@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Subscriber Dashboard — MindForge Capital</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0a0a0f;
+  --ink2: #12121a;
+  --white: #f0f0f5;
+  --text2: #8b8b99;
+  --border: rgba(255,255,255,0.06);
+  --accent: #6c63ff;
+  --accent2: #2dd4bf;
+  --accent3: #9f7aea;
+  --green: #10b981;
+  --red: #ef4444;
+  --r: 12px;
+  --r-lg: 16px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--ink);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse 800px 500px at 60% 20%, rgba(108, 99, 255, 0.04) 0%, transparent 70%),
+              radial-gradient(ellipse 400px 300px at 10% 70%, rgba(45, 212, 191, 0.03) 0%, transparent 60%);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* NAV BAR */
+/* ────────────────────────────────────────────────────────────────────────── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+}
+
+nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  flex: 1;
+}
+
+.nav-links a {
+  font-size: 13px;
+  color: var(--text2);
+  text-decoration: none;
+  transition: color 0.2s;
+  font-weight: 500;
+}
+
+.nav-links a:hover {
+  color: var(--white);
+}
+
+.nav-links a.active {
+  color: var(--accent);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* LOADING SPINNER */
+/* ────────────────────────────────────────────────────────────────────────── */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 1;
+  transition: opacity 0.3s;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* ERROR STATE */
+/* ────────────────────────────────────────────────────────────────────────── */
+.error-state {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.error-card {
+  text-align: center;
+  max-width: 520px;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.error-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--white);
+}
+
+.error-card p {
+  color: var(--text2);
+  margin-bottom: 28px;
+  line-height: 1.7;
+}
+
+.btn-primary {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  padding: 12px 28px;
+  border-radius: var(--r);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: #5a52cc;
+  transform: translateY(-2px);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* DASHBOARD CONTENT */
+/* ────────────────────────────────────────────────────────────────────────── */
+.dashboard {
+  padding: 40px 0;
+  min-height: 100vh;
+}
+
+/* Header section */
+.dashboard-header {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dashboard-header h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.strategy-badge {
+  display: inline-block;
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid var(--accent);
+  color: var(--accent2);
+  padding: 8px 16px;
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.validity-text {
+  color: var(--text2);
+  font-size: 14px;
+}
+
+.validity-text strong {
+  color: var(--white);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(108, 99, 255, 0.1);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  border-radius: var(--r);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.btn-icon:hover {
+  background: rgba(108, 99, 255, 0.2);
+  border-color: var(--accent);
+}
+
+.btn-icon.success {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* Stats row */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 48px;
+}
+
+.stat-card {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  border-color: rgba(108, 99, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+
+.stat-unit {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.stat-value.green {
+  color: var(--green);
+}
+
+.stat-value.red {
+  color: var(--red);
+}
+
+.stat-value.accent {
+  color: var(--accent);
+}
+
+/* Stock table */
+.table-section {
+  margin-bottom: 40px;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.table-header h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.market-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.market-status.closed {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+}
+
+.market-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.market-status.closed .market-status-dot {
+  background: #6b7280;
+}
+
+.table-wrapper {
+  background: var(--ink2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+thead {
+  background: rgba(108, 99, 255, 0.05);
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  padding: 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+tbody tr {
+  transition: background-color 0.15s;
+}
+
+tbody tr:hover {
+  background: rgba(108, 99, 255, 0.05);
+}
+
+tbody tr.positive {
+  background: rgba(16, 185, 129, 0.03);
+}
+
+tbody tr.positive:hover {
+  background: rgba(16, 185, 129, 0.08);
+}
+
+tbody tr.negative {
+  background: rgba(239, 68, 68, 0.03);
+}
+
+tbody tr.negative:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.price-up {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.price-down {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.price-neutral {
+  color: var(--text2);
+}
+
+.ticker-col {
+  font-weight: 600;
+  color: var(--white);
+  font-family: 'Syne', sans-serif;
+}
+
+.sector-col {
+  color: var(--text2);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  height: 16px;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Footer */
+.dashboard-footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.footer-note {
+  margin-bottom: 16px;
+}
+
+.footer-disclaimer {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* RESPONSIVE */
+/* ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  nav .container {
+    gap: 16px;
+  }
+
+  .nav-links {
+    gap: 16px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 24px;
+  }
+
+  .header-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 12px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .dashboard {
+    padding: 24px 0;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<nav>
+  <div class="container">
+    <a href="index.html" class="logo">🧠 MindForge</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="strategies.html">Strategies</a>
+      <a href="newsletter.html">Newsletter</a>
+      <a href="dashboard.html" class="active">Dashboard</a>
+    </div>
+  </div>
+</nav>
+
+<main id="mainContent" style="display: none;">
+  <div class="container">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <h1 id="welcomeMsg">Welcome back!</h1>
+      <div class="header-meta">
+        <span class="strategy-badge" id="strategyBadge">Loading...</span>
+        <span class="validity-text">Valid until <strong id="expiryDate">—</strong></span>
+        <span class="market-status" id="marketStatus">
+          <span class="market-status-dot"></span>
+          <span id="marketStatusText">Checking...</span>
+        </span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" id="copyLinkBtn" onclick="copyDashboardLink()">
+          📋 Copy Dashboard Link
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Stocks</div>
+        <div class="stat-value accent" id="totalStocks">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Entry Price (₹)</div>
+        <div class="stat-value" id="avgEntryPrice">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Portfolio Performance</div>
+        <div class="stat-value" id="portfolioPerformance">—</div>
+      </div>
+    </div>
+
+    <!-- Stock Table -->
+    <div class="table-section">
+      <div class="table-header">
+        <h2>Holdings</h2>
+      </div>
+      <div class="table-wrapper">
+        <table id="stockTable">
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Company</th>
+              <th>Sector</th>
+              <th style="text-align: right;">Entry Price (₹)</th>
+              <th style="text-align: right;">Live Price (₹)</th>
+              <th style="text-align: right;">Change (₹)</th>
+              <th style="text-align: right;">Change (%)</th>
+              <th style="text-align: right;">Weight (%)</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody">
+            <tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text2);">
+              <div class="skeleton" style="width: 30%; height: 16px; margin: 0 auto 8px;"></div>
+              <div class="skeleton" style="width: 20%; height: 16px; margin: 0 auto;"></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="dashboard-footer">
+      <div class="footer-note">Prices update every 60 seconds during market hours</div>
+      <div class="footer-note">Data sourced from NSE via Yahoo Finance</div>
+      <div class="footer-disclaimer">
+        Disclaimer: This portfolio is for educational purposes. Past performance does not guarantee future results.
+        Please consult with a financial advisor before making investment decisions.
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="error-state" id="errorState" style="display: none;">
+  <div class="error-card">
+    <span class="error-icon" id="errorIcon">⚠️</span>
+    <h2 id="errorTitle">Subscription Not Found</h2>
+    <p id="errorMessage">Your subscription link is invalid or has expired. Please subscribe again to access your personalized dashboard.</p>
+    <a href="strategies.html" class="btn-primary">Subscribe Now</a>
+    <p style="margin-top: 20px; color: var(--text2); font-size: 13px;">
+      Have an account? <a href="recover.html" style="color: var(--accent); text-decoration: none;">Recover your link</a>
+    </p>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'PLACEHOLDER_APPS_SCRIPT_URL';
+
+// ─────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────
+let subscriptionData = null;
+let stocks = [];
+let priceRefreshInterval = null;
+
+// ─────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  initDashboard();
+});
+
+async function initDashboard() {
+  // Get token from URL
+  const token = new URLSearchParams(window.location.search).get('token');
+
+  if (!token) {
+    showErrorState('No Token Provided', 'Your subscription link is incomplete. Please check the URL and try again.');
+    return;
+  }
+
+  // Fetch subscription data
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=stocks&token=${encodeURIComponent(token)}`);
+    const data = await response.json();
+
+    if (data.error) {
+      showErrorState('Subscription Invalid', data.error);
+      return;
+    }
+
+    subscriptionData = data.subscription;
+    stocks = data.stocks || [];
+
+    // Validate subscription
+    if (!subscriptionData || subscriptionData.status !== 'active') {
+      showErrorState('Subscription Expired', 'Your subscription has expired or been cancelled. Please renew to access your dashboard.');
+      return;
+    }
+
+    // Check expiry
+    const expiryDate = new Date(subscriptionData.expires_at);
+    if (expiryDate < new Date()) {
+      showErrorState('Subscription Expired', 'Your subscription expired on ' + expiryDate.toLocaleDateString() + '. Please renew to access your dashboard.');
+      return;
+    }
+
+    // Render dashboard
+    renderDashboard();
+
+    // Hide loading, show content
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('mainContent').style.display = 'block';
+
+    // Fetch live prices
+    fetchLivePrices();
+
+    // Setup price refresh every 60 seconds (during market hours)
+    setupPriceRefresh();
+
+  } catch (err) {
+    console.error('Error fetching subscription:', err);
+    showErrorState('Connection Error', 'Failed to load your subscription. Please check your internet connection and refresh the page.');
+  }
+}
+
+function renderDashboard() {
+  const subData = subscriptionData;
+  const expiryDate = new Date(subData.expires_at);
+
+  // Header
+  document.getElementById('welcomeMsg').textContent = `Welcome back, ${subData.name}!`;
+  document.getElementById('strategyBadge').textContent = subData.strategy;
+  document.getElementById('expiryDate').textContent = expiryDate.toLocaleDateString('en-IN');
+
+  // Stats
+  document.getElementById('totalStocks').textContent = stocks.length;
+
+  if (stocks.length > 0) {
+    const avgEntry = stocks.reduce((sum, s) => sum + (s.recommended_price || 0), 0) / stocks.length;
+    document.getElementById('avgEntryPrice').textContent = '₹' + avgEntry.toFixed(2);
+  }
+
+  // Table
+  renderStockTable();
+
+  // Update market status
+  updateMarketStatus();
+}
+
+function renderStockTable() {
+  const tbody = document.getElementById('stockTableBody');
+  tbody.innerHTML = '';
+
+  stocks.forEach((stock, idx) => {
+    const row = document.createElement('tr');
+
+    const livePrice = parseFloat(stock.live_price) || 0;
+    const entryPrice = parseFloat(stock.recommended_price) || 0;
+    const change = livePrice - entryPrice;
+    const changePct = entryPrice > 0 ? (change / entryPrice) * 100 : 0;
+    const weight = parseFloat(stock.weight_pct) || 0;
+
+    const isPosChange = change >= 0;
+    row.classList.add(isPosChange ? 'positive' : 'negative');
+
+    row.innerHTML = `
+      <td style="text-align: center;">${idx + 1}</td>
+      <td><span class="ticker-col">${stock.ticker}</span><br><span style="color: var(--text2); font-size: 12px;">${stock.company_name || '—'}</span></td>
+      <td><span class="sector-col">${stock.industry || '—'}</span></td>
+      <td style="text-align: right;">₹${entryPrice > 0 ? entryPrice.toFixed(2) : '—'}</td>
+      <td style="text-align: right; color: var(--white);">${livePrice > 0 ? '₹' + livePrice.toFixed(2) : 'Loading...'}</td>
+      <td style="text-align: right;"><span class="${isPosChange ? 'price-up' : (change === 0 ? 'price-neutral' : 'price-down')}">${change !== 0 ? (isPosChange ? '+' : '') + change.toFixed(2) : '—'}</span></td>
+      <td style="text-align: right;"><span class="${isPosChange ? 'price-up' : (changePct === 0 ? 'price-neutral' : 'price-down')}">${changePct !== 0 ? (isPosChange ? '+' : '') + changePct.toFixed(2) + '%' : '—'}</span></td>
+      <td style="text-align: right;">${weight.toFixed(2)}%</td>
+    `;
+
+    tbody.appendChild(row);
+  });
+
+  // Calculate portfolio performance
+  if (stocks.length > 0) {
+    const avgChange = stocks.reduce((sum, s) => {
+      const livePrice = parseFloat(s.live_price) || 0;
+      const entryPrice = parseFloat(s.recommended_price) || 0;
+      return sum + (entryPrice > 0 ? (livePrice - entryPrice) / entryPrice : 0);
+    }, 0) / stocks.length;
+
+    const perfElement = document.getElementById('portfolioPerformance');
+    const isGreen = avgChange >= 0;
+    perfElement.textContent = (isGreen ? '+' : '') + (avgChange * 100).toFixed(2) + '%';
+    perfElement.classList.add(isGreen ? 'green' : 'red');
+  }
+}
+
+async function fetchLivePrices() {
+  if (stocks.length === 0) return;
+
+  const tickers = stocks.map(s => s.yahoo_ticker || s.ticker).filter(t => t).join(',');
+  if (!tickers) return;
+
+  try {
+    const response = await fetch(`${APPS_SCRIPT_URL}?action=prices&tickers=${encodeURIComponent(tickers)}`);
+    const data = await response.json();
+
+    if (data.prices) {
+      stocks.forEach(stock => {
+        const ticker = stock.yahoo_ticker || stock.ticker;
+        if (data.prices[ticker]) {
+          stock.live_price = data.prices[ticker].price;
+        }
+      });
+
+      renderStockTable();
+    }
+  } catch (err) {
+    console.error('Error fetching live prices:', err);
+  }
+}
+
+function setupPriceRefresh() {
+  // Refresh prices every 60 seconds during market hours
+  priceRefreshInterval = setInterval(function() {
+    if (isMarketHours()) {
+      fetchLivePrices();
+    }
+  }, 60000);
+}
+
+function isMarketHours() {
+  const now = new Date();
+  // IST is UTC+5:30
+  const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const hour = istTime.getHours();
+  const minute = istTime.getMinutes();
+  const day = istTime.getDay();
+
+  // Market hours: 9:15 AM - 3:30 PM IST, weekdays only
+  const inWeekday = day >= 1 && day <= 5;
+  const inMarketHours = (hour > 9 || (hour === 9 && minute >= 15)) && (hour < 15 || (hour === 15 && minute <= 30));
+
+  return inWeekday && inMarketHours;
+}
+
+function updateMarketStatus() {
+  const status = document.getElementById('marketStatus');
+  const statusText = document.getElementById('marketStatusText');
+
+  if (isMarketHours()) {
+    status.classList.remove('closed');
+    statusText.textContent = 'Market Open';
+  } else {
+    status.classList.add('closed');
+    statusText.textContent = 'Market Closed';
+  }
+}
+
+function copyDashboardLink() {
+  const btn = document.getElementById('copyLinkBtn');
+  const url = window.location.href;
+
+  navigator.clipboard.writeText(url).then(function() {
+    const originalText = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('success');
+    setTimeout(function() {
+      btn.textContent = originalText;
+      btn.classList.remove('success');
+    }, 2000);
+  }).catch(function(err) {
+    console.error('Failed to copy:', err);
+    alert('Failed to copy link. Please try again.');
+  });
+}
+
+function showErrorState(title, message) {
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMessage').textContent = message;
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  document.getElementById('errorState').style.display = 'flex';
+}
+</script>
+
+</body>
+</html>
