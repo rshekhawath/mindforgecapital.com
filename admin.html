@@ -395,9 +395,118 @@
       td, th { padding: 10px 10px; }
       .td-phone { display: none; }
     }
+
+    /* ── Login overlay ── */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 40px rgba(26,80,216,.10);
+    }
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .login-logo img { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; }
+    .login-logo span { font-family: "Syne", sans-serif; font-weight: 700; font-size: 17px; color: var(--ink); }
+    #login-box h2 {
+      font-family: "Syne", sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    #login-box p.sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .login-field { margin-bottom: 16px; }
+    .login-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .login-field input:focus { border-color: var(--accent); }
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: "Syne", sans-serif;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background .2s;
+    }
+    .btn-login:hover { background: #1340b0; }
+    #login-error {
+      display: none;
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 12px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div id="login-box">
+    <div class="login-logo">
+      <img src="Logo.png" alt="MindForge Capital" onerror="this.style.display='none'">
+      <span>MindForge Capital</span>
+    </div>
+    <h2>Admin Login</h2>
+    <p class="sub">Enter your credentials to access the lead panel.</p>
+    <form id="login-form" onsubmit="doLogin(event)">
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="login-user" autocomplete="username" required autofocus>
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-pass" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-login">Sign In →</button>
+      <div id="login-error">Incorrect username or password.</div>
+    </form>
+  </div>
+</div>
 
 <nav>
   <a href="/" class="nav-brand">
@@ -710,8 +819,36 @@ function esc(str) {
     .replace(/"/g, '&quot;');
 }
 
-// Load on startup
-loadLeads();
+
+// ── Login ──
+(async function() {
+  // Check session
+  if (sessionStorage.getItem('mfc_admin') === '1') {
+    document.getElementById('login-overlay').style.display = 'none';
+    loadLeads();
+    return;
+  }
+})();
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  var hash = await sha256(pass);
+  if (user === 'rshekhawath' && hash === '6250f54e98a18394badb26b861522cf15d5df1549ad23494f3b580986fba48ed') {
+    sessionStorage.setItem('mfc_admin', '1');
+    document.getElementById('login-overlay').style.display = 'none';
+    loadLeads();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
 </script>
 </body>
 </html>
