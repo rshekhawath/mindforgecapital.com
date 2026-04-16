@@ -678,12 +678,12 @@ function renderTable(leads) {
 
     var activateBtn = isActivated
       ? '<span style="font-size:12px;color:var(--green);">✓ Done</span>'
-      : '<button class="btn-activate" onclick="openActivateModal(' +
-          JSON.stringify(lead.name) + ',' +
-          JSON.stringify(lead.email) + ',' +
-          JSON.stringify(lead.phone) + ',' +
-          JSON.stringify(lead.strategy) +
-        ')">Activate</button>';
+      : '<button class="btn-activate" ' +
+          'data-name="'     + esc(lead.name     || '') + '" ' +
+          'data-email="'    + esc(lead.email    || '') + '" ' +
+          'data-phone="'    + esc(lead.phone    || '') + '" ' +
+          'data-strategy="' + esc(lead.strategy || '') + '">' +
+        'Activate</button>';
 
     return '<tr>' +
       '<td><div class="td-name">' + esc(lead.name || '—') + '</div></td>' +
@@ -720,6 +720,18 @@ function filterTable() {
 
 // ── Activate modal ──
 var _actLeadEmail = '';
+var WHATSAPP_ADMIN = '917989080493'; // your business WhatsApp number
+
+// Delegate clicks on Activate buttons (data-attribute approach avoids HTML quote bugs)
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.btn-activate');
+  if (!btn) return;
+  var name     = btn.getAttribute('data-name');
+  var email    = btn.getAttribute('data-email');
+  var phone    = btn.getAttribute('data-phone');
+  var strategy = btn.getAttribute('data-strategy');
+  openActivateModal(name, email, phone, strategy);
+});
 
 function openActivateModal(name, email, phone, strategy) {
   _actLeadEmail = email;
@@ -779,9 +791,27 @@ function confirmActivate() {
   .then(function(data) {
     if (data.status === 'ok') {
       closeActivateModal();
-      showToast('✓ ' + (name || email) + ' activated! Dashboard email sent.', 'success');
+      showToast('✓ ' + (name || email) + ' activated! Email sent. Opening WhatsApp…', 'success');
+
+      // Send WhatsApp to subscriber's number with dashboard link
+      var dashUrl  = data.dashboard_url || 'https://mindforgecapital.com/dashboard.html';
+      var rawPhone = (phone || '').replace(/\D/g, '');
+      if (rawPhone.length === 10) rawPhone = '91' + rawPhone;
+      else if (rawPhone.length === 11 && rawPhone.startsWith('0')) rawPhone = '91' + rawPhone.slice(1);
+      if (rawPhone.length >= 11) {
+        var waMsg = encodeURIComponent(
+          'Hi ' + (name || 'there') + '! 🎉\n\n' +
+          'Your MindForge Capital dashboard is now active.\n\n' +
+          '📊 Strategy: ' + strategy + '\n' +
+          '🔗 Dashboard link (keep this private):\n' + dashUrl + '\n\n' +
+          'Your subscription is valid for 30 days. Use this link anytime to view live portfolio updates.\n\n' +
+          '— MindForge Capital'
+        );
+        window.open('https://wa.me/' + rawPhone + '?text=' + waMsg, '_blank');
+      }
+
       // Refresh leads after short delay
-      setTimeout(loadLeads, 1200);
+      setTimeout(loadLeads, 1500);
     } else {
       showToast('Error: ' + (data.error || 'Unknown error'), 'error');
       btn.textContent = '✓ Activate & Send Email';
