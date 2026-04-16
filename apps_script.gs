@@ -98,7 +98,7 @@ function doGet(e) {
     } else if (action === 'prices') {
       return handleGetPrices(e.parameter.tickers);
     } else if (action === 'recover') {
-      return handleRecover(e.parameter.email);
+      return handleRecover(e.parameter.email, e.parameter.phone);
     } else if (action === 'get_leads') {
       return handleGetLeads();
     } else {
@@ -222,6 +222,9 @@ function handleSaveLead(payload) {
     'pending'
   ]);
 
+  // Notify admin of new lead
+  sendAdminLeadNotification(payload.name || '', payload.email || '', payload.phone || '', payload.strategy || '', payload.price || '');
+
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
     message: 'Lead saved'
@@ -264,11 +267,14 @@ function handleActivate(payload) {
     'active'
   ]);
 
-  // Mark lead as activated in leads sheet
+  // Mark lead as activated in leads sheet — find the most recent PENDING row
+  // (avoids skipping a row when two leads share the same email)
   const leadsSheet = getSheet('leads');
   const leadsData  = leadsSheet.getDataRange().getValues();
   for (let i = leadsData.length - 1; i >= 1; i--) {
-    if ((leadsData[i][2] || '').toLowerCase() === email) {
+    const rowEmail  = (leadsData[i][2] || '').toLowerCase().trim();
+    const rowStatus = (leadsData[i][6] || '').toLowerCase();
+    if (rowEmail === email && rowStatus !== 'activated') {
       leadsSheet.getRange(i + 1, 7).setValue('activated');
       break;
     }
@@ -355,13 +361,17 @@ function handleGetStocks(token) {
     return errorResponse('Subscription is not active');
   }
 
-  // Find stocks by run_id
+  // Always use the LATEST run for the strategy so the dashboard
+  // shows the most current portfolio picks, regardless of signup time.
+  const latestRunId = findLatestRunId(subscription.strategy);
+  subscription.run_id = latestRunId;
+
   const runSheet = getSheet('strategy_runs');
   const runData = runSheet.getDataRange().getValues();
   const stocks = [];
 
   for (let i = 1; i < runData.length; i++) {
-    if (runData[i][0] === subscription.run_id) {
+    if (runData[i][0] === latestRunId) {
       stocks.push({
         ticker: runData[i][3],
         yahoo_ticker: runData[i][4],
@@ -424,19 +434,30 @@ function handleGetPrices(tickers) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-function handleRecover(email) {
-  if (!email) {
-    return errorResponse('No email provided');
+function handleRecover(email, phone) {
+  const emailClean = (email || '').toLowerCase().trim();
+  const phoneClean = (phone || '').replace(/\D/g, '').slice(-10); // last 10 digits
+
+  if (!emailClean && !phoneClean) {
+    return errorResponse('Please provide your subscription email address or phone number');
   }
 
-  // Find most recent active subscription for this email
+  // Find most recent active subscription matching email OR phone
   const subSheet = getSheet('subscriptions');
   const subData = subSheet.getDataRange().getValues();
   let latestSubscription = null;
   let latestDate = null;
 
   for (let i = 1; i < subData.length; i++) {
-    if (subData[i][1].toLowerCase() === email.toLowerCase() && subData[i][9] === 'active') {
+    if (subData[i][9] !== 'active') continue;
+
+    const rowEmail = (subData[i][1] || '').toLowerCase().trim();
+    const rowPhone = (subData[i][3] || '').toString().replace(/\D/g, '').slice(-10);
+
+    const emailMatch = emailClean && rowEmail === emailClean;
+    const phoneMatch = phoneClean && rowPhone === phoneClean;
+
+    if (emailMatch || phoneMatch) {
       const subDate = new Date(subData[i][6]);
       if (!latestDate || subDate > latestDate) {
         latestDate = subDate;
@@ -451,7 +472,7 @@ function handleRecover(email) {
   }
 
   if (!latestSubscription) {
-    return errorResponse('No active subscription found for this email address');
+    return errorResponse('No active subscription found. Please check your email or phone number.');
   }
 
   // Check if expired
@@ -588,7 +609,10 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
   `;
 
   try {
-    GmailApp.sendEmail(email, subject, '', { htmlBody: htmlBody });
+    GmailApp.sendEmail(email, subject, '', {
+      htmlBody: htmlBody,
+      name: 'MindForge Capital'
+    });
   } catch (err) {
     Logger.log('Email send error: ' + err);
   }
@@ -639,7 +663,10 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
   `;
 
   try {
-    GmailApp.sendEmail(email, subject, '', { htmlBody: htmlBody });
+    GmailApp.sendEmail(email, subject, '', {
+      htmlBody: htmlBody,
+      name: 'MindForge Capital'
+    });
   } catch (err) {
     Logger.log('Recovery email send error: ' + err);
   }
@@ -713,9 +740,74 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
   `;
 
   try {
-    GmailApp.sendEmail(email, subject, '', { htmlBody: htmlBody });
+    GmailApp.sendEmail(email, subject, '', {
+      htmlBody: htmlBody,
+      name: 'MindForge Capital'
+    });
   } catch (err) {
     Logger.log('Activation email send error: ' + err);
+  }
+}
+
+function sendAdminLeadNotification(name, email, phone, strategy, price) {
+  const adminEmail = 'rshekhawath@gmail.com';
+  const subject = '🔔 New MindForge Lead: ' + name + ' (' + strategy + ')';
+
+  const body = 'New lead registered on MindForge Capital.\n\n'
+    + 'Name:     ' + name     + '\n'
+    + 'Email:    ' + email    + '\n'
+    + 'Phone:    ' + phone    + '\n'
+    + 'Strategy: ' + strategy + '\n'
+    + 'Price:    ' + price    + '\n\n'
+    + 'Log in to the admin panel to review and activate:\n'
+    + 'https://mindforgecapital.com/admin.html';
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0c1831; margin: 0; padding: 20px; }
+    .container { max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 12px; overflow: hidden; }
+    .header { background: linear-gradient(135deg, #1a50d8 0%, #2563eb 100%); padding: 28px 24px; }
+    .header h1 { margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; }
+    .header p { margin: 4px 0 0; color: rgba(255,255,255,0.8); font-size: 13px; }
+    .content { padding: 28px 28px; }
+    .row { display: flex; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    .label { width: 90px; color: #64748b; flex-shrink: 0; }
+    .value { color: #0c1831; font-weight: 600; }
+    .btn-wrap { text-align: center; margin: 28px 0 0; }
+    .btn { display: inline-block; background: #1a50d8; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; }
+    .footer { background: #f8fafc; padding: 16px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔔 New Lead Registered</h1>
+      <p>MindForge Capital — Admin Notification</p>
+    </div>
+    <div class="content">
+      <div class="row"><span class="label">Name</span><span class="value">` + name + `</span></div>
+      <div class="row"><span class="label">Email</span><span class="value">` + email + `</span></div>
+      <div class="row"><span class="label">Phone</span><span class="value">` + phone + `</span></div>
+      <div class="row"><span class="label">Strategy</span><span class="value">` + strategy + `</span></div>
+      <div class="row"><span class="label">Price</span><span class="value">` + price + `</span></div>
+      <div class="btn-wrap">
+        <a href="https://mindforgecapital.com/admin.html" class="btn">Open Admin Panel →</a>
+      </div>
+    </div>
+    <div class="footer">© 2026 MindForge Capital</div>
+  </div>
+</body>
+</html>`;
+
+  try {
+    GmailApp.sendEmail(adminEmail, subject, body, {
+      htmlBody: htmlBody,
+      name: 'MindForge Capital Alerts'
+    });
+  } catch (err) {
+    Logger.log('Admin notification email error: ' + err);
   }
 }
 
