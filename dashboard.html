@@ -172,7 +172,7 @@ footer p{font-size:12px;color:var(--text3);}
       </div>
       <div class="stat-card">
         <div class="stat-val gold" id="stat-avg-entry">—</div>
-        <div class="stat-label">Avg Entry Price</div>
+        <div class="stat-label">Avg Rec. Price</div>
       </div>
       <div class="stat-card">
         <div class="stat-val" id="stat-portfolio-change">—</div>
@@ -208,14 +208,15 @@ footer p{font-size:12px;color:var(--text3);}
               <th>Company</th>
               <th>Ticker</th>
               <th>Industry</th>
-              <th>Entry Price</th>
+              <th>Rec. Price</th>
+              <th>Qty</th>
               <th>Live Price</th>
               <th>Change</th>
               <th>Weight</th>
             </tr>
           </thead>
           <tbody id="stocks-tbody">
-            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">Loading stocks…</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Loading stocks…</td></tr>
           </tbody>
         </table>
       </div>
@@ -235,7 +236,17 @@ footer p{font-size:12px;color:var(--text3);}
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 const token = new URLSearchParams(window.location.search).get('token');
 
+// Recommended investment amount per strategy (₹)
+const STRATEGY_BUDGET = {
+  'MultiAsset':       100000,
+  'LargeMidCap':      100000,
+  'SmallMicro':       100000,
+  'MindForge Capital':100000
+};
+const DEFAULT_BUDGET = 100000;
+
 let stocksData = [];
+let currentStrategy = '';
 
 async function init() {
   if (!token) {
@@ -260,7 +271,8 @@ function renderDashboard(sub, stocks) {
 
   const expiry = new Date(sub.expires_at);
   document.getElementById('expiry-date').textContent = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
-  document.getElementById('strategy-name').textContent = sub.strategy || '—';
+  currentStrategy = sub.strategy || '';
+  document.getElementById('strategy-name').textContent = currentStrategy || '—';
   document.getElementById('run-id').textContent = sub.run_id || '—';
   document.getElementById('stat-stocks').textContent = stocks.length;
 
@@ -277,9 +289,10 @@ function renderDashboard(sub, stocks) {
 function renderTable(stocks, prices) {
   const tbody = document.getElementById('stocks-tbody');
   if (!stocks.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
     return;
   }
+  const budget = STRATEGY_BUDGET[currentStrategy] || DEFAULT_BUDGET;
   let gainers = 0, losers = 0, totalChange = 0, priceCount = 0;
   tbody.innerHTML = stocks.map((s,i) => {
     const entry = s.recommended_price || 0;
@@ -291,12 +304,18 @@ function renderTable(stocks, prices) {
     const chgTd = chg !== null
       ? `<td class="change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</td>`
       : '<td class="change" style="color:var(--text3)">—</td>';
+    // Quantity = floor( weight% × budget / rec_price )
+    const qty = (s.weight_pct && entry > 0)
+      ? Math.floor((s.weight_pct / 100) * budget / entry)
+      : null;
+    const qtyTd = qty !== null ? qty : '<span style="color:var(--text3)">—</span>';
     return `<tr>
       <td style="color:var(--text3);font-size:13px;">${i+1}</td>
       <td class="company">${s.company_name||s.ticker}</td>
       <td class="ticker">${s.ticker}</td>
       <td><span class="industry-badge">${s.industry||'—'}</span></td>
       <td class="price">₹${entry.toFixed(2)}</td>
+      <td class="weight" style="font-weight:600;color:var(--text);">${qtyTd}</td>
       <td class="price">${liveTd}</td>
       ${chgTd}
       <td class="weight">${s.weight_pct ? s.weight_pct.toFixed(1)+'%' : '—'}</td>

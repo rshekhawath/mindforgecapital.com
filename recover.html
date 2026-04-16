@@ -32,9 +32,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 
 .form-group{margin-bottom:20px;}
 label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;font-family:'Syne',sans-serif;}
-input[type=email]{width:100%;padding:13px 16px;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;}
-input[type=email]::placeholder{color:var(--text3);}
-input[type=email]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.10);}
+input[type=email],input[type=tel]{width:100%;padding:13px 16px;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;}
+input[type=email]::placeholder,input[type=tel]::placeholder{color:var(--text3);}
+input[type=email]:focus,input[type=tel]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.10);}
 
 .btn{width:100%;padding:14px;border-radius:var(--r-sm);border:none;background:var(--accent);color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.01em;}
 .btn:hover{background:#2a5ef5;transform:translateY(-1px);box-shadow:0 6px 20px rgba(26,80,216,0.25);}
@@ -74,11 +74,14 @@ footer{text-align:center;padding:32px 16px;font-size:12px;color:var(--text3);pos
   <div class="card">
     <div class="card-icon">🔑</div>
     <h1>Recover Dashboard Access</h1>
-    <p class="desc">Enter the email address you used when subscribing and we'll send your personal dashboard link.</p>
+    <p class="desc">Enter the email address or phone number you used when subscribing and we'll send your personal dashboard link.</p>
 
     <div class="form-group">
-      <label for="email-input">Subscription Email Address</label>
+      <label for="email-input">Email Address</label>
       <input type="email" id="email-input" placeholder="you@example.com" autocomplete="email">
+      <div style="text-align:center;margin:10px 0;color:var(--text3);font-size:13px;font-weight:500;">— or —</div>
+      <label for="phone-input">Phone Number</label>
+      <input type="tel" id="phone-input" placeholder="+91 98765 43210" autocomplete="tel">
     </div>
 
     <button class="btn" id="recover-btn" onclick="recoverAccess()">Send My Dashboard Link</button>
@@ -122,7 +125,10 @@ async function recoverAccess() {
   box.style.display = 'none';
 
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=recover&email=' + encodeURIComponent(email));
+    const params = new URLSearchParams({ action: 'recover' });
+    if (email) params.set('email', email);
+    if (phone) params.set('phone', phone);
+    const res = await fetch(APPS_SCRIPT_URL + '?' + params.toString());
     const data = await res.json();
 
     if (data.error) {
@@ -145,8 +151,10 @@ function showResult(type, msg) {
   box.style.display = 'block';
 }
 
-document.getElementById('email-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') recoverAccess();
+['email-input','phone-input'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') recoverAccess();
+  });
 });
 </script>
 </body>
