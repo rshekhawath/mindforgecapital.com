@@ -540,9 +540,31 @@ function errorResponse(error) {
 // ─────────────────────────────────────────────────────────────────────────────
 // EMAIL FUNCTIONS
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// Spam / deliverability notes:
+//   1. All outbound emails now include a plain-text body (the 3rd arg to
+//      GmailApp.sendEmail). HTML-only emails are a major spam signal.
+//   2. A `replyTo` address is set so inbox providers see a valid return path.
+//   3. Visible Unsubscribe links are included in every footer — the single
+//      biggest factor for Gmail / Outlook bulk-sender reputation since Feb 2024.
+//   4. Subject lines no longer use ✅ / 🎉 / 🔔 emojis, which heuristic spam
+//      filters penalise on transactional mail.
+//
+// Things still to do OUTSIDE this script (Apps Script alone cannot fix these):
+//   a. Add an SPF record for mindforgecapital.com that includes _spf.google.com
+//      (e.g. "v=spf1 include:_spf.google.com ~all")
+//   b. Enable DKIM signing for mindforgecapital.com in Google Workspace Admin
+//      (Apps → Google Workspace → Gmail → Authenticate email).
+//   c. Add a DMARC record: "v=DMARC1; p=quarantine; rua=mailto:postmaster@mindforgecapital.com"
+//   d. Switch sender to a branded Workspace address (e.g. hello@mindforgecapital.com)
+//      instead of a @gmail.com account — Gmail's bulk-sender rules require
+//      domain-aligned From addresses for best deliverability.
+//   e. Warm the sender: start with low volume and ramp slowly.
+//
+// ─────────────────────────────────────────────────────────────────────────────
 
 function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
-  const subject = 'Your MindForge Capital Dashboard is Ready — ' + strategy;
+  const subject = 'Your MindForge Capital dashboard access';
 
   const htmlBody = `
     <!DOCTYPE html>
@@ -570,7 +592,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🧠 MindForge Capital</h1>
+          <h1>MindForge Capital</h1>
         </div>
         <div class="content">
           <h2>Welcome ` + name + `!</h2>
@@ -601,17 +623,30 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
           <p>
             <strong>SEBI Disclaimer:</strong> MindForge Capital provides educational information only and is not registered with SEBI. This is not financial advice. Trade at your own risk. Please review our privacy policy and terms of service.
           </p>
-          <p style="margin-top: 16px; color: #9ca3af;">© 2026 MindForge Capital. All rights reserved.</p>
+          <p style="margin-top: 16px; color: #9ca3af;">© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:rshekhawath@gmail.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
         </div>
       </div>
     </body>
     </html>
   `;
 
+  const plainBody =
+    'Hello ' + name + ',\n\n' +
+    'Your MindForge Capital subscription is active.\n\n' +
+    'Dashboard: ' + dashboardUrl + '\n' +
+    'Strategy: ' + strategy + '\n' +
+    'Valid until: ' + expiresAt.toLocaleDateString('en-IN') + '\n\n' +
+    'Your dashboard link is unique — please do not share it. If you lose it, recover it at https://mindforgecapital.com/recover.html\n\n' +
+    'SEBI Disclaimer: MindForge Capital provides educational information only and is not registered with SEBI. This is not financial advice.\n\n' +
+    'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
+    '— MindForge Capital\n' +
+    'https://mindforgecapital.com';
+
   try {
-    GmailApp.sendEmail(email, subject, '', {
+    GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
-      name: 'MindForge Capital'
+      name: 'MindForge Capital',
+      replyTo: 'rshekhawath@gmail.com'
     });
   } catch (err) {
     Logger.log('Email send error: ' + err);
@@ -619,7 +654,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
 }
 
 function sendRecoveryEmail(email, name, dashboardUrl) {
-  const subject = 'Your MindForge Capital Dashboard Link';
+  const subject = 'Your MindForge Capital dashboard link';
 
   const htmlBody = `
     <!DOCTYPE html>
@@ -642,7 +677,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🧠 MindForge Capital</h1>
+          <h1>MindForge Capital</h1>
         </div>
         <div class="content">
           <h2>Hello ` + name + `!</h2>
@@ -655,17 +690,27 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
           <p style="font-size: 14px; color: #6b7280; margin-top: 24px;">If you did not request this link, you can safely ignore this email. Your subscription is secure.</p>
         </div>
         <div class="footer">
-          <p>© 2026 MindForge Capital. All rights reserved.</p>
+          <p>© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:rshekhawath@gmail.com?subject=unsubscribe" style="color:#6b7280;">Unsubscribe</a></p>
         </div>
       </div>
     </body>
     </html>
   `;
 
+  const plainBody =
+    'Hello ' + name + ',\n\n' +
+    'You requested a dashboard link recovery. Your subscription is still active.\n\n' +
+    'Dashboard: ' + dashboardUrl + '\n\n' +
+    'If you did not request this, please ignore this email.\n\n' +
+    'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
+    '— MindForge Capital\n' +
+    'https://mindforgecapital.com';
+
   try {
-    GmailApp.sendEmail(email, subject, '', {
+    GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
-      name: 'MindForge Capital'
+      name: 'MindForge Capital',
+      replyTo: 'rshekhawath@gmail.com'
     });
   } catch (err) {
     Logger.log('Recovery email send error: ' + err);
@@ -673,7 +718,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
 }
 
 function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
-  const subject = '✅ Your MindForge Capital Dashboard is Ready — ' + strategy;
+  const subject = 'Your MindForge Capital dashboard is active';
 
   const htmlBody = `
     <!DOCTYPE html>
@@ -705,7 +750,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           <p>Quant-powered investment strategies</p>
         </div>
         <div class="content">
-          <h2>Welcome aboard, ` + (name || 'Investor') + `! 🎉</h2>
+          <h2>Welcome aboard, ` + (name || 'Investor') + `!</h2>
           <p>Your payment has been verified and your dashboard is now active. Click the button below to access your personalised strategy portfolio.</p>
 
           <div class="btn-wrap">
@@ -732,17 +777,30 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           </p>
         </div>
         <div class="footer">
-          <p>© 2026 MindForge Capital · <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a></p>
+          <p>© 2026 MindForge Capital · <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a><br><a href="mailto:rshekhawath@gmail.com?subject=unsubscribe" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#94a3b8;text-decoration:none;">Privacy</a></p>
         </div>
       </div>
     </body>
     </html>
   `;
 
+  const plainBody =
+    'Welcome aboard, ' + (name || 'Investor') + '!\n\n' +
+    'Your payment has been verified and your MindForge Capital dashboard is now active.\n\n' +
+    'Dashboard: ' + dashboardUrl + '\n' +
+    'Strategy: ' + strategy + '\n' +
+    'Valid until: ' + expiresAt.toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '\n\n' +
+    'Keep this link private. It is unique to you. If you ever lose it, use the recovery page at https://mindforgecapital.com/recover.html\n\n' +
+    'SEBI Disclaimer: MindForge Capital provides educational information only and is not registered with SEBI as an investment advisor. Past performance does not guarantee future results.\n\n' +
+    'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
+    '— MindForge Capital\n' +
+    'https://mindforgecapital.com';
+
   try {
-    GmailApp.sendEmail(email, subject, '', {
+    GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
-      name: 'MindForge Capital'
+      name: 'MindForge Capital',
+      replyTo: 'rshekhawath@gmail.com'
     });
   } catch (err) {
     Logger.log('Activation email send error: ' + err);
@@ -751,7 +809,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
 
 function sendAdminLeadNotification(name, email, phone, strategy, price) {
   const adminEmail = 'rshekhawath@gmail.com';
-  const subject = '🔔 New MindForge Lead: ' + name + ' (' + strategy + ')';
+  const subject = 'New MindForge lead: ' + name + ' (' + strategy + ')';
 
   const body = 'New lead registered on MindForge Capital.\n\n'
     + 'Name:     ' + name     + '\n'
@@ -783,7 +841,7 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔔 New Lead Registered</h1>
+      <h1>New Lead Registered</h1>
       <p>MindForge Capital — Admin Notification</p>
     </div>
     <div class="content">
@@ -804,7 +862,8 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
   try {
     GmailApp.sendEmail(adminEmail, subject, body, {
       htmlBody: htmlBody,
-      name: 'MindForge Capital Alerts'
+      name: 'MindForge Capital Alerts',
+      replyTo: 'rshekhawath@gmail.com'
     });
   } catch (err) {
     Logger.log('Admin notification email error: ' + err);

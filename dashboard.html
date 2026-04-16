@@ -160,7 +160,6 @@ footer p{font-size:12px;color:var(--text3);}
       <div class="meta-row">
         <div class="meta-pill"><span class="dot-green"></span> Subscription Active until <strong id="expiry-date">—</strong></div>
         <div class="meta-pill"><span class="dot-blue"></span> Strategy: <strong id="strategy-name">—</strong></div>
-        <div class="meta-pill">Run snapshot: <strong id="run-id">—</strong></div>
       </div>
     </div>
 
@@ -169,18 +168,6 @@ footer p{font-size:12px;color:var(--text3);}
       <div class="stat-card highlight">
         <div class="stat-val blue" id="stat-stocks">—</div>
         <div class="stat-label">Total Stocks</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val gold" id="stat-avg-entry">—</div>
-        <div class="stat-label">Avg Rec. Price</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-portfolio-change">—</div>
-        <div class="stat-label">Portfolio Change</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val" id="stat-gainers">—</div>
-        <div class="stat-label">Gainers / Losers</div>
       </div>
     </div>
 
@@ -196,7 +183,6 @@ footer p{font-size:12px;color:var(--text3);}
             <span id="market-dot" class="dot-green"></span>
             <span id="market-label">Checking market…</span>
           </div>
-          <button class="refresh-btn" onclick="refreshPrices()"><span class="refresh-icon">↻</span> Refresh Prices</button>
         </div>
       </div>
 
@@ -209,14 +195,11 @@ footer p{font-size:12px;color:var(--text3);}
               <th>Ticker</th>
               <th>Industry</th>
               <th>Rec. Price</th>
-              <th>Qty</th>
-              <th>Live Price</th>
-              <th>Change</th>
               <th>Weight</th>
             </tr>
           </thead>
           <tbody id="stocks-tbody">
-            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Loading stocks…</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">Loading stocks…</td></tr>
           </tbody>
         </table>
       </div>
@@ -259,7 +242,6 @@ async function init() {
     if (data.error) { showError('Access Denied', data.error); return; }
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
-    refreshPrices();
   } catch(e) {
     showError('Connection Error', 'Could not connect to the server. Please try again in a moment.');
   }
@@ -273,13 +255,7 @@ function renderDashboard(sub, stocks) {
   document.getElementById('expiry-date').textContent = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
   currentStrategy = sub.strategy || '';
   document.getElementById('strategy-name').textContent = currentStrategy || '—';
-  document.getElementById('run-id').textContent = sub.run_id || '—';
   document.getElementById('stat-stocks').textContent = stocks.length;
-
-  if (stocks.length > 0) {
-    const avgEntry = stocks.reduce((s,st) => s + (st.recommended_price||0), 0) / stocks.length;
-    document.getElementById('stat-avg-entry').textContent = '₹' + avgEntry.toFixed(0);
-  }
 
   renderTable(stocks, {});
   updateMarketStatus();
@@ -289,59 +265,22 @@ function renderDashboard(sub, stocks) {
 function renderTable(stocks, prices) {
   const tbody = document.getElementById('stocks-tbody');
   if (!stocks.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
     return;
   }
-  const budget = STRATEGY_BUDGET[currentStrategy] || DEFAULT_BUDGET;
-  let gainers = 0, losers = 0, totalChange = 0, priceCount = 0;
   tbody.innerHTML = stocks.map((s,i) => {
     const entry = s.recommended_price || 0;
-    const p = prices[s.yahoo_ticker] || prices[s.ticker];
-    const live = p ? p.price : null;
-    const chg = (live && entry) ? ((live - entry) / entry * 100) : null;
-    if (chg !== null) { totalChange += chg; priceCount++; if (chg >= 0) gainers++; else losers++; }
-    const liveTd = live ? '₹' + live.toFixed(2) : '<span style="color:var(--text3)">—</span>';
-    const chgTd = chg !== null
-      ? `<td class="change ${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${chg.toFixed(2)}%</td>`
-      : '<td class="change" style="color:var(--text3)">—</td>';
-    // Quantity = floor( weight% × budget / rec_price )
-    const qty = (s.weight_pct && entry > 0)
-      ? Math.floor((s.weight_pct / 100) * budget / entry)
-      : null;
-    const qtyTd = qty !== null ? qty : '<span style="color:var(--text3)">—</span>';
     return `<tr>
       <td style="color:var(--text3);font-size:13px;">${i+1}</td>
       <td class="company">${s.company_name||s.ticker}</td>
       <td class="ticker">${s.ticker}</td>
       <td><span class="industry-badge">${s.industry||'—'}</span></td>
       <td class="price">₹${entry.toFixed(2)}</td>
-      <td class="weight" style="font-weight:600;color:var(--text);">${qtyTd}</td>
-      <td class="price">${liveTd}</td>
-      ${chgTd}
       <td class="weight">${s.weight_pct ? s.weight_pct.toFixed(1)+'%' : '—'}</td>
     </tr>`;
   }).join('');
 
-  if (priceCount > 0) {
-    const avgChg = totalChange / priceCount;
-    const el = document.getElementById('stat-portfolio-change');
-    el.textContent = (avgChg >= 0 ? '+' : '') + avgChg.toFixed(2) + '%';
-    el.className = 'stat-val ' + (avgChg >= 0 ? 'green' : 'red');
-    document.getElementById('stat-gainers').textContent = gainers + ' / ' + losers;
-    const gEl = document.getElementById('stat-gainers');
-    gEl.className = 'stat-val ' + (gainers >= losers ? 'green' : 'red');
-  }
   document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('en-IN');
-}
-
-async function refreshPrices() {
-  if (!stocksData.length) return;
-  const tickers = stocksData.map(s => s.yahoo_ticker || s.ticker).join(',');
-  try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=prices&tickers=' + encodeURIComponent(tickers));
-    const data = await res.json();
-    if (data.prices) renderTable(stocksData, data.prices);
-  } catch(e) { console.warn('Price fetch failed', e); }
 }
 
 function updateMarketStatus() {
@@ -354,7 +293,6 @@ function updateMarketStatus() {
   document.getElementById('market-label').innerHTML = isOpen
     ? '<span class="market-open">Market Open</span>'
     : '<span class="market-closed">Market Closed</span>';
-  if (isOpen) setTimeout(refreshPrices, 60000);
 }
 
 function showError(title, msg) {
