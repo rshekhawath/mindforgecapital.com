@@ -464,9 +464,10 @@ function handleRecover(email, phone) {
       if (!latestDate || subDate > latestDate) {
         latestDate = subDate;
         latestSubscription = {
-          token: subData[i][0],
-          email: subData[i][1],
-          name: subData[i][2],
+          token:      subData[i][0],
+          email:      subData[i][1],
+          name:       subData[i][2],
+          phone:      subData[i][3],
           expires_at: subData[i][7]
         };
       }
@@ -487,9 +488,13 @@ function handleRecover(email, phone) {
   const dashboardUrl = getBaseUrl() + '/dashboard.html?token=' + latestSubscription.token;
   sendRecoveryEmail(latestSubscription.email, latestSubscription.name, dashboardUrl);
 
+  // Return dashboard_url and phone so the frontend can offer a WhatsApp link
+  const subPhone = (latestSubscription.phone || '').toString().replace(/\D/g, '').slice(-10);
+
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
     dashboard_url: dashboardUrl,
+    phone: subPhone,
     message: 'Recovery link sent to your email'
   })).setMimeType(ContentService.MimeType.JSON);
 }

@@ -112,10 +112,16 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8
 
 async function recoverAccess() {
   const email = document.getElementById('email-input').value.trim();
-  const btn = document.getElementById('recover-btn');
-  const box = document.getElementById('result-box');
+  const phone = document.getElementById('phone-input').value.trim().replace(/\D/g, '').slice(-10);
+  const btn   = document.getElementById('recover-btn');
+  const box   = document.getElementById('result-box');
 
-  if (!email || !email.includes('@')) {
+  // Require at least one identifier
+  if (!email && !phone) {
+    showResult('error', 'Please enter your email address or phone number.');
+    return;
+  }
+  if (email && !email.includes('@')) {
     showResult('error', 'Please enter a valid email address.');
     return;
   }
@@ -128,13 +134,24 @@ async function recoverAccess() {
     const params = new URLSearchParams({ action: 'recover' });
     if (email) params.set('email', email);
     if (phone) params.set('phone', phone);
-    const res = await fetch(APPS_SCRIPT_URL + '?' + params.toString());
+    const res  = await fetch(APPS_SCRIPT_URL + '?' + params.toString());
     const data = await res.json();
 
     if (data.error) {
       showResult('error', data.error);
     } else {
-      showResult('success', '✓ Dashboard link sent! Check your inbox (and spam folder) for an email from MindForge Capital.');
+      // Build WhatsApp link if phone is available from the response
+      const dashUrl   = data.dashboard_url || '';
+      const subPhone  = data.phone || phone;
+      const waMsg     = encodeURIComponent('Your MindForge Capital dashboard link:\n' + dashUrl + '\n\nKeep this link private — it is unique to you.');
+      const waNumber  = subPhone ? '91' + subPhone.slice(-10) : '';
+      const waLink    = waNumber ? 'https://wa.me/' + waNumber + '?text=' + waMsg : '';
+
+      let html = '<strong>Dashboard link sent!</strong> Check your email inbox (and spam folder).';
+      if (waLink) {
+        html += '<br><br><a href="' + waLink + '" target="_blank" style="display:inline-block;margin-top:8px;padding:10px 20px;background:#25D366;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">&#8594; Also send via WhatsApp</a>';
+      }
+      showResult('success', html, true);
     }
   } catch(e) {
     showResult('error', 'Could not connect to the server. Please try again in a moment.');
@@ -144,10 +161,14 @@ async function recoverAccess() {
   btn.innerHTML = 'Send My Dashboard Link';
 }
 
-function showResult(type, msg) {
+function showResult(type, msg, isHtml) {
   const box = document.getElementById('result-box');
   box.className = 'result-box ' + type;
-  box.textContent = msg;
+  if (isHtml) {
+    box.innerHTML = msg;
+  } else {
+    box.textContent = msg;
+  }
   box.style.display = 'block';
 }
 
