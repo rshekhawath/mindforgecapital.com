@@ -646,7 +646,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
     GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
       name: 'MindForge Capital',
-      replyTo: 'rshekhawath@gmail.com'
+      replyTo: 'hello@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Email send error: ' + err);
@@ -710,7 +710,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
     GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
       name: 'MindForge Capital',
-      replyTo: 'rshekhawath@gmail.com'
+      replyTo: 'hello@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Recovery email send error: ' + err);
@@ -800,7 +800,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
     GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
       name: 'MindForge Capital',
-      replyTo: 'rshekhawath@gmail.com'
+      replyTo: 'hello@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Activation email send error: ' + err);
@@ -808,7 +808,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
 }
 
 function sendAdminLeadNotification(name, email, phone, strategy, price) {
-  const adminEmail = 'rshekhawath@gmail.com';
+  const adminEmail = 'hello@mindforgecapital.com';
   const subject = 'New MindForge lead: ' + name + ' (' + strategy + ')';
 
   const body = 'New lead registered on MindForge Capital.\n\n'
