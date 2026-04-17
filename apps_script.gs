@@ -371,7 +371,9 @@ function handleGetStocks(token) {
   const stocks = [];
 
   for (let i = 1; i < runData.length; i++) {
-    if (runData[i][0] === latestRunId) {
+    // Filter by BOTH run_id AND strategy — guards against run_id collisions
+    // where multiple strategies share the same timestamp-based id.
+    if (runData[i][0] === latestRunId && runData[i][2] === subscription.strategy) {
       stocks.push({
         ticker: runData[i][3],
         yahoo_ticker: runData[i][4],

@@ -484,7 +484,15 @@ def save_run(strategy: str, stocks: list):
     """Save run results to Apps Script."""
     from datetime import datetime
 
-    run_id = datetime.now().strftime("%Y%m%d_%H%M") + "_" + strategy[:3].upper()
+    # Unique 3-letter codes per strategy — all names start with "MultiFactor"
+    # so strategy[:3] was always "MUL", causing run_id collisions across strategies.
+    STRATEGY_CODES = {
+        "MultiFactor LargeMidcap 250": "LMC",
+        "MultiFactor SmallMicro 500":  "SMC",
+        "MultiFactor MultiAsset":      "MAS",
+    }
+    code = STRATEGY_CODES.get(strategy, strategy.replace(" ", "")[:4].upper())
+    run_id = datetime.now().strftime("%Y%m%d_%H%M") + "_" + code
 
     payload = {
         "action": "save_run",
