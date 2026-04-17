@@ -644,10 +644,10 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
     'Dashboard: ' + dashboardUrl + '\n' +
     'Strategy: ' + strategy + '\n' +
     'Valid until: ' + expiresAt.toLocaleDateString('en-IN') + '\n\n' +
-    'Your dashboard link is unique — please do not share it. If you lose it, recover it at https://mindforgecapital.com/recover.html\n\n' +
+    'Your dashboard link is unique -- please do not share it. If you lose it, recover it at https://mindforgecapital.com/recover.html\n\n' +
     'SEBI Disclaimer: MindForge Capital provides educational information only and is not registered with SEBI. This is not financial advice.\n\n' +
     'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
-    '— MindForge Capital\n' +
+    '-- MindForge Capital\n' +
     'https://mindforgecapital.com';
 
   try {
@@ -712,7 +712,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
     'Dashboard: ' + dashboardUrl + '\n\n' +
     'If you did not request this, please ignore this email.\n\n' +
     'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
-    '— MindForge Capital\n' +
+    '-- MindForge Capital\n' +
     'https://mindforgecapital.com';
 
   try {
@@ -803,7 +803,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
     'Keep this link private. It is unique to you. If you ever lose it, use the recovery page at https://mindforgecapital.com/recover.html\n\n' +
     'SEBI Disclaimer: MindForge Capital provides educational information only and is not registered with SEBI as an investment advisor. Past performance does not guarantee future results.\n\n' +
     'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
-    '— MindForge Capital\n' +
+    '-- MindForge Capital\n' +
     'https://mindforgecapital.com';
 
   try {
