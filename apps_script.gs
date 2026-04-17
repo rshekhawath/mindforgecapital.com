@@ -558,7 +558,7 @@ function errorResponse(error) {
 //   b. Enable DKIM signing for mindforgecapital.com in Google Workspace Admin
 //      (Apps → Google Workspace → Gmail → Authenticate email).
 //   c. Add a DMARC record: "v=DMARC1; p=quarantine; rua=mailto:postmaster@mindforgecapital.com"
-//   d. Switch sender to a branded Workspace address (e.g. hello@mindforgecapital.com)
+//   d. Switch sender to a branded Workspace address (e.g. sagar.shekhawath@mindforgecapital.com)
 //      instead of a @gmail.com account — Gmail's bulk-sender rules require
 //      domain-aligned From addresses for best deliverability.
 //   e. Warm the sender: start with low volume and ramp slowly.
@@ -572,6 +572,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #0a0a0f; color: #f0f0f5; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #12121a; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
@@ -625,7 +626,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
           <p>
             <strong>SEBI Disclaimer:</strong> MindForge Capital provides educational information only and is not registered with SEBI. This is not financial advice. Trade at your own risk. Please review our privacy policy and terms of service.
           </p>
-          <p style="margin-top: 16px; color: #9ca3af;">© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:rshekhawath@gmail.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
+          <p style="margin-top: 16px; color: #9ca3af;">© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
         </div>
       </div>
     </body>
@@ -648,7 +649,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
     GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
       name: 'MindForge Capital',
-      replyTo: 'hello@mindforgecapital.com'
+      replyTo: 'sagar.shekhawath@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Email send error: ' + err);
@@ -662,6 +663,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
       <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #0a0a0f; color: #f0f0f5; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #12121a; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
@@ -692,7 +694,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
           <p style="font-size: 14px; color: #6b7280; margin-top: 24px;">If you did not request this link, you can safely ignore this email. Your subscription is secure.</p>
         </div>
         <div class="footer">
-          <p>© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:rshekhawath@gmail.com?subject=unsubscribe" style="color:#6b7280;">Unsubscribe</a></p>
+          <p>© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#6b7280;">Unsubscribe</a></p>
         </div>
       </div>
     </body>
@@ -712,7 +714,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
     GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
       name: 'MindForge Capital',
-      replyTo: 'hello@mindforgecapital.com'
+      replyTo: 'sagar.shekhawath@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Recovery email send error: ' + err);
@@ -726,6 +728,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
       <style>
         body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f5ff; color: #0c1831; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 16px; overflow: hidden; }
@@ -756,7 +759,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           <p>Your payment has been verified and your dashboard is now active. Click the button below to access your personalised strategy portfolio.</p>
 
           <div class="btn-wrap">
-            <a href="` + dashboardUrl + `" class="btn">Open My Dashboard →</a>
+            <a href="` + dashboardUrl + `" class="btn">Open My Dashboard &#8594;</a>
           </div>
 
           <div class="details">
@@ -779,7 +782,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           </p>
         </div>
         <div class="footer">
-          <p>© 2026 MindForge Capital · <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a><br><a href="mailto:rshekhawath@gmail.com?subject=unsubscribe" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#94a3b8;text-decoration:none;">Privacy</a></p>
+          <p>© 2026 MindForge Capital · <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a><br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#94a3b8;text-decoration:none;">Privacy</a></p>
         </div>
       </div>
     </body>
@@ -802,7 +805,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
     GmailApp.sendEmail(email, subject, plainBody, {
       htmlBody: htmlBody,
       name: 'MindForge Capital',
-      replyTo: 'hello@mindforgecapital.com'
+      replyTo: 'sagar.shekhawath@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Activation email send error: ' + err);
@@ -810,7 +813,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
 }
 
 function sendAdminLeadNotification(name, email, phone, strategy, price) {
-  const adminEmail = 'hello@mindforgecapital.com';
+  const adminEmail = 'sagar.shekhawath@mindforgecapital.com';
   const subject = 'New MindForge lead: ' + name + ' (' + strategy + ')';
 
   const body = 'New lead registered on MindForge Capital.\n\n'
@@ -825,6 +828,7 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
   const htmlBody = `<!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0c1831; margin: 0; padding: 20px; }
     .container { max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 12px; overflow: hidden; }
@@ -853,7 +857,7 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
       <div class="row"><span class="label">Strategy</span><span class="value">` + strategy + `</span></div>
       <div class="row"><span class="label">Price</span><span class="value">` + price + `</span></div>
       <div class="btn-wrap">
-        <a href="https://mindforgecapital.com/admin.html" class="btn">Open Admin Panel →</a>
+        <a href="https://mindforgecapital.com/admin.html" class="btn">Open Admin Panel &#8594;</a>
       </div>
     </div>
     <div class="footer">© 2026 MindForge Capital</div>

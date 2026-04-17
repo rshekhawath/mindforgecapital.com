@@ -51,8 +51,8 @@ STRATEGIES = {
     },
     "SmallMicro": {
         "universe_path": "/Users/rshekhawath/Desktop/SmallCases/MultiFactor SmallMicro 500/Stock_Universe_SmallMicro_Master_Universe.xlsx",
-        "top_n": 30,
-        "max_per_sector": 4,
+        "top_n": 50,          # source_code.py: Top 50
+        "max_per_sector": 3,  # source_code.py: max 3 per sector
     }
 }
 
@@ -65,25 +65,45 @@ MULTIASSET_ASSETS = {
     "NASDAQ ETF": "MON100.NS",
 }
 
-# Factor weights (from LargeMidcap source_code.py)
+# Factor weights — LargeMidcap (from source_code.py)
 W_MOMENTUM = 0.45
-W_TREND = 0.45
-W_LOWVOL = 0.05
-W_HIGH52 = 0.03
-W_AMIHUD = 0.02
+W_TREND    = 0.45
+W_LOWVOL   = 0.05
+W_HIGH52   = 0.03
+W_AMIHUD   = 0.02
+
+# Factor weights — SmallMicro (from source_code.py — different model for illiquid stocks)
+SM_W_MOMENTUM = 0.30
+SM_W_TREND    = 0.25
+SM_W_VOLUME   = 0.20   # Volume Breakout: 20d avg vol / 60d avg vol
+SM_W_HIGH52   = 0.15
+SM_W_RELVOL   = 0.10   # Relative Volatility: −(21d vol / 252d vol)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPERS
 # ─────────────────────────────────────────────────────────────────────────────
 
 def safe_zscore(series: pd.Series) -> pd.Series:
-    """Z-score normalization with NaN handling."""
+    """Z-score normalization with NaN handling (LargeMidcap)."""
     s = pd.to_numeric(series, errors="coerce").replace([np.inf, -np.inf], np.nan)
     if s.isna().all():
         return pd.Series(0.0, index=s.index)
     s = s.fillna(s.median())
     if s.std() == 0 or pd.isna(s.std()):
         return pd.Series(0.0, index=s.index)
+    return pd.Series(zscore(s.values, nan_policy="omit"), index=s.index)
+
+
+def safe_zscore_sm(series: pd.Series) -> pd.Series:
+    """Z-score with ±3σ winsorisation — more robust for illiquid small/microcap stocks.
+    Source: SmallMicro source_code.py safe_zscore."""
+    s = pd.to_numeric(series, errors="coerce").replace([np.inf, -np.inf], np.nan)
+    if s.isna().all():
+        return pd.Series(0.0, index=s.index)
+    med, std = s.median(), s.std()
+    if std == 0 or pd.isna(std):
+        return pd.Series(0.0, index=s.index)
+    s = s.clip(med - 3 * std, med + 3 * std).fillna(med)
     return pd.Series(zscore(s.values, nan_policy="omit"), index=s.index)
 
 
@@ -108,27 +128,73 @@ def load_universe(universe_path: str) -> pd.DataFrame:
     return df
 
 
-def download_ohlcv(tickers: list, lookback_days: int = 420) -> tuple:
-    """Download OHLCV data from Yahoo Finance."""
-    end_date = datetime.today()
+def _extract_field(raw_df, field):
+    """Extract a price/volume field from a raw yfinance DataFrame (handles MultiIndex)."""
+    if isinstance(raw_df.columns, pd.MultiIndex):
+        lvl0 = raw_df.columns.get_level_values(0).unique().tolist()
+        if field in lvl0:
+            return raw_df.xs(field, level=0, axis=1)
+    return raw_df if field == "Close" else pd.DataFrame(index=raw_df.index)
+
+
+def download_ohlcv(tickers: list, lookback_days: int = 420, thresh: int = 252) -> tuple:
+    """Download OHLCV data from Yahoo Finance with per-ticker retry for batch failures.
+
+    yfinance batch downloads (250–500 tickers) split internally into parallel request
+    batches. If any batch is rate-limited or times out, those tickers silently drop.
+    This function retries missing tickers individually so the runner matches what
+    source_code.py produces with progress=True (which triggers internal yfinance retries).
+    """
+    end_date   = datetime.today()
     start_date = end_date - timedelta(days=lookback_days)
 
-    raw = yf.download(tickers, start=start_date, end=end_date, auto_adjust=True, progress=False)
+    # ── Batch download ─────────────────────────────────────────────────────────
+    raw = yf.download(tickers, start=start_date, end=end_date,
+                      auto_adjust=True, progress=False)
 
-    # Extract price and volume
-    def extract_field(raw_df, field):
-        if isinstance(raw_df.columns, pd.MultiIndex):
-            lvl0 = raw_df.columns.get_level_values(0).unique().tolist()
-            if field in lvl0:
-                return raw_df.xs(field, level=0, axis=1)
-        return raw_df if field == "Close" else pd.DataFrame(index=raw_df.index)
+    prices  = _extract_field(raw, "Close").ffill()
+    volumes = _extract_field(raw, "Volume").fillna(0)
 
-    prices = extract_field(raw, "Close").ffill()
-    volumes = extract_field(raw, "Volume").fillna(0)
+    # ── Retry tickers that came back empty from the batch ─────────────────────
+    # A ticker is "missing" if it has no column in prices at all, or only NaNs.
+    present  = set(prices.columns[prices.notna().any()].tolist())
+    missing  = [t for t in tickers if t not in present]
 
-    # Filter tickers with sufficient history
-    prices = prices.dropna(axis=1, how="all").dropna(axis=1, thresh=252)
-    valid = prices.columns.tolist()
+    if missing:
+        print(f"  Batch missed {len(missing)} tickers — retrying individually …")
+        retry_prices  = []
+        retry_volumes = []
+        recovered = []
+
+        for t in missing:
+            try:
+                r = yf.download(t, start=start_date, end=end_date,
+                                auto_adjust=True, progress=False)
+                if r.empty:
+                    continue
+                p_col = _extract_field(r, "Close")
+                v_col = _extract_field(r, "Volume")
+                if isinstance(p_col, pd.DataFrame):
+                    p_col = p_col.squeeze()
+                if isinstance(v_col, pd.DataFrame):
+                    v_col = v_col.squeeze()
+                if p_col.notna().sum() > 0:
+                    retry_prices.append(p_col.rename(t))
+                    retry_volumes.append(v_col.rename(t))
+                    recovered.append(t)
+            except Exception:
+                pass
+
+        if recovered:
+            print(f"  Recovered {len(recovered)}/{len(missing)} tickers via retry")
+            p_retry = pd.concat(retry_prices,  axis=1).ffill()
+            v_retry = pd.concat(retry_volumes, axis=1).fillna(0)
+            prices  = pd.concat([prices,  p_retry],  axis=1)
+            volumes = pd.concat([volumes, v_retry], axis=1)
+
+    # ── Filter tickers with sufficient history ─────────────────────────────────
+    prices = prices.dropna(axis=1, how="all").dropna(axis=1, thresh=thresh)
+    valid  = prices.columns.tolist()
     volumes = volumes.reindex(columns=valid).fillna(0)
 
     return prices, volumes, valid
@@ -255,8 +321,8 @@ def run_largemidcap():
 
     print(f"Universe: {len(all_tickers)} tickers")
 
-    # Download data
-    prices, volumes, valid = download_ohlcv(all_tickers)
+    # Download data (252-day history threshold, with per-ticker retry)
+    prices, volumes, valid = download_ohlcv(all_tickers, lookback_days=420, thresh=252)
     print(f"Downloaded: {len(valid)}/{len(all_tickers)} tickers")
 
     # Compute factors
@@ -296,7 +362,17 @@ def run_largemidcap():
 
 
 def run_smallmicro():
-    """Run SmallMicro strategy."""
+    """Run SmallMicro 500 strategy using its own factor model from source_code.py.
+
+    This is a DIFFERENT model from LargeMidcap — tuned for illiquid small/microcap stocks:
+      Momentum 30%  |  Trend 25%  |  Volume Breakout 20%  |  52W High 15%  |  Rel Vol 10%
+
+    Key differences from LargeMidcap:
+    - Volume Breakout replaces Amihud (20d/60d avg vol ratio — confirms price strength)
+    - Relative Volatility replaces Low Volatility (21d/252d ratio — avoids frozen stocks)
+    - Winsorised z-score (±3σ) for robustness against illiquid price spikes
+    - Top 50 stocks, max 3 per sector, min 120 days of history
+    """
     print("\n" + "=" * 65)
     print("SmallMicro 500 Strategy")
     print("=" * 65)
@@ -305,44 +381,124 @@ def run_smallmicro():
     df_universe = load_universe(config["universe_path"])
 
     all_tickers = df_universe["Yahoo Finance Ticker"].dropna().str.strip().tolist()
-    sector_map = dict(zip(df_universe["Yahoo Finance Ticker"], df_universe["Industry"]))
+    sector_map  = dict(zip(df_universe["Yahoo Finance Ticker"], df_universe["Industry"]))
     company_map = dict(zip(df_universe["Yahoo Finance Ticker"], df_universe["Company Name"]))
 
     print(f"Universe: {len(all_tickers)} tickers")
+    print(f"Industries: {df_universe['Industry'].nunique()}")
 
-    # Download data
-    prices, volumes, valid = download_ohlcv(all_tickers)
+    # ── Download 2 years of data, lower threshold (120 days) for new listings ──
+    # Uses shared download_ohlcv() with per-ticker retry — same reliability as
+    # source_code.py's progress=True batch which triggers internal yfinance retries.
+    prices, volumes, valid = download_ohlcv(
+        all_tickers, lookback_days=2 * 365 + 30, thresh=120
+    )
     print(f"Downloaded: {len(valid)}/{len(all_tickers)} tickers")
 
-    # Compute factors
-    factors = compute_factors(prices, volumes)
-    scores = build_composite_score(factors)
+    # ── Compute SmallMicro-specific 5 factors ─────────────────────────────────
+    factor_data = {}
+    for t in valid:
+        p = prices[t].dropna()
+        v = volumes[t] if t in volumes.columns else pd.Series(dtype=float)
+        n = len(p)
 
-    # Build portfolio
-    portfolio = build_sector_capped_portfolio(
-        scores.copy(),
-        sector_map,
-        company_map,
-        top_n=config["top_n"],
-        max_per_sector=config["max_per_sector"],
+        if n < 63:   # need at least 63 days for linreg slope
+            continue
+
+        rec = {}
+
+        # 1. Momentum: (12m-1m + 6m) / 2
+        r12 = (p.iloc[-1] / p.iloc[-min(252, n)]) - 1
+        r6  = (p.iloc[-1] / p.iloc[-min(126, n)]) - 1
+        r1  = (p.iloc[-1] / p.iloc[-min(21,  n)]) - 1
+        rec["Momentum"] = ((r12 - r1) + r6) / 2
+
+        # 2. Trend Strength: SMA200 ratio + annualised linreg slope (63-day)
+        sma_n     = min(200, n)
+        sma       = p.iloc[-sma_n:].mean()
+        sma_ratio = (p.iloc[-1] / sma) - 1
+        log_p     = np.log(p.iloc[-min(63, n):].values)
+        x         = np.arange(len(log_p))
+        slope, _  = np.polyfit(x, log_p, 1)
+        rec["Trend"] = sma_ratio + (slope * 252)
+
+        # 3. Volume Breakout: 20-day avg vol / 60-day avg vol
+        #    Rising ratio = institutional accumulation (key for thin-liquidity stocks)
+        if len(v) >= 60 and v.iloc[-60:].sum() > 0:
+            avg_20 = v.iloc[-20:].mean()
+            avg_60 = v.iloc[-60:].mean()
+            rec["VolBreak"] = avg_20 / avg_60 if avg_60 > 0 else np.nan
+        else:
+            rec["VolBreak"] = np.nan
+
+        # 4. 52-Week High Proximity
+        high_n        = min(252, n)
+        rec["High52"] = p.iloc[-1] / p.iloc[-high_n:].max()
+
+        # 5. Relative Volatility: −(21d vol / 252d vol)
+        #    Falling ratio (calming after run-up) = bullish for small caps
+        rets = p.pct_change().dropna()
+        if len(rets) >= 63:
+            vol_21  = rets.iloc[-21:].std()  * np.sqrt(252)
+            vol_252 = rets.iloc[-min(252, len(rets)):].std() * np.sqrt(252)
+            rec["RelVol"] = -(vol_21 / vol_252) if vol_252 > 0 else np.nan
+        else:
+            rec["RelVol"] = np.nan
+
+        factor_data[t] = rec
+
+    factors = pd.DataFrame(factor_data).T
+    print(f"Factors computed for {len(factors)} tickers")
+
+    # ── Composite score using winsorised z-score ──────────────────────────────
+    scores = pd.DataFrame(index=factors.index)
+    scores["Z_Momentum"] = safe_zscore_sm(factors["Momentum"])
+    scores["Z_Trend"]    = safe_zscore_sm(factors["Trend"])
+    scores["Z_VolBreak"] = safe_zscore_sm(factors["VolBreak"])
+    scores["Z_High52"]   = safe_zscore_sm(factors["High52"])
+    scores["Z_RelVol"]   = safe_zscore_sm(factors["RelVol"])
+
+    scores["Final"] = (
+        SM_W_MOMENTUM * scores["Z_Momentum"] +
+        SM_W_TREND    * scores["Z_Trend"]    +
+        SM_W_VOLUME   * scores["Z_VolBreak"] +
+        SM_W_HIGH52   * scores["Z_High52"]   +
+        SM_W_RELVOL   * scores["Z_RelVol"]
     )
+
+    scores["Industry"]     = [sector_map.get(t, f"_unk_{t}") for t in scores.index]
+    scores["Company Name"] = [company_map.get(t, "")         for t in scores.index]
+    scores = scores.sort_values("Final", ascending=False)
+
+    # ── Sector-capped portfolio: Top 50, max 3 per sector ─────────────────────
+    portfolio = (
+        scores
+        .groupby("Industry", group_keys=False)
+        .apply(lambda g: g.head(config["max_per_sector"]))
+        .sort_values("Final", ascending=False)
+        .head(config["top_n"])
+    )
+    portfolio["Weight %"] = round(100 / len(portfolio), 2)
 
     print(f"Portfolio: {len(portfolio)} stocks selected")
     print("\nTop 10 holdings:")
     for idx, (ticker, row) in enumerate(portfolio.head(10).iterrows(), 1):
         print(f"  {idx}. {ticker} ({row['Company Name']}) - Score: {row['Final']:.3f}")
 
-    # Prepare stocks for saving
+    # ── Prepare and save ──────────────────────────────────────────────────────
     stocks = []
     for ticker, row in portfolio.iterrows():
         current_price = fetch_current_price(ticker)
+        industry = row["Industry"]
+        if str(industry).startswith("_unk_"):
+            industry = "Unknown"
         stocks.append({
-            "ticker": ticker,
-            "yahoo_ticker": ticker,
-            "company_name": row["Company Name"],
-            "industry": row["Industry"],
+            "ticker":            ticker,
+            "yahoo_ticker":      ticker,
+            "company_name":      row["Company Name"],
+            "industry":          industry,
             "recommended_price": current_price,
-            "weight_pct": row["Weight %"],
+            "weight_pct":        row["Weight %"],
         })
 
     # Save to Apps Script  (name must match subscription strategy field)
