@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindForge Capital — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #0c1831;
+      --accent: #1a50d8;
+      --bg:     #f0f5ff;
+      --card:   #ffffff;
+      --muted:  #64748b;
+      --border: #dbeafe;
+      --green:  #059669;
+      --orange: #d97706;
+      --red:    #dc2626;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+    .nav-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      color: var(--ink);
+    }
+    .nav-badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: #fef3c7;
+      color: #92400e;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: .04em;
+    }
+
+    /* ── Page ── */
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .page-header p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 9px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+
+    .filter-select {
+      padding: 9px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .btn-refresh {
+      padding: 9px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-refresh:hover { background: #1340b0; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead th {
+      background: #f8fafc;
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #f1f5f9;
+      transition: background .15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8faff; }
+
+    td {
+      padding: 14px 16px;
+      color: var(--ink);
+      vertical-align: middle;
+    }
+
+    .td-name { font-weight: 600; }
+    .td-email { color: var(--muted); font-size: 13px; }
+    .td-phone { color: var(--muted); font-size: 13px; }
+
+    .td-strategy span {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .strat-multiasset  { background: #dbeafe; color: #1e40af; }
+    .strat-largemidcap { background: #d1fae5; color: #065f46; }
+    .strat-smallmicro  { background: #ede9fe; color: #5b21b6; }
+    .strat-other       { background: #f1f5f9; color: #475569; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-pending   { background: #fef3c7; color: #92400e; }
+    .status-activated { background: #d1fae5; color: #065f46; }
+
+    .td-time { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+    /* ── Activate button ── */
+    .btn-activate {
+      padding: 6px 16px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      transition: background .2s, opacity .2s;
+    }
+    .btn-activate:hover { background: #047857; }
+    .btn-activate:disabled { opacity: .5; cursor: default; }
+
+    /* ── Activate modal ── */
+    #activate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(12,24,49,.75);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+    }
+    #activate-modal {
+      background: #fff;
+      border-radius: 18px;
+      padding: 36px;
+      max-width: 440px;
+      width: calc(100% - 40px);
+      position: relative;
+      box-shadow: 0 24px 64px rgba(26,80,216,.2);
+    }
+    #activate-modal h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    #activate-modal p {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .modal-field {
+      margin-bottom: 14px;
+    }
+    .modal-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e3a5f;
+      margin-bottom: 5px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .modal-field input,
+    .modal-field select {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .modal-field input:focus,
+    .modal-field select:focus { border-color: var(--accent); }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .btn-modal-cancel {
+      flex: 1;
+      padding: 11px;
+      background: #f1f5f9;
+      color: var(--muted);
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+    }
+    .btn-modal-confirm {
+      flex: 2;
+      padding: 11px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-modal-confirm:hover { background: #047857; }
+    .btn-modal-confirm:disabled { opacity: .5; cursor: default; }
+
+    .close-modal-btn {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      display: none;
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      box-shadow: 0 8px 32px rgba(0,0,0,.15);
+      white-space: nowrap;
+    }
+    #toast.success { background: var(--green); color: #fff; }
+    #toast.error   { background: var(--red);   color: #fff; }
+
+    /* ── Empty / loading states ── */
+    .state-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .state-msg .icon { font-size: 36px; margin-bottom: 12px; }
+    .state-msg p { font-size: 15px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      nav { padding: 0 16px; }
+      .page { padding: 24px 16px 60px; }
+      table { font-size: 13px; }
+      td, th { padding: 10px 10px; }
+      .td-phone { display: none; }
+    }
+
+    /* ── Login overlay ── */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 40px rgba(26,80,216,.10);
+    }
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .login-logo img { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; }
+    .login-logo span { font-family: "Syne", sans-serif; font-weight: 700; font-size: 17px; color: var(--ink); }
+    #login-box h2 {
+      font-family: "Syne", sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    #login-box p.sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+    .login-field { margin-bottom: 16px; }
+    .login-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: "DM Sans", sans-serif;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .2s;
+    }
+    .login-field input:focus { border-color: var(--accent); }
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: "Syne", sans-serif;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background .2s;
+    }
+    .btn-login:hover { background: #1340b0; }
+    #login-error {
+      display: none;
+      color: var(--red);
+      font-size: 13px;
+      margin-top: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div id="login-box">
+    <div class="login-logo">
+      <img src="Logo.png" alt="MindForge Capital" onerror="this.style.display='none'">
+      <span>MindForge Capital</span>
+    </div>
+    <h2>Admin Login</h2>
+    <p class="sub">Enter your credentials to access the lead panel.</p>
+    <form id="login-form" onsubmit="doLogin(event)">
+      <div class="login-field">
+        <label>Username</label>
+        <input type="text" id="login-user" autocomplete="username" required autofocus>
+      </div>
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="login-pass" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-login">Sign In →</button>
+      <div id="login-error">Incorrect username or password.</div>
+    </form>
+  </div>
+</div>
+
+<nav>
+  <a href="/" class="nav-brand">
+    <img src="Logo.png" alt="MindForge Capital" class="nav-logo" onerror="this.style.display='none'">
+    <span class="nav-title">MindForge Capital</span>
+  </a>
+  <span class="nav-badge">ADMIN</span>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Lead Management</h1>
+    <p>View WhatsApp registrations and activate subscribers once payment is confirmed.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Leads</div>
+      <div class="stat-value" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value" id="stat-pending" style="color:var(--orange);">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Activated</div>
+      <div class="stat-value" id="stat-activated" style="color:var(--green);">—</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <input type="text" class="search-input" id="search-input" placeholder="Search by name, email, phone…" oninput="filterTable()">
+    <select class="filter-select" id="filter-status" onchange="filterTable()">
+      <option value="">All statuses</option>
+      <option value="pending">Pending</option>
+      <option value="activated">Activated</option>
+    </select>
+    <select class="filter-select" id="filter-strategy" onchange="filterTable()">
+      <option value="">All strategies</option>
+      <option value="multiasset">MultiAsset</option>
+      <option value="largemidcap">LargeMidcap</option>
+      <option value="smallmicro">SmallMicro</option>
+    </select>
+    <button class="btn-refresh" onclick="loadLeads()">↻ Refresh</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <div id="table-state" class="state-msg">
+      <div class="icon">⏳</div>
+      <p>Loading leads…</p>
+    </div>
+    <table id="leads-table" style="display:none;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Strategy</th>
+          <th>Price</th>
+          <th>Registered</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="leads-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Activate Modal -->
+<div id="activate-overlay" style="display:none;">
+  <div id="activate-modal">
+    <button class="close-modal-btn" onclick="closeActivateModal()">×</button>
+    <h3>Activate Subscriber</h3>
+    <p>Confirm payment received, then click Activate. An email with their dashboard link will be sent automatically.</p>
+
+    <div class="modal-field">
+      <label>Name</label>
+      <input type="text" id="act-name" placeholder="Full name">
+    </div>
+    <div class="modal-field">
+      <label>Email *</label>
+      <input type="email" id="act-email" required placeholder="subscriber@example.com">
+    </div>
+    <div class="modal-field">
+      <label>Phone</label>
+      <input type="tel" id="act-phone" placeholder="+91 98765 43210">
+    </div>
+    <div class="modal-field">
+      <label>Strategy *</label>
+      <select id="act-strategy">
+        <option value="">Select strategy…</option>
+        <option value="MultiFactor MultiAsset">MultiFactor MultiAsset — ₹199/month</option>
+        <option value="MultiFactor LargeMidcap 250">MultiFactor LargeMidcap 250 — ₹499/month</option>
+        <option value="MultiFactor SmallMicro 500">MultiFactor SmallMicro 500 — ₹999/month</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeActivateModal()">Cancel</button>
+      <button class="btn-modal-confirm" id="act-confirm-btn" onclick="confirmActivate()">✓ Activate & Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
+
+var allLeads = [];
+
+// ── Load leads from Apps Script ──
+function loadLeads() {
+  document.getElementById('table-state').innerHTML = '<div class="icon">⏳</div><p>Loading leads…</p>';
+  document.getElementById('table-state').style.display = 'block';
+  document.getElementById('leads-table').style.display = 'none';
+
+  fetch(APPS_SCRIPT_URL + '?action=get_leads')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status === 'ok') {
+        allLeads = data.leads || [];
+        renderTable(allLeads);
+        updateStats(allLeads);
+      } else {
+        showError('Failed to load leads: ' + (data.error || 'Unknown error'));
+      }
+    })
+    .catch(function(err) {
+      document.getElementById('table-state').innerHTML = '<div class="icon">⚠️</div><p>Error loading data. Check your Apps Script URL and make sure it is deployed as a Web App accessible to Anyone.</p>';
+    });
+}
+
+function updateStats(leads) {
+  var pending = leads.filter(function(l) { return l.status !== 'activated'; }).length;
+  var activated = leads.filter(function(l) { return l.status === 'activated'; }).length;
+  document.getElementById('stat-total').textContent = leads.length;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-activated').textContent = activated;
+}
+
+function renderTable(leads) {
+  var tbody = document.getElementById('leads-tbody');
+
+  if (!leads.length) {
+    document.getElementById('table-state').innerHTML = '<div class="icon">📭</div><p>No leads yet. When someone registers on strategies.html, they\'ll appear here.</p>';
+    document.getElementById('table-state').style.display = 'block';
+    document.getElementById('leads-table').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('table-state').style.display = 'none';
+  document.getElementById('leads-table').style.display = 'table';
+
+  tbody.innerHTML = leads.map(function(lead) {
+    var stratKey = (lead.strategy || '').toLowerCase().replace(/\s+/g, '');
+    var stratClass = 'strat-other';
+    if (stratKey.includes('multiasset'))  stratClass = 'strat-multiasset';
+    else if (stratKey.includes('largemid')) stratClass = 'strat-largemidcap';
+    else if (stratKey.includes('smallmicro')) stratClass = 'strat-smallmicro';
+
+    var isActivated = lead.status === 'activated';
+    var ts = lead.timestamp ? new Date(lead.timestamp) : null;
+    var timeStr = ts ? ts.toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+
+    var activateBtn = isActivated
+      ? '<span style="font-size:12px;color:var(--green);">✓ Done</span>'
+      : '<button class="btn-activate" ' +
+          'data-name="'     + esc(lead.name     || '') + '" ' +
+          'data-email="'    + esc(lead.email    || '') + '" ' +
+          'data-phone="'    + esc(lead.phone    || '') + '" ' +
+          'data-strategy="' + esc(lead.strategy || '') + '">' +
+        'Activate</button>';
+
+    return '<tr>' +
+      '<td><div class="td-name">' + esc(lead.name || '—') + '</div></td>' +
+      '<td><div class="td-email">' + esc(lead.email || '—') + '</div>' +
+          '<div class="td-phone">' + esc(lead.phone || '') + '</div></td>' +
+      '<td class="td-strategy"><span class="' + stratClass + '">' + esc(lead.strategy || '—') + '</span></td>' +
+      '<td>' + esc(lead.price || '—') + '</td>' +
+      '<td class="td-time">' + timeStr + '</td>' +
+      '<td><span class="status-badge ' + (isActivated ? 'status-activated' : 'status-pending') + '">' +
+          (isActivated ? '✓ Activated' : '⏳ Pending') + '</span></td>' +
+      '<td>' + activateBtn + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function filterTable() {
+  var q       = document.getElementById('search-input').value.toLowerCase();
+  var status  = document.getElementById('filter-status').value;
+  var strategy = document.getElementById('filter-strategy').value;
+
+  var filtered = allLeads.filter(function(l) {
+    var matchQ = !q ||
+      (l.name  || '').toLowerCase().includes(q) ||
+      (l.email || '').toLowerCase().includes(q) ||
+      (l.phone || '').toLowerCase().includes(q);
+    var matchStatus = !status || l.status === status;
+    var matchStrat  = !strategy ||
+      (l.strategy || '').toLowerCase().replace(/\s+/g,'').includes(strategy);
+    return matchQ && matchStatus && matchStrat;
+  });
+
+  renderTable(filtered);
+}
+
+// ── Activate modal ──
+var _actLeadEmail = '';
+var WHATSAPP_ADMIN = '917601032082'; // your business WhatsApp number
+
+// Delegate clicks on Activate buttons (data-attribute approach avoids HTML quote bugs)
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('.btn-activate');
+  if (!btn) return;
+  var name     = btn.getAttribute('data-name');
+  var email    = btn.getAttribute('data-email');
+  var phone    = btn.getAttribute('data-phone');
+  var strategy = btn.getAttribute('data-strategy');
+  openActivateModal(name, email, phone, strategy);
+});
+
+function openActivateModal(name, email, phone, strategy) {
+  _actLeadEmail = email;
+  document.getElementById('act-name').value     = name     || '';
+  document.getElementById('act-email').value    = email    || '';
+  document.getElementById('act-phone').value    = phone    || '';
+
+  // Pre-select strategy
+  var sel = document.getElementById('act-strategy');
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === strategy) {
+      sel.selectedIndex = i;
+      break;
+    }
+  }
+
+  document.getElementById('activate-overlay').style.display = 'flex';
+}
+
+function closeActivateModal() {
+  document.getElementById('activate-overlay').style.display = 'none';
+  document.getElementById('act-confirm-btn').disabled = false;
+  document.getElementById('act-confirm-btn').textContent = '✓ Activate & Send Email';
+}
+
+document.getElementById('activate-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeActivateModal();
+});
+
+function confirmActivate() {
+  var name     = document.getElementById('act-name').value.trim();
+  var email    = document.getElementById('act-email').value.trim();
+  var phone    = document.getElementById('act-phone').value.trim();
+  var strategy = document.getElementById('act-strategy').value;
+
+  if (!email || !strategy) {
+    showToast('Please fill in email and strategy.', 'error');
+    return;
+  }
+
+  var btn = document.getElementById('act-confirm-btn');
+  btn.textContent = 'Activating…';
+  btn.disabled = true;
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({
+      action:   'activate',
+      name:     name,
+      email:    email,
+      phone:    phone,
+      strategy: strategy
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      closeActivateModal();
+      showToast('✓ ' + (name || email) + ' activated! Email sent. Opening WhatsApp…', 'success');
+
+      // Send WhatsApp to subscriber's number with dashboard link
+      var dashUrl  = data.dashboard_url || 'https://mindforgecapital.com/dashboard.html';
+      var rawPhone = (phone || '').replace(/\D/g, '');
+      if (rawPhone.length === 10) rawPhone = '91' + rawPhone;
+      else if (rawPhone.length === 11 && rawPhone.startsWith('0')) rawPhone = '91' + rawPhone.slice(1);
+      if (rawPhone.length >= 11) {
+        var waMsg = encodeURIComponent(
+          'Hi ' + (name || 'there') + '! 🎉\n\n' +
+          'Your MindForge Capital dashboard is now active.\n\n' +
+          '📊 Strategy: ' + strategy + '\n' +
+          '🔗 Dashboard link (keep this private):\n' + dashUrl + '\n\n' +
+          'Your subscription is valid for 30 days. Use this link anytime to view live portfolio updates.\n\n' +
+          '— MindForge Capital'
+        );
+        window.open('https://wa.me/' + rawPhone + '?text=' + waMsg, '_blank');
+      }
+
+      // Refresh leads after short delay
+      setTimeout(loadLeads, 1500);
+    } else {
+      showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+      btn.textContent = '✓ Activate & Send Email';
+      btn.disabled = false;
+    }
+  })
+  .catch(function(err) {
+    showToast('Network error. Check console.', 'error');
+    btn.textContent = '✓ Activate & Send Email';
+    btn.disabled = false;
+  });
+}
+
+// ── Toast ──
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = type;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 5000);
+}
+
+function showError(msg) {
+  document.getElementById('table-state').innerHTML =
+    '<div class="icon">⚠️</div><p>' + esc(msg) + '</p>';
+  document.getElementById('table-state').style.display = 'block';
+  document.getElementById('leads-table').style.display = 'none';
+}
+
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+
+// ── Login ──
+(async function() {
+  // Check session
+  if (sessionStorage.getItem('mfc_admin') === '1') {
+    document.getElementById('login-overlay').style.display = 'none';
+    loadLeads();
+    return;
+  }
+})();
+
+async function sha256(msg) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  var user = document.getElementById('login-user').value.trim();
+  var pass = document.getElementById('login-pass').value;
+  var hash = await sha256(pass);
+  if (user === 'rshekhawath' && hash === '6250f54e98a18394badb26b861522cf15d5df1549ad23494f3b580986fba48ed') {
+    sessionStorage.setItem('mfc_admin', '1');
+    document.getElementById('login-overlay').style.display = 'none';
+    loadLeads();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+</script>
+</body>
+</html>
