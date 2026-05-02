@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindForge Capital — Systematic Investing, Engineered</title>
+<style>
+:root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--gold:#d97706;--teal:#0891b2;--green:#059669;--text:#0c1831;--text2:#1e3a5f;--text3:#64748b;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .display {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.container { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(240,245,255,0.96);
+  backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--border2);
+  padding: 0 32px;
+}
+.nav-inner {
+  max-width: 1120px; margin: 0 auto;
+  display: flex; align-items: center;
+  height: 64px; gap: 40px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 17px; font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--white);
+}
+.nav-links { display: flex; gap: 32px; margin-left: auto; }
+.nav-links a {
+  font-size: 14px; font-weight: 400; color: var(--text2);
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--white); }
+.nav-cta {
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px; font-weight: 500;
+  padding: 9px 20px;
+  border-radius: 8px;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.nav-cta:hover { opacity: 0.88; background: #2a7fff; }
+
+/* ── HERO ── */
+.hero {
+  padding: 120px 0 100px;
+  position: relative; overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 700px 450px at 70% 50%, rgba(26,108,244,0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 300px at 15% 20%, rgba(56,189,248,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 400px 250px at 50% 90%, rgba(16,185,129,0.05) 0%, transparent 60%);
+}
+.hero-grid {
+  display: grid; grid-template-columns: 1fr;
+  gap: 80px; align-items: center;
+  position: relative; z-index: 1;
+  max-width: 700px;
+}
+.hero-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent2);
+  margin-bottom: 24px;
+}
+.hero-label::before {
+  content: ''; display: block;
+  width: 20px; height: 1.5px;
+  background: var(--accent3);
+}
+.hero h1 {
+  font-size: clamp(44px, 5vw, 68px);
+  color: var(--white);
+  margin-bottom: 24px;
+}
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(90deg, #60a5fa, #2dd4bf);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-desc {
+  font-size: 18px; font-weight: 300; color: var(--text2);
+  line-height: 1.7; margin-bottom: 40px;
+  max-width: 480px;
+}
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px; font-weight: 500;
+  padding: 14px 28px; border-radius: var(--r-sm);
+  transition: all 0.2s; border: none; cursor: pointer;
+  display: inline-block;
+}
+.btn-primary:hover { background: #2a7fff; transform: translateY(-1px); }
+.btn-ghost {
+  border: 0.5px solid var(--border2);
+  color: var(--text2);
+  font-size: 15px; font-weight: 400;
+  padding: 14px 28px; border-radius: var(--r-sm);
+  transition: all 0.2s; cursor: pointer;
+  display: inline-block;
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--white); background: rgba(255,255,255,0.05); }
+
+/* ── HERO STATS CARD ── */
+.hero-card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border2);
+  border-radius: 20px;
+  padding: 32px;
+  position: relative;
+}
+.hero-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(37,99,235,0.18), transparent);
+  border-radius: 20px 20px 0 0;
+}
+.hero-card-title {
+  font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text3);
+  margin-bottom: 20px;
+}
+.stat-row {
+  display: flex; flex-direction: column; gap: 20px;
+}
+.stat-item { display: flex; justify-content: space-between; align-items: flex-end; }
+.stat-label { font-size: 13px; color: var(--text2); margin-bottom: 2px; }
+.stat-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600; color: var(--white); }
+.stat-val { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 28px; font-weight: 700; }
+.stat-val.green { color: #00b894; }
+.stat-sub { font-size: 11px; color: var(--text3); text-align: right; margin-top: 2px; }
+.stat-divider { height: 0.5px; background: var(--border); }
+.live-dot {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: #00b894; margin-top: 20px;
+}
+.live-dot::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: #00b894;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+/* ── SECTION LABELS ── */
+.section-label {
+  font-size: 12px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--accent2);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::before {
+  content: ''; display: block;
+  width: 20px; height: 1.5px; background: var(--accent2);
+}
+
+/* ── HOW IT WORKS ── */
+.how {
+  padding: 100px 0;
+  border-top: 0.5px solid var(--border);
+}
+.how h2 { font-size: 42px; color: var(--white); margin-bottom: 16px; max-width: 560px; }
+.how-desc { font-size: 17px; color: var(--text2); font-weight: 300; margin-bottom: 64px; max-width: 520px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.step {
+  background: var(--ink2);
+  padding: 40px 32px;
+  position: relative;
+  transition: background 0.25s;
+}
+.step:first-child { border-radius: var(--r) 0 0 var(--r); }
+.step:last-child  { border-radius: 0 var(--r) var(--r) 0; }
+.step:hover { background: var(--ink3); }
+.step-num {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--text3); margin-bottom: 32px;
+}
+.step-icon {
+  width: 48px; height: 48px; margin-bottom: 24px;
+  background: rgba(108,92,231,0.12);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.step h3 { font-size: 19px; color: var(--white); margin-bottom: 12px; }
+.step p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+
+/* ── STRATEGIES ── */
+.strategies { padding: 100px 0; border-top: 0.5px solid var(--border); }
+.strategies-header { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; margin-bottom: 56px; }
+.strategies-header h2 { font-size: 42px; color: var(--white); }
+.strategies-header p { font-size: 15px; color: var(--text2); font-weight: 300; }
+
+.strat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+.strat-card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+  display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.strat-card:hover { border-color: var(--border2); transform: translateY(-3px); }
+.strat-card.featured {
+  border-color: rgba(26,108,244,0.55);
+  background: linear-gradient(160deg, rgba(37,99,235,0.05) 0%, var(--ink2) 60%);
+}
+.strat-card::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+.strat-card.featured::after {
+  background: linear-gradient(90deg, transparent, rgba(26,108,244,0.55), transparent);
+}
+.strat-badge {
+  display: inline-block;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 20px;
+  margin-bottom: 20px; align-self: flex-start;
+}
+.badge-purple { background: rgba(26,108,244,0.18); color: #60a5fa; }
+.badge-teal   { background: rgba(0,206,201,0.15);  color: #00cec9; }
+.badge-gold   { background: rgba(232,201,122,0.15); color: #e8c97a; }
+.badge-pop    {
+  background: rgba(108,92,231,0.2); color: #a29bfe;
+  font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+}
+.strat-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+.strat-universe { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+.strat-metrics { display: flex; gap: 0; margin-bottom: 24px; align-items: flex-end; }
+.strat-metric { display: flex; flex-direction: column; justify-content: flex-end; }
+.strat-metric:first-child { padding-right: 20px; border-right: 0.5px solid var(--border2); margin-right: 20px; }
+.strat-metric .val { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 26px; font-weight: 700; color: #00b894; line-height: 1; }
+.strat-metric:last-child .val { font-size: 18px; color: var(--text2); }
+.strat-metric .lbl { font-size: 10px; color: var(--text3); margin-top: 5px; text-transform: uppercase; letter-spacing: .05em; }
+.strat-desc { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 28px; flex: 1; }
+.strat-factors { margin-bottom: 28px; }
+.strat-factors-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 10px; }
+.factor-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.factor-pill {
+  font-size: 11px; padding: 3px 10px; border-radius: 20px;
+  background: rgba(255,255,255,0.05); border: 0.5px solid var(--border);
+  color: var(--text2);
+}
+.strat-footer { border-top: 0.5px solid var(--border); padding-top: 24px; }
+.strat-min { font-size: 11px; color: var(--text3); margin-bottom: 14px; }
+.strat-min span { color: var(--white); font-weight: 500; }
+.price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 14px; }
+.price-amt { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 28px; font-weight: 700; color: var(--white); }
+.price-mo  { font-size: 13px; color: var(--text3); }
+.strat-cta {
+  display: block; text-align: center;
+  padding: 11px; border-radius: var(--r-sm);
+  font-size: 14px; font-weight: 500;
+  transition: all 0.2s; cursor: pointer;
+}
+.cta-outline {
+  border: 0.5px solid var(--border2); color: var(--text2);
+}
+.cta-outline:hover { border-color: var(--accent3); color: var(--accent3); }
+.cta-filled {
+  background: var(--accent); color: #fff; border: none;
+}
+.cta-filled:hover { background: #7d6fea; }
+
+/* ── NEWSLETTER ── */
+.newsletter { padding: 100px 0; border-top: 0.5px solid var(--border); }
+.nl-inner {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 80px; align-items: center;
+}
+.newsletter h2 { font-size: 38px; color: var(--white); margin-bottom: 16px; }
+.newsletter p { font-size: 16px; color: var(--text2); font-weight: 300; line-height: 1.7; margin-bottom: 28px; }
+.nl-features { display: flex; flex-direction: column; gap: 14px; }
+.nl-feat { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; color: var(--text2); }
+.nl-feat-icon {
+  width: 22px; height: 22px; flex-shrink: 0;
+  background: rgba(26,108,244,0.15); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 1px;
+}
+.nl-card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border2);
+  border-radius: 20px; padding: 36px;
+  position: relative;
+}
+.nl-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(26,108,244,0.45), transparent);
+  border-radius: 20px 20px 0 0;
+}
+.nl-card h3 { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 20px; color: var(--white); margin-bottom: 8px; }
+.nl-card p  { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+.nl-form { display: flex; flex-direction: column; gap: 12px; }
+.nl-input {
+  background: var(--ink3);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 13px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px; color: var(--white);
+  outline: none; width: 100%;
+  transition: border-color 0.2s;
+}
+.nl-input::placeholder { color: var(--text3); }
+.nl-input:focus { border-color: rgba(26,108,244,0.7); }
+.nl-btn {
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--r-sm);
+  padding: 13px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: all 0.2s;
+}
+.nl-btn:hover { background: #2a7fff; }
+.nl-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; }
+
+/* ── TEAM ── */
+.team { padding: 100px 0; border-top: 0.5px solid var(--border); }
+.team h2 { font-size: 42px; color: var(--white); margin-bottom: 16px; }
+.team-desc { font-size: 17px; color: var(--text2); font-weight: 300; margin-bottom: 56px; }
+.team-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.team-card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border);
+  border-radius: 20px; padding: 32px;
+  display: flex; align-items: center; gap: 24px;
+  transition: border-color 0.2s;
+}
+.team-card:hover { border-color: var(--border2); }
+.team-avatar {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, #6c5ce7, #fd79a8);
+  display: flex; align-items: center; justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 700;
+  color: #fff; flex-shrink: 0; letter-spacing: -0.01em;
+}
+.team-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 18px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+.team-role { font-size: 13px; color: var(--accent3); margin-bottom: 8px; }
+.team-bio  { font-size: 13px; color: var(--text2); line-height: 1.65; }
+.team-coming {
+  background: var(--ink2);
+  border: 0.5px dashed var(--border2);
+  border-radius: 20px; padding: 32px;
+  display: flex; align-items: center; justify-content: center;
+  grid-column: 1 / -1;
+  font-size: 14px; color: var(--text3);
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 0.5px solid var(--border);
+  padding: 56px 0 40px;
+}
+.footer-inner {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px; margin-bottom: 48px;
+}
+.footer-brand p { font-size: 13px; color: var(--text3); line-height: 1.7; margin-top: 12px; max-width: 240px; }
+.footer-col h4 { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 16px; letter-spacing: 0.02em; }
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-col li a { font-size: 13px; color: var(--text3); transition: color 0.2s; }
+.footer-col li a:hover { color: var(--white); }
+.footer-bottom {
+  border-top: 0.5px solid var(--border);
+  padding-top: 28px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.footer-bottom p { font-size: 12px; color: var(--text3); }
+.disclaimer { font-size: 11px; color: var(--text3); opacity: 0.6; max-width: 600px; line-height: 1.6; }
+
+
+  /* ── TIMELINE ── */
+  .timeline{display:flex;flex-direction:column;gap:0;margin:56px 0 48px;position:relative;}
+  .timeline::before{content:'';position:absolute;left:152px;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,var(--accent),var(--accent2),transparent);}
+  .tl-item{display:grid;grid-template-columns:120px 1fr;gap:32px;padding:28px 0 28px 16px;position:relative;}
+  .tl-item::before{content:'';position:absolute;left:144px;top:36px;width:16px;height:16px;border-radius:50%;background:var(--accent);border:3px solid var(--ink2);box-shadow:0 0 0 3px rgba(37,99,235,0.25);}
+  .tl-year{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:13px;font-weight:700;color:var(--accent);padding-top:6px;text-align:right;padding-right:8px;}
+  .tl-title{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:17px;font-weight:700;color:var(--white);margin-bottom:8px;}
+  .tl-desc{font-size:14px;color:var(--text2);line-height:1.7;}
+  .criteria-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:0;}
+  .crit-pill{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:20px 14px;text-align:center;transition:border-color .2s;}
+  .crit-pill:hover{border-color:rgba(96,165,250,0.4);}
+  .crit-icon{width:32px;height:32px;background:rgba(26,108,244,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:13px;font-weight:800;color:var(--accent2);}
+  .crit-name{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;}
+  .crit-tiny{font-size:11px;color:var(--text3);}
+
+/* ── SCROLL ANIMATIONS ── */
+.fade-up { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-card { display: none; }
+  .steps { grid-template-columns: 1fr; gap: 12px; }
+  .step { border-radius: var(--r) !important; }
+  .strat-grid { grid-template-columns: 1fr; }
+  .nl-inner { grid-template-columns: 1fr; }
+  .strategies-header { grid-template-columns: 1fr; }
+  .team-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo" style="gap:0;"><img src="assets/LogoNav.png?v=ea8dcc1d" style="height:42px;width:auto;" alt="MindForge Capital" loading="lazy" decoding="async"></a>
+    <div class="nav-links">
+      <a href="strategies.html">Strategies</a>
+      <a href="#how">How it works</a>
+      <a href="newsletter.html">Newsletter</a>
+      <a href="#team">Team</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="hero-label">Systematic investing</div>
+        <h1>Where data <em>engineers</em> your portfolio.</h1>
+        <p class="hero-desc">MindForge Capital runs three robustly tested quant strategies across Indian equity and ETF markets — built for investors who believe in process over prediction.</p>
+        <div class="hero-actions">
+          <a href="strategies.html" class="btn-primary">Explore strategies</a>
+          <a href="#how" class="btn-ghost">How it works</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS / FACTOR EDUCATION -->
+<section class="how" id="how">
+  <div class="container">
+    <div class="section-label">The science</div>
+    <h2 class="fade-up">Built on 50 years of academic research.</h2>
+    <p class="how-desc fade-up">Factor investing is not a trend — it is peer-reviewed finance, starting with the earliest models of how markets reward risk.</p>
+
+    <!-- Timeline -->
+    <div class="timeline fade-up">
+      <div class="tl-item">
+        <div class="tl-year">1964</div>
+        <div class="tl-content">
+          <div class="tl-title">CAPM — The first model</div>
+          <div class="tl-desc">Sharpe, Lintner &amp; Treynor showed that the only risk earning a return is market beta — undiversifiable systematic risk. This became the universal benchmark for separating genuine skill from factor exposure.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">1992</div>
+        <div class="tl-content">
+          <div class="tl-title">Fama-French — Size &amp; Value</div>
+          <div class="tl-desc">Nobel laureate Eugene Fama and Kenneth French proved CAPM was incomplete. Two new factors — Size (small minus big) and Value (cheap minus expensive) — explained returns that market beta could not. The multi-factor era began.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">1997</div>
+        <div class="tl-content">
+          <div class="tl-title">Momentum — The fourth factor</div>
+          <div class="tl-desc">Jegadeesh, Titman and Carhart documented that stocks with strong recent performance continue to outperform for 3–12 months. The U.S. momentum premium averaged 9.6% per year from 1927–2015 — the highest of all studied factors.</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-year">2026</div>
+        <div class="tl-content">
+          <div class="tl-title">MindForge — Applied to India</div>
+          <div class="tl-desc">We apply academically validated factors to Indian listed equities and ETFs. Every strategy is built on factors that are persistent, pervasive, robust, investable and intuitive — the five criteria from Berkin &amp; Swedroe's definitive guide.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 criteria pills -->
+    <div class="criteria-row fade-up">
+      <div class="crit-pill">
+        <div class="crit-icon">P</div>
+        <div class="crit-name">Persistent</div>
+        <div class="crit-tiny">Holds across decades</div>
+      </div>
+      <div class="crit-pill">
+        <div class="crit-icon">P</div>
+        <div class="crit-name">Pervasive</div>
+        <div class="crit-tiny">Holds across markets</div>
+      </div>
+      <div class="crit-pill">
+        <div class="crit-icon">R</div>
+        <div class="crit-name">Robust</div>
+        <div class="crit-tiny">Not one formulation</div>
+      </div>
+      <div class="crit-pill">
+        <div class="crit-icon">I</div>
+        <div class="crit-name">Investable</div>
+        <div class="crit-tiny">Works after costs</div>
+      </div>
+      <div class="crit-pill">
+        <div class="crit-icon">I</div>
+        <div class="crit-name">Intuitive</div>
+        <div class="crit-tiny">Logical explanation</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:14px;">Five criteria from <em>Your Complete Guide to Factor-Based Investing</em> — Berkin &amp; Swedroe (2016)</p>
+  </div>
+</section>
+
+<!-- STRATEGIES -->
+<section class="strategies" id="strategies">
+  <div class="container">
+    <div class="strategies-header">
+      <div>
+        <div class="section-label">Three strategies</div>
+        <h2 class="fade-up">One for every risk appetite.</h2>
+      </div>
+      <p class="fade-up" style="font-size:15px;color:var(--text2);font-weight:300;line-height:1.7;">From capital-efficient multi-asset rotation to concentrated small-cap alpha — subscribe to one or all three.</p>
+    </div>
+
+    <div class="strat-grid">
+
+      <!-- MultiAsset -->
+      <div class="strat-card fade-up">
+        <span class="strat-badge badge-teal">Multi-Asset</span>
+        <div class="strat-name">MultiFactor MultiAsset</div>
+        <div class="strat-universe">6 assets · Weekly signals · Monthly rebalance</div>
+        <div class="strat-metrics">
+          <div class="strat-metric">
+            <div class="val" style="color:#00b894;">19.0%</div>
+            <div class="lbl">5Y CAGR</div>
+          </div>
+          <div class="strat-metric">
+            <div class="val" style="color:var(--text2);font-size:18px;">16.3%</div>
+            <div class="lbl">Benchmark CAGR</div>
+          </div>
+        </div>
+        <p class="strat-desc">Rotates systematically across Nifty 50, Next 50, Midcap 150, Gold, Bharat Bond and NASDAQ ETFs using momentum, volatility-adjusted scoring and a 10-month trend filter. Defensive by design.</p>
+        <div class="strat-factors">
+          <div class="strat-factors-label">Signal factors</div>
+          <div class="factor-pills">
+            <span class="factor-pill">3M + 6M + 12M momentum</span>
+            <span class="factor-pill">Vol-adjusted score</span>
+            <span class="factor-pill">10M MA trend filter</span>
+          </div>
+        </div>
+        <div class="strat-footer">
+          <div class="strat-min">Recommended Investment <span>₹1,00,000</span></div>
+          <div class="price-row">
+            <span class="price-amt">₹199</span>
+            <span class="price-mo">/ month</span>
+          </div>
+          <a href="strategies.html?tab=multiasset" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','multiasset')">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- LargeMidcap -->
+      <div class="strat-card featured fade-up">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <span class="strat-badge badge-purple">Large &amp; Midcap</span>
+          <span class="badge-pop">Most popular</span>
+        </div>
+        <div class="strat-name">MultiFactor LargeMidcap 250</div>
+        <div class="strat-universe">250 stocks · Nifty LargeMidcap 250 · Monthly rebalance</div>
+        <div class="strat-metrics">
+          <div class="strat-metric">
+            <div class="val" style="color:#00b894;">38.0%</div>
+            <div class="lbl">5Y CAGR</div>
+          </div>
+          <div class="strat-metric">
+            <div class="val" style="color:var(--text2);font-size:18px;">26.9%</div>
+            <div class="lbl">Benchmark CAGR</div>
+          </div>
+        </div>
+        <p class="strat-desc">Selects the top 25 stocks from the Nifty LargeMidcap 250 universe using five quantitative factors. Capped at 3 stocks per industry. 5-year backtest shows +11.1% alpha over equal-weight benchmark.</p>
+        <div class="strat-factors">
+          <div class="strat-factors-label">Signal factors</div>
+          <div class="factor-pills">
+            <span class="factor-pill">Momentum</span>
+            <span class="factor-pill">Trend strength</span>
+            <span class="factor-pill">Low volatility</span>
+            <span class="factor-pill">52-Week high</span>
+            <span class="factor-pill">Amihud liquidity</span>
+          </div>
+        </div>
+        <div class="strat-footer">
+          <div class="strat-min">Recommended Investment <span>₹5,00,000</span></div>
+          <div class="price-row">
+            <span class="price-amt">₹499</span>
+            <span class="price-mo">/ month</span>
+          </div>
+          <a href="strategies.html?tab=largemidcap" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','largemidcap')">Learn more →</a>
+        </div>
+      </div>
+
+      <!-- SmallMicro -->
+      <div class="strat-card fade-up">
+        <span class="strat-badge badge-gold">Small &amp; Microcap</span>
+        <div class="strat-name">MultiFactor SmallMicro 500</div>
+        <div class="strat-universe">500 stocks · Smallcap 250 + Microcap 250 · Monthly rebalance</div>
+        <div class="strat-metrics">
+          <div class="strat-metric">
+            <div class="val" style="color:#00b894;">43.4%</div>
+            <div class="lbl">5Y CAGR</div>
+          </div>
+          <div class="strat-metric">
+            <div class="val" style="color:var(--text2);font-size:18px;">31.9%</div>
+            <div class="lbl">Benchmark CAGR</div>
+          </div>
+        </div>
+        <p class="strat-desc">The highest-conviction strategy — selects 50 stocks from 500 small and micro-cap names. Uses volume breakout and relative volatility signals tuned specifically for the thin-liquidity dynamics of this segment.</p>
+        <div class="strat-factors">
+          <div class="strat-factors-label">Signal factors</div>
+          <div class="factor-pills">
+            <span class="factor-pill">Momentum</span>
+            <span class="factor-pill">Trend strength</span>
+            <span class="factor-pill">Volume breakout</span>
+            <span class="factor-pill">52-Week high</span>
+            <span class="factor-pill">Relative volatility</span>
+          </div>
+        </div>
+        <div class="strat-footer">
+          <div class="strat-min">Recommended Investment <span>₹25,00,000</span></div>
+          <div class="price-row">
+            <span class="price-amt">₹999</span>
+            <span class="price-mo">/ month</span>
+          </div>
+          <a href="strategies.html?tab=smallmicro" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','smallmicro')">Learn more →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER TEASER -->
+<section class="newsletter" id="newsletter">
+  <div class="container">
+    <div style="text-align:center;max-width:580px;margin:0 auto;">
+      <div class="section-label" style="justify-content:center;">Weekly newsletter</div>
+      <h2 class="fade-up" style="margin-bottom:16px;">The MindForge Brief</h2>
+      <p class="fade-up" style="font-size:16px;color:var(--text2);font-weight:300;line-height:1.7;margin-bottom:36px;">A sharp, signal-driven weekly read on what moved Indian markets, what the models are saying, and what to watch next. Free with every subscription — or sign up on its own.</p>
+      <a href="newsletter.html" class="btn-primary fade-up" style="display:inline-block;font-size:16px;padding:16px 36px;">Subscribe to the newsletter →</a>
+      <p style="margin-top:16px;font-size:13px;color:var(--text3);">No spam. Unsubscribe anytime.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section class="team" id="team">
+  <div class="container">
+    <div class="section-label">The founders</div>
+    <h2 class="fade-up">Built by practitioners, not theorists.</h2>
+    <p class="team-desc fade-up">MindForge Capital was founded by people who build and run these models themselves — more details coming soon.</p>
+    <div class="team-grid fade-up" style="grid-template-columns:repeat(3,1fr);">
+      <div class="team-card" style="flex-direction:column;align-items:flex-start;">
+        <div class="team-avatar" style="margin-bottom:18px;">SS</div>
+        <div>
+          <div class="team-name">Sagar Shekhawath</div>
+          <div class="team-role">Co-Founder &middot; SEBI Registered Research Analyst (RA No. to be added)</div>
+          <div class="team-bio">Finance-focused professional with a background in engineering, product delivery, and Agile leadership. Over 5 years of experience at Collins Aerospace and an MBA in Finance, combining analytical thinking, business strategy, and execution discipline — skills well suited to capital markets and model portfolio advisory.</div>
+        </div>
+      </div>
+      <div class="team-card" style="flex-direction:column;align-items:flex-start;">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#1a6cf4,#2dd4bf);margin-bottom:18px;">AM</div>
+        <div>
+          <div class="team-name">Ankit Maganti</div>
+          <div class="team-role">Co-Founder</div>
+          <div class="team-bio">More details coming soon.</div>
+        </div>
+      </div>
+      <div class="team-card" style="flex-direction:column;align-items:flex-start;">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444);margin-bottom:18px;">SS</div>
+        <div>
+          <div class="team-name">Shagun Singh</div>
+          <div class="team-role">Co-Founder</div>
+          <div class="team-bio">More details coming soon.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="logo">
+          <img src="assets/LogoNav.png?v=ea8dcc1d" style="height:42px;width:auto;" alt="MindForge Capital" loading="lazy" decoding="async">
+        </a>
+        <p>Systematic investing, engineered for Indian markets. Built on process, not predictions.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Strategies</h4>
+        <ul>
+          <li><a href="#strategies">MultiFactor MultiAsset</a></li>
+          <li><a href="#strategies">MultiFactor LargeMidcap 250</a></li>
+          <li><a href="#strategies">MultiFactor SmallMicro 500</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#newsletter">Newsletter</a></li>
+          <li><a href="#team">Team</a></li>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="terms.html">Terms of service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 MindForge Capital. All rights reserved.</p>
+      <p class="disclaimer">Past performance is not indicative of future results. Backtest returns are simulated and do not reflect actual trading. Research published under SEBI-registered Research Analyst Sagar Shekhawath.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
