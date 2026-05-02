@@ -62,15 +62,35 @@ footer p{font-size:12px;color:var(--text3);}
   .bt-chart-full{background:transparent;border:none;border-radius:0;padding:0;margin-bottom:32px;overflow:visible;}
   .bt-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
   .bt-chart-wrap{background:var(--ink2);border:0.5px solid var(--border);border-radius:var(--r);padding:16px;overflow:hidden;}
-  .bt-chart-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;}
+  .bt-chart-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--accent2);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
   .bt-chart-img{width:100%;border-radius:8px;display:block;}
-  /* chart containers stay dark so matplotlib PNGs render correctly */
   .bt-chart-full,.bt-chart-wrap{background:transparent !important;border:none !important;}
   .bt-section-label{color:var(--accent3);}.bt-chart-label{color:var(--accent2);}
   .bt-section-title{color:var(--white);}
-  
   .bt-note{font-size:11px;color:var(--text3);margin-top:16px;line-height:1.5;}
   @media(max-width:900px){.bt-chart-grid{grid-template-columns:1fr;}}
+
+  /* Skeleton loading */
+  .bt-chart-img{min-height:200px;background:linear-gradient(90deg,#e4eeff 25%,#f0f5ff 50%,#e4eeff 75%);background-size:200% 100%;animation:sk-shimmer 1.6s infinite;}
+  .bt-chart-img.loaded{background:none;animation:none;min-height:0;}
+  @keyframes sk-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* Tooltip */
+  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(37,99,235,0.15);color:var(--accent2);font-size:9px;font-weight:700;cursor:help;position:relative;flex-shrink:0;}
+  .tip-icon .tip-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text2);line-height:1.55;z-index:50;box-shadow:0 8px 24px rgba(37,99,235,0.12);}
+  .tip-icon:hover .tip-popup,.tip-icon:focus .tip-popup{display:block;}
+
+  /* Last updated badge */
+  .updated-badge{display:inline-block;font-size:10px;font-weight:500;color:var(--text3);background:rgba(37,99,235,0.07);border:0.5px solid var(--border);border-radius:20px;padding:2px 9px;vertical-align:middle;letter-spacing:.04em;}
+
+  /* Sticky CTA */
+  .sticky-cta{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 24px;font-size:14px;box-shadow:0 -4px 24px rgba(26,80,216,0.25);transform:translateY(100%);transition:transform .4s ease;}
+  .sticky-cta.visible{transform:translateY(0);}
+  .sticky-cta .cta-text{font-weight:400;opacity:0.9;}
+  .sticky-cta .cta-btn{background:#fff;color:var(--accent);font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;transition:opacity .2s;}
+  .sticky-cta .cta-btn:hover{opacity:0.88;}
+  .sticky-cta .cta-dismiss{background:none;border:none;color:rgba(255,255,255,0.6);font-size:18px;cursor:pointer;padding:0 4px;line-height:1;margin-left:4px;}
+  @media(max-width:600px){.sticky-cta{gap:10px;padding:12px 16px;font-size:13px;}.sticky-cta .cta-text{display:none;}}
 
 /* ═══════════════════════════════════════════════════════
    MOBILE RESPONSIVE — added for phone/tablet support
@@ -261,7 +281,7 @@ footer p{font-size:12px;color:var(--text3);}
 <section class="content-section">
   <div class="container">
     <div class="stat-showcase fade-up">
-      <div class="stat-box"><div class="sv">38.0%</div><div class="sl">5Y Backtest CAGR</div></div>
+      <div class="stat-box"><div class="sv">38.0%</div><div class="sl">5Y Backtest CAGR <span class="updated-badge">May 2026</span></div></div>
       <div class="stat-box"><div class="sv">26.9%</div><div class="sl" style="color:var(--text3);">Benchmark CAGR</div></div>
       <div class="stat-box"><div class="sv" style="color:var(--accent2);">+11.1%</div><div class="sl">Annual Alpha</div></div>
       <div class="stat-box"><div class="sv" style="color:var(--accent2);">1.46</div><div class="sl">Sharpe Ratio</div></div>
@@ -369,7 +389,7 @@ footer p{font-size:12px;color:var(--text3);}
     </div>
 
     <div class="bt-chart-full fade-up">
-      <div class="bt-chart-label">Rolling 12-Month Returns</div>
+      <div class="bt-chart-label">Rolling 12-Month Returns <span class="tip-icon" tabindex="0">i<span class="tip-popup">Top: rolling 1-year CAGR vs benchmark. Bottom: rolling Sharpe ratio — return earned per unit of risk. A Sharpe above 1.0 means more than 1 unit of return per unit of volatility taken.</span></span></div>
       <img src="assets/charts/largemidcap_rolling_returns.png?v=eb6a15ad" class="bt-chart-img" alt="" loading="lazy" decoding="async">
     </div>
 
@@ -383,7 +403,7 @@ footer p{font-size:12px;color:var(--text3);}
       <img src="assets/charts/largemidcap_fund_vs_bench.png?v=50fbd584" class="bt-chart-img" alt="" loading="lazy" decoding="async">
     </div>
 
-    <p class="bt-note">Backtest period: Feb 2021 → Mar 2026 · Simulated performance, not live trading. Past performance is not indicative of future returns.</p>
+    <p class="bt-note">Backtest period: Feb 2021 → May 2026 · 38.0% CAGR vs 26.9% benchmark · Sharpe 1.46 · Max drawdown -20.9%. Simulated performance, not live trading. Past performance is not indicative of future returns. <span class="updated-badge">Updated May 2026</span></p>
   </div>
 </section>
 
@@ -396,6 +416,13 @@ footer p{font-size:12px;color:var(--text3);}
     </div>
   </div>
 </section>
+<!-- Sticky Subscribe CTA -->
+<div class="sticky-cta" id="sticky-cta">
+  <span class="cta-text">Ready to invest systematically?</span>
+  <button class="cta-btn" onclick="window.location.href='newsletter.html'">Subscribe — ₹499/month →</button>
+  <button class="cta-dismiss" onclick="document.getElementById('sticky-cta').remove()" aria-label="Dismiss">×</button>
+</div>
+
 <footer>
   <div class="container">
     <p>© 2026 MindForge Capital · <a href="mindforge_capital.html" style="color:var(--accent2);">Back to home</a></p>
@@ -405,6 +432,21 @@ footer p{font-size:12px;color:var(--text3);}
 <script>
 const obs=new IntersectionObserver(es=>es.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('visible'),i*80);}),{threshold:.1});
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+
+// Skeleton loading
+document.querySelectorAll('.bt-chart-img').forEach(img => {
+  if (img.complete && img.naturalWidth > 0) img.classList.add('loaded');
+  else img.addEventListener('load', () => img.classList.add('loaded'));
+  img.addEventListener('error', () => img.classList.add('loaded'));
+});
+
+// Sticky CTA — show after scrolling past the hero
+const cta = document.getElementById('sticky-cta');
+if (cta) {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 500) cta.classList.add('visible');
+  }, { passive: true });
+}
 </script>
 
 <script>
