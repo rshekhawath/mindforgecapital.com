@@ -101,6 +101,10 @@ function doGet(e) {
       return handleRecover(e.parameter.email, e.parameter.phone);
     } else if (action === 'get_leads') {
       return handleGetLeads();
+    } else if (action === 'request_otp') {
+      return handleRequestOTP(e.parameter.email);
+    } else if (action === 'verify_otp') {
+      return handleVerifyOTP(e.parameter.email, e.parameter.otp);
     } else {
       return ContentService.createTextOutput(JSON.stringify({
         status: 'error',
@@ -497,6 +501,149 @@ function handleRecover(email, phone) {
     phone: subPhone,
     message: 'Recovery link sent to your email'
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OTP LOGIN HANDLERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function handleRequestOTP(email) {
+  const emailClean = (email || '').toLowerCase().trim();
+  if (!emailClean) return errorResponse('Please provide an email address.');
+
+  // Check if any active subscription exists for this email
+  const subSheet = getSheet('subscriptions');
+  const subData  = subSheet.getDataRange().getValues();
+  let found = false;
+  for (let i = 1; i < subData.length; i++) {
+    if ((subData[i][1] || '').toLowerCase().trim() === emailClean) { found = true; break; }
+  }
+  if (!found) {
+    return errorResponse('No subscriptions found for this email. Please subscribe to a strategy first, or check the email you used when subscribing.');
+  }
+
+  // Generate 6-digit OTP and store with 10-min expiry in Script Properties
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const key = 'otp_' + emailClean.replace(/[^a-z0-9]/g, '_');
+  PropertiesService.getScriptProperties().setProperty(key, JSON.stringify({ otp, expiry }));
+
+  // Email the OTP
+  sendOTPEmail(emailClean, otp);
+
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'ok',
+    message: 'OTP sent'
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function handleVerifyOTP(email, otp) {
+  const emailClean = (email || '').toLowerCase().trim();
+  const otpClean   = (otp   || '').trim();
+  if (!emailClean || !otpClean) return errorResponse('Email and OTP are required.');
+
+  const key = 'otp_' + emailClean.replace(/[^a-z0-9]/g, '_');
+  const stored = PropertiesService.getScriptProperties().getProperty(key);
+  if (!stored) return errorResponse('No code found for this email. Please request a new one.');
+
+  let parsed;
+  try { parsed = JSON.parse(stored); } catch(e) { return errorResponse('Invalid code. Please request a new one.'); }
+
+  // Check expiry
+  if (new Date(parsed.expiry) < new Date()) {
+    PropertiesService.getScriptProperties().deleteProperty(key);
+    return errorResponse('This code has expired. Please request a new one.');
+  }
+
+  // Check OTP value
+  if (parsed.otp !== otpClean) {
+    return errorResponse('Incorrect code. Please try again.');
+  }
+
+  // OTP valid — delete it so it can't be reused
+  PropertiesService.getScriptProperties().deleteProperty(key);
+
+  // Return all subscriptions for this email
+  const subSheet = getSheet('subscriptions');
+  const subData  = subSheet.getDataRange().getValues();
+  const subscriptions = [];
+  for (let i = 1; i < subData.length; i++) {
+    if ((subData[i][1] || '').toLowerCase().trim() !== emailClean) continue;
+    subscriptions.push({
+      token:      subData[i][0],
+      email:      subData[i][1],
+      name:       subData[i][2],
+      strategy:   subData[i][4],
+      expires_at: subData[i][7],
+      status:     subData[i][9]
+    });
+  }
+  // Most recent first
+  subscriptions.reverse();
+
+  return ContentService.createTextOutput(JSON.stringify({
+    status:        'ok',
+    subscriptions: subscriptions
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function sendOTPEmail(email, otp) {
+  const subject = 'Your MindForge Capital sign-in code: ' + otp;
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:#f0f5ff;color:#0c1831;margin:0;padding:20px;}
+  .container{max-width:480px;margin:0 auto;background:#fff;border:1px solid #dbeafe;border-radius:16px;overflow:hidden;}
+  .header{background:linear-gradient(135deg,#1a50d8,#2563eb);padding:32px 24px;text-align:center;}
+  .header h1{margin:0;font-size:22px;font-weight:700;color:#fff;letter-spacing:-.5px;}
+  .header p{margin:6px 0 0;color:rgba(255,255,255,.8);font-size:13px;}
+  .content{padding:36px 32px;}
+  .otp-box{background:#f0f5ff;border:2px solid #dbeafe;border-radius:12px;text-align:center;padding:24px;margin:20px 0;}
+  .otp-code{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',Helvetica,Arial,sans-serif;font-size:42px;font-weight:800;letter-spacing:.18em;color:#1a50d8;}
+  .otp-note{font-size:12px;color:#64748b;margin-top:8px;}
+  p{font-size:14px;color:#475569;line-height:1.7;margin:10px 0;}
+  .footer{background:#f8fafc;padding:20px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MindForge Capital</h1>
+      <p>Sign-in verification</p>
+    </div>
+    <div class="content">
+      <p>Your one-time sign-in code is:</p>
+      <div class="otp-box">
+        <div class="otp-code">` + otp + `</div>
+        <div class="otp-note">Expires in 10 minutes</div>
+      </div>
+      <p>Enter this code on the sign-in page to access your dashboard. If you didn't request this, you can safely ignore this email.</p>
+      <p style="font-size:12px;color:#94a3b8;margin-top:20px;">Do not share this code with anyone.</p>
+    </div>
+    <div class="footer">
+      © 2026 MindForge Capital ·
+      <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const plainBody =
+    'Your MindForge Capital sign-in code is: ' + otp + '\n\n' +
+    'This code expires in 10 minutes.\n\n' +
+    'If you didn\'t request this, please ignore this email.\n\n' +
+    '-- MindForge Capital\nhttps://mindforgecapital.com';
+
+  try {
+    GmailApp.sendEmail(email, subject, plainBody, {
+      htmlBody: htmlBody,
+      name: 'MindForge Capital',
+      replyTo: 'sagar.shekhawath@mindforgecapital.com'
+    });
+  } catch(err) {
+    Logger.log('OTP email error: ' + err);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

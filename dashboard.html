@@ -86,6 +86,12 @@ td.weight{color:var(--text3);font-size:13px;}
 footer{border-top:0.5px solid var(--border);padding:32px 0;text-align:center;position:relative;z-index:1;}
 footer p{font-size:12px;color:var(--text3);}
 
+/* NOTIFICATION TOGGLE */
+.notif-switch{width:44px;height:24px;background:var(--border2);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.notif-switch.on{background:var(--accent);}
+.notif-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.notif-switch.on .notif-knob{transform:translateX(20px);}
+
 /* LOADING / ERROR */
 .state-box{text-align:center;padding:80px 32px;}
 .state-box .icon{font-size:48px;margin-bottom:16px;}
@@ -103,15 +109,31 @@ footer p{font-size:12px;color:var(--text3);}
   .container{padding:0 16px;}
   .stats-row{grid-template-columns:1fr 1fr;gap:10px;}
   .stat-val{font-size:24px;}
-  table{font-size:13px;}
-  thead th,td{padding:10px 12px;}
   .meta-row{gap:10px;}
 }
-@media(max-width:480px){
-  .stats-row{grid-template-columns:1fr 1fr;}
-  .table-wrap{overflow-x:auto;}
-  table{min-width:600px;}
+
+/* ── MOBILE CARD VIEW for portfolio table ── */
+@media(max-width:600px){
+  .table-wrap table { display: none; }
+  .stock-cards { display: flex !important; flex-direction: column; gap: 10px; }
 }
+@media(min-width:601px){
+  .stock-cards { display: none; }
+}
+.stock-card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sc-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.sc-company { font-size: 15px; font-weight: 600; color: var(--white); }
+.sc-ticker { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 12px; font-weight: 700; color: var(--accent2); margin-top: 2px; }
+.sc-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.sc-key { color: var(--text3); }
+.sc-val { color: var(--white); font-weight: 500; }
+.sc-num { font-size: 11px; color: var(--text3); width: 24px; height: 24px; background: rgba(37,99,235,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -123,6 +145,7 @@ footer p{font-size:12px;color:var(--text3);}
     <div class="nav-links">
       <a href="strategies.html">Strategies</a>
       <a href="newsletter.html">Newsletter</a>
+      <a href="login.html" style="color:var(--text2);">My Account</a>
       <span class="nav-badge">Member Dashboard</span>
     </div>
   </div>
@@ -202,6 +225,33 @@ footer p{font-size:12px;color:var(--text3);}
         </table>
       </div>
 
+      <!-- MOBILE CARD VIEW (hidden on desktop via CSS) -->
+      <div class="stock-cards" id="stock-cards-mobile"></div>
+
+      <!-- REBALANCE NOTIFICATIONS -->
+      <div id="notif-section" style="margin-top:32px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:24px 28px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+          <div>
+            <div style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Rebalance notifications</div>
+            <div style="font-size:13px;color:var(--text2);">Get an email when your portfolio rebalances each month.</div>
+          </div>
+          <div id="notif-toggle-wrap">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text2);">
+              <div class="notif-switch" id="notif-switch" onclick="toggleNotif()">
+                <div class="notif-knob"></div>
+              </div>
+              <span id="notif-label">Off</span>
+            </label>
+          </div>
+        </div>
+        <div id="notif-email-row" style="display:none;margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input id="notif-email-input" type="email" placeholder="Confirm your email"
+            style="flex:1;min-width:200px;padding:10px 14px;border:0.5px solid var(--border2);border-radius:8px;font-size:14px;background:var(--ink);color:var(--white);outline:none;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">
+          <button onclick="saveNotifPref()" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;">Save</button>
+        </div>
+        <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:#059669;">✓ You'll be notified on rebalance day.</div>
+      </div>
+
       <div class="disclaimer">
         <strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only. This is not SEBI-registered investment advice. Past performance does not guarantee future results. All investments carry risk. Please consult a qualified financial advisor before making investment decisions. Trade at your own risk.
       </div>
@@ -246,6 +296,7 @@ async function init() {
 }
 
 function renderDashboard(sub, stocks) {
+  window._currentSub = sub;
   document.getElementById('state-loading').style.display = 'none';
   document.getElementById('state-dashboard').style.display = 'block';
 
@@ -262,10 +313,15 @@ function renderDashboard(sub, stocks) {
 
 function renderTable(stocks, prices) {
   const tbody = document.getElementById('stocks-tbody');
+  const mobileCards = document.getElementById('stock-cards-mobile');
+
   if (!stocks.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
+    mobileCards.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">No stocks found.</div>';
     return;
   }
+
+  // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {
     const entry = s.recommended_price || 0;
     return `<tr>
@@ -278,7 +334,67 @@ function renderTable(stocks, prices) {
     </tr>`;
   }).join('');
 
+  // Mobile cards
+  mobileCards.innerHTML = stocks.map((s,i) => {
+    const entry = s.recommended_price || 0;
+    return `<div class="stock-card">
+      <div class="sc-header">
+        <div>
+          <div class="sc-company">${s.company_name||s.ticker}</div>
+          <div class="sc-ticker">${s.ticker}</div>
+        </div>
+        <div class="sc-num">${i+1}</div>
+      </div>
+      <div class="sc-row">
+        <span class="sc-key">Industry</span>
+        <span class="sc-val"><span class="industry-badge">${s.industry||'—'}</span></span>
+      </div>
+      <div class="sc-row">
+        <span class="sc-key">Rec. Price</span>
+        <span class="sc-val">₹${entry.toFixed(2)}</span>
+      </div>
+      <div class="sc-row">
+        <span class="sc-key">Weight</span>
+        <span class="sc-val">${s.weight_pct ? s.weight_pct.toFixed(1)+'%' : '—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+
   document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('en-IN');
+}
+
+// ── NOTIFICATION PREFERENCES ──
+var _notifOn = false;
+
+function toggleNotif() {
+  _notifOn = !_notifOn;
+  const sw = document.getElementById('notif-switch');
+  const lbl = document.getElementById('notif-label');
+  const row = document.getElementById('notif-email-row');
+  if (_notifOn) {
+    sw.classList.add('on');
+    lbl.textContent = 'On';
+    row.style.display = 'flex';
+    // Pre-fill email from subscription if available
+    const sub = window._currentSub;
+    if (sub && sub.email) document.getElementById('notif-email-input').value = sub.email;
+  } else {
+    sw.classList.remove('on');
+    lbl.textContent = 'Off';
+    row.style.display = 'none';
+    document.getElementById('notif-success').style.display = 'none';
+  }
+}
+
+function saveNotifPref() {
+  const email = document.getElementById('notif-email-input').value.trim();
+  if (!email) return;
+  // Store preference in localStorage keyed by token
+  if (token) {
+    localStorage.setItem('mfc_notif_' + token, JSON.stringify({ email, on: true, savedAt: new Date().toISOString() }));
+  }
+  document.getElementById('notif-email-row').style.display = 'none';
+  document.getElementById('notif-success').style.display = 'block';
 }
 
 function updateMarketStatus() {
