@@ -776,7 +776,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
         </div>
         <div class="footer">
           <p>
-            <strong>SEBI Disclaimer:</strong> MindForge Capital provides educational information only and is not registered with SEBI. This is not financial advice. Trade at your own risk. Please review our privacy policy and terms of service.
+            <strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Trade at your own risk. Please review our privacy policy and terms of service.
           </p>
           <p style="margin-top: 16px; color: #9ca3af;">© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
         </div>
@@ -792,7 +792,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
     'Strategy: ' + strategy + '\n' +
     'Valid until: ' + expiresAt.toLocaleDateString('en-IN') + '\n\n' +
     'Your dashboard link is unique -- please do not share it. If you lose it, recover it at https://mindforgecapital.com/recover.html\n\n' +
-    'SEBI Disclaimer: MindForge Capital provides educational information only and is not registered with SEBI. This is not financial advice.\n\n' +
+    'SEBI Disclaimer: MindForge Capital provides quantitative research and educational information only. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice.\n\n' +
     'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
     '-- MindForge Capital\n' +
     'https://mindforgecapital.com';
@@ -930,7 +930,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           </div>
 
           <p style="font-size:13px;color:#94a3b8;">
-            <strong>SEBI Disclaimer:</strong> MindForge Capital provides educational information only and is not registered with SEBI as an investment advisor. This is not financial advice. Past performance does not guarantee future results. Trade at your own risk.
+            <strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only and is not a SEBI-registered investment advisor. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Past performance does not guarantee future results. Trade at your own risk.
           </p>
         </div>
         <div class="footer">
@@ -948,7 +948,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
     'Strategy: ' + strategy + '\n' +
     'Valid until: ' + expiresAt.toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + '\n\n' +
     'Keep this link private. It is unique to you. If you ever lose it, use the recovery page at https://mindforgecapital.com/recover.html\n\n' +
-    'SEBI Disclaimer: MindForge Capital provides educational information only and is not registered with SEBI as an investment advisor. Past performance does not guarantee future results.\n\n' +
+    'SEBI Disclaimer: MindForge Capital provides quantitative research and educational information only and is not a SEBI-registered investment advisor. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Past performance does not guarantee future results.\n\n' +
     'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
     '-- MindForge Capital\n' +
     'https://mindforgecapital.com';
@@ -1021,7 +1021,7 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
     GmailApp.sendEmail(adminEmail, subject, body, {
       htmlBody: htmlBody,
       name: 'MindForge Capital Alerts',
-      replyTo: 'rshekhawath@gmail.com'
+      replyTo: 'sagar.shekhawath@mindforgecapital.com'
     });
   } catch (err) {
     Logger.log('Admin notification email error: ' + err);
