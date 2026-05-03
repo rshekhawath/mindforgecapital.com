@@ -321,14 +321,42 @@ const obs=new IntersectionObserver(es=>es.forEach((e,i)=>{if(e.isIntersecting)se
 document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
 </script>
 <script>
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
+
+var INTEREST_LABELS = {
+  'multiasset':  'MultiFactor MultiAsset',
+  'largemidcap': 'MultiFactor LargeMidcap 250',
+  'smallmicro':  'MultiFactor SmallMicro 500',
+  'all':         'All three strategies',
+  'newsletter':  'Newsletter only'
+};
+
 function handleSubmit(e) {
   e.preventDefault();
-  const btn = document.getElementById('nl-btn');
+  var btn = document.getElementById('nl-btn');
+  var name  = document.getElementById('nl-name').value.trim();
+  var email = document.getElementById('nl-email').value.trim();
+  var sel   = document.getElementById('nl-interest').value;
+  var interest = INTEREST_LABELS[sel] || 'Newsletter only';
+
   btn.textContent = 'Subscribing…'; btn.disabled = true; btn.style.opacity = '0.7';
-  setTimeout(() => {
+
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain'},
+    body: JSON.stringify({
+      action:   'save_lead',
+      name:     name,
+      email:    email,
+      phone:    '',
+      strategy: interest,
+      price:    'newsletter'
+    })
+  }).catch(function(err){ console.warn('Newsletter signup save failed (non-blocking):', err); })
+   .finally(function() {
     btn.style.display = 'none';
     document.getElementById('nl-success').style.display = 'block';
-  }, 900);
+  });
 }
 </script>
 
