@@ -1109,14 +1109,19 @@ body.annual-billing .price-annual { display: flex; }
 </footer>
 
 <script>
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 80);
+function revealFadeUps() {
+  var vh = window.innerHeight || document.documentElement.clientHeight;
+  document.querySelectorAll('.fade-up:not(.visible)').forEach(function(el, i) {
+    var rect = el.getBoundingClientRect();
+    if (rect.top < vh + 80 && rect.bottom > -80) {
+      setTimeout(function() { el.classList.add('visible'); }, Math.min(i, 4) * 60);
     }
   });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+}
+revealFadeUps();
+window.addEventListener('load', revealFadeUps);
+window.addEventListener('scroll', revealFadeUps, { passive: true });
+window.addEventListener('resize', revealFadeUps, { passive: true });
 
 function setBilling(mode) {
   if (mode === 'annual') {
