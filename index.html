@@ -1125,6 +1125,165 @@ body.annual-billing .price-annual { display: flex; }
   0% { transform: translateX(-100%); }
   35%, 100% { transform: translateX(150%); }
 }
+
+/* ═══════════════════════════════════════════════════
+   VISUAL POLISH v4 — 3D TILT, SPOTLIGHT, SPARKLINES
+   ═══════════════════════════════════════════════════ */
+
+/* 3D tilt scaffolding for cards */
+.tilt-host {
+  transform-style: preserve-3d;
+  transform: perspective(1000px) rotateX(var(--ry, 0deg)) rotateY(var(--rx, 0deg));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+  will-change: transform;
+}
+.tilt-host.tilting { transition: transform 0.05s linear; }
+
+/* Mouse-tracked spotlight on hero card */
+.hv-card {
+  --mx: 50%;
+  --my: 50%;
+}
+.hv-card::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 22px;
+  background: radial-gradient(420px circle at var(--mx) var(--my),
+              rgba(45,212,191,0.10) 0%,
+              rgba(26,108,244,0.06) 30%,
+              transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 1;
+}
+.hv-card.spotlight-on::after { opacity: 1; }
+.hv-card > * { position: relative; z-index: 2; }
+
+/* Strategy card: spotlight + sparkline area */
+.strat-card {
+  --mx: 50%;
+  --my: 50%;
+}
+.strat-card::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(380px circle at var(--mx) var(--my),
+              rgba(26,108,244,0.10) 0%,
+              transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+.strat-card.spotlight-on::before { opacity: 1; }
+.strat-card > * { position: relative; z-index: 1; }
+
+/* Strategy card mini sparkline */
+.spark-wrap {
+  margin: 8px 0 22px;
+  background: linear-gradient(180deg, rgba(240,245,255,0.5), transparent);
+  border-radius: 10px;
+  padding: 10px 8px 6px;
+  position: relative;
+}
+.spark-wrap svg { width: 100%; height: 60px; display: block; }
+.spark-wrap .spark-strat {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px rgba(26,80,216,0.18));
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+}
+.spark-wrap .spark-bench {
+  fill: none;
+  stroke: var(--text3);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 4;
+  opacity: 0.55;
+  stroke-linecap: round;
+}
+.spark-wrap .spark-fill { opacity: 0.16; }
+.spark-wrap.animate .spark-strat {
+  animation: spark-draw 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes spark-draw {
+  to { stroke-dashoffset: 0; }
+}
+.spark-wrap .spark-end-dot {
+  opacity: 0;
+  transition: opacity 0.3s ease 1.6s;
+}
+.spark-wrap.animate .spark-end-dot { opacity: 1; }
+.spark-legend {
+  display: flex; gap: 12px; align-items: center;
+  margin-top: 4px;
+  font-size: 10px; color: var(--text3);
+  letter-spacing: 0.04em;
+}
+.spark-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.spark-legend .swatch {
+  display: inline-block; width: 12px; height: 2px; border-radius: 1px;
+}
+
+/* Hero particle constellation */
+#hero-particles {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-content, .hero-visual { position: relative; z-index: 1; }
+
+/* Logo subtle glow on hover */
+.logo {
+  position: relative;
+  transition: transform 0.3s ease;
+}
+.logo:hover { transform: scale(1.02); }
+.logo img {
+  transition: filter 0.3s ease;
+}
+.logo:hover img {
+  filter: drop-shadow(0 4px 12px rgba(26,80,216,0.25));
+}
+
+/* Featured strategy card: animated gradient border */
+.strat-card.featured {
+  position: relative;
+}
+.strat-card.featured::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+              rgba(26,108,244,0.55) 0%,
+              rgba(45,212,191,0.45) 25%,
+              rgba(26,108,244,0.35) 50%,
+              rgba(45,212,191,0.45) 75%,
+              rgba(26,108,244,0.55) 100%);
+  background-size: 300% 300%;
+  animation: featured-border-flow 8s linear infinite;
+  -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes featured-border-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 300% 0%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strat-card.featured::after { animation: none; }
+  .tilt-host { transform: none !important; }
+}
+
+/* Better proof bar number animation */
+.proof-num { display: inline-block; transition: transform 0.3s; }
+.proof-item:hover .proof-num { transform: scale(1.05); }
+
+/* Section transitions: subtle reveal pattern */
+.fade-up.reveal-stagger { transition-delay: var(--reveal-delay, 0ms); }
 </style>
   <!-- Favicon & App Icons -->
   <link rel="icon" href="assets/favicon-32.png" type="image/png">
@@ -1160,6 +1319,7 @@ body.annual-billing .price-annual { display: flex; }
 <!-- HERO -->
 <section class="hero">
   <div class="hero-bg"></div>
+  <canvas id="hero-particles" aria-hidden="true"></canvas>
   <div class="container">
     <div class="hero-grid">
       <div class="hero-content">
@@ -1173,7 +1333,7 @@ body.annual-billing .price-annual { display: flex; }
       </div>
 
       <div class="hero-visual" aria-hidden="true">
-        <div class="hv-card">
+        <div class="hv-card tilt-host">
           <div class="hv-head">
             <span class="hv-title">5Y Backtested Performance</span>
             <span class="hv-pulse">Live data</span>
@@ -1349,7 +1509,7 @@ body.annual-billing .price-annual { display: flex; }
     <div class="strat-grid">
 
       <!-- MultiAsset -->
-      <div class="strat-card fade-up">
+      <div class="strat-card tilt-host fade-up">
         <span class="strat-badge badge-teal">Multi-Asset</span>
         <div class="strat-name">MultiFactor MultiAsset</div>
         <div class="strat-universe">6 assets · Weekly signals · Monthly rebalance</div>
@@ -1361,6 +1521,28 @@ body.annual-billing .price-annual { display: flex; }
           <div class="strat-metric">
             <div class="val" style="color:var(--text2);font-size:18px;"><!--MFSTAT:ma:bench_cagr-->16.3%<!--/MFSTAT--></div>
             <div class="lbl">Benchmark CAGR</div>
+          </div>
+        </div>
+        <div class="spark-wrap" data-spark="ma">
+          <svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="spark-grad-ma" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0891b2" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="spark-stroke-ma" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#0891b2"/>
+                <stop offset="100%" stop-color="#06b6d4"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill" fill="url(#spark-grad-ma)" d="M 0 50 C 20 48, 40 44, 60 40 S 100 35, 120 30 S 160 22, 200 14 L 200 60 L 0 60 Z"/>
+            <path class="spark-bench" d="M 0 52 C 30 50, 60 47, 90 44 S 150 38, 200 32"/>
+            <path class="spark-strat" stroke="url(#spark-stroke-ma)" d="M 0 50 C 20 48, 40 44, 60 40 S 100 35, 120 30 S 160 22, 200 14"/>
+            <circle class="spark-end-dot" cx="200" cy="14" r="3" fill="#fff" stroke="#0891b2" stroke-width="2"/>
+          </svg>
+          <div class="spark-legend">
+            <span><i class="swatch" style="background:linear-gradient(90deg,#0891b2,#06b6d4);"></i>Strategy</span>
+            <span><i class="swatch" style="background:var(--text3);opacity:0.5;"></i>Benchmark</span>
           </div>
         </div>
         <p class="strat-desc">Rotates systematically across Nifty 50, Next 50, Midcap 150, Gold, Bharat Bond and NASDAQ ETFs using momentum, volatility-adjusted scoring and a 10-month trend filter. Defensive by design.</p>
@@ -1388,7 +1570,7 @@ body.annual-billing .price-annual { display: flex; }
       </div>
 
       <!-- LargeMidcap -->
-      <div class="strat-card featured fade-up">
+      <div class="strat-card featured tilt-host fade-up">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <span class="strat-badge badge-purple">Large &amp; Midcap</span>
           <span class="badge-pop">Most popular</span>
@@ -1403,6 +1585,28 @@ body.annual-billing .price-annual { display: flex; }
           <div class="strat-metric">
             <div class="val" style="color:var(--text2);font-size:18px;"><!--MFSTAT:lm:bench_cagr-->26.8%<!--/MFSTAT--></div>
             <div class="lbl">Benchmark CAGR</div>
+          </div>
+        </div>
+        <div class="spark-wrap" data-spark="lm">
+          <svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="spark-grad-lm" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#1a50d8" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#1a50d8" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="spark-stroke-lm" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#1a50d8"/>
+                <stop offset="100%" stop-color="#2dd4bf"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill" fill="url(#spark-grad-lm)" d="M 0 52 C 20 50, 40 44, 60 36 S 100 26, 120 20 S 160 10, 200 4 L 200 60 L 0 60 Z"/>
+            <path class="spark-bench" d="M 0 54 C 30 51, 60 46, 90 40 S 150 28, 200 20"/>
+            <path class="spark-strat" stroke="url(#spark-stroke-lm)" d="M 0 52 C 20 50, 40 44, 60 36 S 100 26, 120 20 S 160 10, 200 4"/>
+            <circle class="spark-end-dot" cx="200" cy="4" r="3" fill="#fff" stroke="#1a50d8" stroke-width="2"/>
+          </svg>
+          <div class="spark-legend">
+            <span><i class="swatch" style="background:linear-gradient(90deg,#1a50d8,#2dd4bf);"></i>Strategy</span>
+            <span><i class="swatch" style="background:var(--text3);opacity:0.5;"></i>Benchmark</span>
           </div>
         </div>
         <p class="strat-desc">Selects the top 25 stocks from the Nifty LargeMidcap 250 universe using five quantitative factors. Capped at 3 stocks per industry. 5-year backtest shows <!--MFSTAT:lm:alpha-->+10.0%<!--/MFSTAT--> alpha over equal-weight benchmark.</p>
@@ -1432,7 +1636,7 @@ body.annual-billing .price-annual { display: flex; }
       </div>
 
       <!-- SmallMicro -->
-      <div class="strat-card fade-up">
+      <div class="strat-card tilt-host fade-up">
         <span class="strat-badge badge-gold">Small &amp; Microcap</span>
         <div class="strat-name">MultiFactor SmallMicro 500</div>
         <div class="strat-universe">500 stocks · Smallcap 250 + Microcap 250 · Monthly rebalance</div>
@@ -1444,6 +1648,28 @@ body.annual-billing .price-annual { display: flex; }
           <div class="strat-metric">
             <div class="val" style="color:var(--text2);font-size:18px;"><!--MFSTAT:sm:bench_cagr-->32.6%<!--/MFSTAT--></div>
             <div class="lbl">Benchmark CAGR</div>
+          </div>
+        </div>
+        <div class="spark-wrap" data-spark="sm">
+          <svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="spark-grad-sm" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#d97706" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#d97706" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="spark-stroke-sm" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#d97706"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+            </defs>
+            <path class="spark-fill" fill="url(#spark-grad-sm)" d="M 0 54 C 20 50, 40 46, 60 36 S 100 22, 120 14 S 160 6, 200 2 L 200 60 L 0 60 Z"/>
+            <path class="spark-bench" d="M 0 55 C 30 52, 60 46, 90 38 S 150 24, 200 16"/>
+            <path class="spark-strat" stroke="url(#spark-stroke-sm)" d="M 0 54 C 20 50, 40 46, 60 36 S 100 22, 120 14 S 160 6, 200 2"/>
+            <circle class="spark-end-dot" cx="200" cy="2" r="3" fill="#fff" stroke="#d97706" stroke-width="2"/>
+          </svg>
+          <div class="spark-legend">
+            <span><i class="swatch" style="background:linear-gradient(90deg,#d97706,#f59e0b);"></i>Strategy</span>
+            <span><i class="swatch" style="background:var(--text3);opacity:0.5;"></i>Benchmark</span>
           </div>
         </div>
         <p class="strat-desc">The highest-conviction strategy — selects 50 stocks from 500 small and micro-cap names. Uses volume breakout and relative volatility signals tuned specifically for the thin-liquidity dynamics of this segment.</p>
@@ -1675,6 +1901,131 @@ function setBilling(mode) {
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43zM12.04 21.8h-.01a9.86 9.86 0 0 1-5.03-1.38l-.36-.21-3.72.98 1-3.63-.24-.37a9.84 9.84 0 0 1-1.51-5.27c0-5.46 4.44-9.9 9.9-9.9 2.65 0 5.13 1.03 7 2.9a9.83 9.83 0 0 1 2.9 7c-.01 5.46-4.45 9.88-9.93 9.88zm5.43-7.4c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.06 2.88 1.21 3.08.15.2 2.1 3.2 5.07 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.34z"/></svg>
   <span class="fab-wa-tip">Chat with us</span>
 </a>
+
+<script>
+/* ── 3D TILT + SPOTLIGHT for cards ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(max-width: 900px)').matches) return;
+  var hosts = document.querySelectorAll('.tilt-host');
+  if (!hosts.length) return;
+  var MAX = 6;
+  hosts.forEach(function(host) {
+    var raf = null;
+    function onMove(e) {
+      var rect = host.getBoundingClientRect();
+      var x = e.clientX - rect.left;
+      var y = e.clientY - rect.top;
+      var px = x / rect.width;
+      var py = y / rect.height;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function() {
+        host.style.setProperty('--rx', ((px - 0.5) * MAX * 2).toFixed(2) + 'deg');
+        host.style.setProperty('--ry', ((0.5 - py) * MAX * 2).toFixed(2) + 'deg');
+        host.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        host.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+    }
+    host.addEventListener('mouseenter', function() {
+      host.classList.add('tilting', 'spotlight-on');
+    });
+    host.addEventListener('mousemove', onMove);
+    host.addEventListener('mouseleave', function() {
+      host.classList.remove('tilting', 'spotlight-on');
+      host.style.setProperty('--rx', '0deg');
+      host.style.setProperty('--ry', '0deg');
+    });
+  });
+})();
+
+/* ── SPARKLINE: animate when in view ── */
+(function() {
+  var sparks = document.querySelectorAll('.spark-wrap');
+  if (!sparks.length) return;
+  if (!('IntersectionObserver' in window)) {
+    sparks.forEach(function(s) { s.classList.add('animate'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('animate');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  sparks.forEach(function(s) { io.observe(s); });
+})();
+
+/* ── HERO PARTICLE CONSTELLATION ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var canvas = document.getElementById('hero-particles');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var hero = canvas.parentElement;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var particles = [];
+  var w = 0, h = 0;
+  var COUNT = window.innerWidth < 900 ? 22 : 42;
+  var LINK_DIST = 110;
+  function size() {
+    var rect = hero.getBoundingClientRect();
+    w = rect.width; h = rect.height;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function init() {
+    particles = [];
+    for (var i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+        r: Math.random() * 1.6 + 0.6
+      });
+    }
+  }
+  function tick() {
+    ctx.clearRect(0, 0, w, h);
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > w) p.vx *= -1;
+      if (p.y < 0 || p.y > h) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(26,80,216,0.32)';
+      ctx.fill();
+    }
+    for (var i = 0; i < particles.length; i++) {
+      for (var j = i + 1; j < particles.length; j++) {
+        var dx = particles[i].x - particles[j].x;
+        var dy = particles[i].y - particles[j].y;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (d < LINK_DIST) {
+          var alpha = (1 - d / LINK_DIST) * 0.18;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = 'rgba(26,80,216,' + alpha.toFixed(3) + ')';
+          ctx.lineWidth = 0.6;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  size(); init(); tick();
+  var rsTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(rsTimer);
+    rsTimer = setTimeout(function() { size(); init(); }, 200);
+  });
+})();
+</script>
 
 <script>
 // Scroll progress bar
