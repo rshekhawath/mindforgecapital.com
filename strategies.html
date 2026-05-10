@@ -484,6 +484,59 @@ footer p{font-size:12px;color:var(--text3);}
   0%, 100% { background-position: 0% 0; }
   50% { background-position: 100% 0; }
 }
+
+/* 3D tilt scaffolding */
+.tilt-host {
+  transform: perspective(900px) rotateX(var(--ry, 0deg)) rotateY(var(--rx, 0deg));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+  will-change: transform;
+}
+.tilt-host.tilting { transition: transform 0.05s linear; }
+@media (prefers-reduced-motion: reduce) {
+  .tilt-host { transform: none !important; }
+}
+
+/* Stat-card spotlight */
+.stat-card { --mx: 50%; --my: 50%; }
+.stat-card::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(220px circle at var(--mx) var(--my),
+              rgba(26,108,244,0.12) 0%,
+              transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+.stat-card.spotlight-on::after { opacity: 1; }
+.stat-card > * { position: relative; z-index: 1; }
+
+/* Sidebar card subtle pulse on subscription card */
+.sidebar-btn {
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: side-shimmer 5s ease-in-out infinite;
+  animation-delay: 1.5s;
+  pointer-events: none;
+}
+@keyframes side-shimmer {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(150%); }
+}
+
+/* Compare table: subtle row entrance */
+.compare-table tbody tr {
+  transition: background 0.2s, transform 0.2s;
+}
+.compare-table tbody tr:hover {
+  background: rgba(37,99,235,0.045) !important;
+}
 </style>
   <!-- Favicon & App Icons -->
   <link rel="icon" href="assets/favicon-32.png" type="image/png">
@@ -1115,6 +1168,84 @@ function showSuccessToast() {
 <script>
 // Scroll progress bar
 (function(){var bar=document.getElementById('scroll-progress');if(!bar)return;function update(){var doc=document.documentElement;var max=(doc.scrollHeight-doc.clientHeight)||1;var pct=(window.scrollY/max)*100;bar.style.width=Math.min(100,Math.max(0,pct))+'%';}update();window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update,{passive:true});})();
+</script>
+
+<script>
+/* ── 3D TILT + SPOTLIGHT for stat cards ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(max-width: 900px)').matches) return;
+  // Auto-tag stat cards as tilt hosts
+  document.querySelectorAll('.stat-card').forEach(function(c) { c.classList.add('tilt-host'); });
+  var hosts = document.querySelectorAll('.tilt-host');
+  if (!hosts.length) return;
+  var MAX = 5;
+  hosts.forEach(function(host) {
+    var raf = null;
+    function onMove(e) {
+      var rect = host.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width;
+      var py = (e.clientY - rect.top) / rect.height;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function() {
+        host.style.setProperty('--rx', ((px - 0.5) * MAX * 2).toFixed(2) + 'deg');
+        host.style.setProperty('--ry', ((0.5 - py) * MAX * 2).toFixed(2) + 'deg');
+        host.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        host.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+    }
+    host.addEventListener('mouseenter', function() { host.classList.add('tilting','spotlight-on'); });
+    host.addEventListener('mousemove', onMove);
+    host.addEventListener('mouseleave', function() {
+      host.classList.remove('tilting','spotlight-on');
+      host.style.setProperty('--rx','0deg');
+      host.style.setProperty('--ry','0deg');
+    });
+  });
+})();
+
+/* ── COUNT-UP for stat-card numbers ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function parseNum(text) {
+    var m = text.match(/(-?\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    var idx = text.indexOf(m[1]);
+    return {
+      value: parseFloat(m[1]),
+      decimals: (m[1].split('.')[1] || '').length,
+      prefix: text.slice(0, idx),
+      suffix: text.slice(idx + m[1].length)
+    };
+  }
+  function animate(el, parsed) {
+    var dur = 1100, start = performance.now();
+    function step(now) {
+      var t = Math.min(1, (now - start) / dur);
+      var eased = 1 - Math.pow(1 - t, 3);
+      var v = parsed.value * eased;
+      el.textContent = parsed.prefix + (parsed.decimals ? v.toFixed(parsed.decimals) : Math.round(v)) + parsed.suffix;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var nums = document.querySelectorAll('.stat-card .sv');
+  if (!nums.length) return;
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (!e.isIntersecting) return;
+      var el = e.target;
+      if (el._counted) return; el._counted = true;
+      var parsed = parseNum(el.textContent.trim());
+      if (parsed === null) return; // non-numeric (e.g., "Low", "Monthly")
+      el._original = el.textContent;
+      animate(el, parsed);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  nums.forEach(function(n) { io.observe(n); });
+})();
 </script>
 
 </body>
