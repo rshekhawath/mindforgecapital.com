@@ -537,6 +537,120 @@ footer p{font-size:12px;color:var(--text3);}
 .compare-table tbody tr:hover {
   background: rgba(37,99,235,0.045) !important;
 }
+
+/* Page hero grid + KPI card */
+.page-hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 56px;
+  align-items: center;
+}
+.ph-kpi-card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.85) 0%, var(--ink2) 60%);
+  border: 0.5px solid var(--border2);
+  border-radius: 22px;
+  padding: 24px;
+  position: relative;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 28px 60px -28px rgba(26,80,216,0.22),
+    0 8px 20px -10px rgba(15,23,42,0.08);
+  backdrop-filter: blur(8px);
+}
+.ph-kpi-card::before {
+  content: ''; position: absolute; inset: -1px;
+  border-radius: 22px;
+  padding: 1px;
+  background: linear-gradient(160deg, rgba(26,108,244,0.4), rgba(45,212,191,0.18) 50%, transparent 80%);
+  -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+}
+.ph-kpi-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--border);
+}
+.ph-kpi-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text3);
+}
+.ph-kpi-live {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent2);
+  background: rgba(26,108,244,0.10);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.ph-kpi-live::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent2);
+  animation: ph-pulse 1.8s ease-out infinite;
+}
+@keyframes ph-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,108,244,0.45); }
+  70% { box-shadow: 0 0 0 6px rgba(26,108,244,0); }
+}
+.ph-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ph-kpi-tile {
+  background: var(--ink2);
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  position: relative; overflow: hidden;
+}
+.ph-kpi-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96,165,250,0.4);
+  box-shadow: 0 14px 28px -16px rgba(26,80,216,0.20);
+}
+.ph-kpi-val {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.ph-kpi-val.ph-green { color: #0891b2; }
+.ph-kpi-val.ph-blue  { color: var(--accent2); }
+.ph-kpi-val.ph-gold  { color: var(--gold); }
+.ph-kpi-val.ph-teal  { color: #0d9488; background: linear-gradient(110deg, #0891b2, #2dd4bf); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.ph-kpi-lbl {
+  font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 5px;
+}
+.ph-spark {
+  width: 100%; height: 22px;
+  margin-top: 8px;
+  display: block;
+}
+.ph-kpi-mini {
+  font-size: 10px; color: var(--text3); margin-top: 8px;
+  letter-spacing: 0.04em;
+}
+.ph-kpi-foot {
+  margin-top: 16px;
+  display: flex; justify-content: center; gap: 8px;
+  font-size: 11px; color: var(--text3);
+  letter-spacing: 0.04em;
+}
+@media (max-width: 960px) {
+  .page-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .ph-kpi-card { padding: 20px; }
+}
+@media (max-width: 480px) {
+  .ph-kpi-grid { grid-template-columns: 1fr; }
+  .ph-kpi-foot { flex-wrap: wrap; }
+}
 </style>
   <!-- Favicon & App Icons -->
   <link rel="icon" href="assets/favicon-32.png" type="image/png">
@@ -570,9 +684,46 @@ footer p{font-size:12px;color:var(--text3);}
 
 <div class="container">
   <section class="page-hero fade-up">
-    <div class="section-label">Three strategies</div>
-    <h1>One for every <span class="accent-text">risk appetite.</span></h1>
-    <p class="sub">From capital-efficient multi-asset rotation to concentrated small-cap alpha. Select a strategy below to explore its approach, backtest results, and how to get started.</p>
+    <div class="page-hero-grid">
+      <div>
+        <div class="section-label">Three strategies</div>
+        <h1>One for every <span class="accent-text">risk appetite.</span></h1>
+        <p class="sub">From capital-efficient multi-asset rotation to concentrated small-cap alpha. Select a strategy below to explore its approach, backtest results, and how to get started.</p>
+      </div>
+      <div class="ph-kpi-card">
+        <div class="ph-kpi-head">
+          <span class="ph-kpi-title">Combined performance</span>
+          <span class="ph-kpi-live">Backtest</span>
+        </div>
+        <div class="ph-kpi-grid">
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-green">19.0%</div>
+            <div class="ph-kpi-lbl">MultiAsset CAGR</div>
+            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 20 C 12 18, 24 15, 36 12 S 60 8, 80 4" fill="none" stroke="#0891b2" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-blue">36.8%</div>
+            <div class="ph-kpi-lbl">LargeMidcap CAGR</div>
+            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 19, 24 14, 36 10 S 60 4, 80 2" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-gold">44.3%</div>
+            <div class="ph-kpi-lbl">SmallMicro CAGR</div>
+            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 20, 24 14, 36 8 S 60 3, 80 1" fill="none" stroke="#d97706" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-teal">+11.7%</div>
+            <div class="ph-kpi-lbl">Best alpha</div>
+            <div class="ph-kpi-mini">vs benchmark</div>
+          </div>
+        </div>
+        <div class="ph-kpi-foot">
+          <span>5-year backtest · 2021–2026</span>
+          <span>·</span>
+          <span>Updated May 2026</span>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ── COMPARISON TABLE ── -->

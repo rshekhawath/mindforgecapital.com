@@ -642,7 +642,8 @@ footer {
   .criteria-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:0;}
   .crit-pill{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:20px 14px;text-align:center;transition:border-color .2s;}
   .crit-pill:hover{border-color:rgba(96,165,250,0.4);}
-  .crit-icon{width:32px;height:32px;background:rgba(26,108,244,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:13px;font-weight:800;color:var(--accent2);}
+  .crit-icon{width:36px;height:36px;background:rgba(26,108,244,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:var(--accent2);}
+  .crit-icon svg{display:block;}
   .crit-name{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;}
   .crit-tiny{font-size:11px;color:var(--text3);}
 
@@ -1284,6 +1285,133 @@ body.annual-billing .price-annual { display: flex; }
 
 /* Section transitions: subtle reveal pattern */
 .fade-up.reveal-stagger { transition-delay: var(--reveal-delay, 0ms); }
+
+/* ── WHY MINDFORGE SECTION ── */
+.why-mf {
+  padding: 100px 0;
+  border-top: 0.5px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.why-mf::before {
+  content: ''; position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45,212,191,0.08) 0%, transparent 70%);
+  filter: blur(60px);
+  top: -150px; right: -150px;
+  pointer-events: none;
+  z-index: 0;
+}
+.why-mf > * { position: relative; z-index: 1; }
+.why-h2 {
+  font-size: 42px;
+  color: var(--white);
+  margin-bottom: 16px;
+  max-width: 600px;
+}
+.why-desc {
+  font-size: 17px;
+  color: var(--text2);
+  font-weight: 300;
+  margin-bottom: 56px;
+  max-width: 620px;
+  line-height: 1.7;
+}
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.why-card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.3s;
+  --mx: 50%; --my: 50%;
+}
+.why-card::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(360px circle at var(--mx) var(--my),
+              rgba(26,108,244,0.08) 0%,
+              transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: 0;
+}
+.why-card.spotlight-on::before { opacity: 1; }
+.why-card > * { position: relative; z-index: 1; }
+.why-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(26,108,244,0.25), transparent);
+  opacity: 0; transition: opacity 0.3s;
+}
+.why-card:hover {
+  border-color: rgba(96,165,250,0.45);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -22px rgba(26,80,216,0.22);
+}
+.why-card:hover::after { opacity: 1; }
+.why-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(26,108,244,0.14), rgba(45,212,191,0.10));
+  border: 0.5px solid rgba(26,108,244,0.18);
+  color: var(--accent2);
+  margin-bottom: 18px;
+  transition: transform 0.3s ease, background 0.3s;
+}
+.why-card:hover .why-icon {
+  transform: scale(1.06) rotate(-3deg);
+  background: linear-gradient(135deg, rgba(26,108,244,0.22), rgba(45,212,191,0.16));
+}
+.why-card h3 {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+.why-card p {
+  font-size: 13.5px;
+  color: var(--text2);
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+.why-stat {
+  display: flex; align-items: baseline; gap: 8px;
+  padding-top: 14px;
+  border-top: 0.5px solid var(--border);
+}
+.why-stat-val {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 18px; font-weight: 800;
+  background: linear-gradient(110deg, var(--accent), #2dd4bf);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+}
+.why-stat-lbl {
+  font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+@media (max-width: 900px) {
+  .why-grid { grid-template-columns: repeat(2, 1fr); }
+  .why-h2 { font-size: 30px; }
+}
+@media (max-width: 600px) {
+  .why-mf { padding: 60px 0; }
+  .why-grid { grid-template-columns: 1fr; }
+  .why-card { padding: 22px; }
+}
 </style>
   <!-- Favicon & App Icons -->
   <link rel="icon" href="assets/favicon-32.png" type="image/png">
@@ -1305,6 +1433,7 @@ body.annual-billing .price-annual { display: flex; }
     <div class="nav-links">
       <a href="strategies.html">Strategies</a>
       <a href="#how">How it works</a>
+      <a href="#why">Why us</a>
       <a href="newsletter.html">Newsletter</a>
       <a href="#team">Team</a>
         <a href="recover.html" style="color:var(--accent3);">Recover Access</a>
@@ -1395,8 +1524,11 @@ body.annual-billing .price-annual { display: flex; }
       </div>
       <div class="proof-divider"></div>
       <div class="proof-item">
-        <span class="proof-num">SEBI Registered</span>
-        <span class="proof-label">XXXXXXXXXX</span>
+        <span class="proof-num" style="display:inline-flex;align-items:center;gap:6px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a50d8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          SEBI Registered
+        </span>
+        <span class="proof-label">Research Analyst</span>
       </div>
       <div class="proof-divider"></div>
       <div class="proof-item">
@@ -1459,27 +1591,37 @@ body.annual-billing .price-annual { display: flex; }
     <!-- 5 criteria pills -->
     <div class="criteria-row fade-up">
       <div class="crit-pill">
-        <div class="crit-icon">P</div>
+        <div class="crit-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
         <div class="crit-name">Persistent</div>
         <div class="crit-tiny">Holds across decades</div>
       </div>
       <div class="crit-pill">
-        <div class="crit-icon">P</div>
+        <div class="crit-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
         <div class="crit-name">Pervasive</div>
         <div class="crit-tiny">Holds across markets</div>
       </div>
       <div class="crit-pill">
-        <div class="crit-icon">R</div>
+        <div class="crit-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
         <div class="crit-name">Robust</div>
         <div class="crit-tiny">Not one formulation</div>
       </div>
       <div class="crit-pill">
-        <div class="crit-icon">I</div>
+        <div class="crit-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
         <div class="crit-name">Investable</div>
         <div class="crit-tiny">Works after costs</div>
       </div>
       <div class="crit-pill">
-        <div class="crit-icon">I</div>
+        <div class="crit-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21h6"/><path d="M12 17v4"/><path d="M5.5 11A6.5 6.5 0 1112 17.5 6.5 6.5 0 015.5 11z"/><path d="M9 11h6"/></svg>
+        </div>
         <div class="crit-name">Intuitive</div>
         <div class="crit-tiny">Logical explanation</div>
       </div>
@@ -1698,6 +1840,71 @@ body.annual-billing .price-annual { display: flex; }
         </div>
       </div>
 
+    </div>
+  </div>
+</section>
+
+<!-- WHY MINDFORGE -->
+<section class="why-mf" id="why">
+  <div class="container">
+    <div class="section-label">Why MindForge</div>
+    <h2 class="why-h2 fade-up">A different kind of money manager.</h2>
+    <p class="why-desc fade-up">No fund-manager lottery. No black-box portfolios. No 1.5% expense ratios eating into your returns. Just academically validated factors, applied transparently to Indian markets.</p>
+
+    <div class="why-grid">
+      <div class="why-card fade-up tilt-host">
+        <div class="why-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        </div>
+        <h3>Academic foundations</h3>
+        <p>Every factor — momentum, low-volatility, quality, trend strength — is documented in peer-reviewed finance, not a hot tip.</p>
+        <div class="why-stat"><span class="why-stat-val">50+</span><span class="why-stat-lbl">years of research</span></div>
+      </div>
+
+      <div class="why-card fade-up tilt-host">
+        <div class="why-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+        </div>
+        <h3>Built for India</h3>
+        <p>NSE-listed instruments, Indian liquidity dynamics, INR-priced. We trade what you can trade — no offshore wrappers.</p>
+        <div class="why-stat"><span class="why-stat-val">100%</span><span class="why-stat-lbl">India-listed</span></div>
+      </div>
+
+      <div class="why-card fade-up tilt-host">
+        <div class="why-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3>Total transparency</h3>
+        <p>Every monthly rebalance is published in full — exact tickers, exact weights. No black-box claims. You see what the model sees.</p>
+        <div class="why-stat"><span class="why-stat-val">0</span><span class="why-stat-lbl">hidden trades</span></div>
+      </div>
+
+      <div class="why-card fade-up tilt-host">
+        <div class="why-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <h3>Honest pricing</h3>
+        <p>A flat monthly subscription. No AUM-based fees, no profit share, no exit loads. You keep 100% of your gains.</p>
+        <div class="why-stat"><span class="why-stat-val">₹99+</span><span class="why-stat-lbl">flat monthly</span></div>
+      </div>
+
+      <div class="why-card fade-up tilt-host">
+        <div class="why-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Hands-off operation</h3>
+        <p>Once a month, you receive your rebalance. Place the orders in your broker (or skip a month). No phone calls, no meetings.</p>
+        <div class="why-stat"><span class="why-stat-val">~10 min</span><span class="why-stat-lbl">per month</span></div>
+      </div>
+
+      <div class="why-card fade-up tilt-host">
+        <div class="why-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>SEBI registered</h3>
+        <p>Research published under a SEBI-registered Research Analyst. Compliant by design — your subscription is safe and regulated.</p>
+        <div class="why-stat"><span class="why-stat-val">RA</span><span class="why-stat-lbl">registered</span></div>
+      </div>
     </div>
   </div>
 </section>
@@ -2045,6 +2252,9 @@ function setBilling(mode) {
 
 // Animated number counters on proof bar
 (function() {
+  function fmt(target, prefix, suffix, decimals) {
+    return prefix + (decimals ? target.toFixed(decimals) : Math.round(target)) + suffix;
+  }
   function animate(el) {
     if (el._counted) return; el._counted = true;
     var target = parseFloat(el.getAttribute('data-count'));
@@ -2056,23 +2266,29 @@ function setBilling(mode) {
       var t = Math.min(1, (now - start) / dur);
       var eased = 1 - Math.pow(1 - t, 3);
       var v = target * eased;
-      el.textContent = prefix + (decimals ? v.toFixed(decimals) : Math.round(v)) + suffix;
+      el.textContent = fmt(v, prefix, suffix, decimals);
       if (t < 1) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
   }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var nums = document.querySelectorAll('.proof-num[data-count]');
   if (!nums.length) return;
+  // Reset to 0 so we never see a mid-flash
+  nums.forEach(function(el) {
+    var prefix = el.getAttribute('data-prefix') || '';
+    var suffix = el.getAttribute('data-suffix') || '';
+    var decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
+    el.textContent = fmt(0, prefix, suffix, decimals);
+  });
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function(entries) {
       entries.forEach(function(e) { if (e.isIntersecting) animate(e.target); });
-    }, { threshold: 0.4 });
+    }, { threshold: 0.3 });
     nums.forEach(function(n) { io.observe(n); });
   } else {
     nums.forEach(animate);
   }
-  // Fallback: animate after 1.5s if observer never fires
-  setTimeout(function() { nums.forEach(animate); }, 1500);
 })();
 </script>
 
