@@ -113,9 +113,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   @keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
   /* ── SHARPE TOOLTIP ── */
-  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(37,99,235,0.15);color:var(--accent2);font-size:9px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;position:relative;}
-  .tip-icon .tip-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text2);line-height:1.55;z-index:50;box-shadow:0 8px 24px rgba(37,99,235,0.12);}
-  .tip-icon:hover .tip-popup,.tip-icon:focus .tip-popup{display:block;}
+  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(37,99,235,0.15);color:var(--accent2);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;position:relative;font-style:italic;}
+  .tip-icon .tip-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text2);line-height:1.55;z-index:50;box-shadow:0 8px 24px rgba(37,99,235,0.12);font-style:normal;}
+  .tip-icon:hover .tip-popup,.tip-icon:focus .tip-popup,.tip-icon.tip-open .tip-popup{display:block;}
+  @media(max-width:720px){.tip-icon .tip-popup{width:min(240px,calc(100vw - 48px));left:auto;right:-8px;transform:none;}}
 
   /* ── LAST UPDATED BADGE ── */
   .updated-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#047857;background:rgba(5,150,105,0.10);border:0.5px solid rgba(5,150,105,0.20);border-radius:20px;padding:3px 10px;margin-left:10px;vertical-align:middle;letter-spacing:.04em;}
@@ -144,6 +145,25 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .mcta-ghost{border:0.5px solid var(--border2);color:var(--text2);background:var(--ink2);}
   .mcta-ghost:hover{color:var(--white);border-color:var(--accent3);}
   @media (max-width: 768px){.mobile-cta-bar{display:flex;}body{padding-bottom:76px;}.fab-wa{bottom:88px;}}
+
+  /* ── BACK TO TOP BUTTON ── */
+  .back-to-top{position:fixed;bottom:90px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--ink2);border:0.5px solid var(--border2);color:var(--accent2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px);transition:all 0.25s ease;z-index:89;box-shadow:0 8px 24px -8px rgba(26,80,216,0.20),inset 0 1px 0 rgba(255,255,255,0.7);}
+  .back-to-top.visible{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .back-to-top:hover{transform:translateY(-2px);background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 12px 28px -8px rgba(26,80,216,0.45);}
+  .back-to-top:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  @media (max-width: 768px){.back-to-top{bottom:150px;right:16px;width:40px;height:40px;}}
+
+  /* Comparison table — subtle zebra striping for scan-ability */
+  .compare-table tbody tr:nth-child(odd) td{background:rgba(37,99,235,0.018);}
+
+  /* Spark legend — better readability */
+  .spark-legend{font-size:11px;}
+
+  /* Highlight a section briefly when navigated to via anchor */
+  @media (prefers-reduced-motion: no-preference){
+    :target{animation:mf-anchor-flash 1.6s ease-out;}
+    @keyframes mf-anchor-flash{0%{background-color:rgba(37,99,235,0.08);}100%{background-color:transparent;}}
+  }
 
   /* ── COMPARISON TABLE ── */
   .compare-section{padding:48px 0 0;margin-bottom:40px;}
@@ -320,9 +340,9 @@ footer p{font-size:12px;color:var(--text3);}
 }
 
 /* ── Logo size ── */
-.logo img { height: 46px; width: auto; display: block; }
+.logo img { height: 44px; width: auto; display: block; }
 @media (max-width: 768px) {
-  .logo img { height: 38px; }
+  .logo img { height: 36px; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -690,8 +710,8 @@ textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 @media (prefers-reduced-motion: no-preference) {
   body { animation: mf-page-in 0.6s ease-out both; }
   @keyframes mf-page-in {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: none; }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 }
 
@@ -1057,12 +1077,12 @@ button:disabled, .btn-primary:disabled, .sidebar-btn:disabled, .strat-cta:disabl
 
 <nav>
   <div class="nav-inner">
-    <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" style="height:80px;width:auto;" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
+    <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links">
       <a href="strategies.html" class="active">Strategies</a>
       <a href="index.html#how">How it works</a>
+      <a href="index.html#why">Why us</a>
       <a href="newsletter.html">Newsletter</a>
-      <a href="index.html#team">Team</a>
       <a href="recover.html" style="color:var(--accent3);">Recover Access</a>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
       <a href="signup.html" class="nav-cta">Get Started</a>
@@ -1482,18 +1502,34 @@ button:disabled, .btn-primary:disabled, .sidebar-btn:disabled, .strat-cta:disabl
 </footer>
 
 <script>
-function switchTab(id, btn) {
+function switchTab(id, btn, opts) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   if (btn) btn.classList.add('active');
   else {
-    // Find the button by data attribute
     document.querySelectorAll('.tab-btn').forEach(b => {
       if (b.getAttribute('data-tab') === id) b.classList.add('active');
     });
   }
+  // Sync URL (so refresh/share preserves selected tab)
+  if (!opts || opts.pushUrl !== false) {
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.set('tab', id);
+      history.replaceState(null, '', url.toString());
+    } catch (e) {}
+  }
 }
+
+// Re-sync tab if user navigates browser back/forward
+window.addEventListener('popstate', function() {
+  var params = new URLSearchParams(window.location.search);
+  var tab = params.get('tab') || 'multiasset';
+  var validTabs = ['multiasset', 'largemidcap', 'smallmicro'];
+  if (validTabs.indexOf(tab) === -1) tab = 'multiasset';
+  switchTab(tab, null, { pushUrl: false });
+});
 
 // On load: check URL param then localStorage for requested tab
 (function() {
@@ -1502,7 +1538,8 @@ function switchTab(id, btn) {
   localStorage.removeItem('mf-tab');
   var validTabs = ['multiasset', 'largemidcap', 'smallmicro'];
   if (validTabs.indexOf(tab) === -1) tab = 'multiasset';
-  switchTab(tab, null);
+  // Don't push URL on initial load (it's already correct or we'd dirty history)
+  switchTab(tab, null, { pushUrl: !!params.get('tab') });
 })();
 function revealFadeUps() {
   var vh = window.innerHeight || document.documentElement.clientHeight;
@@ -1530,11 +1567,32 @@ document.querySelectorAll('.bt-chart-img').forEach(img => {
   else img.addEventListener('load', () => img.classList.add('loaded'));
   img.addEventListener('error', () => img.classList.add('loaded'));
 });
+
+// Tip-icon: click to toggle (works on touch + desktop alike)
+document.querySelectorAll('.tip-icon').forEach(function(tip) {
+  tip.setAttribute('role', 'button');
+  tip.setAttribute('aria-label', 'Show explanation');
+  tip.addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.querySelectorAll('.tip-icon.tip-open').forEach(function(o) {
+      if (o !== tip) o.classList.remove('tip-open');
+    });
+    tip.classList.toggle('tip-open');
+  });
+});
+document.addEventListener('click', function() {
+  document.querySelectorAll('.tip-icon.tip-open').forEach(function(o) { o.classList.remove('tip-open'); });
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.tip-icon.tip-open').forEach(function(o) { o.classList.remove('tip-open'); });
+  }
+});
 </script>
 
 <!-- Registration Modal -->
-<div id="reg-modal-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(12,24,49,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
-  <div id="reg-modal" style="background:#fff;border-radius:20px;padding:40px;max-width:460px;width:calc(100% - 40px);position:relative;box-shadow:0 24px 64px rgba(26,80,216,0.18);">
+<div id="reg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reg-modal-title" style="display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:1000;background:rgba(12,24,49,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px;overflow-y:auto;">
+  <div id="reg-modal" style="background:#fff;border-radius:20px;padding:40px;max-width:460px;width:100%;position:relative;box-shadow:0 24px 64px rgba(26,80,216,0.22), 0 4px 12px rgba(15,23,42,0.10);margin:auto;">
     <button onclick="closeRegModal()" style="position:absolute;top:16px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;line-height:1;">×</button>
     <div style="margin-bottom:24px;">
       <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">MINDFORGE CAPITAL</div>
@@ -1617,6 +1675,11 @@ function closeRegModal() {
 
 document.getElementById('reg-modal-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeRegModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('reg-modal-overlay').style.display === 'flex') {
+    closeRegModal();
+  }
 });
 
 function handleRegSubmit(e) {
@@ -1705,6 +1768,29 @@ function showSuccessToast() {
    target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43zM12.04 21.8h-.01a9.86 9.86 0 0 1-5.03-1.38l-.36-.21-3.72.98 1-3.63-.24-.37a9.84 9.84 0 0 1-1.51-5.27c0-5.46 4.44-9.9 9.9-9.9 2.65 0 5.13 1.03 7 2.9a9.83 9.83 0 0 1 2.9 7c-.01 5.46-4.45 9.88-9.93 9.88zm5.43-7.4c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.06 2.88 1.21 3.08.15.2 2.1 3.2 5.07 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.34z"/></svg>
 </a>
+
+<!-- Back to top -->
+<button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+// Back to top button
+(function() {
+  var btn = document.getElementById('back-to-top');
+  if (!btn) return;
+  function update() {
+    var show = window.scrollY > 400;
+    btn.classList.toggle('visible', show);
+  }
+  btn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    btn.blur();
+  });
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
 
 <script>
 // Scroll progress bar
