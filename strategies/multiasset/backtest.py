@@ -278,7 +278,7 @@ hero_y = 0.83
 for i, (label, value, color) in enumerate(hero):
     x = 0.06 + i * 0.31
     ax.text(x, hero_y + 0.045, label, transform=ax.transAxes,
-            fontsize=10, fontweight="semibold", color=GRAY,
+            fontsize=12, fontweight="semibold", color=GRAY,
             ha="left", va="bottom")
     ax.text(x, hero_y - 0.02, value, transform=ax.transAxes,
             fontsize=22, fontweight="bold", color=color,
@@ -306,13 +306,13 @@ table_top = 0.68
 row_h     = 0.075
 col_xs    = [0.05, 0.46, 0.66, 0.88]
 ax.text(col_xs[0], table_top + 0.030, "METRIC",    transform=ax.transAxes,
-        fontsize=10, fontweight="semibold", color=GRAY)
+        fontsize=12, fontweight="semibold", color=GRAY)
 ax.text(col_xs[1], table_top + 0.030, "STRATEGY",  transform=ax.transAxes,
-        fontsize=10, fontweight="semibold", color=GRAY)
+        fontsize=12, fontweight="semibold", color=GRAY)
 ax.text(col_xs[2], table_top + 0.030, "BENCHMARK", transform=ax.transAxes,
-        fontsize=10, fontweight="semibold", color=GRAY)
+        fontsize=12, fontweight="semibold", color=GRAY)
 ax.text(col_xs[3], table_top + 0.030, "EDGE",      transform=ax.transAxes,
-        fontsize=10, fontweight="semibold", color=GRAY)
+        fontsize=12, fontweight="semibold", color=GRAY)
 
 for ri, (label, tv, bv, higher_better) in enumerate(metrics_rows):
     y = table_top - (ri + 1) * row_h
@@ -340,9 +340,9 @@ for ri, (label, tv, bv, higher_better) in enumerate(metrics_rows):
 fig.text(0.03, 0.022,
          f"Benchmark: {BENCH_LABEL}  ·  Fixed CAGR {BENCH_CAGR*100:.2f}% "
          f"(public historical 5Y reference, sourced from NSE / NSE Indices factsheets).",
-         ha="left", va="center", fontsize=9, color=GRAY, style="italic")
+         ha="left", va="center", fontsize=12, color=GRAY, style="italic")
 fig.text(0.97, 0.022, "Simulated. Not investment advice.",
-         ha="right", va="center", fontsize=9, color=GRAY)
+         ha="right", va="center", fontsize=12, color=GRAY)
 _save(fig, "summary.png")
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -368,11 +368,11 @@ pv_ma = float(port_growth_ma.iloc[-1]); bv_ma = float(bench_growth_ma.iloc[-1])
 pv_lbl = f"₹{pv_ma/100000:.1f}L"; bv_lbl = f"₹{bv_ma/100000:.1f}L"
 ax.annotate(pv_lbl, xy=(dates[-1], pv_ma),
             xytext=(8, 0), textcoords="offset points",
-            fontsize=10.5, color=ACCENT, fontweight="semibold",
+            fontsize=13, color=ACCENT, fontweight="semibold",
             va="center", ha="left", annotation_clip=False)
 ax.annotate(bv_lbl, xy=(dates[-1], bv_ma),
             xytext=(8, 0), textcoords="offset points",
-            fontsize=10, color=GRAY,
+            fontsize=12, color=GRAY,
             va="center", ha="left", annotation_clip=False)
 style_ax(ax, "Growth of ₹1,00,000",
          "", "Portfolio value",
@@ -396,7 +396,7 @@ mdd_pt = dd_pct.idxmin(); mdd_v = float(dd_pct.min())
 ax.scatter([mdd_pt], [mdd_v], s=22, color=RED, zorder=3)
 ax.annotate(f"Max DD  {mdd_v:.1f}%",
             xy=(mdd_pt, mdd_v), xytext=(10, 14),
-            textcoords="offset points", fontsize=9.5, color=RED,
+            textcoords="offset points", fontsize=12, color=RED,
             fontweight="semibold",
             arrowprops=dict(arrowstyle="-", color=RED, lw=0.6, alpha=0.7))
 style_ax(ax, "Drawdown from peak",
@@ -464,11 +464,11 @@ ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
 pv_cum = float(port_cum_ma.iloc[-1]); bv_cum = float(bench_cum_ma.iloc[-1])
 ax.annotate(f"{pv_cum:+.0f}%", xy=(dates[-1], pv_cum),
             xytext=(8, 0), textcoords="offset points",
-            fontsize=10.5, color=ACCENT, fontweight="semibold",
+            fontsize=13, color=ACCENT, fontweight="semibold",
             va="center", ha="left", annotation_clip=False)
 ax.annotate(f"{bv_cum:+.0f}%", xy=(dates[-1], bv_cum),
             xytext=(8, 0), textcoords="offset points",
-            fontsize=10, color=GRAY,
+            fontsize=12, color=GRAY,
             va="center", ha="left", annotation_clip=False)
 style_ax(ax, "Cumulative returns",
          "", "Cumulative return",

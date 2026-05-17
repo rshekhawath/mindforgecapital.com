@@ -59,31 +59,31 @@ SECTOR_PALETTE = [
 plt.rcParams.update({
     "font.family":        ["Helvetica Neue", "Helvetica", "Arial",
                            "DejaVu Sans", "sans-serif"],
-    "font.size":           10.5,
-    "axes.titlesize":      13,
+    "font.size":           13,
+    "axes.titlesize":      16,
     "axes.titleweight":    "semibold",
-    "axes.labelsize":      10.5,
+    "axes.labelsize":      13,
     "axes.labelweight":    "regular",
     "axes.edgecolor":      GRAY,
-    "axes.linewidth":      0.6,
+    "axes.linewidth":      0.8,
     "axes.titlecolor":     WHITE,
     "axes.labelcolor":     LGRAY,
     "axes.spines.top":     False,
     "axes.spines.right":   False,
     "xtick.color":         GRAY,
     "ytick.color":         GRAY,
-    "xtick.labelsize":     10,
-    "ytick.labelsize":     10,
+    "xtick.labelsize":     12,
+    "ytick.labelsize":     12,
     "xtick.direction":     "out",
     "ytick.direction":     "out",
-    "xtick.major.size":    3,
-    "ytick.major.size":    3,
-    "xtick.major.width":   0.5,
-    "ytick.major.width":   0.5,
+    "xtick.major.size":    4,
+    "ytick.major.size":    4,
+    "xtick.major.width":   0.7,
+    "ytick.major.width":   0.7,
     "grid.color":          GRID,
-    "grid.linewidth":      0.6,
+    "grid.linewidth":      0.8,
     "grid.alpha":          1.0,
-    "legend.fontsize":     10,
+    "legend.fontsize":     12,
     "legend.frameon":      False,
     "figure.facecolor":    BG,
     "axes.facecolor":      CARD,
@@ -106,27 +106,27 @@ def style_ax(ax, title="", xlabel="", ylabel="", subtitle=""):
     ax.figure.patch.set_facecolor(BG)
     # Horizontal gridlines only — keeps eye on price/value, not dates.
     ax.grid(True, which="major", axis="y",
-            color=GRID, linewidth=0.6, zorder=0, alpha=1.0)
+            color=GRID, linewidth=0.8, zorder=0, alpha=1.0)
     ax.grid(False, axis="x")
     ax.set_axisbelow(True)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     for side in ("left", "bottom"):
         ax.spines[side].set_color(GRAY)
-        ax.spines[side].set_linewidth(0.6)
-    ax.tick_params(colors=GRAY, labelsize=10, length=3, width=0.5)
+        ax.spines[side].set_linewidth(0.8)
+    ax.tick_params(colors=GRAY, labelsize=12, length=4, width=0.7)
     ax.yaxis.label.set_color(LGRAY)
     ax.xaxis.label.set_color(LGRAY)
     if title:
-        ax.set_title(title, color=WHITE, fontsize=13, fontweight="semibold",
-                     pad=18 if subtitle else 12, loc="left")
+        ax.set_title(title, color=WHITE, fontsize=16, fontweight="semibold",
+                     pad=22 if subtitle else 14, loc="left")
     if subtitle:
         ax.text(0.0, 1.02, subtitle, transform=ax.transAxes,
-                fontsize=10, color=GRAY, ha="left", va="bottom")
+                fontsize=12, color=GRAY, ha="left", va="bottom")
     if xlabel:
-        ax.set_xlabel(xlabel, color=LGRAY, fontsize=10.5, labelpad=8)
+        ax.set_xlabel(xlabel, color=LGRAY, fontsize=13, labelpad=10)
     if ylabel:
-        ax.set_ylabel(ylabel, color=LGRAY, fontsize=10.5, labelpad=8)
+        ax.set_ylabel(ylabel, color=LGRAY, fontsize=13, labelpad=10)
 
 
 def fmt_xaxis(ax, interval=6):
@@ -135,7 +135,7 @@ def fmt_xaxis(ax, interval=6):
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=interval))
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=0, ha="center",
-             color=GRAY, fontsize=9.5)
+             color=GRAY, fontsize=12)
 
 
 def legend(ax, **kwargs):
@@ -146,7 +146,7 @@ def legend(ax, **kwargs):
     kwargs.setdefault("handlelength", 1.6)
     kwargs.setdefault("handletextpad", 0.6)
     kwargs.setdefault("columnspacing", 1.8)
-    leg = ax.legend(fontsize=10, labelcolor=WHITE, **kwargs)
+    leg = ax.legend(fontsize=12, labelcolor=WHITE, **kwargs)
     for text in leg.get_texts():
         text.set_color(WHITE)
         text.set_fontweight("regular")
