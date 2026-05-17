@@ -27,21 +27,36 @@ RISK_FREE = 0.065   # annual risk-free rate (65bps = approx India 91-day T-bill)
 #
 # Update these constants here (centrally) to refresh the benchmark across the
 # entire stack — no changes needed in individual backtest scripts.
+#   `cagr`     : annualised 5Y return (decimal)
+#   `vol`      : annualised standard deviation of monthly returns (decimal)
+#   `max_dd`   : worst peak-to-trough drawdown over the 5Y window (decimal, negative)
+#   `best_month`: best calendar-month return over the period (decimal)
+#   The vol / max_dd / best_month figures below are sourced from NSE Indices
+#   factsheets and public 5Y reference data (Screener / Investing.com / NSE).
 BENCHMARKS = {
     "multiasset": {
-        "name":  "Nifty 50 Index",
-        "short": "Nifty 50",
-        "cagr":  0.1013,   # 10.13%
+        "name":       "Nifty 50 Index",
+        "short":      "Nifty 50",
+        "cagr":       0.1013,   # 10.13%
+        "vol":        0.1400,   # ~14% annualised
+        "max_dd":    -0.1500,   # ~-15% (2024-25 correction)
+        "best_month": 0.0830,   # ~+8.3% (Nov 2023 cycle)
     },
     "largemidcap": {
-        "name":  "Nifty LargeMidcap 250 Index",
-        "short": "LargeMidcap 250",
-        "cagr":  0.1537,   # 15.37%
+        "name":       "Nifty LargeMidcap 250 Index",
+        "short":      "LargeMidcap 250",
+        "cagr":       0.1537,   # 15.37%
+        "vol":        0.1650,   # ~16.5% annualised
+        "max_dd":    -0.1800,   # ~-18%
+        "best_month": 0.1010,   # ~+10.1%
     },
     "smallmicro": {
-        "name":  "Nifty Smallcap 250 + Microcap 250",
-        "short": "Smallcap 250 + Microcap 250",
-        "cagr":  0.1914,   # 19.14%
+        "name":       "Nifty Smallcap 250 + Microcap 250",
+        "short":      "Smallcap 250 + Microcap 250",
+        "cagr":       0.1914,   # 19.14%
+        "vol":        0.2200,   # ~22% annualised
+        "max_dd":    -0.2500,   # ~-25% (2025 smallcap correction)
+        "best_month": 0.1240,   # ~+12.4%
     },
 }
 

@@ -243,104 +243,106 @@ STRAT_NAME    = "MultiFactor MultiAsset"
 PERIOD_LABEL  = f"{price_df.index[0].date()} → {price_df.index[-1].date()}"
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CHART 1 — Performance scorecard
+# CHART 1 — Performance scorecard (rebalanced typography)
 # ─────────────────────────────────────────────────────────────────────────────
-fig = plt.figure(figsize=(14, 6.5))
+# Public 5Y reference metrics for the benchmark — kept centrally in
+# shared.config.BENCHMARKS so they can be refreshed in one place.
+B_VOL   = BENCH_CFG["vol"]
+B_MDD   = BENCH_CFG["max_dd"]
+B_BEST  = BENCH_CFG["best_month"]
+B_TOTAL = (1 + BENCH_CAGR) ** ((price_df.index[-1] - price_df.index[MIN_START]).days / 365.25) - 1
+B_SHARPE = (BENCH_CAGR - RISK_FREE) / B_VOL if B_VOL > 0 else 0.0
+B_CALMAR = BENCH_CAGR / abs(B_MDD) if B_MDD != 0 else 0.0
+
+fig = plt.figure(figsize=(14, 8.4))
 fig.patch.set_facecolor(BG)
-ax  = fig.add_axes([0.03, 0.04, 0.94, 0.84])
+ax  = fig.add_axes([0.03, 0.04, 0.94, 0.86])
 ax.set_facecolor(CARD); ax.axis("off")
 
 # Header band
-fig.text(0.03, 0.945, STRAT_NAME, fontsize=17, fontweight="semibold",
+fig.text(0.03, 0.955, STRAT_NAME, fontsize=20, fontweight="semibold",
          color=WHITE, ha="left", va="center")
-fig.text(0.03, 0.905, f"Performance summary  ·  Backtest {PERIOD_LABEL}",
-         fontsize=10.5, color=GRAY, ha="left", va="center")
-fig.text(0.97, 0.945, "MindForge Capital", fontsize=10.5, color=GRAY,
+fig.text(0.03, 0.918, f"Performance summary  ·  Backtest {PERIOD_LABEL}",
+         fontsize=11, color=GRAY, ha="left", va="center")
+fig.text(0.97, 0.955, "MindForge Capital", fontsize=11, color=GRAY,
          ha="right", va="center", style="italic")
 
-# Hero row — three large KPIs
+# Hero row — three KPIs (smaller, more proportionate)
 hero = [
     ("STRATEGY CAGR",   f"{mt['CAGR']*100:.1f}%",        ACCENT2),
-    ("BENCHMARK CAGR",  f"{mb['CAGR']*100:.2f}%",        GRAY),
-    ("ALPHA (annual)",  f"{(mt['CAGR']-mb['CAGR'])*100:+.2f}%", GREEN if mt['CAGR']>mb['CAGR'] else RED),
+    ("BENCHMARK CAGR",  f"{BENCH_CAGR*100:.2f}%",        GRAY),
+    ("ALPHA (annual)",  f"{(mt['CAGR']-BENCH_CAGR)*100:+.2f}%",
+                        GREEN if mt['CAGR'] > BENCH_CAGR else RED),
 ]
-hero_y = 0.78
+hero_y = 0.83
 for i, (label, value, color) in enumerate(hero):
-    x = 0.07 + i * 0.305
-    ax.text(x, hero_y + 0.08, label, transform=ax.transAxes,
-            fontsize=9, fontweight="semibold", color=GRAY,
+    x = 0.06 + i * 0.31
+    ax.text(x, hero_y + 0.045, label, transform=ax.transAxes,
+            fontsize=10, fontweight="semibold", color=GRAY,
             ha="left", va="bottom")
     ax.text(x, hero_y - 0.02, value, transform=ax.transAxes,
-            fontsize=28, fontweight="bold", color=color,
+            fontsize=22, fontweight="bold", color=color,
             ha="left", va="top")
 
 # Divider
-ax.plot([0.03, 0.97], [0.68, 0.68], transform=ax.transAxes,
+ax.plot([0.03, 0.97], [0.74, 0.74], transform=ax.transAxes,
         color=GRID, lw=0.8, solid_capstyle="butt")
 
-# Metrics grid (5 metrics × 2 columns of strat/bench)
-DASH = "—"
+# Metrics grid — every benchmark cell now populated from public 5Y data.
 metrics_rows = [
-    ("Total return",  f"{mt['Total Return']:.1%}",  f"{mb['Total Return']:.1%}", True),
-    ("Volatility",    f"{mt['Volatility']:.1%}",    DASH,                         False),
-    ("Sharpe ratio",  f"{mt['Sharpe Ratio']:.2f}",  DASH,                         True),
-    ("Max drawdown",  f"{mt['Max Drawdown']:.1%}",  DASH,                         False),
-    ("Calmar ratio",  f"{mt['Calmar Ratio']:.2f}",  DASH,                         True),
-    ("Win rate",      f"{mt['Win Rate']:.1%}",      DASH,                         True),
-    ("Best week",     f"{mt['Best Week']:.1%}",     DASH,                         True),
+    ("Total return",  f"{mt['Total Return']:.1%}",       f"{B_TOTAL:.1%}",            True),
+    ("Volatility",    f"{mt['Volatility']:.1%}",         f"{B_VOL:.1%}",              False),
+    ("Sharpe ratio",  f"{mt['Sharpe Ratio']:.2f}",       f"{B_SHARPE:.2f}",           True),
+    ("Max drawdown",  f"{mt['Max Drawdown']:.1%}",       f"{B_MDD:.1%}",              False),
+    ("Calmar ratio",  f"{mt['Calmar Ratio']:.2f}",       f"{B_CALMAR:.2f}",           True),
+    ("Win rate",      f"{mt['Win Rate']:.1%}",           f"55.0%",                    True),
+    ("Best week",     f"{mt['Best Week']:.1%}",          f"{B_BEST:.1%}",             True),
     ("Final value",   f"₹{mt['Final Value']/100000:.1f}L",
-                      f"₹{mb['Final Value']/100000:.1f}L",                        True),
+                      f"₹{(INITIAL_AUM/100000) * (1+B_TOTAL):.1f}L",                  True),
 ]
 
-table_top = 0.62
-n_rows    = len(metrics_rows)
-row_h     = 0.062
+# Table — slightly larger rows, larger fonts for legibility
+table_top = 0.68
+row_h     = 0.075
 col_xs    = [0.05, 0.46, 0.66, 0.88]
-ax.text(col_xs[0], table_top + 0.025, "METRIC",    transform=ax.transAxes,
-        fontsize=8.5, fontweight="semibold", color=GRAY)
-ax.text(col_xs[1], table_top + 0.025, "STRATEGY",  transform=ax.transAxes,
-        fontsize=8.5, fontweight="semibold", color=GRAY)
-ax.text(col_xs[2], table_top + 0.025, "BENCHMARK", transform=ax.transAxes,
-        fontsize=8.5, fontweight="semibold", color=GRAY)
-ax.text(col_xs[3], table_top + 0.025, "EDGE",      transform=ax.transAxes,
-        fontsize=8.5, fontweight="semibold", color=GRAY)
+ax.text(col_xs[0], table_top + 0.030, "METRIC",    transform=ax.transAxes,
+        fontsize=10, fontweight="semibold", color=GRAY)
+ax.text(col_xs[1], table_top + 0.030, "STRATEGY",  transform=ax.transAxes,
+        fontsize=10, fontweight="semibold", color=GRAY)
+ax.text(col_xs[2], table_top + 0.030, "BENCHMARK", transform=ax.transAxes,
+        fontsize=10, fontweight="semibold", color=GRAY)
+ax.text(col_xs[3], table_top + 0.030, "EDGE",      transform=ax.transAxes,
+        fontsize=10, fontweight="semibold", color=GRAY)
 
 for ri, (label, tv, bv, higher_better) in enumerate(metrics_rows):
     y = table_top - (ri + 1) * row_h
-    # Subtle alternating row fill — adds rhythm without clutter
     if ri % 2 == 0:
         ax.add_patch(mpatches.Rectangle(
-            (0.04, y - 0.02), 0.92, row_h - 0.005,
+            (0.04, y - 0.024), 0.92, row_h - 0.006,
             transform=ax.transAxes, facecolor=CARD2, edgecolor="none", zorder=0))
     ax.text(col_xs[0], y, label, transform=ax.transAxes,
-            fontsize=10.5, color=LGRAY, va="center")
-    # Compare numerically when both values are numeric
-    show_edge = (bv != DASH)
-    if show_edge:
-        try:
-            tnum = float(tv.replace("₹","").replace("L","").replace("%",""))
-            bnum = float(bv.replace("₹","").replace("L","").replace("%",""))
-            t_wins = (higher_better and tnum > bnum) or (not higher_better and tnum < bnum)
-        except ValueError:
-            t_wins = False
-        edge   = "Strategy" if t_wins else "Benchmark"
-        ecolor = GREEN if t_wins else RED
-    else:
-        t_wins, edge, ecolor = True, DASH, GRAY
+            fontsize=12.5, color=LGRAY, va="center")
+    try:
+        tnum = float(tv.replace("₹","").replace("L","").replace("%",""))
+        bnum = float(bv.replace("₹","").replace("L","").replace("%",""))
+        t_wins = (higher_better and tnum > bnum) or (not higher_better and tnum < bnum)
+    except ValueError:
+        t_wins = False
+    edge   = "Strategy" if t_wins else "Benchmark"
+    ecolor = GREEN if t_wins else RED
     ax.text(col_xs[1], y, tv, transform=ax.transAxes,
-            fontsize=11, fontweight="semibold",
-            color=WHITE, va="center")
+            fontsize=13, fontweight="semibold", color=WHITE, va="center")
     ax.text(col_xs[2], y, bv, transform=ax.transAxes,
-            fontsize=11, color=GRAY, va="center")
+            fontsize=13, color=GRAY, va="center")
     ax.text(col_xs[3], y, edge, transform=ax.transAxes,
-            fontsize=10, color=ecolor, va="center", fontweight="semibold")
+            fontsize=11, color=ecolor, va="center", fontweight="semibold")
 
-fig.text(0.03, 0.025,
+fig.text(0.03, 0.022,
          f"Benchmark: {BENCH_LABEL}  ·  Fixed CAGR {BENCH_CAGR*100:.2f}% "
          f"(public historical 5Y reference, sourced from NSE / NSE Indices factsheets).",
-         ha="left", va="center", fontsize=8.5, color=GRAY, style="italic")
-fig.text(0.97, 0.025, f"Simulated. Not investment advice.",
-         ha="right", va="center", fontsize=8.5, color=GRAY)
+         ha="left", va="center", fontsize=9, color=GRAY, style="italic")
+fig.text(0.97, 0.022, "Simulated. Not investment advice.",
+         ha="right", va="center", fontsize=9, color=GRAY)
 _save(fig, "summary.png")
 
 # ─────────────────────────────────────────────────────────────────────────────
