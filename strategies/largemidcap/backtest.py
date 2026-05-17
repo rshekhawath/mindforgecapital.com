@@ -1,0 +1,561 @@
+"""
+MultiFactor LargeMidcap 250 — Backtest
+=======================================
+Factor Model
+------------
+  Momentum          45%  =  (12-1m return + 6m return) / 2
+  Trend Strength    45%  =  price/SMA200 + annualised linreg slope (63-day)
+  Low Volatility    05%  =  −252-day realised volatility
+  52-Week High      03%  =  price / 52-week high
+  Amihud Liquidity  02%  =  −Amihud illiquidity (60-day avg |ret|/₹turnover)
+
+Charts saved to outputs/
+------------------------
+  summary.png              — performance scorecard
+  growth.png               — growth of ₹1,00,000 (fund + benchmark)
+  rolling_returns.png      — rolling 12M CAGR (top) + rolling Sharpe (bottom)
+  drawdown.png             — drawdown from peak (fund + benchmark)
+  fund_vs_bench.png        — cumulative % returns from 0% (fund + benchmark)
+  results.csv              — monthly returns data
+"""
+
+import os, sys, warnings
+import numpy as np
+import pandas as pd
+import yfinance as yf
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.ticker as mticker
+from matplotlib.gridspec import GridSpec
+from matplotlib.colors import LinearSegmentedColormap
+from scipy.stats import norm as sp_norm
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
+# ── Shared modules ────────────────────────────────────────────────────────────
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+sys.path.insert(0, ROOT_DIR)
+
+from shared.config import LARGEMIDCAP, BENCHMARKS, RISK_FREE
+from shared.backtest_engine import (
+    safe_zscore, extract_field, build_rebalancing_dates,
+    period_return, compute_performance_stats,
+)
+from shared.chart_theme import (
+    BG, CARD, CARD2, ACCENT, ACCENT2, GREEN, RED, GOLD, TEAL,
+    WHITE, LGRAY, GRAY, GRID, SECTOR_PALETTE,
+    STRATEGY_COLOR, BNH_COLOR,
+    style_ax, fmt_xaxis, legend, save, make_monthly_pivot,
+)
+
+warnings.filterwarnings("ignore")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
+BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
+UNIVERSE_PATH  = os.path.join(BASE_DIR, "universe.xlsx")
+OUTPUTS_DIR    = os.path.join(BASE_DIR, "outputs")
+os.makedirs(OUTPUTS_DIR, exist_ok=True)
+
+# Benchmark — static, fixed-CAGR (sourced from shared.config.BENCHMARKS).
+# No market data is fetched for the benchmark; the comparison curve is a
+# smooth exponential at the configured CAGR. Strategy logic is unchanged.
+BENCH_CFG     = BENCHMARKS["largemidcap"]
+BENCH_LABEL   = BENCH_CFG["name"]
+BENCH_SHORT   = BENCH_CFG["short"]
+BENCH_CAGR    = BENCH_CFG["cagr"]
+
+UNIVERSE_SHEET   = LARGEMIDCAP["UNIVERSE_SHEET"]
+TOP_N            = LARGEMIDCAP["TOP_N"]
+MAX_PER_SECTOR   = LARGEMIDCAP["MAX_PER_SECTOR"]
+BACKTEST_YEARS   = LARGEMIDCAP["BACKTEST_YEARS"]
+TRANSACTION_COST = LARGEMIDCAP["TRANSACTION_COST"]
+W_MOMENTUM       = LARGEMIDCAP["W_MOMENTUM"]
+W_TREND          = LARGEMIDCAP["W_TREND"]
+W_LOWVOL         = LARGEMIDCAP["W_LOWVOL"]
+W_HIGH52         = LARGEMIDCAP["W_HIGH52"]
+W_AMIHUD         = LARGEMIDCAP["W_AMIHUD"]
+
+def _save(fig, name):
+    save(fig, name, OUTPUTS_DIR)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 1 · LOAD UNIVERSE
+# ─────────────────────────────────────────────────────────────────────────────
+print("=" * 60)
+print("STEP 1 · Loading universe from universe.xlsx")
+print("=" * 60)
+
+if not os.path.exists(UNIVERSE_PATH):
+    raise FileNotFoundError(
+        f"Universe file not found:\n  {UNIVERSE_PATH}\n\n"
+        "Run portfolio_builder.py first (which requires universe.xlsx)."
+    )
+
+df_universe = pd.read_excel(UNIVERSE_PATH, sheet_name=UNIVERSE_SHEET)
+df_universe.columns = df_universe.columns.str.strip()
+
+required_cols = ["Symbol", "Yahoo Finance Ticker", "Industry", "Company Name"]
+missing_cols  = [c for c in required_cols if c not in df_universe.columns]
+if missing_cols:
+    raise ValueError(f"universe.xlsx missing columns: {missing_cols}")
+
+dummy_mask  = df_universe["Symbol"].str.upper().str.startswith("DUMMY")
+if dummy_mask.any():
+    removed     = df_universe.loc[dummy_mask, "Yahoo Finance Ticker"].tolist()
+    df_universe = df_universe[~dummy_mask].reset_index(drop=True)
+    print(f"  Removed {len(removed)} NSE dummy placeholder(s): {removed}")
+
+tickers    = df_universe["Yahoo Finance Ticker"].dropna().str.strip().tolist()
+sector_map = dict(zip(df_universe["Yahoo Finance Ticker"], df_universe["Industry"]))
+print(f"Universe: {len(tickers)} stocks across {df_universe['Industry'].nunique()} industries")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 2 · DOWNLOAD OHLCV HISTORY
+# ─────────────────────────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("STEP 2 · Downloading OHLCV history")
+print("=" * 60)
+
+end_date   = datetime.today()
+start_date = end_date - relativedelta(years=BACKTEST_YEARS) - relativedelta(months=15)
+
+raw = yf.download(tickers, start=start_date, end=end_date,
+                  auto_adjust=True, progress=True)
+
+prices  = extract_field(raw, "Close").ffill()
+volumes = extract_field(raw, "Volume").fillna(0)
+
+prices  = prices.dropna(axis=1, how="all").dropna(axis=1, thresh=300)
+valid   = prices.columns.tolist()
+volumes = volumes.reindex(columns=valid).fillna(0)
+sector_map = {t: sector_map[t] for t in valid if t in sector_map}
+print(f"\n✓ {len(valid)} tickers with sufficient history")
+
+print(f"\nBenchmark: {BENCH_LABEL}  ·  fixed CAGR {BENCH_CAGR*100:.2f}% (static)")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 3 · REBALANCING DATES
+# ─────────────────────────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("STEP 3 · Building monthly rebalancing schedule")
+print("=" * 60)
+
+rebal_dates = build_rebalancing_dates(prices, start_date, lookback_months=13)
+print(f"Backtest period : {rebal_dates[0].date()} → {rebal_dates[-1].date()}")
+print(f"Rebalancing dates: {len(rebal_dates)} months")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STRATEGY HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+def select_portfolio(as_of):
+    """Build the LargeMidcap factor portfolio as of a given date."""
+    p_hist = prices.loc[:as_of]
+    v_hist = volumes.loc[:as_of]
+    recs   = {}
+
+    for t in valid:
+        p = p_hist[t].dropna()
+        v = v_hist[t] if t in v_hist.columns else pd.Series(dtype=float)
+        if len(p) < 252:
+            continue
+        rec = {}
+        r12 = (p.iloc[-1] / p.iloc[-252]) - 1
+        r6  = (p.iloc[-1] / p.iloc[-126]) - 1
+        r1  = (p.iloc[-1] / p.iloc[-21])  - 1
+        rec["Momentum"] = ((r12 - r1) + r6) / 2
+
+        sma200       = p.iloc[-200:].mean()
+        sma_ratio    = (p.iloc[-1] / sma200) - 1
+        log_p        = np.log(p.iloc[-63:].values)
+        x            = np.arange(len(log_p))
+        slope, _     = np.polyfit(x, log_p, 1)
+        rec["Trend"] = sma_ratio + (slope * 252)
+
+        daily_rets     = p.pct_change().iloc[-252:]
+        rec["LowVol"]  = -(daily_rets.std() * np.sqrt(252))
+        rec["High52"]  = p.iloc[-1] / p.iloc[-252:].max()
+
+        if len(v) >= 60 and v.iloc[-60:].sum() > 0:
+            idx60        = daily_rets.index.intersection(v.index)
+            r60          = daily_rets.reindex(idx60).iloc[-60:]
+            v60          = v.reindex(idx60).iloc[-60:]
+            p60          = p.reindex(idx60).iloc[-60:]
+            turnover     = (v60 * p60).replace(0, np.nan)
+            rec["Amihud"] = -(r60.abs() / turnover).mean()
+        else:
+            rec["Amihud"] = np.nan
+
+        recs[t] = rec
+
+    df = pd.DataFrame(recs).T.dropna(subset=["Momentum", "Trend", "LowVol", "High52"])
+    if df.empty:
+        return []
+
+    df["Z_Mom"]    = safe_zscore(df["Momentum"])
+    df["Z_Trend"]  = safe_zscore(df["Trend"])
+    df["Z_LowVol"] = safe_zscore(df["LowVol"])
+    df["Z_High52"] = safe_zscore(df["High52"])
+    df["Z_Amihud"] = safe_zscore(df["Amihud"])
+
+    df["Score"] = (
+        W_MOMENTUM * df["Z_Mom"]    +
+        W_TREND    * df["Z_Trend"]  +
+        W_LOWVOL   * df["Z_LowVol"] +
+        W_HIGH52   * df["Z_High52"] +
+        W_AMIHUD   * df["Z_Amihud"]
+    )
+    df["Sector"] = df.index.map(sector_map)
+    df = df.sort_values("Score", ascending=False)
+
+    port = (
+        df.groupby("Sector", group_keys=False)
+          .apply(lambda g: g.head(MAX_PER_SECTOR))
+          .sort_values("Score", ascending=False)
+          .head(TOP_N)
+    )
+    return port.index.tolist()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 4 · RUN BACKTEST
+# ─────────────────────────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("STEP 4 · Running backtest")
+print("=" * 60)
+
+rows             = []
+prev_holdings    = []
+turnover_list    = []
+holdings_history = []
+
+for i in range(len(rebal_dates) - 1):
+    start    = rebal_dates[i]
+    end      = rebal_dates[i + 1]
+    holdings = select_portfolio(start)
+    if not holdings:
+        continue
+
+    port_ret  = period_return(prices, holdings, start, end)
+    changed   = (len(set(holdings) ^ set(prev_holdings)) / TOP_N
+                 if prev_holdings else 1.0)
+    port_ret -= changed * TRANSACTION_COST
+
+    # Benchmark return — static per-period rate derived from the configured
+    # annual CAGR. The benchmark equity curve grows smoothly at BENCH_CAGR.
+    period_years = (end - start).days / 365.25
+    bench_ret    = (1.0 + BENCH_CAGR) ** period_years - 1.0
+
+    rows.append({"Date": end, "Portfolio": port_ret,
+                 "Benchmark": bench_ret, "N_Holdings": len(holdings)})
+    turnover_list.append(changed)
+    holdings_history.append((start, holdings))
+    prev_holdings = holdings
+
+    if i % 6 == 0:
+        print(f"  {start.date()}  →  Portfolio: {port_ret*100:+.1f}%  "
+              f"Benchmark: {bench_ret*100:+.1f}%  Holdings: {len(holdings)}")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 5 · METRICS
+# ─────────────────────────────────────────────────────────────────────────────
+print("\n" + "=" * 60)
+print("STEP 5 · Performance metrics")
+print("=" * 60)
+
+results = pd.DataFrame(rows).set_index("Date")
+results["Port_Equity"]  = (1 + results["Portfolio"]).cumprod() * 100
+results["Bench_Equity"] = (1 + results["Benchmark"]).cumprod() * 100
+
+stats = compute_performance_stats(
+    results["Portfolio"], results["Benchmark"],
+    results["Port_Equity"], results["Bench_Equity"],
+)
+p_cagr    = stats["p_cagr"];   b_cagr  = BENCH_CAGR  # override with static config value
+p_sharpe  = stats["p_sharpe"]; b_sharpe = stats["b_sharpe"]
+p_dd      = stats["p_dd"];     b_dd    = stats["b_dd"]
+alpha     = stats["alpha"];    beat_pct = stats["beat_pct"]
+port_rets = stats["port_pct"]; bench_rets = stats["bench_pct"]
+excess_rets = stats["excess_pct"]
+var_95    = stats["var_95"];   cvar_95 = stats["cvar_95"]
+p_vol     = stats["p_vol"];    b_vol   = stats["b_vol"]
+p_win     = stats["p_win"];    b_win   = stats["b_win"]
+p_total   = stats["p_total"];  b_total = stats["b_total"]
+calmar_p  = stats["calmar_p"]; calmar_b = stats["calmar_b"]
+avg_turn  = np.mean(turnover_list)
+
+print(f"""
+  CAGR        Portfolio: {p_cagr*100:.1f}%  |  Benchmark: {b_cagr*100:.1f}%
+  Alpha (CAGR)  {alpha*100:+.1f}%
+  Sharpe        Portfolio: {p_sharpe:.2f}  |  Benchmark: {b_sharpe:.2f}
+  Max Drawdown  Portfolio: {p_dd*100:.1f}%  |  Benchmark: {b_dd*100:.1f}%
+  Beats bench   {beat_pct*100:.0f}% of months
+  VaR 95%       {var_95:.1f}%
+""")
+
+print("\nGenerating charts...")
+
+STRAT_NAME    = "MultiFactor LargeMidcap 250"
+PERIOD_LABEL  = f"{rebal_dates[0].date()} → {rebal_dates[-1].date()}"
+DASH          = "—"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART 1 — Performance scorecard (institutional layout)
+# ─────────────────────────────────────────────────────────────────────────────
+fig = plt.figure(figsize=(14, 6.5))
+fig.patch.set_facecolor(BG)
+ax  = fig.add_axes([0.03, 0.04, 0.94, 0.84])
+ax.set_facecolor(CARD); ax.axis("off")
+
+fig.text(0.03, 0.945, STRAT_NAME, fontsize=17, fontweight="semibold",
+         color=WHITE, ha="left", va="center")
+fig.text(0.03, 0.905, f"Performance summary  ·  Backtest {PERIOD_LABEL}",
+         fontsize=10.5, color=GRAY, ha="left", va="center")
+fig.text(0.97, 0.945, "MindForge Capital", fontsize=10.5, color=GRAY,
+         ha="right", va="center", style="italic")
+
+# Hero KPIs
+hero = [
+    ("STRATEGY CAGR",   f"{p_cagr*100:.1f}%",            ACCENT2),
+    ("BENCHMARK CAGR",  f"{b_cagr*100:.2f}%",            GRAY),
+    ("ALPHA (annual)",  f"{(p_cagr - b_cagr)*100:+.2f}%",
+                        GREEN if p_cagr > b_cagr else RED),
+]
+hero_y = 0.78
+for i, (label, value, color) in enumerate(hero):
+    x = 0.07 + i * 0.305
+    ax.text(x, hero_y + 0.08, label, transform=ax.transAxes,
+            fontsize=9, fontweight="semibold", color=GRAY,
+            ha="left", va="bottom")
+    ax.text(x, hero_y - 0.02, value, transform=ax.transAxes,
+            fontsize=28, fontweight="bold", color=color,
+            ha="left", va="top")
+
+ax.plot([0.03, 0.97], [0.68, 0.68], transform=ax.transAxes,
+        color=GRID, lw=0.8, solid_capstyle="butt")
+
+metrics_rows = [
+    ("Total return", f"{p_total:.1%}",          f"{((1+b_cagr)**((rebal_dates[-1]-rebal_dates[0]).days/365.25)-1):.1%}", True),
+    ("Volatility",   f"{p_vol*100:.1f}%",       DASH, False),
+    ("Sharpe ratio", f"{p_sharpe:.2f}",         DASH, True),
+    ("Max drawdown", f"{p_dd*100:.1f}%",        DASH, False),
+    ("Calmar ratio", f"{calmar_p:.2f}",         DASH, True),
+    ("Win rate",     f"{p_win:.1%}",            DASH, True),
+    ("Best month",   f"{port_rets.max():.1f}%", DASH, True),
+    ("Beats bench",  f"{beat_pct*100:.0f}% of months", DASH, True),
+]
+
+table_top = 0.62
+row_h     = 0.062
+col_xs    = [0.05, 0.46, 0.66, 0.88]
+ax.text(col_xs[0], table_top + 0.025, "METRIC",    transform=ax.transAxes,
+        fontsize=8.5, fontweight="semibold", color=GRAY)
+ax.text(col_xs[1], table_top + 0.025, "STRATEGY",  transform=ax.transAxes,
+        fontsize=8.5, fontweight="semibold", color=GRAY)
+ax.text(col_xs[2], table_top + 0.025, "BENCHMARK", transform=ax.transAxes,
+        fontsize=8.5, fontweight="semibold", color=GRAY)
+ax.text(col_xs[3], table_top + 0.025, "EDGE",      transform=ax.transAxes,
+        fontsize=8.5, fontweight="semibold", color=GRAY)
+
+for ri, (label, tv, bv, higher_better) in enumerate(metrics_rows):
+    y = table_top - (ri + 1) * row_h
+    if ri % 2 == 0:
+        ax.add_patch(mpatches.Rectangle(
+            (0.04, y - 0.02), 0.92, row_h - 0.005,
+            transform=ax.transAxes, facecolor=CARD2, edgecolor="none", zorder=0))
+    ax.text(col_xs[0], y, label, transform=ax.transAxes,
+            fontsize=10.5, color=LGRAY, va="center")
+    show_edge = (bv != DASH)
+    if show_edge:
+        try:
+            tnum = float(tv.replace("₹","").replace("L","").replace("%","").split()[0])
+            bnum = float(bv.replace("₹","").replace("L","").replace("%","").split()[0])
+            t_wins = (higher_better and tnum > bnum) or (not higher_better and tnum < bnum)
+        except (ValueError, IndexError):
+            t_wins = False
+        edge   = "Strategy" if t_wins else "Benchmark"
+        ecolor = GREEN if t_wins else RED
+    else:
+        edge, ecolor = DASH, GRAY
+    ax.text(col_xs[1], y, tv, transform=ax.transAxes,
+            fontsize=11, fontweight="semibold", color=WHITE, va="center")
+    ax.text(col_xs[2], y, bv, transform=ax.transAxes,
+            fontsize=11, color=GRAY, va="center")
+    ax.text(col_xs[3], y, edge, transform=ax.transAxes,
+            fontsize=10, color=ecolor, va="center", fontweight="semibold")
+
+fig.text(0.03, 0.025,
+         f"Benchmark: {BENCH_LABEL}  ·  Fixed CAGR {BENCH_CAGR*100:.2f}% "
+         f"(public historical 5Y reference).",
+         ha="left", va="center", fontsize=8.5, color=GRAY, style="italic")
+fig.text(0.97, 0.025, "Simulated. Not investment advice.",
+         ha="right", va="center", fontsize=8.5, color=GRAY)
+_save(fig, "summary.png")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART 2 — Growth of ₹1,00,000
+# ─────────────────────────────────────────────────────────────────────────────
+INITIAL = 100000
+port_growth  = results["Port_Equity"]  / results["Port_Equity"].iloc[0]  * INITIAL
+bench_growth = results["Bench_Equity"] / results["Bench_Equity"].iloc[0] * INITIAL
+
+fig, ax = plt.subplots(figsize=(13, 5.2))
+ax.plot(results.index, bench_growth, color=BNH_COLOR, lw=1.6, ls=(0, (4, 3)),
+        label=f"{BENCH_SHORT}  ·  {b_cagr*100:.2f}% CAGR", zorder=2)
+ax.plot(results.index, port_growth, color=STRATEGY_COLOR, lw=2.6,
+        label=f"{STRAT_NAME}  ·  {p_cagr*100:.1f}% CAGR", zorder=3)
+ax.fill_between(results.index, port_growth, bench_growth,
+                where=port_growth >= bench_growth,
+                alpha=0.12, color=ACCENT2, linewidth=0, zorder=1)
+ax.yaxis.set_major_formatter(mticker.FuncFormatter(
+    lambda x, _: f"₹{x/100000:.1f}L" if x >= 100000 else f"₹{x:,.0f}"))
+pv = float(port_growth.iloc[-1]); bv = float(bench_growth.iloc[-1])
+ax.annotate(f"₹{pv/100000:.1f}L", xy=(results.index[-1], pv),
+            xytext=(8, 0), textcoords="offset points",
+            fontsize=10.5, color=ACCENT, fontweight="semibold",
+            va="center", ha="left", annotation_clip=False)
+ax.annotate(f"₹{bv/100000:.1f}L", xy=(results.index[-1], bv),
+            xytext=(8, 0), textcoords="offset points",
+            fontsize=10, color=GRAY,
+            va="center", ha="left", annotation_clip=False)
+style_ax(ax, "Growth of ₹1,00,000", "", "Portfolio value",
+         subtitle=f"{STRAT_NAME} vs {BENCH_LABEL}  ·  {PERIOD_LABEL}")
+fmt_xaxis(ax)
+legend(ax, loc="upper left", ncols=2)
+fig.tight_layout(pad=1.8)
+_save(fig, "growth.png")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART 3 — Rolling 12-Month Performance (2 panels: CAGR + Sharpe)
+# ─────────────────────────────────────────────────────────────────────────────
+ROLL = 12
+rolling_cagr_p = results["Portfolio"].rolling(ROLL).apply(
+    lambda x: (1 + x).prod() ** (12 / ROLL) - 1)
+rolling_sharpe = results["Portfolio"].rolling(ROLL).apply(
+    lambda x: (x.mean() / x.std()) * np.sqrt(12) if x.std() > 1e-8 else np.nan)
+
+fig, axes = plt.subplots(2, 1, figsize=(13, 8.5))
+fig.patch.set_facecolor(BG)
+
+ax = axes[0]
+ax.plot(results.index, [BENCH_CAGR * 100] * len(results), color=BNH_COLOR,
+        lw=1.6, ls=(0, (4, 3)),
+        label=f"{BENCH_SHORT}  ·  {BENCH_CAGR*100:.2f}% CAGR (static)")
+ax.plot(results.index, rolling_cagr_p * 100, color=STRATEGY_COLOR, lw=2.2,
+        label=STRAT_NAME)
+ax.axhline(0, color=GRAY, lw=0.6)
+ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+style_ax(ax, "Rolling 12-month performance", "", "Rolling 12M CAGR",
+         subtitle=f"{STRAT_NAME}  ·  trailing 12-month annualised return at each rebalance")
+fmt_xaxis(ax)
+legend(ax, loc="upper left", ncols=2)
+
+ax = axes[1]
+ax.plot(results.index, rolling_sharpe, color=STRATEGY_COLOR, lw=2.2,
+        label=STRAT_NAME)
+ax.axhline(0, color=GRAY, lw=0.6)
+ax.axhline(1, color=GREEN, lw=0.7, ls=(0, (3, 3)), alpha=0.7, label="Sharpe = 1.0")
+style_ax(ax, "Rolling Sharpe ratio", "", "Sharpe ratio (12M)",
+         subtitle="Risk-adjusted return — excess return per unit of volatility")
+fmt_xaxis(ax)
+legend(ax, loc="upper left", ncols=2)
+
+fig.tight_layout(pad=2.4)
+_save(fig, "rolling_returns.png")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART 4 — Drawdown from peak (strategy only — static benchmark has no DD)
+# ─────────────────────────────────────────────────────────────────────────────
+dd = (results["Port_Equity"] - results["Port_Equity"].cummax()) / results["Port_Equity"].cummax() * 100
+
+fig, ax = plt.subplots(figsize=(13, 4.5))
+ax.fill_between(results.index, dd, 0, color=RED, alpha=0.18, linewidth=0)
+ax.plot(results.index, dd, color=RED, lw=1.6, label=STRAT_NAME)
+ax.axhline(0, color=GRAY, lw=0.6)
+ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+mdd_pt = dd.idxmin(); mdd_v = float(dd.min())
+ax.scatter([mdd_pt], [mdd_v], s=22, color=RED, zorder=3)
+ax.annotate(f"Max DD  {mdd_v:.1f}%",
+            xy=(mdd_pt, mdd_v), xytext=(10, 14),
+            textcoords="offset points", fontsize=9.5, color=RED,
+            fontweight="semibold",
+            arrowprops=dict(arrowstyle="-", color=RED, lw=0.6, alpha=0.7))
+style_ax(ax, "Drawdown from peak", "", "Drawdown",
+         subtitle=f"{STRAT_NAME}  ·  realised drawdowns over the backtest")
+fmt_xaxis(ax)
+legend(ax, loc="lower left")
+fig.tight_layout(pad=1.8)
+_save(fig, "drawdown.png")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CHART 5 — Cumulative returns
+# ─────────────────────────────────────────────────────────────────────────────
+port_cum  = (results["Port_Equity"]  / results["Port_Equity"].iloc[0]  - 1) * 100
+bench_cum = (results["Bench_Equity"] / results["Bench_Equity"].iloc[0] - 1) * 100
+
+fig, ax = plt.subplots(figsize=(13, 5.2))
+ax.plot(results.index, bench_cum, color=BNH_COLOR, lw=1.6, ls=(0, (4, 3)),
+        label=f"{BENCH_SHORT}  ·  {b_cagr*100:.2f}% CAGR", zorder=2)
+ax.plot(results.index, port_cum, color=STRATEGY_COLOR, lw=2.6,
+        label=f"{STRAT_NAME}  ·  {p_cagr*100:.1f}% CAGR", zorder=3)
+ax.fill_between(results.index, port_cum, bench_cum,
+                where=port_cum >= bench_cum,
+                alpha=0.12, color=ACCENT2, linewidth=0, zorder=1)
+ax.axhline(0, color=GRAY, lw=0.6)
+ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f"{x:.0f}%"))
+pv_cum = float(port_cum.iloc[-1]); bv_cum = float(bench_cum.iloc[-1])
+ax.annotate(f"{pv_cum:+.0f}%", xy=(results.index[-1], pv_cum),
+            xytext=(8, 0), textcoords="offset points",
+            fontsize=10.5, color=ACCENT, fontweight="semibold",
+            va="center", ha="left", annotation_clip=False)
+ax.annotate(f"{bv_cum:+.0f}%", xy=(results.index[-1], bv_cum),
+            xytext=(8, 0), textcoords="offset points",
+            fontsize=10, color=GRAY,
+            va="center", ha="left", annotation_clip=False)
+style_ax(ax, "Cumulative returns", "", "Cumulative return",
+         subtitle=f"{STRAT_NAME} vs {BENCH_LABEL}  ·  rebased to 0% at inception")
+fmt_xaxis(ax)
+legend(ax, loc="upper left", ncols=2)
+fig.tight_layout(pad=1.8)
+_save(fig, "fund_vs_bench.png")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SAVE CSV + STATS JSON
+# ─────────────────────────────────────────────────────────────────────────────
+import json as _json
+from datetime import datetime as _dt
+
+results.to_csv(os.path.join(OUTPUTS_DIR, "results.csv"))
+print(f"  ✓  results.csv")
+
+_alpha = p_cagr - BENCH_CAGR
+_stats_out = {
+    "cagr":         f"{p_cagr*100:.1f}%",
+    "bench_cagr":   f"{BENCH_CAGR*100:.2f}%",
+    "bench_name":   BENCH_LABEL,
+    "alpha":        f"{_alpha*100:+.2f}%",
+    "sharpe":       f"{p_sharpe:.2f}",
+    "bench_sharpe": "—",
+    "max_dd":       f"{p_dd*100:.1f}%",
+    "bench_max_dd": "—",
+    "last_updated": _dt.now().strftime("%b %Y"),
+}
+with open(os.path.join(OUTPUTS_DIR, "stats.json"), "w") as _f:
+    _json.dump(_stats_out, _f, indent=2)
+print(f"  ✓  stats.json")
+
+print(f"""
+✅  All outputs saved to:
+    {OUTPUTS_DIR}
+
+    summary.png              — performance scorecard
+    growth.png               — growth of ₹1,00,000
+    rolling_returns.png      — rolling 12M CAGR + Sharpe
+    drawdown.png             — drawdown from peak
+    fund_vs_bench.png        — cumulative % returns from 0%
+    results.csv              — monthly returns data
+    stats.json               — key metrics for website injection
+""")
