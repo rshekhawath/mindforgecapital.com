@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Strategies — MindForge Capital</title>
+<style>
+:root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--gold:#d97706;--teal:#0891b2;--green:#059669;--text:#0c1831;--text2:#1e3a5f;--text3:#64748b;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--ink);color:var(--text);font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;font-size:16px;line-height:1.65;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 800px 500px at 60% 20%,rgba(37,99,235,0.05) 0%,transparent 70%),
+             radial-gradient(ellipse 400px 300px at 10% 70%,rgba(59,130,246,0.04) 0%,transparent 60%);}
+h1,h2,h3,h4{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
+a{color:inherit;text-decoration:none;}
+.container{max-width:1120px;margin:0 auto;padding:0 32px;}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.07);padding:0 32px;}
+.nav-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;height:64px;gap:40px;}
+.logo{display:flex;align-items:center;gap:0;}
+.nav-links{display:flex;gap:32px;margin-left:auto;align-items:center;}
+.nav-links a{font-size:14px;color:var(--text2);transition:color .2s;display:inline-flex;align-items:center;height:40px;line-height:1;}
+.nav-links a:hover,.nav-links a.active{color:var(--white);}
+.nav-cta{background:var(--accent);color:#fff !important;font-size:14px;font-weight:600;padding:10px 22px;border-radius:var(--r-sm);transition:all .2s;flex-shrink:0;display:inline-block;}
+.nav-cta:hover{background:#2a5ef5;transform:translateY(-1px);}
+
+/* ── HERO ── */
+.page-hero{padding:80px 0 56px;position:relative;z-index:1;}
+.section-label{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent3);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-label::before{content:'';display:block;width:20px;height:1.5px;background:var(--accent3);}
+.page-hero h1{font-size:clamp(36px,5vw,58px);color:var(--white);margin-bottom:16px;}
+.page-hero .sub{font-size:17px;color:var(--text2);font-weight:300;max-width:580px;line-height:1.7;}
+
+/* ── TOGGLE TABS ── */
+.tabs-wrap{position:relative;z-index:1;padding:0 0 80px;}
+.tabs-nav{display:flex;gap:4px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:14px;padding:5px;margin-bottom:40px;max-width:880px;}
+.tab-btn{flex:1;padding:12px 18px;border-radius:10px;border:none;background:transparent;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .25s;text-align:center;white-space:nowrap;}
+.tab-btn:hover{color:var(--white);}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(26,108,244,0.3);}
+
+/* ── TAB PANELS ── */
+.tab-panel{display:none;animation:fadeIn .3s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── STRATEGY LAYOUT ── */
+.strat-layout{display:grid;grid-template-columns:1fr 380px;gap:48px;align-items:start;}
+
+/* Stats bar at top */
+.stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:40px;}
+.stat-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:22px 18px;text-align:center;transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card.highlight{border-color:rgba(26,108,244,0.5);background:linear-gradient(145deg,rgba(37,99,235,0.05),var(--ink2));}
+.stat-card .sv{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:800;}
+.stat-card .sv.green{color:var(--green);}
+.stat-card .sv.blue{color:var(--accent2);}
+.stat-card .sv.gold{color:var(--gold);}
+.stat-card .sv.teal{color:var(--teal);}
+.stat-card .sl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-top:5px;}
+
+/* Content */
+.strat-prose h2{font-size:28px;color:var(--white);margin-bottom:16px;}
+.strat-prose p{font-size:15px;color:var(--text2);line-height:1.75;margin-bottom:16px;}
+.strat-prose p:last-child{margin-bottom:0;}
+.highlight-box{background:var(--ink2);border:0.5px solid var(--border2);border-left:3px solid var(--accent);border-radius:var(--r);padding:20px 22px;margin:20px 0;font-size:14px;color:var(--text2);line-height:1.7;}
+.highlight-box strong{color:var(--white);}
+
+/* Sidebar */
+.strat-sidebar{position:sticky;top:88px;}
+.sidebar-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:20px;padding:28px;margin-bottom:16px;position:relative;overflow:hidden;}
+.sidebar-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(37,99,235,0.15),transparent);}
+.sidebar-card h4{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:14px;font-weight:700;color:var(--white);margin-bottom:16px;}
+.sidebar-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border);font-size:13px;}
+.sidebar-row:last-child{border-bottom:none;}
+.sidebar-row .key{color:var(--text3);}
+.sidebar-row .val{color:var(--white);font-weight:500;}
+.sidebar-btn{display:block;text-align:center;padding:13px;border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;background:var(--accent);color:#fff;border:none;cursor:pointer;width:100%;transition:all .2s;}
+.sidebar-btn:hover{background:#2a7fff;transform:translateY(-1px);}
+
+/* Pillars grid */
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0;}
+.pillar{background:var(--ink2);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:18px;transition:border-color .2s;}
+.pillar:hover{border-color:var(--border2);}
+.pillar-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-bottom:10px;}
+.pillar h4{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:6px;}
+.pillar p{font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* Disclaimer */
+
+  /* ── BACKTEST CHARTS ── */
+  .bt-section{margin-top:40px;padding-top:32px;border-top:0.5px solid var(--border);}
+  .bt-section-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent3);margin-bottom:8px;}
+  .bt-section-title{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:20px;}
+  .bt-chart-full{background:#fafbfd;border:0.5px solid var(--border2);border-radius:14px;padding:14px 16px 10px;margin:0 auto 18px;max-width:1040px;overflow:hidden;transition:transform 0.25s ease,border-color 0.25s ease,box-shadow 0.25s ease;box-shadow:0 1px 2px rgba(15,23,42,0.03),inset 0 1px 0 rgba(255,255,255,0.7);}
+  .bt-chart-full:hover{border-color:rgba(37,99,235,0.30);box-shadow:0 14px 30px -18px rgba(37,99,235,0.22),inset 0 1px 0 rgba(255,255,255,0.7);transform:translateY(-1px);}
+  .bt-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .bt-chart-wrap{background:#fafbfd;border:0.5px solid var(--border2);border-radius:var(--r);padding:14px;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,0.03),inset 0 1px 0 rgba(255,255,255,0.7);}
+  .bt-chart-label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);margin:2px 0 8px;}
+  .bt-chart-img{width:100%;height:auto;border-radius:8px;display:block;image-rendering:-webkit-optimize-contrast;}
+  .bt-section-label{color:var(--accent3);}.bt-chart-label{color:var(--accent2);}
+  .bt-section-title{color:var(--white);}
+
+  .bt-note{font-size:12px;color:var(--text3);margin-top:16px;line-height:1.6;max-width:1040px;margin-left:auto;margin-right:auto;}
+  @media(max-width:900px){.bt-chart-grid{grid-template-columns:1fr;}}
+  @media(max-width:720px){.bt-chart-full{max-width:100%;padding:12px 12px 10px;}}
+
+  .disclaimer-strip{font-size:11px;color:var(--text3);margin-top:48px;padding-top:24px;border-top:0.5px solid var(--border);line-height:1.6;}
+
+  /* ── SKELETON LOADING ── */
+  .bt-chart-img{min-height:200px;background:linear-gradient(90deg,#eef2f8 25%,#fafbfd 50%,#eef2f8 75%);background-size:200% 100%;animation:skeleton-shimmer 1.6s infinite;}
+  .bt-chart-img.loaded{background:none;animation:none;min-height:0;}
+  @keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* ── SHARPE TOOLTIP ── */
+  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(37,99,235,0.15);color:var(--accent2);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;position:relative;font-style:italic;}
+  .tip-icon .tip-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text2);line-height:1.55;z-index:50;box-shadow:0 8px 24px rgba(37,99,235,0.12);font-style:normal;}
+  .tip-icon:hover .tip-popup,.tip-icon:focus .tip-popup,.tip-icon.tip-open .tip-popup{display:block;}
+  @media(max-width:720px){.tip-icon .tip-popup{width:min(240px,calc(100vw - 48px));left:auto;right:-8px;transform:none;}}
+
+  /* ── LAST UPDATED BADGE ── */
+  .updated-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:600;color:#047857;background:rgba(5,150,105,0.10);border:0.5px solid rgba(5,150,105,0.20);border-radius:20px;padding:3px 10px;margin-left:10px;vertical-align:middle;letter-spacing:.04em;}
+  .updated-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 0 0 rgba(16,185,129,0.55);animation:up-ping 1.8s ease-out infinite;}
+  @keyframes up-ping{0%{box-shadow:0 0 0 0 rgba(16,185,129,0.55);}70%{box-shadow:0 0 0 6px rgba(16,185,129,0);}100%{box-shadow:0 0 0 0 rgba(16,185,129,0);}}
+
+  /* ── SCROLL PROGRESS BAR ── */
+  .scroll-progress{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent) 0%,#2dd4bf 100%);width:0%;z-index:1000;transition:width 0.05s linear;pointer-events:none;}
+
+  /* ── FLOATING WHATSAPP BUTTON ── */
+  .fab-wa{position:fixed;bottom:24px;right:24px;z-index:90;width:56px;height:56px;border-radius:50%;background:#25D366;color:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 32px -10px rgba(37,211,102,0.55),0 4px 10px rgba(0,0,0,0.10);transition:transform 0.2s ease,box-shadow 0.2s ease;opacity:0;transform:translateY(8px) scale(0.9);animation:fab-in 0.5s ease-out 0.8s forwards;text-decoration:none;}
+  .fab-wa:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 16px 40px -8px rgba(37,211,102,0.65),0 6px 14px rgba(0,0,0,0.12);}
+  .fab-wa::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid rgba(37,211,102,0.45);animation:fab-pulse 2.4s ease-out infinite;}
+  @keyframes fab-in{to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes fab-pulse{0%{transform:scale(1);opacity:0.6;}80%{transform:scale(1.5);opacity:0;}100%{transform:scale(1.5);opacity:0;}}
+  .fab-wa svg{width:28px;height:28px;fill:#fff;position:relative;z-index:1;}
+
+  /* ── FEATURED COMPARE TABLE ROW ── */
+  .compare-table tr.lm-row td{background:linear-gradient(90deg,rgba(26,108,244,0.04),rgba(45,212,191,0.04));}
+
+  /* ── MOBILE STICKY CTA BAR ── */
+  .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px env(safe-area-inset-bottom,10px);display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
+  .mobile-cta-bar a{flex:1;padding:13px 16px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;}
+  .mcta-primary{background:var(--accent);color:#fff;}
+  .mcta-primary:hover{background:#2a5ef5;}
+  .mcta-ghost{border:0.5px solid var(--border2);color:var(--text2);background:var(--ink2);}
+  .mcta-ghost:hover{color:var(--white);border-color:var(--accent3);}
+  @media (max-width: 768px){.mobile-cta-bar{display:flex;}body{padding-bottom:76px;}.fab-wa{bottom:88px;}}
+
+  /* ── BACK TO TOP BUTTON ── */
+  .back-to-top{position:fixed;bottom:90px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--ink2);border:0.5px solid var(--border2);color:var(--accent2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px);transition:all 0.25s ease;z-index:89;box-shadow:0 8px 24px -8px rgba(26,80,216,0.20),inset 0 1px 0 rgba(255,255,255,0.7);}
+  .back-to-top.visible{opacity:1;pointer-events:auto;transform:translateY(0);}
+  .back-to-top:hover{transform:translateY(-2px);background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 12px 28px -8px rgba(26,80,216,0.45);}
+  .back-to-top:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  @media (max-width: 768px){.back-to-top{bottom:150px;right:16px;width:40px;height:40px;}}
+
+  /* Comparison table — subtle zebra striping for scan-ability */
+  .compare-table tbody tr:nth-child(odd) td{background:rgba(37,99,235,0.018);}
+
+  /* Spark legend — better readability */
+  .spark-legend{font-size:11px;}
+
+  /* Highlight a section briefly when navigated to via anchor */
+  @media (prefers-reduced-motion: no-preference){
+    :target{animation:mf-anchor-flash 1.6s ease-out;}
+    @keyframes mf-anchor-flash{0%{background-color:rgba(37,99,235,0.08);}100%{background-color:transparent;}}
+  }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-section{padding:48px 0 0;margin-bottom:40px;}
+  .compare-section h3{font-size:18px;color:var(--white);margin-bottom:6px;}
+  .compare-section p.sub{font-size:13px;color:var(--text3);margin-bottom:20px;}
+  .compare-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .compare-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);border-bottom:0.5px solid var(--border2);background:var(--ink2);}
+  .compare-table th:first-child{border-radius:10px 0 0 0;}
+  .compare-table th:last-child{border-radius:0 10px 0 0;}
+  .compare-table td{padding:10px 14px;border-bottom:0.5px solid var(--border);vertical-align:middle;}
+  .compare-table tr:last-child td{border-bottom:none;}
+  .compare-table tr:hover td{background:rgba(37,99,235,0.04);}
+  .compare-table .row-label{color:var(--text2);font-weight:500;}
+  .compare-table .best{color:var(--green);font-weight:700;}
+  .compare-table .mid{color:var(--accent2);font-weight:600;}
+  .compare-table .low{color:var(--text2);}
+  .compare-table .risk-pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;}
+  .compare-table .risk-low{background:rgba(5,150,105,0.12);color:var(--green);}
+  .compare-table .risk-med{background:rgba(37,99,235,0.12);color:var(--accent2);}
+  .compare-table .risk-high{background:rgba(220,38,38,0.10);color:#dc2626;}
+  @media(max-width:700px){.compare-table{font-size:11px;}.compare-table th,.compare-table td{padding:8px 8px;}}
+
+/* Footer */
+footer{border-top:0.5px solid var(--border);padding:40px 0;text-align:center;position:relative;z-index:1;}
+footer p{font-size:12px;color:var(--text3);}
+
+.fade-up{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+
+@media(max-width:960px){
+  .strat-layout{grid-template-columns:1fr;}
+  .strat-sidebar{position:static;}
+  .stats-bar{grid-template-columns:1fr 1fr;}
+  .pillars{grid-template-columns:1fr;}
+  .tabs-nav{flex-direction:column;max-width:100%;}
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — added for phone/tablet support
+   ═══════════════════════════════════════════════════════ */
+
+/* Hamburger button */
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  margin-left: auto;
+  z-index: 200;
+}
+.nav-hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--white);
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 768px) {
+  /* ── Nav ── */
+  nav { padding: 0 16px; }
+  .nav-inner { gap: 12px; height: 56px; }
+  .nav-hamburger { display: flex; }
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0; right: 0;
+    background: rgba(240,245,255,0.98);
+    backdrop-filter: blur(20px);
+    border-bottom: 0.5px solid var(--border2);
+    flex-direction: column;
+    padding: 20px 24px 28px;
+    gap: 4px;
+    z-index: 150;
+    box-shadow: 0 8px 32px rgba(26,80,216,0.10);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { font-size: 16px; padding: 10px 0; height: auto; line-height: 1.4; border-bottom: 0.5px solid var(--border); }
+  .nav-links a:last-child { border-bottom: none; }
+  .nav-cta { display: inline-block; margin-top: 8px; text-align: center; }
+
+  /* ── Container & spacing ── */
+  .container { padding: 0 16px; }
+
+  /* ── Hero (index.html) ── */
+  .hero { padding: 60px 0 48px; }
+  .hero h1 { font-size: clamp(30px, 8vw, 44px); }
+  .hero-desc { font-size: 16px; }
+  .hero-actions { flex-direction: column; gap: 10px; }
+  .hero-actions .btn-primary,
+  .hero-actions .btn-ghost { width: 100%; text-align: center; padding: 14px 20px; }
+
+  /* ── How it works ── */
+  .how { padding: 60px 0; }
+  .how h2 { font-size: 30px; }
+  .steps { grid-template-columns: 1fr; gap: 2px; }
+
+  /* ── Strategy cards ── */
+  .strategies { padding: 60px 0; }
+  .strat-cards { grid-template-columns: 1fr !important; }
+
+  /* ── Pricing grid ── */
+  .pricing-grid { grid-template-columns: 1fr !important; }
+  .pricing-card-featured { transform: none !important; }
+
+  /* ── Page hero (strategy detail pages) ── */
+  .hero-page { padding: 48px 0 32px; }
+  .hero-page h1 { font-size: clamp(28px, 7vw, 42px); }
+  .hero-page .sub { font-size: 16px; }
+  .hero-badges { gap: 8px; }
+
+  /* ── Page hero (strategies.html) ── */
+  .page-hero { padding: 48px 0 32px; }
+  .page-hero h1 { font-size: clamp(28px, 7vw, 42px); }
+
+  /* ── Stats bar (strategies.html 5-col) ── */
+  .stats-bar { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ── Strategy layout (sidebar) ── */
+  .strat-layout { grid-template-columns: 1fr !important; gap: 32px; }
+  .strat-sidebar { position: static !important; top: auto !important; }
+
+  /* ── Tab nav ── */
+  .tabs-nav { flex-direction: column; max-width: 100%; gap: 4px; }
+  .tab-btn { width: 100%; text-align: center; font-size: 13px; padding: 11px 12px; }
+
+  /* ── Pillars grid ── */
+  .pillars { grid-template-columns: 1fr !important; }
+  .pillar-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Stat showcase ── */
+  .stat-showcase { grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Two col prose ── */
+  .two-col-prose { grid-template-columns: 1fr !important; gap: 24px; }
+
+  /* ── Backtest charts ── */
+  .bt-chart-grid { grid-template-columns: 1fr !important; }
+
+  /* ── CTA band ── */
+  .cta-band { padding: 32px 20px; }
+  .cta-band h2 { font-size: 24px; }
+
+  /* ── Footer ── */
+  .footer-grid { grid-template-columns: 1fr !important; gap: 32px; }
+  .footer-links { flex-direction: column; gap: 8px; }
+
+  /* ── Newsletter ── */
+  .nl-form { flex-direction: column; gap: 10px; }
+  .nl-form input, .nl-form button { width: 100%; }
+
+  /* ── Sidebar card subscribe button ── */
+  .sidebar-card { padding: 20px; }
+}
+
+@media (max-width: 480px) {
+  /* Collapse further on small phones */
+  .stats-bar { grid-template-columns: 1fr; }
+  .stat-showcase { grid-template-columns: 1fr 1fr; }
+  .pillar-grid { grid-template-columns: 1fr; }
+  .stat-card { padding: 16px 12px; }
+  .stat-card .sv { font-size: 24px; }
+  .hero-card { padding: 20px; }
+  .how h2 { font-size: 26px; }
+  .section-label { font-size: 11px; }
+}
+
+/* ── Logo size ── */
+.logo img { height: 44px; width: auto; display: block; }
+@media (max-width: 768px) {
+  .logo img { height: 36px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   VISUAL POLISH v3 — May 2026
+   ═══════════════════════════════════════════════════ */
+
+/* Stat cards: top accent bar + subtle hover glow */
+.stat-card {
+  position: relative; overflow: hidden;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; opacity: 0; transition: opacity 0.3s;
+}
+.stat-card:nth-child(1)::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.stat-card:nth-child(2)::before { background: linear-gradient(90deg, transparent, var(--text3), transparent); }
+.stat-card:nth-child(3)::before { background: linear-gradient(90deg, transparent, var(--teal), transparent); }
+.stat-card:nth-child(4)::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.stat-card:nth-child(5)::before { background: linear-gradient(90deg, transparent, var(--accent2), transparent); }
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(96,165,250,0.45);
+  box-shadow: 0 18px 38px -22px rgba(26,80,216,0.22);
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-card.highlight {
+  box-shadow: 0 12px 28px -16px rgba(26,80,216,0.18);
+}
+.stat-card.highlight::before { opacity: 1; }
+
+/* Compare table: highlight winning row + smooth row hover */
+.compare-table tbody tr {
+  transition: background 0.2s;
+}
+.compare-table .best { position: relative; }
+.compare-table .best::after {
+  content: '✓';
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  color: var(--green);
+  opacity: 0.7;
+}
+
+/* Tab buttons: smoother transitions + shimmer on active */
+.tab-btn {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+.tab-btn.active {
+  box-shadow: 0 6px 16px -6px rgba(26,80,216,0.4);
+}
+.tab-btn.active::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: tab-shimmer 3s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+@keyframes tab-shimmer {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(150%); }
+}
+
+/* Pillar cards */
+.pillar {
+  position: relative; overflow: hidden;
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.3s;
+}
+.pillar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -18px rgba(26,80,216,0.18);
+}
+.pillar-dot {
+  background: linear-gradient(135deg, var(--accent), #2dd4bf);
+  box-shadow: 0 0 0 3px rgba(26,80,216,0.10);
+  transition: box-shadow 0.3s;
+}
+.pillar:hover .pillar-dot {
+  box-shadow: 0 0 0 5px rgba(26,80,216,0.18);
+}
+
+/* Sidebar card: subtle accent + hover */
+.sidebar-card {
+  transition: border-color 0.25s, box-shadow 0.3s;
+}
+.sidebar-card:hover {
+  border-color: rgba(96,165,250,0.4);
+  box-shadow: 0 18px 38px -22px rgba(26,80,216,0.20);
+}
+.sidebar-btn {
+  background: linear-gradient(120deg, var(--accent) 0%, #2563eb 50%, var(--accent) 100%);
+  background-size: 200% 100%;
+  box-shadow: 0 10px 22px -10px rgba(26,80,216,0.5);
+  transition: all 0.25s ease;
+}
+.sidebar-btn:hover {
+  background-position: 100% 0;
+  box-shadow: 0 14px 30px -10px rgba(26,80,216,0.6);
+  transform: translateY(-2px);
+}
+
+/* Highlight box: gradient accent left bar */
+.highlight-box {
+  border-left: 3px solid transparent;
+  background-image:
+    linear-gradient(var(--ink2), var(--ink2)),
+    linear-gradient(180deg, var(--accent), #2dd4bf);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  transition: box-shadow 0.3s;
+}
+.highlight-box:hover { box-shadow: 0 14px 30px -18px rgba(26,80,216,0.20); }
+
+/* Page hero: subtle floating orb */
+.page-hero { overflow: hidden; }
+.page-hero::after {
+  content: ''; position: absolute;
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45,212,191,0.16) 0%, transparent 70%);
+  filter: blur(40px);
+  top: -80px; right: -60px;
+  animation: page-orb 16s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes page-orb {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(-25px, 30px) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-hero::after { animation: none; }
+}
+
+/* Updated badge: subtle hover */
+.updated-badge { transition: transform 0.25s; }
+.updated-badge:hover { transform: scale(1.05); }
+
+/* Risk pill: subtle hover */
+.risk-pill { transition: transform 0.25s; }
+.risk-pill:hover { transform: scale(1.06); }
+
+/* Scroll progress: glow */
+.scroll-progress { box-shadow: 0 0 8px rgba(26,80,216,0.4); }
+
+/* H1 gradient accent on key word */
+.page-hero h1 .accent-text {
+  background: linear-gradient(110deg, #1a50d8 0%, #3b82f6 40%, #2dd4bf 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hero-shift 6s ease-in-out infinite;
+}
+@keyframes hero-shift {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+}
+
+/* 3D tilt scaffolding */
+.tilt-host {
+  transform: perspective(900px) rotateX(var(--ry, 0deg)) rotateY(var(--rx, 0deg));
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+  will-change: transform;
+}
+.tilt-host.tilting { transition: transform 0.05s linear; }
+@media (prefers-reduced-motion: reduce) {
+  .tilt-host { transform: none !important; }
+}
+
+/* Stat-card spotlight */
+.stat-card { --mx: 50%; --my: 50%; }
+.stat-card::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(220px circle at var(--mx) var(--my),
+              rgba(26,108,244,0.12) 0%,
+              transparent 60%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+.stat-card.spotlight-on::after { opacity: 1; }
+.stat-card > * { position: relative; z-index: 1; }
+
+/* Sidebar card subtle pulse on subscription card */
+.sidebar-btn {
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-btn::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: side-shimmer 5s ease-in-out infinite;
+  animation-delay: 1.5s;
+  pointer-events: none;
+}
+@keyframes side-shimmer {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(150%); }
+}
+
+/* Compare table: subtle row entrance */
+.compare-table tbody tr {
+  transition: background 0.2s, transform 0.2s;
+}
+.compare-table tbody tr:hover {
+  background: rgba(37,99,235,0.045) !important;
+}
+
+/* Page hero grid + KPI card */
+.page-hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 56px;
+  align-items: center;
+}
+.ph-kpi-card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.85) 0%, var(--ink2) 60%);
+  border: 0.5px solid var(--border2);
+  border-radius: 22px;
+  padding: 24px;
+  position: relative;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 28px 60px -28px rgba(26,80,216,0.22),
+    0 8px 20px -10px rgba(15,23,42,0.08);
+  backdrop-filter: blur(8px);
+}
+.ph-kpi-card::before {
+  content: ''; position: absolute; inset: -1px;
+  border-radius: 22px;
+  padding: 1px;
+  background: linear-gradient(160deg, rgba(26,108,244,0.4), rgba(45,212,191,0.18) 50%, transparent 80%);
+  -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+}
+.ph-kpi-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 0.5px solid var(--border);
+}
+.ph-kpi-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text3);
+}
+.ph-kpi-live {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent2);
+  background: rgba(26,108,244,0.10);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.ph-kpi-live::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent2);
+  animation: ph-pulse 1.8s ease-out infinite;
+}
+@keyframes ph-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26,108,244,0.45); }
+  70% { box-shadow: 0 0 0 6px rgba(26,108,244,0); }
+}
+.ph-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ph-kpi-tile {
+  background: var(--ink2);
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  position: relative; overflow: hidden;
+}
+.ph-kpi-tile:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96,165,250,0.4);
+  box-shadow: 0 14px 28px -16px rgba(26,80,216,0.20);
+}
+.ph-kpi-val {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.ph-kpi-val.ph-green { color: #0891b2; }
+.ph-kpi-val.ph-blue  { color: var(--accent2); }
+.ph-kpi-val.ph-gold  { color: var(--gold); }
+.ph-kpi-val.ph-teal  { color: #0d9488; background: linear-gradient(110deg, #0891b2, #2dd4bf); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.ph-kpi-lbl {
+  font-size: 11px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 5px;
+}
+.ph-spark {
+  width: 100%; height: 22px;
+  margin-top: 8px;
+  display: block;
+}
+.ph-kpi-mini {
+  font-size: 10px; color: var(--text3); margin-top: 8px;
+  letter-spacing: 0.04em;
+}
+.ph-kpi-foot {
+  margin-top: 16px;
+  display: flex; justify-content: center; gap: 8px;
+  font-size: 11px; color: var(--text3);
+  letter-spacing: 0.04em;
+}
+@media (max-width: 960px) {
+  .page-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .ph-kpi-card { padding: 20px; }
+}
+@media (max-width: 480px) {
+  .ph-kpi-grid { grid-template-columns: 1fr; }
+  .ph-kpi-foot { flex-wrap: wrap; }
+}
+
+/* ── World-class polish ── */
+html { scroll-padding-top: 80px; }
+@media (max-width: 768px) { html { scroll-padding-top: 68px; } }
+::selection { background: rgba(26,80,216,0.18); color: var(--white); }
+::-moz-selection { background: rgba(26,80,216,0.18); color: var(--white); }
+
+.hv-num .val, .proof-num, .stat-val, .stat-name,
+.strat-cagr, .strat-bench, .strat-num, .strat-sharpe, .strat-dd,
+.why-stat-val, .price-num, .kpi-val, .cmp-num, .cmp-val,
+.bt-summary-num, .bt-note, .ph-kpi-val, code, pre, time, .num,
+[class*="cagr"], [class*="-val"], [class*="-num"], table td, table th {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+*:focus { outline: none; }
+a:focus-visible, button:focus-visible, input:focus-visible,
+textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+@media (pointer: fine) {
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(37,99,235,0.22);
+    border-radius: 999px;
+    border: 3px solid var(--ink);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(37,99,235,0.40); }
+  html { scrollbar-width: thin; scrollbar-color: rgba(37,99,235,0.28) transparent; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body { animation: mf-page-in 0.6s ease-out both; }
+  @keyframes mf-page-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+footer { position: relative; }
+footer::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.32) 50%, transparent 100%);
+}
+
+.btn-primary, .strat-cta.cta-filled { box-shadow: 0 6px 16px -8px rgba(26,80,216,0.55); }
+.btn-primary:hover, .strat-cta.cta-filled:hover { box-shadow: 0 12px 26px -10px rgba(26,80,216,0.60); }
+
+/* ── Round 2: visual rhythm & micro-interactions ── */
+.logo img { transition: filter 0.3s ease; }
+.logo:hover img { filter: drop-shadow(0 0 14px rgba(26,80,216,0.45)); }
+
+.footer-bottom .disclaimer {
+  background: linear-gradient(180deg, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.02) 100%);
+  border-left: 2px solid rgba(37,99,235,0.22);
+  padding: 12px 16px; border-radius: 6px;
+  opacity: 0.78; transition: opacity 0.25s;
+}
+.footer-bottom .disclaimer:hover { opacity: 1; }
+
+.nav-cta { position: relative; overflow: hidden; }
+.nav-cta::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.22) 50%, transparent 75%);
+  transform: translateX(-110%);
+  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+  pointer-events: none;
+}
+.nav-cta:hover::after { transform: translateX(110%); }
+
+/* Backtest chart wraps get refined depth on hover */
+.bt-chart-wrap, .bt-chart-full {
+  transition: transform 0.25s ease, box-shadow 0.3s ease;
+}
+.bt-chart-wrap:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px -22px rgba(26,80,216,0.20);
+}
+
+/* Compare table — refined row hover */
+.cmp-table tbody tr, table tbody tr {
+  transition: background 0.2s ease;
+}
+.cmp-table tbody tr:hover, table tbody tr:hover {
+  background: linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.05) 50%, transparent 100%);
+}
+
+/* Mobile sticky CTA + ambient strategy hero depth */
+.mobile-cta-bar { box-shadow: 0 -12px 32px -12px rgba(15,23,42,0.14); }
+.mcta-primary { box-shadow: 0 4px 12px -4px rgba(26,80,216,0.45); }
+.mcta-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -6px rgba(26,80,216,0.55); }
+
+/* Subtle inset highlight on cards */
+.strat-card, .ph-kpi-card, .bt-chart-wrap, .nl-card, .hero-card {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+
+/* ── Round 3 ── */
+
+/* Decorative bar under section h2s */
+.ph-h1, .ph-h1 + p, .compare-h2 {
+  position: relative;
+}
+
+/* Strategy CTAs (Learn more →) refined */
+.strat-cta.cta-filled {
+  background: linear-gradient(135deg, var(--accent) 0%, #2563eb 100%);
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.strat-cta.cta-filled:hover {
+  background: linear-gradient(135deg, #2a5ef5 0%, #1e40af 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -10px rgba(26,80,216,0.55);
+}
+
+/* Sticky-nav scroll shadow */
+nav { transition: box-shadow 0.3s ease, background-color 0.3s ease; }
+body.scrolled nav { box-shadow: 0 10px 30px -18px rgba(15,23,42,0.18); }
+
+/* Mobile nav drawer stagger */
+@media (max-width: 768px) {
+  .nav-links a {
+    opacity: 0; transform: translateY(-6px);
+    transition: opacity 0.35s ease, transform 0.35s ease, color 0.2s ease;
+  }
+  .nav-links.open a { opacity: 1; transform: none; }
+  .nav-links.open a:nth-child(1) { transition-delay: 0.05s; }
+  .nav-links.open a:nth-child(2) { transition-delay: 0.10s; }
+  .nav-links.open a:nth-child(3) { transition-delay: 0.15s; }
+  .nav-links.open a:nth-child(4) { transition-delay: 0.20s; }
+  .nav-links.open a:nth-child(5) { transition-delay: 0.25s; }
+  .nav-links.open a:nth-child(6) { transition-delay: 0.30s; }
+  .nav-links.open a:nth-child(7) { transition-delay: 0.35s; }
+  .nav-links.open a:nth-child(8) { transition-delay: 0.40s; }
+}
+
+/* Footer brand halo */
+.footer-brand { position: relative; }
+.footer-brand::before {
+  content: ''; position: absolute;
+  width: 220px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(37,99,235,0.10) 0%, transparent 60%);
+  filter: blur(30px);
+  top: -10px; left: -30px;
+  pointer-events: none; z-index: 0;
+}
+.footer-brand > * { position: relative; z-index: 1; }
+
+/* Backtest chart wraps — added subtle gradient backdrop */
+.bt-chart-wrap, .bt-chart-full {
+  position: relative;
+}
+
+/* ph-kpi-card lift */
+.ph-kpi-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.ph-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 18px 36px -22px rgba(26,80,216,0.22);
+}
+
+/* ── Round 6: refinements ── */
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(37,99,235,0.7) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.12) !important;
+  outline: none;
+}
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; }
+button:disabled, .btn-primary:disabled, .sidebar-btn:disabled, .strat-cta:disabled {
+  opacity: 0.6; cursor: not-allowed;
+  transform: none !important; box-shadow: none !important;
+}
+.fab-wa-tip { letter-spacing: 0.02em; font-weight: 600; }
+@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 1.5dppx) {
+  img { image-rendering: -webkit-optimize-contrast; }
+}
+
+/* ── Round 5 ── */
+.skip-link {
+  position: absolute; top: -100px; left: 16px;
+  background: var(--accent); color: #fff;
+  padding: 14px 22px; font-size: 14px; font-weight: 600;
+  text-decoration: none; z-index: 1000;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 20px -8px rgba(26,80,216,0.55);
+  transition: top 0.2s ease;
+}
+.skip-link:focus { top: 0; outline: none; }
+.footer-col li a { position: relative; display: inline-block; transition: color 0.2s, transform 0.2s; }
+.footer-col li a:hover { color: var(--white); transform: translateX(2px); }
+.footer-col h4 { position: relative; padding-bottom: 8px; }
+.footer-col h4::after {
+  content: ''; position: absolute; left: 0; bottom: 0;
+  width: 24px; height: 2px;
+  background: linear-gradient(90deg, var(--accent) 0%, #2dd4bf 100%);
+  border-radius: 2px; opacity: 0.7;
+}
+.scroll-progress { height: 2.5px; box-shadow: 0 0 12px rgba(26,80,216,0.5); }
+
+/* ── Round 4: tabs, table, pillars, labels, sidebar refinements ── */
+
+/* Strategy tab switcher — refined active state + hover */
+.tab-btn {
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tab-btn:hover:not(.active) {
+  background: rgba(37,99,235,0.06);
+  color: var(--white);
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--accent) 0%, #2563eb 100%);
+  box-shadow:
+    0 6px 18px -8px rgba(26,80,216,0.50),
+    inset 0 1px 0 rgba(255,255,255,0.22);
+  letter-spacing: 0.01em;
+}
+
+/* Compare table — alternating subtle row striping for readability */
+.compare-table tbody tr:nth-child(even) td {
+  background: rgba(37,99,235,0.018);
+}
+.compare-table tbody tr:nth-child(even):hover td,
+.compare-table tbody tr:hover td {
+  background: rgba(37,99,235,0.06);
+}
+.compare-table thead th {
+  position: sticky;
+  top: 64px;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+  background: rgba(240,245,255,0.95);
+}
+@media (max-width: 768px) {
+  .compare-table thead th { top: 56px; }
+}
+.compare-table tbody tr { transition: background 0.18s ease; }
+.compare-table .best {
+  position: relative;
+}
+.compare-table .best::before {
+  content: '▲';
+  font-size: 8px;
+  margin-right: 4px;
+  color: var(--green);
+  opacity: 0.7;
+}
+
+/* Pillar dot — refined gradient + subtle ring */
+.pillar-dot {
+  background: linear-gradient(135deg, var(--accent) 0%, #2dd4bf 100%) !important;
+  box-shadow:
+    0 0 0 2px rgba(37,99,235,0.08),
+    0 4px 10px -3px rgba(26,80,216,0.30);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.pillar:hover .pillar-dot {
+  transform: scale(1.18);
+  box-shadow:
+    0 0 0 3px rgba(37,99,235,0.18),
+    0 6px 14px -3px rgba(26,80,216,0.45);
+}
+
+/* bt-section-label / bt-chart-label — gradient accent rule under the label */
+.bt-section-label {
+  position: relative;
+  display: inline-block;
+}
+.bt-section-label::after {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 2px;
+  margin-top: 8px;
+  background: linear-gradient(90deg, var(--accent3) 0%, #2dd4bf 100%);
+  border-radius: 2px;
+}
+
+.bt-chart-label {
+  position: relative;
+  padding-left: 14px;
+}
+.bt-chart-label::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 6px; height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2) 0%, #2dd4bf 100%);
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.10);
+}
+
+/* bt-note refined backdrop — give simulated-performance footnote a container */
+.bt-note {
+  margin-top: 20px;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.015) 100%);
+  border-left: 2px solid rgba(37,99,235,0.20);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text2);
+  opacity: 0.85;
+  transition: opacity 0.25s;
+}
+.bt-note:hover { opacity: 1; }
+
+/* disclaimer-strip refined container */
+.disclaimer-strip {
+  background: linear-gradient(180deg, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.015) 100%);
+  border-left: 2px solid rgba(37,99,235,0.22);
+  border-radius: 6px;
+  padding: 12px 16px;
+  opacity: 0.82;
+  transition: opacity 0.25s;
+}
+.disclaimer-strip:hover { opacity: 1; }
+
+/* Sidebar card — refined top accent */
+.sidebar-card::before {
+  background: linear-gradient(90deg, transparent 0%, rgba(45,212,191,0.50) 30%, rgba(26,108,244,0.50) 70%, transparent 100%) !important;
+  height: 1.5px !important;
+}
+
+/* stat-card on legacy strategy section: refined hover */
+.stat-card { transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 14px 28px -16px rgba(26,80,216,0.20); }
+.stat-card.highlight {
+  background: linear-gradient(160deg, rgba(37,99,235,0.04) 0%, var(--ink2) 100%);
+}
+
+/* updated-badge — refined */
+.updated-badge {
+  background: linear-gradient(135deg, rgba(5,150,105,0.16) 0%, rgba(45,212,191,0.16) 100%);
+  border: 0.5px solid rgba(5,150,105,0.30);
+}
+</style>
+  <!-- Favicon & App Icons -->
+  <link rel="icon" href="assets/favicon-32.png" type="image/png">
+  <link rel="shortcut icon" href="assets/favicon-32.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MindForge Capital">
+  <meta name="theme-color" content="#1a50d8">
+  <!-- SEO -->
+  <meta name="description" content="LargeMidcap 250, SmallMicro 500 and MultiAsset systematic strategies — full backtest results, growth curves, drawdowns and rolling returns for Indian markets.">
+  <link rel="canonical" href="https://mindforgecapital.com/strategies.html">
+  <meta name="robots" content="index,follow">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MindForge Capital">
+  <meta property="og:title" content="Strategies — MindForge Capital">
+  <meta property="og:description" content="LargeMidcap 250, SmallMicro 500 and MultiAsset systematic strategies — full backtest results for Indian markets.">
+  <meta property="og:url" content="https://mindforgecapital.com/strategies.html">
+  <meta property="og:image" content="https://mindforgecapital.com/assets/favicon-192.png">
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Strategies — MindForge Capital">
+  <meta name="twitter:description" content="LargeMidcap 250, SmallMicro 500 and MultiAsset systematic strategies — full backtest results for Indian markets.">
+  <meta name="twitter:image" content="https://mindforgecapital.com/assets/favicon-192.png">
+  <!-- Structured data: breadcrumbs + WebPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mindforgecapital.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Strategies", "item": "https://mindforgecapital.com/strategies.html" }
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "url": "https://mindforgecapital.com/strategies.html",
+        "name": "Strategies — MindForge Capital",
+        "description": "LargeMidcap 250, SmallMicro 500 and MultiAsset systematic strategies — full backtest results for Indian markets.",
+        "inLanguage": "en-IN"
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
+    <div class="nav-links">
+      <a href="strategies.html" class="active">Strategies</a>
+      <a href="index.html#how">How it works</a>
+      <a href="index.html#why">Why us</a>
+      <a href="newsletter.html">Newsletter</a>
+      <a href="recover.html" style="color:var(--accent3);">Recover Access</a>
+      <a href="login.html" style="color:var(--text2);">Sign In</a>
+      <a href="signup.html" class="nav-cta">Get Started</a>
+    </div>
+  
+    <button class="nav-hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="container" id="main-content">
+  <section class="page-hero fade-up">
+    <div class="page-hero-grid">
+      <div>
+        <div class="section-label">Three strategies</div>
+        <h1>One for every <span class="accent-text">risk appetite.</span></h1>
+        <p class="sub">From capital-efficient multi-asset rotation to concentrated small-cap alpha. Select a strategy below to explore its approach, backtest results, and how to get started.</p>
+      </div>
+      <div class="ph-kpi-card">
+        <div class="ph-kpi-head">
+          <span class="ph-kpi-title">Combined performance</span>
+          <span class="ph-kpi-live">Backtest</span>
+        </div>
+        <div class="ph-kpi-grid">
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-green">19.3%</div>
+            <div class="ph-kpi-lbl">MultiAsset CAGR</div>
+            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 20 C 12 18, 24 15, 36 12 S 60 8, 80 4" fill="none" stroke="#0891b2" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-blue">38.0%</div>
+            <div class="ph-kpi-lbl">LargeMidcap CAGR</div>
+            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 19, 24 14, 36 10 S 60 4, 80 2" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-gold">42.6%</div>
+            <div class="ph-kpi-lbl">SmallMicro CAGR</div>
+            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 20, 24 14, 36 8 S 60 3, 80 1" fill="none" stroke="#d97706" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ph-kpi-tile">
+            <div class="ph-kpi-val ph-teal">+25.29%</div>
+            <div class="ph-kpi-lbl">Best alpha</div>
+            <div class="ph-kpi-mini">vs benchmark</div>
+          </div>
+        </div>
+        <div class="ph-kpi-foot">
+          <span>5-year backtest · 2021–2026</span>
+          <span>·</span>
+          <span>Updated May 2026</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COMPARISON TABLE ── -->
+  <div class="compare-section">
+    <h3>Compare all strategies <span class="updated-badge">Updated May 2026</span></h3>
+    <p class="sub">Backtest results across all strategies (LargeMidcap &amp; SmallMicro: 2021–2026; MultiAsset: 2022–2026). Benchmarks: Nifty 50 Index (MultiAsset), Nifty LargeMidcap 250 (LargeMidcap), Smallcap 250 + Microcap 250 (SmallMicro). Microcap 250 launched Jan 2024 — combined benchmark uses available history. Simulated, not live. Past performance is not indicative of future returns.</p>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>MultiAsset</th>
+          <th>LargeMidcap 250</th>
+          <th>SmallMicro 500</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="row-label">Backtested CAGR</td><td class="low"><!--MFSTAT:ma:cagr-->19.9%<!--/MFSTAT--></td><td class="mid"><!--MFSTAT:lm:cagr-->38.0%<!--/MFSTAT--></td><td class="best"><!--MFSTAT:sm:cagr-->44.4%<!--/MFSTAT--></td></tr>
+        <tr><td class="row-label">Benchmark</td><td>Nifty 50 Index</td><td>Nifty LargeMidcap 250</td><td>Smallcap 250 + Microcap 250</td></tr>
+        <tr><td class="row-label">Benchmark CAGR</td><td><!--MFSTAT:ma:bench_cagr-->10.13%<!--/MFSTAT--></td><td><!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--></td><td><!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--></td></tr>
+        <tr><td class="row-label">Alpha (annual)</td><td class="low"><!--MFSTAT:ma:alpha-->+9.77%<!--/MFSTAT--></td><td class="mid"><!--MFSTAT:lm:alpha-->+22.64%<!--/MFSTAT--></td><td class="best"><!--MFSTAT:sm:alpha-->+25.29%<!--/MFSTAT--></td></tr>
+        <tr><td class="row-label">Sharpe Ratio</td><td class="best"><!--MFSTAT:ma:sharpe-->1.38<!--/MFSTAT--></td><td class="best"><!--MFSTAT:lm:sharpe-->1.47<!--/MFSTAT--></td><td class="mid"><!--MFSTAT:sm:sharpe-->1.30<!--/MFSTAT--></td></tr>
+        <tr><td class="row-label">Max Drawdown</td><td class="best"><!--MFSTAT:ma:max_dd-->-9.0%<!--/MFSTAT--></td><td class="mid"><!--MFSTAT:lm:max_dd-->-20.9%<!--/MFSTAT--></td><td class="low"><!--MFSTAT:sm:max_dd-->-27.9%<!--/MFSTAT--></td></tr>
+        <tr><td class="row-label">Risk Level</td><td><span class="risk-pill risk-low">Low</span></td><td><span class="risk-pill risk-med">Medium</span></td><td><span class="risk-pill risk-high">High</span></td></tr>
+        <tr><td class="row-label">Min. Investment</td><td>₹1,00,000</td><td>₹5,00,000</td><td>₹25,00,000</td></tr>
+        <tr><td class="row-label">Monthly Fee</td><td>₹99</td><td>₹499</td><td>₹1,499</td></tr>
+        <tr><td class="row-label">Annual Fee</td><td>₹990 <span style="font-size:10px;color:#059669;">(save ₹198)</span></td><td>₹4,990 <span style="font-size:10px;color:#059669;">(save ₹998)</span></td><td>₹14,990 <span style="font-size:10px;color:#059669;">(save ₹2,998)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('multiasset', this)" data-tab="multiasset">MultiFactor MultiAsset</button>
+      <button class="tab-btn" onclick="switchTab('largemidcap', this)" data-tab="largemidcap">MultiFactor LargeMidcap 250</button>
+      <button class="tab-btn" onclick="switchTab('smallmicro', this)" data-tab="smallmicro">MultiFactor SmallMicro 500</button>
+    </div>
+
+    <!-- ── MULTI ASSET ── -->
+    <div id="tab-multiasset" class="tab-panel active">
+      <div class="stats-bar">
+        <div class="stat-card highlight"><div class="sv green"><!--MFSTAT:ma:cagr-->19.9%<!--/MFSTAT--></div><div class="sl">Backtested CAGR <span class="updated-badge">May 2026</span></div></div>
+        <div class="stat-card"><div class="sv" style="color:var(--text2)"><!--MFSTAT:ma:bench_cagr-->10.13%<!--/MFSTAT--></div><div class="sl">Nifty 50 · Benchmark CAGR</div></div>
+        <div class="stat-card"><div class="sv teal">6</div><div class="sl">Assets in portfolio</div></div>
+        <div class="stat-card"><div class="sv green">Low</div><div class="sl">Risk level</div></div>
+        <div class="stat-card"><div class="sv blue">Monthly</div><div class="sl">Rebalance cycle</div></div>
+      </div>
+      <div class="strat-layout">
+        <div class="strat-prose">
+          <h2>A dynamic, signal-driven rotation across six asset classes.</h2>
+          <p>The MultiFactor MultiAsset strategy allocates capital across six ETFs spanning Indian equities (large-cap, next-50, midcap), NASDAQ, Bharat Bond and Gold — all listed on NSE. The model shifts weights every month based on which assets score best on our proprietary multi-factor framework.</p>
+          <p>When equity markets are turbulent, the model naturally moves weight toward gold or fixed income. When Indian markets are running, equity ETFs attract larger allocations. This is not done by judgement — it is computed systematically every week, with the monthly rebalance reflecting the current signal.</p>
+          <div class="highlight-box"><strong>Defensive by design.</strong> Assets in confirmed downtrends receive a significant score haircut, systematically cutting exposure. Riskier assets are penalised proportionally — the model prefers calmer assets in turbulent markets.</div>
+
+          <!-- CONTEXT COMPARISON -->
+          <div style="margin:32px 0;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:20px;">How MultiAsset stacks up · Backtested CAGR (2022–2026)</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--white);font-weight:600;flex-shrink:0;">MindForge MultiAsset</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:60%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#00b894;width:48px;text-align:right;">19.3%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Avg. Large-Cap MF</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:48%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~15%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Nifty 50 Index</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:32%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~10%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Fixed Deposit (SBI)</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:22%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~7%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pillars">
+            <div class="pillar"><div class="pillar-dot"></div><h4>Multi-factor scoring</h4><p>A proprietary blend of factor signals ranks all six assets each cycle. Top scorers get higher allocations; weak scorers get cut.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Risk-adjusted ranking</h4><p>The model penalises riskier assets proportionally — it prefers calmer assets when conditions deteriorate.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>ETF-only universe</h4><p>All six instruments are highly liquid NSE-listed ETFs. No illiquidity, no single-stock risk, no derivatives.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Fully transparent</h4><p>Every month you receive exact allocation weights. The model never changes its rules mid-cycle.</p></div>
+          </div>
+          <div class="disclaimer-strip">Past backtest performance is simulated and not indicative of future returns. Not investment advice.</div>
+        </div>
+        <div class="strat-sidebar">
+
+          <div class="sidebar-card">
+            <h4>Subscription details</h4>
+            <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹1,00,000</span></div>
+            <div class="sidebar-row"><span class="key">Monthly</span><span class="val">₹99 / mo</span></div>
+            <div class="sidebar-row"><span class="key">Annual</span><span class="val" style="color:#059669;">₹990 / yr <span style="font-size:10px;">(save ₹198)</span></span></div>
+            <div class="sidebar-row"><span class="key">Rebalance</span><span class="val">Monthly</span></div>
+            <div class="sidebar-row"><span class="key">Newsletter</span><span class="val">Included</span></div>
+          </div>
+          <button class="sidebar-btn" onclick="openRegModal('MultiFactor MultiAsset', 99, 'multiasset')">Subscribe — ₹99/month →</button>
+        </div>
+      </div>
+
+      <!-- BACKTEST CHARTS -->
+      <div class="bt-section">
+        <div class="bt-section-label">Backtest results · 2022–2026</div>
+        <h3 class="bt-section-title">Full performance analysis</h3>
+
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Performance Summary</div>
+          <img src="assets/charts/multiasset_summary.png?v=85401ee0" class="bt-chart-img" alt="MultiAsset strategy performance summary scorecard — key metrics vs benchmark" width="2088" height="824" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Growth of ₹1,00,000</div>
+          <img src="assets/charts/multiasset_growth.png?v=12f7d69b" class="bt-chart-img" alt="MultiAsset growth of ₹1,00,000 since inception vs benchmark" width="1760" height="716" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Rolling 12-Month Returns <span class="tip-icon" tabindex="0">i<span class="tip-popup">Top panel: rolling 1-year CAGR for the strategy vs benchmark. Bottom panel: rolling Sharpe ratio — how much return was earned per unit of risk. A Sharpe above 1.0 means more than 1 unit of return for every unit of volatility taken.</span></span></div>
+          <img src="assets/charts/multiasset_rolling_returns.png?v=287f84c5" class="bt-chart-img" alt="MultiAsset rolling 12-month returns and Sharpe ratio vs benchmark" width="1768" height="1316" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Drawdown from Peak</div>
+          <img src="assets/charts/multiasset_drawdown.png?v=f3264b1a" class="bt-chart-img" alt="MultiAsset drawdown from peak — depth and duration of losses over time" width="1767" height="566" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Fund vs Benchmark — Cumulative Returns</div>
+          <img src="assets/charts/multiasset_fund_vs_bench.png?v=31e5917e" class="bt-chart-img" alt="MultiAsset cumulative returns vs benchmark since inception" width="1768" height="716" loading="lazy" decoding="async">
+        </div>
+        <p class="bt-note">Backtest period: 2022-05-20 → 2026-05-15 · Benchmark: Nifty 50 Index · <!--MFSTAT:ma:cagr-->19.9%<!--/MFSTAT--> CAGR vs <!--MFSTAT:ma:bench_cagr-->10.13%<!--/MFSTAT--> benchmark · Sharpe <!--MFSTAT:ma:sharpe-->1.38<!--/MFSTAT--> · Max drawdown <!--MFSTAT:ma:max_dd-->-9.0%<!--/MFSTAT-->. Simulated performance, not live trading. Past performance is not indicative of future returns.</p>
+      </div>
+    </div>
+
+    <!-- ── LARGEMIDCAP ── -->
+    <div id="tab-largemidcap" class="tab-panel">
+      <div class="stats-bar">
+        <div class="stat-card highlight"><div class="sv green"><!--MFSTAT:lm:cagr-->38.0%<!--/MFSTAT--></div><div class="sl">Backtested CAGR <span class="updated-badge">May 2026</span></div></div>
+        <div class="stat-card"><div class="sv" style="color:var(--text2)"><!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--></div><div class="sl">LargeMidcap 250 · Benchmark CAGR</div></div>
+        <div class="stat-card"><div class="sv blue">25</div><div class="sl">Assets in portfolio</div></div>
+        <div class="stat-card"><div class="sv" style="color:var(--gold)">Medium</div><div class="sl">Risk level</div></div>
+        <div class="stat-card"><div class="sv blue">Monthly</div><div class="sl">Rebalance cycle</div></div>
+      </div>
+      <div class="strat-layout">
+        <div class="strat-prose">
+          <h2>Top 25 stocks from the Nifty LargeMidcap 250. Every month, without exception.</h2>
+          <p>The model scores all 250 stocks in the Nifty LargeMidcap 250 universe each month using our proprietary multi-factor framework. The top 25 — capped at 3 per industry — are selected and held in equal weight until the next rebalance. No overrides, no exceptions, no gut calls.</p>
+          <p>The 5-year backtest delivered <!--MFSTAT:lm:cagr-->38.0%<!--/MFSTAT--> CAGR vs a <!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--> Nifty LargeMidcap 250 Index benchmark — a <!--MFSTAT:lm:alpha-->+22.64%<!--/MFSTAT--> annual alpha. The Sharpe ratio of <!--MFSTAT:lm:sharpe-->1.47<!--/MFSTAT--> reflects strong risk-adjusted returns, not just raw performance. Maximum drawdown was <!--MFSTAT:lm:max_dd-->-20.9%<!--/MFSTAT--> versus the benchmark.</p>
+          <div class="highlight-box"><strong>Equal weight, sector-capped.</strong> Every stock in the portfolio carries the same weight. The 3-per-industry cap ensures no single sector dominates. Even when one industry leads, the portfolio remains diversified across multiple sectors simultaneously.</div>
+
+          <!-- CONTEXT COMPARISON -->
+          <div style="margin:32px 0;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:20px;">How LargeMidcap 250 stacks up · 5-year CAGR</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--white);font-weight:600;flex-shrink:0;">MindForge LargeMidcap</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:100%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#00b894;width:48px;text-align:right;">38.0%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Avg. Large-Cap MF</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:41%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~15%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Nifty 50 Index</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:26%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~10%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Fixed Deposit (SBI)</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:19%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~7%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pillars">
+            <div class="pillar"><div class="pillar-dot"></div><h4>250-stock universe</h4><p>Covers the top 100 NSE companies plus 150 midcap stocks — capturing the majority of India's listed market cap.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Multi-factor scoring</h4><p>A proprietary blend of academically validated factor signals ranks every stock each month. Composition and weighting are MindForge IP.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Equal-weight, sector-capped</h4><p>Every name carries the same weight; no single industry can take more than 3 of the 25 slots. Diversification is structural, not promised.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Rules over hunches</h4><p>The model runs identically every cycle. Output is a portfolio — not a thesis, not a call, not a discretionary tweak.</p></div>
+          </div>
+          <div class="disclaimer-strip">5-year backtest results (2021–2026). Simulated performance, not live trading. Past performance is not indicative of future returns. Not investment advice.</div>
+        </div>
+        <div class="strat-sidebar">
+          <div class="sidebar-card">
+            <h4>Backtest snapshot (5Y)</h4>
+        <div class="sidebar-row"><span class="key">Portfolio CAGR</span><span class="val" style="color:var(--green)"><!--MFSTAT:lm:cagr-->38.0%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Benchmark</span><span class="val" style="font-size:12px;">Nifty LargeMidcap 250</span></div>
+        <div class="sidebar-row"><span class="key">Benchmark CAGR</span><span class="val"><!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Alpha (annual)</span><span class="val" style="color:var(--accent2)"><!--MFSTAT:lm:alpha-->+22.64%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Sharpe ratio</span><span class="val" style="color:var(--accent2)"><!--MFSTAT:lm:sharpe-->1.47<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Max drawdown</span><span class="val" style="color:#f87171"><!--MFSTAT:lm:max_dd-->-20.9%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Beat benchmark</span><span class="val">~64% of months</span></div>
+          </div>
+          <div class="sidebar-card">
+            <h4>Subscription details</h4>
+            <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹5,00,000</span></div>
+            <div class="sidebar-row"><span class="key">Monthly</span><span class="val">₹499 / mo</span></div>
+            <div class="sidebar-row"><span class="key">Annual</span><span class="val" style="color:#059669;">₹4,990 / yr <span style="font-size:10px;">(save ₹998)</span></span></div>
+            <div class="sidebar-row"><span class="key">Portfolio size</span><span class="val">25 stocks</span></div>
+            <div class="sidebar-row"><span class="key">Newsletter</span><span class="val">Included</span></div>
+          </div>
+          <button class="sidebar-btn" onclick="openRegModal('MultiFactor LargeMidcap 250', 499, 'largemidcap')">Subscribe — ₹499/month →</button>
+        </div>
+      </div>
+
+      <!-- LARGEMIDCAP BACKTEST CHARTS -->
+      <div class="bt-section">
+        <div class="bt-section-label">Backtest results · 2021–2026</div>
+        <h3 class="bt-section-title">Full performance analysis</h3>
+
+
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Performance Summary</div>
+          <img src="assets/charts/largemidcap_summary.png?v=231273a8" class="bt-chart-img" alt="LargeMidcap 250 performance summary scorecard — key metrics vs Nifty 50 benchmark" width="2088" height="824" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Growth of ₹1,00,000</div>
+          <img src="assets/charts/largemidcap_growth.png?v=33ef9827" class="bt-chart-img" alt="LargeMidcap 250 growth of ₹1,00,000 since inception vs benchmark" width="2047" height="846" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Rolling 12-Month Returns <span class="tip-icon" tabindex="0">i<span class="tip-popup">Top panel: rolling 1-year CAGR for the strategy vs benchmark. Bottom panel: rolling Sharpe ratio — how much return was earned per unit of risk. A Sharpe above 1.0 means more than 1 unit of return for every unit of volatility taken.</span></span></div>
+          <img src="assets/charts/largemidcap_rolling_returns.png?v=ac8e39f5" class="bt-chart-img" alt="LargeMidcap 250 rolling 12-month returns and Sharpe ratio vs benchmark" width="2047" height="1296" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Drawdown from Peak</div>
+          <img src="assets/charts/largemidcap_drawdown.png?v=1cc36421" class="bt-chart-img" alt="LargeMidcap 250 drawdown from peak — depth and duration of losses over time" width="2047" height="696" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Fund vs Benchmark — Cumulative Returns</div>
+          <img src="assets/charts/largemidcap_fund_vs_bench.png?v=25b07625" class="bt-chart-img" alt="LargeMidcap 250 cumulative returns vs benchmark since inception" width="2047" height="846" loading="lazy" decoding="async">
+        </div>
+        <p class="bt-note">Backtest period: Apr 2021 → Apr 2026 · Benchmark: Nifty LargeMidcap 250 Index · <!--MFSTAT:lm:cagr-->38.0%<!--/MFSTAT--> CAGR vs <!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--> benchmark · Beats benchmark 64% of months. Simulated performance, not live trading. Past performance is not indicative of future returns.</p>
+      </div>
+    </div>
+
+    <!-- ── SMALLMICRO ── -->
+    <div id="tab-smallmicro" class="tab-panel">
+      <div class="stats-bar">
+        <div class="stat-card highlight"><div class="sv green"><!--MFSTAT:sm:cagr-->44.4%<!--/MFSTAT--></div><div class="sl">Backtested CAGR <span class="updated-badge">May 2026</span></div></div>
+        <div class="stat-card"><div class="sv" style="color:var(--text2)"><!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--></div><div class="sl">Smallcap 250 + Microcap 250 · Benchmark CAGR</div></div>
+        <div class="stat-card"><div class="sv blue">50</div><div class="sl">Assets in portfolio</div></div>
+        <div class="stat-card"><div class="sv" style="color:#f87171;">High</div><div class="sl">Risk level</div></div>
+        <div class="stat-card"><div class="sv blue">Monthly</div><div class="sl">Rebalance cycle</div></div>
+      </div>
+      <div class="strat-layout">
+        <div class="strat-prose">
+          <h2>50 high-conviction picks from 500 small and microcap stocks. Rules only.</h2>
+          <p>The combined Nifty Smallcap 250 and Microcap 250 universe gives the model 500 stocks to rank each month. The top 50 — capped at 3 per industry — are selected and held in equal weight. Small and microcap stocks are genuinely different from large-cap, so the model uses a proprietary multi-factor framework purpose-built for this segment's liquidity dynamics.</p>
+          <p>The 5-year backtest delivered <!--MFSTAT:sm:cagr-->44.4%<!--/MFSTAT--> CAGR — the highest of MindForge's three strategies — against a <!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--> Nifty Smallcap 250 + Microcap 250 benchmark (Microcap 250 launched Jan 2024, so the combined benchmark uses the historical 5Y CAGR from public NSE sources). Maximum drawdown was <!--MFSTAT:sm:max_dd-->-27.9%<!--/MFSTAT-->, reflecting the higher volatility inherent in the small and microcap segment. The Sharpe ratio of <!--MFSTAT:sm:sharpe-->1.30<!--/MFSTAT--> shows this additional risk was historically well-compensated.</p>
+          <div class="highlight-box"><strong>Built for the segment.</strong> Small and microcap stocks behave differently from large-cap — illiquid spikes, sharper drawdowns, fragmented coverage. The model uses signals calibrated specifically for these dynamics, with safeguards that aren't needed (or appropriate) in large-cap.</div>
+
+          <!-- CONTEXT COMPARISON -->
+          <div style="margin:32px 0;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:20px;">How SmallMicro 500 stacks up · 5-year CAGR</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--white);font-weight:600;flex-shrink:0;">MindForge SmallMicro</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:100%;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#00b894;width:48px;text-align:right;">42.6%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Smallcap 250 + Microcap 250</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:45%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~19.1%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Nifty Smallcap 250</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:40%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~17%</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:140px;font-size:12px;color:var(--text2);flex-shrink:0;">Fixed Deposit (SBI)</div>
+                <div style="flex:1;background:var(--border);border-radius:4px;height:10px;overflow:hidden;">
+                  <div style="width:16%;height:100%;background:var(--border2);border-radius:4px;"></div>
+                </div>
+                <div style="font-size:13px;color:var(--text2);width:48px;text-align:right;">~7%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pillars">
+            <div class="pillar"><div class="pillar-dot"></div><h4>500-stock universe</h4><p>Smallcap 250 + Microcap 250 — India's broadest listed segment. Both constituent lists fetched live from NSE each cycle.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Multi-factor scoring</h4><p>A proprietary factor blend tuned for small- and microcap behaviour ranks every stock each month. Composition and weighting are MindForge IP.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>Equal-weight, sector-capped</h4><p>Every name carries the same weight; no industry takes more than 3 of the 50 slots. The portfolio stays structurally diversified.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h4>High risk, high reward</h4><p>Highest expected return of MindForge's three strategies. Recommended investment of ₹25L and genuine tolerance for -28% drawdowns.</p></div>
+          </div>
+          <div class="disclaimer-strip">5-year backtest results (2021–2026). Simulated performance, not live trading. Past performance is not indicative of future returns. Not investment advice. This strategy carries significant risk and is suitable only for sophisticated investors.</div>
+        </div>
+        <div class="strat-sidebar">
+          <div class="sidebar-card">
+            <h4>Backtest snapshot (5Y)</h4>
+        <div class="sidebar-row"><span class="key">Portfolio CAGR</span><span class="val" style="color:var(--green)"><!--MFSTAT:sm:cagr-->44.4%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Benchmark</span><span class="val" style="font-size:12px;">Smallcap 250 + Microcap 250</span></div>
+        <div class="sidebar-row"><span class="key">Benchmark CAGR</span><span class="val"><!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Alpha (annual)</span><span class="val" style="color:var(--accent2)"><!--MFSTAT:sm:alpha-->+25.29%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Sharpe ratio</span><span class="val" style="color:var(--accent2)"><!--MFSTAT:sm:sharpe-->1.30<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Max drawdown</span><span class="val" style="color:#f87171"><!--MFSTAT:sm:max_dd-->-27.9%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Beat benchmark</span><span class="val">~57% of months</span></div>
+          </div>
+          <div class="sidebar-card">
+            <h4>Subscription details</h4>
+            <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹25,00,000</span></div>
+            <div class="sidebar-row"><span class="key">Monthly</span><span class="val">₹1,499 / mo</span></div>
+            <div class="sidebar-row"><span class="key">Annual</span><span class="val" style="color:#059669;">₹14,990 / yr <span style="font-size:10px;">(save ₹2,998)</span></span></div>
+            <div class="sidebar-row"><span class="key">Portfolio size</span><span class="val">50 stocks</span></div>
+            <div class="sidebar-row"><span class="key">Newsletter</span><span class="val">Included</span></div>
+          </div>
+          <button class="sidebar-btn" onclick="openRegModal('MultiFactor SmallMicro 500', 1499, 'smallmicro')">Subscribe — ₹1,499/month →</button>
+        </div>
+      </div>
+
+      <!-- SMALLMICRO BACKTEST CHARTS -->
+      <div class="bt-section">
+        <div class="bt-section-label">Backtest results · 2021–2026</div>
+        <h3 class="bt-section-title">Full performance analysis</h3>
+
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Performance Summary</div>
+          <img src="assets/charts/smallmicro_summary.png?v=1da3e556" class="bt-chart-img" alt="SmallMicro 500 performance summary scorecard — key metrics vs benchmark" width="2088" height="824" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Growth of ₹1,00,000</div>
+          <img src="assets/charts/smallmicro_growth.png?v=ee7ecd4b" class="bt-chart-img" alt="SmallMicro 500 growth of ₹1,00,000 since inception vs benchmark" width="2047" height="846" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Rolling 12-Month Returns <span class="tip-icon" tabindex="0">i<span class="tip-popup">Top panel: rolling 1-year CAGR for the strategy vs benchmark. Bottom panel: rolling Sharpe ratio — how much return was earned per unit of risk. A Sharpe above 1.0 means more than 1 unit of return for every unit of volatility taken.</span></span></div>
+          <img src="assets/charts/smallmicro_rolling_returns.png?v=8f1d0bf5" class="bt-chart-img" alt="SmallMicro 500 rolling 12-month returns and Sharpe ratio vs benchmark" width="2047" height="1296" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Drawdown from Peak</div>
+          <img src="assets/charts/smallmicro_drawdown.png?v=b074d306" class="bt-chart-img" alt="SmallMicro 500 drawdown from peak — depth and duration of losses over time" width="2033" height="696" loading="lazy" decoding="async">
+        </div>
+        <div class="bt-chart-full">
+          <div class="bt-chart-label">Fund vs Benchmark — Cumulative Returns</div>
+          <img src="assets/charts/smallmicro_fund_vs_bench.png?v=0de7d6d9" class="bt-chart-img" alt="SmallMicro 500 cumulative returns vs benchmark since inception" width="2047" height="846" loading="lazy" decoding="async">
+        </div>
+        <p class="bt-note">Backtest period: Apr 2021 → Apr 2026 · Benchmark: Nifty Smallcap 250 + Microcap 250 · <!--MFSTAT:sm:cagr-->44.4%<!--/MFSTAT--> CAGR vs <!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--> benchmark · Sharpe <!--MFSTAT:sm:sharpe-->1.30<!--/MFSTAT--> · Max drawdown <!--MFSTAT:sm:max_dd-->-27.9%<!--/MFSTAT-->. Simulated performance, not live trading. Past performance is not indicative of future returns. This strategy carries significant risk.</p>
+      </div>
+    </div>
+
+  </div><!-- end tabs-wrap -->
+</div><!-- end container -->
+
+<footer>
+  <p>© 2026 MindForge Capital · <a href="index.html" style="color:var(--accent2);">Back to home</a></p>
+  <p style="margin-top:8px;max-width:600px;margin-left:auto;margin-right:auto;opacity:.6;"><strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only. This is not SEBI-registered investment advice. Past performance is not indicative of future results. Backtest returns are simulated. All investments carry risk. Please consult a qualified financial advisor before making investment decisions.</p>
+</footer>
+
+<script>
+function switchTab(id, btn, opts) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  else {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      if (b.getAttribute('data-tab') === id) b.classList.add('active');
+    });
+  }
+  // Sync URL (so refresh/share preserves selected tab)
+  if (!opts || opts.pushUrl !== false) {
+    try {
+      var url = new URL(window.location.href);
+      url.searchParams.set('tab', id);
+      history.replaceState(null, '', url.toString());
+    } catch (e) {}
+  }
+}
+
+// Re-sync tab if user navigates browser back/forward
+window.addEventListener('popstate', function() {
+  var params = new URLSearchParams(window.location.search);
+  var tab = params.get('tab') || 'multiasset';
+  var validTabs = ['multiasset', 'largemidcap', 'smallmicro'];
+  if (validTabs.indexOf(tab) === -1) tab = 'multiasset';
+  switchTab(tab, null, { pushUrl: false });
+});
+
+// On load: check URL param then localStorage for requested tab
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var tab = params.get('tab') || localStorage.getItem('mf-tab') || 'multiasset';
+  localStorage.removeItem('mf-tab');
+  var validTabs = ['multiasset', 'largemidcap', 'smallmicro'];
+  if (validTabs.indexOf(tab) === -1) tab = 'multiasset';
+  // Don't push URL on initial load (it's already correct or we'd dirty history)
+  switchTab(tab, null, { pushUrl: !!params.get('tab') });
+})();
+function revealFadeUps() {
+  var vh = window.innerHeight || document.documentElement.clientHeight;
+  document.querySelectorAll('.fade-up:not(.visible)').forEach(function(el, i) {
+    var rect = el.getBoundingClientRect();
+    if (rect.top < vh + 80 && rect.bottom > -80) {
+      setTimeout(function() { el.classList.add('visible'); }, Math.min(i, 4) * 60);
+    }
+  });
+}
+revealFadeUps();
+if ('IntersectionObserver' in window) {
+  var _io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.fade-up').forEach(function(el) { _io.observe(el); });
+}
+window.addEventListener('load', revealFadeUps);
+window.addEventListener('scroll', revealFadeUps, { passive: true });
+window.addEventListener('resize', revealFadeUps, { passive: true });
+
+// Skeleton: mark images loaded
+document.querySelectorAll('.bt-chart-img').forEach(img => {
+  if (img.complete && img.naturalWidth > 0) img.classList.add('loaded');
+  else img.addEventListener('load', () => img.classList.add('loaded'));
+  img.addEventListener('error', () => img.classList.add('loaded'));
+});
+
+// Tip-icon: click to toggle (works on touch + desktop alike)
+document.querySelectorAll('.tip-icon').forEach(function(tip) {
+  tip.setAttribute('role', 'button');
+  tip.setAttribute('aria-label', 'Show explanation');
+  tip.addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.querySelectorAll('.tip-icon.tip-open').forEach(function(o) {
+      if (o !== tip) o.classList.remove('tip-open');
+    });
+    tip.classList.toggle('tip-open');
+  });
+});
+document.addEventListener('click', function() {
+  document.querySelectorAll('.tip-icon.tip-open').forEach(function(o) { o.classList.remove('tip-open'); });
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.tip-icon.tip-open').forEach(function(o) { o.classList.remove('tip-open'); });
+  }
+});
+</script>
+
+<!-- Registration Modal -->
+<div id="reg-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reg-modal-title" style="display:none;position:fixed;top:0;right:0;bottom:0;left:0;z-index:1000;background:rgba(12,24,49,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px;overflow-y:auto;">
+  <div id="reg-modal" style="background:#fff;border-radius:20px;padding:40px;max-width:460px;width:100%;position:relative;box-shadow:0 24px 64px rgba(26,80,216,0.22), 0 4px 12px rgba(15,23,42,0.10);margin:auto;">
+    <button onclick="closeRegModal()" style="position:absolute;top:16px;right:20px;background:none;border:none;font-size:22px;cursor:pointer;color:#64748b;line-height:1;">×</button>
+    <div style="margin-bottom:24px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#2563eb;margin-bottom:8px;">MINDFORGE CAPITAL</div>
+      <h3 id="reg-modal-title" style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:22px;font-weight:700;color:#0c1831;margin-bottom:6px;">Subscribe to Strategy</h3>
+      <p id="reg-modal-price" style="font-size:14px;color:#64748b;"></p>
+    </div>
+    <form id="reg-form" onsubmit="handleRegSubmit(event)">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:500;color:#1e3a5f;margin-bottom:6px;">Full Name *</label>
+        <input id="reg-name" type="text" required placeholder="Your full name"
+          style="width:100%;padding:11px 14px;border:1.5px solid #dbeafe;border-radius:10px;font-size:14px;outline:none;transition:border .2s;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;"
+          onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#dbeafe'">
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:500;color:#1e3a5f;margin-bottom:6px;">Email Address *</label>
+        <input id="reg-email" type="email" required placeholder="you@example.com"
+          style="width:100%;padding:11px 14px;border:1.5px solid #dbeafe;border-radius:10px;font-size:14px;outline:none;transition:border .2s;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;"
+          onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#dbeafe'">
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-size:13px;font-weight:500;color:#1e3a5f;margin-bottom:6px;">Mobile Number *</label>
+        <div style="display:flex;gap:8px;align-items:stretch;">
+          <div style="padding:11px 14px;border:1.5px solid #dbeafe;border-radius:10px;font-size:14px;background:#f0f5ff;color:#1e3a5f;font-weight:600;white-space:nowrap;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">+91</div>
+          <input id="reg-phone" type="tel" required placeholder="98765 43210" maxlength="10"
+            pattern="[0-9]{10}" title="Enter 10-digit mobile number without country code"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+            style="flex:1;padding:11px 14px;border:1.5px solid #dbeafe;border-radius:10px;font-size:14px;outline:none;transition:border .2s;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;"
+            onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#dbeafe'">
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">10-digit number, no spaces or dashes</div>
+      </div>
+      <button type="submit" id="reg-submit-btn"
+        style="width:100%;padding:14px;background:#1a50d8;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;cursor:pointer;transition:all .2s;">
+        Register & Connect on WhatsApp →
+      </button>
+      <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:12px;">
+        We'll reach out with your UPI QR code on WhatsApp
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- Registration Success Toast -->
+<div id="pay-success-toast" style="display:none;position:fixed;bottom:32px;left:50%;transform:translateX(-50%);z-index:2000;background:#059669;color:#fff;padding:16px 28px;border-radius:12px;font-size:14px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;box-shadow:0 8px 32px rgba(5,150,105,0.3);">
+  ✓ Registered! Opening WhatsApp — we'll share the UPI QR there.
+</div>
+
+<script>
+// ─── Configuration ───────────────────────────────────────────
+var WHATSAPP_NUMBER = '917601032082'; // +91-7601032082
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
+
+var STRATEGY_PRICES = {
+  'multiasset':  { label: '₹99/month', annual: '₹990/year' },
+  'largemidcap': { label: '₹499/month', annual: '₹4,990/year' },
+  'smallmicro':  { label: '₹1,499/month', annual: '₹14,990/year' }
+};
+
+var _currentStrategy   = '';
+var _currentStrategyId = '';
+
+function openRegModal(strategyName, price, strategyId) {
+  _currentStrategy   = strategyName;
+  _currentStrategyId = strategyId;
+
+  document.getElementById('reg-modal-title').textContent = strategyName;
+  document.getElementById('reg-modal-price').textContent =
+    STRATEGY_PRICES[strategyId].label + ' monthly · or ' + STRATEGY_PRICES[strategyId].annual + ' (2 months free)';
+
+  var overlay = document.getElementById('reg-modal-overlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRegModal() {
+  document.getElementById('reg-modal-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+  document.getElementById('reg-form').reset();
+}
+
+document.getElementById('reg-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeRegModal();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' && document.getElementById('reg-modal-overlay').style.display === 'flex') {
+    closeRegModal();
+  }
+});
+
+function handleRegSubmit(e) {
+  e.preventDefault();
+  var name  = document.getElementById('reg-name').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+  var rawPhone = document.getElementById('reg-phone').value.replace(/\D/g,'');
+  if (rawPhone.length !== 10) {
+    document.getElementById('reg-phone').focus();
+    document.getElementById('reg-phone').style.borderColor = '#ef4444';
+    return;
+  }
+  var phone = '+91' + rawPhone;
+
+  var btn = document.getElementById('reg-submit-btn');
+  btn.textContent = 'Saving & opening WhatsApp…';
+  btn.disabled = true;
+
+  // 1. Save lead to Google Sheets via Apps Script
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain'},
+    body: JSON.stringify({
+      action: 'save_lead',
+      name: name,
+      email: email,
+      phone: phone,
+      strategy: _currentStrategy,
+      price: STRATEGY_PRICES[_currentStrategyId].label
+    })
+  }).catch(function(err) { console.warn('Lead save failed:', err); });
+
+  // 2. Show success toast, close modal
+  closeRegModal();
+  showSuccessToast();
+
+  // 3. Open WhatsApp with pre-filled message
+  var waText = encodeURIComponent(
+    'Hi MindForge Capital! I would like to subscribe to the ' +
+    _currentStrategy + ' plan (' + STRATEGY_PRICES[_currentStrategyId].label + ').' +
+    '\n\nName: ' + name +
+    '\nEmail: ' + email +
+    '\nPhone: ' + phone
+  );
+  window.open('https://wa.me/' + WHATSAPP_NUMBER + '?text=' + waText, '_blank');
+
+  btn.textContent = 'Register & Connect on WhatsApp →';
+  btn.disabled = false;
+}
+
+function showSuccessToast() {
+  var toast = document.getElementById('pay-success-toast');
+  toast.style.display = 'block';
+  setTimeout(function() { toast.style.display = 'none'; }, 5000);
+}
+</script>
+
+<script>
+// Mobile hamburger menu
+(function() {
+  var btn = document.querySelector('.nav-hamburger');
+  var links = document.querySelector('.nav-links');
+  if (!btn || !links) return;
+  btn.addEventListener('click', function() {
+    btn.classList.toggle('open');
+    links.classList.toggle('open');
+  });
+  // Close when a link is clicked
+  links.querySelectorAll('a').forEach(function(a) {
+    a.addEventListener('click', function() {
+      btn.classList.remove('open');
+      links.classList.remove('open');
+    });
+  });
+})();
+</script>
+
+<!-- Mobile sticky CTA bar -->
+<div class="mobile-cta-bar">
+  <a class="mcta-ghost" href="newsletter.html">Free newsletter</a>
+  <a class="mcta-primary" href="signup.html">Get started →</a>
+</div>
+
+<!-- Floating WhatsApp CTA -->
+<a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%20want%20to%20learn%20more%20about%20your%20quant%20strategies."
+   target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43zM12.04 21.8h-.01a9.86 9.86 0 0 1-5.03-1.38l-.36-.21-3.72.98 1-3.63-.24-.37a9.84 9.84 0 0 1-1.51-5.27c0-5.46 4.44-9.9 9.9-9.9 2.65 0 5.13 1.03 7 2.9a9.83 9.83 0 0 1 2.9 7c-.01 5.46-4.45 9.88-9.93 9.88zm5.43-7.4c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.06 2.88 1.21 3.08.15.2 2.1 3.2 5.07 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.34z"/></svg>
+</a>
+
+<!-- Back to top -->
+<button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+// Back to top button
+(function() {
+  var btn = document.getElementById('back-to-top');
+  if (!btn) return;
+  function update() {
+    var show = window.scrollY > 400;
+    btn.classList.toggle('visible', show);
+  }
+  btn.addEventListener('click', function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    btn.blur();
+  });
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+
+<script>
+// Scroll progress bar
+(function(){var bar=document.getElementById('scroll-progress');function update(){var doc=document.documentElement;var y=window.scrollY;if(bar){var max=(doc.scrollHeight-doc.clientHeight)||1;var pct=(y/max)*100;bar.style.width=Math.min(100,Math.max(0,pct))+'%';}var s=y>24;if(s!==document.body.classList.contains('scrolled'))document.body.classList.toggle('scrolled',s);}update();window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update,{passive:true});})();
+</script>
+
+<script>
+/* ── 3D TILT + SPOTLIGHT for stat cards ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(max-width: 900px)').matches) return;
+  // Auto-tag stat cards as tilt hosts
+  document.querySelectorAll('.stat-card').forEach(function(c) { c.classList.add('tilt-host'); });
+  var hosts = document.querySelectorAll('.tilt-host');
+  if (!hosts.length) return;
+  var MAX = 5;
+  hosts.forEach(function(host) {
+    var raf = null;
+    function onMove(e) {
+      var rect = host.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width;
+      var py = (e.clientY - rect.top) / rect.height;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function() {
+        host.style.setProperty('--rx', ((px - 0.5) * MAX * 2).toFixed(2) + 'deg');
+        host.style.setProperty('--ry', ((0.5 - py) * MAX * 2).toFixed(2) + 'deg');
+        host.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        host.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+      });
+    }
+    host.addEventListener('mouseenter', function() { host.classList.add('tilting','spotlight-on'); });
+    host.addEventListener('mousemove', onMove);
+    host.addEventListener('mouseleave', function() {
+      host.classList.remove('tilting','spotlight-on');
+      host.style.setProperty('--rx','0deg');
+      host.style.setProperty('--ry','0deg');
+    });
+  });
+})();
+
+/* ── COUNT-UP for stat-card numbers ── */
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function parseNum(text) {
+    var m = text.match(/(-?\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    var idx = text.indexOf(m[1]);
+    return {
+      value: parseFloat(m[1]),
+      decimals: (m[1].split('.')[1] || '').length,
+      prefix: text.slice(0, idx),
+      suffix: text.slice(idx + m[1].length)
+    };
+  }
+  function animate(el, parsed) {
+    var dur = 1100, start = performance.now();
+    function step(now) {
+      var t = Math.min(1, (now - start) / dur);
+      var eased = 1 - Math.pow(1 - t, 3);
+      var v = parsed.value * eased;
+      el.textContent = parsed.prefix + (parsed.decimals ? v.toFixed(parsed.decimals) : Math.round(v)) + parsed.suffix;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var nums = document.querySelectorAll('.stat-card .sv');
+  if (!nums.length) return;
+  if (!('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (!e.isIntersecting) return;
+      var el = e.target;
+      if (el._counted) return; el._counted = true;
+      var parsed = parseNum(el.textContent.trim());
+      if (parsed === null) return; // non-numeric (e.g., "Low", "Monthly")
+      el._original = el.textContent;
+      animate(el, parsed);
+      io.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  nums.forEach(function(n) { io.observe(n); });
+})();
+</script>
+
+</body>
+</html>
