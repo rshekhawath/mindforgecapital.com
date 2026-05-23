@@ -1627,8 +1627,25 @@ document.addEventListener('keydown', function(e) {
         </div>
         <div style="font-size:11px;color:#94a3b8;margin-top:4px;">10-digit number, no spaces or dashes</div>
       </div>
-      <button type="submit" id="reg-submit-btn"
-        style="width:100%;padding:14px;background:#1a50d8;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;cursor:pointer;transition:all .2s;">
+
+      <!-- ── REQUIRED RISK + T&C ACKNOWLEDGEMENT ── -->
+      <div style="margin:24px 0 16px;padding:18px 18px 16px;border:2px solid #dc2626;border-radius:12px;background:rgba(239,68,68,0.05);">
+        <div style="font-size:13px;font-weight:800;color:#dc2626;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;">⚠ Important — Read before subscribing</div>
+        <p style="font-size:13px;color:#1e3a5f;line-height:1.55;margin:0 0 10px;">
+          Backtested returns are <strong>simulated</strong>, not real, and may differ materially from live results. Investing in equities — especially <strong>small &amp; microcap stocks — can result in total loss of capital</strong>. MindForge provides <strong>research only</strong>; we are not your investment adviser, portfolio manager, or fiduciary. All investment decisions are yours alone.
+        </p>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;background:#fff;border:1.5px solid #fecaca;border-radius:10px;transition:border .2s;" id="reg-tnc-label"
+          onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor=document.getElementById('reg-tnc').checked?'#059669':'#fecaca'">
+          <input type="checkbox" id="reg-tnc" required style="width:20px;height:20px;flex-shrink:0;margin-top:2px;accent-color:#dc2626;cursor:pointer;"
+            onchange="handleTncChange()">
+          <span style="font-size:13px;font-weight:700;color:#0c1831;line-height:1.5;">
+            I have read and agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer" style="color:#1a50d8;text-decoration:underline;">Terms &amp; Conditions</a> and acknowledge that I accept all investment risks, including the possible <span style="color:#dc2626;">total loss of my capital</span>.
+          </span>
+        </label>
+      </div>
+
+      <button type="submit" id="reg-submit-btn" disabled
+        style="width:100%;padding:14px;background:#94a3b8;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;cursor:not-allowed;transition:all .2s;opacity:0.6;">
         Register & Connect on WhatsApp →
       </button>
       <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:12px;">
@@ -1668,12 +1685,41 @@ function openRegModal(strategyName, price, strategyId) {
   var overlay = document.getElementById('reg-modal-overlay');
   overlay.style.display = 'flex';
   document.body.style.overflow = 'hidden';
+
+  // Ensure T&C checkbox starts unchecked and submit starts disabled.
+  var tnc = document.getElementById('reg-tnc');
+  if (tnc) tnc.checked = false;
+  handleTncChange();
 }
 
 function closeRegModal() {
   document.getElementById('reg-modal-overlay').style.display = 'none';
   document.body.style.overflow = '';
   document.getElementById('reg-form').reset();
+  // Re-disable the submit button after reset (form.reset clears the checkbox)
+  handleTncChange();
+}
+
+// Toggle submit-button enabled state based on T&C checkbox.
+// Hard-block: submit is physically disabled in the DOM when the box is unchecked.
+function handleTncChange() {
+  var cb  = document.getElementById('reg-tnc');
+  var btn = document.getElementById('reg-submit-btn');
+  var lbl = document.getElementById('reg-tnc-label');
+  if (!cb || !btn) return;
+  if (cb.checked) {
+    btn.disabled = false;
+    btn.style.background    = '#1a50d8';
+    btn.style.cursor        = 'pointer';
+    btn.style.opacity       = '1';
+    if (lbl) lbl.style.borderColor = '#059669';
+  } else {
+    btn.disabled = true;
+    btn.style.background    = '#94a3b8';
+    btn.style.cursor        = 'not-allowed';
+    btn.style.opacity       = '0.6';
+    if (lbl) lbl.style.borderColor = '#fecaca';
+  }
 }
 
 document.getElementById('reg-modal-overlay').addEventListener('click', function(e) {
@@ -1687,6 +1733,18 @@ document.addEventListener('keydown', function(e) {
 
 function handleRegSubmit(e) {
   e.preventDefault();
+  // Hard gate — must accept T&C before anything else.
+  var tnc = document.getElementById('reg-tnc');
+  if (!tnc || !tnc.checked) {
+    var lbl = document.getElementById('reg-tnc-label');
+    if (lbl) {
+      lbl.style.borderColor = '#dc2626';
+      lbl.style.boxShadow   = '0 0 0 4px rgba(220,38,38,0.18)';
+      lbl.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(function() { lbl.style.boxShadow = ''; }, 1600);
+    }
+    return;
+  }
   var name  = document.getElementById('reg-name').value.trim();
   var email = document.getElementById('reg-email').value.trim();
   var rawPhone = document.getElementById('reg-phone').value.replace(/\D/g,'');
