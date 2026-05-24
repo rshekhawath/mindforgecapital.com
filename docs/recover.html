@@ -84,12 +84,12 @@ footer{text-align:center;padding:32px 16px;font-size:12px;color:var(--text3);pos
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
-    <div class="nav-links">
+    <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
       <a href="signup.html" class="nav-cta">Get Started</a>
     </div>
-    <button class="nav-hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
@@ -148,8 +148,12 @@ async function recoverAccess() {
     showResult('error', 'Please enter your email address or phone number.');
     return;
   }
-  if (email && !email.includes('@')) {
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     showResult('error', 'Please enter a valid email address.');
+    return;
+  }
+  if (phone && phone.length !== 10) {
+    showResult('error', 'Phone number must be a 10-digit Indian mobile number.');
     return;
   }
 
@@ -204,8 +208,8 @@ function showResult(type, msg, isHtml) {
   var btn = document.querySelector('.nav-hamburger');
   var links = document.querySelector('.nav-links');
   if (!btn || !links) return;
-  btn.addEventListener('click', function() { btn.classList.toggle('open'); links.classList.toggle('open'); });
-  links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { btn.classList.remove('open'); links.classList.remove('open'); }); });
+  btn.addEventListener('click', function() { var open = btn.classList.toggle('open'); links.classList.toggle('open'); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu'); });
+  links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { btn.classList.remove('open'); links.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Open menu'); }); });
 })();
 
 ['email-input','phone-input'].forEach(id => {

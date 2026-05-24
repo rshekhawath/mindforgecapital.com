@@ -288,7 +288,7 @@ footer::before {
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
-    <div class="nav-links">
+    <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
       <a href="index.html#how">How it works</a>
       <a href="recover.html" style="color:var(--accent3);">Recover Access</a>
@@ -296,7 +296,7 @@ footer::before {
       <a href="signup.html" class="nav-cta">Get Started</a>
     </div>
   
-    <button class="nav-hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
@@ -414,17 +414,10 @@ footer::before {
   var btn = document.querySelector('.nav-hamburger');
   var links = document.querySelector('.nav-links');
   if (!btn || !links) return;
-  btn.addEventListener('click', function() {
-    btn.classList.toggle('open');
-    links.classList.toggle('open');
-  });
+  function setHam(open) { btn.classList.toggle('open', open); links.classList.toggle('open', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu'); }
+  btn.addEventListener('click', function() { setHam(!btn.classList.contains('open')); });
   // Close when a link is clicked
-  links.querySelectorAll('a').forEach(function(a) {
-    a.addEventListener('click', function() {
-      btn.classList.remove('open');
-      links.classList.remove('open');
-    });
-  });
+  links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { setHam(false); }); });
 })();
 </script>
 

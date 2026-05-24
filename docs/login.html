@@ -156,12 +156,12 @@ input[type=email]:hover, input[type=text]:hover {
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
-    <div class="nav-links">
+    <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
       <a href="recover.html" style="color:var(--accent3);">Recover Access</a>
       <a href="signup.html" class="nav-cta">Get Started</a>
     </div>
-    <button class="nav-hamburger" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
@@ -342,8 +342,8 @@ function resendOTP() {
   var btn = document.querySelector('.nav-hamburger');
   var links = document.querySelector('.nav-links');
   if (!btn || !links) return;
-  btn.addEventListener('click', function() { btn.classList.toggle('open'); links.classList.toggle('open'); });
-  links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { btn.classList.remove('open'); links.classList.remove('open'); }); });
+  btn.addEventListener('click', function() { var open = btn.classList.toggle('open'); links.classList.toggle('open'); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu'); });
+  links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { btn.classList.remove('open'); links.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Open menu'); }); });
 })();
 
 // Allow Enter key
