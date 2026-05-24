@@ -709,6 +709,179 @@ tbody tr:hover {
   .stat-card[data-urgent="true"] .sv::after { animation: none !important; }
   .stat-card { transition: none !important; }
 }
+
+/* ═════════════════════════════════════════════════════════
+   VISUAL POLISH v6 — DASHBOARD DEPTH + MOTION
+   May 2026
+   ═════════════════════════════════════════════════════════ */
+
+/* —— Refined hero h1 size on desktop —— */
+@media (min-width: 900px) {
+  .dash-hero h1 { font-size: clamp(34px, 4.2vw, 50px); letter-spacing: -.025em; }
+}
+
+/* —— Stat-card numbers: refined typography rhythm —— */
+.stat-card .stat-val {
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* —— Stat-card icon wrap: gentle rotation on card hover —— */
+.stat-card .ico-wrap {
+  transition: transform .35s cubic-bezier(.2,.7,.2,1),
+              background .25s ease;
+}
+.stat-card:hover .ico-wrap {
+  transform: rotate(-4deg) scale(1.06);
+}
+
+/* —— Sector allocation: more depth on rows + refined donut center —— */
+.alloc-row { transition: background-color .15s ease; border-radius: 6px; padding: 4px 6px; margin: 0 -6px; }
+.alloc-row:hover { background: rgba(26,80,216,0.05); }
+.alloc-bar { transition: filter .25s ease; }
+.alloc-row:hover .alloc-bar { filter: brightness(1.08); }
+
+.alloc-donut svg.donut { filter: drop-shadow(0 8px 20px rgba(26,80,216,0.10)); }
+.donut-center .dc-num {
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  background: linear-gradient(120deg, var(--accent) 0%, #06b6d4 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* —— Position-sizing card: subtle gradient hairline + better preset hover —— */
+.size-card { position: relative; }
+.size-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(37,99,235,0.40) 50%, transparent 100%);
+  opacity: .7;
+  border-radius: var(--r) var(--r) 0 0;
+  pointer-events: none;
+}
+.size-preset {
+  transition: transform .15s ease, background .15s ease, color .15s ease;
+}
+.size-preset:hover:not(.active) {
+  background: rgba(26,80,216,0.06);
+  border-color: rgba(26,80,216,0.30);
+  transform: translateY(-1px);
+}
+.size-preset.active {
+  box-shadow: 0 6px 14px -6px rgba(26,80,216,0.45);
+}
+
+/* —— Stock table rows: green tint when bought; keep existing strike-through-on-company —— */
+tr.row-bought { background: rgba(5,150,105,0.045); }
+tr.row-bought:hover { background: rgba(5,150,105,0.08) !important; }
+
+/* —— Mobile stock card: subtle entrance —— */
+.stock-card {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.stock-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.85) inset,
+    0 12px 24px -16px rgba(26,80,216,0.22);
+  border-color: rgba(26,80,216,0.25);
+}
+
+/* —— Table action buttons: brighter hover —— */
+.tbl-btn {
+  transition: transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+}
+.tbl-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(26,80,216,0.06);
+  border-color: rgba(26,80,216,0.30);
+  color: var(--accent);
+}
+
+/* —— Industry badge: refined color via brand —— */
+.industry-badge {
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.industry-badge:hover {
+  background: rgba(26,80,216,0.10);
+  color: var(--accent);
+}
+
+/* —— Ticker chip: cleaner copy interaction —— */
+.ticker-chip {
+  transition: transform .15s ease, background .15s ease, color .15s ease;
+}
+.ticker-chip:hover {
+  transform: translateY(-1px);
+}
+.ticker-chip.copied {
+  background: rgba(5,150,105,0.12) !important;
+  color: var(--green) !important;
+  border-color: rgba(5,150,105,0.30) !important;
+}
+
+/* —— Notification card: refined toggle look —— */
+.notif-switch {
+  transition: background .25s ease, box-shadow .25s ease;
+}
+.notif-switch.on {
+  box-shadow: 0 4px 10px -4px rgba(26,80,216,0.40);
+}
+
+/* —— HOW TO INVEST steps: hover lift —— */
+.howto-step {
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.howto-step:hover {
+  transform: translateY(-2px);
+  border-color: rgba(26,80,216,0.25);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.85) inset,
+    0 10px 22px -12px rgba(26,80,216,0.18);
+}
+.howto-step .num {
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), background .25s ease;
+}
+.howto-step:hover .num {
+  transform: scale(1.10);
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  color: #fff;
+}
+
+/* —— Toast: refined entrance —— */
+.toast {
+  transform: translateY(8px) scale(0.96);
+  opacity: 0;
+  transition: transform .35s cubic-bezier(.2,.7,.2,1), opacity .35s ease;
+}
+.toast.show {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+/* —— Buy-progress card: more depth —— */
+.buy-prog-card {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.85) inset,
+    0 6px 18px -10px rgba(26,80,216,0.15);
+}
+
+/* —— Footer social: per-brand hover tints already in place; add scale —— */
+.dash-foot-social a { transition: all .25s cubic-bezier(.2,.7,.2,1); }
+.dash-foot-social a:hover { transform: translateY(-3px) scale(1.06); }
+
+@media (prefers-reduced-motion: reduce) {
+  .alloc-row,
+  .stat-card .ico-wrap,
+  .size-preset,
+  .howto-step .num,
+  .stock-card,
+  .ticker-chip,
+  .industry-badge,
+  .tbl-btn,
+  .toast,
+  .dash-foot-social a { transition: none !important; }
+}
 </style>
 </head>
 <body>
@@ -986,13 +1159,13 @@ tbody tr:hover {
         </svg>
       </a>
       <a href="https://www.linkedin.com/company/mindforgecapital" target="_blank" rel="noopener noreferrer" aria-label="MindForge Capital on LinkedIn" title="LinkedIn">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.07 2.07 0 1 1 0-4.14 2.07 2.07 0 0 1 0 4.14zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z"/>
+        <svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true">
+          <path d="M22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003zM7.12 20.452H3.558V9h3.563v11.452zM5.339 7.433a2.064 2.064 0 1 1 0-4.128 2.064 2.064 0 0 1 0 4.128zm15.115 13.019h-3.558v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.602 0 4.268 2.37 4.268 5.455v6.286h.005z"/>
         </svg>
       </a>
       <a href="https://wa.me/917601032082" target="_blank" rel="noopener noreferrer" aria-label="MindForge Capital on WhatsApp" title="WhatsApp">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43zm-3.05 10.92c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.49-.9-.8-1.5-1.78-1.67-2.08-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.21-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.06 2.88 1.21 3.08.15.2 2.1 3.2 5.07 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.34z"/>
+        <svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/>
         </svg>
       </a>
     </div>
