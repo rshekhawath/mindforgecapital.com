@@ -514,6 +514,134 @@ footer a:hover{color:var(--accent);}
   .table-wrap{box-shadow:none;border-color:#e2e8f0;}
   .stat-card, .alloc-card{box-shadow:none;border-color:#e2e8f0;break-inside:avoid;}
 }
+
+/* ═════════════════════════════════════════════════════════
+   DASHBOARD VISUAL POLISH v2 — Engaging interactions
+   ═════════════════════════════════════════════════════════ */
+
+/* —— Animated subtle gradient background sheen on dash-hero —— */
+.dash-hero {
+  position: relative;
+  overflow: hidden;
+}
+.dash-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 280px at 80% -20%, rgba(26,108,244,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 240px at 15% 110%, rgba(8,145,178,0.07) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.dash-hero > * { position: relative; z-index: 1; }
+
+/* —— Stat cards: lift + glow on hover —— */
+.stat-card {
+  transition: transform .35s cubic-bezier(.2,.7,.2,1),
+              box-shadow .35s cubic-bezier(.2,.7,.2,1),
+              border-color .25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(26,80,216,0.04) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity .35s ease;
+  pointer-events: none;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 22px 44px -22px rgba(15,23,42,0.18),
+              0 6px 18px -8px rgba(26,80,216,0.20);
+  border-color: rgba(37,99,235,0.30);
+}
+.stat-card:hover::before { opacity: 1; }
+
+/* —— Stock row hover: subtle highlight + ticker pulse —— */
+.sc-row, tr {
+  transition: background-color .2s ease;
+}
+
+/* —— "Welcome back" name with brand-gradient —— */
+.welcome-name {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* —— Strategy chip in hero: subtle pulsing dot —— */
+.dash-hero .pill-strat {
+  position: relative;
+}
+@keyframes mf-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.6); }
+}
+
+/* —— Refresh button: spin on click —— */
+@keyframes mf-spin {
+  to { transform: rotate(360deg); }
+}
+.btn-refresh.spinning svg { animation: mf-spin .8s linear; }
+
+/* —— Donut chart: subtle scale-in animation when sector card is in viewport —— */
+@keyframes mf-donut-in {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.alloc-card svg.donut {
+  animation: mf-donut-in .9s cubic-bezier(.2,.7,.2,1) both;
+}
+
+/* —— "Days left" countdown urgency tint when low —— */
+.stat-card[data-urgent="true"] .sv {
+  color: var(--gold) !important;
+  position: relative;
+}
+.stat-card[data-urgent="true"] .sv::after {
+  content: "";
+  position: absolute;
+  inset: -4px -8px;
+  background: radial-gradient(circle, rgba(217,119,6,0.18) 0%, transparent 70%);
+  z-index: -1;
+  border-radius: 8px;
+  animation: mf-warn-pulse 2s ease-in-out infinite;
+}
+@keyframes mf-warn-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* —— Market-bar: subtle slide-in —— */
+.market-bar {
+  animation: mf-slide-up .5s cubic-bezier(.2,.7,.2,1) both;
+}
+@keyframes mf-slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* —— Table row: gentle hover —— */
+tbody tr {
+  transition: background-color .15s ease, transform .15s ease;
+}
+tbody tr:hover {
+  background: rgba(26,80,216,0.04) !important;
+}
+
+/* —— Honour reduced motion —— */
+@media (prefers-reduced-motion: reduce) {
+  .alloc-card svg.donut,
+  .market-bar,
+  .stat-card[data-urgent="true"] .sv::after { animation: none !important; }
+  .stat-card { transition: none !important; }
+}
 </style>
 </head>
 <body>
@@ -559,7 +687,7 @@ footer a:hover{color:var(--accent);}
     <!-- HERO -->
     <div class="dash-hero fade-up">
       <div class="section-label">Member Dashboard</div>
-      <h1>Welcome back, <span class="accent" id="hero-name">Investor</span>.</h1>
+      <h1>Welcome back, <span class="accent welcome-name" id="hero-name">Investor</span>.</h1>
       <p class="sub" id="dash-subtitle">Here are this cycle's picks for your strategy. Place them in your broker and you're done for the month.</p>
       <div class="meta-row">
         <div class="meta-pill" id="pill-status">
@@ -612,7 +740,7 @@ footer a:hover{color:var(--accent);}
       </div>
       <div class="alloc-layout">
         <div class="alloc-donut" id="alloc-donut" aria-hidden="true">
-          <svg viewBox="0 0 100 100" id="alloc-donut-svg"></svg>
+          <svg viewBox="0 0 100 100" id="alloc-donut-svg" class="donut"></svg>
           <div class="donut-center">
             <div class="dc-num" id="donut-center-num">—</div>
             <div class="dc-lbl">Sectors</div>
@@ -917,8 +1045,10 @@ function renderDashboard(sub, stocks) {
   const daysCard = document.getElementById('stat-card-days');
   document.getElementById('stat-days').innerHTML = daysLeft + '<span class="unit">days left</span>';
   let progClass = '', dotClass = 'dot-green';
+  daysCard.removeAttribute('data-urgent');
   if (daysLeft <= 7) {
     daysCard.classList.add('tone-red');
+    daysCard.setAttribute('data-urgent', 'true');
     progClass = 'danger'; dotClass = 'dot-red';
     document.getElementById('stat-days-sub').textContent = 'Renew soon — message us on WhatsApp';
   } else if (daysLeft <= 14) {
