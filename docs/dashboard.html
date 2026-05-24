@@ -248,7 +248,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.85);backdrop
   .table-wrap::-webkit-scrollbar{height:6px;}
   .table-wrap::-webkit-scrollbar-thumb{background:rgba(37,99,235,0.22);border-radius:6px;}
 }
-table{width:100%;border-collapse:collapse;font-size:14px;min-width:880px;}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:920px;}
 thead th{
   background:linear-gradient(180deg,rgba(37,99,235,0.05) 0%,rgba(37,99,235,0.015) 100%);
   border-bottom:0.5px solid var(--border2);
@@ -296,6 +296,52 @@ td.shares .qty{color:var(--white);font-weight:700;}
 }
 .tbl-search::placeholder{color:var(--text3);}
 .tbl-search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.10);}
+
+/* ── Mark-as-bought checkbox column ── */
+td.bought-col{width:42px;text-align:center;}
+.bought-cb{
+  appearance:none;-webkit-appearance:none;
+  width:20px;height:20px;border-radius:6px;cursor:pointer;
+  border:1.5px solid var(--border2);background:var(--ink2);
+  position:relative;flex-shrink:0;transition:all .15s ease;vertical-align:middle;
+}
+.bought-cb:hover{border-color:var(--accent);}
+.bought-cb:checked{
+  background:linear-gradient(135deg,var(--green),#10b981);border-color:transparent;
+}
+.bought-cb:checked::after{
+  content:'';position:absolute;left:5px;top:1px;width:6px;height:11px;
+  border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+}
+tr.row-bought td:not(.bought-col){opacity:.55;}
+tr.row-bought td.company{text-decoration:line-through;}
+
+/* ── Buy-progress card ── */
+.buy-prog-card{
+  background:linear-gradient(135deg,rgba(5,150,105,0.06) 0%,var(--ink2) 70%);
+  border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:16px 22px;margin-bottom:18px;position:relative;z-index:1;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  box-shadow:var(--shadow-sm);
+}
+.buy-prog-card .bp-text{flex:1;min-width:200px;}
+.buy-prog-card .bp-title{font-size:13px;color:var(--text2);font-weight:600;}
+.buy-prog-card .bp-title strong{color:var(--white);font-weight:800;}
+.buy-prog-card .bp-meta{font-size:12px;color:var(--text3);margin-top:2px;}
+.buy-prog-bar{flex:0 0 220px;background:rgba(5,150,105,0.10);border-radius:6px;height:10px;overflow:hidden;}
+@media (max-width:520px){.buy-prog-bar{flex-basis:100%;}}
+.buy-prog-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),#10b981,#34d399);width:0;transition:width .55s cubic-bezier(.22,1,.36,1);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
+.buy-prog-reset{
+  background:transparent;border:0.5px solid var(--border2);color:var(--text3);
+  font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:6px 12px;border-radius:8px;
+  cursor:pointer;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  transition:all .15s ease;
+}
+.buy-prog-reset:hover{color:var(--text2);border-color:rgba(37,99,235,0.30);}
+.sc-bought-row{display:flex;align-items:center;gap:10px;padding-top:6px;border-top:0.5px solid var(--border);margin-top:4px;font-size:13px;color:var(--text2);}
+.sc-bought-row label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;}
+.stock-card.row-bought{opacity:.7;}
+.stock-card.row-bought .sc-company{text-decoration:line-through;}
 
 /* ── HOW-TO section ── */
 .howto-card{
@@ -630,10 +676,21 @@ footer a:hover{color:var(--accent);}
         </div>
       </div>
 
+      <!-- Buy progress (visible only once user marks a stock) -->
+      <div class="buy-prog-card" id="buy-prog-card" style="display:none;">
+        <div class="bp-text">
+          <div class="bp-title"><strong id="bp-bought">0</strong> of <strong id="bp-total">0</strong> orders placed</div>
+          <div class="bp-meta" id="bp-meta">Tick the checkbox next to each stock once you've placed the order.</div>
+        </div>
+        <div class="buy-prog-bar"><div class="buy-prog-fill" id="buy-prog-fill"></div></div>
+        <button type="button" class="buy-prog-reset" onclick="resetBought()" title="Uncheck all">Reset</button>
+      </div>
+
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th class="bought-col" title="Tick once you've placed the order"><span aria-hidden="true">✓</span></th>
               <th style="width:48px;">#</th>
               <th>Company</th>
               <th>Ticker</th>
@@ -645,7 +702,7 @@ footer a:hover{color:var(--accent);}
             </tr>
           </thead>
           <tbody id="stocks-tbody">
-            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">Loading stocks…</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Loading stocks…</td></tr>
           </tbody>
         </table>
       </div>
@@ -1119,7 +1176,7 @@ function renderTable(stocks) {
   const mobileCards = document.getElementById('stock-cards-mobile');
 
   if (!stocks.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">No stocks found for your subscription window.</td></tr>';
     mobileCards.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">No stocks found.</div>';
     return;
   }
@@ -1128,6 +1185,7 @@ function renderTable(stocks) {
   const n = stocks.length || 1;
   const per = currentCapital / n;
   const copyIco = '<svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+  const bought = loadBought(currentStrategy);
 
   // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {
@@ -1136,7 +1194,10 @@ function renderTable(stocks) {
     const barPct = (w / maxW) * 100;
     const shares = entry > 0 ? Math.floor(per / entry) : 0;
     const amt = shares * entry;
-    return `<tr data-row="${i}">
+    const isBought = !!bought[s.ticker];
+    const rowCls = isBought ? 'row-bought' : '';
+    return `<tr data-row="${i}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}">
+      <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company">${escapeHtml(s.company_name||s.ticker)}</td>
       <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span></td>
@@ -1160,7 +1221,9 @@ function renderTable(stocks) {
     const barPct = (w / maxW) * 100;
     const shares = entry > 0 ? Math.floor(per / entry) : 0;
     const amt = shares * entry;
-    return `<div class="stock-card" data-row="${i}">
+    const isBought = !!bought[s.ticker];
+    const cardCls = isBought ? 'stock-card row-bought' : 'stock-card';
+    return `<div class="${cardCls}" data-row="${i}" data-ticker="${escapeHtml(s.ticker)}">
       <div class="sc-header">
         <div class="sc-name-wrap">
           <div class="sc-company">${escapeHtml(s.company_name||s.ticker)}</div>
@@ -1174,10 +1237,73 @@ function renderTable(stocks) {
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
       <div class="sc-row"><span class="sc-key">Weight</span><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div>
       <div class="sc-bar-wrap"><div class="sc-bar" data-bar="${barPct.toFixed(1)}%"></div></div>
+      <div class="sc-bought-row">
+        <label><input type="checkbox" class="bought-cb" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>
+      </div>
     </div>`;
   }).join('');
 
   document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('en-IN');
+  refreshBoughtProgress();
+}
+
+// ── MARK-AS-BOUGHT (persisted per strategy) ──────────────────────────────
+function boughtStorageKey(strategy) {
+  return 'mfc_bought_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
+}
+function loadBought(strategy) {
+  try {
+    const raw = localStorage.getItem(boughtStorageKey(strategy));
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function saveBought(strategy, map) {
+  try { localStorage.setItem(boughtStorageKey(strategy), JSON.stringify(map)); } catch (e) {}
+}
+function toggleBought(cb) {
+  // Find the closest tr or stock-card with data-ticker
+  const host = cb.closest('[data-ticker]');
+  if (!host) return;
+  const ticker = host.dataset.ticker;
+  const map = loadBought(currentStrategy);
+  if (cb.checked) map[ticker] = true; else delete map[ticker];
+  saveBought(currentStrategy, map);
+
+  // Sync both desktop row + mobile card visual states
+  document.querySelectorAll('[data-ticker="' + ticker.replace(/"/g,'\\"') + '"]').forEach(el => {
+    el.classList.toggle('row-bought', cb.checked);
+    const sibCb = el.querySelector('.bought-cb');
+    if (sibCb && sibCb !== cb) sibCb.checked = cb.checked;
+  });
+  refreshBoughtProgress();
+}
+function resetBought() {
+  saveBought(currentStrategy, {});
+  document.querySelectorAll('.bought-cb').forEach(cb => { cb.checked = false; });
+  document.querySelectorAll('.row-bought').forEach(el => el.classList.remove('row-bought'));
+  refreshBoughtProgress();
+  showToast('Cleared all marks');
+}
+function refreshBoughtProgress() {
+  const map = loadBought(currentStrategy);
+  const tickers = new Set(stocksData.map(s => s.ticker));
+  const bought = Object.keys(map).filter(t => tickers.has(t)).length;
+  const total = stocksData.length;
+  const pct = total ? (bought/total)*100 : 0;
+  const card = document.getElementById('buy-prog-card');
+  if (!card) return;
+  if (bought === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  document.getElementById('bp-bought').textContent = bought;
+  document.getElementById('bp-total').textContent = total;
+  document.getElementById('buy-prog-fill').style.width = pct.toFixed(1) + '%';
+  const remaining = total - bought;
+  document.getElementById('bp-meta').textContent = remaining === 0
+    ? 'All set — sit tight until next rebalance.'
+    : remaining + ' to go. Saved automatically in your browser.';
 }
 
 // ── COPY / EXPORT ACTIONS ──────────────────────────────────────────────────

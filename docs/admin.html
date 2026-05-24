@@ -98,29 +98,49 @@
     /* ── Stats row ── */
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
       margin-bottom: 32px;
     }
     .stat-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px 24px;
+      border-radius: 14px;
+      padding: 20px 22px;
+      position: relative;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.03);
     }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 12px 32px -16px rgba(37,99,235,0.18); border-color: rgba(37,99,235,0.20); }
+    .stat-card .ico-wrap {
+      position: absolute; top: 16px; right: 16px;
+      width: 32px; height: 32px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(37,99,235,0.08); color: var(--accent);
+    }
+    .stat-card .ico-wrap svg { width: 16px; height: 16px; }
+    .stat-card.tone-orange .ico-wrap { background: rgba(217,119,6,0.10); color: var(--orange); }
+    .stat-card.tone-green  .ico-wrap { background: rgba(5,150,105,0.10);  color: var(--green); }
     .stat-label {
       font-size: 11px;
-      font-weight: 600;
-      letter-spacing: .08em;
+      font-weight: 700;
+      letter-spacing: .09em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .stat-value {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 30px;
+      font-weight: 800;
       color: var(--ink);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
     }
 
     /* ── Controls ── */
@@ -158,7 +178,7 @@
     }
 
     .btn-refresh {
-      padding: 9px 20px;
+      padding: 9px 18px;
       background: var(--accent);
       color: #fff;
       border: none;
@@ -167,9 +187,21 @@
       font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
       cursor: pointer;
-      transition: background .2s;
+      transition: background .2s, transform .15s;
+      display: inline-flex; align-items: center; gap: 7px;
     }
-    .btn-refresh:hover { background: #1340b0; }
+    .btn-refresh svg { width: 14px; height: 14px; }
+    .btn-refresh:hover { background: #1340b0; transform: translateY(-1px); }
+    .btn-refresh.spinning svg { animation: rspin 0.8s linear infinite; }
+    @keyframes rspin { to { transform: rotate(360deg); } }
+
+    .search-input {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: 12px center;
+      background-size: 14px;
+      padding-left: 36px !important;
+    }
 
     /* ── Table ── */
     .table-wrap {
@@ -238,6 +270,10 @@
     }
     .status-pending   { background: #fef3c7; color: #92400e; }
     .status-activated { background: #d1fae5; color: #065f46; }
+    .status-badge svg { width: 11px; height: 11px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .status-pending .status-dot { background: var(--orange); }
+    .status-activated .status-dot { background: var(--green); }
 
     .td-time { font-size: 12px; color: var(--muted); white-space: nowrap; }
 
@@ -387,8 +423,9 @@
       padding: 60px 20px;
       color: var(--muted);
     }
-    .state-msg .icon { font-size: 36px; margin-bottom: 12px; }
-    .state-msg p { font-size: 15px; }
+    .state-msg .icon { width: 56px; height: 56px; margin: 0 auto 14px; color: var(--accent); display: inline-flex; align-items: center; justify-content: center; background: rgba(37,99,235,0.08); border-radius: 16px; }
+    .state-msg .icon svg { width: 26px; height: 26px; }
+    .state-msg p { font-size: 14.5px; color: var(--muted); }
 
     /* ── Responsive ── */
     @media (max-width: 700px) {
@@ -528,16 +565,22 @@
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card">
+      <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
       <div class="stat-label">Total Leads</div>
       <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub">all registrations</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card tone-orange">
+      <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <div class="stat-label">Pending</div>
       <div class="stat-value" id="stat-pending" style="color:var(--orange);">—</div>
+      <div class="stat-sub">awaiting activation</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card tone-green">
+      <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="stat-label">Activated</div>
       <div class="stat-value" id="stat-activated" style="color:var(--green);">—</div>
+      <div class="stat-sub">paying subscribers</div>
     </div>
   </div>
 
@@ -555,13 +598,16 @@
       <option value="largemidcap">LargeMidcap</option>
       <option value="smallmicro">SmallMicro</option>
     </select>
-    <button class="btn-refresh" onclick="loadLeads()">↻ Refresh</button>
+    <button class="btn-refresh" id="btn-refresh" onclick="loadLeads()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Refresh
+    </button>
   </div>
 
   <!-- Table -->
   <div class="table-wrap">
     <div id="table-state" class="state-msg">
-      <div class="icon">⏳</div>
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
       <p>Loading leads…</p>
     </div>
     <table id="leads-table" style="display:none;">
@@ -612,7 +658,9 @@
 
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeActivateModal()">Cancel</button>
-      <button class="btn-modal-confirm" id="act-confirm-btn" onclick="confirmActivate()">✓ Activate & Send Email</button>
+      <button class="btn-modal-confirm" id="act-confirm-btn" onclick="confirmActivate()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px;"><polyline points="20 6 9 17 4 12"/></svg>Activate &amp; Send Email
+      </button>
     </div>
   </div>
 </div>
@@ -626,8 +674,14 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4
 var allLeads = [];
 
 // ── Load leads from Apps Script ──
+var ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+var ICON_INBOX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>';
+var ICON_WARN  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
 function loadLeads() {
-  document.getElementById('table-state').innerHTML = '<div class="icon">⏳</div><p>Loading leads…</p>';
+  var refreshBtn = document.getElementById('btn-refresh');
+  if (refreshBtn) refreshBtn.classList.add('spinning');
+  document.getElementById('table-state').innerHTML = '<div class="icon">' + ICON_CLOCK + '</div><p>Loading leads…</p>';
   document.getElementById('table-state').style.display = 'block';
   document.getElementById('leads-table').style.display = 'none';
 
@@ -643,7 +697,10 @@ function loadLeads() {
       }
     })
     .catch(function(err) {
-      document.getElementById('table-state').innerHTML = '<div class="icon">⚠️</div><p>Error loading data. Check your Apps Script URL and make sure it is deployed as a Web App accessible to Anyone.</p>';
+      document.getElementById('table-state').innerHTML = '<div class="icon" style="color:var(--orange);">' + ICON_WARN + '</div><p>Error loading data. Check your Apps Script URL and make sure it is deployed as a Web App accessible to Anyone.</p>';
+    })
+    .finally(function() {
+      if (refreshBtn) refreshBtn.classList.remove('spinning');
     });
 }
 
@@ -659,7 +716,7 @@ function renderTable(leads) {
   var tbody = document.getElementById('leads-tbody');
 
   if (!leads.length) {
-    document.getElementById('table-state').innerHTML = '<div class="icon">📭</div><p>No leads yet. When someone registers on strategies.html, they\'ll appear here.</p>';
+    document.getElementById('table-state').innerHTML = '<div class="icon">' + ICON_INBOX + '</div><p>No leads yet. When someone registers on strategies.html, they\'ll appear here.</p>';
     document.getElementById('table-state').style.display = 'block';
     document.getElementById('leads-table').style.display = 'none';
     return;
@@ -680,13 +737,19 @@ function renderTable(leads) {
     var timeStr = ts ? ts.toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
 
     var activateBtn = isActivated
-      ? '<span style="font-size:12px;color:var(--green);">✓ Done</span>'
+      ? '<span style="font-size:12px;color:var(--green);font-weight:600;display:inline-flex;align-items:center;gap:5px;">' +
+          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Done' +
+        '</span>'
       : '<button class="btn-activate" ' +
           'data-name="'     + esc(lead.name     || '') + '" ' +
           'data-email="'    + esc(lead.email    || '') + '" ' +
           'data-phone="'    + esc(lead.phone    || '') + '" ' +
           'data-strategy="' + esc(lead.strategy || '') + '">' +
         'Activate</button>';
+
+    var statusBadge = isActivated
+      ? '<span class="status-badge status-activated"><span class="status-dot"></span>Activated</span>'
+      : '<span class="status-badge status-pending"><span class="status-dot"></span>Pending</span>';
 
     return '<tr>' +
       '<td><div class="td-name">' + esc(lead.name || '—') + '</div></td>' +
@@ -695,8 +758,7 @@ function renderTable(leads) {
       '<td class="td-strategy"><span class="' + stratClass + '">' + esc(lead.strategy || '—') + '</span></td>' +
       '<td>' + esc(lead.price || '—') + '</td>' +
       '<td class="td-time">' + timeStr + '</td>' +
-      '<td><span class="status-badge ' + (isActivated ? 'status-activated' : 'status-pending') + '">' +
-          (isActivated ? '✓ Activated' : '⏳ Pending') + '</span></td>' +
+      '<td>' + statusBadge + '</td>' +
       '<td>' + activateBtn + '</td>' +
     '</tr>';
   }).join('');
@@ -757,7 +819,7 @@ function openActivateModal(name, email, phone, strategy) {
 function closeActivateModal() {
   document.getElementById('activate-overlay').style.display = 'none';
   document.getElementById('act-confirm-btn').disabled = false;
-  document.getElementById('act-confirm-btn').textContent = '✓ Activate & Send Email';
+  document.getElementById('act-confirm-btn').textContent = 'Activate & Send Email';
 }
 
 document.getElementById('activate-overlay').addEventListener('click', function(e) {
@@ -794,7 +856,7 @@ function confirmActivate() {
   .then(function(data) {
     if (data.status === 'ok') {
       closeActivateModal();
-      showToast('✓ ' + (name || email) + ' activated! Email sent. Opening WhatsApp…', 'success');
+      showToast((name || email) + ' activated. Email sent — opening WhatsApp…', 'success');
 
       // Send WhatsApp to subscriber's number with dashboard link
       var dashUrl  = data.dashboard_url || 'https://mindforgecapital.com/dashboard.html';
@@ -803,10 +865,10 @@ function confirmActivate() {
       else if (rawPhone.length === 11 && rawPhone.startsWith('0')) rawPhone = '91' + rawPhone.slice(1);
       if (rawPhone.length >= 11) {
         var waMsg = encodeURIComponent(
-          'Hi ' + (name || 'there') + '! 🎉\n\n' +
+          'Hi ' + (name || 'there') + ',\n\n' +
           'Your MindForge Capital dashboard is now active.\n\n' +
-          '📊 Strategy: ' + strategy + '\n' +
-          '🔗 Dashboard link (keep this private):\n' + dashUrl + '\n\n' +
+          'Strategy: ' + strategy + '\n' +
+          'Dashboard link (keep this private):\n' + dashUrl + '\n\n' +
           'Your subscription is valid for 30 days. Use this link anytime to view live portfolio updates.\n\n' +
           '— MindForge Capital'
         );
@@ -817,13 +879,13 @@ function confirmActivate() {
       setTimeout(loadLeads, 1500);
     } else {
       showToast('Error: ' + (data.error || 'Unknown error'), 'error');
-      btn.textContent = '✓ Activate & Send Email';
+      btn.textContent = 'Activate & Send Email';
       btn.disabled = false;
     }
   })
   .catch(function(err) {
     showToast('Network error. Check console.', 'error');
-    btn.textContent = '✓ Activate & Send Email';
+    btn.textContent = 'Activate & Send Email';
     btn.disabled = false;
   });
 }
@@ -839,7 +901,7 @@ function showToast(msg, type) {
 
 function showError(msg) {
   document.getElementById('table-state').innerHTML =
-    '<div class="icon">⚠️</div><p>' + esc(msg) + '</p>';
+    '<div class="icon" style="color:var(--orange);">' + ICON_WARN + '</div><p>' + esc(msg) + '</p>';
   document.getElementById('table-state').style.display = 'block';
   document.getElementById('leads-table').style.display = 'none';
 }
