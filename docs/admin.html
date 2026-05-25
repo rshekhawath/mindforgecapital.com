@@ -726,7 +726,7 @@ function renderTable(leads) {
   document.getElementById('leads-table').style.display = 'table';
 
   tbody.innerHTML = leads.map(function(lead) {
-    var stratKey = (lead.strategy || '').toLowerCase().replace(/\s+/g, '');
+    var stratKey = String(lead.strategy || '').toLowerCase().replace(/\s+/g, '');
     var stratClass = 'strat-other';
     if (stratKey.includes('multiasset'))  stratClass = 'strat-multiasset';
     else if (stratKey.includes('largemid')) stratClass = 'strat-largemidcap';
@@ -769,14 +769,18 @@ function filterTable() {
   var status  = document.getElementById('filter-status').value;
   var strategy = document.getElementById('filter-strategy').value;
 
+  // Cast every field to string before .toLowerCase() — Google Sheets returns
+  // numeric phone numbers as Number, and (123).toLowerCase() throws.
+  function s(v) { return String(v == null ? '' : v); }
+
   var filtered = allLeads.filter(function(l) {
     var matchQ = !q ||
-      (l.name  || '').toLowerCase().includes(q) ||
-      (l.email || '').toLowerCase().includes(q) ||
-      (l.phone || '').toLowerCase().includes(q);
+      s(l.name ).toLowerCase().includes(q) ||
+      s(l.email).toLowerCase().includes(q) ||
+      s(l.phone).toLowerCase().includes(q);
     var matchStatus = !status || l.status === status;
     var matchStrat  = !strategy ||
-      (l.strategy || '').toLowerCase().replace(/\s+/g,'').includes(strategy);
+      s(l.strategy).toLowerCase().replace(/\s+/g,'').includes(strategy);
     return matchQ && matchStatus && matchStrat;
   });
 
