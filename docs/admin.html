@@ -75,7 +75,10 @@
 
     /* ── Page ── */
     .page {
-      max-width: 1100px;
+      /* Bumped from 1100px → 1200px so the Action column (Activate + Decline
+         buttons side by side) fits within the table-wrap without triggering
+         horizontal scroll on standard desktop viewports. */
+      max-width: 1200px;
       margin: 0 auto;
       padding: 40px 24px 80px;
     }
@@ -208,8 +211,12 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 14px;
-      overflow: hidden;
+      /* Allow horizontal scroll on narrow viewports so the Action column
+         (Activate + Decline buttons) is never clipped. */
+      overflow-x: auto;
+      overflow-y: hidden;
     }
+    .table-wrap table { min-width: 880px; }
 
     table {
       width: 100%;
@@ -219,7 +226,7 @@
 
     thead th {
       background: #f8fafc;
-      padding: 12px 16px;
+      padding: 12px 12px;
       text-align: left;
       font-size: 11px;
       font-weight: 600;
@@ -229,6 +236,9 @@
       border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
+    /* Reserve enough room for both action buttons + their gap. */
+    thead th:last-child,
+    tbody td:last-child { padding-right: 14px; min-width: 168px; }
 
     tbody tr {
       border-bottom: 1px solid #f1f5f9;
@@ -238,7 +248,7 @@
     tbody tr:hover { background: #f8faff; }
 
     td {
-      padding: 14px 16px;
+      padding: 12px 12px;
       color: var(--ink);
       vertical-align: middle;
     }
@@ -277,10 +287,10 @@
 
     .td-time { font-size: 12px; color: var(--muted); white-space: nowrap; }
 
-    /* ── Activate button ── */
-    .btn-activate {
-      padding: 6px 16px;
-      background: var(--green);
+    /* ── Action buttons ── */
+    .btn-activate,
+    .btn-decline {
+      padding: 6px 14px;
       color: #fff;
       border: none;
       border-radius: 7px;
@@ -288,10 +298,24 @@
       font-weight: 600;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
       cursor: pointer;
-      transition: background .2s, opacity .2s;
+      transition: background .2s, opacity .2s, transform .15s;
+      white-space: nowrap;
     }
-    .btn-activate:hover { background: #047857; }
-    .btn-activate:disabled { opacity: .5; cursor: default; }
+    .btn-activate { background: var(--green); }
+    .btn-activate:hover { background: #047857; transform: translateY(-1px); }
+    .btn-decline  { background: var(--red, #dc2626); }
+    .btn-decline:hover  { background: #b91c1c; transform: translateY(-1px); }
+    .btn-activate:disabled,
+    .btn-decline:disabled { opacity: .5; cursor: default; transform: none; }
+    .action-cell {
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .status-declined { background: #fee2e2; color: #991b1b; }
+    .status-declined .status-dot { background: #dc2626; }
+    .td-done { font-size: 12px; color: var(--green); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+    .td-declined { font-size: 12px; color: #b91c1c; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
 
     /* ── Activate modal ── */
     #activate-overlay {
@@ -591,6 +615,7 @@
       <option value="">All statuses</option>
       <option value="pending">Pending</option>
       <option value="activated">Activated</option>
+      <option value="declined">Declined</option>
     </select>
     <select class="filter-select" id="filter-strategy" onchange="filterTable()">
       <option value="">All strategies</option>
@@ -705,8 +730,8 @@ function loadLeads() {
 }
 
 function updateStats(leads) {
-  var pending = leads.filter(function(l) { return l.status !== 'activated'; }).length;
-  var activated = leads.filter(function(l) { return l.status === 'activated'; }).length;
+  var pending   = leads.filter(function(l) { var s = String(l.status||'').toLowerCase(); return s !== 'activated' && s !== 'declined'; }).length;
+  var activated = leads.filter(function(l) { return String(l.status||'').toLowerCase() === 'activated'; }).length;
   document.getElementById('stat-total').textContent = leads.length;
   document.getElementById('stat-pending').textContent = pending;
   document.getElementById('stat-activated').textContent = activated;
@@ -732,24 +757,37 @@ function renderTable(leads) {
     else if (stratKey.includes('largemid')) stratClass = 'strat-largemidcap';
     else if (stratKey.includes('smallmicro')) stratClass = 'strat-smallmicro';
 
-    var isActivated = lead.status === 'activated';
+    var status      = String(lead.status || '').toLowerCase();
+    var isActivated = status === 'activated';
+    var isDeclined  = status === 'declined';
     var ts = lead.timestamp ? new Date(lead.timestamp) : null;
     var timeStr = ts ? ts.toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
 
-    var activateBtn = isActivated
-      ? '<span style="font-size:12px;color:var(--green);font-weight:600;display:inline-flex;align-items:center;gap:5px;">' +
-          '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Done' +
-        '</span>'
-      : '<button class="btn-activate" ' +
+    var actionCell;
+    if (isActivated) {
+      actionCell = '<span class="td-done">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Done' +
+      '</span>';
+    } else if (isDeclined) {
+      actionCell = '<span class="td-declined">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Declined' +
+      '</span>';
+    } else {
+      var dataAttrs =
           'data-name="'     + esc(lead.name     || '') + '" ' +
           'data-email="'    + esc(lead.email    || '') + '" ' +
           'data-phone="'    + esc(lead.phone    || '') + '" ' +
-          'data-strategy="' + esc(lead.strategy || '') + '">' +
-        'Activate</button>';
+          'data-strategy="' + esc(lead.strategy || '') + '"';
+      actionCell = '<div class="action-cell">' +
+        '<button class="btn-activate" ' + dataAttrs + '>Activate</button>' +
+        '<button class="btn-decline" '  + dataAttrs + '>Decline</button>' +
+      '</div>';
+    }
 
-    var statusBadge = isActivated
-      ? '<span class="status-badge status-activated"><span class="status-dot"></span>Activated</span>'
-      : '<span class="status-badge status-pending"><span class="status-dot"></span>Pending</span>';
+    var statusBadge;
+    if (isActivated)      statusBadge = '<span class="status-badge status-activated"><span class="status-dot"></span>Activated</span>';
+    else if (isDeclined)  statusBadge = '<span class="status-badge status-declined"><span class="status-dot"></span>Declined</span>';
+    else                  statusBadge = '<span class="status-badge status-pending"><span class="status-dot"></span>Pending</span>';
 
     return '<tr>' +
       '<td><div class="td-name">' + esc(lead.name || '—') + '</div></td>' +
@@ -759,7 +797,7 @@ function renderTable(leads) {
       '<td>' + esc(lead.price || '—') + '</td>' +
       '<td class="td-time">' + timeStr + '</td>' +
       '<td>' + statusBadge + '</td>' +
-      '<td>' + activateBtn + '</td>' +
+      '<td>' + actionCell + '</td>' +
     '</tr>';
   }).join('');
 }
@@ -791,16 +829,61 @@ function filterTable() {
 var _actLeadEmail = '';
 var WHATSAPP_ADMIN = '917601032082'; // your business WhatsApp number
 
-// Delegate clicks on Activate buttons (data-attribute approach avoids HTML quote bugs)
+// Delegate clicks on Activate / Decline buttons (data-attribute approach
+// avoids HTML quote bugs).
 document.addEventListener('click', function(e) {
-  var btn = e.target.closest('.btn-activate');
-  if (!btn) return;
-  var name     = btn.getAttribute('data-name');
-  var email    = btn.getAttribute('data-email');
-  var phone    = btn.getAttribute('data-phone');
-  var strategy = btn.getAttribute('data-strategy');
-  openActivateModal(name, email, phone, strategy);
+  var act = e.target.closest('.btn-activate');
+  if (act) {
+    var name     = act.getAttribute('data-name');
+    var email    = act.getAttribute('data-email');
+    var phone    = act.getAttribute('data-phone');
+    var strategy = act.getAttribute('data-strategy');
+    openActivateModal(name, email, phone, strategy);
+    return;
+  }
+  var dec = e.target.closest('.btn-decline');
+  if (dec) {
+    var dname  = dec.getAttribute('data-name');
+    var demail = dec.getAttribute('data-email');
+    if (!demail) {
+      showToast('Cannot decline a lead without an email.', 'error');
+      return;
+    }
+    if (!confirm('Decline ' + (dname || demail) + '?\n\nThe lead will be marked as Declined and the Activate button will disappear. This cannot be undone from this UI.')) return;
+    declineLead(dec, dname, demail);
+  }
 });
+
+function declineLead(btn, name, email) {
+  btn.disabled = true;
+  btn.textContent = 'Declining…';
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'decline', email: email })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.status === 'ok') {
+      showToast((name || email) + ' declined.', 'success');
+      setTimeout(loadLeads, 800);
+    } else if (data.error && /invalid action/i.test(data.error)) {
+      // Apps Script not yet redeployed with the decline handler.
+      showToast('Decline action not available — redeploy the Apps Script (see apps_script.gs).', 'error');
+      btn.disabled = false;
+      btn.textContent = 'Decline';
+    } else {
+      showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+      btn.disabled = false;
+      btn.textContent = 'Decline';
+    }
+  })
+  .catch(function(err) {
+    showToast('Network error. Check console.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Decline';
+  });
+}
 
 function openActivateModal(name, email, phone, strategy) {
   _actLeadEmail = email;

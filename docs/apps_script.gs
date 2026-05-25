@@ -76,6 +76,8 @@ function doPost(e) {
       return handleSaveLead(payload);
     } else if (action === 'activate') {
       return handleActivate(payload);
+    } else if (action === 'decline') {
+      return handleDecline(payload);
     } else {
       // Legacy: save to leads sheet
       return handleLegacyLead(payload);
@@ -293,6 +295,37 @@ function handleActivate(payload) {
     token: token,
     dashboard_url: dashboardUrl,
     message: 'Subscriber activated and email sent'
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DECLINE — admin marks a pending lead as declined so they stop appearing in
+// the activation queue. No email is sent, no subscription is created.
+// Looks up by email; finds the most recent row whose status is neither
+// already 'activated' nor already 'declined', and sets status='declined'.
+// ─────────────────────────────────────────────────────────────────────────────
+function handleDecline(payload) {
+  const email = String(payload.email || '').toLowerCase().trim();
+  if (!email) return errorResponse('No email provided');
+
+  const leadsSheet = getSheet('leads');
+  const leadsData  = leadsSheet.getDataRange().getValues();
+  let updated = false;
+  for (let i = leadsData.length - 1; i >= 1; i--) {
+    const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
+    const rowStatus = String(leadsData[i][6] || '').toLowerCase();
+    if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
+      leadsSheet.getRange(i + 1, 7).setValue('declined');
+      updated = true;
+      break;
+    }
+  }
+
+  if (!updated) return errorResponse('No pending lead found for that email');
+
+  return ContentService.createTextOutput(JSON.stringify({
+    status:  'ok',
+    message: 'Lead declined'
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
