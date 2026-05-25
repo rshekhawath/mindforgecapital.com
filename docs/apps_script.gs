@@ -78,9 +78,19 @@ function doPost(e) {
       return handleActivate(payload);
     } else if (action === 'decline') {
       return handleDecline(payload);
-    } else {
-      // Legacy: save to leads sheet
+    } else if (!action) {
+      // Legacy payload with no action — treat as a save_lead.
       return handleLegacyLead(payload);
+    } else {
+      // Reject unknown actions explicitly. The previous code silently
+      // fell through to handleLegacyLead, which meant any *new* action
+      // (e.g. 'decline') against a not-yet-redeployed Apps Script would
+      // create a phantom pending lead and return {status: 'ok'} —
+      // misleading the caller into thinking the action succeeded.
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        error:  'Unknown action: ' + action
+      })).setMimeType(ContentService.MimeType.JSON);
     }
   } catch (err) {
     Logger.log('doPost error: ' + err);

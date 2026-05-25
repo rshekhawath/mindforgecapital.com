@@ -857,6 +857,12 @@ document.addEventListener('click', function(e) {
 function declineLead(btn, name, email) {
   btn.disabled = true;
   btn.textContent = 'Declining…';
+
+  function reEnable() {
+    btn.disabled = false;
+    btn.textContent = 'Decline';
+  }
+
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
@@ -864,24 +870,52 @@ function declineLead(btn, name, email) {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data.status === 'ok') {
-      showToast((name || email) + ' declined.', 'success');
-      setTimeout(loadLeads, 800);
-    } else if (data.error && /invalid action/i.test(data.error)) {
-      // Apps Script not yet redeployed with the decline handler.
-      showToast('Decline action not available — redeploy the Apps Script (see apps_script.gs).', 'error');
-      btn.disabled = false;
-      btn.textContent = 'Decline';
-    } else {
-      showToast('Error: ' + (data.error || 'Unknown error'), 'error');
-      btn.disabled = false;
-      btn.textContent = 'Decline';
+    // Apps Script explicitly rejects the action → we know the deployment
+    // doesn't have handleDecline yet. Fail loud, change nothing.
+    if (data.status !== 'ok') {
+      if (data.error && /unknown action|invalid action/i.test(data.error)) {
+        showToast('Decline isn\'t live yet — redeploy the Apps Script (see docs/apps_script.gs).', 'error');
+      } else {
+        showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+      }
+      reEnable();
+      return;
     }
+
+    // Apps Script returned {status:'ok'} — but on a not-yet-redeployed
+    // backend this could be the legacy fallback that silently inserted
+    // a duplicate pending lead. VERIFY: re-fetch the leads and check the
+    // row's status actually flipped to 'declined'. If not, surface the
+    // problem instead of pretending it worked.
+    fetch(APPS_SCRIPT_URL + '?action=get_leads&_=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var target = String(email || '').toLowerCase().trim();
+        var rows = (d && d.leads) || [];
+        var declinedRow = rows.find(function(l) {
+          return String(l.email || '').toLowerCase().trim() === target &&
+                 String(l.status || '').toLowerCase() === 'declined';
+        });
+        if (declinedRow) {
+          showToast((name || email) + ' declined.', 'success');
+          setTimeout(loadLeads, 600);
+        } else {
+          showToast(
+            'Decline did not take effect on the backend. The Apps Script needs to be redeployed (see docs/apps_script.gs). Refresh to inspect.',
+            'error'
+          );
+          reEnable();
+        }
+      })
+      .catch(function() {
+        // Verification fetch failed — assume the worst.
+        showToast('Could not verify decline — check the Google Sheet manually.', 'error');
+        reEnable();
+      });
   })
-  .catch(function(err) {
+  .catch(function() {
     showToast('Network error. Check console.', 'error');
-    btn.disabled = false;
-    btn.textContent = 'Decline';
+    reEnable();
   });
 }
 
