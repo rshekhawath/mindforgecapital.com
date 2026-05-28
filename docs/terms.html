@@ -256,6 +256,16 @@ footer::before {
 }
 .skip-link:focus { top: 0; outline: none; }
 .scroll-progress { height: 2.5px; box-shadow: 0 0 12px rgba(26,80,216,0.5); }
+
+/* MF-SCROLL-PROG v3.4 */
+.mf-scroll-prog {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  z-index: 9999; pointer-events: none;
+  background: linear-gradient(90deg, #1a50d8 0%, #2563eb 45%, #0891b2 80%, #2dd4bf 100%);
+  box-shadow: 0 1px 8px rgba(37,99,235,0.35);
+  transition: width .08s linear;
+}
+@media (prefers-reduced-motion: reduce) { .mf-scroll-prog { transition: none; } }
 </style>
   <!-- Favicon & App Icons -->
   <link rel="icon" href="assets/favicon-32.png" type="image/png">
@@ -284,6 +294,9 @@ footer::before {
   <meta name="twitter:image" content="https://mindforgecapital.com/assets/favicon-192.png">
 </head>
 <body>
+<!-- MF-SCROLL-PROG -->
+<div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
+
 <a href="#main-content" class="skip-link">Skip to main content</a>
 <nav>
   <div class="nav-inner">
@@ -513,5 +526,24 @@ footer::before {
 })();
 </script>
 
+<script>
+// MF-SCROLL-PROG v3.4
+(function() {
+  var bar = document.getElementById('mf-scroll-prog');
+  if (!bar) return;
+  var raf = null;
+  function upd() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = p + '%';
+    raf = null;
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(upd); }
+  upd();
+  window.addEventListener('scroll', onScroll, {passive: true});
+  window.addEventListener('resize', upd);
+})();
+</script>
 </body>
 </html>

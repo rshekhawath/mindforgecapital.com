@@ -940,9 +940,45 @@ tr.row-bought:hover { background: rgba(5,150,105,0.08) !important; }
   .toast,
   .dash-foot-social a { transition: none !important; }
 }
+
+/* MF-SCROLL-PROG v3.4 */
+.mf-scroll-prog {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  z-index: 9999; pointer-events: none;
+  background: linear-gradient(90deg, #1a50d8 0%, #2563eb 45%, #0891b2 80%, #2dd4bf 100%);
+  box-shadow: 0 1px 8px rgba(37,99,235,0.35);
+  transition: width .08s linear;
+}
+@media (prefers-reduced-motion: reduce) { .mf-scroll-prog { transition: none; } }
+
+/* MF-SCROLLTOP v3.4 */
+.mf-fab-top {
+  position: fixed; left: 24px; bottom: 24px; z-index: 91;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, #1a50d8 0%, #2563eb 55%, #0891b2 100%);
+  border: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff;
+  box-shadow: 0 10px 28px -8px rgba(37,99,235,0.45), 0 4px 10px rgba(0,0,0,0.10);
+  opacity: 0; transform: translateY(8px) scale(0.85); pointer-events: none;
+  transition: opacity .28s ease, transform .28s cubic-bezier(.22,1,.36,1), box-shadow .2s ease;
+}
+.mf-fab-top.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.mf-fab-top:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 36px -8px rgba(37,99,235,0.55), 0 6px 14px rgba(0,0,0,0.12); }
+.mf-fab-top:focus-visible { outline: 2px solid rgba(37,99,235,0.55); outline-offset: 3px; }
+.mf-fab-top svg { width: 20px; height: 20px; }
+@media (max-width: 768px) {
+  .mf-fab-top { left: 16px; bottom: 88px; width: 40px; height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mf-fab-top { transition: opacity .2s; transform: none !important; }
+}
 </style>
 </head>
 <body>
+<!-- MF-SCROLL-PROG -->
+<div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
+
 
 <!-- NAV -->
 <nav>
@@ -1937,6 +1973,48 @@ async function refreshDashboard() {
 }
 
 init();
+</script>
+<script>
+// MF-SCROLL-PROG v3.4
+(function() {
+  var bar = document.getElementById('mf-scroll-prog');
+  if (!bar) return;
+  var raf = null;
+  function upd() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = p + '%';
+    raf = null;
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(upd); }
+  upd();
+  window.addEventListener('scroll', onScroll, {passive: true});
+  window.addEventListener('resize', upd);
+})();
+</script>
+<!-- MF-SCROLLTOP -->
+<button class="mf-fab-top" id="mf-fab-top" type="button" aria-label="Scroll to top" title="Scroll to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+<script>
+// MF-SCROLLTOP v3.4
+(function() {
+  var btn = document.getElementById('mf-fab-top');
+  if (!btn) return;
+  var raf = null;
+  function toggle() {
+    if (window.scrollY > 320) btn.classList.add('visible'); else btn.classList.remove('visible');
+    raf = null;
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(toggle); }
+  toggle();
+  window.addEventListener('scroll', onScroll, {passive: true});
+  btn.addEventListener('click', function() {
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({top: 0, behavior: reduced ? 'auto' : 'smooth'});
+  });
+})();
 </script>
 </body>
 </html>

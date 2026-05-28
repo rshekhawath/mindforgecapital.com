@@ -130,9 +130,43 @@ body::before {
   pointer-events: none;
 }
 .help-link:hover::after { transform: translateX(120%); }
+
+/* MF-SCROLL-PROG v3.4 */
+.mf-scroll-prog {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  z-index: 9999; pointer-events: none;
+  background: linear-gradient(90deg, #1a50d8 0%, #2563eb 45%, #0891b2 80%, #2dd4bf 100%);
+  box-shadow: 0 1px 8px rgba(37,99,235,0.35);
+  transition: width .08s linear;
+}
+@media (prefers-reduced-motion: reduce) { .mf-scroll-prog { transition: none; } }
+
+/* MF-AUTH-FOCUS v3.4 */
+/* Richer input focus: gradient ring + subtle lift + smoother transition */
+input[type=email], input[type=text], input[type=tel] {
+  transition: border-color .25s ease, box-shadow .3s ease, transform .25s ease, background-color .25s ease !important;
+}
+input[type=email]:focus, input[type=text]:focus, input[type=tel]:focus {
+  border-color: rgba(37,99,235,0.85) !important;
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,0.12),
+    0 0 0 1px rgba(45,212,191,0.18),
+    0 6px 18px -8px rgba(26,80,216,0.30) !important;
+  background: #ffffff !important;
+  transform: translateY(-1px);
+}
+input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[type=tel]:hover:not(:focus) {
+  border-color: rgba(37,99,235,0.45) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  input[type=email]:focus, input[type=text]:focus, input[type=tel]:focus { transform: none !important; }
+}
 </style>
 </head>
 <body>
+<!-- MF-SCROLL-PROG -->
+<div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
+
 
 <nav>
   <div class="nav-inner">
@@ -270,6 +304,25 @@ function showResult(type, msg, isHtml) {
     if (e.key === 'Enter') recoverAccess();
   });
 });
+</script>
+<script>
+// MF-SCROLL-PROG v3.4
+(function() {
+  var bar = document.getElementById('mf-scroll-prog');
+  if (!bar) return;
+  var raf = null;
+  function upd() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = p + '%';
+    raf = null;
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(upd); }
+  upd();
+  window.addEventListener('scroll', onScroll, {passive: true});
+  window.addEventListener('resize', upd);
+})();
 </script>
 </body>
 </html>
