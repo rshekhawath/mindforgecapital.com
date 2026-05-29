@@ -1616,13 +1616,21 @@ function nextRebalanceDate(now){
   return new Date(y, m + 1, 1);
 }
 
-// V3.7: number rollup for stat cards
+// V3.7: number rollup for stat cards (v2: hidden-tab safe)
 function _animateCount(el, target, opts) {
   opts = opts || {};
   const unitHtml = opts.unitHtml || '';
   const target_n = Number(target) || 0;
-  // Respect reduced motion + skip rollup if target is 0 (nothing satisfying about 0→0)
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || target_n === 0) {
+  // Short-circuit when animation can't or shouldn't run:
+  //  - prefers-reduced-motion
+  //  - target is 0 (nothing satisfying about 0→0)
+  //  - tab is hidden (requestAnimationFrame is throttled / paused in background tabs,
+  //    so the value would stick at "—" until the user returns)
+  if (
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+    target_n === 0 ||
+    document.hidden
+  ) {
     el.innerHTML = target_n + unitHtml;
     return;
   }
@@ -1636,6 +1644,9 @@ function _animateCount(el, target, opts) {
     if (t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
+  // Belt-and-braces: if rAF never fires (background tab promoted mid-animation
+  // and then re-hidden, etc.) guarantee the final value lands.
+  setTimeout(function() { el.innerHTML = target_n + unitHtml; }, dur + 250);
 }
 
 function renderDashboard(sub, stocks) {
@@ -1700,12 +1711,23 @@ function renderDashboard(sub, stocks) {
 
   // Total stocks
   _animateCount(document.getElementById('stat-stocks'), stocks.length);
-  document.getElementById('stat-stocks-sub').textContent = stocks.length ? 'equal-weighted by model' : 'awaiting new run';
+  // Weighting copy depends on strategy: MultiAsset is composite-score weighted,
+  // the other three are equal-weighted within their cap structure.
+  let weightingCopy;
+  if (!stocks.length)                              weightingCopy = 'awaiting new run';
+  else if (/multiasset/i.test(currentStrategy))    weightingCopy = 'composite-score weighted';
+  else                                             weightingCopy = 'equal-weighted by model';
+  document.getElementById('stat-stocks-sub').textContent = weightingCopy;
 
   // Industries
   const industries = new Set(stocks.map(s => (s.industry||'Unknown').trim()).filter(Boolean));
   _animateCount(document.getElementById('stat-industries'), industries.size);
-  document.getElementById('stat-industries-sub').textContent = industries.size ? 'sector-diversified, capped at 3 per' : '—';
+  // MultiAsset is single-industry (ETF) so the 3-per-sector cap copy doesn't apply.
+  let industryCopy;
+  if (!industries.size)                            industryCopy = '—';
+  else if (/multiasset/i.test(currentStrategy))    industryCopy = 'multi-asset diversified';
+  else                                             industryCopy = 'sector-diversified, capped at 3 per';
+  document.getElementById('stat-industries-sub').textContent = industryCopy;
 
   renderAllocation(stocks);
   setupCapitalCalculator(stocks, currentStrategy);

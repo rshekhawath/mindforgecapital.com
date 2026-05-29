@@ -283,16 +283,35 @@ function handleActivate(payload) {
     'active'
   ]);
 
-  // Mark lead as activated in leads sheet — find the most recent PENDING row
-  // (avoids skipping a row when two leads share the same email)
+  // Mark lead as activated in leads sheet.
+  // Match on (email, strategy) so a user with multiple pending leads (e.g.
+  // MultiAsset + LargeMidcap both pending) gets the *correct* row flipped.
+  // Falls back to email-only match if no row matches both — preserves legacy
+  // behaviour for rows where the strategy column may be empty/historical.
   const leadsSheet = getSheet('leads');
   const leadsData  = leadsSheet.getDataRange().getValues();
+  const strategyClean = String(strategy || '').toLowerCase().trim();
+  let updatedIdx = -1;
+  // Pass 1: exact (email, strategy) match, newest pending first
   for (let i = leadsData.length - 1; i >= 1; i--) {
-    const rowEmail  = (leadsData[i][2] || '').toLowerCase().trim();
-    const rowStatus = (leadsData[i][6] || '').toLowerCase();
-    if (rowEmail === email && rowStatus !== 'activated') {
+    const rowEmail    = String(leadsData[i][2] || '').toLowerCase().trim();
+    const rowStrategy = String(leadsData[i][4] || '').toLowerCase().trim();
+    const rowStatus   = String(leadsData[i][6] || '').toLowerCase();
+    if (rowEmail === email && rowStrategy === strategyClean && rowStatus !== 'activated' && rowStatus !== 'declined') {
       leadsSheet.getRange(i + 1, 7).setValue('activated');
+      updatedIdx = i;
       break;
+    }
+  }
+  // Pass 2 (fallback): email-only match — legacy behaviour
+  if (updatedIdx === -1) {
+    for (let i = leadsData.length - 1; i >= 1; i--) {
+      const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
+      const rowStatus = String(leadsData[i][6] || '').toLowerCase();
+      if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
+        leadsSheet.getRange(i + 1, 7).setValue('activated');
+        break;
+      }
     }
   }
 
@@ -606,19 +625,34 @@ function handleVerifyOTP(email, otp) {
   // OTP valid — delete it so it can't be reused
   PropertiesService.getScriptProperties().deleteProperty(key);
 
-  // Return all subscriptions for this email
+  // Return all subscriptions for this email.
+  // Recompute `status` from `expires_at` so subs past their 30-day window
+  // are reported as 'expired' to the UI, instead of inheriting the stale
+  // 'active' value written at creation time. login.html relies on this to
+  // grey out expired entries.
   const subSheet = getSheet('subscriptions');
   const subData  = subSheet.getDataRange().getValues();
   const subscriptions = [];
+  const nowMs = Date.now();
   for (let i = 1; i < subData.length; i++) {
     if ((subData[i][1] || '').toLowerCase().trim() !== emailClean) continue;
+    const storedStatus = String(subData[i][9] || '').toLowerCase().trim();
+    const expiryMs     = subData[i][7] ? new Date(subData[i][7]).getTime() : 0;
+    let liveStatus;
+    if (storedStatus === 'cancelled' || storedStatus === 'inactive') {
+      liveStatus = storedStatus;
+    } else if (expiryMs && expiryMs < nowMs) {
+      liveStatus = 'expired';
+    } else {
+      liveStatus = storedStatus || 'active';
+    }
     subscriptions.push({
       token:      subData[i][0],
       email:      subData[i][1],
       name:       subData[i][2],
       strategy:   subData[i][4],
       expires_at: subData[i][7],
-      status:     subData[i][9]
+      status:     liveStatus
     });
   }
   // Most recent first
