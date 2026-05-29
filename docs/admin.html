@@ -709,6 +709,28 @@
 <script>
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 
+// ── Admin passcode gate ─────────────────────────────────────────────────────
+// The server enforces this — we just collect it once per session and attach
+// it to every privileged call. Stored in sessionStorage so a closed tab
+// re-prompts (rather than persisting to disk).
+function getAdminSecret() {
+  var s = sessionStorage.getItem('mfc_admin_secret');
+  if (s) return s;
+  s = prompt('Admin passcode\n\nEnter the ADMIN_SECRET configured in the Apps Script Script Properties.');
+  if (!s) return '';
+  sessionStorage.setItem('mfc_admin_secret', s.trim());
+  return s.trim();
+}
+function clearAdminSecret() { sessionStorage.removeItem('mfc_admin_secret'); }
+function maybeReauthOn401(data) {
+  if (data && data.status === 'error' && /unauthorized/i.test(data.error || '')) {
+    clearAdminSecret();
+    alert('Admin passcode rejected. Refresh the page to re-enter it.');
+    return true;
+  }
+  return false;
+}
+
 var allLeads = [];
 
 // ── Load leads from Apps Script ──
@@ -723,9 +745,11 @@ function loadLeads() {
   document.getElementById('table-state').style.display = 'block';
   document.getElementById('leads-table').style.display = 'none';
 
-  fetch(APPS_SCRIPT_URL + '?action=get_leads')
+  var secret = getAdminSecret();
+  fetch(APPS_SCRIPT_URL + '?action=get_leads&admin_secret=' + encodeURIComponent(secret))
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      if (maybeReauthOn401(data)) return;
       if (data.status === 'ok') {
         allLeads = data.leads || [];
         renderTable(allLeads);
@@ -879,10 +903,11 @@ function declineLead(btn, name, email) {
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'decline', email: email })
+    body: JSON.stringify({ action: 'decline', email: email, admin_secret: getAdminSecret() })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
+    if (maybeReauthOn401(data)) { reEnable(); return; }
     // Apps Script explicitly rejects the action → we know the deployment
     // doesn't have handleDecline yet. Fail loud, change nothing.
     if (data.status !== 'ok') {
@@ -900,9 +925,10 @@ function declineLead(btn, name, email) {
     // a duplicate pending lead. VERIFY: re-fetch the leads and check the
     // row's status actually flipped to 'declined'. If not, surface the
     // problem instead of pretending it worked.
-    fetch(APPS_SCRIPT_URL + '?action=get_leads&_=' + Date.now())
+    fetch(APPS_SCRIPT_URL + '?action=get_leads&admin_secret=' + encodeURIComponent(getAdminSecret()) + '&_=' + Date.now())
       .then(function(r) { return r.json(); })
       .then(function(d) {
+        if (maybeReauthOn401(d)) { reEnable(); return; }
         var target = String(email || '').toLowerCase().trim();
         var rows = (d && d.leads) || [];
         var declinedRow = rows.find(function(l) {
@@ -979,15 +1005,21 @@ function confirmActivate() {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({
-      action:   'activate',
-      name:     name,
-      email:    email,
-      phone:    phone,
-      strategy: strategy
+      action:       'activate',
+      name:         name,
+      email:        email,
+      phone:        phone,
+      strategy:     strategy,
+      admin_secret: getAdminSecret()
     })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
+    if (maybeReauthOn401(data)) {
+      btn.textContent = 'Activate & Send Email';
+      btn.disabled = false;
+      return;
+    }
     if (data.status === 'ok') {
       closeActivateModal();
       showToast((name || email) + ' activated. Email sent — opening WhatsApp…', 'success');

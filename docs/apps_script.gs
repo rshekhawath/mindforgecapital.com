@@ -63,6 +63,25 @@ const SHEET_NAME = 'MindForge Capital'; // Change to your Google Sheet name
 // MAIN HANDLERS
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── ADMIN AUTH ───────────────────────────────────────────────────────────────
+// activate / decline / get_leads require admin_secret matching ADMIN_SECRET in
+// Script Properties. Set it once via the Apps Script editor:
+//   Project Settings → Script Properties → Add property
+//   Key: ADMIN_SECRET   Value: <a long random string you keep private>
+// Without it set, admin endpoints fail-closed (return an error).
+function adminAuthOk(provided) {
+  const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_SECRET');
+  if (!expected) return false; // fail-closed if not configured
+  if (!provided) return false;
+  return String(provided) === String(expected);
+}
+function adminAuthError() {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: 'error',
+    error:  'Unauthorized: admin_secret missing or invalid'
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
@@ -75,8 +94,10 @@ function doPost(e) {
     } else if (action === 'save_lead') {
       return handleSaveLead(payload);
     } else if (action === 'activate') {
+      if (!adminAuthOk(payload.admin_secret)) return adminAuthError();
       return handleActivate(payload);
     } else if (action === 'decline') {
+      if (!adminAuthOk(payload.admin_secret)) return adminAuthError();
       return handleDecline(payload);
     } else if (!action) {
       // Legacy payload with no action — treat as a save_lead.
@@ -112,6 +133,7 @@ function doGet(e) {
     } else if (action === 'recover') {
       return handleRecover(e.parameter.email, e.parameter.phone);
     } else if (action === 'get_leads') {
+      if (!adminAuthOk(e.parameter.admin_secret)) return adminAuthError();
       return handleGetLeads();
     } else if (action === 'request_otp') {
       return handleRequestOTP(e.parameter.email);
@@ -550,17 +572,29 @@ function handleRecover(email, phone) {
     return errorResponse('Your subscription has expired. Please renew to access your dashboard.');
   }
 
-  // Send recovery email
+  // Send recovery email. The dashboard URL is delivered ONLY via this email so
+  // an attacker who knows just the phone number (and not the inbox) can't
+  // exfiltrate the link by hitting the API. Pre-fix, the URL was also returned
+  // in the JSON response, which leaked it to anyone who could guess phone or
+  // email.
   const dashboardUrl = getBaseUrl() + '/dashboard.html?token=' + latestSubscription.token;
   sendRecoveryEmail(latestSubscription.email, latestSubscription.name, dashboardUrl);
 
-  // Return dashboard_url and phone so the frontend can offer a WhatsApp link
-  const subPhone = (latestSubscription.phone || '').toString().replace(/\D/g, '').slice(-10);
+  // Mask the email partially so the UI can confirm where the link went,
+  // without disclosing the full address to a guessing attacker.
+  const fullEmail = String(latestSubscription.email || '');
+  let maskedEmail = '';
+  if (fullEmail.includes('@')) {
+    const [local, domain] = fullEmail.split('@');
+    const localMasked = local.length <= 2
+      ? local[0] + '*'
+      : local[0] + '*'.repeat(Math.max(1, local.length - 2)) + local.slice(-1);
+    maskedEmail = localMasked + '@' + domain;
+  }
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
-    dashboard_url: dashboardUrl,
-    phone: subPhone,
+    masked_email: maskedEmail,
     message: 'Recovery link sent to your email'
   })).setMimeType(ContentService.MimeType.JSON);
 }
