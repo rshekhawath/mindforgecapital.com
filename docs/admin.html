@@ -810,11 +810,17 @@ function renderTable(leads) {
         '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Declined' +
       '</span>';
     } else {
+      // data-timestamp lets us decline rows with no email (newsletter/blank).
+      // Convert to a canonical ISO string regardless of how Apps Script
+      // serialized the underlying Date, so the backend matcher can pair it
+      // with the sheet value.
+      var tsRaw = lead.timestamp ? new Date(lead.timestamp).toISOString() : '';
       var dataAttrs =
-          'data-name="'     + esc(lead.name     || '') + '" ' +
-          'data-email="'    + esc(lead.email    || '') + '" ' +
-          'data-phone="'    + esc(lead.phone    || '') + '" ' +
-          'data-strategy="' + esc(lead.strategy || '') + '"';
+          'data-name="'      + esc(lead.name     || '') + '" ' +
+          'data-email="'     + esc(lead.email    || '') + '" ' +
+          'data-phone="'     + esc(lead.phone    || '') + '" ' +
+          'data-strategy="'  + esc(lead.strategy || '') + '" ' +
+          'data-timestamp="' + esc(tsRaw) + '"';
       actionCell = '<div class="action-cell">' +
         '<button class="btn-activate" ' + dataAttrs + '>Activate</button>' +
         '<button class="btn-decline" '  + dataAttrs + '>Decline</button>' +
@@ -882,16 +888,20 @@ document.addEventListener('click', function(e) {
   if (dec) {
     var dname  = dec.getAttribute('data-name');
     var demail = dec.getAttribute('data-email');
-    if (!demail) {
-      showToast('Cannot decline a lead without an email.', 'error');
+    var dts    = dec.getAttribute('data-timestamp');
+    if (!demail && !dts) {
+      // Both keys missing — backend has nothing to match on.
+      showToast('Cannot decline a lead without an email or timestamp.', 'error');
       return;
     }
-    if (!confirm('Decline ' + (dname || demail) + '?\n\nThe lead will be marked as Declined and the Activate button will disappear. This cannot be undone from this UI.')) return;
-    declineLead(dec, dname, demail);
+    // Label the confirm dialog with the best identifier we have.
+    var label = dname || demail || (dts ? new Date(dts).toLocaleString('en-IN') : 'this lead');
+    if (!confirm('Decline ' + label + '?\n\nThe lead will be marked as Declined and the Activate button will disappear. This cannot be undone from this UI.')) return;
+    declineLead(dec, dname, demail, dts);
   }
 });
 
-function declineLead(btn, name, email) {
+function declineLead(btn, name, email, timestamp) {
   btn.disabled = true;
   btn.textContent = 'Declining…';
 
@@ -903,7 +913,12 @@ function declineLead(btn, name, email) {
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'decline', email: email, admin_secret: getAdminSecret() })
+    body: JSON.stringify({
+      action:       'decline',
+      email:        email || '',
+      timestamp:    timestamp || '',
+      admin_secret: getAdminSecret()
+    })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -929,14 +944,19 @@ function declineLead(btn, name, email) {
       .then(function(r) { return r.json(); })
       .then(function(d) {
         if (maybeReauthOn401(d)) { reEnable(); return; }
-        var target = String(email || '').toLowerCase().trim();
+        var targetEmail = String(email || '').toLowerCase().trim();
+        var targetTs    = timestamp ? new Date(timestamp).toISOString() : '';
         var rows = (d && d.leads) || [];
+        // Match by timestamp first (works for empty-email rows), fall back to email.
         var declinedRow = rows.find(function(l) {
-          return String(l.email || '').toLowerCase().trim() === target &&
-                 String(l.status || '').toLowerCase() === 'declined';
+          if (String(l.status || '').toLowerCase() !== 'declined') return false;
+          var rowTs = l.timestamp ? new Date(l.timestamp).toISOString() : '';
+          if (targetTs && rowTs === targetTs) return true;
+          if (targetEmail && String(l.email || '').toLowerCase().trim() === targetEmail) return true;
+          return false;
         });
         if (declinedRow) {
-          showToast((name || email) + ' declined.', 'success');
+          showToast((name || email || 'Lead') + ' declined.', 'success');
           setTimeout(loadLeads, 600);
         } else {
           showToast(

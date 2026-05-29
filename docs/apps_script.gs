@@ -356,23 +356,60 @@ function handleActivate(payload) {
 // already 'activated' nor already 'declined', and sets status='declined'.
 // ─────────────────────────────────────────────────────────────────────────────
 function handleDecline(payload) {
-  const email = String(payload.email || '').toLowerCase().trim();
-  if (!email) return errorResponse('No email provided');
+  // Row identification is timestamp-first, email-fallback.
+  // Timestamp is the only field that's guaranteed unique even for leads with
+  // no email (e.g. "Newsletter only" rows or stale blank rows) — pre-fix
+  // those rows could never be declined because the only matcher was email.
+  const email     = String(payload.email     || '').toLowerCase().trim();
+  const timestamp = String(payload.timestamp || '').trim();
+
+  if (!email && !timestamp) return errorResponse('No email or timestamp provided');
+
+  // Normalize both sides to ISO strings so a Date in the sheet matches the
+  // string the frontend sends back.
+  function tsString(v) {
+    if (v instanceof Date) return v.toISOString();
+    const s = String(v || '').trim();
+    // Some legacy rows store the timestamp without milliseconds; normalize
+    // via Date parsing where possible so the comparison is canonical.
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toISOString();
+  }
+
+  const targetTs = timestamp ? tsString(timestamp) : '';
 
   const leadsSheet = getSheet('leads');
   const leadsData  = leadsSheet.getDataRange().getValues();
   let updated = false;
-  for (let i = leadsData.length - 1; i >= 1; i--) {
-    const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
-    const rowStatus = String(leadsData[i][6] || '').toLowerCase();
-    if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
-      leadsSheet.getRange(i + 1, 7).setValue('declined');
-      updated = true;
-      break;
+
+  // Pass 1: exact timestamp match (works for empty-email rows too)
+  if (targetTs) {
+    for (let i = leadsData.length - 1; i >= 1; i--) {
+      const rowTs     = tsString(leadsData[i][0]);
+      const rowStatus = String(leadsData[i][6] || '').toLowerCase();
+      if (rowTs === targetTs && rowStatus !== 'activated' && rowStatus !== 'declined') {
+        leadsSheet.getRange(i + 1, 7).setValue('declined');
+        updated = true;
+        break;
+      }
     }
   }
 
-  if (!updated) return errorResponse('No pending lead found for that email');
+  // Pass 2 (fallback): email match — legacy behaviour for clients that
+  // haven't been updated to send timestamp yet.
+  if (!updated && email) {
+    for (let i = leadsData.length - 1; i >= 1; i--) {
+      const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
+      const rowStatus = String(leadsData[i][6] || '').toLowerCase();
+      if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
+        leadsSheet.getRange(i + 1, 7).setValue('declined');
+        updated = true;
+        break;
+      }
+    }
+  }
+
+  if (!updated) return errorResponse('No pending lead found to decline');
 
   return ContentService.createTextOutput(JSON.stringify({
     status:  'ok',
