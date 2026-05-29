@@ -1697,6 +1697,12 @@ function renderTable(stocks) {
   const copyIco = '<svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
   const bought = loadBought(currentStrategy);
 
+  // Per-stock currency: yahoo_ticker ending with .NS → ₹ (Indian NSE),
+  // otherwise → $ (US stocks like S&P 500). Allocation uses the same currency
+  // as the price so subscribers can do direct broker math.
+  const stockCurr = s => (s.yahoo_ticker && /\.NS$/i.test(s.yahoo_ticker)) ? '₹' : '$';
+  const fmtAmt = (curr, n) => curr === '₹' ? ('₹' + fmtINR(n)) : ('$' + n.toLocaleString('en-US', {maximumFractionDigits: 0}));
+
   // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {
     const entry = Number(s.recommended_price) || 0;
@@ -1706,14 +1712,15 @@ function renderTable(stocks) {
     const amt = shares * entry;
     const isBought = !!bought[s.ticker];
     const rowCls = isBought ? 'row-bought' : '';
+    const curr = stockCurr(s);
     return `<tr data-row="${i}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company">${escapeHtml(s.company_name||s.ticker)}</td>
       <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span></td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${escapeHtml(s.industry||'—')}</span></td>
-      <td class="price right">₹${entry.toFixed(2)}</td>
-      <td class="alloc-amt right">₹${fmtINR(amt)}</td>
+      <td class="price right">${curr}${entry.toFixed(2)}</td>
+      <td class="alloc-amt right">${fmtAmt(curr, amt)}</td>
       <td class="shares right"><span class="qty">${shares}</span></td>
       <td class="right">
         <div class="weight-cell">
@@ -1742,8 +1749,8 @@ function renderTable(stocks) {
         <div class="sc-num">${i+1}</div>
       </div>
       <div class="sc-meta"><span class="industry-badge">${escapeHtml(s.industry||'—')}</span></div>
-      <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">₹${entry.toFixed(2)}</span></div>
-      <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">₹${fmtINR(amt)}</span></div>
+      <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">${stockCurr(s)}${entry.toFixed(2)}</span></div>
+      <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(stockCurr(s), amt)}</span></div>
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
       <div class="sc-row"><span class="sc-key">Weight</span><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div>
       <div class="sc-bar-wrap"><div class="sc-bar" data-bar="${barPct.toFixed(1)}%"></div></div>
