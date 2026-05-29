@@ -139,6 +139,37 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .compare-table tr.lm-row td{background:linear-gradient(90deg,rgba(26,108,244,0.04),rgba(45,212,191,0.04));}
 
   /* ── MOBILE STICKY CTA BAR ── */
+  /* V3.7: floating Subscribe CTA pill — desktop only; mobile has its own .mobile-cta-bar */
+  .mf-tab-cta {
+    position: fixed; left: 50%; bottom: 24px; z-index: 92;
+    transform: translateX(-50%) translateY(28px); opacity: 0; pointer-events: none;
+    display: inline-flex; align-items: center; gap: 14px;
+    padding: 12px 8px 12px 22px; border-radius: 999px;
+    background: linear-gradient(135deg, #0c1831 0%, #1a50d8 60%, #2563eb 100%);
+    box-shadow: 0 16px 40px -12px rgba(26,80,216,0.50), 0 4px 14px rgba(15,23,42,0.18);
+    color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
+    transition: opacity .32s ease, transform .32s cubic-bezier(.22,1,.36,1);
+  }
+  .mf-tab-cta.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .mf-tab-cta-go {
+    background: rgba(255,255,255,0.18); border: 0; cursor: pointer;
+    color: #fff; font: inherit; font-weight: 700;
+    padding: 9px 16px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background .18s ease, transform .18s ease;
+  }
+  .mf-tab-cta-go:hover { background: rgba(255,255,255,0.30); transform: translateX(2px); }
+  .mf-tab-cta-go::after { content: '→'; font-size: 15px; }
+  .mf-tab-cta-close {
+    background: transparent; border: 0; cursor: pointer;
+    color: rgba(255,255,255,0.55); padding: 4px 8px;
+    font-size: 16px; line-height: 1; transition: color .15s;
+    margin-right: 4px;
+  }
+  .mf-tab-cta-close:hover { color: #fff; }
+  @media (max-width: 768px) { .mf-tab-cta { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .mf-tab-cta { transition: opacity .2s; transform: translateX(-50%) !important; } }
   .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px env(safe-area-inset-bottom,10px);display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
   .mobile-cta-bar a{flex:1;padding:13px 16px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;}
   .mcta-primary{background:var(--accent);color:#fff;}
@@ -2019,6 +2050,8 @@ function switchTab(id, btn, opts) {
       history.replaceState(null, '', url.toString());
     } catch (e) {}
   }
+  // V3.7: refresh floating Subscribe CTA pill copy to match the newly-active tab
+  if (typeof updateFloatingCta === 'function') updateFloatingCta(id);
 }
 
 // Re-sync tab if user navigates browser back/forward
@@ -2162,9 +2195,10 @@ var WHATSAPP_NUMBER = '917601032082'; // +91-7601032082
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 
 var STRATEGY_PRICES = {
-  'multiasset':  { label: '₹99/month', annual: '₹990/year' },
-  'largemidcap': { label: '₹1,499/month', annual: '₹14,990/year' },
-  'smallmicro':  { label: '₹2,500/month', annual: '₹24,990/year' }
+  'multiasset':  { label: '₹99/month',     annual: '₹990/year',    monthly: 99,    full: 'MindForge MultiAsset' },
+  'largemidcap': { label: '₹1,499/month',  annual: '₹14,990/year', monthly: 1499,  full: 'MindForge LargeMidcap 250' },
+  'smallmicro':  { label: '₹2,500/month',  annual: '₹24,990/year', monthly: 2500,  full: 'MindForge SmallMicro 500' },
+  'sp500':       { label: '₹10,000/month', annual: '₹99,990/year', monthly: 10000, full: 'MindForge S&P 500' }
 };
 
 var _currentStrategy   = '';
@@ -2312,6 +2346,71 @@ function showSuccessToast() {
   <a class="mcta-ghost" href="index.html">Home</a>
   <a class="mcta-primary" href="signup.html">Get started →</a>
 </div>
+
+<!-- V3.7: Floating Subscribe-to-current-tab CTA (desktop only) -->
+<div class="mf-tab-cta" id="mf-tab-cta" role="region" aria-label="Subscribe to current strategy">
+  <span class="mf-tab-cta-label" id="mf-tab-cta-label">Subscribe to MindForge MultiAsset — ₹99/month</span>
+  <button class="mf-tab-cta-go" type="button" id="mf-tab-cta-go">Subscribe</button>
+  <button class="mf-tab-cta-close" type="button" id="mf-tab-cta-close" aria-label="Hide subscribe pill">×</button>
+</div>
+<script>
+// MF-TAB-CTA v3.7
+(function() {
+  var cta   = document.getElementById('mf-tab-cta');
+  var label = document.getElementById('mf-tab-cta-label');
+  var go    = document.getElementById('mf-tab-cta-go');
+  var close = document.getElementById('mf-tab-cta-close');
+  if (!cta || !go || !close || !label) return;
+  var currentTabId = 'multiasset';
+  var dismissedThisSession = false;
+  function activeTab() {
+    var btn = document.querySelector('.tab-btn.active');
+    return btn ? btn.getAttribute('data-tab') : 'multiasset';
+  }
+  window.updateFloatingCta = function(id) {
+    currentTabId = id || activeTab();
+    var meta = (window.STRATEGY_PRICES || {})[currentTabId];
+    if (!meta) return;
+    label.textContent = 'Subscribe to ' + meta.full + ' — ' + meta.label;
+    go.setAttribute('data-strategy', currentTabId);
+  };
+  go.addEventListener('click', function() {
+    var id = go.getAttribute('data-strategy') || currentTabId;
+    var meta = (window.STRATEGY_PRICES || {})[id];
+    if (!meta) return;
+    if (typeof openRegModal === 'function') {
+      openRegModal(meta.full, meta.monthly, id);
+    } else {
+      window.location.href = 'signup.html?strategy=' + id;
+    }
+  });
+  close.addEventListener('click', function() {
+    dismissedThisSession = true;
+    cta.classList.remove('visible');
+  });
+  var raf = null;
+  function refresh() {
+    var show = !dismissedThisSession && window.scrollY > 620 &&
+               (document.documentElement.scrollHeight - window.scrollY - window.innerHeight) > 320;
+    cta.classList.toggle('visible', !!show);
+    raf = null;
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(refresh); }
+  // initial population + scroll listener
+  window.addEventListener('scroll', onScroll, {passive: true});
+  window.addEventListener('resize', refresh);
+  document.addEventListener('DOMContentLoaded', function() {
+    window.updateFloatingCta(activeTab());
+    refresh();
+  });
+  // Already-loaded fallback
+  if (document.readyState !== 'loading') {
+    window.updateFloatingCta(activeTab());
+    refresh();
+  }
+})();
+window.STRATEGY_PRICES = STRATEGY_PRICES;  // expose for the CTA controller above
+</script>
 
 <!-- Floating WhatsApp CTA -->
 <a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%20want%20to%20learn%20more%20about%20your%20quant%20strategies."

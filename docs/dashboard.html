@@ -418,6 +418,25 @@ td.row-num{
   height:100%;border-radius:4px;
   background:linear-gradient(90deg,var(--accent) 0%,var(--accent3) 100%);
   width:0;transition:width 1.1s cubic-bezier(.22,1,.36,1);
+  position:relative;
+}
+/* V3.7: gleam sweep over the weight-bar when its row is hovered */
+@keyframes mf-weight-gleam {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+.weight-bar::after {
+  content:'';
+  position:absolute; top:0; bottom:0; left:0; width:55%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+  transform: translateX(-120%);
+  pointer-events:none;
+}
+tr:hover .weight-bar::after, .stock-card:hover .weight-bar::after {
+  animation: mf-weight-gleam .85s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .weight-bar::after { display:none; }
 }
 .weight-val{font-size:12px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums;min-width:42px;text-align:right;}
 
@@ -1390,6 +1409,28 @@ function nextRebalanceDate(now){
   return new Date(y, m + 1, 1);
 }
 
+// V3.7: number rollup for stat cards
+function _animateCount(el, target, opts) {
+  opts = opts || {};
+  const unitHtml = opts.unitHtml || '';
+  const target_n = Number(target) || 0;
+  // Respect reduced motion + skip rollup if target is 0 (nothing satisfying about 0→0)
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || target_n === 0) {
+    el.innerHTML = target_n + unitHtml;
+    return;
+  }
+  const dur = 950;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const v = Math.round(target_n * eased);
+    el.innerHTML = v + unitHtml;
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function renderDashboard(sub, stocks) {
   window._currentSub = sub;
   document.getElementById('state-loading').style.display = 'none';
@@ -1419,7 +1460,7 @@ function renderDashboard(sub, stocks) {
     '"><svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43z"/></svg>Renew on WhatsApp</a>';
 
   const daysCard = document.getElementById('stat-card-days');
-  document.getElementById('stat-days').innerHTML = daysLeft + '<span class="unit">days left</span>';
+  _animateCount(document.getElementById('stat-days'), daysLeft, {unitHtml: '<span class="unit">days left</span>'});
   let progClass = '', dotClass = 'dot-green';
   daysCard.removeAttribute('data-urgent');
   if (daysLeft <= 7) {
@@ -1446,17 +1487,17 @@ function renderDashboard(sub, stocks) {
   // Next rebalance
   const nextReb = nextRebalanceDate(now);
   const daysToReb = Math.max(0, daysBetween(now, nextReb));
-  document.getElementById('stat-next').innerHTML = daysToReb + '<span class="unit">days</span>';
+  _animateCount(document.getElementById('stat-next'), daysToReb, {unitHtml: '<span class="unit">days</span>'});
   document.getElementById('stat-next-sub').textContent = 'on ' + nextReb.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
   document.getElementById('rebalance-date').textContent = nextReb.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' (monthly)';
 
   // Total stocks
-  document.getElementById('stat-stocks').textContent = stocks.length;
+  _animateCount(document.getElementById('stat-stocks'), stocks.length);
   document.getElementById('stat-stocks-sub').textContent = stocks.length ? 'equal-weighted by model' : 'awaiting new run';
 
   // Industries
   const industries = new Set(stocks.map(s => (s.industry||'Unknown').trim()).filter(Boolean));
-  document.getElementById('stat-industries').textContent = industries.size;
+  _animateCount(document.getElementById('stat-industries'), industries.size);
   document.getElementById('stat-industries-sub').textContent = industries.size ? 'sector-diversified, capped at 3 per' : '—';
 
   renderAllocation(stocks);

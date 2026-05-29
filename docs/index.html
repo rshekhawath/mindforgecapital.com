@@ -3534,6 +3534,43 @@ function setBilling(mode) {
     nums.forEach(animate);
   }
 })();
+
+// V3.7: subtle hero-card parallax — drifts up to 12px on scroll for depth.
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var card = document.querySelector('.hv-card');
+  if (!card) return;
+  var ticking = false;
+  function update() {
+    var drift = Math.min(12, Math.max(0, window.scrollY * 0.04));
+    card.style.transform = 'translateY(' + drift + 'px)';
+    ticking = false;
+  }
+  function onScroll() { if (!ticking) { requestAnimationFrame(update); ticking = true; } }
+  window.addEventListener('scroll', onScroll, {passive: true});
+  update();
+})();
+
+// V3.7: re-attach the V3.4 strategy-card magnetic shine (regressed when
+// the duplicate scroll-progress / scroll-to-top blocks were stripped from
+// index.html — the .card-shine CSS is in place but no JS was injecting the span).
+(function() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.strat-card').forEach(function(card) {
+    if (card.querySelector('.card-shine')) return;  // idempotent
+    var shine = document.createElement('span');
+    shine.className = 'card-shine';
+    shine.setAttribute('aria-hidden', 'true');
+    card.appendChild(shine);
+    card.addEventListener('mousemove', function(e) {
+      var r = card.getBoundingClientRect();
+      shine.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+      shine.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+      shine.style.opacity = '1';
+    });
+    card.addEventListener('mouseleave', function() { shine.style.opacity = '0'; });
+  });
+})();
 </script>
 
 </body>
