@@ -2682,6 +2682,178 @@ textarea:focus-visible, select:focus-visible {
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: .35;
 }
+
+/* ═════════════════════════════════════════════════════════
+   VISUAL POLISH v11 — PAGE-WIDE FINESSE
+   May 2026 — section transitions, refined cards, brand
+   accents, deeper micro-interactions
+   ═════════════════════════════════════════════════════════ */
+
+/* —— Section reveal: gentler stagger curve —— */
+.fade-up {
+  transition: opacity .65s cubic-bezier(.22,.7,.2,1),
+              transform .65s cubic-bezier(.22,.7,.2,1);
+}
+
+/* —— Step cards: brand-accent corner on hover —— */
+.step {
+  position: relative;
+  overflow: hidden;
+  transition: transform .3s cubic-bezier(.2,.7,.2,1),
+              border-color .3s ease,
+              box-shadow .3s ease;
+}
+.step::before {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), #2dd4bf);
+  transition: width .4s cubic-bezier(.2,.7,.2,1);
+}
+.step:hover::before { width: 100%; }
+.step:hover {
+  transform: translateY(-2px);
+  border-color: rgba(26,80,216,0.20);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.85) inset,
+    0 12px 28px -14px rgba(26,80,216,0.18);
+}
+
+/* —— Hero card: refined arrival —— */
+.hero-card {
+  animation: mf-hero-card-in 0.9s cubic-bezier(.22,.7,.2,1) 0.15s both;
+}
+@keyframes mf-hero-card-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-card { animation: none; }
+}
+
+/* —— Strategy card price: subtle gradient on the headline value —— */
+.strat-card .price-amt {
+  background: linear-gradient(135deg, #0f172a 0%, #1a50d8 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* —— Why-card icon: refined arrival —— */
+.why-card .why-icon {
+  position: relative;
+}
+.why-card .why-icon::after {
+  content: ''; position: absolute; inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(26,80,216,0.18), rgba(45,212,191,0.10));
+  opacity: 0; transition: opacity .35s ease;
+  z-index: -1;
+}
+.why-card:hover .why-icon::after { opacity: 1; }
+
+/* —— Strategy card top accent line on hover —— */
+.strat-card:not(.featured) {
+  position: relative;
+}
+.strat-card:not(.featured)::after {
+  content: ''; position: absolute; top: 0; left: 50%; right: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), #2dd4bf);
+  border-radius: 2px;
+  transition: left .35s cubic-bezier(.2,.7,.2,1),
+              right .35s cubic-bezier(.2,.7,.2,1);
+  pointer-events: none;
+}
+.strat-card:not(.featured):hover::after { left: 12%; right: 12%; }
+
+/* —— Newsletter container: refined edge —— */
+.newsletter .container > div {
+  position: relative;
+  overflow: hidden;
+}
+.newsletter .container > div::after {
+  content: ''; position: absolute; bottom: 0; left: 50%;
+  width: 0; height: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--accent), #2dd4bf);
+  border-radius: 2px;
+  transition: width .5s cubic-bezier(.22,.7,.2,1);
+}
+.newsletter:hover .container > div::after { width: 30%; }
+
+/* —— Pricing card focus on hover (lift the most-popular even higher) —— */
+.strat-card.featured {
+  animation: mf-featured-glow 6s ease-in-out infinite;
+}
+@keyframes mf-featured-glow {
+  0%, 100% {
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.85) inset,
+      0 0 0 1px rgba(26,80,216,0.18),
+      0 20px 40px -22px rgba(26,80,216,0.20);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.95) inset,
+      0 0 0 1px rgba(26,80,216,0.28),
+      0 28px 52px -22px rgba(26,80,216,0.30),
+      0 0 0 4px rgba(26,80,216,0.06);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .strat-card.featured { animation: none; }
+}
+
+/* —— Team card: refined social/role transitions —— */
+.team-role {
+  position: relative; display: inline-block;
+}
+.team-role::after {
+  content: ''; position: absolute; left: 0; bottom: -2px;
+  width: 0; height: 1px;
+  background: var(--accent3);
+  transition: width .35s ease;
+}
+.team-card:hover .team-role::after { width: 100%; }
+
+/* —— Timeline: refined dot transitions on hover —— */
+.tl-item {
+  transition: transform .25s ease;
+}
+.tl-item:hover { transform: translateX(4px); }
+.tl-item:hover::before {
+  background: linear-gradient(135deg, var(--accent), #2dd4bf);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tl-item { transition: none; }
+}
+
+/* —— Proof bar number: subtle scale on hover —— */
+.proof-num {
+  transition: transform .25s cubic-bezier(.2,.7,.2,1),
+              color .25s ease;
+}
+.proof-item:hover .proof-num {
+  transform: scale(1.05);
+  color: var(--accent);
+}
+
+/* —— Section background: gentle ambient gradient on key sections —— */
+.how, .why, .strategies, .team {
+  position: relative;
+}
+.how::before, .why::before, .strategies::before, .team::before {
+  content: ''; position: absolute; top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 80px; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(26,80,216,0.30), transparent);
+  border-radius: 2px;
+  opacity: 0;
+}
+
+/* —— Mobile sticky CTA: refined hover/press —— */
+@media (max-width: 768px) {
+  .mcta-primary:active { transform: scale(0.98); }
+}
 </style>
   <!-- Favicon & App Icons -->
   <link rel="icon" href="assets/favicon-32.png" type="image/png">
