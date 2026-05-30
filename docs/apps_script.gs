@@ -1,18 +1,18 @@
 /*
 ================================================================================
-  MindForge Capital — Google Apps Script Backend
+  MindForge Capital - Google Apps Script Backend
 ================================================================================
 
 SETUP INSTRUCTIONS:
 1. Create a Google Sheet with 3 sheets: "strategy_runs", "subscriptions", "leads"
 2. Add the column headers to each sheet (see SHEET STRUCTURE below)
-3. Go to Extensions → Apps Script
+3. Go to Extensions -> Apps Script
 4. Paste this entire code into the editor
 5. Save the project
-6. Click Deploy → New Deployment → Web App
+6. Click Deploy -> New Deployment -> Web App
 7. Execute as: Me (your account)
 8. Who has access: Anyone
-9. Click Deploy → Authorize → Grant permission to MindForge Capital
+9. Click Deploy -> Authorize -> Grant permission to MindForge Capital
 10. Copy the Deployment ID and Web App URL
 11. Replace PLACEHOLDER_APPS_SCRIPT_URL in:
     - dashboard.html
@@ -59,14 +59,14 @@ SHEET STRUCTURE:
 
 const SHEET_NAME = 'MindForge Capital'; // Change to your Google Sheet name
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // MAIN HANDLERS
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
-// ── ADMIN AUTH ───────────────────────────────────────────────────────────────
+// -- ADMIN AUTH ---------------------------------------------------------------
 // activate / decline / get_leads require admin_secret matching ADMIN_SECRET in
 // Script Properties. Set it once via the Apps Script editor:
-//   Project Settings → Script Properties → Add property
+//   Project Settings -> Script Properties -> Add property
 //   Key: ADMIN_SECRET   Value: <a long random string you keep private>
 // Without it set, admin endpoints fail-closed (return an error).
 function adminAuthOk(provided) {
@@ -100,13 +100,13 @@ function doPost(e) {
       if (!adminAuthOk(payload.admin_secret)) return adminAuthError();
       return handleDecline(payload);
     } else if (!action) {
-      // Legacy payload with no action — treat as a save_lead.
+      // Legacy payload with no action - treat as a save_lead.
       return handleLegacyLead(payload);
     } else {
       // Reject unknown actions explicitly. The previous code silently
       // fell through to handleLegacyLead, which meant any *new* action
       // (e.g. 'decline') against a not-yet-redeployed Apps Script would
-      // create a phantom pending lead and return {status: 'ok'} —
+      // create a phantom pending lead and return {status: 'ok'} -
       // misleading the caller into thinking the action succeeded.
       return ContentService.createTextOutput(JSON.stringify({
         status: 'error',
@@ -154,9 +154,9 @@ function doGet(e) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // ACTION HANDLERS
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 function handleSubscribe(payload) {
   const token = payload.token;
@@ -308,7 +308,7 @@ function handleActivate(payload) {
   // Mark lead as activated in leads sheet.
   // Match on (email, strategy) so a user with multiple pending leads (e.g.
   // MultiAsset + LargeMidcap both pending) gets the *correct* row flipped.
-  // Falls back to email-only match if no row matches both — preserves legacy
+  // Falls back to email-only match if no row matches both - preserves legacy
   // behaviour for rows where the strategy column may be empty/historical.
   const leadsSheet = getSheet('leads');
   const leadsData  = leadsSheet.getDataRange().getValues();
@@ -325,7 +325,7 @@ function handleActivate(payload) {
       break;
     }
   }
-  // Pass 2 (fallback): email-only match — legacy behaviour
+  // Pass 2 (fallback): email-only match - legacy behaviour
   if (updatedIdx === -1) {
     for (let i = leadsData.length - 1; i >= 1; i--) {
       const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
@@ -349,16 +349,16 @@ function handleActivate(payload) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DECLINE — admin marks a pending lead as declined so they stop appearing in
+// -----------------------------------------------------------------------------
+// DECLINE - admin marks a pending lead as declined so they stop appearing in
 // the activation queue. No email is sent, no subscription is created.
 // Looks up by email; finds the most recent row whose status is neither
 // already 'activated' nor already 'declined', and sets status='declined'.
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 function handleDecline(payload) {
   // Row identification is timestamp-first, email-fallback.
   // Timestamp is the only field that's guaranteed unique even for leads with
-  // no email (e.g. "Newsletter only" rows or stale blank rows) — pre-fix
+  // no email (e.g. "Newsletter only" rows or stale blank rows) - pre-fix
   // those rows could never be declined because the only matcher was email.
   const email     = String(payload.email     || '').toLowerCase().trim();
   const timestamp = String(payload.timestamp || '').trim();
@@ -395,7 +395,7 @@ function handleDecline(payload) {
     }
   }
 
-  // Pass 2 (fallback): email match — legacy behaviour for clients that
+  // Pass 2 (fallback): email match - legacy behaviour for clients that
   // haven't been updated to send timestamp yet.
   if (!updated && email) {
     for (let i = leadsData.length - 1; i >= 1; i--) {
@@ -506,7 +506,7 @@ function handleGetStocks(token) {
   const stocks = [];
 
   for (let i = 1; i < runData.length; i++) {
-    // Filter by BOTH run_id AND strategy — guards against run_id collisions
+    // Filter by BOTH run_id AND strategy - guards against run_id collisions
     // where multiple strategies share the same timestamp-based id.
     if (runData[i][0] === pinnedRunId && runData[i][2] === subscription.strategy) {
       stocks.push({
@@ -646,9 +646,9 @@ function handleRecover(email, phone) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // OTP LOGIN HANDLERS
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 function handleRequestOTP(email) {
   const emailClean = (email || '').toLowerCase().trim();
@@ -669,7 +669,7 @@ function handleRequestOTP(email) {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
   const key = 'otp_' + emailClean.replace(/[^a-z0-9]/g, '_');
-  // `attempts` caps brute-force guessing within the 10-min window — a 6-digit
+  // `attempts` caps brute-force guessing within the 10-min window - a 6-digit
   // code is only 10^6 wide, so without a cap it is guessable by a script.
   PropertiesService.getScriptProperties().setProperty(key, JSON.stringify({ otp, expiry, attempts: 0 }));
 
@@ -715,7 +715,7 @@ function handleVerifyOTP(email, otp) {
     return errorResponse('Incorrect code. Please try again.');
   }
 
-  // OTP valid — delete it so it can't be reused
+  // OTP valid - delete it so it can't be reused
   PropertiesService.getScriptProperties().deleteProperty(key);
 
   // Return all subscriptions for this email.
@@ -792,7 +792,7 @@ function sendOTPEmail(email, otp) {
       <p style="font-size:12px;color:#94a3b8;margin-top:20px;">Do not share this code with anyone.</p>
     </div>
     <div class="footer">
-      © 2026 MindForge Capital ·
+      &copy; 2026 MindForge Capital &middot;
       <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a>
     </div>
   </div>
@@ -816,9 +816,9 @@ function sendOTPEmail(email, otp) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // HELPER FUNCTIONS
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 function getSheet(sheetName) {
   const ss = SpreadsheetApp.openById(PropertiesService.getScriptProperties().getProperty('SHEET_ID'));
@@ -861,31 +861,31 @@ function errorResponse(error) {
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // EMAIL FUNCTIONS
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 //
 // Spam / deliverability notes:
 //   1. All outbound emails now include a plain-text body (the 3rd arg to
 //      GmailApp.sendEmail). HTML-only emails are a major spam signal.
 //   2. A `replyTo` address is set so inbox providers see a valid return path.
-//   3. Visible Unsubscribe links are included in every footer — the single
+//   3. Visible Unsubscribe links are included in every footer - the single
 //      biggest factor for Gmail / Outlook bulk-sender reputation since Feb 2024.
-//   4. Subject lines no longer use ✅ / 🎉 / 🔔 emojis, which heuristic spam
+//   4. Subject lines no longer use (check) / (party) / (bell) emojis, which heuristic spam
 //      filters penalise on transactional mail.
 //
 // Things still to do OUTSIDE this script (Apps Script alone cannot fix these):
 //   a. Add an SPF record for mindforgecapital.com that includes _spf.google.com
 //      (e.g. "v=spf1 include:_spf.google.com ~all")
 //   b. Enable DKIM signing for mindforgecapital.com in Google Workspace Admin
-//      (Apps → Google Workspace → Gmail → Authenticate email).
+//      (Apps -> Google Workspace -> Gmail -> Authenticate email).
 //   c. Add a DMARC record: "v=DMARC1; p=quarantine; rua=mailto:postmaster@mindforgecapital.com"
 //   d. Switch sender to a branded Workspace address (e.g. sagar.shekhawath@mindforgecapital.com)
-//      instead of a @gmail.com account — Gmail's bulk-sender rules require
+//      instead of a @gmail.com account - Gmail's bulk-sender rules require
 //      domain-aligned From addresses for best deliverability.
 //   e. Warm the sender: start with low volume and ramp slowly.
 //
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
   const subject = 'Your MindForge Capital dashboard access';
@@ -948,7 +948,7 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
           <p>
             <strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Trade at your own risk. Please review our privacy policy and terms of service.
           </p>
-          <p style="margin-top: 16px; color: #9ca3af;">© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
+          <p style="margin-top: 16px; color: #9ca3af;">&copy; 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> &middot; <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
         </div>
       </div>
     </body>
@@ -1016,7 +1016,7 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
           <p style="font-size: 14px; color: #6b7280; margin-top: 24px;">If you did not request this link, you can safely ignore this email. Your subscription is secure.</p>
         </div>
         <div class="footer">
-          <p>© 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#6b7280;">Unsubscribe</a></p>
+          <p>&copy; 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#6b7280;">Unsubscribe</a></p>
         </div>
       </div>
     </body>
@@ -1096,7 +1096,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           </div>
 
           <div class="note">
-            <strong>Keep this link private.</strong> Your dashboard link is unique to you — do not share it. If you ever lose it, use the <a href="https://mindforgecapital.com/recover.html">link recovery page</a>.
+            <strong>Keep this link private.</strong> Your dashboard link is unique to you - do not share it. If you ever lose it, use the <a href="https://mindforgecapital.com/recover.html">link recovery page</a>.
           </div>
 
           <p style="font-size:13px;color:#94a3b8;">
@@ -1104,7 +1104,7 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           </p>
         </div>
         <div class="footer">
-          <p>© 2026 MindForge Capital · <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a><br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a> · <a href="https://mindforgecapital.com/privacy.html" style="color:#94a3b8;text-decoration:none;">Privacy</a></p>
+          <p>&copy; 2026 MindForge Capital &middot; <a href="https://mindforgecapital.com" style="color:#1a50d8;text-decoration:none;">mindforgecapital.com</a><br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;text-decoration:none;">Unsubscribe</a> &middot; <a href="https://mindforgecapital.com/privacy.html" style="color:#94a3b8;text-decoration:none;">Privacy</a></p>
         </div>
       </div>
     </body>
@@ -1170,7 +1170,7 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
   <div class="container">
     <div class="header">
       <h1>New Lead Registered</h1>
-      <p>MindForge Capital — Admin Notification</p>
+      <p>MindForge Capital - Admin Notification</p>
     </div>
     <div class="content">
       <div class="row"><span class="label">Name</span><span class="value">` + name + `</span></div>
@@ -1182,7 +1182,7 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
         <a href="https://mindforgecapital.com/admin.html" class="btn">Open Admin Panel &#8594;</a>
       </div>
     </div>
-    <div class="footer">© 2026 MindForge Capital</div>
+    <div class="footer">&copy; 2026 MindForge Capital</div>
   </div>
 </body>
 </html>`;
@@ -1198,13 +1198,13 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // SETUP UTILITY (run once to initialize)
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 function setupSheetId() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
   Logger.log('Sheet ID set: ' + ss.getId());
-  Logger.log('Now deploy this as a Web App (Deploy → New Deployment → Web App)');
+  Logger.log('Now deploy this as a Web App (Deploy -> New Deployment -> Web App)');
 }
