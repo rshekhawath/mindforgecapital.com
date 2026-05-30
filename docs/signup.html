@@ -293,10 +293,21 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
           <option value="" disabled selected>Select a strategy</option>
           <option value="MindForge MultiAsset">MindForge MultiAsset — ₹99/month</option>
           <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹1,499/month</option>
-          <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,500/month</option>
-          <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹10,000/month</option>
+          <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
+          <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹9,999/month</option>
         </select>
         <div class="strategy-note" id="strategy-note"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="reg-duration">Duration</label>
+        <select id="reg-duration" required onchange="onStrategyChange()">
+          <option value="1">1 month</option>
+          <option value="3">3 months — 5% off</option>
+          <option value="6">6 months — 10% off</option>
+          <option value="12">1 year — 20% off</option>
+        </select>
+        <div class="strategy-note" id="duration-note" style="display:none;"></div>
       </div>
 
       <!-- ── REQUIRED RISK + T&C ACKNOWLEDGEMENT ── -->
@@ -377,18 +388,38 @@ var WHATSAPP_NUMBER = '917601032082';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 
 var STRATEGY_META = {
-  'MindForge MultiAsset':       { price: '₹99/month',    annual: '₹990/year',     desc: '8 ETFs across equity, gold, silver & bonds. Defensive, diversified. Rec. investment ₹1,00,000.' },
-  'MindForge LargeMidcap 250':  { price: '₹1,499/month', annual: '₹14,990/year',  desc: '25 stocks from Nifty LargeMidcap 250. Most popular plan. Rec. investment ₹15,00,000.' },
-  'MindForge SmallMicro 500':   { price: '₹2,500/month', annual: '₹24,990/year',  desc: '25 small & micro-cap stocks. Highest conviction. Rec. investment ₹25,00,000.' },
-  'MindForge S&P 500':          { price: '₹10,000/month', annual: '₹99,990/year',  desc: '30 US large-cap stocks from the S&P 500. USD pricing. Rec. investment ₹1,00,00,000.' }
+  'MindForge MultiAsset':       { monthly: 99,   desc: '8 ETFs across equity, gold, silver & bonds. Defensive, diversified. Rec. investment ₹1,00,000.' },
+  'MindForge LargeMidcap 250':  { monthly: 1499, desc: '25 stocks from Nifty LargeMidcap 250. Most popular plan. Rec. investment ₹15,00,000.' },
+  'MindForge SmallMicro 500':   { monthly: 2499, desc: '25 small & micro-cap stocks. Highest conviction. Rec. investment ₹25,00,000.' },
+  'MindForge S&P 500':          { monthly: 9999, desc: '30 US large-cap stocks from the S&P 500. Rec. investment ₹1,00,00,000.' }
 };
+// Duration → discount (item 9): 1mo 0%, 3mo 5%, 6mo 10%, 12mo 20%
+var DURATIONS = {
+  '1':  { months: 1,  disc: 0.00, label: '1 month'  },
+  '3':  { months: 3,  disc: 0.05, label: '3 months' },
+  '6':  { months: 6,  disc: 0.10, label: '6 months' },
+  '12': { months: 12, disc: 0.20, label: '1 year'   }
+};
+function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function priceFor(strategy, durKey){
+  var m = STRATEGY_META[strategy]; if (!m) return null;
+  var d = DURATIONS[durKey] || DURATIONS['1'];
+  var total = Math.round(m.monthly * d.months * (1 - d.disc));
+  return { total: total, months: d.months, disc: d.disc, label: d.label, save: (m.monthly * d.months) - total, monthly: m.monthly };
+}
 
 function onStrategyChange() {
   var sel = document.getElementById('reg-strategy').value;
+  var durKey = (document.getElementById('reg-duration') || {}).value || '1';
   var note = document.getElementById('strategy-note');
-  if (sel && STRATEGY_META[sel]) {
-    var m = STRATEGY_META[sel];
-    note.innerHTML = '<strong>' + m.price + '</strong> monthly &nbsp;·&nbsp; or <strong>' + m.annual + '</strong> (2 months free)<br><span style="color:var(--text3);margin-top:3px;display:block;">' + m.desc + '</span>';
+  var m = STRATEGY_META[sel];
+  if (sel && m) {
+    var p = priceFor(sel, durKey);
+    var saveTxt = p.disc > 0
+      ? ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">save ' + inr(p.save) + ' (' + Math.round(p.disc * 100) + '% off)</span>'
+      : '';
+    note.innerHTML = '<strong>' + inr(p.total) + '</strong> for ' + p.label + saveTxt +
+      '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + inr(m.monthly) + '/month base — ' + m.desc + '</span>';
     note.style.display = 'block';
   } else {
     note.style.display = 'none';
@@ -457,9 +488,12 @@ async function handleSubmit() {
   setBtn(true);
 
   var phone = '+91' + rawPhone;
-  var price = STRATEGY_META[strategy].price;
+  var durKey = (document.getElementById('reg-duration') || {}).value || '1';
+  var p = priceFor(strategy, durKey);
+  var price = inr(p.total) + ' for ' + p.label;
 
-  // Save lead to sheet (fire-and-forget — don't block UX on network)
+  // Save lead to sheet (fire-and-forget — don't block UX on network).
+  // agreement:true tells the backend to generate + store the signed T&C PDF.
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: {'Content-Type': 'text/plain'},
@@ -469,14 +503,17 @@ async function handleSubmit() {
       email: email,
       phone: phone,
       strategy: strategy,
-      price: price
+      price: price,
+      duration_months: p.months,
+      duration_label: p.label,
+      agreement: true
     })
   }).catch(function(err){ console.warn('Lead save failed (non-blocking):', err); });
 
   // Build WhatsApp message
   var waText = encodeURIComponent(
     'Hi MindForge Capital! I would like to subscribe to ' + strategy +
-    ' (' + price + ').' +
+    ' — ' + p.label + ' (' + price + ').' +
     '\n\nName: ' + name +
     '\nEmail: ' + email +
     '\nPhone: ' + phone

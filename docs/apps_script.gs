@@ -224,10 +224,17 @@ function handleSaveRun(payload) {
 
   Logger.log('Saved ' + stocks.length + ' stocks for ' + strategy);
 
+  // Item 11: email a rebalance notification to non-monthly subscribers of this
+  // strategy (notify flag on, still active). Non-fatal.
+  let notified = 0;
+  try { notified = notifyRebalance(strategy, runId); }
+  catch (err) { Logger.log('notifyRebalance failed: ' + err); }
+
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
     run_id: runId,
-    count: stocks.length
+    count: stocks.length,
+    notified: notified
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -250,14 +257,28 @@ function handleLegacyLead(payload) {
 
 function handleSaveLead(payload) {
   const sheet = getSheet('leads');
+  const ts = new Date().toISOString();
+  const durationMonths = parseInt(payload.duration_months, 10) || 1;
+
+  // Item 12: when the user ticked the T&C box (agreement:true), generate a
+  // signed-agreement PDF and store it in Drive alongside the backend sheet.
+  // Non-fatal: if it fails the lead still saves.
+  let pdfUrl = '';
+  if (payload.agreement) {
+    try { pdfUrl = generateAgreementPdf(payload, ts); }
+    catch (err) { Logger.log('Agreement PDF generation failed: ' + err); }
+  }
+
   sheet.appendRow([
-    new Date().toISOString(),
+    ts,
     payload.name  || '',
     payload.email || '',
     payload.phone || '',
     payload.strategy || '',
     payload.price || '',
-    'pending'
+    'pending',
+    durationMonths,  // H: requested duration (months)
+    pdfUrl           // I: signed-agreement PDF link (Drive)
   ]);
 
   // Notify admin of new lead
@@ -265,7 +286,8 @@ function handleSaveLead(payload) {
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
-    message: 'Lead saved'
+    message: 'Lead saved',
+    agreement_pdf: pdfUrl
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -281,16 +303,54 @@ function handleActivate(payload) {
 
   // Generate secure token
   const token = generateToken();
+  const strategyClean = String(strategy || '').toLowerCase().trim();
 
-  // 30-day expiry
+  // Mark the matching pending lead as activated AND read the duration it was
+  // created with (leads col H, item 9/10) so the subscription expiry + notify
+  // flag match what the subscriber signed up for. payload.duration_months
+  // overrides if the admin passed one explicitly.
+  const leadsSheet = getSheet('leads');
+  const leadsData  = leadsSheet.getDataRange().getValues();
+  let durationMonths = parseInt(payload.duration_months, 10) || 0;
+  let matched = false;
+  // Pass 1: exact (email, strategy) match, newest pending first
+  for (let i = leadsData.length - 1; i >= 1; i--) {
+    const rowEmail    = String(leadsData[i][2] || '').toLowerCase().trim();
+    const rowStrategy = String(leadsData[i][4] || '').toLowerCase().trim();
+    const rowStatus   = String(leadsData[i][6] || '').toLowerCase();
+    if (rowEmail === email && rowStrategy === strategyClean && rowStatus !== 'activated' && rowStatus !== 'declined') {
+      leadsSheet.getRange(i + 1, 7).setValue('activated');
+      if (!durationMonths) durationMonths = parseInt(leadsData[i][7], 10) || 1;
+      matched = true;
+      break;
+    }
+  }
+  // Pass 2 (fallback): email-only match - legacy behaviour
+  if (!matched) {
+    for (let i = leadsData.length - 1; i >= 1; i--) {
+      const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
+      const rowStatus = String(leadsData[i][6] || '').toLowerCase();
+      if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
+        leadsSheet.getRange(i + 1, 7).setValue('activated');
+        if (!durationMonths) durationMonths = parseInt(leadsData[i][7], 10) || 1;
+        break;
+      }
+    }
+  }
+  if (!durationMonths) durationMonths = 1;
+
+  // Expiry by duration (item 9): 1 / 3 / 6 / 12 calendar months.
   const subscribedAt = new Date();
   const expiresAt    = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30);
+  expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
 
-  // Find latest run_id for this strategy
+  // Item 11: non-monthly subscribers get rebalance notifications auto-on.
+  const notifyFlag = durationMonths > 1 ? 'on' : 'off';
+
+  // Find latest run_id for this strategy (pinned at activation)
   const runId = findLatestRunId(strategy);
 
-  // Append to subscriptions sheet
+  // Append to subscriptions sheet (K: duration_months, L: notify flag)
   const subSheet = getSheet('subscriptions');
   subSheet.appendRow([
     token,
@@ -302,40 +362,10 @@ function handleActivate(payload) {
     subscribedAt.toISOString(),
     expiresAt.toISOString(),
     'manual_upi',
-    'active'
+    'active',
+    durationMonths,
+    notifyFlag
   ]);
-
-  // Mark lead as activated in leads sheet.
-  // Match on (email, strategy) so a user with multiple pending leads (e.g.
-  // MultiAsset + LargeMidcap both pending) gets the *correct* row flipped.
-  // Falls back to email-only match if no row matches both - preserves legacy
-  // behaviour for rows where the strategy column may be empty/historical.
-  const leadsSheet = getSheet('leads');
-  const leadsData  = leadsSheet.getDataRange().getValues();
-  const strategyClean = String(strategy || '').toLowerCase().trim();
-  let updatedIdx = -1;
-  // Pass 1: exact (email, strategy) match, newest pending first
-  for (let i = leadsData.length - 1; i >= 1; i--) {
-    const rowEmail    = String(leadsData[i][2] || '').toLowerCase().trim();
-    const rowStrategy = String(leadsData[i][4] || '').toLowerCase().trim();
-    const rowStatus   = String(leadsData[i][6] || '').toLowerCase();
-    if (rowEmail === email && rowStrategy === strategyClean && rowStatus !== 'activated' && rowStatus !== 'declined') {
-      leadsSheet.getRange(i + 1, 7).setValue('activated');
-      updatedIdx = i;
-      break;
-    }
-  }
-  // Pass 2 (fallback): email-only match - legacy behaviour
-  if (updatedIdx === -1) {
-    for (let i = leadsData.length - 1; i >= 1; i--) {
-      const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
-      const rowStatus = String(leadsData[i][6] || '').toLowerCase();
-      if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
-        leadsSheet.getRange(i + 1, 7).setValue('activated');
-        break;
-      }
-    }
-  }
 
   // Send dashboard access email
   const dashboardUrl = getBaseUrl() + '/dashboard.html?token=' + token;
@@ -345,6 +375,7 @@ function handleActivate(payload) {
     status: 'ok',
     token: token,
     dashboard_url: dashboardUrl,
+    duration_months: durationMonths,
     message: 'Subscriber activated and email sent'
   })).setMimeType(ContentService.MimeType.JSON);
 }
@@ -465,7 +496,8 @@ function handleGetStocks(token) {
         subscribed_at: subData[i][6],
         expires_at: subData[i][7],
         payment_id: subData[i][8],
-        status: subData[i][9]
+        status: subData[i][9],
+        duration_months: parseInt(subData[i][10], 10) || 1
       };
       break;
     }
@@ -486,20 +518,25 @@ function handleGetStocks(token) {
     return errorResponse('Subscription is not active');
   }
 
-  // Lock to signup-month picks: serve the run_id PINNED on the subscription
-  // (whatever was latest when the subscriber was activated), NOT the current
-  // latest run. A subscriber sees the portfolio they paid for; to receive a
-  // newer monthly rebalance they renew, and each renewal creates a fresh
-  // subscription row pinned to that month's run.
-  //
-  // Fallback: if the stored run_id is missing or a 'default_run_*' placeholder
-  // (subscribed before any run existed for the strategy), fall back to the
-  // latest run so the dashboard isn't empty.
-  let pinnedRunId = subscription.run_id;
-  if (!pinnedRunId || String(pinnedRunId).indexOf('default_run_') === 0) {
+  // Which run to serve:
+  //  - MONTHLY subscribers (duration 1 month) are LOCKED to the run pinned at
+  //    signup. To receive a newer monthly rebalance they renew, and each
+  //    renewal creates a fresh subscription row pinned to that month's run.
+  //  - NON-MONTHLY subscribers (3/6/12-month) receive the LATEST rebalance for
+  //    the life of their subscription (they paid for ongoing signals and are
+  //    emailed on each rebalance - see notifyRebalance()).
+  // Fallback: if a monthly sub's stored run_id is missing or a 'default_run_*'
+  // placeholder, fall back to the latest run so the dashboard isn't empty.
+  let pinnedRunId;
+  if ((subscription.duration_months || 1) > 1) {
     pinnedRunId = findLatestRunId(subscription.strategy);
-    subscription.run_id = pinnedRunId;
+  } else {
+    pinnedRunId = subscription.run_id;
+    if (!pinnedRunId || String(pinnedRunId).indexOf('default_run_') === 0) {
+      pinnedRunId = findLatestRunId(subscription.strategy);
+    }
   }
+  subscription.run_id = pinnedRunId;
 
   const runSheet = getSheet('strategy_runs');
   const runData = runSheet.getDataRange().getValues();
@@ -929,11 +966,11 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
 
           <div class="details">
             <div class="details-row">
-              <span class="details-label">Strategy</span>
+              <span class="details-label">Strategy:&nbsp;</span>
               <span class="details-value">` + strategy + `</span>
             </div>
             <div class="details-row">
-              <span class="details-label">Valid Until</span>
+              <span class="details-label">Valid Until:&nbsp;</span>
               <span class="details-value">` + expiresAt.toLocaleDateString('en-IN') + `</span>
             </div>
           </div>
@@ -1086,11 +1123,11 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
 
           <div class="details">
             <div class="details-row">
-              <span class="details-label">Strategy</span>
+              <span class="details-label">Strategy:&nbsp;</span>
               <span class="details-value">` + strategy + `</span>
             </div>
             <div class="details-row">
-              <span class="details-label">Valid Until</span>
+              <span class="details-label">Valid Until:&nbsp;</span>
               <span class="details-value">` + expiresAt.toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + `</span>
             </div>
           </div>
@@ -1207,4 +1244,93 @@ function setupSheetId() {
   PropertiesService.getScriptProperties().setProperty('SHEET_ID', ss.getId());
   Logger.log('Sheet ID set: ' + ss.getId());
   Logger.log('Now deploy this as a Web App (Deploy -> New Deployment -> Web App)');
+}
+
+// -----------------------------------------------------------------------------
+// AGREEMENT PDF (item 12) + REBALANCE NOTIFICATIONS (item 11)
+// -----------------------------------------------------------------------------
+
+function escapeHtmlGs(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Drive folder (next to the backend Sheet) that stores signed-agreement PDFs.
+function getOrCreateAgreementsFolder() {
+  var parent;
+  try {
+    var ssId = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+    var parents = DriveApp.getFileById(ssId).getParents();
+    parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  } catch (e) {
+    parent = DriveApp.getRootFolder();
+  }
+  var existing = parent.getFoldersByName('MindForge Agreements');
+  return existing.hasNext() ? existing.next() : parent.createFolder('MindForge Agreements');
+}
+
+// Item 12: generate the subscriber's T&C agreement as a PDF, store in Drive, return URL.
+function generateAgreementPdf(payload, ts) {
+  var name = payload.name || 'Subscriber';
+  var html =
+    '<html><body style="font-family:Arial,Helvetica,sans-serif;padding:36px;color:#0c1831;">' +
+    '<h2 style="margin:0 0 4px;">MindForge Capital - Subscription Agreement</h2>' +
+    '<p style="color:#64748b;margin:0 0 20px;font-size:12px;">Recorded ' + escapeHtmlGs(ts) + '</p>' +
+    '<table cellpadding="8" style="font-size:13px;border-collapse:collapse;width:100%;">' +
+    '<tr><td style="width:140px;color:#64748b;">Name</td><td><b>'     + escapeHtmlGs(name) + '</b></td></tr>' +
+    '<tr><td style="color:#64748b;">Email</td><td>'    + escapeHtmlGs(payload.email || '') + '</td></tr>' +
+    '<tr><td style="color:#64748b;">Phone</td><td>'    + escapeHtmlGs(payload.phone || '') + '</td></tr>' +
+    '<tr><td style="color:#64748b;">Strategy</td><td>' + escapeHtmlGs(payload.strategy || '') + '</td></tr>' +
+    '<tr><td style="color:#64748b;">Plan</td><td>'     + escapeHtmlGs(payload.price || '') + '</td></tr>' +
+    '</table>' +
+    '<h3 style="margin-top:24px;">Acknowledgement</h3>' +
+    '<p style="font-size:13px;line-height:1.6;">By submitting the registration form on mindforgecapital.com, the subscriber named above confirmed that they have read and agree to the MindForge Capital Terms &amp; Conditions, and acknowledge that they accept all investment risks, including the possible total loss of capital. Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. MindForge provides research only and is not an investment adviser, portfolio manager, or fiduciary. All investment decisions are the subscriber\'s own.</p>' +
+    '<p style="margin-top:32px;font-size:11px;color:#94a3b8;">Generated automatically when the subscriber accepted the Terms &amp; Conditions checkbox. Timestamp: ' + escapeHtmlGs(ts) + '.</p>' +
+    '</body></html>';
+  var pdf = Utilities.newBlob(html, 'text/html', 'agreement.html').getAs('application/pdf');
+  var folder = getOrCreateAgreementsFolder();
+  var safe = (name + '_' + (payload.strategy || '') + '_' + ts).replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 80);
+  var file = folder.createFile(pdf).setName('MFC_Agreement_' + safe + '.pdf');
+  return file.getUrl();
+}
+
+// Item 11: email non-monthly active subscribers of a strategy that a new rebalance is live.
+function notifyRebalance(strategy, runId) {
+  var subSheet = getSheet('subscriptions');
+  var data = subSheet.getDataRange().getValues();
+  var now = Date.now();
+  var count = 0;
+  for (var i = 1; i < data.length; i++) {
+    var sStrategy = data[i][4];
+    var status    = String(data[i][9] || '').toLowerCase();
+    var notify    = String(data[i][11] || '').toLowerCase();   // L: notify flag
+    var expiresMs = data[i][7] ? new Date(data[i][7]).getTime() : 0;
+    if (sStrategy === strategy && status === 'active' && notify === 'on' && expiresMs > now) {
+      try {
+        sendRebalanceEmail(data[i][1], data[i][2], strategy, getBaseUrl() + '/dashboard.html?token=' + data[i][0]);
+        count++;
+      } catch (e) {
+        Logger.log('rebalance email failed for ' + data[i][1] + ': ' + e);
+      }
+    }
+  }
+  return count;
+}
+
+function sendRebalanceEmail(email, name, strategy, dashboardUrl) {
+  if (!email) return;
+  var subject = 'New ' + strategy + ' rebalance is live - MindForge Capital';
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>' +
+    '<body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;background:#f0f5ff;color:#0c1831;margin:0;padding:20px;">' +
+    '<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #dbeafe;border-radius:14px;overflow:hidden;">' +
+    '<div style="background:linear-gradient(135deg,#1a50d8,#2563eb);padding:28px 24px;"><h1 style="margin:0;font-size:20px;color:#fff;">MindForge Capital</h1><p style="margin:4px 0 0;color:rgba(255,255,255,.85);font-size:13px;">Monthly rebalance published</p></div>' +
+    '<div style="padding:28px;">' +
+    '<p style="font-size:15px;">Hello ' + escapeHtmlGs(name || 'Investor') + ',</p>' +
+    '<p style="font-size:14px;color:#475569;line-height:1.6;">This month\'s <b>' + escapeHtmlGs(strategy) + '</b> rebalance is now live on your dashboard. As an active multi-month subscriber, your dashboard already reflects the latest picks - open it to review and place your orders.</p>' +
+    '<div style="text-align:center;margin:28px 0;"><a href="' + dashboardUrl + '" style="display:inline-block;background:#1a50d8;color:#fff;padding:13px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">Open My Dashboard &#8594;</a></div>' +
+    '<p style="font-size:12px;color:#94a3b8;">SEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. This is not personalised investment advice. Past performance does not guarantee future results.</p>' +
+    '</div>' +
+    '<div style="background:#f8fafc;padding:18px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;">&copy; 2026 MindForge Capital &middot; <a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;">Unsubscribe</a></div>' +
+    '</div></body></html>';
+  var plain = 'Hello ' + (name || 'Investor') + ',\n\nThis month\'s ' + strategy + ' rebalance is live on your dashboard:\n' + dashboardUrl + '\n\nSEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. Not personalised investment advice.\n\nTo unsubscribe, reply with "unsubscribe".\n\n-- MindForge Capital\nhttps://mindforgecapital.com';
+  GmailApp.sendEmail(email, subject, plain, { htmlBody: html, name: 'MindForge Capital', replyTo: 'sagar.shekhawath@mindforgecapital.com' });
 }
