@@ -703,6 +703,37 @@
   </div>
 </div>
 
+<!-- Passcode Modal (replaces native prompt()) -->
+<div id="passcode-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">
+  <div id="passcode-modal" style="background:#ffffff; border-radius:18px; padding:32px 30px; width:min(420px, 90vw); box-shadow:0 24px 60px -16px rgba(15,23,42,0.30), 0 8px 24px -8px rgba(15,23,42,0.18); position:relative; animation:passcode-in .35s cubic-bezier(.22,.7,.2,1);">
+    <div style="text-align:center; margin-bottom:18px;">
+      <div style="width:52px; height:52px; margin:0 auto 14px; border-radius:14px; background:linear-gradient(135deg, #1a50d8, #2563eb); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px -10px rgba(26,80,216,0.50);">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2.5"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16.5" r="1.2" fill="#ffffff"/></svg>
+      </div>
+      <h3 style="margin:0 0 6px; font-size:19px; font-weight:700; color:#0c1831; letter-spacing:-.01em;">Admin passcode</h3>
+      <p style="margin:0; font-size:13px; color:#64748b; line-height:1.55;">Enter the <code style="background:#f0f5ff; padding:1px 5px; border-radius:4px; font-size:11px; color:#1a50d8;">ADMIN_SECRET</code> configured in the Apps Script Script Properties.</p>
+    </div>
+    <input id="passcode-input" type="password" placeholder="•••••••••••••••••••••••••••••••" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="width:100%; padding:13px 14px; border:1.5px solid #dbeafe; border-radius:10px; font-size:14px; font-family:'SF Mono','Menlo',monospace; color:#0c1831; background:#f8fafc; outline:none; transition:border-color .2s, box-shadow .2s; box-sizing:border-box;">
+    <div id="passcode-error" style="display:none; margin-top:10px; font-size:12.5px; color:#dc2626; padding:8px 12px; background:rgba(220,38,38,0.08); border-radius:8px; border-left:3px solid #dc2626;"></div>
+    <button id="passcode-submit" style="width:100%; margin-top:16px; padding:13px; background:linear-gradient(135deg, #1a50d8, #2563eb); color:#ffffff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:transform .15s, box-shadow .2s, background-position .35s; box-shadow:0 8px 20px -8px rgba(26,80,216,0.45);">
+      Unlock admin →
+    </button>
+    <p style="margin:14px 0 0; font-size:11.5px; color:#94a3b8; text-align:center;">Cached in sessionStorage until tab closes</p>
+  </div>
+</div>
+<style>
+@keyframes passcode-in {
+  from { opacity:0; transform: translateY(12px) scale(.96); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+#passcode-input:focus { border-color: #1a50d8 !important; box-shadow: 0 0 0 3px rgba(26,80,216,0.15) !important; background:#ffffff !important; }
+#passcode-submit:hover { transform: translateY(-1px); box-shadow: 0 12px 28px -8px rgba(26,80,216,0.55); }
+#passcode-submit:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  #passcode-modal { animation: none !important; }
+}
+</style>
+
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -713,23 +744,64 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4
 // The server enforces this — we just collect it once per session and attach
 // it to every privileged call. Stored in sessionStorage so a closed tab
 // re-prompts (rather than persisting to disk).
+//
+// V12 polish: passcode is collected via a styled in-page modal instead of the
+// native prompt(). The modal blocks the rest of the UI until a passcode is
+// entered, and any 401 from the backend kicks the user back to the modal
+// instead of an alert(). Synchronous callers use the cached value if present.
 function getAdminSecret() {
-  var s = sessionStorage.getItem('mfc_admin_secret');
-  if (s) return s;
-  s = prompt('Admin passcode\n\nEnter the ADMIN_SECRET configured in the Apps Script Script Properties.');
-  if (!s) return '';
-  sessionStorage.setItem('mfc_admin_secret', s.trim());
-  return s.trim();
+  return sessionStorage.getItem('mfc_admin_secret') || '';
 }
 function clearAdminSecret() { sessionStorage.removeItem('mfc_admin_secret'); }
+function showPasscodeModal(opts) {
+  opts = opts || {};
+  var overlay = document.getElementById('passcode-overlay');
+  var input   = document.getElementById('passcode-input');
+  var err     = document.getElementById('passcode-error');
+  var submit  = document.getElementById('passcode-submit');
+  overlay.style.display = 'flex';
+  input.value = '';
+  err.style.display = 'none';
+  setTimeout(function(){ input.focus(); }, 50);
+  if (opts.errorMsg) {
+    err.textContent = opts.errorMsg;
+    err.style.display = 'block';
+  }
+  function onSubmit() {
+    var v = (input.value || '').trim();
+    if (!v) {
+      err.textContent = 'Please enter the passcode.';
+      err.style.display = 'block';
+      input.focus();
+      return;
+    }
+    sessionStorage.setItem('mfc_admin_secret', v);
+    overlay.style.display = 'none';
+    submit.removeEventListener('click', onSubmit);
+    input.removeEventListener('keydown', onKey);
+    if (typeof opts.onUnlock === 'function') opts.onUnlock();
+  }
+  function onKey(e) { if (e.key === 'Enter') onSubmit(); }
+  submit.addEventListener('click', onSubmit);
+  input.addEventListener('keydown', onKey);
+}
 function maybeReauthOn401(data) {
   if (data && data.status === 'error' && /unauthorized/i.test(data.error || '')) {
     clearAdminSecret();
-    alert('Admin passcode rejected. Refresh the page to re-enter it.');
+    showPasscodeModal({
+      errorMsg: 'Passcode rejected — please re-enter.',
+      onUnlock: function(){ loadLeads(); }
+    });
     return true;
   }
   return false;
 }
+// On page load, gate the whole admin behind the passcode modal.
+document.addEventListener('DOMContentLoaded', function() {
+  if (!getAdminSecret()) {
+    showPasscodeModal({ onUnlock: function(){ loadLeads(); } });
+  }
+});
 
 var allLeads = [];
 
@@ -1101,34 +1173,12 @@ function esc(str) {
 }
 
 
-// ── Login ──
-(async function() {
-  // Check session
-  if (sessionStorage.getItem('mfc_admin') === '1') {
-    document.getElementById('login-overlay').style.display = 'none';
-    loadLeads();
-    return;
-  }
-})();
-
-async function sha256(msg) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-async function doLogin(e) {
-  e.preventDefault();
-  var user = document.getElementById('login-user').value.trim();
-  var pass = document.getElementById('login-pass').value;
-  var hash = await sha256(pass);
-  if (user === 'rshekhawath' && hash === '6250f54e98a18394badb26b861522cf15d5df1549ad23494f3b580986fba48ed') {
-    sessionStorage.setItem('mfc_admin', '1');
-    document.getElementById('login-overlay').style.display = 'none';
-    loadLeads();
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-  }
-}
+// ── Legacy login (V12: superseded by passcode modal) ──────────────────────
+// The old username/password gate was client-side only — it just hid the UI.
+// It's been replaced by the ADMIN_SECRET passcode modal which is backed by
+// real backend validation (Apps Script rejects requests without the secret).
+// Hide the legacy overlay so the new modal is the sole gate.
+document.getElementById('login-overlay').style.display = 'none';
 
 </script>
 <script>
