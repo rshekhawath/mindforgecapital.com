@@ -486,10 +486,20 @@ function handleGetStocks(token) {
     return errorResponse('Subscription is not active');
   }
 
-  // Always use the LATEST run for the strategy so the dashboard
-  // shows the most current portfolio picks, regardless of signup time.
-  const latestRunId = findLatestRunId(subscription.strategy);
-  subscription.run_id = latestRunId;
+  // Lock to signup-month picks: serve the run_id PINNED on the subscription
+  // (whatever was latest when the subscriber was activated), NOT the current
+  // latest run. A subscriber sees the portfolio they paid for; to receive a
+  // newer monthly rebalance they renew, and each renewal creates a fresh
+  // subscription row pinned to that month's run.
+  //
+  // Fallback: if the stored run_id is missing or a 'default_run_*' placeholder
+  // (subscribed before any run existed for the strategy), fall back to the
+  // latest run so the dashboard isn't empty.
+  let pinnedRunId = subscription.run_id;
+  if (!pinnedRunId || String(pinnedRunId).indexOf('default_run_') === 0) {
+    pinnedRunId = findLatestRunId(subscription.strategy);
+    subscription.run_id = pinnedRunId;
+  }
 
   const runSheet = getSheet('strategy_runs');
   const runData = runSheet.getDataRange().getValues();
@@ -498,7 +508,7 @@ function handleGetStocks(token) {
   for (let i = 1; i < runData.length; i++) {
     // Filter by BOTH run_id AND strategy — guards against run_id collisions
     // where multiple strategies share the same timestamp-based id.
-    if (runData[i][0] === latestRunId && runData[i][2] === subscription.strategy) {
+    if (runData[i][0] === pinnedRunId && runData[i][2] === subscription.strategy) {
       stocks.push({
         ticker: runData[i][3],
         yahoo_ticker: runData[i][4],
@@ -659,7 +669,9 @@ function handleRequestOTP(email) {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
   const key = 'otp_' + emailClean.replace(/[^a-z0-9]/g, '_');
-  PropertiesService.getScriptProperties().setProperty(key, JSON.stringify({ otp, expiry }));
+  // `attempts` caps brute-force guessing within the 10-min window — a 6-digit
+  // code is only 10^6 wide, so without a cap it is guessable by a script.
+  PropertiesService.getScriptProperties().setProperty(key, JSON.stringify({ otp, expiry, attempts: 0 }));
 
   // Email the OTP
   sendOTPEmail(emailClean, otp);
@@ -688,8 +700,18 @@ function handleVerifyOTP(email, otp) {
     return errorResponse('This code has expired. Please request a new one.');
   }
 
+  // Brute-force guard: after 5 wrong tries, burn the code so the attacker must
+  // request a fresh one (which re-emails the legitimate owner, surfacing abuse).
+  const attempts = Number(parsed.attempts || 0);
+  if (attempts >= 5) {
+    PropertiesService.getScriptProperties().deleteProperty(key);
+    return errorResponse('Too many incorrect attempts. Please request a new code.');
+  }
+
   // Check OTP value
   if (parsed.otp !== otpClean) {
+    parsed.attempts = attempts + 1;
+    PropertiesService.getScriptProperties().setProperty(key, JSON.stringify(parsed));
     return errorResponse('Incorrect code. Please try again.');
   }
 

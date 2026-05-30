@@ -1318,8 +1318,8 @@ footer p {
       <div>
         <div class="size-input-wrap">
           <div class="size-input-shell">
-            <span class="prefix">₹</span>
-            <input type="text" class="size-input" id="size-input" inputmode="numeric" placeholder="1,00,000" aria-label="Investment capital in rupees">
+            <span class="prefix" id="size-prefix">₹</span>
+            <input type="text" class="size-input" id="size-input" inputmode="numeric" placeholder="1,00,000" aria-label="Investment capital">
           </div>
           <div class="size-presets" id="size-presets"></div>
         </div>
@@ -1401,7 +1401,7 @@ footer p {
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
           <div>
             <div style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Rebalance notifications</div>
-            <div style="font-size:13px;color:var(--text2);">Get an email when your portfolio rebalances each month.</div>
+            <div style="font-size:13px;color:var(--text2);">Get an email when next month's portfolio is published — renew to switch your dashboard to it.</div>
           </div>
           <div id="notif-toggle-wrap">
             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text2);">
@@ -1417,7 +1417,7 @@ footer p {
             style="flex:1;min-width:200px;padding:10px 14px;border:0.5px solid var(--border2);border-radius:8px;font-size:14px;background:var(--ink);color:var(--white);outline:none;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">
           <button onclick="saveNotifPref()" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;">Save</button>
         </div>
-        <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:#059669;">✓ You'll be notified on rebalance day.</div>
+        <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:#059669;">✓ You'll be emailed when next month's picks are published.</div>
       </div>
 
       <!-- HOW TO INVEST -->
@@ -1451,8 +1451,8 @@ footer p {
           <div class="howto-step">
             <div class="num">4</div>
             <div>
-              <h4>Hold till next rebalance</h4>
-              <p>Turn on rebalance notifications above and we'll email you when the model regenerates next month.</p>
+              <h4>Hold for your cycle</h4>
+              <p>Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it.</p>
             </div>
           </div>
         </div>
@@ -1522,7 +1522,8 @@ footer p {
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 const token = new URLSearchParams(window.location.search).get('token');
-const isDemo = new URLSearchParams(window.location.search).get('demo') === '1';
+const demoMode = new URLSearchParams(window.location.search).get('demo');
+const isDemo = demoMode === '1' || demoMode === 'sp500';
 
 let stocksData = [];
 let currentStrategy = '';
@@ -1534,13 +1535,41 @@ const CAPITAL_PRESETS = {
   'MindForge MultiAsset':      { recommended: 100000,  options: [50000, 100000, 200000, 500000] },
   'MindForge LargeMidcap 250': { recommended: 1500000, options: [500000, 1500000, 2500000, 5000000] },
   'MindForge SmallMicro 500':  { recommended: 2500000, options: [1000000, 2500000, 5000000, 10000000] },
+  // S&P 500 is priced in USD — presets are in dollars (≈ ₹1cr ≈ $120k) so the
+  // capital, per-stock and allocation figures all stay in one currency.
+  'MindForge S&P 500':         { recommended: 120000,  options: [50000, 120000, 250000, 500000] },
   _default:                      { recommended: 500000,  options: [100000, 500000, 1500000, 2500000] }
 };
 
 // ── DEMO DATA for local visual testing (?demo=1) ────────────────────────────
-function _demoData() {
+function _demoData(mode) {
   const now = new Date();
   const exp = new Date(); exp.setDate(exp.getDate() + 18);
+  // ?demo=sp500 → a USD book so the $ currency path (price, allocation,
+  // capital calculator) can be previewed without a live S&P 500 token.
+  if (mode === 'sp500') {
+    const usd = [
+      {ticker:'AAPL',  yahoo_ticker:'AAPL',  company_name:'Apple',              industry:'Information Technology', recommended_price:212.45, weight_pct:3.33},
+      {ticker:'MSFT',  yahoo_ticker:'MSFT',  company_name:'Microsoft',          industry:'Information Technology', recommended_price:438.10, weight_pct:3.33},
+      {ticker:'NVDA',  yahoo_ticker:'NVDA',  company_name:'NVIDIA',             industry:'Information Technology', recommended_price:131.26, weight_pct:3.33},
+      {ticker:'AMZN',  yahoo_ticker:'AMZN',  company_name:'Amazon',             industry:'Consumer Discretionary', recommended_price:197.12, weight_pct:3.33},
+      {ticker:'GOOGL', yahoo_ticker:'GOOGL', company_name:'Alphabet',           industry:'Communication Services', recommended_price:178.30, weight_pct:3.33},
+      {ticker:'META',  yahoo_ticker:'META',  company_name:'Meta Platforms',     industry:'Communication Services', recommended_price:589.40, weight_pct:3.33},
+      {ticker:'BRK-B', yahoo_ticker:'BRK-B', company_name:'Berkshire Hathaway', industry:'Financials',             recommended_price:467.80, weight_pct:3.33},
+      {ticker:'JPM',   yahoo_ticker:'JPM',   company_name:'JPMorgan Chase',     industry:'Financials',             recommended_price:243.55, weight_pct:3.33},
+      {ticker:'V',     yahoo_ticker:'V',     company_name:'Visa',               industry:'Financials',             recommended_price:312.90, weight_pct:3.33},
+      {ticker:'LLY',   yahoo_ticker:'LLY',   company_name:'Eli Lilly',          industry:'Health Care',            recommended_price:782.15, weight_pct:3.34},
+      {ticker:'UNH',   yahoo_ticker:'UNH',   company_name:'UnitedHealth',       industry:'Health Care',            recommended_price:521.70, weight_pct:3.34},
+      {ticker:'XOM',   yahoo_ticker:'XOM',   company_name:'Exxon Mobil',        industry:'Energy',                 recommended_price:118.60, weight_pct:3.34},
+    ];
+    return {
+      subscription: {
+        name: 'Alex', email: 'alex@example.com', strategy: 'MindForge S&P 500',
+        expires_at: exp.toISOString(), subscribed_at: now.toISOString(), status: 'active'
+      },
+      stocks: usd
+    };
+  }
   const stocks = [
     {ticker:'INFY',       company_name:'Infosys',                          industry:'IT Services',                  recommended_price:1543.20, weight_pct:4.00},
     {ticker:'TCS',        company_name:'Tata Consultancy Services',        industry:'IT Services',                  recommended_price:3812.55, weight_pct:4.00},
@@ -1568,6 +1597,10 @@ function _demoData() {
     {ticker:'JSWSTEEL',   company_name:'JSW Steel',                        industry:'Metals',                       recommended_price:945.20,  weight_pct:4.00},
     {ticker:'TATASTEEL',  company_name:'Tata Steel',                       industry:'Metals',                       recommended_price:154.70,  weight_pct:4.00},
   ];
+  // Real API rows always carry a yahoo_ticker; the demo fixture omits it, so
+  // backfill ".NS" suffixes here to keep the table/calculator on ₹ for the
+  // Indian book (without it, the table's per-row currency falls through to $).
+  stocks.forEach(s => { if (!s.yahoo_ticker) s.yahoo_ticker = s.ticker + '.NS'; });
   return {
     subscription: {
       name: 'Riya', email: 'riya@example.com', strategy: 'MindForge LargeMidcap 250',
@@ -1579,7 +1612,7 @@ function _demoData() {
 
 async function init() {
   if (isDemo) {
-    const d = _demoData();
+    const d = _demoData(demoMode);
     stocksData = d.stocks;
     renderDashboard(d.subscription, d.stocks);
     return;
@@ -1836,6 +1869,27 @@ function parseINR(s){
   return Number(String(s||'').replace(/[^\d]/g,'')) || 0;
 }
 
+// ── CURRENCY ───────────────────────────────────────────────────────────────
+// US books (S&P 500) carry yahoo_tickers WITHOUT a .NS suffix → price in $.
+// Indian books (.NS) → ₹. The position-sizing calculator reads `currentCurrency`
+// so capital, per-stock and allocation figures all share ONE currency and the
+// share math (capital ÷ price) isn't mixing ₹ with $.
+let currentCurrency = '₹';
+function dashCurrency() {
+  return (stocksData || []).some(s => s && s.yahoo_ticker && !/\.NS$/i.test(s.yahoo_ticker)) ? '$' : '₹';
+}
+function fmtNum(curr, v) {
+  v = Math.round(Number(v) || 0);
+  return curr === '$' ? v.toLocaleString('en-US', {maximumFractionDigits: 0}) : fmtINR(v);
+}
+function fmtMoney(curr, v) { return curr + fmtNum(curr, v); }
+function shortMoney(curr, v) {
+  if (curr !== '$') return shortLakhs(v);
+  if (v >= 1000000) return '$' + (v/1000000).toFixed(v % 1000000 ? 1 : 0).replace(/\.0$/,'') + 'M';
+  if (v >= 1000)    return '$' + Math.round(v/1000) + 'K';
+  return '$' + v;
+}
+
 // ── POSITION SIZING ──────────────────────────────────────────────────────
 function capitalStorageKey(strategy) {
   return 'mfc_capital_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
@@ -1853,22 +1907,29 @@ function saveCapital(strategy, v) {
 function setupCapitalCalculator(stocks, strategy) {
   if (!stocks || !stocks.length) return;
   const card = document.getElementById('size-card');
+  currentCurrency = dashCurrency();
   const presets = (CAPITAL_PRESETS[strategy] || CAPITAL_PRESETS._default);
   // Use saved capital if present; otherwise recommended preset
   const saved = loadSavedCapital(strategy);
   currentCapital = saved > 0 ? saved : presets.recommended;
 
+  // Currency-aware input chrome (₹ for NSE books, $ for the S&P 500 book)
+  const prefixEl = document.getElementById('size-prefix');
+  if (prefixEl) prefixEl.textContent = currentCurrency;
+  const input = document.getElementById('size-input');
+  input.placeholder = currentCurrency === '$' ? '100,000' : '1,00,000';
+
   // Render preset buttons
   const presetEl = document.getElementById('size-presets');
   presetEl.innerHTML = presets.options.map(v => {
     const cls = v === currentCapital ? 'size-preset active' : 'size-preset';
-    return `<button class="${cls}" data-val="${v}" onclick="setCapital(${v}, this)">${shortLakhs(v)}</button>`;
+    return `<button class="${cls}" data-val="${v}" onclick="setCapital(${v}, this)">${shortMoney(currentCurrency, v)}</button>`;
   }).join('');
 
-  document.getElementById('size-input').value = fmtINR(currentCapital);
-  document.getElementById('size-input').addEventListener('input', e => {
+  input.value = fmtNum(currentCurrency, currentCapital);
+  input.addEventListener('input', e => {
     const v = parseINR(e.target.value);
-    e.target.value = v ? fmtINR(v) : '';
+    e.target.value = v ? fmtNum(currentCurrency, v) : '';
     setCapital(v, null, true);
   });
 
@@ -1889,7 +1950,7 @@ function setCapital(v, btn, fromInput) {
   document.querySelectorAll('.size-preset').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === currentCapital));
   // Sync input value if not coming from input
   if (!fromInput) {
-    document.getElementById('size-input').value = currentCapital ? fmtINR(currentCapital) : '';
+    document.getElementById('size-input').value = currentCapital ? fmtNum(currentCurrency, currentCapital) : '';
   }
   refreshSizeSummary();
   // Re-render the allocation/shares columns without rebuilding bars
@@ -1908,9 +1969,9 @@ function refreshSizeSummary() {
     totalAlloc += shares * price;
   });
   const residue = currentCapital - totalAlloc;
-  document.getElementById('size-per-stock').textContent  = '₹' + fmtINR(per);
-  document.getElementById('size-total-alloc').textContent = '₹' + fmtINR(totalAlloc);
-  document.getElementById('size-residue').textContent     = '₹' + fmtINR(residue);
+  document.getElementById('size-per-stock').textContent   = fmtMoney(currentCurrency, per);
+  document.getElementById('size-total-alloc').textContent = fmtMoney(currentCurrency, totalAlloc);
+  document.getElementById('size-residue').textContent     = fmtMoney(currentCurrency, residue);
 }
 
 function updateAllocationCells() {
@@ -1922,12 +1983,12 @@ function updateAllocationCells() {
     const amt = shares * price;
     const allocCell = document.querySelector('tr[data-row="'+i+'"] .alloc-amt');
     const sharesCell = document.querySelector('tr[data-row="'+i+'"] .shares');
-    if (allocCell) allocCell.textContent = '₹' + fmtINR(amt);
+    if (allocCell) allocCell.textContent = fmtMoney(currentCurrency, amt);
     if (sharesCell) sharesCell.innerHTML = '<span class="qty">' + shares + '</span>';
     // Mobile
     const mAlloc = document.querySelector('.stock-card[data-row="'+i+'"] .sc-alloc');
     const mShares = document.querySelector('.stock-card[data-row="'+i+'"] .sc-shares');
-    if (mAlloc) mAlloc.textContent = '₹' + fmtINR(amt);
+    if (mAlloc) mAlloc.textContent = fmtMoney(currentCurrency, amt);
     if (mShares) mShares.textContent = shares;
   });
 }
@@ -1956,7 +2017,7 @@ function renderTable(stocks) {
 
   if (!stocks.length) {
     const emptyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-    tbody.innerHTML = `<tr><td colspan="9"><div class="tbl-empty"><div class="icon">${emptyIcon}</div><h4>No picks yet for this run</h4><p>The model hasn't published stocks for your strategy this month. New picks land on the first business day of each month — we'll email you when they do.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="tbl-empty"><div class="icon">${emptyIcon}</div><h4>No picks yet for this run</h4><p>There are no published picks for your subscription run yet. New monthly sets are released on the first business day — we'll email you when one is available.</p></div></td></tr>`;
     mobileCards.innerHTML = `<div class="tbl-empty"><div class="icon">${emptyIcon}</div><h4>No picks yet for this run</h4><p>The model hasn't published stocks for your strategy this month.</p></div>`;
     return;
   }
@@ -2089,7 +2150,7 @@ function refreshBoughtProgress() {
   document.getElementById('buy-prog-fill').style.width = pct.toFixed(1) + '%';
   const remaining = total - bought;
   document.getElementById('bp-meta').textContent = remaining === 0
-    ? 'All set — sit tight until next rebalance.'
+    ? 'All set — hold these through your subscription cycle.'
     : remaining + ' to go. Saved automatically in your browser.';
 }
 
@@ -2226,7 +2287,7 @@ function showError(title, msg) {
 async function refreshDashboard() {
   if (isDemo) {
     // Refresh from demo data + bump time
-    const d = _demoData();
+    const d = _demoData(demoMode);
     if (window._currentSub) d.subscription.expires_at = window._currentSub.expires_at;
     stocksData = d.stocks;
     renderDashboard(d.subscription, d.stocks);
@@ -2293,5 +2354,41 @@ init();
   });
 })();
 </script>
+
+<!-- ============================================================
+     MF VISUAL v13 — dashboard (premium depth + harmonize)
+     Additive layer. Deliberately avoids ::before/::after on .stat-card /
+     .dash-hero (already used) to preserve the existing motion. RM-safe.
+     ============================================================ -->
+<style id="mf-v13-dash">
+:root{
+  --v13-ease: cubic-bezier(.22,.8,.2,1);
+  --v13-shadow: 0 1px 2px rgba(12,24,49,.04), 0 12px 34px -16px rgba(26,80,216,.18), 0 30px 60px -34px rgba(26,80,216,.20);
+}
+/* Premium, unified float for the large panels */
+.size-card, .alloc-card, .table-section, .howto-card, .notif-card{
+  box-shadow:var(--v13-shadow) !important;
+  transition:box-shadow .3s var(--v13-ease), transform .3s var(--v13-ease) !important;
+}
+.size-card:hover, .alloc-card:hover, .table-section:hover{
+  box-shadow:var(--v13-shadow), 0 0 0 1px rgba(37,99,235,.10) !important;
+}
+/* Brand focus ring on the table search (matches the auth pages) */
+.tbl-search:focus{
+  border-color:rgba(37,99,235,.6) !important;
+  box-shadow:0 0 0 4px rgba(37,99,235,.12), 0 0 0 1px rgba(8,145,178,.18) !important;
+  outline:none !important;
+}
+/* Button micro-polish */
+.tbl-btn{ transition:transform .2s var(--v13-ease), box-shadow .2s, border-color .2s, background .2s !important; }
+.tbl-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 18px -10px rgba(26,80,216,.40); }
+.renew-cta{ transition:transform .2s var(--v13-ease), box-shadow .2s !important; }
+.renew-cta:hover{ transform:translateY(-1px); }
+
+@media (prefers-reduced-motion: reduce){
+  .size-card, .alloc-card, .table-section, .howto-card, .notif-card, .tbl-btn, .renew-cta{ transition:none !important; }
+  .tbl-btn:hover, .renew-cta:hover{ transform:none !important; }
+}
+</style>
 </body>
 </html>
