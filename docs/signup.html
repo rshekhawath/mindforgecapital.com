@@ -682,6 +682,22 @@ input:focus-visible, select:focus-visible, #reg-tnc:focus-visible{
 @media (prefers-reduced-motion: reduce){
   .page::after{ opacity: .35; }
 }
+.nav-links a[aria-current="page"]{ color: var(--white) !important; position: relative; }
+.nav-links a[aria-current="page"]::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, #1a50d8, #0891b2, #2dd4bf);
+}
 </style>
+<script>
+(function(){
+  var here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  if (here === '') here = 'index.html';
+  document.querySelectorAll('.nav-links a').forEach(function(a){
+    var href = (a.getAttribute('href') || '').split('?')[0].split('#')[0].toLowerCase();
+    if (href === here) a.setAttribute('aria-current', 'page');
+  });
+})();
+</script>
 </body>
 </html>

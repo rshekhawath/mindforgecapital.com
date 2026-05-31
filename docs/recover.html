@@ -10,6 +10,8 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1a50d8">
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="dns-prefetch" href="https://script.google.com">
 <style>
 :root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--green:#059669;--red:#dc2626;--text:#0c1831;--text2:#1e3a5f;--text3:#64748b;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -387,6 +389,22 @@ function showResult(type, msg, isHtml) {
 @media (prefers-reduced-motion: reduce){
   .page::after{ opacity: .35; }
 }
+.nav-links a[aria-current="page"]{ color: var(--white) !important; position: relative; }
+.nav-links a[aria-current="page"]::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, #1a50d8, #0891b2, #2dd4bf);
+}
 </style>
+<script>
+(function(){
+  var here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  if (here === '') here = 'index.html';
+  document.querySelectorAll('.nav-links a').forEach(function(a){
+    var href = (a.getAttribute('href') || '').split('?')[0].split('#')[0].toLowerCase();
+    if (href === here) a.setAttribute('aria-current', 'page');
+  });
+})();
+</script>
 </body>
 </html>

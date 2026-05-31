@@ -9,6 +9,10 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1a50d8">
+<!-- Perf: warm DNS + TLS for Apps Script + Yahoo price API before they're needed -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="dns-prefetch" href="https://script.google.com">
+<link rel="dns-prefetch" href="https://query1.finance.yahoo.com">
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--white:#0c1831;
@@ -1335,7 +1339,7 @@ footer p {
         </div>
         <div class="table-actions">
           <input type="search" class="tbl-search" id="tbl-search" placeholder="Search ticker or company…" oninput="filterStocks(this.value)" aria-label="Search stocks">
-          <div class="market-bar" id="market-status" title="Indian markets · 9:15–15:30 IST, Mon–Fri">
+          <div class="market-bar" id="market-status" title="Market hours — auto-detected from your strategy">
             <span id="market-dot" class="dot-green"></span>
             <span id="market-label">Checking market…</span>
           </div>
@@ -2264,17 +2268,35 @@ function saveNotifPref() {
 }
 
 function updateMarketStatus() {
-  const now = new Date();
-  const ist = new Date(now.toLocaleString('en-US', {timeZone:'Asia/Kolkata'}));
-  const h = ist.getHours(), m = ist.getMinutes(), d = ist.getDay();
-  const mins = h*60+m;
+  // Pick the exchange based on the dashboard's current currency:
+  //   ₹ → NSE  (IST 9:15–15:30, Mon–Fri)
+  //   $ → NYSE (ET   9:30–16:00, Mon–Fri)
+  // Pre-V4.8 this was IST-only, so S&P 500 subscribers saw "Market closed"
+  // during US trading hours.
+  const isUS = (currentCurrency === '$');
+  const tz   = isUS ? 'America/New_York' : 'Asia/Kolkata';
+  const open = isUS ? (9*60 + 30) : (9*60 + 15);
+  const close= isUS ? (16*60)     : (15*60 + 30);
+  const label= isUS ? 'NYSE'      : 'NSE';
+  const hours= isUS ? '9:30–16:00 ET' : '9:15–15:30 IST';
+
+  const local = new Date(new Date().toLocaleString('en-US', {timeZone: tz}));
+  const h = local.getHours(), m = local.getMinutes(), d = local.getDay();
+  const mins = h*60 + m;
   const isWeekday = d >= 1 && d <= 5;
-  const isOpen = isWeekday && mins >= 9*60+15 && mins <= 15*60+30;
-  document.getElementById('market-label').innerHTML = isOpen
-    ? '<span class="market-open">Market open</span>'
-    : '<span class="market-closed">Market closed</span>';
+  const isOpen = isWeekday && mins >= open && mins <= close;
+
+  const lblEl = document.getElementById('market-label');
+  if (lblEl) {
+    lblEl.innerHTML = isOpen
+      ? '<span class="market-open">' + label + ' open</span>'
+      : '<span class="market-closed">' + label + ' closed</span>';
+  }
   const dot = document.getElementById('market-dot');
-  dot.className = isOpen ? 'dot-green' : 'dot-red';
+  if (dot) dot.className = isOpen ? 'dot-green' : 'dot-red';
+
+  const bar = document.getElementById('market-status');
+  if (bar) bar.title = label + ' · ' + hours + ' · Mon–Fri';
 }
 
 function showError(title, msg) {
@@ -2529,6 +2551,62 @@ init();
 @media (prefers-reduced-motion: reduce){
   .dash-hero::after{ opacity: .35; }
   .skel-bar, .skel-pill{ animation: none !important; }
+}
+</style>
+
+<!-- MF VISUAL v16 — dashboard usability polish -->
+<style id="mf-v16-dash">
+:root{ --v16-ease: cubic-bezier(.22,.8,.2,1); }
+
+/* STICKY TABLE HEADER — for long stock lists (30 picks on S&P 500), the column
+   labels stay pinned to the top of the table-wrap as the user scrolls. */
+.table-wrap{ max-height: none; }
+.table-wrap table thead th{
+  position: sticky; top: 0; z-index: 4;
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 80%, rgba(248,250,252,0.95) 100%);
+  box-shadow: 0 1px 0 rgba(37,99,235,0.10), 0 2px 6px -3px rgba(15,23,42,0.06);
+  backdrop-filter: blur(8px);
+}
+
+/* Industry chip — show full text on hover via larger tooltip (native title already there) */
+.industry-badge{
+  transition: background-color .18s var(--v16-ease), color .18s var(--v16-ease);
+  cursor: help;
+}
+.industry-badge:hover{
+  background-color: rgba(37,99,235,0.12);
+  color: var(--white);
+}
+
+/* Long company names — clamp + ellipsis with full text on hover via title */
+.company{
+  max-width: 240px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.company[title]{ cursor: help; }
+
+/* Bought checkbox tap-target — wrap a larger invisible hit area around the
+   20×20 box so phones (44px guideline) don't fat-finger neighbouring rows. */
+.bought-col{ padding: 0; }
+.bought-col label, .bought-col{
+  min-width: 44px; min-height: 44px;
+}
+.bought-cb{
+  width: 22px; height: 22px;
+  cursor: pointer;
+}
+
+/* Copy ticker — quick success flash */
+@keyframes v16-copy-flash{
+  0%   { background-color: rgba(5,150,105,0.0); }
+  30%  { background-color: rgba(5,150,105,0.18); }
+  100% { background-color: rgba(5,150,105,0.0); }
+}
+.ticker-chip.copied{ animation: v16-copy-flash .9s ease-out 1; }
+
+@media (prefers-reduced-motion: reduce){
+  .ticker-chip.copied{ animation: none !important; }
+  .industry-badge, .company{ transition: none !important; }
 }
 </style>
 </body>
