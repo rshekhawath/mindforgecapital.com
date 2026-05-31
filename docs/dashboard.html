@@ -2608,6 +2608,170 @@ init();
   .ticker-chip.copied{ animation: none !important; }
   .industry-badge, .company{ transition: none !important; }
 }
+.nav-links a[aria-current="page"]{ color: var(--white) !important; position: relative; }
+.nav-links a[aria-current="page"]::after{
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, #1a50d8, #0891b2, #2dd4bf);
+}
 </style>
+
+<!-- MF VISUAL v17 — dashboard usability: keyboard shortcut, empty-search, sortable -->
+<style id="mf-v17-dash">
+:root{ --v17-ease: cubic-bezier(.22,.8,.2,1); }
+
+/* "/" keyboard shortcut hint inside the search input */
+.tbl-search{ position: relative; }
+.tbl-search-wrap{ position: relative; display: inline-block; }
+.tbl-search-wrap::after{
+  content: '/';
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font: 600 12px/1 -apple-system, BlinkMacSystemFont, monospace;
+  color: var(--text3);
+  background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.18);
+  border-radius: 4px; padding: 3px 7px;
+  pointer-events: none;
+  opacity: .85;
+  transition: opacity .2s var(--v17-ease);
+}
+.tbl-search-wrap:focus-within::after{ opacity: 0; }
+
+/* Empty-search-results row */
+.tbl-empty-search{
+  padding: 36px 24px !important; text-align: center; color: var(--text3);
+  background: rgba(37,99,235,0.02);
+}
+.tbl-empty-search strong{ display: block; color: var(--text2); margin-bottom: 4px; font-size: 14px; }
+
+/* Sortable column headers — visual affordance */
+th.sortable{ cursor: pointer; user-select: none; position: relative; }
+th.sortable::after{
+  content: '↕';
+  margin-left: 6px; font-size: 10px; opacity: .35;
+  vertical-align: middle;
+  transition: opacity .2s var(--v17-ease);
+}
+th.sortable:hover::after{ opacity: .65; }
+th.sortable.sort-asc::after{  content: '↑'; opacity: 1; color: var(--accent); }
+th.sortable.sort-desc::after{ content: '↓'; opacity: 1; color: var(--accent); }
+th.sortable:hover{ color: var(--accent); }
+
+/* Last-updated freshness — pulses green just after a refresh */
+.last-update{ transition: color .25s var(--v17-ease); }
+.last-update.fresh #last-update-time{
+  color: #047857;
+  animation: v17-fresh 2.5s ease-out 1;
+}
+@keyframes v17-fresh{
+  0%   { color: #047857; }
+  100% { color: var(--text2); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .last-update.fresh #last-update-time{ animation: none !important; }
+}
+</style>
+
+<script id="mf-v17-dash-js">
+/* MF v17 dashboard JS — nav active marker + "/" keyboard shortcut +
+   empty-search message + sortable columns + freshness pulse.
+   All hooks are defensive — if a target element is missing, just skip. */
+(function(){
+  // (a) Active nav link marker (V4.8 missed dashboard.html)
+  var here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  if (here === '') here = 'index.html';
+  document.querySelectorAll('.nav-links a').forEach(function(a){
+    var href = (a.getAttribute('href') || '').split('?')[0].split('#')[0].toLowerCase();
+    if (href === here) a.setAttribute('aria-current', 'page');
+  });
+
+  // (b) "/" focuses the table search (skip if already inside an input)
+  document.addEventListener('keydown', function(e){
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    var el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+    var search = document.getElementById('tbl-search');
+    if (search) { e.preventDefault(); search.focus(); search.select(); }
+  });
+
+  // (c) Wrap the table search input so the "/" hint chip can sit inside.
+  // Done on DOMContentLoaded so the input definitely exists.
+  function wrapSearch(){
+    var s = document.getElementById('tbl-search');
+    if (!s || s.parentElement.classList.contains('tbl-search-wrap')) return;
+    var wrap = document.createElement('span');
+    wrap.className = 'tbl-search-wrap';
+    s.parentNode.insertBefore(wrap, s);
+    wrap.appendChild(s);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wrapSearch);
+  } else { wrapSearch(); }
+
+  // (d) Empty-search message — insert a row when filterStocks hides everything.
+  // We monkey-patch filterStocks to keep the original behaviour and then check.
+  function hookFilter(){
+    if (typeof window.filterStocks !== 'function' || window._v17FilterHooked) return;
+    var orig = window.filterStocks;
+    window.filterStocks = function(q){
+      orig(q);
+      var tbody = document.getElementById('stocks-tbody');
+      if (!tbody) return;
+      var visible = 0;
+      tbody.querySelectorAll('tr[data-row]').forEach(function(tr){
+        if (tr.style.display !== 'none') visible++;
+      });
+      var existing = tbody.querySelector('.tbl-empty-search-row');
+      if (visible === 0 && q && String(q).trim()) {
+        if (!existing) {
+          var tr = document.createElement('tr');
+          tr.className = 'tbl-empty-search-row';
+          var td = document.createElement('td');
+          td.colSpan = 9; td.className = 'tbl-empty-search';
+          td.innerHTML = '<strong>No matches for "' + String(q).replace(/[<>&"]/g, function(c){
+            return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
+          }) + '"</strong>Try a different ticker, company name, or industry.';
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
+      } else if (existing) {
+        existing.remove();
+      }
+    };
+    window._v17FilterHooked = true;
+  }
+  // The render path defines filterStocks after initial fetch — poll briefly.
+  var tries = 0;
+  var iv = setInterval(function(){
+    hookFilter();
+    if (window._v17FilterHooked || ++tries > 40) clearInterval(iv);
+  }, 250);
+
+  // (e) Freshness pulse — light up the "Last updated" timestamp after refresh.
+  // Wrap the existing refreshDashboard to add the pulse class.
+  function hookRefresh(){
+    if (typeof window.refreshDashboard !== 'function' || window._v17RefreshHooked) return;
+    var orig = window.refreshDashboard;
+    window.refreshDashboard = async function(){
+      var r = await orig.apply(this, arguments);
+      var box = document.querySelector('.last-update');
+      if (box) {
+        box.classList.remove('fresh');
+        // re-trigger the animation
+        void box.offsetWidth;
+        box.classList.add('fresh');
+        setTimeout(function(){ box.classList.remove('fresh'); }, 2700);
+      }
+      return r;
+    };
+    window._v17RefreshHooked = true;
+  }
+  var rtries = 0;
+  var riv = setInterval(function(){
+    hookRefresh();
+    if (window._v17RefreshHooked || ++rtries > 40) clearInterval(riv);
+  }, 250);
+})();
+</script>
 </body>
 </html>
