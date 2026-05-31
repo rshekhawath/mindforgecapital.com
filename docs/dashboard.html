@@ -2469,5 +2469,67 @@ init();
   .stat-card:hover::after{ transform: translateX(-130%); }
 }
 </style>
+
+<!-- MF VISUAL v15 — dashboard a11y + atmospheric polish (additive) -->
+<style id="mf-v15-dash">
+:root{ --v15-ease: cubic-bezier(.22,.8,.2,1); }
+
+/* Subtle dot-grid behind hero greeting (very faint) */
+.dash-hero{ position: relative; }
+.dash-hero::after{
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image: radial-gradient(rgba(37,99,235,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 30% 40%, #000 30%, transparent 80%);
+          mask-image: radial-gradient(ellipse 70% 60% at 30% 40%, #000 30%, transparent 80%);
+  opacity: .50;
+}
+.dash-hero > *{ position: relative; z-index: 1; }
+
+/* Stronger keyboard-focus visibility on dashboard controls */
+.tbl-btn:focus-visible,
+.size-input:focus-visible,
+.tbl-search:focus-visible,
+.bought-cb:focus-visible,
+.size-preset:focus-visible,
+.renew-cta:focus-visible{
+  outline: 3px solid rgba(45,212,191,0.55) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px rgba(26,80,216,0.12) !important;
+}
+
+/* Table row keyboard-focus highlight (when tabbing through checkboxes) */
+#stocks-tbody tr:focus-within{
+  background: linear-gradient(180deg, rgba(37,99,235,0.06), rgba(8,145,178,0.05)) !important;
+  outline: 2px solid rgba(26,80,216,0.30);
+  outline-offset: -2px;
+}
+
+/* Skeleton-row shimmer is more visible (was barely perceptible) */
+.skel-bar, .skel-pill{
+  background: linear-gradient(90deg, rgba(37,99,235,0.06) 0%, rgba(37,99,235,0.14) 50%, rgba(37,99,235,0.06) 100%) !important;
+  background-size: 200% 100% !important;
+  animation: v15-skel 1.4s ease-in-out infinite !important;
+}
+@keyframes v15-skel{
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Better print styling — hide controls + FAB, ensure table prints cleanly */
+@media print{
+  nav, footer, .mf-fab-top, .mf-scroll-prog, .tbl-btn, .renew-cta,
+  .market-bar, .buy-prog-card, .size-card, .notif-card, .howto-card,
+  .nav-hamburger{ display: none !important; }
+  body{ background: #fff !important; }
+  .stat-card{ break-inside: avoid; box-shadow: 0 0 0 1px #ccc !important; }
+  table{ font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .dash-hero::after{ opacity: .35; }
+  .skel-bar, .skel-pill{ animation: none !important; }
+}
+</style>
 </body>
 </html>
