@@ -938,41 +938,48 @@ function errorResponse(error) {
 function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
   const subject = 'Your MindForge Capital dashboard access';
 
+  // V5.1: rebuilt on the LIGHT brand theme to match the website + the
+  // newer sendActivationEmail / sendRecoveryEmail templates. All button
+  // styles inline so Gmail/Outlook never strip the white-on-blue text.
   const htmlBody = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #0a0a0f; color: #f0f0f5; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #12121a; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
-        .header { background: linear-gradient(135deg, #6c63ff 0%, #2dd4bf 100%); padding: 40px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
-        .content { padding: 40px 30px; }
-        .content h2 { font-size: 22px; margin: 0 0 12px 0; color: #f0f0f5; }
-        .content p { color: #8b8b99; line-height: 1.6; margin: 12px 0; }
-        .button-container { text-align: center; margin: 32px 0; }
-        .button { display: inline-block; background: #6c63ff; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
-        .button:hover { background: #5a52cc; }
-        .details { background: rgba(108,99,255,0.1); border-left: 3px solid #6c63ff; padding: 16px; margin: 24px 0; border-radius: 6px; font-size: 14px; }
-        .details-row { display: flex; justify-content: space-between; margin: 8px 0; }
-        .details-label { color: #8b8b99; }
-        .details-value { color: #f0f0f5; font-weight: 600; }
-        .footer { background: rgba(255,255,255,0.02); padding: 24px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid rgba(255,255,255,0.06); }
-        .warning { background: rgba(239,68,68,0.1); border-left: 3px solid #ef4444; padding: 12px 16px; margin: 16px 0; border-radius: 4px; font-size: 12px; color: #fca5a5; }
+        body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f5ff; color: #0c1831; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 16px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1a50d8 0%, #2563eb 50%, #0891b2 100%); padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; }
+        .header p { margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 14px; }
+        .content { padding: 40px 32px; }
+        .content h2 { font-size: 20px; margin: 0 0 12px 0; color: #0c1831; }
+        .content p { color: #475569; line-height: 1.7; margin: 12px 0; font-size: 15px; }
+        .btn-wrap { text-align: center; margin: 32px 0; }
+        .details { background: #f0f5ff; border-left: 3px solid #1a50d8; padding: 16px 20px; margin: 24px 0; border-radius: 8px; }
+        .details-row { display: flex; justify-content: space-between; margin: 6px 0; font-size: 14px; }
+        .details-label { color: #64748b; }
+        .details-value { color: #0c1831; font-weight: 600; }
+        .warning { background: #fee2e2; border-left: 3px solid #dc2626; padding: 12px 16px; margin: 16px 0; border-radius: 6px; font-size: 13px; color: #7f1d1d; }
+        .footer { background: #f8fafc; padding: 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+        .footer a { color: #1a50d8; text-decoration: none; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
           <h1>MindForge Capital</h1>
+          <p>Your dashboard is ready</p>
         </div>
         <div class="content">
-          <h2>Welcome ` + name + `!</h2>
-          <p>Your MindForge Capital subscription is now active. Your personalized dashboard is ready to use.</p>
+          <h2>Welcome ` + (name || 'Investor') + `,</h2>
+          <p>Your MindForge Capital subscription is now active. Your personalised dashboard is ready to use.</p>
 
-          <div class="button-container">
-            <a href="` + dashboardUrl + `" class="button">Access Your Dashboard</a>
+          <div class="btn-wrap" style="text-align:center;margin:32px 0;">
+            <a href="` + dashboardUrl + `"
+               style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);">
+              <span style="color:#ffffff !important;">Access My Dashboard &nbsp;&#8594;</span>
+            </a>
           </div>
 
           <div class="details">
@@ -982,21 +989,19 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
             </div>
             <div class="details-row">
               <span class="details-label">Valid Until:&nbsp;</span>
-              <span class="details-value">` + expiresAt.toLocaleDateString('en-IN') + `</span>
+              <span class="details-value">` + expiresAt.toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'}) + `</span>
             </div>
           </div>
 
-          <p>Your dashboard link is unique and personal. <strong>Do not share it with others.</strong> If you need to recover your link later, visit the recovery page with your email address.</p>
+          <p>Your dashboard link is unique and personal. <strong>Do not share it with others.</strong> If you ever lose it, recover it at the <a href="https://mindforgecapital.com/recover.html" style="color:#1a50d8;">recovery page</a>.</p>
 
           <div class="warning">
             <strong>Important:</strong> This portfolio is for educational purposes. Past performance does not guarantee future results. Always consult with a financial advisor before making investment decisions.
           </div>
         </div>
         <div class="footer">
-          <p>
-            <strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Trade at your own risk. Please review our privacy policy and terms of service.
-          </p>
-          <p style="margin-top: 16px; color: #9ca3af;">&copy; 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#9ca3af;">Unsubscribe</a> &middot; <a href="https://mindforgecapital.com/privacy.html" style="color:#9ca3af;">Privacy</a></p>
+          <p><strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Trade at your own risk.</p>
+          <p style="margin-top: 12px;">&copy; 2026 MindForge Capital &middot; <a href="https://mindforgecapital.com">mindforgecapital.com</a><br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe">Unsubscribe</a> &middot; <a href="https://mindforgecapital.com/privacy.html">Privacy</a></p>
         </div>
       </div>
     </body>
@@ -1029,42 +1034,52 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
 function sendRecoveryEmail(email, name, dashboardUrl) {
   const subject = 'Your MindForge Capital dashboard link';
 
+  // V5.1: rebuilt on the LIGHT brand theme used by sendActivationEmail —
+  // matches the website (background #f0f5ff, brand blue gradient header).
+  // All button styles inline so Gmail/Outlook don't strip white-on-blue text.
   const htmlBody = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: #0a0a0f; color: #f0f0f5; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #12121a; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; overflow: hidden; }
-        .header { background: linear-gradient(135deg, #6c63ff 0%, #2dd4bf 100%); padding: 40px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 28px; font-weight: 700; }
-        .content { padding: 40px 30px; }
-        .content h2 { font-size: 22px; margin: 0 0 12px 0; color: #f0f0f5; }
-        .content p { color: #8b8b99; line-height: 1.6; margin: 12px 0; }
-        .button-container { text-align: center; margin: 32px 0; }
-        .button { display: inline-block; background: #6c63ff; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; }
-        .button:hover { background: #5a52cc; }
-        .footer { background: rgba(255,255,255,0.02); padding: 24px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid rgba(255,255,255,0.06); }
+        body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f5ff; color: #0c1831; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #dbeafe; border-radius: 16px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #1a50d8 0%, #2563eb 50%, #0891b2 100%); padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 26px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px; }
+        .header p { margin: 8px 0 0 0; color: rgba(255,255,255,0.85); font-size: 14px; }
+        .content { padding: 40px 32px; }
+        .content h2 { font-size: 20px; margin: 0 0 12px 0; color: #0c1831; }
+        .content p { color: #475569; line-height: 1.7; margin: 12px 0; font-size: 15px; }
+        .btn-wrap { text-align: center; margin: 32px 0; }
+        .note { background: #f0f5ff; border-left: 3px solid #1a50d8; padding: 12px 16px; margin: 20px 0; border-radius: 6px; font-size: 13px; color: #475569; }
+        .footer { background: #f8fafc; padding: 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+        .footer a { color: #1a50d8; text-decoration: none; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
           <h1>MindForge Capital</h1>
+          <p>Dashboard link recovery</p>
         </div>
         <div class="content">
-          <h2>Hello ` + name + `!</h2>
-          <p>We received your request to recover your dashboard link. Your personalized dashboard is still active and ready to use.</p>
+          <h2>Hello ` + (name || 'Investor') + `,</h2>
+          <p>We received your request to recover your dashboard link. Your personalised dashboard is still active and ready to use.</p>
 
-          <div class="button-container">
-            <a href="` + dashboardUrl + `" class="button">Access Your Dashboard</a>
+          <div class="btn-wrap" style="text-align:center;margin:32px 0;">
+            <a href="` + dashboardUrl + `"
+               style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);">
+              <span style="color:#ffffff !important;">Access My Dashboard &nbsp;&#8594;</span>
+            </a>
           </div>
 
-          <p style="font-size: 14px; color: #6b7280; margin-top: 24px;">If you did not request this link, you can safely ignore this email. Your subscription is secure.</p>
+          <div class="note">
+            <strong>Keep this link private.</strong> Your dashboard link is unique to you — do not share it. If you did not request this email, you can safely ignore it; your subscription is secure.
+          </div>
         </div>
         <div class="footer">
-          <p>&copy; 2026 MindForge Capital. All rights reserved.<br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#6b7280;">Unsubscribe</a></p>
+          <p>&copy; 2026 MindForge Capital &middot; <a href="https://mindforgecapital.com">mindforgecapital.com</a><br><a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe">Unsubscribe</a> &middot; <a href="https://mindforgecapital.com/privacy.html">Privacy</a></p>
         </div>
       </div>
     </body>
@@ -1128,8 +1143,12 @@ function sendActivationEmail(email, name, strategy, dashboardUrl, expiresAt) {
           <h2>Welcome aboard, ` + (name || 'Investor') + `!</h2>
           <p>Your payment has been verified and your dashboard is now active. Click the button below to access your personalised strategy portfolio.</p>
 
-          <div class="btn-wrap">
-            <a href="` + dashboardUrl + `" class="btn">Open My Dashboard &#8594;</a>
+          <div class="btn-wrap" style="text-align:center;margin:32px 0;">
+            <!-- V5.1: inline button styles so Gmail/Outlook never strip the white text -->
+            <a href="` + dashboardUrl + `"
+               style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);">
+              <span style="color:#ffffff !important;">Open My Dashboard &nbsp;&#8594;</span>
+            </a>
           </div>
 
           <div class="details">
@@ -1226,8 +1245,12 @@ function sendAdminLeadNotification(name, email, phone, strategy, price) {
       <div class="row"><span class="label">Phone</span><span class="value">` + phone + `</span></div>
       <div class="row"><span class="label">Strategy</span><span class="value">` + strategy + `</span></div>
       <div class="row"><span class="label">Price</span><span class="value">` + price + `</span></div>
-      <div class="btn-wrap">
-        <a href="https://mindforgecapital.com/admin.html" class="btn">Open Admin Panel &#8594;</a>
+      <div class="btn-wrap" style="text-align:center;margin:28px 0 0;">
+        <!-- V5.1: inline styles so Gmail/Outlook never strip the white text colour -->
+        <a href="https://mindforgecapital.com/admin.html"
+           style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:.02em;box-shadow:0 6px 16px -6px rgba(26,80,216,.55);mso-padding-alt:0;">
+          <span style="color:#ffffff !important;">Open Admin Panel &nbsp;&#8594;</span>
+        </a>
       </div>
     </div>
     <div class="footer">&copy; 2026 MindForge Capital</div>
@@ -1337,7 +1360,7 @@ function sendRebalanceEmail(email, name, strategy, dashboardUrl) {
     '<div style="padding:28px;">' +
     '<p style="font-size:15px;">Hello ' + escapeHtmlGs(name || 'Investor') + ',</p>' +
     '<p style="font-size:14px;color:#475569;line-height:1.6;">This month\'s <b>' + escapeHtmlGs(strategy) + '</b> rebalance is now live on your dashboard. As an active multi-month subscriber, your dashboard already reflects the latest picks - open it to review and place your orders.</p>' +
-    '<div style="text-align:center;margin:28px 0;"><a href="' + dashboardUrl + '" style="display:inline-block;background:#1a50d8;color:#fff;padding:13px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">Open My Dashboard &#8594;</a></div>' +
+    '<div style="text-align:center;margin:28px 0;"><a href="' + dashboardUrl + '" style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);"><span style="color:#ffffff !important;">Open My Dashboard &nbsp;&#8594;</span></a></div>' +
     '<p style="font-size:12px;color:#94a3b8;">SEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. This is not personalised investment advice. Past performance does not guarantee future results.</p>' +
     '</div>' +
     '<div style="background:#f8fafc;padding:18px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;">&copy; 2026 MindForge Capital &middot; <a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;">Unsubscribe</a></div>' +

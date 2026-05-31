@@ -37,11 +37,11 @@ body::before{
 }
 h1,h2,h3,h4{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.1;}
 a{color:inherit;text-decoration:none;}
-.container{max-width:1200px;margin:0 auto;padding:0 32px;}
+.container{max-width:1320px;margin:0 auto;padding:0 32px;}
 
 /* NAV */
 nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.05);padding:0 32px;}
-.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;height:64px;gap:40px;}
+.nav-inner{max-width:1320px;margin:0 auto;display:flex;align-items:center;height:64px;gap:40px;}
 .logo{display:flex;align-items:center;}
 .logo img{height:44px;width:auto;display:block;}
 .nav-links{display:flex;gap:24px;margin-left:auto;align-items:center;}
@@ -320,11 +320,18 @@ td.shares{color:var(--text2);font-weight:600;font-variant-numeric:tabular-nums;}
 td.shares .qty{color:var(--white);font-weight:700;}
 .tbl-search{
   background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;
-  padding:8px 12px 8px 36px;font-size:13px;color:var(--white);
+  /* V5.1: padding-right reserves space for the v17 "/" hint chip so the
+           placeholder no longer gets clipped to "Search ticker or compa/" */
+  padding:8px 38px 8px 36px;font-size:13px;color:var(--white);
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-  outline:none;width:200px;transition:border-color .2s,box-shadow .2s;
+  outline:none;width:260px;transition:border-color .2s,box-shadow .2s;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:12px center;background-size:14px;
+}
+/* On narrow screens, drop the "/" hint chip so the placeholder always fits */
+@media (max-width: 720px){
+  .tbl-search-wrap::after{ display: none !important; }
+  .tbl-search{ padding-right: 12px; }
 }
 .tbl-search::placeholder{color:var(--text3);}
 .tbl-search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.10);}
@@ -1376,7 +1383,9 @@ footer p {
         <table>
           <thead>
             <tr>
-              <th class="bought-col" title="Tick once you've placed the order"><span aria-hidden="true">✓</span></th>
+              <th class="bought-col" title="Tick to mark every visible pick as bought">
+                <input type="checkbox" class="bought-cb bought-all" id="bought-all" aria-label="Select all picks as bought" onchange="toggleBoughtAll(this)">
+              </th>
               <th style="width:48px;">#</th>
               <th>Company</th>
               <th>Ticker</th>
@@ -2128,6 +2137,49 @@ function toggleBought(cb) {
     if (sibCb && sibCb !== cb) sibCb.checked = cb.checked;
   });
   refreshBoughtProgress();
+  syncBoughtAllHeader();
+}
+
+// V5.1: select-all header checkbox toggles every visible row's bought state.
+// Replaces the static "✓" glyph that was just decorative.
+function toggleBoughtAll(headerCb) {
+  if (!stocksData || !stocksData.length) return;
+  const map = loadBought(currentStrategy);
+  const rows = document.querySelectorAll('#stocks-tbody tr[data-row]');
+  rows.forEach(tr => {
+    // Skip rows hidden by search filter — only act on what the user sees
+    if (tr.style.display === 'none') return;
+    const ticker = tr.dataset.ticker;
+    if (!ticker) return;
+    if (headerCb.checked) map[ticker] = true; else delete map[ticker];
+    tr.classList.toggle('row-bought', headerCb.checked);
+    document.querySelectorAll('[data-ticker="' + ticker.replace(/"/g,'\\"') + '"]').forEach(el => {
+      el.classList.toggle('row-bought', headerCb.checked);
+      const sibCb = el.querySelector('.bought-cb');
+      if (sibCb) sibCb.checked = headerCb.checked;
+    });
+  });
+  saveBought(currentStrategy, map);
+  refreshBoughtProgress();
+  showToast(headerCb.checked ? 'Marked all visible picks bought' : 'Cleared all marks');
+}
+
+// Keep the header checkbox in sync with row state (checked when ALL visible
+// rows are checked; indeterminate when SOME are; unchecked when NONE).
+function syncBoughtAllHeader() {
+  const head = document.getElementById('bought-all');
+  if (!head) return;
+  const rows = Array.from(document.querySelectorAll('#stocks-tbody tr[data-row]'))
+    .filter(tr => tr.style.display !== 'none');
+  if (!rows.length) {
+    head.checked = false; head.indeterminate = false; return;
+  }
+  const checked = rows.filter(tr => {
+    const cb = tr.querySelector('.bought-cb');
+    return cb && cb.checked;
+  }).length;
+  head.checked = (checked === rows.length);
+  head.indeterminate = (checked > 0 && checked < rows.length);
 }
 function resetBought() {
   saveBought(currentStrategy, {});
@@ -2608,6 +2660,22 @@ init();
   .ticker-chip.copied{ animation: none !important; }
   .industry-badge, .company{ transition: none !important; }
 }
+
+/* V5.1: select-all checkbox styling — sits cleanly in the header cell,
+   distinct from row checkboxes via a subtle outline. */
+th.bought-col{ width: 44px; text-align: center; padding: 0; vertical-align: middle; }
+th.bought-col .bought-all{
+  width: 18px; height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-block;
+}
+th.bought-col .bought-all:indeterminate{ opacity: .65; }
+
+/* V5.1: ensure the buy-progress card never crowds the table actions */
+.table-actions{ row-gap: 8px; }
+
 .nav-links a[aria-current="page"]{ color: var(--white) !important; position: relative; }
 .nav-links a[aria-current="page"]::after{
   content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
