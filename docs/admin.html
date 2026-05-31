@@ -690,13 +690,33 @@
     </div>
     <div class="modal-field">
       <label>Strategy *</label>
-      <select id="act-strategy">
+      <select id="act-strategy" onchange="updateActPrice()">
         <option value="">Select strategy…</option>
         <option value="MindForge MultiAsset">MindForge MultiAsset — ₹99/month</option>
         <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹1,499/month</option>
         <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
         <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹9,999/month</option>
       </select>
+    </div>
+
+    <!-- V5.0: Duration selector — admin can now pick the plan the customer
+         paid for (1/3/6/12 months) instead of silently defaulting to 1.
+         Auto-prefilled from the matching lead row's duration_months when
+         openActivateModal() is called with the data-duration attribute. -->
+    <div class="modal-field">
+      <label>Duration *</label>
+      <select id="act-duration" onchange="updateActPrice()">
+        <option value="1">1 month</option>
+        <option value="3">3 months — 5% off</option>
+        <option value="6">6 months — 10% off</option>
+        <option value="12">1 year — 20% off</option>
+      </select>
+    </div>
+
+    <div class="modal-field" style="margin-top:-4px;">
+      <div id="act-price-box" style="display:none;padding:10px 12px;background:rgba(37,99,235,0.05);border:1px solid rgba(37,99,235,0.18);border-radius:8px;font-size:13px;color:#0c1831;">
+        <strong id="act-price-total">—</strong> <span id="act-price-meta" style="color:#64748b;"></span>
+      </div>
     </div>
 
     <div class="modal-actions">
@@ -901,6 +921,7 @@ function renderTable(leads) {
           'data-email="'     + esc(lead.email    || '') + '" ' +
           'data-phone="'     + esc(lead.phone    || '') + '" ' +
           'data-strategy="'  + esc(lead.strategy || '') + '" ' +
+          'data-duration="'  + esc(lead.duration_months || '1') + '" ' +
           'data-timestamp="' + esc(tsRaw) + '"';
       actionCell = '<div class="action-cell">' +
         '<button class="btn-activate" ' + dataAttrs + '>Activate</button>' +
@@ -965,7 +986,8 @@ document.addEventListener('click', function(e) {
     var email    = act.getAttribute('data-email');
     var phone    = act.getAttribute('data-phone');
     var strategy = act.getAttribute('data-strategy');
-    openActivateModal(name, email, phone, strategy);
+    var duration = act.getAttribute('data-duration');
+    openActivateModal(name, email, phone, strategy, duration);
     return;
   }
   var dec = e.target.closest('.btn-decline');
@@ -1062,7 +1084,63 @@ function declineLead(btn, name, email, timestamp) {
   });
 }
 
-function openActivateModal(name, email, phone, strategy) {
+// V5.0: pricing table — kept in sync with signup.html STRATEGY_META and
+// strategies.html STRATEGY_PRICES. Single source of truth for the admin's
+// live price preview in the activate modal.
+var ADMIN_STRATEGY_PRICES = {
+  'MindForge MultiAsset':      99,
+  'MindForge LargeMidcap 250': 1499,
+  'MindForge SmallMicro 500':  2499,
+  'MindForge S&P 500':         9999
+};
+var ADMIN_DURATIONS = {
+  '1':  { months: 1,  disc: 0.00, label: '1 month'  },
+  '3':  { months: 3,  disc: 0.05, label: '3 months' },
+  '6':  { months: 6,  disc: 0.10, label: '6 months' },
+  '12': { months: 12, disc: 0.20, label: '1 year'   }
+};
+function admInr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+// Refresh the price preview + rewrite the Duration option labels with
+// per-strategy totals so the admin sees what to charge.
+function updateActPrice(){
+  var strat = document.getElementById('act-strategy').value;
+  var durSel = document.getElementById('act-duration');
+  var durKey = (durSel && durSel.value) || '1';
+  var monthly = ADMIN_STRATEGY_PRICES[strat];
+  var d = ADMIN_DURATIONS[durKey];
+  var box = document.getElementById('act-price-box');
+
+  // Rewrite duration option labels with the per-strategy total (so the
+  // admin sees "3 months — ₹4,272 (5% off)" not just "3 months — 5% off").
+  if (durSel) {
+    ['1','3','6','12'].forEach(function(key){
+      var opt = durSel.querySelector('option[value="' + key + '"]');
+      var dd  = ADMIN_DURATIONS[key];
+      if (!opt || !dd) return;
+      if (monthly) {
+        var total = Math.round(monthly * dd.months * (1 - dd.disc));
+        var pct = Math.round(dd.disc * 100);
+        opt.textContent = dd.label + ' — ' + admInr(total) + (pct > 0 ? ' (' + pct + '% off)' : '');
+      } else {
+        opt.textContent = dd.label + (dd.disc > 0 ? ' — ' + Math.round(dd.disc * 100) + '% off' : '');
+      }
+    });
+  }
+
+  if (monthly && d && box){
+    var total = Math.round(monthly * d.months * (1 - d.disc));
+    var save  = (monthly * d.months) - total;
+    var saveTxt = d.disc > 0 ? '  ·  save ' + admInr(save) + ' (' + Math.round(d.disc * 100) + '% off)' : '';
+    document.getElementById('act-price-total').textContent = admInr(total) + ' for ' + d.label;
+    document.getElementById('act-price-meta').textContent  = '(' + admInr(monthly) + '/mo base)' + saveTxt;
+    box.style.display = 'block';
+  } else if (box) {
+    box.style.display = 'none';
+  }
+}
+
+function openActivateModal(name, email, phone, strategy, duration) {
   _actLeadEmail = email;
   document.getElementById('act-name').value     = name     || '';
   document.getElementById('act-email').value    = email    || '';
@@ -1077,6 +1155,12 @@ function openActivateModal(name, email, phone, strategy) {
     }
   }
 
+  // V5.0: pre-select the lead's chosen duration (if any). Falls back to 1.
+  var durSel = document.getElementById('act-duration');
+  var d = parseInt(duration, 10);
+  durSel.value = (d === 3 || d === 6 || d === 12) ? String(d) : '1';
+
+  updateActPrice();
   document.getElementById('activate-overlay').style.display = 'flex';
 }
 
@@ -1095,6 +1179,9 @@ function confirmActivate() {
   var email    = document.getElementById('act-email').value.trim();
   var phone    = document.getElementById('act-phone').value.trim();
   var strategy = document.getElementById('act-strategy').value;
+  // V5.0: read duration from the new selector (defaults to 1 if missing)
+  var durSel   = document.getElementById('act-duration');
+  var duration = parseInt((durSel && durSel.value) || '1', 10) || 1;
 
   if (!email || !strategy) {
     showToast('Please fill in email and strategy.', 'error');
@@ -1109,12 +1196,13 @@ function confirmActivate() {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({
-      action:       'activate',
-      name:         name,
-      email:        email,
-      phone:        phone,
-      strategy:     strategy,
-      admin_secret: getAdminSecret()
+      action:          'activate',
+      name:            name,
+      email:           email,
+      phone:           phone,
+      strategy:        strategy,
+      duration_months: duration,
+      admin_secret:    getAdminSecret()
     })
   })
   .then(function(r) { return r.json(); })
@@ -1134,12 +1222,16 @@ function confirmActivate() {
       if (rawPhone.length === 10) rawPhone = '91' + rawPhone;
       else if (rawPhone.length === 11 && rawPhone.startsWith('0')) rawPhone = '91' + rawPhone.slice(1);
       if (rawPhone.length >= 11) {
+        // V5.0: WhatsApp message now reflects the actual subscription duration
+        // (previously hard-coded "30 days" regardless of plan).
+        var durLabel = (ADMIN_DURATIONS[String(duration)] || ADMIN_DURATIONS['1']).label;
         var waMsg = encodeURIComponent(
           'Hi ' + (name || 'there') + ',\n\n' +
           'Your MindForge Capital dashboard is now active.\n\n' +
           'Strategy: ' + strategy + '\n' +
+          'Plan: ' + durLabel + '\n' +
           'Dashboard link (keep this private):\n' + dashUrl + '\n\n' +
-          'Your subscription is valid for 30 days. Use this link anytime to view live portfolio updates.\n\n' +
+          'Your subscription is valid for ' + durLabel + '. Use this link anytime to view live portfolio updates.\n\n' +
           '— MindForge Capital'
         );
         window.open('https://wa.me/' + rawPhone + '?text=' + waMsg, '_blank');

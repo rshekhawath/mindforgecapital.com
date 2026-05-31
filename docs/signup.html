@@ -410,9 +410,30 @@ function priceFor(strategy, durKey){
 
 function onStrategyChange() {
   var sel = document.getElementById('reg-strategy').value;
-  var durKey = (document.getElementById('reg-duration') || {}).value || '1';
+  var durSel = document.getElementById('reg-duration');
+  var durKey = (durSel || {}).value || '1';
   var note = document.getElementById('strategy-note');
   var m = STRATEGY_META[sel];
+
+  // V5.0: rewrite the Duration <option> labels so each shows the actual
+  // total price for the currently-selected strategy. Previously the user
+  // saw only "3 months — 5% off" with no rupee figure — they had to read
+  // the strategy-note below to see what they'd pay.
+  if (durSel) {
+    ['1','3','6','12'].forEach(function(key){
+      var opt = durSel.querySelector('option[value="' + key + '"]');
+      var d   = DURATIONS[key];
+      if (!opt || !d) return;
+      if (m) {
+        var total = Math.round(m.monthly * d.months * (1 - d.disc));
+        var pct   = Math.round(d.disc * 100);
+        opt.textContent = d.label + ' — ' + inr(total) + (pct > 0 ? ' (' + pct + '% off)' : '');
+      } else {
+        opt.textContent = d.label + (d.disc > 0 ? ' — ' + Math.round(d.disc * 100) + '% off' : '');
+      }
+    });
+  }
+
   if (sel && m) {
     var p = priceFor(sel, durKey);
     var saveTxt = p.disc > 0

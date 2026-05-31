@@ -461,13 +461,18 @@ function handleGetLeads() {
 
   for (let i = 1; i < data.length; i++) {
     leads.push({
-      timestamp: data[i][0],
-      name:      data[i][1],
-      email:     data[i][2],
-      phone:     data[i][3],
-      strategy:  data[i][4],
-      price:     data[i][5],
-      status:    data[i][6] || 'pending'
+      timestamp:       data[i][0],
+      name:            data[i][1],
+      email:           data[i][2],
+      phone:           data[i][3],
+      strategy:        data[i][4],
+      price:           data[i][5],
+      status:          data[i][6] || 'pending',
+      // V5.0: surface duration_months (col H) + agreement_pdf (col I) so the
+      // admin's Activate modal can pre-select the duration the customer
+      // chose at signup. Falls back to 1 if the column is empty (legacy rows).
+      duration_months: parseInt(data[i][7], 10) || 1,
+      agreement_pdf:   data[i][8] || ''
     });
   }
 
