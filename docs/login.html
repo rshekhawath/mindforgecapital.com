@@ -381,24 +381,49 @@ async function verifyOTP() {
 
 function renderSubscriptions(subs) {
   var list = document.getElementById('subs-list');
+  // Sort: active first, then expired
+  subs.sort(function(a, b){
+    var ae = new Date(a.expires_at) < new Date();
+    var be = new Date(b.expires_at) < new Date();
+    if (ae !== be) return ae ? 1 : -1;
+    return new Date(b.expires_at) - new Date(a.expires_at);
+  });
   list.innerHTML = subs.map(function(sub) {
     var expiry = new Date(sub.expires_at);
     var expired = expiry < new Date();
-    return '<div class="sub-row" onclick="openDashboard(\'' + sub.token + '\')" style="' + (expired ? 'opacity:0.5;' : '') + '">' +
+    var safeStrat = String(sub.strategy || 'Strategy').replace(/[<>&"']/g, function(c){
+      return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
+    });
+    var dateStr = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+    if (expired) {
+      // Don't navigate to a dashboard that will just error out — send the user
+      // straight to WhatsApp to renew, with strategy + email pre-filled.
+      var waText = encodeURIComponent('Hi MindForge Capital — I would like to renew my ' + (sub.strategy||'') + ' subscription. Email: ' + (sub.email||_email||'') + '.');
+      var waUrl  = 'https://wa.me/917601032082?text=' + waText;
+      return '<a class="sub-row" href="' + waUrl + '" target="_blank" rel="noopener noreferrer" style="opacity:0.7;text-decoration:none;">' +
+        '<div>' +
+          '<div class="sub-name">' + safeStrat + '</div>' +
+          '<div class="sub-meta" style="color:#dc2626;">Expired on ' + dateStr + ' · Renew on WhatsApp</div>' +
+        '</div>' +
+        '<div class="sub-go" style="color:#25d366;">Renew →</div>' +
+      '</a>';
+    }
+    return '<a class="sub-row" href="dashboard.html?token=' + encodeURIComponent(sub.token) + '" style="text-decoration:none;">' +
       '<div>' +
-        '<div class="sub-name">' + (sub.strategy || 'Strategy') + '</div>' +
-        '<div class="sub-meta">' + (expired ? 'Expired · ' : 'Active until ') + expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) + '</div>' +
+        '<div class="sub-name">' + safeStrat + '</div>' +
+        '<div class="sub-meta">Active until ' + dateStr + '</div>' +
       '</div>' +
-      '<div class="sub-go">' + (expired ? 'Renew' : 'Open →') + '</div>' +
-    '</div>';
+      '<div class="sub-go">Open →</div>' +
+    '</a>';
   }).join('');
-  document.getElementById('subs-desc').textContent = 'Found ' + subs.length + ' subscription' + (subs.length > 1 ? 's' : '') + ' for ' + _email + '.';
+  var activeCount = subs.filter(function(s){ return new Date(s.expires_at) >= new Date(); }).length;
+  var expiredCount = subs.length - activeCount;
+  var desc = 'Found ' + subs.length + ' subscription' + (subs.length > 1 ? 's' : '') + ' for ' + _email + '.';
+  if (expiredCount && activeCount) desc += ' (' + activeCount + ' active, ' + expiredCount + ' expired)';
+  else if (expiredCount && !activeCount) desc += ' All expired — tap Renew to subscribe again on WhatsApp.';
+  document.getElementById('subs-desc').textContent = desc;
   document.getElementById('step-otp').style.display = 'none';
   document.getElementById('step-subs').style.display = 'block';
-}
-
-function openDashboard(token) {
-  window.location.href = 'dashboard.html?token=' + encodeURIComponent(token);
 }
 
 function backToEmail() {
@@ -466,6 +491,42 @@ document.addEventListener('keydown', function(e) {
 .btn.btn-ghost:hover{ transform:translateY(-2px); background:rgba(255,255,255,.92) !important; border-color:rgba(37,99,235,.45) !important; }
 .card{ box-shadow:0 1px 2px rgba(12,24,49,.04), 0 18px 48px -22px rgba(26,80,216,.22), 0 44px 84px -52px rgba(26,80,216,.18) !important; }
 @media (prefers-reduced-motion: reduce){ .btn,.btn.btn-ghost{transition:none !important;} .btn:hover,.btn.btn-ghost:hover{transform:none !important;} }
+</style>
+
+<!-- MF VISUAL v14 — login refinement (additive, RM-safe) -->
+<style id="mf-v14-login">
+:root{ --v14-ease: cubic-bezier(.22,.8,.2,1); }
+.card{ opacity:0; transform: translateY(8px); animation: v14-card-in .55s var(--v14-ease) .05s forwards; }
+@keyframes v14-card-in{ to{ opacity:1; transform:none; } }
+
+.btn:not(.btn-ghost){ position:relative; overflow:hidden; }
+.btn:not(.btn-ghost)::after{
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.32) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: v14-shimmer 2.6s cubic-bezier(.4,0,.2,1) 1s 1 forwards;
+  pointer-events:none; border-radius:inherit;
+}
+@keyframes v14-shimmer{ 0%{transform:translateX(-130%);} 100%{transform:translateX(130%);} }
+
+/* Subscription rows hover-lift */
+.sub-row{
+  transition: transform .25s var(--v14-ease), box-shadow .25s var(--v14-ease), border-color .25s var(--v14-ease);
+}
+.sub-row:hover{
+  transform: translateX(2px);
+  box-shadow: 0 10px 22px -14px rgba(26,80,216,.30);
+  border-color: rgba(96,165,250,.45) !important;
+}
+
+/* OTP digit pulse on focus */
+#otp-input:focus{
+  letter-spacing: .3em;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .card, .btn::after, .sub-row{ animation: none !important; transition: none !important; opacity:1; transform:none !important; }
+}
 </style>
 </body>
 </html>

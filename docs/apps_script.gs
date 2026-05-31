@@ -169,12 +169,16 @@ function handleSubscribe(payload) {
   // Find latest run_id for this strategy
   const runId = findLatestRunId(strategy);
 
-  // Calculate expiry (30 days from now)
+  // Expiry by duration months (item 9). Legacy callers without duration_months
+  // default to 1 month so they never accidentally get a 30-day plan when the
+  // user paid for a longer one.
+  const durationMonths = parseInt(payload.duration_months, 10) || 1;
   const subscribedAt = new Date();
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 30);
+  const expiresAt    = new Date();
+  expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+  const notifyFlag = durationMonths > 1 ? 'on' : 'off';
 
-  // Save to subscriptions sheet
+  // Save to subscriptions sheet (K: duration_months, L: notify flag)
   const sheet = getSheet('subscriptions');
   sheet.appendRow([
     token,
@@ -186,7 +190,9 @@ function handleSubscribe(payload) {
     subscribedAt.toISOString(),
     expiresAt.toISOString(),
     paymentId,
-    'active'
+    'active',
+    durationMonths,
+    notifyFlag
   ]);
 
   // Send confirmation email

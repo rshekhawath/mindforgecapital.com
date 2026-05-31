@@ -1622,7 +1622,7 @@ async function init() {
     return;
   }
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?action=stocks&token=' + encodeURIComponent(token));
+    const res = await fetch(APPS_SCRIPT_URL + '?action=stocks&token=' + encodeURIComponent(token) + '&_=' + Date.now());
     const data = await res.json();
     if (data.error) { showError('Access Denied', data.error); return; }
     stocksData = data.stocks || [];
@@ -2388,6 +2388,85 @@ init();
 @media (prefers-reduced-motion: reduce){
   .size-card, .alloc-card, .table-section, .howto-card, .notif-card, .tbl-btn, .renew-cta{ transition:none !important; }
   .tbl-btn:hover, .renew-cta:hover{ transform:none !important; }
+}
+</style>
+
+<!-- ============================================================
+     MF VISUAL v14 — dashboard refinement layer
+     - Stat-card sheen on hover
+     - Soft halo on the Refresh button when idle
+     - Refined table row hover (gradient underline)
+     - Pill-status gradient border
+     RM-safe.
+     ============================================================ -->
+<style id="mf-v14-dash">
+:root{ --v14-ease: cubic-bezier(.22,.8,.2,1); }
+
+/* Stat cards — subtle sheen on hover (additive — they already have their own animation) */
+.stat-card{ position:relative; overflow:hidden; }
+.stat-card::after{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,.45) 50%, transparent 68%);
+  transform: translateX(-130%);
+  transition: transform .9s var(--v14-ease);
+}
+.stat-card:hover::after{ transform: translateX(130%); }
+
+/* Refresh button — gentle pulse so the user knows it's interactive */
+#btn-refresh{
+  box-shadow: 0 4px 12px -6px rgba(26,80,216,.35);
+  animation: v14-breath 5s ease-in-out 3s infinite;
+}
+@keyframes v14-breath{
+  0%, 100% { box-shadow: 0 4px 12px -6px rgba(26,80,216,.35); }
+  50%      { box-shadow: 0 8px 20px -6px rgba(26,80,216,.55), 0 0 0 4px rgba(45,212,191,.08); }
+}
+
+/* Status pill — softened glow + smoother edge */
+#pill-status{
+  box-shadow: 0 4px 14px -8px rgba(26,80,216,.30), inset 0 1px 0 rgba(255,255,255,.45);
+  transition: box-shadow .25s var(--v14-ease);
+}
+#pill-status:hover{
+  box-shadow: 0 8px 22px -8px rgba(26,80,216,.45), inset 0 1px 0 rgba(255,255,255,.55);
+}
+
+/* Renew CTA — make it visually obvious + brand it green for "go" */
+.renew-cta{
+  box-shadow: 0 6px 18px -8px rgba(37,211,102,.50);
+  animation: v14-renew 3.5s ease-in-out infinite;
+}
+@keyframes v14-renew{
+  0%, 100% { box-shadow: 0 6px 18px -8px rgba(37,211,102,.50); }
+  50%      { box-shadow: 0 10px 26px -8px rgba(37,211,102,.70), 0 0 0 5px rgba(37,211,102,.10); }
+}
+
+/* Allocation donut shines on hover */
+#alloc-card:hover .dc-num{ transition: color .25s var(--v14-ease); }
+
+/* Table row gradient bottom-border on hover */
+#stocks-tbody tr:not(.skel-row){ position:relative; }
+#stocks-tbody tr:not(.skel-row):hover{
+  background: linear-gradient(180deg, rgba(37,99,235,0.03), rgba(8,145,178,0.04)) !important;
+}
+
+/* Scroll progress bolder gradient */
+.mf-scroll-prog{
+  background: linear-gradient(90deg, #1a50d8 0%, #2563eb 35%, #0891b2 70%, #2dd4bf 100%) !important;
+  box-shadow: 0 1px 10px rgba(37,99,235,.45) !important;
+}
+
+/* Floating scroll-to-top — branded gradient */
+.mf-fab-top{
+  background: linear-gradient(135deg, #1a50d8, #0891b2) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px -10px rgba(26,80,216,.55) !important;
+}
+.mf-fab-top:hover{ transform: translateY(-2px); box-shadow: 0 16px 36px -10px rgba(26,80,216,.75) !important; }
+
+@media (prefers-reduced-motion: reduce){
+  .stat-card::after, #btn-refresh, .renew-cta{ animation: none !important; transition: none !important; }
+  .stat-card:hover::after{ transform: translateX(-130%); }
 }
 </style>
 </body>
