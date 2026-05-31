@@ -685,16 +685,18 @@ footer {
   .proof-item { width: 100%; }
 }
 
-/* ── BILLING TOGGLE ── */
+/* ── DURATION TOGGLE (1mo / 3mo / 6mo / 1yr) ── */
 .billing-wrap { display: flex; justify-content: center; margin-bottom: 40px; }
-.billing-toggle { display: inline-flex; background: var(--ink2); border: 0.5px solid var(--border2); border-radius: 10px; padding: 4px; gap: 4px; }
-.toggle-btn { background: none; border: none; border-radius: 8px; padding: 8px 20px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.billing-toggle { display: inline-flex; flex-wrap: wrap; justify-content: center; background: var(--ink2); border: 0.5px solid var(--border2); border-radius: 10px; padding: 4px; gap: 4px; }
+.toggle-btn { background: none; border: none; border-radius: 8px; padding: 8px 18px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
 .toggle-btn.active { background: var(--accent); color: #fff; }
 .save-badge { background: rgba(5,150,105,0.15); color: #059669; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; margin-left: 6px; vertical-align: middle; }
-.price-annual { display: none; }
-.price-annual-note { font-size: 11px; color: var(--text3); margin-top: 2px; }
-body.annual-billing .price-monthly { display: none; }
-body.annual-billing .price-annual { display: flex; }
+.toggle-btn.active .save-badge { background: rgba(255,255,255,0.22); color: #fff; }
+.price-annual-note { font-size: 11px; color: #059669; font-weight: 600; margin-top: 4px; }
+@media (max-width: 520px) {
+  .billing-toggle { width: 100%; flex-direction: column; }
+  .toggle-btn { width: 100%; text-align: center; }
+}
 
 /* ── SCROLL ANIMATIONS ── */
 .fade-up { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
@@ -3122,8 +3124,10 @@ textarea:focus-visible, select:focus-visible {
 
     <div class="billing-wrap fade-up">
       <div class="billing-toggle">
-        <button class="toggle-btn active" id="btn-monthly" onclick="setBilling('monthly')">Monthly</button>
-        <button class="toggle-btn" id="btn-annual" onclick="setBilling('annual')">Annual <span class="save-badge">2 months free</span></button>
+        <button class="toggle-btn active" id="btn-dur-1"  onclick="setDuration('1')">1 month</button>
+        <button class="toggle-btn"        id="btn-dur-3"  onclick="setDuration('3')">3 months <span class="save-badge">5% off</span></button>
+        <button class="toggle-btn"        id="btn-dur-6"  onclick="setDuration('6')">6 months <span class="save-badge">10% off</span></button>
+        <button class="toggle-btn"        id="btn-dur-12" onclick="setDuration('12')">1 year <span class="save-badge">20% off</span></button>
       </div>
     </div>
 
@@ -3177,15 +3181,11 @@ textarea:focus-visible, select:focus-visible {
         </div>
         <div class="strat-footer">
           <div class="strat-min">Recommended Investment <span>₹1,00,000</span></div>
-          <div class="price-row price-monthly">
-            <span class="price-amt">₹99</span>
-            <span class="price-mo">/ month</span>
+          <div class="price-row">
+            <span class="price-amt" id="ma-price-amt">₹99</span>
+            <span class="price-mo"  id="ma-price-unit">/ month</span>
           </div>
-          <div class="price-row price-annual">
-            <span class="price-amt">₹990</span>
-            <span class="price-mo">/ year</span>
-          </div>
-          <div class="price-annual-note" style="display:none;" id="ma-annual-note">Billed annually · Save ₹198</div>
+          <div class="price-annual-note" id="ma-price-note" style="display:none;"></div>
           <a href="strategies.html?tab=multiasset" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','multiasset')">Learn more →</a>
         </div>
       </div>
@@ -3242,15 +3242,11 @@ textarea:focus-visible, select:focus-visible {
         </div>
         <div class="strat-footer">
           <div class="strat-min">Recommended Investment <span>₹15,00,000</span></div>
-          <div class="price-row price-monthly">
-            <span class="price-amt">₹1,499</span>
-            <span class="price-mo">/ month</span>
+          <div class="price-row">
+            <span class="price-amt" id="lm-price-amt">₹1,499</span>
+            <span class="price-mo"  id="lm-price-unit">/ month</span>
           </div>
-          <div class="price-row price-annual">
-            <span class="price-amt">₹14,990</span>
-            <span class="price-mo">/ year</span>
-          </div>
-          <div class="price-annual-note" style="display:none;" id="lm-annual-note">Billed annually · Save ₹2,998</div>
+          <div class="price-annual-note" id="lm-price-note" style="display:none;"></div>
           <a href="strategies.html?tab=largemidcap" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','largemidcap')">Learn more →</a>
         </div>
       </div>
@@ -3304,15 +3300,11 @@ textarea:focus-visible, select:focus-visible {
         </div>
         <div class="strat-footer">
           <div class="strat-min">Recommended Investment <span>₹25,00,000</span></div>
-          <div class="price-row price-monthly">
-            <span class="price-amt">₹2,500</span>
-            <span class="price-mo">/ month</span>
+          <div class="price-row">
+            <span class="price-amt" id="sm-price-amt">₹2,499</span>
+            <span class="price-mo"  id="sm-price-unit">/ month</span>
           </div>
-          <div class="price-row price-annual">
-            <span class="price-amt">₹24,990</span>
-            <span class="price-mo">/ year</span>
-          </div>
-          <div class="price-annual-note" style="display:none;" id="sm-annual-note">Billed annually · Save ₹5,010</div>
+          <div class="price-annual-note" id="sm-price-note" style="display:none;"></div>
           <a href="strategies.html?tab=smallmicro" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','smallmicro')">Learn more →</a>
         </div>
       </div>
@@ -3366,15 +3358,11 @@ textarea:focus-visible, select:focus-visible {
         </div>
         <div class="strat-footer">
           <div class="strat-min">Recommended Investment <span>₹1,00,00,000</span></div>
-          <div class="price-row price-monthly">
-            <span class="price-amt">₹10,000</span>
-            <span class="price-mo">/ month</span>
+          <div class="price-row">
+            <span class="price-amt" id="sp-price-amt">₹9,999</span>
+            <span class="price-mo"  id="sp-price-unit">/ month</span>
           </div>
-          <div class="price-row price-annual">
-            <span class="price-amt">₹99,990</span>
-            <span class="price-mo">/ year</span>
-          </div>
-          <div class="price-annual-note" style="display:none;" id="sp-annual-note">Billed annually · Save ₹20,010</div>
+          <div class="price-annual-note" id="sp-price-note" style="display:none;"></div>
           <a href="strategies.html?tab=sp500" class="strat-cta cta-filled" onclick="localStorage.setItem('mf-tab','sp500')">Learn more →</a>
         </div>
       </div>
@@ -3592,18 +3580,46 @@ window.addEventListener('load', revealFadeUps);
 window.addEventListener('scroll', revealFadeUps, { passive: true });
 window.addEventListener('resize', revealFadeUps, { passive: true });
 
-function setBilling(mode) {
-  if (mode === 'annual') {
-    document.body.classList.add('annual-billing');
-    document.getElementById('btn-annual').classList.add('active');
-    document.getElementById('btn-monthly').classList.remove('active');
-    document.querySelectorAll('.price-annual-note').forEach(el => el.style.display = 'block');
-  } else {
-    document.body.classList.remove('annual-billing');
-    document.getElementById('btn-monthly').classList.add('active');
-    document.getElementById('btn-annual').classList.remove('active');
-    document.querySelectorAll('.price-annual-note').forEach(el => el.style.display = 'none');
-  }
+// Duration-aware pricing on the landing strategy cards. Mirrors the
+// signup.html / strategies.html model so the displayed price is always what
+// the user will be charged on registration.
+//   1mo → 0% off, 3mo → 5%, 6mo → 10%, 12mo → 20%
+// Total is rounded to the nearest rupee (Math.round(monthly × months × (1−disc)))
+// to match the backend's handleActivate expiry/duration computation.
+var STRAT_MONTHLY = { ma: 99, lm: 1499, sm: 2499, sp: 9999 };
+var DURATIONS = {
+  '1':  { months: 1,  disc: 0.00, unit: '/ month'    },
+  '3':  { months: 3,  disc: 0.05, unit: '/ 3 months' },
+  '6':  { months: 6,  disc: 0.10, unit: '/ 6 months' },
+  '12': { months: 12, disc: 0.20, unit: '/ year'     }
+};
+function inrFmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function setDuration(durKey) {
+  var dur = DURATIONS[durKey];
+  if (!dur) return;
+  ['1','3','6','12'].forEach(function(k){
+    var b = document.getElementById('btn-dur-' + k);
+    if (b) b.classList.toggle('active', k === durKey);
+  });
+  Object.keys(STRAT_MONTHLY).forEach(function(key) {
+    var monthly = STRAT_MONTHLY[key];
+    var total   = Math.round(monthly * dur.months * (1 - dur.disc));
+    var save    = (monthly * dur.months) - total;
+    var amt     = document.getElementById(key + '-price-amt');
+    var unit    = document.getElementById(key + '-price-unit');
+    var note    = document.getElementById(key + '-price-note');
+    if (amt)  amt.textContent  = inrFmt(total);
+    if (unit) unit.textContent = dur.unit;
+    if (note) {
+      if (dur.disc > 0) {
+        note.textContent = 'Save ' + inrFmt(save) + ' · ' + Math.round(dur.disc * 100) + '% off';
+        note.style.display = 'block';
+      } else {
+        note.textContent = '';
+        note.style.display = 'none';
+      }
+    }
+  });
 }
 </script>
 
