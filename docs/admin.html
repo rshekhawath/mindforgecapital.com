@@ -267,6 +267,7 @@
     .strat-multiasset  { background: #dbeafe; color: #1e40af; }
     .strat-largemidcap { background: #d1fae5; color: #065f46; }
     .strat-smallmicro  { background: #ede9fe; color: #5b21b6; }
+    .strat-sp500       { background: #fef3c7; color: #92400e; }
     .strat-other       { background: #f1f5f9; color: #475569; }
 
     .status-badge {
@@ -862,11 +863,15 @@ function renderTable(leads) {
   document.getElementById('leads-table').style.display = 'table';
 
   tbody.innerHTML = leads.map(function(lead) {
-    var stratKey = String(lead.strategy || '').toLowerCase().replace(/\s+/g, '');
+    // Strip spaces AND ampersands so "MindForge S&P 500" → "mindforgesp500"
+    // matches the sp500 branch below. Keeping the two normalizations in sync
+    // with filterTable() ensures pill colour + dropdown filter behave the same.
+    var stratKey = String(lead.strategy || '').toLowerCase().replace(/[\s&]+/g, '');
     var stratClass = 'strat-other';
     if (stratKey.includes('multiasset'))  stratClass = 'strat-multiasset';
     else if (stratKey.includes('largemid')) stratClass = 'strat-largemidcap';
     else if (stratKey.includes('smallmicro')) stratClass = 'strat-smallmicro';
+    else if (stratKey.includes('sp500')) stratClass = 'strat-sp500';
 
     var status      = String(lead.status || '').toLowerCase();
     var isActivated = status === 'activated';
@@ -934,8 +939,11 @@ function filterTable() {
       s(l.email).toLowerCase().includes(q) ||
       s(l.phone).toLowerCase().includes(q);
     var matchStatus = !status || l.status === status;
-    var matchStrat  = !strategy ||
-      s(l.strategy).toLowerCase().replace(/\s+/g,'').includes(strategy);
+    // Normalize the lead's strategy name to a comparable key. We strip spaces
+    // AND ampersands so "MindForge S&P 500" → "mindforgesp500" matches the
+    // dropdown's "sp500" value (previously the '&' broke the .includes()).
+    var leadKey = s(l.strategy).toLowerCase().replace(/[\s&]+/g,'');
+    var matchStrat  = !strategy || leadKey.includes(strategy);
     return matchQ && matchStatus && matchStrat;
   });
 
