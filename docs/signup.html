@@ -10,8 +10,9 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1a50d8">
+<link rel="manifest" href="/manifest.json">
 <style>
-:root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--green:#059669;--red:#dc2626;--text:#0c1831;--text2:#1e3a5f;--text3:#64748b;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
+:root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--green:#059669;--red:#dc2626;--text:#0c1831;--text2:#1e3a5f;--text3:#475569;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{background:var(--ink);color:var(--text);font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;font-size:16px;line-height:1.65;min-height:100vh;}
@@ -305,7 +306,7 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
           <option value="1">1 month</option>
           <option value="3">3 months — 5% off</option>
           <option value="6">6 months — 10% off</option>
-          <option value="12">1 year — 20% off</option>
+          <option value="12">1 year — 20% off ★ Best value</option>
         </select>
         <div class="strategy-note" id="duration-note" style="display:none;"></div>
       </div>
@@ -380,8 +381,85 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
 </div>
 
 <footer>
-  <p>© 2026 MindForge Capital · <a href="privacy.html" style="color:var(--accent3);">Privacy</a> · <a href="terms.html" style="color:var(--accent3);">Terms</a></p>
+  <p><span class="sebi-line">SEBI-Registered Research Analyst · INH-XXXXXXXXXXX · Sagar Shekhawath</span><br>© 2026 MindForge Capital · <a href="privacy.html" style="color:var(--accent3);">Privacy</a> · <a href="terms.html" style="color:var(--accent3);">Terms</a></p>
 </footer>
+
+<!-- V5.2 #17: sticky mobile-only Subscribe bar. Visible after the user
+     scrolls past the picker; hides on success state. -->
+<div class="mf-mobile-cta" id="mf-mobile-cta" aria-hidden="true">
+  <div class="mf-mobile-cta-inner">
+    <div class="mf-mobile-cta-meta" id="mf-mobile-cta-meta">Pick a strategy to subscribe</div>
+    <button type="button" class="mf-mobile-cta-btn" id="mf-mobile-cta-btn"
+      onclick="document.getElementById('reg-btn').scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){document.getElementById('reg-tnc').focus();},400);">
+      Register →
+    </button>
+  </div>
+</div>
+<style id="mf-v52-mobile-cta">
+.mf-mobile-cta{
+  display:none;
+  position:fixed; left:0; right:0; bottom:0; z-index:90;
+  background:rgba(255,255,255,.96); backdrop-filter:blur(14px);
+  border-top:0.5px solid var(--border2);
+  box-shadow:0 -8px 24px -8px rgba(15,23,42,.08);
+  padding:10px 14px env(safe-area-inset-bottom,10px) 10px;
+  transform:translateY(110%);
+  transition:transform .25s cubic-bezier(.22,.8,.2,1);
+}
+.mf-mobile-cta.visible{ transform:translateY(0); }
+.mf-mobile-cta-inner{ display:flex; align-items:center; gap:10px; max-width:560px; margin:0 auto; }
+.mf-mobile-cta-meta{ flex:1; font-size:13px; line-height:1.3; color:var(--text2); font-weight:600; }
+.mf-mobile-cta-meta strong{ color:var(--accent); font-size:14px; display:block; }
+.mf-mobile-cta-btn{
+  flex-shrink:0; padding:11px 18px; border:none; border-radius:10px; cursor:pointer;
+  font-size:14px; font-weight:700; letter-spacing:.01em;
+  background:linear-gradient(135deg,#1a50d8,#2563eb,#0891b2);
+  color:#fff; box-shadow:0 6px 16px -6px rgba(26,80,216,.55);
+}
+@media (max-width:768px){ .mf-mobile-cta{ display:block; } body{ padding-bottom:72px; } }
+@media (prefers-reduced-motion: reduce){ .mf-mobile-cta{ transition:none; } }
+</style>
+<script id="mf-v52-mobile-cta-js">
+(function(){
+  var bar = document.getElementById('mf-mobile-cta');
+  var meta = document.getElementById('mf-mobile-cta-meta');
+  if (!bar || !meta) return;
+  var raf = null;
+  function refresh(){
+    var success = document.getElementById('step-success');
+    // Hide on success state — user has already registered.
+    if (success && success.style.display !== 'none') {
+      bar.classList.remove('visible'); bar.setAttribute('aria-hidden','true');
+      raf = null; return;
+    }
+    var picker = document.getElementById('reg-strategy');
+    var pickerBottom = picker ? picker.getBoundingClientRect().bottom : 0;
+    var show = pickerBottom < 60;
+    bar.classList.toggle('visible', show);
+    bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+
+    // Update meta line with current selection + price
+    if (window.STRATEGY_META && typeof priceFor === 'function') {
+      var s = picker && picker.value;
+      var d = (document.getElementById('reg-duration') || {}).value || '1';
+      if (s && window.STRATEGY_META[s]) {
+        var p = priceFor(s, d);
+        if (p) meta.innerHTML = '<strong>' + s.replace('MindForge ','') + '</strong>' + inr(p.total) + ' for ' + p.label;
+      } else {
+        meta.innerHTML = 'Pick a strategy to subscribe';
+      }
+    }
+    raf = null;
+  }
+  function onScroll(){ if (!raf) raf = requestAnimationFrame(refresh); }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', refresh);
+  document.addEventListener('change', refresh);
+  refresh();
+  // Expose so STRATEGY_META check below picks it up
+  setTimeout(function(){ window.STRATEGY_META = window.STRATEGY_META || (typeof STRATEGY_META !== 'undefined' ? STRATEGY_META : null); refresh(); }, 100);
+})();
+</script>
 
 <script>
 var WHATSAPP_NUMBER = '917601032082';
@@ -427,9 +505,11 @@ function onStrategyChange() {
       if (m) {
         var total = Math.round(m.monthly * d.months * (1 - d.disc));
         var pct   = Math.round(d.disc * 100);
-        opt.textContent = d.label + ' — ' + inr(total) + (pct > 0 ? ' (' + pct + '% off)' : '');
+        var bv    = (key === '12') ? '  ★ Best value' : '';
+        opt.textContent = d.label + ' — ' + inr(total) + (pct > 0 ? ' (' + pct + '% off)' : '') + bv;
       } else {
-        opt.textContent = d.label + (d.disc > 0 ? ' — ' + Math.round(d.disc * 100) + '% off' : '');
+        var bv = (key === '12') ? ' ★ Best value' : '';
+        opt.textContent = d.label + (d.disc > 0 ? ' — ' + Math.round(d.disc * 100) + '% off' : '') + bv;
       }
     });
   }
@@ -720,5 +800,9 @@ input:focus-visible, select:focus-visible, #reg-tnc:focus-visible{
   });
 })();
 </script>
+
+<style id="mf-v18-sebi">
+.sebi-line{display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--text3,#475569);font-weight:600;text-transform:uppercase;padding:4px 10px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.16);border-radius:999px;margin-bottom:8px;}
+</style>
 </body>
 </html>

@@ -1368,3 +1368,134 @@ function sendRebalanceEmail(email, name, strategy, dashboardUrl) {
   var plain = 'Hello ' + (name || 'Investor') + ',\n\nThis month\'s ' + strategy + ' rebalance is live on your dashboard:\n' + dashboardUrl + '\n\nSEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. Not personalised investment advice.\n\nTo unsubscribe, reply with "unsubscribe".\n\n-- MindForge Capital\nhttps://mindforgecapital.com';
   GmailApp.sendEmail(email, subject, plain, { htmlBody: html, name: 'MindForge Capital', replyTo: 'sagar.shekhawath@mindforgecapital.com' });
 }
+
+// -----------------------------------------------------------------------------
+// V5.2 #14 + #15 — Lifecycle email cron jobs
+//
+// These are designed to be invoked by Apps Script time-driven triggers
+// (NOT by the doGet/doPost web endpoints). To wire them:
+//   1. In Apps Script editor: Triggers (⏰ icon) → "Add Trigger"
+//   2. cronRebalanceReminder    → Day timer, between 9am-10am, monthly trigger,
+//                                 day-of-month = 28
+//   3. cronWelcomeCheckin       → Day timer, between 9am-10am, daily trigger
+//
+// Both are idempotent within a single run by tagging the subscriptions sheet
+// (col M = reminder_sent_ts, col N = checkin_sent_ts). If the column is empty
+// or older than this calendar month, the email goes out; otherwise it's skipped.
+// -----------------------------------------------------------------------------
+
+// V5.2 #14: 3-day rebalance reminder — fire on the 28th of each month.
+// Emails every ACTIVE subscriber that next monthly rebalance is in 3 days.
+function cronRebalanceReminder() {
+  var subSheet = getSheet('subscriptions');
+  var data = subSheet.getDataRange().getValues();
+  var now = Date.now();
+  var nowMonth = new Date().toISOString().slice(0, 7); // "2026-05"
+  var sent = 0;
+
+  for (var i = 1; i < data.length; i++) {
+    var token   = data[i][0];
+    var email   = String(data[i][1] || '').trim();
+    var name    = data[i][2];
+    var strategy= data[i][4];
+    var expiresMs = data[i][7] ? new Date(data[i][7]).getTime() : 0;
+    var status  = String(data[i][9] || '').toLowerCase().trim();
+    var lastSentRaw = data[i][12] || '';
+    var lastSentMonth = lastSentRaw ? String(lastSentRaw).slice(0, 7) : '';
+
+    if (!email) continue;
+    if (status !== 'active') continue;
+    if (expiresMs && expiresMs < now) continue;
+    if (lastSentMonth === nowMonth) continue; // already sent this month
+
+    try {
+      sendReminderEmail(email, name, strategy, getBaseUrl() + '/dashboard.html?token=' + token);
+      subSheet.getRange(i + 1, 13).setValue(new Date().toISOString()); // col M
+      sent++;
+    } catch (e) {
+      Logger.log('cronRebalanceReminder: failed for ' + email + ' — ' + e);
+    }
+  }
+  Logger.log('cronRebalanceReminder: sent ' + sent + ' reminders');
+  return sent;
+}
+
+function sendReminderEmail(email, name, strategy, dashboardUrl) {
+  var subject = strategy + ' rebalance in 3 days — MindForge Capital';
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>' +
+    '<body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;background:#f0f5ff;color:#0c1831;margin:0;padding:20px;">' +
+    '<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #dbeafe;border-radius:14px;overflow:hidden;">' +
+    '<div style="background:linear-gradient(135deg,#1a50d8,#2563eb,#0891b2);padding:28px 24px;"><h1 style="margin:0;font-size:20px;color:#fff;">MindForge Capital</h1><p style="margin:4px 0 0;color:rgba(255,255,255,.85);font-size:13px;">Rebalance reminder</p></div>' +
+    '<div style="padding:28px;">' +
+    '<p style="font-size:15px;">Hello ' + escapeHtmlGs(name || 'Investor') + ',</p>' +
+    '<p style="font-size:14px;color:#475569;line-height:1.6;">Your next <b>' + escapeHtmlGs(strategy) + '</b> rebalance drops in <b>3 days</b> — on the 1st of next month. The model will publish a fresh set of picks; you\'ll get a separate email when they\'re live.</p>' +
+    '<p style="font-size:14px;color:#475569;line-height:1.6;">In the meantime, you can review this month\'s portfolio on your dashboard:</p>' +
+    '<div style="text-align:center;margin:28px 0;"><a href="' + dashboardUrl + '" style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);"><span style="color:#ffffff !important;">Open My Dashboard &nbsp;&#8594;</span></a></div>' +
+    '<p style="font-size:12px;color:#94a3b8;">SEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. Not personalised investment advice.</p>' +
+    '</div>' +
+    '<div style="background:#f8fafc;padding:18px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;">&copy; 2026 MindForge Capital &middot; <a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;">Unsubscribe</a></div>' +
+    '</div></body></html>';
+  var plain = 'Hello ' + (name || 'Investor') + ',\n\nYour ' + strategy + ' rebalance drops in 3 days — on the 1st of next month.\nReview this month\'s portfolio: ' + dashboardUrl + '\n\nSEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst.\n\nTo unsubscribe, reply with "unsubscribe".\n\n-- MindForge Capital\nhttps://mindforgecapital.com';
+  GmailApp.sendEmail(email, subject, plain, { htmlBody: html, name: 'MindForge Capital', replyTo: 'sagar.shekhawath@mindforgecapital.com' });
+}
+
+// V5.2 #15: 30-day welcome check-in — fires daily, picks subscribers whose
+// subscribed_at is between 28 and 32 days ago and hasn't been checked-in yet.
+function cronWelcomeCheckin() {
+  var subSheet = getSheet('subscriptions');
+  var data = subSheet.getDataRange().getValues();
+  var now = Date.now();
+  var sent = 0;
+
+  for (var i = 1; i < data.length; i++) {
+    var token        = data[i][0];
+    var email        = String(data[i][1] || '').trim();
+    var name         = data[i][2];
+    var strategy     = data[i][4];
+    var subbedMs     = data[i][6] ? new Date(data[i][6]).getTime() : 0;
+    var status       = String(data[i][9] || '').toLowerCase().trim();
+    var checkinSent  = data[i][13] || ''; // col N
+
+    if (!email) continue;
+    if (status !== 'active') continue;
+    if (checkinSent) continue;             // already sent
+    if (!subbedMs) continue;
+
+    var ageDays = (now - subbedMs) / 86400000;
+    if (ageDays < 28 || ageDays > 32) continue;
+
+    try {
+      sendCheckinEmail(email, name, strategy, getBaseUrl() + '/dashboard.html?token=' + token);
+      subSheet.getRange(i + 1, 14).setValue(new Date().toISOString()); // col N
+      sent++;
+    } catch (e) {
+      Logger.log('cronWelcomeCheckin: failed for ' + email + ' — ' + e);
+    }
+  }
+  Logger.log('cronWelcomeCheckin: sent ' + sent + ' check-ins');
+  return sent;
+}
+
+function sendCheckinEmail(email, name, strategy, dashboardUrl) {
+  var renewUrl = 'https://wa.me/917601032082?text=' + encodeURIComponent(
+    'Hi MindForge Capital — I want to renew my ' + strategy + ' subscription.'
+  );
+  var subject = 'How\'s it going with ' + strategy + '? — MindForge Capital';
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>' +
+    '<body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;background:#f0f5ff;color:#0c1831;margin:0;padding:20px;">' +
+    '<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #dbeafe;border-radius:14px;overflow:hidden;">' +
+    '<div style="background:linear-gradient(135deg,#1a50d8,#2563eb,#0891b2);padding:28px 24px;"><h1 style="margin:0;font-size:20px;color:#fff;">MindForge Capital</h1><p style="margin:4px 0 0;color:rgba(255,255,255,.85);font-size:13px;">30-day check-in</p></div>' +
+    '<div style="padding:28px;">' +
+    '<p style="font-size:15px;">Hello ' + escapeHtmlGs(name || 'Investor') + ',</p>' +
+    '<p style="font-size:14px;color:#475569;line-height:1.6;">It has been 30 days since you started with <b>' + escapeHtmlGs(strategy) + '</b>. How is it going? If you have a moment, just reply to this email and tell us — we read every response personally.</p>' +
+    '<p style="font-size:14px;color:#475569;line-height:1.6;">If your subscription is about to expire and you would like to renew, the easiest way is on WhatsApp:</p>' +
+    '<div style="text-align:center;margin:28px 0;"><a href="' + renewUrl + '" style="display:inline-block;background:linear-gradient(135deg,#25d366,#1da954);background-color:#25d366;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(37,211,102,.55);"><span style="color:#ffffff !important;">Renew on WhatsApp &nbsp;&#8594;</span></a></div>' +
+    '<p style="font-size:14px;color:#475569;line-height:1.6;">Or open your dashboard directly:</p>' +
+    '<div style="text-align:center;margin:18px 0;"><a href="' + dashboardUrl + '" style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:12px 28px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;"><span style="color:#ffffff !important;">Open My Dashboard</span></a></div>' +
+    '<p style="font-size:12px;color:#94a3b8;">SEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst. Not personalised investment advice.</p>' +
+    '</div>' +
+    '<div style="background:#f8fafc;padding:18px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;">&copy; 2026 MindForge Capital &middot; <a href="mailto:sagar.shekhawath@mindforgecapital.com?subject=unsubscribe" style="color:#94a3b8;">Unsubscribe</a></div>' +
+    '</div></body></html>';
+  var plain = 'Hello ' + (name || 'Investor') + ',\n\nIt has been 30 days since you started with ' + strategy + '. How is it going? Reply to this email and tell us.\n\nRenew on WhatsApp: ' + renewUrl + '\nOr open your dashboard: ' + dashboardUrl + '\n\nSEBI Disclaimer: Research is published by Sagar Shekhawath, a SEBI-registered Research Analyst.\n\nTo unsubscribe, reply with "unsubscribe".\n\n-- MindForge Capital\nhttps://mindforgecapital.com';
+  GmailApp.sendEmail(email, subject, plain, { htmlBody: html, name: 'MindForge Capital', replyTo: 'sagar.shekhawath@mindforgecapital.com' });
+}

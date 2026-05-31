@@ -9,6 +9,15 @@
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1a50d8">
+<link rel="manifest" href="/manifest.json">
+<!-- V5.2 #3: register service worker for PWA install + asset caching -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
+</script>
 <!-- Perf: warm DNS + TLS for Apps Script + Yahoo price API before they're needed -->
 <link rel="preconnect" href="https://script.google.com" crossorigin>
 <link rel="dns-prefetch" href="https://script.google.com">
@@ -18,7 +27,7 @@
   --ink:#f0f5ff;--ink2:#ffffff;--white:#0c1831;
   --accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;
   --gold:#d97706;--teal:#0891b2;--green:#059669;--red:#dc2626;
-  --text:#0c1831;--text2:#1e3a5f;--text3:#64748b;
+  --text:#0c1831;--text2:#1e3a5f;--text3:#475569;
   --border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);
   --r:16px;--r-sm:10px;--r-lg:22px;
   --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
@@ -1339,6 +1348,8 @@ footer p {
 
     <!-- TABLE -->
     <div class="table-section fade-up">
+      <!-- V5.2 #20: sector filter chips populated by renderTable() -->
+      <div class="sector-chips" id="sector-chips" role="toolbar" aria-label="Filter picks by sector"></div>
       <div class="table-header">
         <div class="left">
           <h2>Stock picks</h2>
@@ -1350,6 +1361,12 @@ footer p {
             <span id="market-dot" class="dot-green"></span>
             <span id="market-label">Checking market…</span>
           </div>
+          <!-- V5.2 #2: broker preference picker — saved in localStorage -->
+          <select class="tbl-btn broker-picker" id="broker-picker" onchange="setBroker(this.value)" title="Choose your broker for one-click order links" aria-label="Broker">
+            <option value="kite">Kite</option>
+            <option value="groww">Groww</option>
+            <option value="upstox">Upstox</option>
+          </select>
           <button class="tbl-btn" id="btn-copy-tickers" onclick="copyAllTickers()" title="Copy all tickers for your broker">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             Copy tickers
@@ -1386,14 +1403,14 @@ footer p {
               <th class="bought-col" title="Tick to mark every visible pick as bought">
                 <input type="checkbox" class="bought-cb bought-all" id="bought-all" aria-label="Select all picks as bought" onchange="toggleBoughtAll(this)">
               </th>
-              <th style="width:48px;">#</th>
-              <th>Company</th>
-              <th>Ticker</th>
-              <th>Industry</th>
-              <th class="right">Rec. Price</th>
-              <th class="right">Allocation</th>
-              <th class="right">Shares</th>
-              <th class="right" style="width:170px;">Weight</th>
+              <th style="width:48px;" class="sortable" data-sort="num">#</th>
+              <th class="sortable" data-sort="company">Company</th>
+              <th class="sortable" data-sort="ticker">Ticker</th>
+              <th class="sortable" data-sort="industry">Industry</th>
+              <th class="right sortable" data-sort="price">Rec. Price</th>
+              <th class="right sortable" data-sort="alloc">Allocation</th>
+              <th class="right sortable" data-sort="shares">Shares</th>
+              <th class="right sortable" data-sort="weight" style="width:170px;">Weight</th>
             </tr>
           </thead>
           <tbody id="stocks-tbody">
@@ -1522,7 +1539,7 @@ footer p {
         </svg>
       </a>
     </div>
-    <p>© 2026 MindForge Capital · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="recover.html">Recover access</a></p>
+    <p><span class="sebi-line">SEBI-Registered Research Analyst · INH-XXXXXXXXXXX · Sagar Shekhawath</span><br>© 2026 MindForge Capital · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="recover.html">Recover access</a></p>
   </footer>
 </div>
 
@@ -1778,6 +1795,10 @@ function renderDashboard(sub, stocks) {
   renderAllocation(stocks);
   setupCapitalCalculator(stocks, currentStrategy);
   renderTable(stocks);
+  renderSectorChips();  // V5.2 #20: filter chips above the table
+  restoreSort();        // V5.2 #1: re-apply user's last sort preference
+  var bp = document.getElementById('broker-picker'); // V5.2 #2: sync broker picker
+  if (bp) bp.value = getBroker();
   updateMarketStatus();
   // Set the market-status poll exactly once — refreshDashboard re-enters renderDashboard.
   if (!window._mfMarketTimer) {
@@ -1824,10 +1845,13 @@ function renderAllocation(stocks) {
   const card = document.getElementById('alloc-card');
   const grid = document.getElementById('alloc-grid');
 
-  // Legend rows with colored bars + swatches
+  // Legend rows — V5.2 #21: each row is clickable + filters the table.
   grid.innerHTML = rows.map(r => `
-    <div class="alloc-row">
-      <div class="alloc-name" title="${escapeHtml(r.name)}">
+    <div class="alloc-row" role="button" tabindex="0" data-sector="${escapeHtml(r.name)}"
+         title="Click to filter the table to ${escapeHtml(r.name)}"
+         onclick="filterBySector(this.dataset.sector)"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterBySector(this.dataset.sector);}">
+      <div class="alloc-name">
         <span class="alloc-swatch" style="background:${r.color}"></span>
         ${escapeHtml(r.name)}
       </div>
@@ -2022,6 +2046,8 @@ function filterStocks(q) {
     const hay = ((s.ticker||'') + ' ' + (s.company_name||'') + ' ' + (s.industry||'')).toLowerCase();
     c.style.display = !_searchQ || hay.includes(_searchQ) ? '' : 'none';
   });
+  // V5.2 #20/#21: layer the active sector filter on top of search results
+  if (_sectorFilter) applySectorFilter();
 }
 
 function renderTable(stocks) {
@@ -2061,7 +2087,9 @@ function renderTable(stocks) {
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company">${escapeHtml(s.company_name||s.ticker)}</td>
-      <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span></td>
+      <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>
+          ${brokerLink(s)}
+      </td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${escapeHtml(s.industry||'—')}</span></td>
       <td class="price right">${curr}${entry.toFixed(2)}</td>
       <td class="alloc-amt right">${fmtAmt(curr, amt)}</td>
@@ -2139,6 +2167,200 @@ function toggleBought(cb) {
   refreshBoughtProgress();
   syncBoughtAllHeader();
 }
+
+// V5.2 #2: broker deeplinks per stock row. User can pick their preferred
+// broker once and every row gets a one-click "Open in <broker>" link.
+// Saved in localStorage so the choice persists. Default: Zerodha Kite.
+var BROKERS = {
+  kite:   { name: 'Kite',   color: '#387ed1',
+            link: function(s){
+              // Kite supports a query-pre-fill URL on the order page
+              var t = (s.ticker || '').toUpperCase();
+              var seg = (s.yahoo_ticker && !/\.NS$/i.test(s.yahoo_ticker)) ? 'NASDAQ' : 'NSE';
+              // US side not supported by Kite India — fall back to a search
+              if (seg === 'NASDAQ') return null;
+              return 'https://kite.zerodha.com/chart/web/' + seg + '/' + encodeURIComponent(t);
+            } },
+  groww:  { name: 'Groww',  color: '#00b386',
+            link: function(s){
+              var t = (s.ticker || '').toUpperCase();
+              if (s.yahoo_ticker && !/\.NS$/i.test(s.yahoo_ticker)) {
+                return 'https://groww.in/us-stocks/' + encodeURIComponent(t.toLowerCase());
+              }
+              return 'https://groww.in/stocks/' + encodeURIComponent(t.toLowerCase());
+            } },
+  upstox: { name: 'Upstox', color: '#371777',
+            link: function(s){
+              var t = (s.ticker || '').toUpperCase();
+              // Upstox search-page deeplink (works for both NSE and US)
+              return 'https://upstox.com/search?q=' + encodeURIComponent(t);
+            } },
+};
+function getBroker(){
+  try { return localStorage.getItem('mfc-broker') || 'kite'; } catch(e){ return 'kite'; }
+}
+function setBroker(key){
+  if (!BROKERS[key]) return;
+  try { localStorage.setItem('mfc-broker', key); } catch(e){}
+  // Re-render table so all rows pick up the new deeplinks
+  renderTable(stocksData);
+  showToast('Broker set to ' + BROKERS[key].name);
+}
+function brokerLink(s){
+  var key = getBroker();
+  var b = BROKERS[key] || BROKERS.kite;
+  var url = b.link(s);
+  if (!url) return '';
+  var safeUrl = url.replace(/"/g,'&quot;');
+  return '<a class="broker-link" target="_blank" rel="noopener noreferrer" href="' + safeUrl +
+         '" title="Open ' + escapeHtml(s.ticker) + ' on ' + escapeHtml(b.name) + '" ' +
+         'style="background:' + b.color + '14;color:' + b.color + ';border-color:' + b.color + '33;">' +
+         escapeHtml(b.name) + ' →</a>';
+}
+
+// V5.2 #20 + #21: sector filter chips + click-on-sector-allocation filtering.
+// _sectorFilter is the active sector ('' = all). filterStocks already runs the
+// search-term filter; we layer this on top.
+var _sectorFilter = '';
+function filterBySector(sectorName){
+  _sectorFilter = (_sectorFilter === sectorName) ? '' : (sectorName || '');
+  document.getElementById('tbl-search').value = '';
+  filterStocks('');               // run base filter, then re-apply sector
+  applySectorFilter();
+  reflectChipState();
+  // Scroll table into view if user clicked from the allocation card
+  var sec = document.querySelector('.table-section');
+  if (sec && _sectorFilter) sec.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function applySectorFilter(){
+  if (!_sectorFilter) return;
+  var s = _sectorFilter.trim().toLowerCase();
+  document.querySelectorAll('#stocks-tbody tr[data-row]').forEach(function(tr){
+    var i = Number(tr.dataset.row);
+    var industry = (stocksData[i] && stocksData[i].industry || '').toLowerCase();
+    if (industry !== s) tr.style.display = 'none';
+  });
+  document.querySelectorAll('.stock-card[data-row]').forEach(function(c){
+    var i = Number(c.dataset.row);
+    var industry = (stocksData[i] && stocksData[i].industry || '').toLowerCase();
+    if (industry !== s) c.style.display = 'none';
+  });
+}
+function renderSectorChips(){
+  var box = document.getElementById('sector-chips');
+  if (!box) return;
+  if (!stocksData || stocksData.length < 4) { box.innerHTML = ''; return; }
+  var sectors = {};
+  stocksData.forEach(function(s){
+    var k = (s.industry || 'Unknown').trim() || 'Unknown';
+    sectors[k] = (sectors[k] || 0) + 1;
+  });
+  var entries = Object.entries(sectors).sort(function(a,b){ return b[1]-a[1]; });
+  var html = '<button type="button" class="chip" data-sector="" onclick="filterBySector(\'\')">All <span class="chip-n">' + stocksData.length + '</span></button>';
+  entries.forEach(function(e){
+    var safe = String(e[0]).replace(/'/g,"\\'");
+    html += '<button type="button" class="chip" data-sector="' + escapeHtml(e[0]) + '" onclick="filterBySector(\'' + safe + '\')">' +
+      escapeHtml(e[0]) + ' <span class="chip-n">' + e[1] + '</span></button>';
+  });
+  box.innerHTML = html;
+  reflectChipState();
+}
+function reflectChipState(){
+  document.querySelectorAll('#sector-chips .chip').forEach(function(b){
+    var s = b.getAttribute('data-sector') || '';
+    b.classList.toggle('active', s === _sectorFilter);
+  });
+}
+
+// V5.2 #1: click-to-sort table columns. CSS hooks (th.sortable / .sort-asc /
+// .sort-desc) were shipped in v17 — this is the JS that wires them up.
+// State persists per-strategy in localStorage so users return to the same view.
+var _sortKey = null, _sortDir = 1;
+function applySort(){
+  if (!_sortKey || !stocksData || !stocksData.length) {
+    // Re-render in original order
+    renderTable(stocksData);
+    return;
+  }
+  var n = stocksData.length || 1;
+  var per = currentCapital / n;
+  var getters = {
+    num:      function(s, i){ return i; },
+    company:  function(s){ return (s.company_name || s.ticker || '').toLowerCase(); },
+    ticker:   function(s){ return (s.ticker || '').toLowerCase(); },
+    industry: function(s){ return (s.industry || '').toLowerCase(); },
+    price:    function(s){ return Number(s.recommended_price) || 0; },
+    alloc:    function(s){
+      var p = Number(s.recommended_price) || 0;
+      var sh = p > 0 ? Math.floor(per / p) : 0;
+      return sh * p;
+    },
+    shares:   function(s){
+      var p = Number(s.recommended_price) || 0;
+      return p > 0 ? Math.floor(per / p) : 0;
+    },
+    weight:   function(s){ return Number(s.weight_pct) || 0; },
+  };
+  var get = getters[_sortKey];
+  if (!get) { renderTable(stocksData); return; }
+  // Stable copy
+  var paired = stocksData.map(function(s,i){ return {s:s, k:get(s,i), i:i}; });
+  paired.sort(function(a,b){
+    if (a.k < b.k) return -1 * _sortDir;
+    if (a.k > b.k) return  1 * _sortDir;
+    return a.i - b.i;
+  });
+  var sorted = paired.map(function(p){ return p.s; });
+  renderTable(sorted);
+  // Reapply sort affordance after re-render
+  setTimeout(reflectSortAffordance, 0);
+}
+function reflectSortAffordance(){
+  document.querySelectorAll('th.sortable').forEach(function(th){
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.getAttribute('data-sort') === _sortKey) {
+      th.classList.add(_sortDir > 0 ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+function sortByKey(key){
+  if (_sortKey === key) {
+    _sortDir = -_sortDir; // toggle
+  } else {
+    _sortKey = key;
+    _sortDir = (key === 'company' || key === 'ticker' || key === 'industry') ? 1 : -1;
+  }
+  try { localStorage.setItem('mfc-sort-' + (currentStrategy||'_'), _sortKey + ',' + _sortDir); } catch(e){}
+  applySort();
+}
+// Restore from storage on dashboard render
+function restoreSort(){
+  if (!currentStrategy) return;
+  try {
+    var v = localStorage.getItem('mfc-sort-' + currentStrategy);
+    if (!v) return;
+    var parts = v.split(',');
+    _sortKey = parts[0]; _sortDir = Number(parts[1]) || 1;
+    applySort();
+  } catch(e){}
+}
+// Wire header clicks once
+(function(){
+  function bind(){
+    document.querySelectorAll('th.sortable').forEach(function(th){
+      if (th._sortBound) return;
+      th._sortBound = true;
+      th.addEventListener('click', function(){
+        var key = th.getAttribute('data-sort');
+        if (key) sortByKey(key);
+      });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+  // Re-bind after re-renders (cheap; idempotent guard above)
+  setInterval(bind, 1000);
+})();
 
 // V5.1: select-all header checkbox toggles every visible row's bought state.
 // Replaces the static "✓" glyph that was just decorative.
@@ -2676,6 +2898,63 @@ th.bought-col .bought-all:indeterminate{ opacity: .65; }
 /* V5.1: ensure the buy-progress card never crowds the table actions */
 .table-actions{ row-gap: 8px; }
 
+/* ── V5.2 bundle: sector chips + broker link pill + clickable alloc rows ── */
+.sector-chips{
+  display:flex; flex-wrap:wrap; gap:6px;
+  margin: 0 0 12px;
+}
+.sector-chips .chip{
+  font:600 12px/1.2 -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  background:rgba(37,99,235,0.06); color:var(--text2);
+  border:1px solid rgba(37,99,235,0.18); border-radius:999px;
+  padding:6px 12px; cursor:pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .12s ease;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.sector-chips .chip:hover{ background:rgba(37,99,235,0.12); color:var(--accent); border-color:rgba(37,99,235,0.32); }
+.sector-chips .chip.active{
+  background:linear-gradient(135deg,#1a50d8,#2563eb);
+  color:#fff; border-color:transparent;
+  box-shadow:0 6px 14px -6px rgba(26,80,216,0.55);
+}
+.sector-chips .chip-n{
+  display:inline-block; min-width:18px; padding:1px 6px;
+  background:rgba(15,23,42,0.06); border-radius:999px;
+  font-size:11px; font-weight:700; color:var(--text2);
+}
+.sector-chips .chip.active .chip-n{ background:rgba(255,255,255,0.22); color:#fff; }
+.broker-link{
+  display:inline-block; margin-left:6px;
+  padding:2px 8px; border-radius:6px;
+  font:600 11px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  text-decoration:none; border:1px solid;
+  transition: transform .12s ease, filter .15s ease;
+  white-space: nowrap;
+}
+.broker-link:hover{ transform:translateY(-1px); filter:brightness(1.05); }
+.broker-picker{
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 26px !important;
+  cursor: pointer;
+}
+.alloc-row[role="button"]{
+  cursor: pointer; user-select: none;
+  transition: background .18s ease, transform .12s ease, box-shadow .18s ease;
+}
+.alloc-row[role="button"]:hover{
+  background: rgba(37,99,235,0.07) !important;
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px -8px rgba(26,80,216,0.25);
+}
+.alloc-row[role="button"]:focus-visible{
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
 .nav-links a[aria-current="page"]{ color: var(--white) !important; position: relative; }
 .nav-links a[aria-current="page"]::after{
   content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
@@ -2841,5 +3120,9 @@ th.sortable:hover{ color: var(--accent); }
   }, 250);
 })();
 </script>
+
+<style id="mf-v18-sebi">
+.sebi-line{display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--text3,#475569);font-weight:600;text-transform:uppercase;padding:4px 10px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.16);border-radius:999px;margin-bottom:8px;}
+</style>
 </body>
 </html>
