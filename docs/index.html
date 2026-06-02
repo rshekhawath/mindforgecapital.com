@@ -686,8 +686,17 @@ footer {
 .proof-divider { width: 1px; height: 40px; background: var(--border2); flex-shrink: 0; }
 @media (max-width: 768px) {
   .proof-bar { flex-wrap: wrap; justify-content: center; gap: 0; }
-  .proof-item { padding: 14px 0; width: 50%; }
+  .proof-item { padding: 14px 8px; width: 50%; }
   .proof-divider { display: none; }
+  /* V5.6: long labels like "Backtested track record" used to overflow the
+     50% column and bleed into the next item ("Annual alpha · Live"). Allow
+     wrapping and centre the wrapped lines. */
+  .proof-label {
+    white-space: normal;
+    text-align: center;
+    line-height: 1.35;
+    max-width: 100%;
+  }
 }
 @media (max-width: 360px) {
   .proof-item { width: 100%; }
@@ -1606,6 +1615,18 @@ footer::before {
   transition: opacity 0.25s;
 }
 .footer-bottom .disclaimer:hover { opacity: 1; }
+
+/* V5.6: stack the SEBI line and the disclaimer below it on mobile —
+   side-by-side flex starves both columns when the viewport drops under
+   ~760px, causing the disclaimer to wrap into a 2-column-style block. */
+@media (max-width: 768px) {
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .footer-bottom .disclaimer { max-width: 100%; }
+}
 
 /* Mobile sticky CTA: stronger silhouette */
 .mobile-cta-bar { box-shadow: 0 -12px 32px -12px rgba(15,23,42,0.14); }
@@ -3037,7 +3058,7 @@ textarea:focus-visible, select:focus-visible {
       </div>
       <div class="proof-divider"></div>
       <div class="proof-item">
-        <span class="proof-num" data-count="31.64" data-prefix="+" data-suffix="%" data-decimals="2">+31.64%</span>
+        <span class="proof-num" data-count="28.69" data-prefix="+" data-suffix="%" data-decimals="2"><!--MFSTAT:sm:alpha-->+28.69%<!--/MFSTAT--></span>
         <span class="proof-label">Annual alpha <span class="proof-live" style="margin-left:6px;">Live</span></span>
       </div>
     </div>
@@ -3855,6 +3876,20 @@ function setDuration(durKey) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var nums = document.querySelectorAll('.proof-num[data-count]');
   if (!nums.length) return;
+  // V5.6: sync data-count to the rendered text BEFORE resetting to 0, so any
+  // MFSTAT-injected value (e.g. <!--MFSTAT:sm:alpha-->+28.69%<!--/MFSTAT-->)
+  // becomes the animation target. Without this the animation always counts up
+  // to the stale data-count baked into the HTML, even after stats.json moved
+  // on. Falls back to the existing data-count for elements with no MFSTAT.
+  nums.forEach(function(el) {
+    var prefix = el.getAttribute('data-prefix') || '';
+    var suffix = el.getAttribute('data-suffix') || '';
+    var raw = el.textContent.trim();
+    if (prefix && raw.indexOf(prefix) === 0) raw = raw.slice(prefix.length);
+    if (suffix && raw.lastIndexOf(suffix) === raw.length - suffix.length) raw = raw.slice(0, raw.length - suffix.length);
+    var parsed = parseFloat(raw);
+    if (!isNaN(parsed) && isFinite(parsed)) el.setAttribute('data-count', parsed);
+  });
   // Reset to 0 so we never see a mid-flash
   nums.forEach(function(el) {
     var prefix = el.getAttribute('data-prefix') || '';
