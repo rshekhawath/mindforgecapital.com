@@ -1801,7 +1801,7 @@ body[data-route="strategies"] .nav-links a[href="strategies.html"]::after {
   </section>
 
   <!-- ── COMPARISON TABLE ── -->
-  <div class="compare-section">
+  <div class="compare-section" id="compare">
     <h3>Compare all strategies <span class="updated-badge">Updated Jun 2026</span></h3>
     <!-- V5.8: horizontal-scroll wrapper so the 5-column table doesn't overflow
          on mobile. The scroll affordance hint below is hidden on desktop. -->
@@ -1957,55 +1957,12 @@ body[data-route="strategies"] .nav-links a[href="strategies.html"]::after {
 </style>
 
 <script>
-function switchTab(id, btn, opts) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => {
-    b.classList.remove('active');
-    b.setAttribute('aria-selected', 'false');
-  });
-  document.getElementById('tab-' + id).classList.add('active');
-  if (btn) {
-    btn.classList.add('active');
-    btn.setAttribute('aria-selected', 'true');
-  } else {
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      if (b.getAttribute('data-tab') === id) {
-        b.classList.add('active');
-        b.setAttribute('aria-selected', 'true');
-      }
-    });
-  }
-  // Sync URL (so refresh/share preserves selected tab)
-  if (!opts || opts.pushUrl !== false) {
-    try {
-      var url = new URL(window.location.href);
-      url.searchParams.set('tab', id);
-      history.replaceState(null, '', url.toString());
-    } catch (e) {}
-  }
-  // V3.7: refresh floating Subscribe CTA pill copy to match the newly-active tab
-  if (typeof updateFloatingCta === 'function') updateFloatingCta(id);
-}
-
-// Re-sync tab if user navigates browser back/forward
-window.addEventListener('popstate', function() {
-  var params = new URLSearchParams(window.location.search);
-  var tab = params.get('tab') || 'multiasset';
-  var validTabs = ['multiasset', 'largemidcap', 'smallmicro', 'sp500'];
-  if (validTabs.indexOf(tab) === -1) tab = 'multiasset';
-  switchTab(tab, null, { pushUrl: false });
-});
-
-// On load: check URL param then localStorage for requested tab
-(function() {
-  var params = new URLSearchParams(window.location.search);
-  var tab = params.get('tab') || localStorage.getItem('mf-tab') || 'multiasset';
-  localStorage.removeItem('mf-tab');
-  var validTabs = ['multiasset', 'largemidcap', 'smallmicro', 'sp500'];
-  if (validTabs.indexOf(tab) === -1) tab = 'multiasset';
-  // Don't push URL on initial load (it's already correct or we'd dirty history)
-  switchTab(tab, null, { pushUrl: !!params.get('tab') });
-})();
+// V6.0: switchTab() / popstate / on-load tab-resolver IIFE removed — the
+// 4 per-strategy tabs are now standalone pages (multiasset.html etc.) and
+// the legacy ?tab=X URLs are forwarded by the redirect IIFE at the top of
+// <body>. Leaving the old switchTab() in place threw TypeError on the
+// now-missing #tab-* elements, which killed the .fade-up reveal chain
+// below and left the page-hero invisible (opacity:0).
 function revealFadeUps() {
   var vh = window.innerHeight || document.documentElement.clientHeight;
   document.querySelectorAll('.fade-up:not(.visible)').forEach(function(el, i) {
