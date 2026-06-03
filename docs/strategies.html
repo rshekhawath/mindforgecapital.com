@@ -139,37 +139,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .compare-table tr.lm-row td{background:linear-gradient(90deg,rgba(26,108,244,0.04),rgba(45,212,191,0.04));}
 
   /* ── MOBILE STICKY CTA BAR ── */
-  /* V3.7: floating Subscribe CTA pill — desktop only; mobile has its own .mobile-cta-bar */
-  .mf-tab-cta {
-    position: fixed; left: 50%; bottom: 24px; z-index: 92;
-    transform: translateX(-50%) translateY(28px); opacity: 0; pointer-events: none;
-    display: inline-flex; align-items: center; gap: 14px;
-    padding: 12px 8px 12px 22px; border-radius: 999px;
-    background: linear-gradient(135deg, #0c1831 0%, #1a50d8 60%, #2563eb 100%);
-    box-shadow: 0 16px 40px -12px rgba(26,80,216,0.50), 0 4px 14px rgba(15,23,42,0.18);
-    color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
-    transition: opacity .32s ease, transform .32s cubic-bezier(.22,1,.36,1);
-  }
-  .mf-tab-cta.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-  .mf-tab-cta-go {
-    background: rgba(255,255,255,0.18); border: 0; cursor: pointer;
-    color: #fff; font: inherit; font-weight: 700;
-    padding: 9px 16px; border-radius: 999px;
-    display: inline-flex; align-items: center; gap: 6px;
-    transition: background .18s ease, transform .18s ease;
-  }
-  .mf-tab-cta-go:hover { background: rgba(255,255,255,0.30); transform: translateX(2px); }
-  .mf-tab-cta-go::after { content: '→'; font-size: 15px; }
-  .mf-tab-cta-close {
-    background: transparent; border: 0; cursor: pointer;
-    color: rgba(255,255,255,0.55); padding: 4px 8px;
-    font-size: 16px; line-height: 1; transition: color .15s;
-    margin-right: 4px;
-  }
-  .mf-tab-cta-close:hover { color: #fff; }
-  @media (max-width: 768px) { .mf-tab-cta { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .mf-tab-cta { transition: opacity .2s; transform: translateX(-50%) !important; } }
+  /* V6.1: the V3.7 .mf-tab-cta floating-pill CSS was removed here along with
+     its markup + controller (see comment near the footer). The pill was a
+     single-strategy "Subscribe to current tab" affordance that no longer has
+     a tab to track now that strategies.html is a comparison hub. */
   .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px env(safe-area-inset-bottom,10px);display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
   .mobile-cta-bar a{flex:1;padding:13px 16px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;}
   .mcta-primary{background:var(--accent);color:#fff;}
@@ -1760,10 +1733,10 @@ body[data-route="strategies"] .nav-links a[href="strategies.html"]::after {
           </div>
           <label for="mfc-strat" style="margin-top:8px;">Strategy</label>
           <select id="mfc-strat" onchange="mfcUpdate()">
-            <option value="largemidcap" selected>MindForge LargeMidcap 250 (37.0% CAGR)</option>
-            <option value="smallmicro">MindForge SmallMicro 500 (47.8% CAGR)</option>
-            <option value="multiasset">MindForge MultiAsset (24.9% CAGR)</option>
-            <option value="sp500">MindForge S&amp;P 500 (27.3% CAGR)</option>
+            <option value="largemidcap" data-cagr="37.0" selected>MindForge LargeMidcap 250 (<!--MFSTAT:lm:cagr-->37.0%<!--/MFSTAT--> CAGR)</option>
+            <option value="smallmicro" data-cagr="47.8">MindForge SmallMicro 500 (<!--MFSTAT:sm:cagr-->47.8%<!--/MFSTAT--> CAGR)</option>
+            <option value="multiasset" data-cagr="24.9">MindForge MultiAsset (<!--MFSTAT:ma:cagr-->24.9%<!--/MFSTAT--> CAGR)</option>
+            <option value="sp500" data-cagr="27.3">MindForge S&amp;P 500 (<!--MFSTAT:sp:cagr-->27.3%<!--/MFSTAT--> CAGR)</option>
           </select>
           <label for="mfc-years" style="margin-top:8px;">Horizon</label>
           <select id="mfc-years" onchange="mfcUpdate()">
@@ -2296,74 +2269,15 @@ function showSuccessToast() {
   <a class="mcta-primary" href="signup.html">Get started →</a>
 </div>
 
-<!-- V3.7: Floating Subscribe-to-current-tab CTA (desktop only) -->
-<div class="mf-tab-cta" id="mf-tab-cta" role="region" aria-label="Subscribe to current strategy">
-  <span class="mf-tab-cta-label" id="mf-tab-cta-label">Subscribe to MindForge MultiAsset — ₹99/month</span>
-  <button class="mf-tab-cta-go" type="button" id="mf-tab-cta-go">Subscribe</button>
-  <button class="mf-tab-cta-close" type="button" id="mf-tab-cta-close" aria-label="Hide subscribe pill">×</button>
-</div>
-<script>
-// MF-TAB-CTA v3.7
-(function() {
-  var cta   = document.getElementById('mf-tab-cta');
-  var label = document.getElementById('mf-tab-cta-label');
-  var go    = document.getElementById('mf-tab-cta-go');
-  var close = document.getElementById('mf-tab-cta-close');
-  if (!cta || !go || !close || !label) return;
-  var currentTabId = 'multiasset';
-  var dismissedThisSession = false;
-  function activeTab() {
-    var btn = document.querySelector('.tab-btn.active');
-    return btn ? btn.getAttribute('data-tab') : 'multiasset';
-  }
-  window.updateFloatingCta = function(id) {
-    currentTabId = id || activeTab();
-    var meta = (window.STRATEGY_PRICES || {})[currentTabId];
-    if (!meta) return;
-    // STRATEGY_PRICES rows are { monthly, full } — there is no `.label` field.
-    // Pre-V5.0 this concatenated `undefined` into the floater text.
-    // Use the inr() formatter (already defined above) for the "/month" base price.
-    var priceTxt = (typeof inr === 'function') ? (inr(meta.monthly) + '/month') : ('₹' + meta.monthly + '/month');
-    label.textContent = 'Subscribe to ' + meta.full + ' — ' + priceTxt;
-    go.setAttribute('data-strategy', currentTabId);
-  };
-  go.addEventListener('click', function() {
-    var id = go.getAttribute('data-strategy') || currentTabId;
-    var meta = (window.STRATEGY_PRICES || {})[id];
-    if (!meta) return;
-    if (typeof openRegModal === 'function') {
-      openRegModal(meta.full, meta.monthly, id);
-    } else {
-      window.location.href = 'signup.html?strategy=' + id;
-    }
-  });
-  close.addEventListener('click', function() {
-    dismissedThisSession = true;
-    cta.classList.remove('visible');
-  });
-  var raf = null;
-  function refresh() {
-    var show = !dismissedThisSession && window.scrollY > 620 &&
-               (document.documentElement.scrollHeight - window.scrollY - window.innerHeight) > 320;
-    cta.classList.toggle('visible', !!show);
-    raf = null;
-  }
-  function onScroll() { if (!raf) raf = requestAnimationFrame(refresh); }
-  // initial population + scroll listener
-  window.addEventListener('scroll', onScroll, {passive: true});
-  window.addEventListener('resize', refresh);
-  document.addEventListener('DOMContentLoaded', function() {
-    window.updateFloatingCta(activeTab());
-    refresh();
-  });
-  // Already-loaded fallback
-  if (document.readyState !== 'loading') {
-    window.updateFloatingCta(activeTab());
-    refresh();
-  }
-})();
-window.STRATEGY_PRICES = STRATEGY_PRICES;  // expose for the CTA controller above
-</script>
+<!-- V6.1: the V3.7 floating "Subscribe to current tab" pill (.mf-tab-cta)
+     was removed here. It resolved the active strategy via .tab-btn.active,
+     but V5.9 replaced the tab interface with standalone per-strategy pages,
+     so the pill had no active tab to read and permanently showed
+     "Subscribe to MindForge MultiAsset — ₹99/month" on what is now a
+     comparison hub. On the hub the user picks a strategy from the cards
+     (each links to its own page with its own Subscribe CTA), so a global
+     single-strategy pill is misleading. STRATEGY_PRICES stays defined above
+     for the reg-modal + vs-MF calculator that still use it. -->
 
 <!-- Floating WhatsApp CTA + auto-popping invite bubble (V5.7) -->
 <a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%20want%20to%20learn%20more%20about%20your%20quant%20strategies."
@@ -2742,12 +2656,28 @@ window.STRATEGY_PRICES = STRATEGY_PRICES;  // expose for the CTA controller abov
 </style>
 <script id="mfcalc-script">
 (function(){
+  // V6.1: cagr values here are fallbacks only — at runtime mfcUpdate() reads
+  // the live CAGR from the selected <option>'s "(NN.N% CAGR)" label, which is
+  // MFSTAT-driven and refreshed by runner/publish.py every month. This keeps
+  // the calculator's maths in lockstep with the dropdown the user sees (they
+  // had drifted: pre-V6.1 the table held the stale V5.2 38.4/49.6/25.1/29.0
+  // while the labels already showed the current 37.0/47.8/24.9/27.3).
   var MFC_STRATS = {
-    largemidcap: { cagr: 0.384, bench: 0.1537, name: 'LargeMidcap 250',  benchName: 'Nifty LargeMidcap 250' },
-    smallmicro:  { cagr: 0.496, bench: 0.1914, name: 'SmallMicro 500',   benchName: 'Nifty Smallcap 250'    },
-    multiasset:  { cagr: 0.251, bench: 0.1013, name: 'MultiAsset',       benchName: 'Nifty 50'              },
-    sp500:       { cagr: 0.290, bench: 0.1330, name: 'S&P 500',          benchName: 'S&P 500'               },
+    largemidcap: { cagr: 0.370, bench: 0.1537, name: 'LargeMidcap 250',  benchName: 'Nifty LargeMidcap 250' },
+    smallmicro:  { cagr: 0.478, bench: 0.1914, name: 'SmallMicro 500',   benchName: 'Nifty Smallcap 250'    },
+    multiasset:  { cagr: 0.249, bench: 0.1013, name: 'MultiAsset',       benchName: 'Nifty 50'              },
+    sp500:       { cagr: 0.273, bench: 0.1330, name: 'S&P 500',          benchName: 'S&P 500'               },
   };
+  // Pull the live CAGR (decimal) out of the selected option's label text so
+  // the computation always matches what's shown. Falls back to the table.
+  function liveCagr(key){
+    var sel = document.getElementById('mfc-strat');
+    if (sel && sel.selectedOptions && sel.selectedOptions[0]) {
+      var m = sel.selectedOptions[0].textContent.match(/([\d.]+)%\s*CAGR/i);
+      if (m) { var v = parseFloat(m[1]); if (isFinite(v)) return v / 100; }
+    }
+    return MFC_STRATS[key] ? MFC_STRATS[key].cagr : 0;
+  }
   function inr(n){ if (!isFinite(n)) return '—'; return '₹' + Math.round(n).toLocaleString('en-IN'); }
   function compactInr(n){
     if (n >= 1e7) return '₹' + (n/1e7).toFixed(2).replace(/\.00$/,'') + 'Cr';
@@ -2776,12 +2706,13 @@ window.STRATEGY_PRICES = STRATEGY_PRICES;  // expose for the CTA controller abov
       document.getElementById('mfc-delta-val').textContent = '—';
       return;
     }
-    var model = cap * Math.pow(1 + s.cagr, yrs);
+    var cagr = liveCagr(k);
+    var model = cap * Math.pow(1 + cagr, yrs);
     var mfRate = Math.max(0.001, s.bench - 0.015);
     var mf = cap * Math.pow(1 + mfRate, yrs);
     var delta = model - mf;
     document.getElementById('mfc-model-val').textContent  = compactInr(model);
-    document.getElementById('mfc-model-meta').textContent = '@' + (s.cagr*100).toFixed(1) + '% CAGR · ' + s.name;
+    document.getElementById('mfc-model-meta').textContent = '@' + (cagr*100).toFixed(1) + '% CAGR · ' + s.name;
     document.getElementById('mfc-mf-val').textContent  = compactInr(mf);
     document.getElementById('mfc-mf-meta').textContent = '@' + (mfRate*100).toFixed(2) + '% (' + s.benchName + ' − 1.5%)';
     document.getElementById('mfc-delta-val').textContent  = '+' + compactInr(delta);
