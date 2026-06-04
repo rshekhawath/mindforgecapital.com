@@ -193,7 +193,7 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
   <div class="card">
     <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="14" r="4"/><path d="M11 11l9-9"/><path d="M17 5l3 3"/><path d="M14 8l3 3"/></svg></div>
     <h1>Recover Dashboard Access</h1>
-    <p class="desc">Enter the email address or phone number you used when subscribing and we'll send your personal dashboard link.</p>
+    <p class="desc">Enter the email address or phone number you used when subscribing and we'll email links to all your active dashboards.</p>
 
     <div class="form-group">
       <label for="email-input">Email Address</label>
@@ -270,13 +270,19 @@ async function recoverAccess() {
       // Security: the API intentionally no longer returns the dashboard URL —
       // it's delivered only via email so an attacker who guesses a phone
       // number can't exfiltrate the link. The server returns a partially
-      // masked email (e.g. r*****h@gmail.com) which we display for confirmation.
+      // masked email (e.g. r*****h@gmail.com) which we display for confirmation,
+      // plus a count of how many dashboards were emailed (newest one per
+      // strategy). count may be absent on an older backend — fall back cleanly.
       const masked = data.masked_email || '';
-      let html = '<strong>Dashboard link sent!</strong> Check your email inbox (and spam folder)';
+      const count  = parseInt(data.count, 10) || 0;
+      const plural = count > 1;
+      let html = plural
+        ? '<strong>' + count + ' dashboard links sent!</strong> We emailed a link for each of your active strategies — check your inbox (and spam folder)'
+        : '<strong>Dashboard link sent!</strong> Check your email inbox (and spam folder)';
       if (masked) {
         html += ' at <strong>' + masked.replace(/[<>&]/g, '') + '</strong>';
       }
-      html += '.<br><br><span style="font-size:12px;color:#64748b;">For your security, the link is sent only to the email on file — not displayed here or sent via WhatsApp.</span>';
+      html += '.<br><br><span style="font-size:12px;color:#64748b;">For your security, the link' + (plural ? 's are' : ' is') + ' sent only to the email on file — not displayed here or sent via WhatsApp.</span>';
       showResult('success', html, true);
     }
   } catch(e) {

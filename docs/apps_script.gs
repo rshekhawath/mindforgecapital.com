@@ -627,60 +627,88 @@ function handleRecover(email, phone) {
     return errorResponse('Please provide your subscription email address or phone number');
   }
 
-  // Find most recent active subscription matching email OR phone
   const subSheet = getSheet('subscriptions');
   const subData = subSheet.getDataRange().getValues();
-  let latestSubscription = null;
-  let latestDate = null;
+  const now = new Date();
 
+  // ── Pass 1 ─────────────────────────────────────────────────────────────────
+  // Find the most-recent ACTIVE, non-expired subscription that matches the
+  // supplied email OR phone. Its email becomes the canonical recipient: the
+  // dashboard links are ONLY ever sent to the on-file email, so an attacker who
+  // knows just a phone number (and not the inbox) still can't exfiltrate them.
+  let targetEmail = '';
+  let targetName  = '';
+  let latestMatchDate = null;
+  let sawExpiredMatch = false;
   for (let i = 1; i < subData.length; i++) {
     if (subData[i][9] !== 'active') continue;
 
     const rowEmail = (subData[i][1] || '').toLowerCase().trim();
     const rowPhone = (subData[i][3] || '').toString().replace(/\D/g, '').slice(-10);
-
     const emailMatch = emailClean && rowEmail === emailClean;
     const phoneMatch = phoneClean && rowPhone === phoneClean;
+    if (!emailMatch && !phoneMatch) continue;
 
-    if (emailMatch || phoneMatch) {
-      const subDate = new Date(subData[i][6]);
-      if (!latestDate || subDate > latestDate) {
-        latestDate = subDate;
-        latestSubscription = {
-          token:      subData[i][0],
-          email:      subData[i][1],
-          name:       subData[i][2],
-          phone:      subData[i][3],
-          expires_at: subData[i][7]
-        };
-      }
+    const expiry = subData[i][7] ? new Date(subData[i][7]) : null;
+    if (expiry && expiry < now) { sawExpiredMatch = true; continue; }
+
+    const subDate = new Date(subData[i][6]);
+    if (!latestMatchDate || subDate > latestMatchDate) {
+      latestMatchDate = subDate;
+      targetEmail = rowEmail;
+      targetName  = subData[i][2] || '';
     }
   }
 
-  if (!latestSubscription) {
+  if (!targetEmail) {
+    // Distinguish "expired, renew" from "nothing found" for a clearer message.
+    if (sawExpiredMatch) {
+      return errorResponse('Your subscription has expired. Please renew to access your dashboard.');
+    }
     return errorResponse('No active subscription found. Please check your email or phone number.');
   }
 
-  // Check if expired
-  const expiryDate = new Date(latestSubscription.expires_at);
-  if (expiryDate < new Date()) {
-    return errorResponse('Your subscription has expired. Please renew to access your dashboard.');
+  // ── Pass 2 ─────────────────────────────────────────────────────────────────
+  // Gather ALL active, non-expired subscriptions for the canonical email,
+  // keeping only the NEWEST per strategy. A subscriber to several strategies (or
+  // one who has renewed) thus gets exactly one current link per strategy —
+  // instead of only their single most-recent dashboard (the old behaviour) or a
+  // pile of duplicate links.
+  const byStrategy = {}; // strategy -> { token, date }
+  for (let i = 1; i < subData.length; i++) {
+    if (subData[i][9] !== 'active') continue;
+    const rowEmail = (subData[i][1] || '').toLowerCase().trim();
+    if (rowEmail !== targetEmail) continue;
+    const expiry = subData[i][7] ? new Date(subData[i][7]) : null;
+    if (expiry && expiry < now) continue;
+
+    const strategy = subData[i][4] || '';
+    if (!strategy) continue;
+    const subDate = new Date(subData[i][6]);
+    const prev = byStrategy[strategy];
+    if (!prev || subDate > prev.date) {
+      byStrategy[strategy] = { token: subData[i][0], date: subDate };
+    }
   }
 
-  // Send recovery email. The dashboard URL is delivered ONLY via this email so
-  // an attacker who knows just the phone number (and not the inbox) can't
-  // exfiltrate the link by hitting the API. Pre-fix, the URL was also returned
-  // in the JSON response, which leaked it to anyone who could guess phone or
-  // email.
-  const dashboardUrl = getBaseUrl() + '/dashboard.html?token=' + latestSubscription.token;
-  sendRecoveryEmail(latestSubscription.email, latestSubscription.name, dashboardUrl);
+  const base = getBaseUrl();
+  const dashboards = Object.keys(byStrategy).sort().map(function(strategy) {
+    return { strategy: strategy, url: base + '/dashboard.html?token=' + byStrategy[strategy].token };
+  });
 
-  // Mask the email partially so the UI can confirm where the link went,
-  // without disclosing the full address to a guessing attacker.
-  const fullEmail = String(latestSubscription.email || '');
+  if (!dashboards.length) {
+    return errorResponse('No active subscription found. Please check your email or phone number.');
+  }
+
+  // One email lists every active dashboard. Delivered ONLY to the on-file email.
+  sendRecoveryEmail(targetEmail, targetName, dashboards);
+
+  // Mask the recipient email partially so the UI can confirm where the links
+  // went, without disclosing the full address to a guessing attacker.
   let maskedEmail = '';
-  if (fullEmail.includes('@')) {
-    const [local, domain] = fullEmail.split('@');
+  if (targetEmail.includes('@')) {
+    const parts = targetEmail.split('@');
+    const local = parts[0], domain = parts[1];
     const localMasked = local.length <= 2
       ? local[0] + '*'
       : local[0] + '*'.repeat(Math.max(1, local.length - 2)) + local.slice(-1);
@@ -690,7 +718,8 @@ function handleRecover(email, phone) {
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
     masked_email: maskedEmail,
-    message: 'Recovery link sent to your email'
+    count: dashboards.length,
+    message: 'Recovery ' + (dashboards.length > 1 ? 'links' : 'link') + ' sent to your email'
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -1031,12 +1060,47 @@ function sendSubscriptionEmail(email, name, strategy, dashboardUrl, expiresAt) {
   }
 }
 
-function sendRecoveryEmail(email, name, dashboardUrl) {
-  const subject = 'Your MindForge Capital dashboard link';
+function sendRecoveryEmail(email, name, dashboards) {
+  // Accept the new array form [{strategy, url}, ...] or, defensively, a single
+  // URL string from any legacy caller.
+  if (typeof dashboards === 'string') dashboards = [{ strategy: '', url: dashboards }];
+  dashboards = dashboards || [];
+  const multi = dashboards.length > 1;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function btn(url, label) {
+    return '<a href="' + url + '" style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:13px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);"><span style="color:#ffffff !important;">' + label + ' &nbsp;&#8594;</span></a>';
+  }
+
+  const subject = multi
+    ? 'Your MindForge Capital dashboard links'
+    : 'Your MindForge Capital dashboard link';
+
+  let buttonsHtml;
+  if (multi) {
+    buttonsHtml = dashboards.map(function(d) {
+      return '<div style="margin:0 0 16px;padding:16px 18px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;text-align:center;">' +
+               '<div style="font-size:13px;font-weight:700;color:#0c1831;margin-bottom:12px;letter-spacing:.01em;">' + esc(d.strategy || 'Your strategy') + '</div>' +
+               btn(d.url, 'Open dashboard') +
+             '</div>';
+    }).join('');
+  } else {
+    buttonsHtml = '<div class="btn-wrap" style="text-align:center;margin:32px 0;">' +
+      btn(dashboards[0] ? dashboards[0].url : '#', 'Access My Dashboard') + '</div>';
+  }
+
+  const intro = multi
+    ? ('We received your request to recover your dashboard access. Here ' +
+       (dashboards.length === 2 ? 'are links to both of your' : 'are links to all ' + dashboards.length + ' of your') +
+       ' active dashboards — open the one you need.')
+    : 'We received your request to recover your dashboard link. Your personalised dashboard is still active and ready to use.';
 
   // V5.1: rebuilt on the LIGHT brand theme used by sendActivationEmail —
   // matches the website (background #f0f5ff, brand blue gradient header).
   // All button styles inline so Gmail/Outlook don't strip white-on-blue text.
+  // V6.9: now lists every active dashboard (newest per strategy), not just one.
   const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -1061,21 +1125,16 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
       <div class="container">
         <div class="header">
           <h1>MindForge Capital</h1>
-          <p>Dashboard link recovery</p>
+          <p>Dashboard ` + (multi ? 'links' : 'link') + ` recovery</p>
         </div>
         <div class="content">
           <h2>Hello ` + (name || 'Investor') + `,</h2>
-          <p>We received your request to recover your dashboard link. Your personalised dashboard is still active and ready to use.</p>
+          <p>` + intro + `</p>
 
-          <div class="btn-wrap" style="text-align:center;margin:32px 0;">
-            <a href="` + dashboardUrl + `"
-               style="display:inline-block;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);background-color:#1a50d8;color:#ffffff !important;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.02em;box-shadow:0 6px 18px -8px rgba(26,80,216,.55);">
-              <span style="color:#ffffff !important;">Access My Dashboard &nbsp;&#8594;</span>
-            </a>
-          </div>
+          ` + buttonsHtml + `
 
           <div class="note">
-            <strong>Keep this link private.</strong> Your dashboard link is unique to you — do not share it. If you did not request this email, you can safely ignore it; your subscription is secure.
+            <strong>Keep ` + (multi ? 'these links' : 'this link') + ` private.</strong> Your dashboard ` + (multi ? 'links are' : 'link is') + ` unique to you — do not share ` + (multi ? 'them' : 'it') + `. If you did not request this email, you can safely ignore it; your subscription is secure.
           </div>
         </div>
         <div class="footer">
@@ -1086,10 +1145,16 @@ function sendRecoveryEmail(email, name, dashboardUrl) {
     </html>
   `;
 
+  const plainLinks = dashboards.map(function(d) {
+    return (d.strategy ? d.strategy + ': ' : 'Dashboard: ') + d.url;
+  }).join('\n');
+
   const plainBody =
-    'Hello ' + name + ',\n\n' +
-    'You requested a dashboard link recovery. Your subscription is still active.\n\n' +
-    'Dashboard: ' + dashboardUrl + '\n\n' +
+    'Hello ' + (name || 'Investor') + ',\n\n' +
+    (multi
+      ? 'You requested dashboard access recovery. Links to all your active dashboards:\n\n'
+      : 'You requested a dashboard link recovery. Your subscription is still active.\n\n') +
+    plainLinks + '\n\n' +
     'If you did not request this, please ignore this email.\n\n' +
     'To unsubscribe, reply with "unsubscribe" in the subject line.\n\n' +
     '-- MindForge Capital\n' +
