@@ -139,7 +139,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.85);backdrop
 .stat-card.tone-green .ico-wrap{background:rgba(5,150,105,0.10);color:var(--green);}
 .stat-card.tone-gold  .ico-wrap{background:rgba(217,119,6,0.10);color:var(--gold);}
 .stat-card.tone-red   .ico-wrap{background:rgba(220,38,38,0.10);color:var(--red);}
-.stat-card .stat-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+.stat-card .stat-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-right:44px;}/* V6.8 M4: reserve space for the abs-positioned ico-wrap so long labels like "Next rebalance" don't run under it on mobile */
 .stat-card .stat-val{
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size:34px;font-weight:800;color:var(--white);letter-spacing:-.02em;line-height:1;
@@ -283,6 +283,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.85);backdrop
   content:'';position:sticky;right:0;top:0;height:100%;width:36px;
   pointer-events:none;display:none;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,0.85));
+}
+/* V6.8 M5: between ~600px and ~1265px the 920px-min-width table overflows
+   horizontally and the right edge (Weight column) gets clipped with no
+   visual cue. Enable the right-edge fade in that band so users see there's
+   more to scroll. Mobile (<=600px) already swaps to the card layout. */
+@media (min-width:601px) and (max-width:1265px){
+  .table-wrap::after{display:block;}
 }
 @media (max-width:1080px){
   .table-wrap{scrollbar-width:thin;}
@@ -739,14 +746,9 @@ footer a:hover{color:var(--accent);}
   .welcome-name { animation: none; }
 }
 
-/* —— Strategy chip in hero: subtle pulsing dot —— */
-.dash-hero .pill-strat {
-  position: relative;
-}
-@keyframes mf-pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(1.6); }
-}
+/* V6.8 L4: removed dead .dash-hero .pill-strat rule + its mf-pulse-dot
+   keyframe — no .pill-strat element exists in the markup (the strategy
+   hero pill is a plain .meta-pill). */
 
 /* —— Refresh button: spin on click —— */
 @keyframes mf-spin {
@@ -763,24 +765,12 @@ footer a:hover{color:var(--accent);}
   animation: mf-donut-in .9s cubic-bezier(.2,.7,.2,1) both;
 }
 
-/* —— "Days left" countdown urgency tint when low —— */
-.stat-card[data-urgent="true"] .sv {
-  color: var(--gold) !important;
-  position: relative;
-}
-.stat-card[data-urgent="true"] .sv::after {
-  content: "";
-  position: absolute;
-  inset: -4px -8px;
-  background: radial-gradient(circle, rgba(217,119,6,0.18) 0%, transparent 70%);
-  z-index: -1;
-  border-radius: 8px;
-  animation: mf-warn-pulse 2s ease-in-out infinite;
-}
-@keyframes mf-warn-pulse {
-  0%, 100% { opacity: 0.6; }
-  50%       { opacity: 1; }
-}
+/* V6.8 L3: the data-urgent gold-tint+pulse rules were dead code — they
+   targeted .sv but the stat value uses .stat-val (no .sv exists). At ≤7
+   days the .tone-red class already paints the card red, so the urgency
+   is already visible; the gold "warning" intent at ≤14 days is conveyed
+   by .tone-gold (also already applied). Removed the dead block and its
+   mf-warn-pulse keyframe. */
 
 /* —— Market-bar: subtle slide-in —— */
 .market-bar {
@@ -802,8 +792,7 @@ tbody tr:hover {
 /* —— Honour reduced motion —— */
 @media (prefers-reduced-motion: reduce) {
   .alloc-card svg.donut,
-  .market-bar,
-  .stat-card[data-urgent="true"] .sv::after { animation: none !important; }
+  .market-bar { animation: none !important; }
   .stat-card { transition: none !important; }
 }
 
@@ -1007,7 +996,9 @@ tr.row-bought:hover { background: rgba(5,150,105,0.08) !important; }
 .mf-fab-top:focus-visible { outline: 2px solid rgba(37,99,235,0.55); outline-offset: 3px; }
 .mf-fab-top svg { width: 20px; height: 20px; }
 @media (max-width: 768px) {
-  .mf-fab-top { left: 16px; bottom: 88px; width: 40px; height: 40px; }
+  /* V6.8 M3: move to right gutter on mobile so the 40px FAB doesn't cover
+     the left edge of stock cards (was hiding "Rec. Price" / "Allocation"). */
+  .mf-fab-top { right: 16px; left: auto; bottom: 88px; width: 40px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mf-fab-top { transition: opacity .2s; transform: none !important; }
@@ -1217,7 +1208,9 @@ footer p {
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
-<div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
+<!-- V6.8 L7: dropped role=progressbar + aria-label — the bar is decorative
+     (aria-hidden=true), so the role/label were contradictory dead weight. -->
+<div class="mf-scroll-prog" id="mf-scroll-prog" aria-hidden="true"></div>
 
 
 <!-- NAV -->
@@ -1851,7 +1844,7 @@ function renderAllocation(stocks) {
          title="Click to filter the table to ${escapeHtml(r.name)}"
          onclick="filterBySector(this.dataset.sector)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterBySector(this.dataset.sector);}">
-      <div class="alloc-name">
+      <div class="alloc-name" title="${escapeHtml(r.name)}"><!-- V6.8 L2: full sector name on hover; long GICS names like "Information Technology" get truncated by the 140px ellipsis -->
         <span class="alloc-swatch" style="background:${r.color}"></span>
         ${escapeHtml(r.name)}
       </div>
@@ -1864,8 +1857,18 @@ function renderAllocation(stocks) {
     'Showing ' + rows.length + ' of ' + allRows.length + ' sectors · combined ' +
     rows.reduce((a,r) => a+r.pct, 0).toFixed(1) + '%';
 
+  // V6.8 L1: aggregate the remaining sectors into an "Other" slice so the
+  // donut ring sums to 100% instead of leaving a grey gap that reads as
+  // unallocated cash. The legend still shows the top 8.
+  let donutRows = rows;
+  if (allRows.length > rows.length) {
+    const otherPct = allRows.slice(rows.length).reduce((a, r) => a + r.pct, 0);
+    if (otherPct > 0.01) {
+      donutRows = rows.concat([{ name: 'Other', w: 0, pct: otherPct, color: '#cbd5e1' }]);
+    }
+  }
   // Donut SVG — concentric arc slices around r=42 ring
-  renderDonut(rows);
+  renderDonut(donutRows);
   document.getElementById('donut-center-num').textContent = allRows.length;
 
   card.style.display = '';
@@ -2472,7 +2475,10 @@ function exportCSV() {
   if (!stocksData.length) return;
   const n = stocksData.length || 1;
   const per = currentCapital / n;
-  const header = ['#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
+  // V6.8 M1: derive currency from the book so the S&P 500 ($) export doesn't
+  // mis-label its USD columns as "(INR)".
+  const ccyCode = (typeof dashCurrency === 'function' && dashCurrency() === '$') ? 'USD' : 'INR';
+  const header = ['#','Company','Ticker','Industry','Recommended Price (' + ccyCode + ')','Weight (%)','Allocation (' + ccyCode + ')','Shares'];
   const lines = [header.join(',')];
   stocksData.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
@@ -2814,9 +2820,10 @@ init();
 
 /* Better print styling — hide controls + FAB, ensure table prints cleanly */
 @media print{
+  /* V6.8 L5: dropped vestigial .nav-hamburger from this print rule —
+     the dashboard nav has no hamburger element to hide. */
   nav, footer, .mf-fab-top, .mf-scroll-prog, .tbl-btn, .renew-cta,
-  .market-bar, .buy-prog-card, .size-card, .notif-card, .howto-card,
-  .nav-hamburger{ display: none !important; }
+  .market-bar, .buy-prog-card, .size-card, .notif-card, .howto-card{ display: none !important; }
   body{ background: #fff !important; }
   .stat-card{ break-inside: avoid; box-shadow: 0 0 0 1px #ccc !important; }
   table{ font-size: 11px; }
@@ -2832,15 +2839,10 @@ init();
 <style id="mf-v16-dash">
 :root{ --v16-ease: cubic-bezier(.22,.8,.2,1); }
 
-/* STICKY TABLE HEADER — for long stock lists (30 picks on S&P 500), the column
-   labels stay pinned to the top of the table-wrap as the user scrolls. */
-.table-wrap{ max-height: none; }
-.table-wrap table thead th{
-  position: sticky; top: 0; z-index: 4;
-  background: linear-gradient(180deg, #ffffff 0%, #ffffff 80%, rgba(248,250,252,0.95) 100%);
-  box-shadow: 0 1px 0 rgba(37,99,235,0.10), 0 2px 6px -3px rgba(15,23,42,0.06);
-  backdrop-filter: blur(8px);
-}
+/* V6.8 M2: the v16 sticky-header rules were dead code — .table-wrap had
+   max-height:none, so it was never a vertical scroll container, and even if
+   the <th> did pin to top:0 it would have sat behind the z:100 nav. Removed
+   the broken rules to avoid implying a feature that wasn't there. */
 
 /* Industry chip — show full text on hover via larger tooltip (native title already there) */
 .industry-badge{
