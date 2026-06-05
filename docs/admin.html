@@ -857,6 +857,27 @@ var ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 var ICON_INBOX = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>';
 var ICON_WARN  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
+// V7.0 (Fix 3): fetch leads with the admin secret in the POST body instead of
+// the URL query string (which lands in browser history / request logs). Falls
+// back to the legacy GET if the backend hasn't been redeployed with the POST
+// route yet, so the page keeps working across the deploy window.
+function getLeadsFetch() {
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'get_leads', admin_secret: getAdminSecret() })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data && data.error && /unknown action|invalid action/i.test(data.error)) {
+      // Backend not yet redeployed with the POST route — fall back to GET.
+      return fetch(APPS_SCRIPT_URL + '?action=get_leads&admin_secret=' + encodeURIComponent(getAdminSecret()) + '&_=' + Date.now())
+        .then(function(r) { return r.json(); });
+    }
+    return data;
+  });
+}
+
 function loadLeads() {
   var refreshBtn = document.getElementById('btn-refresh');
   if (refreshBtn) refreshBtn.classList.add('spinning');
@@ -864,9 +885,7 @@ function loadLeads() {
   document.getElementById('table-state').style.display = 'block';
   document.getElementById('leads-table').style.display = 'none';
 
-  var secret = getAdminSecret();
-  fetch(APPS_SCRIPT_URL + '?action=get_leads&admin_secret=' + encodeURIComponent(secret))
-    .then(function(r) { return r.json(); })
+  getLeadsFetch()
     .then(function(data) {
       if (maybeReauthOn401(data)) return;
       if (data.status === 'ok') {
@@ -1084,8 +1103,7 @@ function declineLead(btn, name, email, timestamp) {
     // a duplicate pending lead. VERIFY: re-fetch the leads and check the
     // row's status actually flipped to 'declined'. If not, surface the
     // problem instead of pretending it worked.
-    fetch(APPS_SCRIPT_URL + '?action=get_leads&admin_secret=' + encodeURIComponent(getAdminSecret()) + '&_=' + Date.now())
-      .then(function(r) { return r.json(); })
+    getLeadsFetch()
       .then(function(d) {
         if (maybeReauthOn401(d)) { reEnable(); return; }
         var targetEmail = String(email || '').toLowerCase().trim();

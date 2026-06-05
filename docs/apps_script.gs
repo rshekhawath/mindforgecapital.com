@@ -99,6 +99,12 @@ function doPost(e) {
     } else if (action === 'decline') {
       if (!adminAuthOk(payload.admin_secret)) return adminAuthError();
       return handleDecline(payload);
+    } else if (action === 'get_leads') {
+      // V7.0 (Fix 3): accept get_leads over POST so the admin secret travels in
+      // the request body, not the URL query string (which lands in browser
+      // history and request logs). The GET route is kept for backward compat.
+      if (!adminAuthOk(payload.admin_secret)) return adminAuthError();
+      return handleGetLeads();
     } else if (!action) {
       // Legacy payload with no action - treat as a save_lead.
       return handleLegacyLead(payload);
@@ -174,12 +180,14 @@ function handleSubscribe(payload) {
   // user paid for a longer one.
   const durationMonths = parseInt(payload.duration_months, 10) || 1;
   const subscribedAt = new Date();
-  const expiresAt    = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+  const expiresAt    = addMonths(subscribedAt, durationMonths);
   const notifyFlag = durationMonths > 1 ? 'on' : 'off';
 
   // Save to subscriptions sheet (K: duration_months, L: notify flag)
   const sheet = getSheet('subscriptions');
+  // V7.0 (Fix 5): retire any prior active row for this same email+strategy so
+  // each subscriber keeps exactly one active subscription per strategy.
+  supersedePriorActive(sheet, email, strategy);
   sheet.appendRow([
     token,
     email,
@@ -229,6 +237,12 @@ function handleSaveRun(payload) {
   });
 
   Logger.log('Saved ' + stocks.length + ' stocks for ' + strategy);
+
+  // V7.0 (Fix 1): refresh the O(1) latest-run index + per-run stock cache so
+  // findLatestRunId() and handleGetStocks() don't rescan the whole strategy_runs
+  // sheet on every dashboard load. Non-fatal.
+  try { indexRun(strategy, runId, runTime, stocks); }
+  catch (err) { Logger.log('indexRun failed: ' + err); }
 
   // Item 11: email a rebalance notification to non-monthly subscribers of this
   // strategy (notify flag on, still active). Non-fatal.
@@ -331,12 +345,16 @@ function handleActivate(payload) {
       break;
     }
   }
-  // Pass 2 (fallback): email-only match - legacy behaviour
+  // Pass 2 (fallback): match by email but ONLY consume a lead for THIS strategy
+  // (or a strategy-less legacy lead). Pre-V7.0 this matched email-only and could
+  // flip an unrelated strategy's pending lead to 'activated' (and apply its
+  // duration), silently dropping that lead from the activation queue.
   if (!matched) {
     for (let i = leadsData.length - 1; i >= 1; i--) {
-      const rowEmail  = String(leadsData[i][2] || '').toLowerCase().trim();
-      const rowStatus = String(leadsData[i][6] || '').toLowerCase();
-      if (rowEmail === email && rowStatus !== 'activated' && rowStatus !== 'declined') {
+      const rowEmail    = String(leadsData[i][2] || '').toLowerCase().trim();
+      const rowStrategy = String(leadsData[i][4] || '').toLowerCase().trim();
+      const rowStatus   = String(leadsData[i][6] || '').toLowerCase();
+      if (rowEmail === email && (rowStrategy === strategyClean || !rowStrategy) && rowStatus !== 'activated' && rowStatus !== 'declined') {
         leadsSheet.getRange(i + 1, 7).setValue('activated');
         if (!durationMonths) durationMonths = parseInt(leadsData[i][7], 10) || 1;
         break;
@@ -347,8 +365,7 @@ function handleActivate(payload) {
 
   // Expiry by duration (item 9): 1 / 3 / 6 / 12 calendar months.
   const subscribedAt = new Date();
-  const expiresAt    = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+  const expiresAt    = addMonths(subscribedAt, durationMonths);
 
   // Item 11: non-monthly subscribers get rebalance notifications auto-on.
   const notifyFlag = durationMonths > 1 ? 'on' : 'off';
@@ -358,6 +375,10 @@ function handleActivate(payload) {
 
   // Append to subscriptions sheet (K: duration_months, L: notify flag)
   const subSheet = getSheet('subscriptions');
+  // V7.0 (Fix 5): retire any prior active row for this same email+strategy first
+  // so a re-activation / renewal REPLACES the old one instead of stacking a
+  // second active row (which would trigger duplicate rebalance/reminder emails).
+  supersedePriorActive(subSheet, email, strategy);
   subSheet.appendRow([
     token,
     email,
@@ -518,9 +539,11 @@ function handleGetStocks(token) {
     return errorResponse('Subscription not found');
   }
 
-  // Check if expired
+  // Check if expired. A missing/unparseable expiry is treated as expired (deny)
+  // rather than slipping through: `new Date('') < now` is false, which pre-V7.0
+  // would have granted indefinite access to a row with a blank expires_at.
   const expiryDate = new Date(subscription.expires_at);
-  if (expiryDate < new Date()) {
+  if (!subscription.expires_at || isNaN(expiryDate.getTime()) || expiryDate < new Date()) {
     return errorResponse('Subscription has expired');
   }
 
@@ -549,24 +572,11 @@ function handleGetStocks(token) {
   }
   subscription.run_id = pinnedRunId;
 
-  const runSheet = getSheet('strategy_runs');
-  const runData = runSheet.getDataRange().getValues();
-  const stocks = [];
-
-  for (let i = 1; i < runData.length; i++) {
-    // Filter by BOTH run_id AND strategy - guards against run_id collisions
-    // where multiple strategies share the same timestamp-based id.
-    if (runData[i][0] === pinnedRunId && runData[i][2] === subscription.strategy) {
-      stocks.push({
-        ticker: runData[i][3],
-        yahoo_ticker: runData[i][4],
-        company_name: runData[i][5],
-        industry: runData[i][6],
-        recommended_price: parseFloat(runData[i][7]) || 0,
-        weight_pct: parseFloat(runData[i][8]) || 0
-      });
-    }
-  }
+  // V7.0 (Fix 1): serve the pinned run's stocks from the per-run cache (keyed by
+  // the immutable runId+strategy) instead of scanning the entire strategy_runs
+  // sheet on every dashboard load. getRunStocks() falls back to one scan + cache
+  // on a miss.
+  const stocks = getRunStocks(pinnedRunId, subscription.strategy);
 
   return ContentService.createTextOutput(JSON.stringify({
     status: 'ok',
@@ -742,6 +752,21 @@ function handleRequestOTP(email) {
     return errorResponse('No subscriptions found for this email. Please subscribe to a strategy first, or check the email you used when subscribing.');
   }
 
+  // V7.0 (Fix 8): cap OTP requests to 5 per 15-minute window per email. Each
+  // request re-randomises the code, so without this an attacker could reset the
+  // 5-try verify lockout indefinitely by re-requesting; it also limits inbox spam.
+  const reqProps = PropertiesService.getScriptProperties();
+  const rlKey = 'otpreq_' + emailClean.replace(/[^a-z0-9]/g, '_');
+  let rl;
+  try { rl = JSON.parse(reqProps.getProperty(rlKey) || '{}'); } catch (e) { rl = {}; }
+  const nowMsReq = Date.now();
+  if (!rl.resetAt || nowMsReq > rl.resetAt) { rl = { count: 0, resetAt: nowMsReq + 15 * 60 * 1000 }; }
+  if (rl.count >= 5) {
+    return errorResponse('Too many code requests. Please wait a few minutes and try again.');
+  }
+  rl.count += 1;
+  reqProps.setProperty(rlKey, JSON.stringify(rl));
+
   // Generate 6-digit OTP and store with 10-min expiry in Script Properties
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const expiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -906,6 +931,13 @@ function getSheet(sheetName) {
 }
 
 function findLatestRunId(strategy) {
+  // Fast path: the O(1) index maintained by indexRun() on each save_run.
+  const props = PropertiesService.getScriptProperties();
+  const cached = props.getProperty('latestRun::' + strategy);
+  if (cached) return cached;
+
+  // Fallback for runs published before the index existed: scan once, then
+  // memoize so subsequent calls are O(1).
   const sheet = getSheet('strategy_runs');
   const data = sheet.getDataRange().getValues();
   let latestRunId = null;
@@ -921,7 +953,101 @@ function findLatestRunId(strategy) {
     }
   }
 
+  if (latestRunId) {
+    props.setProperty('latestRun::' + strategy, latestRunId);
+    if (latestTime) props.setProperty('latestRunTime::' + strategy, latestTime.toISOString());
+  }
   return latestRunId || 'default_run_' + strategy;
+}
+
+// V7.0 (Fix 1): O(1) latest-run index + per-run stock cache, refreshed on every
+// save_run. Lets findLatestRunId() and handleGetStocks() avoid scanning the
+// whole (ever-growing) strategy_runs sheet on each dashboard load.
+function indexRun(strategy, runId, runTime, stocks) {
+  const props = PropertiesService.getScriptProperties();
+  const prevTime = props.getProperty('latestRunTime::' + strategy);
+  // Only advance the pointer if this run is at least as recent as the last one
+  // (guards against an out-of-order / re-published older run regressing it).
+  if (!prevTime || new Date(runTime) >= new Date(prevTime)) {
+    props.setProperty('latestRun::' + strategy, runId);
+    props.setProperty('latestRunTime::' + strategy, new Date(runTime).toISOString());
+  }
+  // Prime the per-run cache with the full, just-published list so a dashboard
+  // load never observes a partially-appended run.
+  try {
+    const clean = (stocks || []).map(function(s) {
+      return {
+        ticker: s.ticker, yahoo_ticker: s.yahoo_ticker, company_name: s.company_name,
+        industry: s.industry, recommended_price: parseFloat(s.recommended_price) || 0,
+        weight_pct: parseFloat(s.weight_pct) || 0
+      };
+    });
+    CacheService.getScriptCache().put('stocks::' + runId + '::' + strategy, JSON.stringify(clean), 21600);
+  } catch (e) { Logger.log('run cache prime failed: ' + e); }
+}
+
+// Returns the stock list for (runId, strategy), reading a 6-hour cache first and
+// falling back to a single sheet scan (then caching) on a miss. Runs are
+// immutable once published, so caching by runId can never serve stale picks.
+function getRunStocks(runId, strategy) {
+  const cache = CacheService.getScriptCache();
+  const key = 'stocks::' + runId + '::' + strategy;
+  try {
+    const hit = cache.get(key);
+    if (hit) return JSON.parse(hit);
+  } catch (e) { /* fall through to scan */ }
+
+  const runSheet = getSheet('strategy_runs');
+  const runData = runSheet.getDataRange().getValues();
+  const stocks = [];
+  for (let i = 1; i < runData.length; i++) {
+    // Filter by BOTH run_id AND strategy - guards against run_id collisions
+    // where multiple strategies share the same timestamp-based id.
+    if (runData[i][0] === runId && runData[i][2] === strategy) {
+      stocks.push({
+        ticker: runData[i][3],
+        yahoo_ticker: runData[i][4],
+        company_name: runData[i][5],
+        industry: runData[i][6],
+        recommended_price: parseFloat(runData[i][7]) || 0,
+        weight_pct: parseFloat(runData[i][8]) || 0
+      });
+    }
+  }
+  try { cache.put(key, JSON.stringify(stocks), 21600); } catch (e) {}
+  return stocks;
+}
+
+// V7.0 (Fix 6): add `n` calendar months, clamping to the last day of the target
+// month so Jan 31 + 1mo => Feb 28/29 instead of JS setMonth() overflowing to
+// Mar 3 (which silently granted a few extra days of access).
+function addMonths(date, n) {
+  const d = new Date(date.getTime());
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDay));
+  return d;
+}
+
+// V7.0 (Fix 5): retire any existing ACTIVE subscription row for this same
+// email+strategy (status -> 'inactive') so a re-activation/renewal leaves
+// exactly ONE active row per strategy. Prevents duplicate rebalance/reminder/
+// check-in emails (the crons iterate per active row) and keeps recovery clean.
+function supersedePriorActive(subSheet, email, strategy) {
+  const emailClean = String(email || '').toLowerCase().trim();
+  const strategyClean = String(strategy || '').toLowerCase().trim();
+  if (!emailClean || !strategyClean) return;
+  const data = subSheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const rEmail = String(data[i][1] || '').toLowerCase().trim();
+    const rStrat = String(data[i][4] || '').toLowerCase().trim();
+    const rStatus = String(data[i][9] || '').toLowerCase().trim();
+    if (rEmail === emailClean && rStrat === strategyClean && rStatus === 'active') {
+      subSheet.getRange(i + 1, 10).setValue('inactive'); // col J = status
+    }
+  }
 }
 
 function generateToken() {
@@ -1464,12 +1590,19 @@ function cronRebalanceReminder() {
     var name    = data[i][2];
     var strategy= data[i][4];
     var expiresMs = data[i][7] ? new Date(data[i][7]).getTime() : 0;
+    var notify  = String(data[i][11] || '').toLowerCase().trim();
     var status  = String(data[i][9] || '').toLowerCase().trim();
     var lastSentRaw = data[i][12] || '';
     var lastSentMonth = lastSentRaw ? String(lastSentRaw).slice(0, 7) : '';
 
     if (!email) continue;
     if (status !== 'active') continue;
+    // V7.0 (Fix 2): only multi-month subscribers (notify='on') actually receive
+    // the monthly rebalance. Monthly subs are pinned to their signup run and
+    // must renew, so the "fresh picks drop on the 1st" reminder does not apply —
+    // emailing it over-promised picks they never get. They still get the 30-day
+    // check-in (with a renewal CTA) from cronWelcomeCheckin instead.
+    if (notify !== 'on') continue;
     if (expiresMs && expiresMs < now) continue;
     if (lastSentMonth === nowMonth) continue; // already sent this month
 
