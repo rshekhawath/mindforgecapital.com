@@ -301,7 +301,8 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
           <option value="MindForge MultiAsset">MindForge MultiAsset — ₹99/month</option>
           <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹1,499/month</option>
           <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
-          <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹9,999/month</option>
+          <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹4,999/month</option>
+          <option value="MindForge All-Access (Indian Equities)">MindForge All-Access (Indian Equities) — ₹29,990/year</option>
         </select>
         <div class="strategy-note" id="strategy-note"></div>
       </div>
@@ -475,8 +476,12 @@ var STRATEGY_META = {
   'MindForge MultiAsset':       { monthly: 99,   desc: '8 ETFs across equity, gold, silver & bonds. Defensive, diversified. Rec. investment ₹1,00,000.' },
   'MindForge LargeMidcap 250':  { monthly: 1499, desc: '25 stocks from Nifty LargeMidcap 250. Most popular plan. Rec. investment ₹15,00,000.' },
   'MindForge SmallMicro 500':   { monthly: 2499, desc: '25 small & micro-cap stocks. Highest conviction. Rec. investment ₹25,00,000.' },
-  'MindForge S&P 500':          { monthly: 9999, desc: '30 US large-cap stocks from the S&P 500. Rec. investment ₹1,00,00,000.' }
+  'MindForge S&P 500':          { monthly: 4999, desc: '30 US large-cap stocks from the S&P 500. Rec. investment ₹1,00,00,000.' },
+  // V7.2: All-Access bundle — MultiAsset + LargeMidcap 250 + SmallMicro 500 under one
+  // pass. Fixed price; offered for 6 & 12 months only (no 1/3-month).
+  'MindForge All-Access (Indian Equities)': { bundle: true, prices: { '6': 14995, '12': 29990 }, desc: 'All three Indian-equity strategies — MultiAsset + LargeMidcap 250 + SmallMicro 500 — under one pass. Save ~40% vs subscribing separately.' }
 };
+var BUNDLE_COMBINED_MONTHLY = 99 + 1499 + 2499; // 4097 — for the "save vs month-to-month" figure
 // Duration → discount (item 9): 1mo 0%, 3mo 5%, 6mo 10%, 12mo 20%
 var DURATIONS = {
   '1':  { months: 1,  disc: 0.00, label: '1 month'  },
@@ -487,6 +492,14 @@ var DURATIONS = {
 function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
 function priceFor(strategy, durKey){
   var m = STRATEGY_META[strategy]; if (!m) return null;
+  if (m.bundle) {
+    var bk = (durKey === '6' || durKey === '12') ? durKey : '12';   // bundle: 6 or 12 only
+    var bd = DURATIONS[bk];
+    var btotal = m.prices[bk];
+    var separate = BUNDLE_COMBINED_MONTHLY * bd.months;             // the 3 strategies month-to-month
+    return { total: btotal, months: bd.months, disc: 0, label: bd.label,
+             save: separate - btotal, monthly: Math.round(btotal / bd.months), bundle: true };
+  }
   var d = DURATIONS[durKey] || DURATIONS['1'];
   var total = Math.round(m.monthly * d.months * (1 - d.disc));
   return { total: total, months: d.months, disc: d.disc, label: d.label, save: (m.monthly * d.months) - total, monthly: m.monthly };
@@ -495,26 +508,36 @@ function priceFor(strategy, durKey){
 function onStrategyChange() {
   var sel = document.getElementById('reg-strategy').value;
   var durSel = document.getElementById('reg-duration');
-  var durKey = (durSel || {}).value || '1';
   var note = document.getElementById('strategy-note');
   var m = STRATEGY_META[sel];
+  var isBundle = !!(m && m.bundle);
 
-  // V5.0: rewrite the Duration <option> labels so each shows the actual
-  // total price for the currently-selected strategy. Previously the user
-  // saw only "3 months — 5% off" with no rupee figure — they had to read
-  // the strategy-note below to see what they'd pay.
+  // V7.2: the All-Access bundle is offered for 6 & 12 months only — hide the
+  // 1/3-month options when it's selected (and bounce a stale 1/3-month
+  // selection to 1 year). Single strategies keep all four durations.
+  if (durSel) {
+    ['1','3'].forEach(function(key){
+      var o = durSel.querySelector('option[value="' + key + '"]');
+      if (o) { o.disabled = isBundle; o.hidden = isBundle; }
+    });
+    if (isBundle && (durSel.value === '1' || durSel.value === '3')) durSel.value = '12';
+  }
+  var durKey = (durSel || {}).value || (isBundle ? '12' : '1');
+
+  // Rewrite each Duration <option> label so it shows the actual total for this plan.
   if (durSel) {
     ['1','3','6','12'].forEach(function(key){
       var opt = durSel.querySelector('option[value="' + key + '"]');
       var d   = DURATIONS[key];
       if (!opt || !d) return;
-      if (m) {
+      var bv = (key === '12') ? '  ★ Best value' : '';
+      if (isBundle) {
+        if (key === '6' || key === '12') opt.textContent = d.label + ' — ' + inr(m.prices[key]) + bv;
+      } else if (m) {
         var total = Math.round(m.monthly * d.months * (1 - d.disc));
         var pct   = Math.round(d.disc * 100);
-        var bv    = (key === '12') ? '  ★ Best value' : '';
         opt.textContent = d.label + ' — ' + inr(total) + (pct > 0 ? ' (' + pct + '% off)' : '') + bv;
       } else {
-        var bv = (key === '12') ? ' ★ Best value' : '';
         opt.textContent = d.label + (d.disc > 0 ? ' — ' + Math.round(d.disc * 100) + '% off' : '') + bv;
       }
     });
@@ -522,11 +545,17 @@ function onStrategyChange() {
 
   if (sel && m) {
     var p = priceFor(sel, durKey);
-    var saveTxt = p.disc > 0
-      ? ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">save ' + inr(p.save) + ' (' + Math.round(p.disc * 100) + '% off)</span>'
-      : '';
-    note.innerHTML = '<strong>' + inr(p.total) + '</strong> for ' + p.label + saveTxt +
-      '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + inr(m.monthly) + '/month base — ' + m.desc + '</span>';
+    if (isBundle) {
+      note.innerHTML = '<strong>' + inr(p.total) + '</strong> for ' + p.label +
+        ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">save ' + inr(p.save) + ' vs month-to-month</span>' +
+        '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + m.desc + '</span>';
+    } else {
+      var saveTxt = p.disc > 0
+        ? ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">save ' + inr(p.save) + ' (' + Math.round(p.disc * 100) + '% off)</span>'
+        : '';
+      note.innerHTML = '<strong>' + inr(p.total) + '</strong> for ' + p.label + saveTxt +
+        '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + inr(m.monthly) + '/month base — ' + m.desc + '</span>';
+    }
     note.style.display = 'block';
   } else {
     note.style.display = 'none';
@@ -673,7 +702,8 @@ function resetForm() {
     'multiasset':  'MindForge MultiAsset',
     'largemidcap': 'MindForge LargeMidcap 250',
     'smallmicro':  'MindForge SmallMicro 500',
-    'sp500':       'MindForge S&P 500'
+    'sp500':       'MindForge S&P 500',
+    'allaccess':   'MindForge All-Access (Indian Equities)'
   };
   var sel = document.getElementById('reg-strategy');
   if (map[s]) {
