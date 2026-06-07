@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MFC Screener — MindForge Capital</title>
+<meta name="description" content="MindForge Capital local Screener — quantitative equity screening for the Nifty universe.">
+<link rel="icon" href="assets/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<style>
+:root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--gold:#d97706;--teal:#0891b2;--green:#059669;--text:#0c1831;--text2:#1e3a5f;--text3:#475569;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+  font-size:16px;line-height:1.65;min-height:100vh;
+  display:flex;flex-direction:column;
+}
+a{color:inherit;text-decoration:none}
+
+/* Nav (matches main site) */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(240,245,255,0.96);
+  backdrop-filter:blur(20px);
+  border-bottom:0.5px solid var(--border2);
+  padding:0 32px;
+}
+.nav-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;height:64px;gap:40px}
+.logo{display:flex;align-items:center;gap:0;font-weight:700;color:var(--white)}
+.logo img{height:80px;width:80px;display:block}
+.nav-links{display:flex;gap:32px;margin-left:auto;align-items:center}
+.nav-links a{font-size:14px;font-weight:400;color:var(--text2);transition:color .2s;display:inline-flex;align-items:center;height:40px;line-height:1}
+.nav-links a:hover{color:var(--white)}
+.nav-cta{background:var(--accent);color:#fff !important;font-size:14px;font-weight:600;padding:10px 22px;border-radius:var(--r-sm);transition:all .2s;display:inline-block}
+.nav-cta:hover{background:#2a5ef5;transform:translateY(-1px)}
+
+main{
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:48px 24px;
+}
+.card{
+  background:var(--ink2);
+  border:0.5px solid var(--border2);
+  border-radius:var(--r);
+  padding:48px 40px;
+  max-width:560px;width:100%;
+  box-shadow:0 4px 32px rgba(12,24,49,0.08);
+  text-align:center;
+}
+.icon{font-size:2.75rem;line-height:1;margin-bottom:12px}
+h1{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-size:1.8rem;font-weight:700;letter-spacing:-0.02em;line-height:1.15;
+  color:var(--white);margin-bottom:10px;
+}
+p.lead{color:var(--text2);line-height:1.6;font-size:0.98rem}
+.btn{
+  display:inline-block;margin-top:24px;
+  padding:13px 28px;border-radius:var(--r-sm);
+  background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);
+  color:#fff !important;font-weight:700;text-decoration:none;
+  font-size:14.5px;transition:all .2s;
+  border:none;cursor:pointer;
+}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 24px -10px rgba(26,80,216,0.45)}
+.btn.secondary{background:var(--ink3);color:var(--text2) !important;margin-left:8px}
+.step{
+  background:var(--ink);border-radius:var(--r-sm);
+  padding:14px 16px;margin-top:12px;
+  text-align:left;font-size:0.9rem;color:var(--text2);
+}
+.step strong{color:var(--white);display:block;margin-bottom:4px;font-weight:600}
+code{background:#e4eeff;padding:2px 6px;border-radius:4px;font-family:'SF Mono','Menlo',monospace;font-size:0.85em;color:var(--accent)}
+.spinner{
+  width:34px;height:34px;border-radius:50%;
+  border:3px solid var(--border2);border-top-color:var(--accent);
+  margin:6px auto 12px;animation:spin 0.9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none !important}
+.muted{color:var(--text3);font-size:0.82rem;margin-top:18px}
+@media (max-width:520px){
+  .card{padding:36px 24px}
+  h1{font-size:1.5rem}
+  nav{padding:0 16px}
+  .nav-inner{gap:16px}
+  .logo img{height:56px;width:56px}
+}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png" alt="MindForge Capital"></a>
+    <div class="nav-links">
+      <a href="strategies.html">Strategies</a>
+      <a href="login.html" style="color:var(--text2);">Sign In</a>
+      <a href="signup.html" class="nav-cta">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="card" id="card">
+    <div class="spinner" aria-hidden="true"></div>
+    <h1>MFC Screener</h1>
+    <p class="lead">Checking if your local screener is running…</p>
+  </div>
+</main>
+
+<script>
+(function(){
+  var card = document.getElementById('card');
+
+  function renderOnline(){
+    card.innerHTML =
+      '<div class="icon" aria-hidden="true">✅</div>' +
+      '<h1>Screener is live</h1>' +
+      '<p class="lead">Redirecting you to your local screener…</p>';
+    setTimeout(function(){ window.location.href = 'http://localhost:5001'; }, 700);
+  }
+
+  function renderOffline(){
+    card.innerHTML =
+      '<div class="icon" aria-hidden="true">⚠️</div>' +
+      '<h1>Screener Offline</h1>' +
+      '<p class="lead">The MFC Screener runs locally on your Mac. It looks like the server isn’t running right now. Start it with any option below.</p>' +
+      '<div class="step"><strong>Option A — Double-click to start</strong>Open Finder → Desktop → <em>MFC Screener</em> folder → double-click <code>start.command</code>.</div>' +
+      '<div class="step"><strong>Option B — Terminal</strong><code>cd ~/Desktop/MFC\\ Screener && python3 server.py</code></div>' +
+      '<div class="step"><strong>Option C — Auto-start at login</strong>Double-click <code>install_autostart.command</code> in the MFC Screener folder once. After that, the screener starts automatically every time you log in.</div>' +
+      '<a class="btn" href="http://localhost:5001" rel="noopener">Try Again ↗</a>' +
+      '<a class="btn secondary" href="index.html">Back to Home</a>' +
+      '<p class="muted">Tip: the local screener is only accessible from this Mac. The live website does not host the screener.</p>';
+  }
+
+  // Try health endpoint with a short timeout
+  var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timeoutId = setTimeout(function(){ if(controller) controller.abort(); }, 2200);
+
+  fetch('http://localhost:5001/api/health', {
+    method: 'GET',
+    cache: 'no-store',
+    signal: controller ? controller.signal : undefined
+  })
+  .then(function(r){
+    clearTimeout(timeoutId);
+    if(!r.ok) throw new Error('Bad status: ' + r.status);
+    return r.json();
+  })
+  .then(function(data){
+    if(data && data.status === 'ok'){
+      renderOnline();
+    } else {
+      renderOffline();
+    }
+  })
+  .catch(function(){
+    clearTimeout(timeoutId);
+    renderOffline();
+  });
+})();
+</script>
+</body>
+</html>
