@@ -421,9 +421,9 @@ td{padding:12px 14px;white-space:nowrap}
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-section">
-      <button class="btn btn-primary btn-full" onclick="runScreen()">▶ &nbsp;Run Screen</button>
+      <button class="btn btn-primary btn-full" id="btnRunScreen" type="button">▶ &nbsp;Run Screen</button>
       <div style="height:7px"></div>
-      <button class="btn btn-ghost btn-full" onclick="clearFilters()">✕ &nbsp;Clear Filters</button>
+      <button class="btn btn-ghost btn-full" id="btnClearFilters" type="button">✕ &nbsp;Clear Filters</button>
     </div>
 
     <div class="sidebar-section">
@@ -716,6 +716,10 @@ async function runScreen(){
     allResults=d.results;currentPage=1;
     renderTable();
     document.getElementById("resultMeta").innerHTML=`Showing <strong>${d.results.length}</strong> stocks · <strong>${d.cached_total}</strong> in cache`;
+    showToast(`✓ ${d.results.length} stock${d.results.length===1?"":"s"} match your screen`,"success",2000);
+    // On narrow/stacked layouts the results sit below the long filter sidebar —
+    // bring them into view so the click visibly does something.
+    if(window.innerWidth<=900){const tc=document.querySelector(".table-card");if(tc)tc.scrollIntoView({behavior:"smooth",block:"start"});}
     if(d.cached_total===0)showToast("No data cached — fetch first","error");
   }catch{showToast("Screen failed. Is the server running?","error");}
 }
@@ -757,6 +761,8 @@ function clearFilters(){
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
   document.getElementById("sector_filter").value="";
   document.getElementById("queryInput").value="";
+  runScreen();
+  showToast("Filters cleared","success",1800);
 }
 function loadPreset(name){
   clearFilters();
@@ -821,6 +827,11 @@ function showToast(msg,type="info",dur=3500){
   const c=document.getElementById("toastContainer");const t=document.createElement("div");
   t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),dur);
 }
+
+// Bind the sidebar action buttons via addEventListener (replaces inline
+// onclick — more robust, and guarantees the click always fires the handler).
+document.getElementById("btnRunScreen")?.addEventListener("click",runScreen);
+document.getElementById("btnClearFilters")?.addEventListener("click",clearFilters);
 
 checkHealth();
 
