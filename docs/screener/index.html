@@ -380,6 +380,20 @@ td{padding:12px 14px;white-space:nowrap}
 }
 
 @media(max-width:900px){.app-layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:0.5px solid var(--border2)}}
+
+/* ── MOBILE SCREENER POLISH ── */
+.mobile-filters-toggle{display:none}
+@media(max-width:900px){
+  .main-content{padding:16px 14px}
+  .sidebar{padding:16px 14px 20px}
+  /* Collapse the long filter panel by default so results are reachable. */
+  .mobile-filters-toggle{display:inline-flex;width:100%;margin-top:8px}
+  .sidebar.filters-collapsed .sidebar-section ~ .sidebar-section{display:none}
+  /* Results table: let it scroll horizontally instead of clipping columns. */
+  .table-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #resultsTable{min-width:720px}
+  .content-title{font-size:20px}
+}
 </style>
 <script src="screener-data.js"></script>
 </head>
@@ -424,6 +438,7 @@ td{padding:12px 14px;white-space:nowrap}
       <button class="btn btn-primary btn-full" id="btnRunScreen" type="button">▶ &nbsp;Run Screen</button>
       <div style="height:7px"></div>
       <button class="btn btn-ghost btn-full" id="btnClearFilters" type="button">✕ &nbsp;Clear Filters</button>
+      <button class="btn btn-ghost btn-sm mobile-filters-toggle" id="mobFiltersToggle" type="button">⚙&nbsp; Show Filters</button>
     </div>
 
     <div class="sidebar-section">
@@ -719,7 +734,11 @@ async function runScreen(){
     showToast(`✓ ${d.results.length} stock${d.results.length===1?"":"s"} match your screen`,"success",2000);
     // On narrow/stacked layouts the results sit below the long filter sidebar —
     // bring them into view so the click visibly does something.
-    if(window.innerWidth<=900){const tc=document.querySelector(".table-card");if(tc)tc.scrollIntoView({behavior:"smooth",block:"start"});}
+    if(window.innerWidth<=900){
+      const sb=document.querySelector(".sidebar"); if(sb) sb.classList.add("filters-collapsed");
+      const tg=document.getElementById("mobFiltersToggle"); if(tg) tg.innerHTML="⚙&nbsp; Show Filters";
+      const tc=document.querySelector(".table-card"); if(tc) tc.scrollIntoView({behavior:"smooth",block:"start"});
+    }
     if(d.cached_total===0)showToast("No data cached — fetch first","error");
   }catch{showToast("Screen failed. Is the server running?","error");}
 }
@@ -832,6 +851,19 @@ function showToast(msg,type="info",dur=3500){
 // onclick — more robust, and guarantees the click always fires the handler).
 document.getElementById("btnRunScreen")?.addEventListener("click",runScreen);
 document.getElementById("btnClearFilters")?.addEventListener("click",clearFilters);
+
+// Mobile: collapse the long filter panel by default; a toggle reveals it so the
+// results table is the first thing the user sees.
+(function(){
+  var sb=document.querySelector(".sidebar"), tg=document.getElementById("mobFiltersToggle");
+  if(!sb||!tg) return;
+  if(window.matchMedia("(max-width:900px)").matches) sb.classList.add("filters-collapsed");
+  tg.addEventListener("click",function(){
+    var collapsed=sb.classList.toggle("filters-collapsed");
+    tg.innerHTML = collapsed ? "⚙&nbsp; Show Filters" : "✕&nbsp; Hide Filters";
+    if(!collapsed) sb.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+})();
 
 checkHealth();
 
