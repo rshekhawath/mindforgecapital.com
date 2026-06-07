@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company — MindForge Capital Screener</title>
+<meta name="theme-color" content="#1a50d8">
+<script src="screener-data.js"></script>
+<style>
+:root{
+  --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
+  --white:#0c1831;
+  --accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;
+  --gold:#d97706;--teal:#0891b2;--green:#059669;--red:#dc2626;
+  --text:#0c1831;--text2:#1e3a5f;--text3:#475569;
+  --border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);
+  --r:16px;--r-sm:10px;--r-lg:22px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
+  --shadow-md:0 4px 18px -6px rgba(37,99,235,0.18);
+  --shadow-lg:0 18px 40px -22px rgba(37,99,235,0.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--ink);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+  font-size:14px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 900px 600px at 70% -10%,rgba(37,99,235,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 500px 400px at 5% 30%,rgba(59,130,246,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse 700px 500px at 95% 80%,rgba(45,212,191,0.03) 0%,transparent 60%);
+}
+h1,h2,h3,h4{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-weight:700;letter-spacing:-.02em}
+a{color:inherit;text-decoration:none}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.92);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.05);padding:0 32px}
+.nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;height:64px;gap:28px}
+.logo img{height:34px;display:block}
+.nav-divider{width:1px;height:24px;background:var(--border2)}
+.nav-section-label{font-size:13px;font-weight:700;color:var(--accent2);letter-spacing:-.01em;white-space:nowrap}
+.nav-links{display:flex;gap:2px}
+.nav-links a{font-size:13px;font-weight:500;color:var(--text2);padding:6px 12px;border-radius:var(--r-sm);transition:all .18s}
+.nav-links a:hover{color:var(--white);background:rgba(37,99,235,0.06)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:7px 14px;border-radius:var(--r-sm);cursor:pointer;border:none;font-family:inherit;position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s cubic-bezier(.22,.8,.2,1),background-position .55s cubic-bezier(.22,.8,.2,1)}
+.btn-primary{background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);background-size:170% 170%;color:#fff;box-shadow:0 10px 26px -10px rgba(26,80,216,.55),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 18px 40px -12px rgba(26,80,216,.62)}
+.btn-primary::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.3) 50%,transparent 65%);transform:translateX(-130%);animation:btn-shimmer 2.4s cubic-bezier(.4,0,.2,1) .9s 1 forwards}
+@keyframes btn-shimmer{0%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+.btn-ghost{background:rgba(255,255,255,.7);backdrop-filter:blur(8px);color:var(--accent2);border:1px solid rgba(37,99,235,.22)}
+.btn-ghost:hover{transform:translateY(-2px);border-color:rgba(37,99,235,.45);background:rgba(255,255,255,.95);box-shadow:0 12px 26px -14px rgba(26,80,216,.3)}
+.nav-cta{background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);background-size:170% 170%;color:#fff;font-size:13px;font-weight:700;padding:9px 20px;border-radius:var(--r-sm);box-shadow:0 6px 16px -8px rgba(26,80,216,.55);transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s,background-position .55s}
+.nav-cta:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 10px 22px -8px rgba(26,80,216,.7),0 0 0 4px rgba(45,212,191,.10)}
+
+.container{max-width:1400px;margin:0 auto;padding:24px 32px;position:relative;z-index:1}
+
+/* BREADCRUMB */
+.breadcrumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);margin-bottom:16px}
+.breadcrumb a{color:var(--accent2);font-weight:500}
+
+/* HERO */
+.hero-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -14px rgba(26,80,216,.20),0 30px 60px -30px rgba(26,80,216,.14);position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf)}
+.company-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.company-title{font-size:24px;font-weight:800;color:var(--white);letter-spacing:-.025em}
+.sym-tag{background:rgba(26,80,216,0.08);border:0.5px solid rgba(26,80,216,0.2);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--accent2)}
+.company-name-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.company-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text3);margin-top:4px}
+.company-meta a{color:var(--accent2);font-weight:500}
+.price-block{text-align:right;flex-shrink:0}
+.current-price{font-size:34px;font-weight:800;color:var(--white);letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.price-change{font-size:13px;font-weight:600;margin-top:4px}
+.chg-pos{color:var(--green)}.chg-neg{color:var(--red)}
+.price-note{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:20px}
+.kpi-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s;box-shadow:0 1px 2px rgba(15,23,42,.04),0 4px 12px -6px rgba(37,99,235,.12)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--teal));opacity:.6;transition:opacity .25s}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 32px -16px rgba(26,80,216,.25)}
+.kpi-card:hover::before{opacity:1}
+.kpi-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.kpi-value{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
+.kpi-pos{color:var(--green)}.kpi-neg{color:var(--red)}
+
+/* TABS */
+.tabs{display:flex;border-bottom:0.5px solid var(--border2);margin-bottom:20px;gap:0;overflow-x:auto;background:rgba(255,255,255,.6);backdrop-filter:blur(8px);border-radius:var(--r) var(--r) 0 0;padding:0 4px}
+.tab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s cubic-bezier(.22,.8,.2,1);margin-bottom:-0.5px;white-space:nowrap;border-radius:var(--r-sm) var(--r-sm) 0 0}
+.tab:hover{color:var(--accent2);background:rgba(26,80,216,.04)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;background:rgba(26,80,216,.04)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* CARD */
+.card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 20px -10px rgba(37,99,235,.12);margin-bottom:16px;transition:box-shadow .25s}
+.card:hover{box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 36px -18px rgba(26,80,216,.2)}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 14px;border-bottom:0.5px solid var(--border);background:linear-gradient(180deg,var(--ink3) 0%,rgba(255,255,255,0) 100%)}
+.card-title{font-size:13px;font-weight:700;color:var(--white);letter-spacing:-.01em}
+.card-body{padding:18px 20px}
+
+/* 2-col layout */
+.two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:960px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* Price & Trend panel */
+.pt-price{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.pt-now{font-size:30px;font-weight:800;color:var(--white);letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+.pt-chg{font-size:13px;font-weight:700}
+.trend-row{display:flex;flex-direction:column;gap:12px}
+.trend-line{display:flex;align-items:center;gap:12px}
+.trend-line .tl-label{font-size:11px;font-weight:600;color:var(--text3);width:120px;flex-shrink:0}
+.trend-track{position:relative;flex:1;height:8px;background:var(--ink3);border-radius:5px;overflow:hidden}
+.trend-mid{position:absolute;top:-3px;bottom:-3px;left:50%;width:1px;background:var(--border2)}
+.trend-bar{position:absolute;top:0;bottom:0;border-radius:5px}
+.trend-val{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;width:70px;text-align:right;flex-shrink:0}
+.trend-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.tbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700}
+.tbadge.up{background:rgba(5,150,105,0.08);color:var(--green);border:0.5px solid rgba(5,150,105,0.2)}
+.tbadge.down{background:rgba(220,38,38,0.06);color:var(--red);border:0.5px solid rgba(220,38,38,0.15)}
+.tbadge.flat{background:var(--ink3);color:var(--text3);border:0.5px solid var(--border2)}
+
+/* Ratio grids */
+.ratio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.ratio-item{background:var(--ink);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;transition:border-color .15s,background .15s}
+.ratio-item:hover{border-color:var(--border2);background:var(--ink2)}
+.ri-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.ri-value{font-size:16px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums}
+.ri-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* 52W range */
+.range-bar{height:6px;background:linear-gradient(90deg,rgba(220,38,38,.15),rgba(217,119,6,.15),rgba(5,150,105,.15));border-radius:3px;margin:7px 0 4px;position:relative}
+.range-marker{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 2px 6px rgba(26,80,216,.45);transform:translate(-50%,-50%)}
+.range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3)}
+
+/* Quick stats table */
+.qs-table{width:100%;font-size:12px;border-collapse:collapse}
+.qs-table td{padding:6px 4px;border-bottom:0.5px solid var(--border)}
+.qs-table tr:last-child td{border-bottom:none}
+.qs-table td:first-child{color:var(--text3);font-weight:500;width:55%}
+.qs-table td:last-child{text-align:right;font-weight:600;color:var(--white)}
+.pos-val{color:var(--green);font-weight:600}.neg-val{color:var(--red);font-weight:600}
+
+/* Holding bar */
+.hold-bar-wrap{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:6px 0}
+.hold-bar-seg{transition:width .4s ease}
+
+/* About */
+.about-text{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:16px}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.info-item .ii-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+.info-item .ii-value{font-size:13px;font-weight:600;color:var(--white)}
+
+/* Toast */
+.toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:500;box-shadow:0 12px 32px -10px rgba(15,23,42,0.18);animation:slideIn .2s ease}
+.toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(12,24,49,0.5);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:28px;max-width:380px;width:90%;box-shadow:0 32px 64px -24px rgba(15,23,42,0.2)}
+.modal h3{font-size:16px;font-weight:700;color:var(--white);margin-bottom:14px}
+.form-group{margin-bottom:10px}
+.form-label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.form-input{background:var(--ink);border:0.5px solid var(--border2);border-radius:var(--r-sm);color:var(--text);padding:8px 10px;font-size:13px;width:100%;outline:none;transition:all .18s;font-family:inherit}
+.form-input:focus{border-color:var(--accent3);box-shadow:0 0 0 3px rgba(37,99,235,0.07)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="https://mindforgecapital.com" class="logo"><img src="https://mindforgecapital.com/assets/LogoNav.png" alt="MindForge Capital" height="34"></a>
+    <div class="nav-divider"></div>
+    <span class="nav-section-label">Screener</span>
+    <div class="nav-links">
+      <a href="index.html">Screen</a>
+      <a href="watchlist.html">Watchlist</a>
+      <a href="https://mindforgecapital.com/dashboard.html">Dashboard</a>
+      <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-ghost" onclick="addToWatchlist()">+ Watchlist</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('portModal').classList.add('show')">📁 Portfolio</button>
+      <a href="https://mindforgecapital.com/signup.html" class="nav-cta">Get Started →</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="breadcrumb">
+    <a href="index.html">Screener</a><span>›</span>
+    <span id="bcSymbol">Loading…</span>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero-card">
+    <div class="company-header">
+      <div>
+        <div class="company-name-row">
+          <div class="company-title" id="companyName">—</div>
+          <span class="sym-tag" id="companySymbol">—</span>
+        </div>
+        <div class="company-meta" id="companyMeta"></div>
+      </div>
+      <div class="price-block">
+        <div class="current-price" id="currentPrice">₹—</div>
+        <div class="price-change" id="priceChange">—</div>
+        <div class="price-note">NSE · SMA50: <span id="sma50">—</span> · SMA200: <span id="sma200">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active"  onclick="switchTab('overview',this)">Overview</div>
+    <div class="tab"         onclick="switchTab('ratios',this)">Ratios & Valuation</div>
+    <div class="tab"         onclick="switchTab('shareholding',this)">Shareholding</div>
+    <div class="tab"         onclick="switchTab('about',this)">About</div>
+  </div>
+
+  <!-- ── OVERVIEW ── -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Price &amp; Trend</span>
+            <span style="font-size:11px;color:var(--text3)">vs moving averages</span>
+          </div>
+          <div class="card-body" id="priceTrend"></div>
+        </div>
+
+        <!-- P&L Summary -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">P&amp;L Summary (₹ Cr)</span></div>
+          <div class="card-body">
+            <div class="ratio-grid" id="plSummary"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- 52W + Quick Stats -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">52-Week Range</span></div>
+          <div class="card-body">
+            <div id="weekRange"></div>
+            <br>
+            <table class="qs-table" id="quickStats"></table>
+          </div>
+        </div>
+
+        <!-- Margins -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Margins</span></div>
+          <div class="card-body">
+            <table class="qs-table" id="marginsTable"></table>
+          </div>
+        </div>
+
+        <!-- Growth -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">Growth (YoY %)</span></div>
+          <div class="card-body">
+            <table class="qs-table" id="growthTable"></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RATIOS & VALUATION ── -->
+  <div class="tab-content" id="tab-ratios">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Valuation</span></div>
+          <div class="card-body"><div class="ratio-grid" id="ratioValuation"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Profitability & Returns</span></div>
+          <div class="card-body"><div class="ratio-grid" id="ratioProfit"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Growth</span></div>
+          <div class="card-body"><div class="ratio-grid" id="ratioGrowth"></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Liquidity & Leverage</span></div>
+          <div class="card-body"><div class="ratio-grid" id="ratioLiq"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Efficiency</span></div>
+          <div class="card-body"><div class="ratio-grid" id="ratioEff"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Per-Share Data</span></div>
+          <div class="card-body"><div class="ratio-grid" id="ratioPerShare"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SHAREHOLDING ── -->
+  <div class="tab-content" id="tab-shareholding">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Shareholding Pattern</span></div>
+        <div class="card-body" id="holdingBody"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Market Position</span></div>
+        <div class="card-body">
+          <div class="ratio-grid" id="mktPosition"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Note on Shareholding Data</span></div>
+      <div class="card-body">
+        <p style="font-size:13px;color:var(--text3);line-height:1.65">
+          Yahoo Finance provides <strong>Insider Holding</strong> (approx. promoter) and <strong>Institutional Holding</strong>.
+          For precise promoter / FII / DII / public breakdown, SEBI filings on the BSE/NSE website or Screener.in are more accurate.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ABOUT ── -->
+  <div class="tab-content" id="tab-about">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Business Description</span></div>
+      <div class="card-body">
+        <p class="about-text" id="aboutText">Loading…</p>
+        <div class="info-grid" id="companyInfo"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-overlay" id="portModal">
+  <div class="modal">
+    <h3>Add to Portfolio</h3>
+    <div class="form-group"><label class="form-label">Quantity</label><input class="form-input" id="pqty" type="number" placeholder="100"></div>
+    <div class="form-group"><label class="form-label">Buy Price (₹)</label><input class="form-input" id="pprice" type="number" step="0.01" placeholder="2500.00"></div>
+    <div class="form-group"><label class="form-label">Buy Date</label><input class="form-input" id="pdate" type="date"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('portModal').classList.remove('show')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPortfolio()">Add Holding</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "/api";
+const SYMBOL = (new URLSearchParams(location.search).get("symbol") || "RELIANCE").toUpperCase();
+let D = null;
+document.title = `${SYMBOL} — MindForge Capital`;
+
+// ── Helpers ──────────────────────────────────────────────
+const fmtI  = (v,p="")  => v == null ? "—" : `${p}${Number(v).toLocaleString("en-IN", {maximumFractionDigits:2})}`;
+const fmtN  = (v,d=2)   => v == null ? "—" : Number(v).toFixed(d);
+const fmtCr = v => {
+  if (!v && v !== 0) return "—";
+  const c = v / 1e7;
+  if (Math.abs(c) >= 1e5) return `₹${(c/1e5).toFixed(2)}L Cr`;
+  if (Math.abs(c) >= 1000) return `₹${(c/1000).toFixed(2)}K Cr`;
+  return `₹${c.toFixed(0)} Cr`;
+};
+const fmtPct = v => v == null ? "—" : `${v >= 0 ? "+" : ""}${Number(v).toFixed(2)}%`;
+const clsPct = v => v > 0 ? "kpi-pos" : v < 0 ? "kpi-neg" : "";
+
+// ── Load ─────────────────────────────────────────────────
+async function load() {
+  try {
+    const r = await fetch(`${API}/company/${SYMBOL}`);
+    if (!r.ok) { toast("Company not found in the snapshot.", "error", 8000); return; }
+    D = await r.json();
+    document.title = `${D.name || SYMBOL} — MindForge Capital`;
+    document.getElementById("bcSymbol").textContent = D.name || SYMBOL;
+    renderHero(); renderKPIs(); renderOverview();
+    renderRatios(); renderShareholding(); renderAbout();
+  } catch(e) { toast(`Error: ${e.message}`, "error", 8000); }
+}
+
+// ── Hero ─────────────────────────────────────────────────
+function renderHero() {
+  document.getElementById("companyName").textContent   = D.name || SYMBOL;
+  document.getElementById("companySymbol").textContent = SYMBOL;
+  const p = D.current_price;
+  document.getElementById("currentPrice").textContent  = p ? `₹${Number(p).toLocaleString("en-IN",{maximumFractionDigits:2})}` : "₹—";
+  const ch = D.day_change;
+  if (ch != null) {
+    const cls = ch >= 0 ? "chg-pos" : "chg-neg";
+    document.getElementById("priceChange").innerHTML = `<span class="${cls}">${ch >= 0 ? "▲" : "▼"} ${Math.abs(ch).toFixed(2)}% today</span>`;
+  }
+  document.getElementById("sma50").textContent  = D.sma_50  ? `₹${D.sma_50}` : "—";
+  document.getElementById("sma200").textContent = D.sma_200 ? `₹${D.sma_200}` : "—";
+  document.getElementById("companyMeta").innerHTML = [
+    D.sector   && `<span>🏢 ${D.sector}</span>`,
+    D.industry && `<span>📦 ${D.industry}</span>`,
+    D.exchange && `<span>📈 ${D.exchange}</span>`,
+    D.website  && `<span><a href="${D.website}" target="_blank" rel="noopener">🔗 Website</a></span>`,
+  ].filter(Boolean).join("");
+}
+
+// ── KPI Strip (core 12) ───────────────────────────────────
+function renderKPIs() {
+  const kpis = [
+    { l:"Market Cap",     v: fmtCr(D.market_cap) },
+    { l:"P/E (TTM)",      v: D.pe_ratio  ? fmtN(D.pe_ratio, 1) : "—",  s: D.pe_forward ? `Fwd: ${fmtN(D.pe_forward,1)}` : "" },
+    { l:"P/B",            v: D.pb_ratio  ? fmtN(D.pb_ratio, 2) : "—" },
+    { l:"P/S",            v: D.ps_ratio  ? fmtN(D.ps_ratio, 2) : "—" },
+    { l:"EV/EBITDA",      v: D.ev_ebitda ? fmtN(D.ev_ebitda,2): "—" },
+    { l:"ROE",            v: D.roe       ? `${fmtN(D.roe,1)}%` : "—",  cls: clsPct(D.roe) },
+    { l:"ROCE",           v: D.roce      ? `${fmtN(D.roce,1)}%`: "—",  cls: clsPct(D.roce) },
+    { l:"Net Margin",     v: D.net_margin? `${fmtN(D.net_margin,1)}%`:"—", cls: clsPct(D.net_margin) },
+    { l:"D/E Ratio",      v: D.debt_to_equity ? fmtN(D.debt_to_equity,2) : "—" },
+    { l:"Revenue",        v: fmtCr(D.revenue) },
+    { l:"Net Profit",     v: fmtCr(D.net_profit), cls: clsPct(D.net_profit) },
+    { l:"Div Yield",      v: D.dividend_yield ? `${fmtN(D.dividend_yield,2)}%` : "—" },
+  ];
+  document.getElementById("kpiGrid").innerHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.l}</div>
+      <div class="kpi-value ${k.cls||""}">${k.v}</div>
+      ${k.s ? `<div class="kpi-sub">${k.s}</div>` : ""}
+    </div>`).join("");
+}
+
+// ── Price & Trend panel (replaces live price chart in the static snapshot) ──
+function renderPriceTrend() {
+  const el = document.getElementById("priceTrend");
+  const cur = D.current_price, ch = D.day_change;
+  const chCls = ch == null ? "" : (ch >= 0 ? "chg-pos" : "chg-neg");
+  const chTxt = ch == null ? "" : `${ch >= 0 ? "▲" : "▼"} ${Math.abs(ch).toFixed(2)}% today`;
+
+  // % above/below moving averages, mapped onto a -25%..+25% track centred at 0.
+  function bar(label, sma) {
+    if (!cur || !sma) return `<div class="trend-line"><div class="tl-label">${label}</div><div class="trend-track"><div class="trend-mid"></div></div><div class="trend-val">—</div></div>`;
+    const pct = (cur / sma - 1) * 100;
+    const clamped = Math.max(-25, Math.min(25, pct));
+    const up = pct >= 0;
+    const halfPct = Math.abs(clamped) / 25 * 50; // 0..50% of track width
+    const style = up
+      ? `left:50%;width:${halfPct}%;background:linear-gradient(90deg,rgba(5,150,105,.4),var(--green))`
+      : `right:50%;width:${halfPct}%;background:linear-gradient(270deg,rgba(220,38,38,.35),var(--red))`;
+    return `<div class="trend-line">
+      <div class="tl-label">${label}</div>
+      <div class="trend-track"><div class="trend-mid"></div><div class="trend-bar" style="${style}"></div></div>
+      <div class="trend-val ${up ? 'pos-val' : 'neg-val'}">${up ? "+" : ""}${pct.toFixed(1)}%</div>
+    </div>`;
+  }
+
+  function trendBadge(label, above) {
+    if (above == null) return `<span class="tbadge flat">${label}: N/A</span>`;
+    return `<span class="tbadge ${above ? "up" : "down"}">${above ? "▲" : "▼"} ${above ? "Above" : "Below"} ${label}</span>`;
+  }
+
+  const fromHigh = D["52w_from_high_pct"];
+  const fromLow  = D["52w_from_low_pct"];
+
+  el.innerHTML = `
+    <div class="pt-price">
+      <div class="pt-now">${cur ? "₹" + Number(cur).toLocaleString("en-IN",{maximumFractionDigits:2}) : "₹—"}</div>
+      <div class="pt-chg ${chCls}">${chTxt}</div>
+    </div>
+    <div class="trend-row">
+      ${bar("Price vs SMA 50", D.sma_50)}
+      ${bar("Price vs SMA 200", D.sma_200)}
+    </div>
+    <div class="trend-badges">
+      ${trendBadge("50-DMA", D.above_sma50)}
+      ${trendBadge("200-DMA", D.above_sma200)}
+      ${fromHigh != null ? `<span class="tbadge ${fromHigh <= 0 ? 'down' : 'flat'}">${Number(fromHigh).toFixed(1)}% from 52W high</span>` : ""}
+      ${fromLow != null ? `<span class="tbadge up">+${Number(fromLow).toFixed(1)}% from 52W low</span>` : ""}
+      ${D.beta != null ? `<span class="tbadge flat">β ${Number(D.beta).toFixed(2)}</span>` : ""}
+    </div>`;
+}
+
+// ── Overview Tab ─────────────────────────────────────────
+function renderOverview() {
+  renderPriceTrend();
+
+  // 52W range with marker
+  const hi = D["52w_high"], lo = D["52w_low"], cur = D.current_price;
+  if (hi && lo && cur && hi > lo) {
+    const pct = Math.max(0, Math.min(100, Math.round((cur - lo) / (hi - lo) * 100)));
+    document.getElementById("weekRange").innerHTML = `
+      <div class="range-labels"><span>₹${Number(lo).toFixed(2)}</span><span>₹${Number(hi).toFixed(2)}</span></div>
+      <div class="range-bar"><div class="range-marker" style="left:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">₹${Number(cur).toFixed(2)} · ${pct}% of 52W range</div>`;
+  }
+  // Quick stats
+  document.getElementById("quickStats").innerHTML = [
+    ["EPS (TTM)",       fmtI(D.eps, "₹")],
+    ["EPS (Forward)",   fmtI(D.eps_forward, "₹")],
+    ["Book Value",      fmtI(D.book_value, "₹")],
+    ["52W High",        fmtI(D["52w_high"], "₹")],
+    ["52W Low",         fmtI(D["52w_low"], "₹")],
+    ["Beta",            fmtN(D.beta, 2)],
+    ["Shares Out.",     D.shares_outstanding ? `${(D.shares_outstanding/1e7).toFixed(2)} Cr` : "—"],
+    ["Free Cash Flow",  fmtCr(D.free_cashflow)],
+    ["Operating CF",    fmtCr(D.operating_cf)],
+  ].map(([l,v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+
+  // Margins
+  document.getElementById("marginsTable").innerHTML = [
+    ["Gross Margin",   D.gross_margin   != null ? `${fmtN(D.gross_margin,1)}%`   : "—"],
+    ["EBITDA Margin",  D.ebitda_margin  != null ? `${fmtN(D.ebitda_margin,1)}%`  : "—"],
+    ["Operating Margin",D.operating_margin!=null? `${fmtN(D.operating_margin,1)}%`:"—"],
+    ["Net Margin",     D.net_margin     != null ? `${fmtN(D.net_margin,1)}%`     : "—"],
+    ["Payout Ratio",   D.payout_ratio   != null ? `${fmtN(D.payout_ratio,1)}%`  : "—"],
+  ].map(([l,v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+
+  // Growth
+  document.getElementById("growthTable").innerHTML = [
+    ["Revenue Growth (YoY)",  D.revenue_growth    != null ? `<span class="${clsPct(D.revenue_growth)}">${fmtPct(D.revenue_growth)}</span>`  : "—"],
+    ["Earnings Growth (YoY)", D.earnings_growth   != null ? `<span class="${clsPct(D.earnings_growth)}">${fmtPct(D.earnings_growth)}</span>` : "—"],
+    ["Earnings Growth (QoQ)", D.earnings_q_growth != null ? `<span class="${clsPct(D.earnings_q_growth)}">${fmtPct(D.earnings_q_growth)}</span>` : "—"],
+  ].map(([l,v]) => `<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+
+  // P&L summary cards
+  document.getElementById("plSummary").innerHTML = [
+    { l:"Revenue",     v: fmtCr(D.revenue) },
+    { l:"Gross Profit",v: fmtCr(D.gross_profit), cls: clsPct(D.gross_profit) },
+    { l:"EBITDA",      v: fmtCr(D.ebitda),        cls: clsPct(D.ebitda) },
+    { l:"Net Profit",  v: fmtCr(D.net_profit),    cls: clsPct(D.net_profit) },
+    { l:"Free CF",     v: fmtCr(D.free_cashflow),  cls: clsPct(D.free_cashflow) },
+    { l:"Total Debt",  v: fmtCr(D.total_debt) },
+  ].map(k => `
+    <div class="ratio-item">
+      <div class="ri-label">${k.l}</div>
+      <div class="ri-value ${k.cls||""}">${k.v}</div>
+    </div>`).join("");
+}
+
+// ── Ratios Tab ───────────────────────────────────────────
+function renderRatios() {
+  const rI = (l,v,s="")=>`<div class="ratio-item"><div class="ri-label">${l}</div><div class="ri-value">${v}</div>${s?`<div class="ri-sub">${s}</div>`:""}</div>`;
+
+  document.getElementById("ratioValuation").innerHTML = [
+    rI("P/E (Trailing)", D.pe_ratio    ? fmtN(D.pe_ratio,2)    : "—"),
+    rI("P/E (Forward)",  D.pe_forward  ? fmtN(D.pe_forward,2)  : "—"),
+    rI("P/B",            D.pb_ratio    ? fmtN(D.pb_ratio,2)    : "—"),
+    rI("P/S",            D.ps_ratio    ? fmtN(D.ps_ratio,2)    : "—"),
+    rI("PEG Ratio",      D.peg_ratio   ? fmtN(D.peg_ratio,2)   : "—", "Price/Earnings to Growth"),
+    rI("EV/EBITDA",      D.ev_ebitda   ? fmtN(D.ev_ebitda,2)   : "—"),
+    rI("EV/Revenue",     D.ev_revenue  ? fmtN(D.ev_revenue,2)  : "—"),
+    rI("Price to FCF",   D.price_to_fcf? fmtN(D.price_to_fcf,2): "—"),
+    rI("Mkt Cap",        fmtCr(D.market_cap)),
+    rI("Ent. Value",     fmtCr(D.enterprise_value)),
+  ].join("");
+
+  document.getElementById("ratioProfit").innerHTML = [
+    rI("ROE",           D.roe  ? `${fmtN(D.roe,2)}%`  : "—", "Return on Equity"),
+    rI("ROA",           D.roa  ? `${fmtN(D.roa,2)}%`  : "—", "Return on Assets"),
+    rI("ROCE",          D.roce ? `${fmtN(D.roce,2)}%` : "—", "Return on Capital Employed"),
+    rI("Gross Margin",  D.gross_margin   != null ? `${fmtN(D.gross_margin,2)}%`   : "—"),
+    rI("EBITDA Margin", D.ebitda_margin  != null ? `${fmtN(D.ebitda_margin,2)}%`  : "—"),
+    rI("Op. Margin",    D.operating_margin!=null ? `${fmtN(D.operating_margin,2)}%`:"—"),
+    rI("Net Margin",    D.net_margin     != null ? `${fmtN(D.net_margin,2)}%`     : "—"),
+    rI("Payout Ratio",  D.payout_ratio   != null ? `${fmtN(D.payout_ratio,2)}%`  : "—"),
+  ].join("");
+
+  document.getElementById("ratioGrowth").innerHTML = [
+    rI("Rev Growth (YoY)",   D.revenue_growth    != null ? fmtPct(D.revenue_growth)    : "—"),
+    rI("Earn Growth (YoY)",  D.earnings_growth   != null ? fmtPct(D.earnings_growth)   : "—"),
+    rI("Earn Growth (QoQ)",  D.earnings_q_growth != null ? fmtPct(D.earnings_q_growth) : "—"),
+  ].join("");
+
+  document.getElementById("ratioLiq").innerHTML = [
+    rI("Current Ratio",    D.current_ratio   ? fmtN(D.current_ratio,2)   : "—"),
+    rI("Quick Ratio",      D.quick_ratio     ? fmtN(D.quick_ratio,2)     : "—"),
+    rI("D/E Ratio",        D.debt_to_equity  ? fmtN(D.debt_to_equity,2)  : "—"),
+    rI("Interest Coverage",D.interest_coverage?fmtN(D.interest_coverage,2):"—"),
+    rI("Net Debt",         fmtCr(D.net_debt)),
+    rI("Total Cash",       fmtCr(D.total_cash)),
+    rI("Total Debt",       fmtCr(D.total_debt)),
+    rI("Beta",             D.beta ? fmtN(D.beta,2) : "—"),
+  ].join("");
+
+  document.getElementById("ratioEff").innerHTML = [
+    rI("Asset Turnover",     D.asset_turnover     ? fmtN(D.asset_turnover,2)     : "—"),
+    rI("Inventory Turnover", D.inventory_turnover ? fmtN(D.inventory_turnover,2) : "—"),
+    rI("Receivable Days",    D.receivable_days    ? `${fmtN(D.receivable_days,1)} days` : "—"),
+    rI("Payable Days",       D.payable_days       ? `${fmtN(D.payable_days,1)} days`   : "—"),
+  ].join("");
+
+  document.getElementById("ratioPerShare").innerHTML = [
+    rI("EPS (TTM)",           fmtI(D.eps, "₹")),
+    rI("EPS (Forward)",       fmtI(D.eps_forward, "₹")),
+    rI("Book Value / Share",  fmtI(D.book_value, "₹")),
+    rI("Revenue / Share",     fmtI(D.revenue_per_share, "₹")),
+    rI("Cash / Share",        fmtI(D.cash_per_share, "₹")),
+    rI("Dividend Rate",       fmtI(D.dividend_rate, "₹")),
+  ].join("");
+}
+
+// ── Shareholding ─────────────────────────────────────────
+function renderShareholding() {
+  const promo = D.promoter_holding;
+  const inst  = D.institutional_holding;
+
+  const promoVal = promo || 0;
+  const instVal  = inst  || 0;
+  const pubVal   = Math.max(0, 100 - promoVal - instVal);
+
+  document.getElementById("holdingBody").innerHTML = `
+    <div class="hold-bar-wrap">
+      <div class="hold-bar-seg" style="width:${promoVal}%;background:#1a50d8"></div>
+      <div class="hold-bar-seg" style="width:${instVal}%;background:#0891b2"></div>
+      <div class="hold-bar-seg" style="width:${pubVal}%;background:#e4eeff"></div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1a50d8;display:inline-block"></span>Promoter / Insider <strong>${promoVal > 0 ? promoVal.toFixed(2)+"%" : "N/A"}</strong></span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#0891b2;display:inline-block"></span>Institutional <strong>${instVal > 0 ? instVal.toFixed(2)+"%" : "N/A"}</strong></span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#e4eeff;border:0.5px solid var(--border2);display:inline-block"></span>Public / Other <strong>~${pubVal.toFixed(2)}%</strong></span>
+    </div>
+    <br>
+    <table class="qs-table">
+      <tr><td>Shares Outstanding</td><td>${D.shares_outstanding ? (D.shares_outstanding/1e7).toFixed(2)+" Cr" : "—"}</td></tr>
+      <tr><td>Float Shares</td><td>${D.float_pct ? D.float_pct.toFixed(2)+"% of total" : "—"}</td></tr>
+      <tr><td>Short % of Float</td><td>${D.short_pct != null ? D.short_pct.toFixed(2)+"%" : "—"}</td></tr>
+      <tr><td>Short Ratio (days)</td><td>${D.short_ratio != null ? D.short_ratio.toFixed(2) : "—"}</td></tr>
+    </table>`;
+
+  document.getElementById("mktPosition").innerHTML = [
+    {l:"Market Cap",   v: fmtCr(D.market_cap)},
+    {l:"Ent. Value",   v: fmtCr(D.enterprise_value)},
+    {l:"Net Debt",     v: fmtCr(D.net_debt)},
+    {l:"Total Cash",   v: fmtCr(D.total_cash)},
+    {l:"Beta",         v: D.beta ? fmtN(D.beta,2) : "—"},
+    {l:"52W High",     v: fmtI(D["52w_high"],"₹")},
+    {l:"52W Low",      v: fmtI(D["52w_low"],"₹")},
+    {l:"SMA 50",       v: fmtI(D.sma_50,"₹")},
+    {l:"SMA 200",      v: fmtI(D.sma_200,"₹")},
+  ].map(k=>`<div class="ratio-item"><div class="ri-label">${k.l}</div><div class="ri-value">${k.v}</div></div>`).join("");
+}
+
+// ── About ─────────────────────────────────────────────────
+function renderAbout() {
+  document.getElementById("aboutText").textContent = D.description || "No description available.";
+  document.getElementById("companyInfo").innerHTML = [
+    {l:"Sector",    v: D.sector||"—"},
+    {l:"Industry",  v: D.industry||"—"},
+    {l:"Country",   v: D.country||"India"},
+    {l:"Exchange",  v: D.exchange||"NSI"},
+    {l:"Currency",  v: D.currency||"INR"},
+    {l:"Employees", v: D.employees ? D.employees.toLocaleString("en-IN") : "—"},
+    {l:"Website",   v: D.website ? `<a href="${D.website}" target="_blank" rel="noopener" style="color:var(--accent2)">${D.website}</a>` : "—"},
+  ].map(k=>`<div class="info-item"><div class="ii-label">${k.l}</div><div class="ii-value">${k.v}</div></div>`).join("");
+}
+
+// ── Tabs ─────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById(`tab-${name}`).classList.add("active");
+}
+
+// ── Watchlist / Portfolio ────────────────────────────────
+async function addToWatchlist() {
+  if (!D) return;
+  try {
+    const r = await fetch(`${API}/watchlist`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol:SYMBOL})});
+    const d = await r.json();
+    if (r.ok) toast(`✓ ${SYMBOL} added to watchlist`,"success");
+    else toast(d.error||"Failed","error");
+  } catch { toast("Could not save","error"); }
+}
+
+async function submitPortfolio() {
+  const qty   = document.getElementById("pqty").value;
+  const price = document.getElementById("pprice").value;
+  const date  = document.getElementById("pdate").value;
+  if (!qty || !price) { toast("Quantity and price required","error"); return; }
+  try {
+    const r = await fetch(`${API}/portfolio`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol:SYMBOL,quantity:+qty,buy_price:+price,buy_date:date})});
+    if ((await r.json()).success) { toast(`✓ ${SYMBOL} added to portfolio`,"success"); document.getElementById("portModal").classList.remove("show"); }
+  } catch { toast("Could not save","error"); }
+}
+
+function toast(msg, type="info", dur=3500) {
+  const c = document.getElementById("toastContainer");
+  const t = document.createElement("div");
+  t.className = `toast ${type}`; t.textContent = msg; c.appendChild(t);
+  setTimeout(() => t.remove(), dur);
+}
+
+load();
+</script>
+</body>
+</html>
