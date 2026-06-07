@@ -449,14 +449,22 @@ td{padding:12px 14px;white-space:nowrap}
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-title">Custom Query</div>
-      <textarea class="query-builder" id="queryInput" placeholder="Market Cap > 10000&#10;P/E < 25&#10;ROE > 15"></textarea>
+      <div class="sidebar-title">Popular Screens</div>
       <div class="preset-queries">
         <span class="preset-tag" onclick="loadPreset('value')">Value</span>
-        <span class="preset-tag" onclick="loadPreset('growth')">Growth</span>
-        <span class="preset-tag" onclick="loadPreset('dividend')">Dividend</span>
-        <span class="preset-tag" onclick="loadPreset('smallcap')">Small Cap</span>
         <span class="preset-tag" onclick="loadPreset('quality')">Quality</span>
+        <span class="preset-tag" onclick="loadPreset('growth')">Growth</span>
+        <span class="preset-tag" onclick="loadPreset('garp')">GARP</span>
+        <span class="preset-tag" onclick="loadPreset('dividend')">High Dividend</span>
+        <span class="preset-tag" onclick="loadPreset('magicformula')">Magic Formula</span>
+        <span class="preset-tag" onclick="loadPreset('compounders')">Compounders</span>
+        <span class="preset-tag" onclick="loadPreset('deepvalue')">Deep Value</span>
+        <span class="preset-tag" onclick="loadPreset('bluechip')">Blue Chips</span>
+        <span class="preset-tag" onclick="loadPreset('lowdebt')">Low Debt</span>
+        <span class="preset-tag" onclick="loadPreset('fcf')">High FCF Yield</span>
+        <span class="preset-tag" onclick="loadPreset('highroe')">High ROE</span>
+        <span class="preset-tag" onclick="loadPreset('smallcap')">Small Cap</span>
+        <span class="preset-tag" onclick="loadPreset('momentum')">Uptrend</span>
       </div>
     </div>
 
@@ -646,11 +654,22 @@ let allResults=[],currentPage=1;
 const PAGE_SIZE=30;
 
 const PRESETS={
-  value:{min_mcap:500,max_pe:20,max_pb:3,min_roe:10},
-  growth:{min_mcap:1000,min_roe:20},
-  dividend:{min_mcap:2000,min_div:2},
-  smallcap:{min_mcap:500,max_mcap:5000},
-  quality:{min_roe:20,max_pe:40},
+  // Classic, widely-used equity screens. Each fills the sidebar filters + sort
+  // and auto-runs. Keys map to the filter input ids (plus above_sma200/sort_*).
+  value:        {min_mcap:500,  max_pe:20,  max_pb:3,   min_roe:10},
+  quality:      {min_mcap:500,  min_roe:20, min_roce:20},
+  growth:       {min_mcap:1000, min_roe:18, min_rev_growth:15, min_earn_growth:15},
+  garp:         {min_mcap:1000, min_roe:15, min_earn_growth:15, max_pe:25},
+  dividend:     {min_mcap:1000, min_div:3,  max_de:1.5},
+  magicformula: {min_mcap:500,  min_roce:25, max_ev_ebitda:12, sort_by:"roce", sort_dir:"desc"},
+  compounders:  {min_mcap:1000, min_roce:18, min_rev_growth:10, max_de:0.5},
+  deepvalue:    {max_pe:15, max_pb:1.5, min_graham_mos:20, min_current_ratio:1.5},
+  bluechip:     {min_mcap:50000, min_roe:12, min_div:1},
+  lowdebt:      {max_de:0.3, min_current_ratio:2, min_roe:12},
+  fcf:          {min_mcap:1000, min_fcf_yield:5, sort_by:"fcf_yield", sort_dir:"desc"},
+  highroe:      {min_mcap:500, min_roe:25, sort_by:"roe", sort_dir:"desc"},
+  smallcap:     {min_mcap:500, max_mcap:5000, min_roe:12},
+  momentum:     {min_mcap:1000, above_sma200:true, sort_by:"roe", sort_dir:"desc"},
 };
 
 const COLUMNS=[
@@ -780,14 +799,26 @@ function clearFilters(){
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
   document.getElementById("sector_filter").value="";
-  document.getElementById("queryInput").value="";
   runScreen();
   showToast("Filters cleared","success",1800);
 }
 function loadPreset(name){
-  clearFilters();
+  // Reset every input (without triggering a screen run) then apply the preset.
+  ["min_pe","max_pe","min_pb","max_pb","min_roe","max_roe","min_mcap","max_mcap","min_div",
+   "min_roce","min_roa","min_net_margin","max_ev_ebitda","min_fcf_yield","min_graham_mos",
+   "max_de","min_current_ratio","min_rev_growth","min_earn_growth"]
+    .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
+  const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
+  document.getElementById("sector_filter").value="";
+  document.getElementById("sort_by").value="market_cap_cr";
+  document.getElementById("sort_dir").value="desc";
   const p=PRESETS[name]||{};
-  Object.entries(p).forEach(([k,v])=>{const e=document.getElementById(k);if(e)e.value=v;});
+  Object.entries(p).forEach(([k,v])=>{
+    if(k==="above_sma200"){const e=document.getElementById("above_sma200");if(e)e.checked=!!v;return;}
+    if(k==="sector"){const e=document.getElementById("sector_filter");if(e)e.value=v;return;}
+    const e=document.getElementById(k);if(e)e.value=v;   // numeric inputs + sort_by/sort_dir selects
+  });
+  runScreen();
 }
 
 async function addToWatchlist(symbol){
