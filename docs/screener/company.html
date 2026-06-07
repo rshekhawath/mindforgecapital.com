@@ -86,6 +86,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.92);backdrop
 .kpi-value{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
 .kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
 .kpi-pos{color:var(--green)}.kpi-neg{color:var(--red)}
+.kpi-value.v-strong{color:#047857}.kpi-value.v-good{color:#059669}.kpi-value.v-weak{color:#b45309}.kpi-value.v-bad{color:#dc2626}
 
 /* TABS */
 .tabs{display:flex;border-bottom:0.5px solid var(--border2);margin-bottom:20px;gap:0;overflow-x:auto;background:rgba(255,255,255,.6);backdrop-filter:blur(8px);border-radius:var(--r) var(--r) 0 0;padding:0 4px}
@@ -395,6 +396,7 @@ const fmtCr = v => {
 };
 const fmtPct = v => v == null ? "—" : `${v >= 0 ? "+" : ""}${Number(v).toFixed(2)}%`;
 const clsPct = v => v > 0 ? "kpi-pos" : v < 0 ? "kpi-neg" : "";
+const tone = (v,kind) => { if(v==null) return ""; if(kind==="q") return v>=25?"v-strong":v>=15?"v-good":v>=0?"":"v-bad"; if(kind==="pe") return v<0?"v-bad":v<=18?"v-good":v<=35?"":v<=60?"v-weak":"v-bad"; if(kind==="div") return v>=4?"v-strong":v>=2?"v-good":""; return ""; };
 
 // ── Load ─────────────────────────────────────────────────
 async function load() {
@@ -434,17 +436,17 @@ function renderHero() {
 function renderKPIs() {
   const kpis = [
     { l:"Market Cap",     v: fmtCr(D.market_cap) },
-    { l:"P/E (TTM)",      v: D.pe_ratio  ? fmtN(D.pe_ratio, 1) : "—",  s: D.pe_forward ? `Fwd: ${fmtN(D.pe_forward,1)}` : "" },
+    { l:"P/E (TTM)",      v: D.pe_ratio  ? fmtN(D.pe_ratio, 1) : "—",  cls: tone(D.pe_ratio,"pe"),  s: D.pe_forward ? `Fwd: ${fmtN(D.pe_forward,1)}` : "" },
     { l:"P/B",            v: D.pb_ratio  ? fmtN(D.pb_ratio, 2) : "—" },
     { l:"P/S",            v: D.ps_ratio  ? fmtN(D.ps_ratio, 2) : "—" },
     { l:"EV/EBITDA",      v: D.ev_ebitda ? fmtN(D.ev_ebitda,2): "—" },
-    { l:"ROE",            v: D.roe       ? `${fmtN(D.roe,1)}%` : "—",  cls: clsPct(D.roe) },
-    { l:"ROCE",           v: D.roce      ? `${fmtN(D.roce,1)}%`: "—",  cls: clsPct(D.roce) },
-    { l:"Net Margin",     v: D.net_margin? `${fmtN(D.net_margin,1)}%`:"—", cls: clsPct(D.net_margin) },
+    { l:"ROE",            v: D.roe       ? `${fmtN(D.roe,1)}%` : "—",  cls: tone(D.roe,"q") },
+    { l:"ROCE",           v: D.roce      ? `${fmtN(D.roce,1)}%`: "—",  cls: tone(D.roce,"q") },
+    { l:"Net Margin",     v: D.net_margin? `${fmtN(D.net_margin,1)}%`:"—", cls: tone(D.net_margin,"q") },
     { l:"D/E Ratio",      v: D.debt_to_equity ? fmtN(D.debt_to_equity,2) : "—" },
     { l:"Revenue",        v: fmtCr(D.revenue) },
     { l:"Net Profit",     v: fmtCr(D.net_profit), cls: clsPct(D.net_profit) },
-    { l:"Div Yield",      v: D.dividend_yield ? `${fmtN(D.dividend_yield,2)}%` : "—" },
+    { l:"Div Yield",      v: D.dividend_yield ? `${fmtN(D.dividend_yield,2)}%` : "—", cls: tone(D.dividend_yield,"div") },
   ];
   document.getElementById("kpiGrid").innerHTML = kpis.map(k => `
     <div class="kpi-card">

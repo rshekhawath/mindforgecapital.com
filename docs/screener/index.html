@@ -312,6 +312,16 @@ td{padding:12px 14px;white-space:nowrap}
 .company-sym{font-size:11px;color:var(--accent2);margin-top:1px;font-weight:600}
 .company-sector{font-size:11px;color:var(--text3)}
 .num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:var(--text)}
+/* value heatmap — quick-scan strength/valuation cues */
+.num.v-strong{color:#047857;font-weight:700}
+.num.v-good{color:#059669}
+.num.v-weak{color:#b45309}
+.num.v-bad{color:#dc2626}
+.sector-pill{display:inline-block;font-size:10px;font-weight:600;color:var(--text3);background:rgba(37,99,235,.06);border:0.5px solid var(--border);border-radius:20px;padding:1px 8px;margin-top:4px}
+tbody tr.rowlink{cursor:pointer}
+/* skeleton loading shimmer */
+.skel{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(37,99,235,.07) 25%,rgba(37,99,235,.16) 37%,rgba(37,99,235,.07) 63%);background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+@keyframes skel-sweep{0%{background-position:100% 0}100%{background-position:0 0}}
 .change-pos{color:var(--green);font-weight:600}
 .change-neg{color:var(--red);font-weight:600}
 .na{color:var(--text3)}
@@ -660,7 +670,7 @@ const PRESETS={
   quality:      {min_mcap:500,  min_roe:20, min_roce:20},
   growth:       {min_mcap:1000, min_roe:18, min_rev_growth:15, min_earn_growth:15},
   garp:         {min_mcap:1000, min_roe:15, min_earn_growth:15, max_pe:25},
-  dividend:     {min_mcap:1000, min_div:3,  max_de:1.5},
+  dividend:     {min_mcap:1000, min_div:2,  max_de:1.5},
   magicformula: {min_mcap:500,  min_roce:25, max_ev_ebitda:12, sort_by:"roce", sort_dir:"desc"},
   compounders:  {min_mcap:1000, min_roce:18, min_rev_growth:10, max_de:0.5},
   deepvalue:    {max_pe:15, max_pb:1.5, min_graham_mos:20, min_current_ratio:1.5},
@@ -673,28 +683,39 @@ const PRESETS={
 };
 
 const COLUMNS=[
-  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${d.symbol}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div><div class="company-sector">${d.sector||""}</div></div>`, visible:true, nosort:true},
+  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${d.symbol}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${d.sector?`<span class="sector-pill">${d.sector}</span>`:""}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>d.current_price?`<span class="num">₹${Number(d.current_price).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`:`<span class="na">—</span>`, visible:true},
   {key:"day_change",    label:"Day %",        render:d=>fmtChange(d.day_change), visible:true},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:true},
-  {key:"pe_ratio",      label:"P/E",          render:d=>fmtN(d.pe_ratio,1), visible:true},
+  {key:"pe_ratio",      label:"P/E",          render:d=>fmtTone(d.pe_ratio,1,"pe"), visible:true},
   {key:"pb_ratio",      label:"P/B",          render:d=>fmtN(d.pb_ratio,1), visible:true},
-  {key:"roe",           label:"ROE %",        render:d=>fmtN(d.roe,1), visible:true},
-  {key:"dividend_yield",label:"Div Yield %",  render:d=>fmtN(d.dividend_yield,2), visible:true},
-  {key:"net_margin",    label:"Net Margin %", render:d=>fmtN(d.net_margin,1), visible:false},
-  {key:"roce",          label:"ROCE %",      render:d=>fmtN(d.roce,1), visible:false},
-  {key:"graham_mos",    label:"Graham MoS%", render:d=>fmtN(d.graham_mos,1), visible:false},
-  {key:"fcf_yield",     label:"FCF Yield %", render:d=>fmtN(d.fcf_yield,2), visible:false},
+  {key:"roe",           label:"ROE %",        render:d=>fmtTone(d.roe,1,"q"), visible:true},
+  {key:"dividend_yield",label:"Div Yield %",  render:d=>fmtTone(d.dividend_yield,2,"div"), visible:true},
+  {key:"net_margin",    label:"Net Margin %", render:d=>fmtTone(d.net_margin,1,"q"), visible:false},
+  {key:"roce",          label:"ROCE %",      render:d=>fmtTone(d.roce,1,"q"), visible:false},
+  {key:"graham_mos",    label:"Graham MoS%", render:d=>fmtTone(d.graham_mos,1,"gmos"), visible:false},
+  {key:"fcf_yield",     label:"FCF Yield %", render:d=>fmtTone(d.fcf_yield,2,"fcf"), visible:false},
   {key:"revenue_cr",    label:"Revenue (Cr)", render:d=>d.revenue_cr?`<span class="num">${Number(d.revenue_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"debt_to_equity",label:"D/E",          render:d=>fmtN(d.debt_to_equity,2), visible:false},
   {key:"52w_high",      label:"52W High",     render:d=>d["52w_high"]?`<span class="num">₹${Number(d["52w_high"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"beta",          label:"Beta",         render:d=>fmtN(d.beta,2), visible:false},
-  {key:"_actions",      label:"",             render:d=>`<button class="watch-btn" onclick="addToWatchlist('${d.symbol}')">+ Watch</button>`, visible:true, nosort:true},
+  {key:"_actions",      label:"",             render:d=>`<button class="watch-btn" onclick="event.stopPropagation();addToWatchlist('${d.symbol}')">+ Watch</button>`, visible:true, nosort:true},
 ];
 
 let sortKey="market_cap_cr",sortDir=-1;
 
 function fmtN(v,d=1){return v==null?`<span class="na">—</span>`:`<span class="num">${Number(v).toFixed(d)}</span>`}
+function toneClass(v,kind){
+  if(v==null)return"";
+  if(kind==="q")   return v>=25?"v-strong":v>=15?"v-good":v>=0?"":"v-bad";        // ROE/ROCE/margin %
+  if(kind==="pe")  return v<0?"v-bad":v<=18?"v-good":v<=35?"":v<=60?"v-weak":"v-bad";
+  if(kind==="gmos")return v>=30?"v-strong":v>=0?"v-good":"";                       // Graham margin of safety
+  if(kind==="fcf") return v>=6?"v-strong":v>=3?"v-good":v>=0?"":"v-bad";
+  if(kind==="div") return v>=4?"v-strong":v>=2?"v-good":"";                        // dividend yield %
+  return"";
+}
+function fmtTone(v,d,kind){return v==null?`<span class="na">—</span>`:`<span class="num ${toneClass(v,kind)}">${Number(v).toFixed(d)}</span>`;}
+function showSkeleton(n){const vis=COLUMNS.filter(c=>c.visible);document.getElementById("tableBody").innerHTML=Array.from({length:n||8},()=>`<tr class="skel-row">${vis.map(()=>`<td><div class="skel"></div></td>`).join("")}</tr>`).join("");}
 function fmtChange(v){
   if(v==null)return`<span class="na">—</span>`;
   const cls=v>=0?"change-pos":"change-neg";
@@ -745,7 +766,7 @@ async function runScreen(){
   params.append("sort_dir",document.getElementById("sort_dir").value);
   params.append("limit",500);
   const vis=COLUMNS.filter(c=>c.visible);
-  document.getElementById("tableBody").innerHTML=`<tr class="loading-row"><td colspan="${vis.length}"><span class="spinner"></span> Screening stocks…</td></tr>`;
+  showSkeleton(10);
   try{
     const d=await(await fetch(`${API}/screen?${params}`)).json();
     allResults=d.results;currentPage=1;
@@ -760,7 +781,7 @@ async function runScreen(){
       const tc=document.querySelector(".table-card"); if(tc) tc.scrollIntoView({behavior:"smooth",block:"start"});
     }
     if(d.cached_total===0)showToast("No data cached — fetch first","error");
-  }catch{showToast("Screen failed. Is the server running?","error");}
+  }catch{document.getElementById("tableBody").innerHTML=`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-weight:600;color:var(--text2)">Couldn't load results — please refresh.</div></td></tr>`;showToast("Screen failed — please refresh.","error");}
 }
 
 function renderTable(){
@@ -769,7 +790,7 @@ function renderTable(){
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-weight:600;color:var(--text2)">No stocks match your filters</div></td></tr>`
-    :page.map(d=>`<tr>${vis.map(c=>`<td>${c.render(d)}</td>`).join("")}</tr>`).join("");
+    :page.map(d=>`<tr class="rowlink" onclick="location.href='company.html?symbol=${d.symbol}'">${vis.map(c=>`<td>${c.render(d)}</td>`).join("")}</tr>`).join("");
   const pages=Math.ceil(allResults.length/PAGE_SIZE);
   const pg=document.getElementById("pagination");
   if(pages<=1){pg.style.display="none";return;}
@@ -897,6 +918,7 @@ document.getElementById("btnClearFilters")?.addEventListener("click",clearFilter
   });
 })();
 
+showSkeleton(10);
 checkHealth();
 
 // Scroll progress bar
