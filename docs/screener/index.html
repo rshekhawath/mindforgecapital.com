@@ -421,7 +421,6 @@ tbody tr.rowlink{cursor:pointer}
     <span class="nav-section-label">Screener</span>
     <div class="nav-links">
       <a href="index.html" class="active">Screen</a>
-      <a href="watchlist.html">Watchlist</a>
       <a href="https://mindforgecapital.com/dashboard.html">Dashboard</a>
       <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
     </div>
@@ -452,11 +451,7 @@ tbody tr.rowlink{cursor:pointer}
       <button class="btn btn-ghost btn-sm mobile-filters-toggle" id="mobFiltersToggle" type="button">⚙&nbsp; Show Filters</button>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-title">Data Snapshot</div>
-      <div class="cache-chip" id="cacheInfo">— stocks</div>
-      <div id="snapNote" style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5">Loading snapshot…</div>
-    </div>
+    <!-- (Data / snapshot section is local-operator only; omitted from the live screener) -->
 
     <div class="sidebar-section">
       <div class="sidebar-title">Popular Screens</div>
@@ -699,7 +694,6 @@ const COLUMNS=[
   {key:"debt_to_equity",label:"D/E",          render:d=>fmtN(d.debt_to_equity,2), visible:false},
   {key:"52w_high",      label:"52W High",     render:d=>d["52w_high"]?`<span class="num">₹${Number(d["52w_high"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"beta",          label:"Beta",         render:d=>fmtN(d.beta,2), visible:false},
-  {key:"_actions",      label:"",             render:d=>`<button class="watch-btn" onclick="event.stopPropagation();addToWatchlist('${d.symbol}')">+ Watch</button>`, visible:true, nosort:true},
 ];
 
 let sortKey="market_cap_cr",sortDir=-1;
@@ -748,7 +742,7 @@ async function loadSectors(){
 async function loadCacheInfo(){
   try{
     const d=await(await fetch(`${API}/screen?limit=0`)).json();
-    document.getElementById("cacheInfo").textContent=`${d.cached_total} stocks in universe`;
+    const ci=document.getElementById("cacheInfo");if(ci)ci.textContent=`${d.cached_total} stocks cached`;
     if(d.cached_total>0)runScreen();
   }catch{}
 }
@@ -771,7 +765,7 @@ async function runScreen(){
     const d=await(await fetch(`${API}/screen?${params}`)).json();
     allResults=d.results;currentPage=1;
     renderTable();
-    document.getElementById("resultMeta").innerHTML=`Showing <strong>${d.results.length}</strong> stocks · <strong>${d.cached_total}</strong> in cache`;
+    document.getElementById("resultMeta").innerHTML=`Showing <strong>${d.results.length}</strong> stocks`;
     showToast(`✓ ${d.results.length} stock${d.results.length===1?"":"s"} match your screen`,"success",2000);
     // On narrow/stacked layouts the results sit below the long filter sidebar —
     // bring them into view so the click visibly does something.
@@ -840,15 +834,6 @@ function loadPreset(name){
     const e=document.getElementById(k);if(e)e.value=v;   // numeric inputs + sort_by/sort_dir selects
   });
   runScreen();
-}
-
-async function addToWatchlist(symbol){
-  try{
-    const r=await fetch(`${API}/watchlist`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol})});
-    const d=await r.json();
-    if(r.ok)showToast(`✓ ${symbol} added to watchlist`,"success");
-    else showToast(d.error||"Failed","error");
-  }catch{showToast("Server not connected","error");}
 }
 
 let searchTimer;

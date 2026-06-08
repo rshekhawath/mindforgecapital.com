@@ -192,12 +192,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.92);backdrop
     <span class="nav-section-label">Screener</span>
     <div class="nav-links">
       <a href="index.html">Screen</a>
-      <a href="watchlist.html">Watchlist</a>
       <a href="https://mindforgecapital.com/dashboard.html">Dashboard</a>
       <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
     </div>
     <div class="nav-right">
-      <button class="btn btn-ghost" onclick="addToWatchlist()">+ Watchlist</button>
       <button class="btn btn-ghost" onclick="document.getElementById('portModal').classList.add('show')">📁 Portfolio</button>
       <a href="https://mindforgecapital.com/signup.html" class="nav-cta">Get Started →</a>
     </div>
@@ -688,16 +686,7 @@ function switchTab(name, el) {
   document.getElementById(`tab-${name}`).classList.add("active");
 }
 
-// ── Watchlist / Portfolio ────────────────────────────────
-async function addToWatchlist() {
-  if (!D) return;
-  try {
-    const r = await fetch(`${API}/watchlist`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol:SYMBOL})});
-    const d = await r.json();
-    if (r.ok) toast(`✓ ${SYMBOL} added to watchlist`,"success");
-    else toast(d.error||"Failed","error");
-  } catch { toast("Could not save","error"); }
-}
+// ── Portfolio ────────────────────────────────
 
 async function submitPortfolio() {
   const qty   = document.getElementById("pqty").value;
