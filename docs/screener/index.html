@@ -59,7 +59,7 @@ nav{
   font-size:13px;font-weight:700;color:var(--accent2);
   letter-spacing:-.01em;white-space:nowrap;flex-shrink:0;
 }
-.nav-links{display:flex;gap:4px;align-items:center}
+.nav-links{display:flex;gap:6px;align-items:center;margin-left:auto}
 .nav-links a{
   font-size:14px;font-weight:500;color:var(--text2);
   padding:7px 14px;border-radius:var(--r-sm);
@@ -68,6 +68,26 @@ nav{
 .nav-links a:hover{color:var(--white);background:rgba(37,99,235,0.06)}
 .nav-links a.active{color:var(--accent);background:rgba(26,80,216,0.08)}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+/* ── MOBILE NAV (hamburger — matches mindforgecapital.com) ── */
+.nav-hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;margin-left:auto;z-index:300}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .3s}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+@media(max-width:768px){
+  nav{padding:0 16px}
+  .nav-inner{gap:12px;height:56px}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;position:fixed;top:56px;left:0;right:0;margin-left:0;
+    background:rgba(240,245,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:0.5px solid var(--border2);flex-direction:column;align-items:stretch;
+    padding:18px 22px 26px;gap:2px;z-index:250;box-shadow:0 8px 32px rgba(26,80,216,0.10)}
+  .nav-links.open{display:flex}
+  .nav-links a{font-size:16px;padding:12px 2px;border-radius:0;border-bottom:0.5px solid var(--border)}
+  .nav-links a:hover,.nav-links a.active{background:none}
+  .nav-links a.nav-cta{margin-top:16px;text-align:center;padding:15px 28px;font-size:15px;border-bottom:none;border-radius:var(--r-sm)}
+}
 
 /* Search */
 .nav-search{position:relative}
@@ -326,14 +346,6 @@ tbody tr.rowlink{cursor:pointer}
 .change-neg{color:var(--red);font-weight:600}
 .na{color:var(--text3)}
 
-.watch-btn{
-  background:rgba(255,255,255,.7);backdrop-filter:blur(6px);
-  border:0.5px solid var(--border2);
-  border-radius:8px;color:var(--accent2);
-  padding:5px 12px;font-size:11px;font-weight:700;
-  cursor:pointer;transition:all .2s cubic-bezier(.22,.8,.2,1);white-space:nowrap;
-}
-.watch-btn:hover{border-color:var(--accent);color:#fff;background:var(--accent);box-shadow:0 6px 16px -6px rgba(26,80,216,.45);transform:translateY(-1px)}
 
 .empty-row td,.loading-row td{text-align:center;padding:56px 24px;color:var(--text3)}
 .spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
@@ -414,28 +426,17 @@ tbody tr.rowlink{cursor:pointer}
 <!-- NAV -->
 <nav>
   <div class="nav-inner">
-    <a href="https://mindforgecapital.com" class="logo">
+    <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
       <img src="https://mindforgecapital.com/assets/LogoNav.png" alt="MindForge Capital" height="36">
     </a>
-    <div class="nav-divider"></div>
-    <span class="nav-section-label">Screener</span>
-    <div class="nav-links">
-      <a href="index.html" class="active">Screen</a>
-      <a href="https://mindforgecapital.com/dashboard.html">Dashboard</a>
+    <div class="nav-links" id="primary-nav">
       <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+      <a href="index.html" class="active">Screener</a>
+      <a href="https://mindforgecapital.com/dashboard.html">Dashboard</a>
+      <a href="https://mindforgecapital.com/login.html">Sign In</a>
+      <a href="https://mindforgecapital.com/signup.html" class="nav-cta">Get Started</a>
     </div>
-    <div class="nav-right">
-      <div class="nav-search">
-        <span class="search-icon">⌕</span>
-        <input type="text" id="globalSearch" placeholder="Search symbol…" autocomplete="off">
-        <div class="search-dropdown" id="searchDropdown"></div>
-      </div>
-      <div class="status-pill">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Connecting…</span>
-      </div>
-      <a href="https://mindforgecapital.com/signup.html" class="nav-cta">Get Started →</a>
-    </div>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
@@ -720,12 +721,12 @@ async function checkHealth(){
   try{
     const r=await fetch(`${API}/health`);
     if(r.ok){
-      document.getElementById("statusDot").classList.add("live");
-      document.getElementById("statusText").textContent="Live";
-      loadSectors();loadCacheInfo();
+      document.getElementById("statusDot")?.classList.add("live");
+      const st=document.getElementById("statusText");if(st)st.textContent="Live";
+      loadSectors();loadInitialData();
     }
   }catch{
-    document.getElementById("statusText").textContent="Offline";
+    const st=document.getElementById("statusText");if(st)st.textContent="Offline";
     showToast("Could not load screener data — please refresh.","error",8000);
   }
 }
@@ -739,11 +740,11 @@ async function loadSectors(){
   }catch{}
 }
 
-async function loadCacheInfo(){
+async function loadInitialData(){
   try{
     const d=await(await fetch(`${API}/screen?limit=0`)).json();
-    const ci=document.getElementById("cacheInfo");if(ci)ci.textContent=`${d.cached_total} stocks cached`;
-    if(d.cached_total>0)runScreen();
+    const ci=document.getElementById("cacheInfo");if(ci)ci.textContent=`${(d.cached_total||0).toLocaleString("en-IN")} stocks loaded`;
+    if((d.cached_total||0)>0)runScreen();
   }catch{}
 }
 
@@ -774,7 +775,7 @@ async function runScreen(){
       const tg=document.getElementById("mobFiltersToggle"); if(tg) tg.innerHTML="⚙&nbsp; Show Filters";
       const tc=document.querySelector(".table-card"); if(tc) tc.scrollIntoView({behavior:"smooth",block:"start"});
     }
-    if(d.cached_total===0)showToast("No data cached — fetch first","error");
+    if((d.cached_total||0)===0)showToast("No data loaded yet — use Fetch / Refresh Data","error");
   }catch{document.getElementById("tableBody").innerHTML=`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-weight:600;color:var(--text2)">Couldn't load results — please refresh.</div></td></tr>`;showToast("Screen failed — please refresh.","error");}
 }
 
@@ -837,13 +838,16 @@ function loadPreset(name){
 }
 
 let searchTimer;
-document.getElementById("globalSearch").addEventListener("input",function(){
-  clearTimeout(searchTimer);
-  const q=this.value.trim();
-  if(!q){document.getElementById("searchDropdown").classList.remove("show");return;}
-  searchTimer=setTimeout(()=>doSearch(q),200);
-});
-document.getElementById("globalSearch").addEventListener("blur",()=>setTimeout(()=>document.getElementById("searchDropdown").classList.remove("show"),200));
+const _globalSearch=document.getElementById("globalSearch");
+if(_globalSearch){
+  _globalSearch.addEventListener("input",function(){
+    clearTimeout(searchTimer);
+    const q=this.value.trim();
+    if(!q){document.getElementById("searchDropdown").classList.remove("show");return;}
+    searchTimer=setTimeout(()=>doSearch(q),200);
+  });
+  _globalSearch.addEventListener("blur",()=>setTimeout(()=>document.getElementById("searchDropdown").classList.remove("show"),200));
+}
 async function doSearch(q){
   try{
     const res=await(await fetch(`${API}/search?q=${encodeURIComponent(q.toUpperCase())}`)).json();
@@ -870,7 +874,7 @@ async function startFetch(){
   }
   document.getElementById("fetchBanner").style.display="none";
   showToast(`✓ Fetched ${done} stocks`,"success");
-  loadCacheInfo();loadSectors();runScreen();
+  loadInitialData();loadSectors();runScreen();
 }
 
 function exportCSV(){
@@ -901,6 +905,16 @@ document.getElementById("btnClearFilters")?.addEventListener("click",clearFilter
     tg.innerHTML = collapsed ? "⚙&nbsp; Show Filters" : "✕&nbsp; Hide Filters";
     if(!collapsed) sb.scrollIntoView({behavior:"smooth",block:"start"});
   });
+})();
+
+// Mobile hamburger menu — matches mindforgecapital.com nav behavior.
+(function(){
+  var btn=document.querySelector('.nav-hamburger');
+  var links=document.getElementById('primary-nav');
+  if(!btn||!links) return;
+  function setHam(open){btn.classList.toggle('open',open);links.classList.toggle('open',open);btn.setAttribute('aria-expanded',open?'true':'false');btn.setAttribute('aria-label',open?'Close menu':'Open menu');}
+  btn.addEventListener('click',function(){setHam(!btn.classList.contains('open'));});
+  links.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){setHam(false);});});
 })();
 
 showSkeleton(10);

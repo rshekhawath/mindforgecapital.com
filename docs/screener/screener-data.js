@@ -12,22 +12,8 @@
 (function () {
   "use strict";
 
-  // ---- responsive nav polish (mobile) -------------------------------------
-  // The screener nav packs a lot in; on narrow screens collapse the secondary
-  // chrome (search, section label, status) and let the links scroll, so the
-  // bar never overflows awkwardly. Scoped to the screener pages only.
-  try {
-    var navCss = document.createElement("style");
-    navCss.textContent =
-      "@media(max-width:760px){" +
-      "nav .nav-inner{gap:10px!important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}" +
-      "nav .nav-inner::-webkit-scrollbar{display:none}" +
-      "nav .nav-search,nav .nav-section-label,nav .nav-divider,nav .status-pill{display:none!important}" +
-      "nav .nav-links{gap:2px!important}" +
-      "nav .nav-links a{padding:6px 9px!important;font-size:13px!important}" +
-      "}";
-    (document.head || document.documentElement).appendChild(navCss);
-  } catch (e) {}
+  // (Responsive nav handled in-page via the hamburger menu — matches the
+  //  main mindforgecapital.com nav. No JS-injected nav CSS needed here.)
 
   var origFetch = window.fetch ? window.fetch.bind(window) : null;
 
