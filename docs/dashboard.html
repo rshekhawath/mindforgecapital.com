@@ -1219,12 +1219,13 @@ footer p {
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
-    <div class="nav-links">
+    <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
       <a href="screener/" style="color:var(--text2);">Screener</a>
       <a href="login.html" style="color:var(--text2);">My Account</a>
       <span class="nav-badge">Member Dashboard</span>
     </div>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
@@ -3204,5 +3205,39 @@ th.sortable:hover{ color: var(--accent); }
   .meta-pill:hover{ transform:none; }
 }
 </style>
+
+<!-- V8.8 — dashboard mobile nav fix: collapse the links into a hamburger like the
+     rest of the site. Previously the dashboard nav rendered all links inline on
+     mobile, wrapping "My Account" + the "Member Dashboard" badge onto two lines. -->
+<style id="mf-v88-dashnav">
+.nav-hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;margin-left:auto;z-index:200;}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .3s;}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.nav-hamburger.open span:nth-child(2){opacity:0;}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+@media(max-width:768px){
+  .nav-hamburger{display:flex;}
+  .nav-links{display:none;position:fixed;top:56px;left:0;right:0;background:rgba(240,245,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border2);flex-direction:column;align-items:stretch;padding:14px 24px 22px;gap:2px;z-index:150;box-shadow:0 8px 32px rgba(26,80,216,0.10);margin-left:0;}
+  .nav-links.open{display:flex;}
+  .nav-links a{font-size:16px;padding:12px 2px;height:auto;line-height:1.4;border-bottom:0.5px solid var(--border);}
+  .nav-links .nav-badge{align-self:flex-start;margin-top:12px;}
+}
+@media (prefers-reduced-motion: reduce){ .nav-hamburger span{transition:none;} }
+</style>
+<script id="mf-v88-dashnav-js">
+(function(){
+  var btn = document.querySelector('.nav-hamburger');
+  var links = document.getElementById('primary-nav');
+  if (!btn || !links) return;
+  btn.addEventListener('click', function(){
+    var open = btn.classList.toggle('open'); links.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  });
+  links.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ btn.classList.remove('open'); links.classList.remove('open'); btn.setAttribute('aria-expanded','false'); btn.setAttribute('aria-label','Open menu'); });
+  });
+})();
+</script>
 </body>
 </html>
