@@ -39,3 +39,32 @@ html {
   }
   ::-webkit-scrollbar-corner { background: transparent; }
 }
+
+/* ============================================================================
+   V8.7 — modern refinement layer (shared, additive, NO colour change)
+   ----------------------------------------------------------------------------
+   A uniform modern finish on EVERY page, reusing the existing brand palette:
+     • Crisp font rendering — fills the gap on the auth / legal / admin / 404
+       pages (the 7 marketing pages already set antialiasing; same value here).
+     • Smooth in-page scrolling everywhere (reduced-motion aware).
+     • One consistent keyboard-only brand focus ring. Declared with :where()
+       so its specificity is 0 — pages that already ship a tuned :focus-visible
+       keep theirs; this only fills the gaps, never overrides.
+   ========================================================================== */
+
+html { scroll-behavior: smooth; }
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex], [role="button"]):focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.60);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
