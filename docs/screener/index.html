@@ -933,5 +933,34 @@ checkHealth();
   },{passive:true});
 })();
 </script>
+<style id="mf-v89-screener">
+/* V8.9 — screener: a clear "selected" state on the active popular-screen chip
+   (clicking a preset previously gave no feedback on which screen was applied),
+   plus a subtle interactive lift on the chips. Brand palette only; RM-safe. */
+.preset-tag{transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .18s ease,background .15s,border-color .15s,color .15s;}
+.preset-tag:hover{transform:translateY(-1px);box-shadow:0 6px 14px -8px rgba(26,80,216,.30);}
+.preset-tag.active{background:linear-gradient(120deg,#1a50d8,#2563eb);border-color:transparent;color:#fff;font-weight:600;box-shadow:0 6px 15px -6px rgba(26,80,216,.55);}
+.preset-tag.active:hover{color:#fff;background:linear-gradient(120deg,#1a50d8,#2563eb);transform:translateY(-1px);}
+@media (prefers-reduced-motion: reduce){.preset-tag{transition:background .15s,color .15s;}.preset-tag:hover,.preset-tag.active:hover{transform:none;}}
+</style>
+<script id="mf-v89-screener-js">
+(function(){
+  var box = document.querySelector('.preset-queries');
+  var tags = document.querySelectorAll('.preset-tag');
+  if (!box || !tags.length) return;
+  function clearActive(){ tags.forEach(function(t){ t.classList.remove('active'); t.removeAttribute('aria-pressed'); }); }
+  // Highlight the clicked preset. Additive — the inline loadPreset() still runs.
+  box.addEventListener('click', function(e){
+    var t = e.target.closest('.preset-tag'); if(!t) return;
+    clearActive(); t.classList.add('active'); t.setAttribute('aria-pressed','true');
+  });
+  // A manually-edited filter means the screen no longer matches a preset -> clear it.
+  // loadPreset() sets inputs via .value (fires no 'input' event), so it won't self-clear.
+  var sidebar = document.querySelector('.sidebar');
+  if (sidebar) sidebar.addEventListener('input', function(e){ if(!e.target.closest('.preset-queries')) clearActive(); });
+  var clearBtn = document.getElementById('btnClearFilters');
+  if (clearBtn) clearBtn.addEventListener('click', clearActive);
+})();
+</script>
 </body>
 </html>
