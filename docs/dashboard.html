@@ -1490,7 +1490,7 @@ footer p {
             <div class="num">2</div>
             <div>
               <h4>Open your broker</h4>
-              <p>Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.</p>
+              <p id="howto-broker-text">Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.</p>
             </div>
           </div>
           <div class="howto-step">
@@ -1849,6 +1849,15 @@ function renderDashboard(sub, stocks) {
   restoreSort();        // V5.2 #1: re-apply user's last sort preference
   var bp = document.getElementById('broker-picker'); // V5.2 #2: sync broker picker
   if (bp) bp.value = getBroker();
+  // V9.3: make the broker UI currency-aware. The S&P 500 book is in USD, so the
+  // India-only brokers (Kite/Zerodha/ICICI Direct) don't apply — hide Kite (it
+  // can't trade US stocks) and reword the how-to so US members see relevant names.
+  var kiteOpt = bp && bp.querySelector('option[value="kite"]');
+  if (kiteOpt) kiteOpt.style.display = (currentCurrency === '$') ? 'none' : '';
+  var htb = document.getElementById('howto-broker-text');
+  if (htb) htb.textContent = (currentCurrency === '$')
+    ? 'Groww, INDmoney, Vested — any platform that offers US stocks works. Use the Copy tickers button to paste the list at once.'
+    : 'Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.';
   updateMarketStatus();
   // Set the market-status poll exactly once — refreshDashboard re-enters renderDashboard.
   if (!window._mfMarketTimer) {
@@ -2257,7 +2266,12 @@ var BROKERS = {
             } },
 };
 function getBroker(){
-  try { return localStorage.getItem('mfc-broker') || 'kite'; } catch(e){ return 'kite'; }
+  try { var saved = localStorage.getItem('mfc-broker'); if (saved) return saved; } catch(e){}
+  // V9.3: US (S&P 500) books default to Groww, not Kite. Kite India's row deeplink
+  // returns null for US tickers (it can't trade them), which would leave EVERY row
+  // without a broker button. Groww has real US-stock links. Indian (.NS) books are
+  // unchanged — Kite stays their default.
+  return (typeof currentCurrency !== 'undefined' && currentCurrency === '$') ? 'groww' : 'kite';
 }
 function setBroker(key){
   if (!BROKERS[key]) return;

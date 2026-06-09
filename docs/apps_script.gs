@@ -370,6 +370,47 @@ function handleActivate(payload) {
   // Item 11: non-monthly subscribers get rebalance notifications auto-on.
   const notifyFlag = durationMonths > 1 ? 'on' : 'off';
 
+  // V9.3 (Fix): ALL-ACCESS expands into one subscription per Indian-equity
+  // strategy. publish.py only ever publishes the individual strategies (never a
+  // single "All-Access" run), so a lone All-Access subscription would load an
+  // EMPTY dashboard. Instead we create a real, separately-pinned dashboard for
+  // each of the four strategies the bundle covers — exactly what the buyer paid
+  // for — and email the access link for each. The matching All-Access lead has
+  // already been marked 'activated' above, so it clears from the queue once.
+  // (Block-scoped + early return: the single-strategy path below is unchanged.)
+  if (/all[-\s]?access/i.test(String(strategy))) {
+    const aaSheet = getSheet('subscriptions');
+    const AA_STRATEGIES = [
+      'MindForge MultiAsset',
+      'MindForge LargeMidcap 250',
+      'MindForge SmallMicro 500',
+      'MindForge Multicap'
+    ];
+    const aaDashboards = [];
+    AA_STRATEGIES.forEach(function (st) {
+      const aaToken = generateToken();
+      const aaRunId = findLatestRunId(st);
+      supersedePriorActive(aaSheet, email, st);  // renewal replaces, no stacking
+      aaSheet.appendRow([
+        aaToken, email, name, phone, st, aaRunId,
+        subscribedAt.toISOString(), expiresAt.toISOString(),
+        'manual_upi', 'active', durationMonths, notifyFlag
+      ]);
+      const aaUrl = getBaseUrl() + '/dashboard.html?token=' + aaToken;
+      try { sendActivationEmail(email, name, st, aaUrl, expiresAt); }
+      catch (e) { Logger.log('All-Access email failed for ' + st + ': ' + e); }
+      aaDashboards.push({ strategy: st, token: aaToken, dashboard_url: aaUrl });
+    });
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'ok',
+      all_access: true,
+      count: aaDashboards.length,
+      dashboards: aaDashboards,
+      duration_months: durationMonths,
+      message: 'All-Access activated — ' + aaDashboards.length + ' dashboards created and emailed'
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // Find latest run_id for this strategy (pinned at activation)
   const runId = findLatestRunId(strategy);
 
