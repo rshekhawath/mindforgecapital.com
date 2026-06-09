@@ -1575,7 +1575,7 @@ footer p {
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 const token = new URLSearchParams(window.location.search).get('token');
 const demoMode = new URLSearchParams(window.location.search).get('demo');
-const isDemo = demoMode === '1' || demoMode === 'sp500';
+const isDemo = demoMode === '1' || demoMode === 'sp500' || demoMode === 'multicap';
 
 let stocksData = [];
 let currentStrategy = '';
@@ -1587,6 +1587,7 @@ const CAPITAL_PRESETS = {
   'MindForge MultiAsset':      { recommended: 500000,  options: [200000, 500000, 1000000, 2000000] },
   'MindForge LargeMidcap 250': { recommended: 1500000, options: [500000, 1500000, 2500000, 5000000] },
   'MindForge SmallMicro 500':  { recommended: 2500000, options: [1000000, 2500000, 5000000, 10000000] },
+  'MindForge Multicap':        { recommended: 3500000, options: [1500000, 3500000, 7000000, 14000000] },
   // S&P 500 is priced in USD — presets are in dollars (≈ ₹1cr ≈ $120k) so the
   // capital, per-stock and allocation figures all stay in one currency.
   'MindForge S&P 500':         { recommended: 120000,  options: [50000, 120000, 250000, 500000] },
@@ -1620,6 +1621,27 @@ function _demoData(mode) {
         expires_at: exp.toISOString(), subscribed_at: now.toISOString(), status: 'active'
       },
       stocks: usd
+    };
+  }
+  if (mode === 'multicap') {
+    const mc = [
+      {ticker:'RELIANCE',   yahoo_ticker:'RELIANCE.NS',   company_name:'Reliance Industries',         industry:'Oil & Gas',          recommended_price:2945.85, weight_pct:10.0},
+      {ticker:'HDFCBANK',   yahoo_ticker:'HDFCBANK.NS',   company_name:'HDFC Bank',                   industry:'Banks',              recommended_price:1672.90, weight_pct:10.0},
+      {ticker:'INFY',       yahoo_ticker:'INFY.NS',       company_name:'Infosys',                     industry:'IT Services',        recommended_price:1543.20, weight_pct:10.0},
+      {ticker:'BHARTIARTL', yahoo_ticker:'BHARTIARTL.NS', company_name:'Bharti Airtel',               industry:'Telecom',            recommended_price:1582.30, weight_pct:10.0},
+      {ticker:'TITAN',      yahoo_ticker:'TITAN.NS',      company_name:'Titan Company',               industry:'Consumer Durables',  recommended_price:3540.20, weight_pct:10.0},
+      {ticker:'DIXON',      yahoo_ticker:'DIXON.NS',      company_name:'Dixon Technologies',          industry:'Consumer Durables',  recommended_price:14250.00, weight_pct:10.0},
+      {ticker:'POLYCAB',    yahoo_ticker:'POLYCAB.NS',    company_name:'Polycab India',               industry:'Capital Goods',      recommended_price:6890.40, weight_pct:10.0},
+      {ticker:'KPITTECH',   yahoo_ticker:'KPITTECH.NS',   company_name:'KPIT Technologies',           industry:'IT Services',        recommended_price:1485.30, weight_pct:10.0},
+      {ticker:'CDSL',       yahoo_ticker:'CDSL.NS',       company_name:'Central Depository Services', industry:'Financial Services', recommended_price:1620.50, weight_pct:10.0},
+      {ticker:'PGEL',       yahoo_ticker:'PGEL.NS',       company_name:'PG Electroplast',             industry:'Consumer Durables',  recommended_price:735.80,  weight_pct:10.0},
+    ];
+    return {
+      subscription: {
+        name: 'Arjun', email: 'arjun@example.com', strategy: 'MindForge Multicap',
+        expires_at: exp.toISOString(), subscribed_at: now.toISOString(), status: 'active'
+      },
+      stocks: mc
     };
   }
   const stocks = [
