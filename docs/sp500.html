@@ -1968,6 +1968,151 @@ function openRegModal(strategyName, price, strategyId){
 .stat-card{box-shadow:0 1px 2px rgba(15,23,42,0.035),0 12px 28px -22px rgba(26,80,216,0.18);}
 .sidebar-card{box-shadow:0 1px 2px rgba(15,23,42,0.04),0 18px 40px -26px rgba(26,80,216,0.18);}
 </style>
+<!-- ============================================================
+     MF VISUAL v9.8 — strategy pages (additive, RM-safe)
+     (1) Second ambient hero orb — a cool blue counterweight drifting
+         bottom-left, completing the homepage's two-orb composition
+         (the teal orb top-right shipped earlier as .page-hero::after;
+         ::before was free).
+     (2) Click-to-zoom lightbox on every backtest chart — the charts are
+         the evidence prospects scrutinise, and on mobile they render
+         barely 340px wide. Click/tap/Enter opens a full-screen branded
+         preview; Esc, ×, or any click closes it and returns focus.
+     ============================================================ -->
+<style id="mf-v98-strat">
+/* (1) complementary hero orb */
+.page-hero::before{
+  content:''; position:absolute;
+  width:280px; height:280px; border-radius:50%;
+  background:radial-gradient(circle, rgba(96,165,250,0.14) 0%, transparent 70%);
+  filter:blur(40px);
+  bottom:-90px; left:-70px;
+  animation:mf98-orb 19s ease-in-out infinite;
+  pointer-events:none; z-index:-1;
+}
+@keyframes mf98-orb{
+  0%,100%{ transform:translate(0,0) scale(1); }
+  50%    { transform:translate(30px,-24px) scale(1.08); }
+}
+
+/* (2) charts advertise the zoom affordance */
+.bt-chart-img{ cursor:zoom-in; }
+.bt-chart-full{ position:relative; }
+.mf98-zoom-hint{
+  position:absolute; top:10px; right:12px; z-index:2; pointer-events:none;
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:10.5px; font-weight:700; letter-spacing:.04em; color:var(--text3,#475569);
+  background:rgba(255,255,255,.88); border:0.5px solid var(--border2);
+  border-radius:999px; padding:4px 10px;
+  backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+  box-shadow:0 4px 12px -6px rgba(15,23,42,.18);
+  opacity:0; transform:translateY(-2px);
+  transition:opacity .2s ease, transform .2s ease;
+}
+.bt-chart-full:hover .mf98-zoom-hint{ opacity:1; transform:translateY(0); }
+@media (hover:none), (max-width:768px){ .mf98-zoom-hint{ opacity:.92; transform:none; } }
+
+/* (2) the lightbox */
+.mf98-lb{
+  position:fixed; inset:0; z-index:1200; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; padding:28px 18px 20px;
+  background:rgba(7,14,30,.80); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  opacity:0; transition:opacity .25s ease;
+}
+.mf98-lb.open{ opacity:1; }
+.mf98-lb img{
+  max-width:min(1280px,96vw); max-height:80vh; width:auto; height:auto;
+  border-radius:12px; background:#fff; padding:6px;
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.6);
+  transform:scale(.96); transition:transform .28s cubic-bezier(.22,1,.36,1);
+  cursor:zoom-out;
+}
+.mf98-lb.open img{ transform:scale(1); }
+.mf98-lb-cap{ margin-top:14px; font-size:13px; font-weight:600; color:rgba(255,255,255,.92); letter-spacing:.02em; text-align:center; }
+.mf98-lb-hint{ margin-top:4px; font-size:11px; color:rgba(255,255,255,.55); }
+.mf98-lb-x{
+  position:absolute; top:14px; right:14px; width:38px; height:38px; border-radius:50%;
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+  color:#fff; font-size:20px; line-height:1; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:background .2s ease, transform .2s ease;
+}
+.mf98-lb-x:hover{ background:rgba(255,255,255,.24); transform:scale(1.06); }
+.mf98-lb-x:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+
+@media (prefers-reduced-motion: reduce){
+  .page-hero::before{ animation:none; }
+  .mf98-lb, .mf98-lb img, .mf98-zoom-hint{ transition:none; }
+  .mf98-lb img{ transform:none; }
+}
+</style>
+<script id="mf-v98-strat-js">
+/* MF v9.8 — backtest-chart lightbox. Self-contained; fails silent. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      var charts=document.querySelectorAll(".bt-chart-full");
+      if(!charts.length) return;
+      var lb=null, lastFocus=null;
+      function close(){
+        if(!lb) return;
+        var el=lb; lb=null;
+        el.classList.remove("open");
+        document.removeEventListener("keydown",onKey);
+        document.documentElement.style.overflow="";
+        var rm=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, rm?0:260);
+        if(lastFocus&&lastFocus.focus) lastFocus.focus();
+      }
+      function onKey(e){ if(e.key==="Escape") close(); }
+      function open(src,cap,trigger){
+        if(lb) return;
+        lastFocus=trigger;
+        lb=document.createElement("div");
+        lb.className="mf98-lb";
+        lb.setAttribute("role","dialog");
+        lb.setAttribute("aria-modal","true");
+        lb.setAttribute("aria-label",(cap||"Chart")+" — full-screen preview");
+        var img=document.createElement("img");
+        img.src=src; img.alt=cap||"Backtest chart";
+        var x=document.createElement("button");
+        x.type="button"; x.className="mf98-lb-x";
+        x.setAttribute("aria-label","Close chart preview");
+        x.innerHTML="×";
+        lb.appendChild(img); lb.appendChild(x);
+        if(cap){ var c=document.createElement("div"); c.className="mf98-lb-cap"; c.textContent=cap; lb.appendChild(c); }
+        var h=document.createElement("div"); h.className="mf98-lb-hint"; h.textContent="Click anywhere or press Esc to close"; lb.appendChild(h);
+        lb.addEventListener("click",close);
+        document.body.appendChild(lb);
+        document.documentElement.style.overflow="hidden";
+        document.addEventListener("keydown",onKey);
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){ if(lb) lb.classList.add("open"); }); });
+        setTimeout(function(){ if(lb) lb.classList.add("open"); }, 90); /* rAF-throttle fallback */
+        x.focus();
+      }
+      Array.prototype.forEach.call(charts,function(card){
+        var img=card.querySelector(".bt-chart-img");
+        if(!img) return;
+        var label=card.querySelector(".bt-chart-label");
+        var cap=label?((label.childNodes[0]&&label.childNodes[0].nodeValue)||label.textContent||"").trim():"";
+        var hint=document.createElement("span");
+        hint.className="mf98-zoom-hint";
+        hint.setAttribute("aria-hidden","true");
+        hint.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>Click to zoom';
+        card.appendChild(hint);
+        img.setAttribute("tabindex","0");
+        img.setAttribute("role","button");
+        img.setAttribute("aria-label",(cap||"Chart")+" — open full-screen preview");
+        function go(){ open(img.currentSrc||img.src,cap,img); }
+        img.addEventListener("click",go);
+        img.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
+      });
+    }catch(e){}
+  });
+})();
+</script>
 <script src="assets/mfc-offer.js?v=90" defer></script>
 <script src="assets/mfc-reveal.js?v=92" defer></script>
 <script src="assets/mfc-countup.js?v=96" defer></script>

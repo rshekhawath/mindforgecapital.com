@@ -3310,5 +3310,86 @@ th.sortable:hover{ color: var(--accent); }
   background:linear-gradient(90deg,#1a50d8,#0891b2,#2dd4bf);
 }
 </style>
+<!-- ============================================================
+     MF VISUAL v9.8 — dashboard micro-feedback layer (additive, RM-safe)
+     (1) Each stat tile gets a brand-gradient accent bar that sweeps in
+         along its top edge, staggered just behind the existing card
+         entrance. Injected as a real element — both stat-card pseudos
+         already carry earlier layers.
+     (2) The welcome name's gradient now drifts slowly (was static).
+     (3) The order-progress fill carries a moving highlight while you
+         tick off buys — live feedback on the most interactive control.
+     (4) The sector-donut centre count renders in the brand gradient,
+         matching the welcome accent.
+     ============================================================ -->
+<style id="mf-v98-dash">
+/* (1) stat-tile accent bar */
+.mf98-sbar{
+  position:absolute; top:0; left:0; right:0; height:2.5px; z-index:2;
+  background:linear-gradient(90deg,#1a50d8 0%,#2563eb 45%,#0891b2 80%,#2dd4bf 100%);
+  border-radius:0 0 2px 2px;
+  transform:scaleX(0); transform-origin:left;
+  animation:mf98-sbar-in .85s cubic-bezier(.22,1,.36,1) forwards;
+}
+.stats-row .stat-card:nth-child(1) .mf98-sbar{ animation-delay:.40s; }
+.stats-row .stat-card:nth-child(2) .mf98-sbar{ animation-delay:.50s; }
+.stats-row .stat-card:nth-child(3) .mf98-sbar{ animation-delay:.60s; }
+.stats-row .stat-card:nth-child(4) .mf98-sbar{ animation-delay:.70s; }
+@keyframes mf98-sbar-in{ to{ transform:scaleX(1); } }
+
+/* (2) welcome-name gradient drift */
+.dash-hero h1 .accent{
+  background-size:200% 100%;
+  animation:mf98-acc 9s ease-in-out infinite;
+}
+@keyframes mf98-acc{
+  0%,100%{ background-position:0% 50%; }
+  50%    { background-position:100% 50%; }
+}
+
+/* (3) order-progress moving highlight */
+.buy-prog-fill{ position:relative; overflow:hidden; }
+.buy-prog-fill::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.45) 50%,transparent 100%);
+  background-size:200% 100%;
+  animation:mf98-prog 2.4s ease-in-out infinite;
+}
+@keyframes mf98-prog{
+  0%  { background-position:130% 0; }
+  100%{ background-position:-130% 0; }
+}
+
+/* (4) donut centre count in brand gradient */
+.alloc-donut .dc-num{
+  background:linear-gradient(120deg,#1a50d8 0%,#2563eb 55%,#0891b2 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mf98-sbar{ animation:none; transform:scaleX(1); }
+  .dash-hero h1 .accent{ animation:none; }
+  .buy-prog-fill::after{ animation:none; content:none; }
+}
+</style>
+<script id="mf-v98-dash-js">
+/* MF v9.8 — inject the stat-tile accent bars (both pseudos are taken). */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      document.querySelectorAll(".stats-row .stat-card").forEach(function(card){
+        if(card.querySelector(".mf98-sbar")) return;
+        var bar=document.createElement("i");
+        bar.className="mf98-sbar";
+        bar.setAttribute("aria-hidden","true");
+        card.appendChild(bar);
+      });
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
