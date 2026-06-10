@@ -331,6 +331,21 @@ th:hover{color:var(--accent2)}
 th.sorted{color:var(--accent);position:relative}
 th.sorted::after{content:'';position:absolute;bottom:0;left:14px;right:14px;height:2px;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:2px}
 tbody tr{border-bottom:0.5px solid var(--border);transition:background .15s,box-shadow .15s}
+/* V9.7: rows ease in with a soft stagger on each render (matches the
+   dashboard's mf-row-in). Rows beyond the first screenful enter together. */
+@keyframes scr-row-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+tbody tr:not(.empty-row){animation:scr-row-in .38s cubic-bezier(.22,1,.36,1) both}
+tbody tr:nth-child(2){animation-delay:.03s}
+tbody tr:nth-child(3){animation-delay:.06s}
+tbody tr:nth-child(4){animation-delay:.09s}
+tbody tr:nth-child(5){animation-delay:.12s}
+tbody tr:nth-child(6){animation-delay:.15s}
+tbody tr:nth-child(7){animation-delay:.18s}
+tbody tr:nth-child(8){animation-delay:.21s}
+tbody tr:nth-child(9){animation-delay:.24s}
+tbody tr:nth-child(10){animation-delay:.27s}
+tbody tr:nth-child(n+11){animation-delay:.3s}
+@media (prefers-reduced-motion: reduce){tbody tr:not(.empty-row){animation:none}}
 tbody tr:nth-child(even){background:rgba(37,99,235,.012)}
 tbody tr:last-child{border-bottom:none}
 tbody tr:hover{background:rgba(26,80,216,.04);box-shadow:inset 3px 0 0 var(--accent)}
@@ -776,7 +791,7 @@ async function runScreen(){
     const d=await(await fetch(`${API}/screen?${params}`)).json();
     allResults=d.results;currentPage=1;
     renderTable();
-    document.getElementById("resultMeta").innerHTML=`Showing <strong>${d.results.length}</strong> stocks`;
+    rollResultCount(d.results.length);
     showToast(`✓ ${d.results.length} stock${d.results.length===1?"":"s"} match your screen`,"success",2000);
     // On narrow/stacked layouts the results sit below the long filter sidebar —
     // bring them into view so the click visibly does something.
@@ -787,6 +802,20 @@ async function runScreen(){
     }
     if((d.cached_total||0)===0)showToast("No data loaded yet — use Fetch / Refresh Data","error");
   }catch{document.getElementById("tableBody").innerHTML=`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-weight:600;color:var(--text2)">Couldn't load results — please refresh.</div></td></tr>`;showToast("Screen failed — please refresh.","error");}
+}
+
+// V9.7: roll the "Showing N stocks" figure up on each screen run, same
+// easing as the dashboard stat tiles. Reduced-motion users get it instantly.
+function rollResultCount(target){
+  const el=document.getElementById("resultMeta");
+  const set=v=>{el.innerHTML=`Showing <strong>${Number(v).toLocaleString("en-IN")}</strong> stocks`;};
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches||!("requestAnimationFrame" in window)){set(target);return;}
+  const t0=performance.now(),D=600;
+  (function step(now){
+    const t=Math.min(1,(now-t0)/D),eased=1-Math.pow(1-t,3);
+    set(Math.round(target*eased));
+    if(t<1)requestAnimationFrame(step);
+  })(t0);
 }
 
 function renderTable(){
