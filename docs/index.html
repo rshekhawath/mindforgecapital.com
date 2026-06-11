@@ -4604,6 +4604,70 @@ section[id]{ scroll-margin-top: 80px; }
   .hv-chart circle.hv-dot:first-of-type{ animation: hv-fadein .4s ease-out 2.4s forwards; }
 }
 </style>
+<!-- ============================================================
+     MF VISUAL v9.9 — homepage (additive, RM-safe)
+     (1) The Science timeline now *draws itself* when it scrolls into
+         view — the vertical line grows top-to-bottom and the four era
+         dots pop in sequence (1964 → 2026), the last one handing off
+         to its existing infinite pulse. Hooks the page's own .visible
+         reveal class; no new JS. Desktop only (line/dots are hidden
+         on mobile by the existing ≤768px rules).
+     (2) The All-Access band gets a slow ambient light-sweep across its
+         dark gradient (parity with the badge/CTA shimmer family) and
+         its white CTA — the only static button on the page — now
+         lifts with a shadow bloom on hover.
+     ============================================================ -->
+<style id="mf-v99-home">
+/* (1) timeline line draw-in */
+.timeline.fade-up.visible::before{
+  transform-origin: top;
+  animation: mf99-line 1.05s cubic-bezier(.22,1,.36,1) .15s backwards;
+}
+@keyframes mf99-line{ from{ transform:scaleY(0); } to{ transform:scaleY(1); } }
+/* (1) era dots pop in sequence */
+.timeline.fade-up.visible .tl-item::before{
+  animation: mf99-dot .45s cubic-bezier(.34,1.56,.64,1) backwards;
+}
+.timeline.fade-up.visible .tl-item:nth-child(1)::before{ animation-delay:.35s; }
+.timeline.fade-up.visible .tl-item:nth-child(2)::before{ animation-delay:.60s; }
+.timeline.fade-up.visible .tl-item:nth-child(3)::before{ animation-delay:.85s; }
+/* last dot: pop, then hand off to the existing tl-pulse */
+.timeline.fade-up.visible .tl-item:nth-child(4)::before{
+  animation: mf99-dot .45s cubic-bezier(.34,1.56,.64,1) 1.10s backwards,
+             tl-pulse 2.4s ease-in-out 1.65s infinite;
+}
+@keyframes mf99-dot{ from{ transform:scale(0); opacity:0; } to{ transform:scale(1); opacity:1; } }
+
+/* (2) All-Access band ambient light sweep */
+.bundle-band .container > div{ position:relative; overflow:hidden; }
+.bundle-band .container > div::after{
+  content:''; position:absolute; top:-60%; bottom:-60%; left:0; width:34%;
+  background:linear-gradient(105deg, transparent 0%, rgba(255,255,255,.05) 38%,
+             rgba(255,255,255,.10) 50%, rgba(255,255,255,.05) 62%, transparent 100%);
+  transform:skewX(-12deg) translateX(-160%);
+  animation:mf99-band 9s ease-in-out 2s infinite;
+  pointer-events:none;
+}
+@keyframes mf99-band{
+  0%, 52%  { transform:skewX(-12deg) translateX(-160%); }
+  88%, 100%{ transform:skewX(-12deg) translateX(480%); }
+}
+/* (2) All-Access CTA: hover lift + bloom (inline shadow needs !important) */
+.bundle-band a[href*="allaccess"]{
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease;
+}
+.bundle-band a[href*="allaccess"]:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px -12px rgba(0,0,0,.45), 0 0 0 3px rgba(255,255,255,.16) !important;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .timeline.fade-up.visible::before,
+  .timeline.fade-up.visible .tl-item::before{ animation:none; }
+  .bundle-band .container > div::after{ animation:none; content:none; }
+  .bundle-band a[href*="allaccess"]{ transition:none; }
+}
+</style>
 <script src="assets/mfc-offer.js?v=90" defer></script>
 </body>
 </html>
