@@ -4713,6 +4713,61 @@ section[id]{ scroll-margin-top: 80px; }
   .team h2.fade-up::after, .newsletter h2.fade-up::after{ transform:none; animation:none; }
 }
 </style>
+<!-- ============================================================
+     MF VISUAL v10.2 — homepage (additive, RM-safe)
+     Duration-switch feedback: flipping the 1m/3m/6m/1y pricing toggle
+     rewrites all five card prices instantly — now each amount pops
+     (quick scale + accent flash) as it changes, and the annual note
+     fades up when it appears. Driven by an additive MutationObserver
+     on the five price spans; setDuration() itself is untouched.
+     ============================================================ -->
+<style id="mf-v102-home">
+.price-amt.mf102-pop{ animation: mf102-pop .45s cubic-bezier(.22,1,.36,1); }
+@keyframes mf102-pop{
+  0%  { transform:scale(1); color:var(--white); }
+  35% { transform:scale(1.07); color:var(--accent2); }
+  100%{ transform:scale(1); color:var(--white); }
+}
+.price-amt{ display:inline-block; } /* transforms need a box */
+.price-annual-note.mf102-pop{ animation: mf102-note .4s ease-out; }
+@keyframes mf102-note{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){
+  .price-amt.mf102-pop, .price-annual-note.mf102-pop{ animation:none; }
+}
+</style>
+<script id="mf-v102-home-js">
+/* MF v10.2 — price-change pop. Observes the five price amounts (and their
+   annual notes) the duration toggle rewrites; re-triggers the pop class with
+   a reflow so rapid switching restarts the animation. Fails silent. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      if(!("MutationObserver" in window)) return;
+      if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      ["ma","lm","sm","mc","sp"].forEach(function(k){
+        var amt=document.getElementById(k+"-price-amt");
+        var note=document.getElementById(k+"-price-note");
+        if(amt){
+          new MutationObserver(function(){
+            amt.classList.remove("mf102-pop");
+            void amt.offsetWidth;
+            amt.classList.add("mf102-pop");
+          }).observe(amt,{childList:true,characterData:true,subtree:true});
+        }
+        if(note){
+          new MutationObserver(function(){
+            note.classList.remove("mf102-pop");
+            void note.offsetWidth;
+            note.classList.add("mf102-pop");
+          }).observe(note,{childList:true,characterData:true,subtree:true});
+        }
+      });
+    }catch(e){}
+  });
+})();
+</script>
 <script src="assets/mfc-offer.js?v=100" defer></script>
 </body>
 </html>

@@ -3565,5 +3565,67 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
   });
 })();
 </script>
+<!-- ============================================================
+     MF VISUAL v10.2 — dashboard arrival + feedback (additive, RM-safe)
+     (1) The greeting now arrives as a choreography: the welcome line
+         rises first, the subtitle follows, then the three meta-pills
+         stagger in — the homepage proof-strip entrance (v10.1),
+         translated to the member surface. Load-time CSS only.
+     (2) The toast gains a draining gradient underline that mirrors its
+         2.2s auto-dismiss timer, so "Copied" feedback visibly counts
+         down instead of vanishing unannounced. An additive observer
+         flips between two identical keyframe names per show so rapid
+         consecutive toasts restart the drain.
+     ============================================================ -->
+<style id="mf-v102-dash">
+/* (1) greeting choreography */
+.dash-hero h1{ animation: mf102-rise .55s cubic-bezier(.22,1,.36,1) .05s backwards; }
+.dash-hero .sub{ animation: mf102-rise .55s cubic-bezier(.22,1,.36,1) .13s backwards; }
+.meta-row .meta-pill{ animation: mf102-rise .5s cubic-bezier(.22,1,.36,1) backwards; }
+.meta-row .meta-pill:nth-child(1){ animation-delay:.20s; }
+.meta-row .meta-pill:nth-child(2){ animation-delay:.30s; }
+.meta-row .meta-pill:nth-child(3){ animation-delay:.40s; }
+@keyframes mf102-rise{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
+
+/* (2) toast countdown underline */
+.toast{ overflow:hidden; }
+.toast::after{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:2.5px;
+  background:linear-gradient(90deg,#2dd4bf,#0891b2,#2563eb);
+  transform-origin:left; transform:scaleX(0);
+}
+.toast.show[data-mf102="a"]::after{ animation: mf102-drain-a 2.2s linear forwards; }
+.toast.show[data-mf102="b"]::after{ animation: mf102-drain-b 2.2s linear forwards; }
+@keyframes mf102-drain-a{ from{ transform:scaleX(1); } to{ transform:scaleX(0); } }
+@keyframes mf102-drain-b{ from{ transform:scaleX(1); } to{ transform:scaleX(0); } }
+
+@media (prefers-reduced-motion: reduce){
+  .dash-hero h1, .dash-hero .sub, .meta-row .meta-pill{ animation:none; }
+  .toast.show[data-mf102="a"]::after, .toast.show[data-mf102="b"]::after{ animation:none; content:none; }
+}
+</style>
+<script id="mf-v102-dash-js">
+/* MF v10.2 — toast drain restarter. A hide→show cycle restarts the drain by
+   itself (the .show selector re-matches), so the only case needing help is a
+   new message while the toast is still visible: the message observer flips
+   data-mf102 between two identical keyframe names, giving the engine a new
+   animation-name to restart. showToast() is untouched. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      var toast=document.getElementById("toast");
+      var msg=document.getElementById("toast-msg");
+      if(!toast||!msg||!("MutationObserver" in window)) return;
+      new MutationObserver(function(){
+        if(toast.classList.contains("show"))
+          toast.setAttribute("data-mf102", toast.getAttribute("data-mf102")==="a"?"b":"a");
+      }).observe(msg,{childList:true,characterData:true,subtree:true});
+      toast.setAttribute("data-mf102","a");
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
