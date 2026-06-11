@@ -284,9 +284,9 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
         <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>WhatsApp support</span>
       </div>
 
-      <div class="free-month-banner" role="note">
-        <span class="fmb-icon" aria-hidden="true">🎁</span>
-        <span class="fmb-text"><strong>Your 1st month is FREE.</strong> New members pay nothing for month one — you're only billed from month two.</span>
+      <div class="free-month-banner" role="note" id="free-month-banner">
+        <span class="fmb-icon" id="fmb-icon" aria-hidden="true">🎁</span>
+        <span class="fmb-text" id="fmb-text"><strong>Your 1st month is FREE.</strong> New members pay nothing for month one — you're only billed from month two.</span>
       </div>
 
       <div class="form-group">
@@ -320,7 +320,7 @@ input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[t
           <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
           <option value="MindForge Multicap">MindForge Multicap — ₹3,499/month</option>
           <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹4,999/month</option>
-          <option value="MindForge All-Access (Indian Equities)">MindForge All-Access (Indian Equities) — ₹29,990/year</option>
+          <option value="MindForge All-Access (Indian Equities)">MindForge All-Access (Indian Equities) — ₹44,990/year</option>
         </select>
         <div class="strategy-note" id="strategy-note"></div>
       </div>
@@ -473,6 +473,24 @@ function onStrategyChange() {
   var note = document.getElementById('strategy-note');
   var m = STRATEGY_META[sel];
   var isBundle = !!(m && m.bundle);
+
+  // V10.0: the 1st-month-free launch offer does NOT apply to the All-Access
+  // bundle (it is already ~40% off vs subscribing separately, and is sold as
+  // a 6/12-month pass — there is no "month one" to waive). The banner above
+  // the form flips to an explicit exclusion note while the bundle is
+  // selected, and restores the standard offer copy for the five single
+  // strategies (and for the empty default).
+  var fmbIcon = document.getElementById('fmb-icon');
+  var fmbText = document.getElementById('fmb-text');
+  if (fmbIcon && fmbText) {
+    if (isBundle) {
+      fmbIcon.textContent = 'ℹ️';
+      fmbText.innerHTML = '<strong>The 1st-month-free offer does not apply to All-Access.</strong> The bundle is already ~40% off vs subscribing separately — billing starts with month one of your pass.';
+    } else {
+      fmbIcon.textContent = '🎁';
+      fmbText.innerHTML = '<strong>Your 1st month is FREE.</strong> New members pay nothing for month one — you’re only billed from month two.';
+    }
+  }
 
   // V7.2: the All-Access bundle is offered for 6 & 12 months only. V9.6: the
   // 1/3-month options are physically removed from the <select> for the bundle
@@ -655,6 +673,7 @@ function resetForm() {
   document.getElementById('reg-phone').value = '';
   document.getElementById('reg-strategy').value = '';
   document.getElementById('strategy-note').style.display = 'none';
+  onStrategyChange(); // V10.0: restores the offer banner + duration labels after a bundle signup
   // Force re-acceptance of T&C on every fresh submission.
   var tnc = document.getElementById('reg-tnc');
   if (tnc) tnc.checked = false;
@@ -866,6 +885,6 @@ input:focus-visible, select:focus-visible, #reg-tnc:focus-visible{
 .free-month-banner .fmb-text{ font-size:13px;line-height:1.5;color:var(--text2); }
 .free-month-banner .fmb-text strong{ color:#047857;font-weight:800; }
 </style>
-<script src="assets/mfc-offer.js?v=90" defer></script>
+<script src="assets/mfc-offer.js?v=100" defer></script>
 </body>
 </html>
