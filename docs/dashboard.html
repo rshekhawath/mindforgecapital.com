@@ -3468,5 +3468,102 @@ th.sortable:hover{ color: var(--accent); }
   });
 })();
 </script>
+<!-- ============================================================
+     MF VISUAL v10.1 — dashboard working-surface layer (additive, RM-safe)
+     (1) The active sort column carries a brand-gradient underline that
+         slides in under the header (the v5.2 sorter only swapped the
+         arrow glyph — now the eye can find the sorted column at a
+         glance). ::before was free on th.sortable; ::after holds the
+         arrow.
+     (2) The stat-tile icons pop in staggered just after their v9.8
+         accent bars finish sweeping, and tilt playfully when the tile
+         is hovered — same motion language as the homepage why-icons.
+     (3) Legend ↔ donut cross-highlight: hovering (or keyboard-
+         focusing) a sector row in the allocation legend thickens that
+         sector's donut slice and dims the rest — same emphasis the
+         v9.9 slice hover uses, now driven from the list you actually
+         read. Event delegation on the grid container, so it survives
+         the re-renders that sector filtering triggers.
+     ============================================================ -->
+<style id="mf-v101-dash">
+/* (1) sort-active underline — grows centre-out via insets (Chromium ignores
+   transforms on this table-header pseudo, so left/right carry the motion) */
+th.sortable::before{
+  content:''; position:absolute; left:50%; right:50%; bottom:0; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,#1a50d8,#0891b2,#2dd4bf);
+  opacity:0;
+  transition:left .28s cubic-bezier(.22,1,.36,1), right .28s cubic-bezier(.22,1,.36,1), opacity .2s ease;
+}
+th.sortable.sort-asc::before, th.sortable.sort-desc::before{ left:10%; right:10%; opacity:1; }
+th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
+
+/* (2) stat-tile icon entrance + hover tilt */
+.stats-row .stat-card .ico-wrap{
+  animation: mf101-ico .5s cubic-bezier(.34,1.56,.64,1) backwards;
+  transition: transform .3s cubic-bezier(.2,.7,.2,1), background .25s ease;
+}
+.stats-row .stat-card:nth-child(1) .ico-wrap{ animation-delay:.55s; }
+.stats-row .stat-card:nth-child(2) .ico-wrap{ animation-delay:.65s; }
+.stats-row .stat-card:nth-child(3) .ico-wrap{ animation-delay:.75s; }
+.stats-row .stat-card:nth-child(4) .ico-wrap{ animation-delay:.85s; }
+@keyframes mf101-ico{ from{ transform:scale(0); opacity:0; } to{ transform:scale(1); opacity:1; } }
+.stat-card:hover .ico-wrap{ transform: rotate(-6deg) scale(1.12); }
+
+/* (3) legend → donut cross-highlight (class-driven twin of the v9.9 hover) */
+#alloc-donut-svg .ring-slice{
+  transition: stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1),
+              opacity .22s ease, stroke-width .22s ease;
+}
+#alloc-donut-svg.mf101-hot .ring-slice{ opacity:.35; }
+#alloc-donut-svg.mf101-hot .ring-slice.mf101-pick{ opacity:1 !important; stroke-width:14.5 !important; }
+
+@media (prefers-reduced-motion: reduce){
+  th.sortable::before{ transition:none; }
+  th.sortable.sort-asc::before, th.sortable.sort-desc::before{ left:10%; right:10%; opacity:1; }
+  .stats-row .stat-card .ico-wrap{ animation:none; transition:none; }
+  .stat-card:hover .ico-wrap{ transform:none; }
+  #alloc-donut-svg .ring-slice{ transition: stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1); }
+}
+</style>
+<script id="mf-v101-dash-js">
+/* MF v10.1 — legend↔donut cross-highlight. Delegated on the legend grid so
+   it survives sector-filter re-renders; resolves the slice at hover time via
+   the <title> the renderer already writes ("Sector · 12.0%"). Fails silent. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      var grid=document.getElementById("alloc-grid");
+      var svg=document.getElementById("alloc-donut-svg");
+      if(!grid||!svg) return;
+      function clearPick(){
+        svg.classList.remove("mf101-hot");
+        var picked=svg.querySelectorAll(".ring-slice.mf101-pick");
+        for(var i=0;i<picked.length;i++) picked[i].classList.remove("mf101-pick");
+      }
+      function pick(row){
+        clearPick();
+        var sector=row.getAttribute("data-sector");
+        if(!sector) return;
+        var slices=svg.querySelectorAll(".ring-slice");
+        for(var i=0;i<slices.length;i++){
+          var t=slices[i].querySelector("title");
+          if(t&&t.textContent.indexOf(sector+" ·")===0){
+            svg.classList.add("mf101-hot");
+            slices[i].classList.add("mf101-pick");
+            return;
+          }
+        }
+      }
+      function rowOf(e){ return e.target&&e.target.closest?e.target.closest(".alloc-row"):null; }
+      grid.addEventListener("mouseover",function(e){ var r=rowOf(e); if(r) pick(r); });
+      grid.addEventListener("mouseout", function(e){ if(rowOf(e)) clearPick(); });
+      grid.addEventListener("focusin", function(e){ var r=rowOf(e); if(r) pick(r); });
+      grid.addEventListener("focusout",function(e){ if(rowOf(e)) clearPick(); });
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
