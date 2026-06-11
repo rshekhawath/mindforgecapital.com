@@ -1540,5 +1540,134 @@ input:focus-visible, select:focus-visible{
   });
 })();
 </script>
+<!-- ============================================================
+     MF VISUAL v10.4 — admin working-surface layer (additive, RM-safe)
+     The admin panel is the one surface that never received the v9.8+
+     design language. This brings it into the family:
+     (1) Stat tiles get the brand-gradient top accent bars (v9.8) with
+         icons popping in just after (v10.1), plus the hover tilt.
+     (2) The passcode gate's "Unlock admin" button carries the site's
+         sweep shine (v10.2 CTA language) — the modal itself already
+         animates in via its own passcode-in keyframe.
+     (3) Lead rows stagger in on every render — refresh / filter /
+         search re-create the nodes, so the cascade re-runs free.
+     (4) The Pending status dot pulses gently — the queue reads live.
+     (5) The Activate modal arrives (backdrop fades, card scales up)
+         instead of snapping open; same for the bulk-action bar.
+     (6) The toast carries a draining underline matched to its 5s
+         auto-dismiss (v10.2 dashboard parity) — display toggling
+         re-runs the animation per show.
+     (7) The page header gets the site's little gradient rule.
+     ============================================================ -->
+<style id="mf-v104-admin">
+/* (1) stat-tile accent bars + icon pops */
+.stats-row .stat-card{ overflow:hidden; }
+.mf104-sbar{
+  position:absolute; top:0; left:0; right:0; height:2.5px; z-index:2;
+  background:linear-gradient(90deg,#1a50d8 0%,#2563eb 45%,#0891b2 80%,#2dd4bf 100%);
+  border-radius:0 0 2px 2px;
+  transform:scaleX(0); transform-origin:left;
+  animation:mf104-sbar-in .85s cubic-bezier(.22,1,.36,1) forwards;
+}
+.stats-row .stat-card:nth-child(1) .mf104-sbar{ animation-delay:.20s; }
+.stats-row .stat-card:nth-child(2) .mf104-sbar{ animation-delay:.32s; }
+.stats-row .stat-card:nth-child(3) .mf104-sbar{ animation-delay:.44s; }
+@keyframes mf104-sbar-in{ to{ transform:scaleX(1); } }
+.stats-row .stat-card .ico-wrap{
+  animation: mf104-ico .5s cubic-bezier(.34,1.56,.64,1) backwards;
+  transition: transform .3s cubic-bezier(.2,.7,.2,1);
+}
+.stats-row .stat-card:nth-child(1) .ico-wrap{ animation-delay:.45s; }
+.stats-row .stat-card:nth-child(2) .ico-wrap{ animation-delay:.57s; }
+.stats-row .stat-card:nth-child(3) .ico-wrap{ animation-delay:.69s; }
+@keyframes mf104-ico{ from{ transform:scale(0); opacity:0; } to{ transform:scale(1); opacity:1; } }
+.stat-card:hover .ico-wrap{ transform: rotate(-6deg) scale(1.12); }
+
+/* (2) passcode "Unlock admin" button — sweep shine */
+@keyframes mf104-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+#passcode-submit{ position:relative; overflow:hidden; }
+#passcode-submit::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(110deg, transparent 30%, rgba(255,255,255,.28) 50%, transparent 70%);
+  transform:translateX(-120%);
+  transition:transform .55s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+#passcode-submit:hover::after{ transform:translateX(120%); }
+
+/* (3) lead-row cascade on each render */
+#leads-tbody tr{ animation: mf104-rowin .4s cubic-bezier(.22,1,.36,1) backwards; }
+#leads-tbody tr:nth-child(1){ animation-delay:.03s; }
+#leads-tbody tr:nth-child(2){ animation-delay:.06s; }
+#leads-tbody tr:nth-child(3){ animation-delay:.09s; }
+#leads-tbody tr:nth-child(4){ animation-delay:.12s; }
+#leads-tbody tr:nth-child(5){ animation-delay:.15s; }
+#leads-tbody tr:nth-child(6){ animation-delay:.18s; }
+#leads-tbody tr:nth-child(7){ animation-delay:.21s; }
+#leads-tbody tr:nth-child(8){ animation-delay:.24s; }
+#leads-tbody tr:nth-child(9){ animation-delay:.27s; }
+#leads-tbody tr:nth-child(10){ animation-delay:.30s; }
+#leads-tbody tr:nth-child(n+11){ animation-delay:.33s; }
+@keyframes mf104-rowin{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+
+/* (4) pending dot pulse — the queue reads live */
+.status-pending .status-dot{ animation: mf104-pulse 2.2s ease-in-out infinite; }
+@keyframes mf104-pulse{
+  0%,100%{ box-shadow: 0 0 0 0 rgba(217,119,6,.35); }
+  50%    { box-shadow: 0 0 0 5px rgba(217,119,6,0); }
+}
+
+/* (5) modal + bulk-bar arrival (display toggles re-run these per open) */
+#activate-overlay{ animation: mf104-fade .22s ease-out; }
+#activate-modal{ animation: mf104-pop .3s cubic-bezier(.22,1,.36,1); }
+@keyframes mf104-fade{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes mf104-pop{ from{ opacity:0; transform:scale(.96) translateY(8px); } to{ opacity:1; transform:none; } }
+#bulk-bar{ animation: mf104-rise .35s cubic-bezier(.22,1,.36,1); }
+
+/* (6) toast countdown drain — 5s matches the admin auto-dismiss */
+#toast{ overflow:hidden; position:fixed; }
+#toast::after{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:2.5px;
+  background:rgba(255,255,255,.55);
+  transform-origin:left;
+  animation: mf104-drain 5s linear forwards;
+}
+@keyframes mf104-drain{ from{ transform:scaleX(1); } to{ transform:scaleX(0); } }
+
+/* (7) page-header gradient rule */
+.page-header h1{ position:relative; padding-bottom:10px; }
+.page-header h1::after{
+  content:''; position:absolute; left:0; bottom:0; width:56px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,#1a50d8,#0891b2,#2dd4bf);
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mf104-sbar{ animation:none; transform:scaleX(1); }
+  .stats-row .stat-card .ico-wrap{ animation:none; transition:none; }
+  .stat-card:hover .ico-wrap{ transform:none; }
+  #leads-tbody tr, #activate-overlay, #activate-modal, #bulk-bar{ animation:none; }
+  #passcode-submit::after{ content:none; }
+  .status-pending .status-dot{ animation:none; }
+  #toast::after{ animation:none; content:none; }
+}
+</style>
+<script id="mf-v104-admin-js">
+/* MF v10.4 — inject the stat-tile accent bars (v9.8 injector pattern). */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      document.querySelectorAll(".stats-row .stat-card").forEach(function(card){
+        if(card.querySelector(".mf104-sbar")) return;
+        var bar=document.createElement("i");
+        bar.className="mf104-sbar";
+        bar.setAttribute("aria-hidden","true");
+        card.appendChild(bar);
+      });
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
