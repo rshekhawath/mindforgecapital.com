@@ -215,4 +215,10 @@
     FACTORS: FACTORS,
   };
   window.MFCScores = MFCScores;
+
+  // Perf: kick off the stocks.json fetch the moment this script parses (it's in
+  // <head>), so the heavy ~6 MB bundle downloads in parallel with the rest of
+  // the page render instead of waiting for the page's init script. load() is
+  // memoised, so the page's own MFCScores.load() reuses this in-flight request.
+  try { load(); } catch (e) {}
 })();
