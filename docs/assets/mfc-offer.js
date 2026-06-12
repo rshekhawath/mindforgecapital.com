@@ -37,7 +37,7 @@
     bar.innerHTML =
       '<div class="mfc-offer-inner">' +
         '<span class="mfc-offer-gift" aria-hidden="true">🎁</span>' +
-        '<span class="mfc-offer-text"><strong>1st month FREE</strong> for all new members' +
+        '<span class="mfc-offer-text"><strong>1st month FREE</strong><span class="mfc-offer-tail"> for all new members</span>' +
           '<span class="mfc-offer-sub"> · only pay from month two · not applicable on All-Access</span></span>' +
         (onSignup ? "" : '<a class="mfc-offer-cta" href="signup.html">Get started →</a>') +
         '<button class="mfc-offer-x" type="button" aria-label="Dismiss offer">×</button>' +
@@ -57,7 +57,7 @@
       "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.85);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;}" +
       "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
-      "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub{display:none;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
+      "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
       "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}}";
 
     (document.head || document.documentElement).appendChild(css);
