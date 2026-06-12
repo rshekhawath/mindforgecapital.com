@@ -63,7 +63,7 @@
           if (sn) {
             var dt = BUNDLE.data_through || BUNDLE.generated_at;
             sn.textContent = dt
-              ? ("Snapshot: " + fmtDate(dt) + " · refreshed monthly")
+              ? ("Snapshot: " + fmtDate(dt) + " · refreshed daily")
               : "Refreshed monthly";
           }
         } catch (e) {}

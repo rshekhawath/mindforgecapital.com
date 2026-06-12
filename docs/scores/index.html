@@ -106,6 +106,29 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hl-name{font-size:14px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hl-sym{font-size:11px;color:var(--text3);font-weight:600;margin-top:1px}
 
+/* Quality × Value quadrant map */
+.qv-panel{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:20px 24px 18px;margin-bottom:24px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 14px 40px -22px rgba(26,80,216,.18);position:relative;overflow:hidden}
+.qv-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf)}
+.qv-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.qv-title{font-size:15px;font-weight:800;color:var(--white);letter-spacing:-.01em}
+.qv-title .qv-x{color:var(--accent2)}
+.qv-sub{font-size:12.5px;color:var(--text3);margin-top:3px;max-width:520px;line-height:1.5}
+.qv-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.qv-leg{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--text2)}
+.qv-leg .qd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.qv-body{display:grid;grid-template-columns:1fr;gap:14px}
+.qv-chart-wrap{position:relative;width:100%;max-width:520px;margin:0 auto;aspect-ratio:1/1}
+.qv-chart-wrap svg{display:block;width:100%;height:100%;overflow:visible}
+.qv-corner{position:absolute;font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1.2;pointer-events:none;text-transform:uppercase;opacity:.92;max-width:42%}
+.qv-corner.tr{top:8px;right:6px;text-align:right;color:#047857}
+.qv-corner.tl{top:8px;left:6px;text-align:left;color:var(--text3)}
+.qv-corner.br{bottom:6px;right:6px;text-align:right;color:var(--text3)}
+.qv-corner.bl{bottom:6px;left:6px;text-align:left;color:var(--text3)}
+.qv-caption{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:520px;margin:10px auto 0;font-size:11px;color:var(--text3);font-weight:500}
+.qv-caption b{color:var(--text2);font-weight:700}
+.qv-dot-label{font-size:5px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:1.4px;stroke-linejoin:round}
+@media(max-width:560px){.qv-panel{padding:16px 14px 14px}.qv-corner{font-size:9px}.qv-caption{font-size:10px;justify-content:center}}
+
 /* search */
 .search-hero{position:relative;margin:0 auto 22px;max-width:600px}
 .search-hero input{width:100%;background:var(--ink2);border:1px solid var(--border2);border-radius:14px;color:var(--text);padding:16px 18px 16px 50px;font-size:16px;outline:none;transition:all .2s;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -18px rgba(26,80,216,.3);font-family:inherit}
@@ -290,6 +313,31 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
     </div>
   </section>
 
+  <!-- QUALITY × VALUE MAP -->
+  <div class="qv-panel" id="qvPanel" style="display:none">
+    <div class="qv-head">
+      <div>
+        <div class="qv-title">Quality <span class="qv-x">×</span> Value landscape</div>
+        <div class="qv-sub">Every scored stock plotted by its two pillars. The sweet spot is the top-right — strong businesses that are still cheaply priced.</div>
+      </div>
+      <div class="qv-legend">
+        <span class="qv-leg"><span class="qd" style="background:#047857"></span>High score</span>
+        <span class="qv-leg"><span class="qd" style="background:#1a50d8"></span>Mid</span>
+        <span class="qv-leg"><span class="qd" style="background:#dc2626"></span>Low</span>
+      </div>
+    </div>
+    <div class="qv-body">
+      <div class="qv-chart-wrap">
+        <svg id="qvChart" viewBox="0 0 120 120" role="img" aria-label="Scatter plot of stocks by Quality and Value score"></svg>
+        <span class="qv-corner tr">★ Quality<br>+ Value</span>
+        <span class="qv-corner tl">Cheaper,<br>weaker</span>
+        <span class="qv-corner br">Quality,<br>pricier</span>
+        <span class="qv-corner bl">Weaker,<br>pricier</span>
+      </div>
+      <div class="qv-caption"><span>Stronger <b>Quality</b> to the right →</span><span>↑ Better <b>Value</b> (cheaper) higher up</span></div>
+    </div>
+  </div>
+
   <!-- LIST -->
   <div class="list-head">
     <div class="list-title">All scored stocks<small id="listMeta">Ranked by market cap — largest companies first</small></div>
@@ -468,6 +516,34 @@ function renderHero(){
       <div class="hl-meta"><div class="hl-kicker">${card.kick}</div><div class="hl-name">${d.name||d.symbol}</div><div class="hl-sym">${d.symbol}</div></div>
     </div>`;
   }).join("");
+  renderQuadrant();
+}
+
+// Quality × Value scatter — every scored stock plotted, sweet spot top-right.
+function renderQuadrant(){
+  const svg=document.getElementById("qvChart"); if(!svg)return;
+  const pts=ALL.filter(d=>d._q!=null&&d._v!=null&&d._overall!=null);
+  if(!pts.length)return;
+  const X=q=>14+q, Y=v=>108-v;          // plot box: x 14→114, y 8→108 (value inverted)
+  let s="";
+  s+=`<rect x="64" y="8" width="50" height="50" fill="rgba(5,150,105,0.07)"/>`;                 // sweet-spot tint (top-right)
+  s+=`<rect x="14" y="8" width="100" height="100" fill="none" stroke="rgba(37,99,235,0.16)" stroke-width="0.5" rx="2"/>`;
+  s+=`<line x1="64" y1="8" x2="64" y2="108" stroke="rgba(37,99,235,0.16)" stroke-width="0.4" stroke-dasharray="2 2"/>`;
+  s+=`<line x1="14" y1="58" x2="114" y2="58" stroke="rgba(37,99,235,0.16)" stroke-width="0.4" stroke-dasharray="2 2"/>`;
+  let dots="";
+  for(let i=0;i<pts.length;i++){const d=pts[i];dots+=`<circle cx="${X(d._q).toFixed(1)}" cy="${Y(d._v).toFixed(1)}" r="0.8" fill="${MFCScores.color(d._overall)}" opacity="0.42"/>`;}
+  s+=`<g style="pointer-events:none">${dots}</g>`;
+  // featured markers (dedup the 3 leaders by symbol)
+  const top=key=>[...pts].sort((a,b)=>b[key]-a[key])[0];
+  const seen={}, feats=[top("_overall"),top("_q"),top("_v")].filter(d=>d&&!seen[d.symbol]&&(seen[d.symbol]=1));
+  feats.forEach(d=>{
+    const x=X(d._q),y=Y(d._v),c=MFCScores.color(d._overall);
+    const lx=x>88?x-3:x+3, anchor=x>88?"end":"start";
+    s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.1" fill="${c}" stroke="#fff" stroke-width="0.9"/>`;
+    s+=`<text class="qv-dot-label" x="${lx.toFixed(1)}" y="${(y-2.6).toFixed(1)}" text-anchor="${anchor}" fill="${c}">${d.symbol}</text>`;
+  });
+  svg.innerHTML=s;
+  document.getElementById("qvPanel").style.display="";
 }
 function rollNum(id,target,dec){
   const el=document.getElementById(id);if(!el)return;
