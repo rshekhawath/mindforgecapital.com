@@ -1853,6 +1853,14 @@ function renderDashboard(sub, stocks) {
   renderTable(stocks);
   renderSectorChips();  // V5.2 #20: filter chips above the table
   restoreSort();        // V5.2 #1: re-apply user's last sort preference
+  // V10.6 fix: a refresh / strategy switch rebuilt the rows fully visible while
+  // the sector chip (and any search text) still looked applied — re-apply both
+  // filters so state and table stay in sync. A filter pointing at a sector the
+  // fresh data no longer has (strategy switch) is cleared instead: chips were
+  // just rebuilt, so "no active chip" means the sector is gone.
+  if (_sectorFilter && !document.querySelector('#sector-chips .chip.active')) _sectorFilter = '';
+  if (_searchQ) filterStocks(_searchQ);
+  applySectorFilter();
   var bp = document.getElementById('broker-picker'); // V5.2 #2: sync broker picker
   if (bp) bp.value = getBroker();
   // V9.3: make the broker UI currency-aware. The S&P 500 book is in USD, so the
@@ -3623,6 +3631,113 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
           toast.setAttribute("data-mf102", toast.getAttribute("data-mf102")==="a"?"b":"a");
       }).observe(msg,{childList:true,characterData:true,subtree:true});
       toast.setAttribute("data-mf102","a");
+    }catch(e){}
+  });
+})();
+</script>
+<!-- ============================================================
+     MF VISUAL v10.6 — dashboard (additive, RM-safe)
+     (1) Nav links gain the brand-gradient hover underline already
+         on the strategy pages (and now the homepage) — the v16
+         current-page static underline keeps priority. Desktop only.
+     (2) Sector filter chips cascade in left-to-right on every
+         render — load, refresh and strategy switch re-trigger it
+         for free (innerHTML re-render restarts CSS animations),
+         echoing the admin lead-row cascade (v10.4).
+     (3) Position-sizing feedback: the three summary values (per
+         stock / total allocated / cash residue) and the donut
+         centre count pop (scale + accent flash) whenever their
+         text changes — typing capital or tapping a preset now
+         answers visibly, parity with the v10.2 price pop.
+     ============================================================ -->
+<style id="mf-v106-dash">
+/* (1) nav hover underline — current page keeps its v16 static rule */
+.nav-links a:not(.nav-cta):not([aria-current="page"]){ position:relative; }
+.nav-links a:not(.nav-cta):not([aria-current="page"])::after{
+  content:''; position:absolute; left:0; right:0; bottom:-2px;
+  height:2px; border-radius:1px;
+  background:linear-gradient(90deg,#1a50d8,#0891b2,#2dd4bf);
+  transform:scaleX(0); transform-origin:center;
+  transition:transform .3s cubic-bezier(.2,.7,.2,1);
+  pointer-events:none;
+}
+.nav-links a:not(.nav-cta):not([aria-current="page"]):hover::after,
+.nav-links a:not(.nav-cta):not([aria-current="page"]):focus-visible::after{
+  transform:scaleX(1);
+}
+@media (max-width:768px){
+  .nav-links a:not(.nav-cta):not([aria-current="page"])::after{ display:none; }
+}
+
+/* (2) sector chip cascade — re-runs on every renderSectorChips() */
+.sector-chips .chip{
+  animation: mf106-chip .38s cubic-bezier(.22,1,.36,1) both;
+}
+.sector-chips .chip:nth-child(1){ animation-delay:.02s; }
+.sector-chips .chip:nth-child(2){ animation-delay:.06s; }
+.sector-chips .chip:nth-child(3){ animation-delay:.10s; }
+.sector-chips .chip:nth-child(4){ animation-delay:.14s; }
+.sector-chips .chip:nth-child(5){ animation-delay:.18s; }
+.sector-chips .chip:nth-child(6){ animation-delay:.22s; }
+.sector-chips .chip:nth-child(7){ animation-delay:.26s; }
+.sector-chips .chip:nth-child(8){ animation-delay:.30s; }
+.sector-chips .chip:nth-child(9){ animation-delay:.34s; }
+.sector-chips .chip:nth-child(n+10){ animation-delay:.38s; }
+@keyframes mf106-chip{
+  from{ opacity:0; transform:translateY(8px) scale(.92); }
+  to  { opacity:1; transform:none; }
+}
+
+/* (3) sizing-summary / donut-centre pop */
+.size-summary strong, .dc-num{ display:inline-block; }
+.size-summary strong.mf106-pop{ animation: mf106-pop .42s cubic-bezier(.22,1,.36,1); }
+.dc-num.mf106-pop{ animation: mf106-pop .42s cubic-bezier(.22,1,.36,1); }
+@keyframes mf106-pop{
+  0%  { transform:scale(1); }
+  35% { transform:scale(1.10); color:var(--accent2); }
+  100%{ transform:scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .nav-links a:not(.nav-cta):not([aria-current="page"])::after{ transition:none; }
+  .sector-chips .chip{ animation:none; }
+  .size-summary strong.mf106-pop, .dc-num.mf106-pop{ animation:none; }
+}
+</style>
+<script id="mf-v106-dash-js">
+/* MF v10.6 — sizing-summary pop. Observes the three summary strongs and the
+   donut centre count; a text change re-triggers the pop class with a reflow
+   (same pattern as the v10.2 homepage price pop). Calm-guards, because the
+   render order differs by mode (demo renders synchronously BEFORE this script
+   attaches; auth mode fills in after):
+     • seed from content at attach — an element already showing a real value
+       is armed immediately, an "—" placeholder arms on its first fill;
+     • suppress changes landing <400ms after the previous one (or after
+       attach) — silences the v9.6 donut count-up roll and rapid typing,
+       while discrete actions (preset tap, filter click, refresh) still pop.
+   Fails silent. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      if(!("MutationObserver" in window)) return;
+      if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      ["size-per-stock","size-total-alloc","size-residue","donut-center-num"].forEach(function(id){
+        var el=document.getElementById(id);
+        if(!el) return;
+        var txt0=(el.textContent||"").trim();
+        var seeded=(txt0!=="" && txt0!=="—");
+        var last=Date.now();
+        new MutationObserver(function(){
+          var now=Date.now(), gap=now-last; last=now;
+          if(!seeded){ seeded=true; return; }
+          if(gap<400) return;
+          el.classList.remove("mf106-pop");
+          void el.offsetWidth;
+          el.classList.add("mf106-pop");
+        }).observe(el,{childList:true,characterData:true,subtree:true});
+      });
     }catch(e){}
   });
 })();

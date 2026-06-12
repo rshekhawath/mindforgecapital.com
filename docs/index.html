@@ -4768,6 +4768,67 @@ section[id]{ scroll-margin-top: 80px; }
   });
 })();
 </script>
+<!-- ============================================================
+     MF VISUAL v10.6 — homepage (additive, RM-safe)
+     (1) Nav links gain the brand-gradient hover underline the
+         strategy pages have had since v10 — grows from centre on
+         hover/focus; geometry matches the v16 current-page rule
+         (bottom:-2px), which keeps its static underline. Desktop
+         only: the stacked ≤768px menu keeps its row dividers.
+     (2) The pricing toggle's save-badges (5% / 10% / 20% off) pop
+         with a spring when their duration becomes active — the
+         discount answers the click instead of just recolouring.
+     (3) Mobile: the sticky CTA bar now arrives — sliding up from
+         the bottom edge half a second after load instead of being
+         abruptly present, echoing the dashboard FAB family.
+     ============================================================ -->
+<style id="mf-v106-home">
+/* (1) nav hover underline — current page keeps its v16 static rule */
+.nav-links a:not(.nav-cta):not([aria-current="page"]){ position:relative; }
+.nav-links a:not(.nav-cta):not([aria-current="page"])::after{
+  content:''; position:absolute; left:0; right:0; bottom:-2px;
+  height:2px; border-radius:1px;
+  background:linear-gradient(90deg,#1a50d8,#0891b2,#2dd4bf);
+  transform:scaleX(0); transform-origin:center;
+  transition:transform .3s cubic-bezier(.2,.7,.2,1);
+  pointer-events:none;
+}
+.nav-links a:not(.nav-cta):not([aria-current="page"]):hover::after,
+.nav-links a:not(.nav-cta):not([aria-current="page"]):focus-visible::after{
+  transform:scaleX(1);
+}
+@media (max-width:768px){
+  .nav-links a:not(.nav-cta):not([aria-current="page"])::after{ display:none; }
+}
+
+/* (2) save-badge spring pop when its duration becomes active — the badge is
+   inline; transforms need a box */
+.save-badge{ display:inline-block; }
+.toggle-btn.active .save-badge{
+  animation: mf106-badge .45s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes mf106-badge{
+  0%  { transform:scale(.55); }
+  60% { transform:scale(1.14); }
+  100%{ transform:scale(1); }
+}
+
+/* (3) mobile sticky CTA bar entrance — hidden state lives only inside the
+   keyframes, so a non-animating engine shows the bar normally */
+@media (max-width:768px){
+  .mobile-cta-bar{ animation: mf106-bar .5s cubic-bezier(.22,1,.36,1) .5s both; }
+}
+@keyframes mf106-bar{
+  from{ transform:translateY(105%); }
+  to  { transform:none; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .nav-links a:not(.nav-cta):not([aria-current="page"])::after{ transition:none; }
+  .toggle-btn.active .save-badge{ animation:none; }
+  .mobile-cta-bar{ animation:none; }
+}
+</style>
 <script src="assets/mfc-offer.js?v=100" defer></script>
 </body>
 </html>
