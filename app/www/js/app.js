@@ -45,6 +45,49 @@
     var map={};Object.keys(agg).sort(function(a,b){return agg[b]-agg[a];}).forEach(function(n,i){map[n]=SECTOR_COLORS[i%SECTOR_COLORS.length];});
     return map;
   }
+  function prefersReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);}
+  // Roll a number from 0 → its value (same easing as the website's count-up).
+  function countUp(el){
+    var to=parseFloat(el.getAttribute('data-count')); if(isNaN(to))return;
+    var suf=el.getAttribute('data-suffix')||'';
+    if(prefersReduced()||!('requestAnimationFrame' in window)){el.textContent=to+suf;return;}
+    var dur=850,start=null,done=false; el.textContent='0'+suf;
+    requestAnimationFrame(function step(ts){
+      if(start===null)start=ts;
+      var p=Math.min(1,(ts-start)/dur),e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(to*e)+suf;
+      if(p<1)requestAnimationFrame(step);else{done=true;el.textContent=to+suf;}
+    });
+    // fallback: if rAF frames never flow (backgrounded/headless tab) pin the final
+    // value so a stat can never stick mid-roll (same guard the website's count-up uses)
+    setTimeout(function(){if(!done)el.textContent=to+suf;},dur+250);
+  }
+
+  // Sector-allocation donut + legend — the website dashboard's signature data-viz,
+  // ported to mobile. Slices draw in (staggered) when the .alloc-card gets .fx.
+  function sectorAllocCard(stocks,secCol){
+    var agg={};(stocks||[]).forEach(function(s){var k=(s.industry||'Unknown').trim()||'Unknown';agg[k]=(agg[k]||0)+(Number(s.weight_pct)||0);});
+    var rows=Object.keys(agg).map(function(k){return {name:k,w:agg[k]};}).sort(function(a,b){return b.w-a.w;});
+    if(rows.length<2)return '';
+    var total=rows.reduce(function(a,r){return a+r.w;},0)||1, C=2*Math.PI*40, cum=0, slices='';
+    rows.forEach(function(r,i){
+      var len=(r.w/total)*C, start=-90+(cum/total)*360; cum+=r.w;
+      slices+='<circle class="dslice" cx="50" cy="50" r="40" fill="none" stroke="'+(secCol[r.name]||'#cbd5e1')+'" stroke-width="13" '+
+        'stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" style="--len:'+len.toFixed(2)+';transform:rotate('+start.toFixed(2)+'deg);animation-delay:'+(i*80)+'ms"/>';
+    });
+    var legend=rows.slice(0,6).map(function(r,i){
+      return '<div class="leg-row" style="animation-delay:'+(160+i*60)+'ms"><span class="leg-sw" style="background:'+(secCol[r.name]||'#cbd5e1')+'"></span>'+
+        '<span class="leg-nm">'+esc(r.name)+'</span><span class="leg-pc">'+((r.w/total)*100).toFixed(1)+'%</span></div>';
+    }).join('');
+    if(rows.length>6)legend+='<div class="leg-row" style="animation-delay:'+(160+6*60)+'ms"><span class="leg-sw" style="background:#cbd5e1"></span><span class="leg-nm">+'+(rows.length-6)+' more</span></div>';
+    return '<div class="card alloc-card" style="margin-top:14px">'+
+      '<div class="alloc-head"><span class="alloc-ttl">Sector allocation</span><span class="alloc-meta">'+rows.length+' sectors · equal-weighted</span></div>'+
+      '<div class="alloc-body">'+
+        '<div class="donut-wrap"><svg class="donut" viewBox="0 0 100 100" aria-hidden="true"><circle class="dbg" cx="50" cy="50" r="40" fill="none" stroke-width="13"/>'+slices+'</svg>'+
+          '<div class="donut-c"><span class="donut-n" data-count="'+rows.length+'">'+rows.length+'</span><span class="donut-l">sectors</span></div></div>'+
+        '<div class="legend">'+legend+'</div>'+
+      '</div></div>';
+  }
 
   // ── tab bar ─────────────────────────────────────────────────────────────────
   var TABS=[
@@ -247,7 +290,8 @@
   }
   function wireSubSwitcher(){var sw=document.getElementById('subSwitch');if(sw)sw.addEventListener('change',function(){currentToken=sw.value;location.hash='#/holdings/'+encodeURIComponent(sw.value);});}
 
-  function renderHoldings(token,sub,stocks,active){
+  function renderHoldings(token,sub,stocks,active,opts){
+    opts=opts||{}; var skipFx=!!opts.skipFx;   // capital changes re-render without replaying entrances
     stocks=stocks||[];
     var n=stocks.length||1;
     var industries={};stocks.forEach(function(s){industries[(s.industry||'Unknown').trim()||'Unknown']=1;});
@@ -267,7 +311,7 @@
       var dot=ind?'<span class="dot" style="background:'+(secCol[ind]||'#cbd5e1')+'"></span>':'';
       var blink=MFCBrokers.orderLink(s);
       var bname=MFCBrokers.current().name;
-      return '<div class="holding rise" style="animation-delay:'+Math.min(i*40,400)+'ms">'+
+      return '<div class="holding'+(skipFx?'':' rise')+'" style="'+(skipFx?'':'animation-delay:'+Math.min(i*40,400)+'ms')+'">'+
         '<div class="h-top"><div class="h-rank">'+(i+1)+'</div>'+
           '<div class="h-name"><div class="h-co">'+esc(s.company_name||s.ticker)+'</div>'+
           '<div class="h-tk" data-copy="'+esc(s.ticker)+'">'+esc(s.ticker)+' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>'+
@@ -293,11 +337,12 @@
         '<h1 class="h-title">This cycle’s picks</h1>'+
         '<p class="h-sub">Place these with your broker and you’re set for the month.</p>'+
         '<div class="tiles">'+
-          tile('Total picks',String(stocks.length),'equal-weighted')+
-          tile('Industries',String(nInd),'sector-diversified')+
-          tile('Renews in',(dl!=null?dl+' d':'—'),sub&&sub.expires_at?fmtDate(sub.expires_at):'')+
+          tileNum('Total picks',stocks.length,'','equal-weighted')+
+          tileNum('Industries',nInd,'','sector-diversified')+
+          (dl!=null?tileNum('Renews in',dl,' d',sub&&sub.expires_at?fmtDate(sub.expires_at):''):tile('Renews in','—',sub&&sub.expires_at?fmtDate(sub.expires_at):''))+
           tile('Broker',esc(MFCBrokers.current().name),'tap a pick to buy')+
         '</div>'+
+        sectorAllocCard(stocks,secCol)+
         '<div class="card" style="margin-top:14px">'+
           '<label style="display:block;font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:9px">Position sizing</label>'+
           '<div class="calc">'+
@@ -317,14 +362,20 @@
           if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast(t+' copied');}).catch(function(){toast(t);});
           else toast(t);
         });});
-        // capital calculator
+        // capital calculator — re-render WITHOUT replaying entrance animations
         var capIn=document.getElementById('capIn');
-        function applyCap(v){capital=Math.max(0,Math.round(Number(String(v).replace(/[^0-9.]/g,''))||0));renderHoldings(token,sub,stocks,active);}
+        function applyCap(v){capital=Math.max(0,Math.round(Number(String(v).replace(/[^0-9.]/g,''))||0));renderHoldings(token,sub,stocks,active,{skipFx:true});}
         if(capIn){capIn.addEventListener('change',function(){applyCap(capIn.value);});}
         appEl.querySelectorAll('[data-cap]').forEach(function(p){p.addEventListener('click',function(){applyCap(p.getAttribute('data-cap'));});});
+        // entrances: count up the stats + draw in the donut/legend (first render only)
+        if(!skipFx){
+          appEl.querySelectorAll('[data-count]').forEach(countUp);
+          var ac=appEl.querySelector('.alloc-card'); if(ac)ac.classList.add('fx');
+        }
       });
   }
   function tile(k,v,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
+  function tileNum(k,num,suffix,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v"><span data-count="'+num+'" data-suffix="'+(suffix||'')+'">'+num+(suffix||'')+'</span></div><div class="t-s">'+esc(s||'')+'</div></div>';}
 
   // ════════════════════════════════════════════════════════════════════════════
   //  SCANNER  (links to the existing web tools)
@@ -427,6 +478,9 @@
   // ── offline awareness ─────────────────────────────────────────────────────────
   function reflectOnline(){var b=document.getElementById('offline');if(b)b.className='offline'+(navigator.onLine?'':' show');}
   window.addEventListener('online',reflectOnline);window.addEventListener('offline',reflectOnline);
+
+  // app-bar elevates as the screen scrolls (parity with the website nav)
+  window.addEventListener('scroll',function(){var ab=document.querySelector('.appbar');if(ab)ab.classList.toggle('scrolled',(window.scrollY||0)>4);},{passive:true});
 
   // ── boot ──────────────────────────────────────────────────────────────────────
   window.addEventListener('hashchange',router);

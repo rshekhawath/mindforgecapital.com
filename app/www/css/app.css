@@ -182,3 +182,78 @@ button{font-family:inherit;cursor:pointer;}
 .list-h .ls{font-size:12px;color:var(--ink3);}
 .note{font-size:12px;color:var(--ink3);line-height:1.5;background:rgba(37,99,235,.05);border:.5px solid var(--line);border-radius:12px;padding:11px 13px;}
 .note.amber{background:rgba(217,119,6,.07);border-color:rgba(217,119,6,.2);color:#92580a;}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V11.9 — world-class polish. Ports the website's premium design language to the
+   app: ambient hero glow, a sector-allocation donut, count-ups, gradient sweep
+   shines, draw-in animations and live micro-interactions. Reduced-motion safe.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ambient gradient glow behind each screen's header (echoes the site's hero orb) */
+.screen{position:relative;}
+.screen::before{content:'';position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+  width:130%;max-width:560px;height:230px;pointer-events:none;z-index:0;
+  background:radial-gradient(58% 60% at 50% 0%, rgba(26,80,216,.11), rgba(8,145,178,.05) 46%, transparent 72%);}
+.screen>*{position:relative;z-index:1;}
+
+/* primary button — light sweep + deeper tactile press */
+.btn-primary{position:relative;overflow:hidden;}
+.btn-primary::after{content:'';position:absolute;top:0;left:-70%;width:55%;height:100%;pointer-events:none;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-18deg);opacity:0;}
+.btn-primary:active::after{animation:btn-shine .6s ease;}
+@keyframes btn-shine{0%{left:-70%;opacity:.9;}100%{left:130%;opacity:0;}}
+
+/* cards & tiles — tactile press + hover lift */
+.tile,.holding{transition:transform .16s var(--ease),box-shadow .22s var(--ease);}
+.tile:active,.holding:active{transform:scale(.985);}
+@media(hover:hover){.tile:hover,.holding:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(12,24,49,.05),0 18px 40px -22px rgba(26,80,216,.42);}}
+
+/* weight bar — one-time gleam after it fills */
+.h-bar>i{position:relative;overflow:hidden;}
+.h-bar>i::after{content:'';position:absolute;inset:0 auto 0 -45%;width:45%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
+  animation:bar-gleam 1.5s var(--ease) .55s both;}
+@keyframes bar-gleam{0%{left:-45%;}55%,100%{left:125%;}}
+
+/* active tab — springy indicator + lifted icon */
+.tab.active::before{animation:tab-pop .42s var(--ease);}
+@keyframes tab-pop{0%{transform:scaleX(.2);opacity:0;}60%{transform:scaleX(1.18);}100%{transform:scaleX(1);opacity:1;}}
+.tab svg{transition:transform .2s var(--ease);}
+.tab.active svg{transform:translateY(-1px) scale(1.07);}
+
+/* live "active" badge — pulsing dot */
+.badge-active .dot{position:relative;}
+.badge-active .dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--green);
+  animation:dot-pulse 2.1s ease-out infinite;}
+@keyframes dot-pulse{0%{transform:scale(1);opacity:.5;}70%,100%{transform:scale(2.7);opacity:0;}}
+
+/* ── Sector allocation: donut + legend (the site's signature data-viz) ──────── */
+.alloc-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px;}
+.alloc-ttl{font-size:14.5px;font-weight:800;letter-spacing:-.01em;}
+.alloc-meta{font-size:11.5px;color:var(--ink3);font-weight:600;flex-shrink:0;}
+.alloc-body{display:grid;grid-template-columns:124px 1fr;gap:16px;align-items:center;margin-top:10px;}
+.donut-wrap{position:relative;width:124px;height:124px;}
+.donut{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 8px 18px rgba(26,80,216,.14));}
+.donut .dbg{stroke:rgba(37,99,235,.08);}
+.dslice{stroke-dashoffset:0;stroke-linecap:butt;transform-box:fill-box;transform-origin:center;}
+.alloc-card.fx .dslice{animation:dsliceIn .8s var(--ease) both;}
+@keyframes dsliceIn{from{stroke-dashoffset:var(--len);}to{stroke-dashoffset:0;}}
+.donut-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.donut-n{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:31px;font-weight:800;letter-spacing:-.03em;line-height:1;}
+.donut-l{font-size:9.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-top:5px;}
+.legend{display:flex;flex-direction:column;gap:9px;min-width:0;}
+.leg-row{display:flex;align-items:center;gap:9px;font-size:13px;}
+.alloc-card.fx .leg-row{animation:rise .5s var(--ease) both;}
+.leg-sw{width:10px;height:10px;border-radius:3px;flex-shrink:0;box-shadow:0 0 0 1.5px rgba(255,255,255,.65);}
+.leg-nm{flex:1;min-width:0;color:var(--ink2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.leg-pc{font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);flex-shrink:0;}
+
+/* app-bar elevates as you scroll the screen (parity with the site nav) */
+.appbar{transition:box-shadow .25s ease,background .25s ease;}
+.appbar.scrolled{box-shadow:0 8px 26px -16px rgba(26,80,216,.4);}
+
+@media(prefers-reduced-motion:reduce){
+  .btn-primary:active::after,.tab.active::before,.badge-active .dot::after,
+  .alloc-card.fx .dslice,.alloc-card.fx .leg-row{animation:none!important;}
+  .h-bar>i::after{display:none;}
+}
