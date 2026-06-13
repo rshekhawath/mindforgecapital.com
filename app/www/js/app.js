@@ -433,6 +433,16 @@
   reflectOnline();
   if(!location.hash)location.replace(MFCStore.isSignedIn()?'#/home':'#/login');else router();
 
-  // service worker (PWA install + offline shell)
-  if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+  // service worker — register ONLY on the deployed HTTPS site (where offline support
+  // helps). On local demos (http://localhost or a LAN IP) skip it AND unregister any
+  // stale one + drop its caches: a leftover service worker serving an old shell after
+  // the local server restarts is the classic cause of a blank / "offline" page.
+  if('serviceWorker' in navigator){
+    if(location.protocol==='https:'){
+      window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});
+    }else{
+      navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});
+      if(window.caches&&caches.keys){caches.keys().then(function(ks){ks.forEach(function(k){if(/^mfc-app/.test(k))caches.delete(k);});}).catch(function(){});}
+    }
+  }
 })();
