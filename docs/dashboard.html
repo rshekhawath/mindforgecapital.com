@@ -440,6 +440,9 @@ td.row-num{
   font-size:11px;color:var(--text2);font-weight:500;
   max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;
 }
+/* V11.3: sector swatch inside the industry pill — same colour the donut/legend use */
+.ind-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;
+  vertical-align:middle;position:relative;top:-1px;box-shadow:0 0 0 1.5px rgba(255,255,255,.55);}
 .weight-cell{display:flex;align-items:center;gap:10px;min-width:130px;justify-content:flex-end;}
 .weight-bar-wrap{flex:1;max-width:80px;background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:hidden;position:relative;}
 .weight-bar{
@@ -1898,6 +1901,28 @@ const SECTOR_COLORS = [
   '#6366f1', '#0ea5e9'
 ];
 
+// V11.3: one sector→colour map shared by the donut, the legend AND the holdings
+// table, so each sector wears the SAME colour everywhere. Sectors are ranked by
+// aggregate weight (descending) and assigned the palette by rank — the same order
+// the legend uses, so the colours line up exactly across all three surfaces.
+//
+// IMPORTANT: always build this from the canonical `stocksData` (whose order is
+// fixed for the life of a render), NOT from a re-sorted copy. Many books are
+// equal-weighted, so sectors routinely TIE on aggregate weight; ties break by the
+// order sectors first appear in the input, so feeding a column-sorted array would
+// reshuffle the tie-broken colours and desync the table from the legend.
+function buildSectorColorMap(stocks) {
+  const agg = {};
+  (stocks || []).forEach(s => {
+    const k = (s.industry || 'Unknown').trim() || 'Unknown';
+    agg[k] = (agg[k] || 0) + (Number(s.weight_pct) || 0);
+  });
+  const map = {};
+  Object.entries(agg).sort((a, b) => b[1] - a[1])
+    .forEach(([name], i) => { map[name] = SECTOR_COLORS[i % SECTOR_COLORS.length]; });
+  return map;
+}
+
 function renderAllocation(stocks) {
   if (!stocks || !stocks.length) return;
   const map = {};
@@ -1913,8 +1938,9 @@ function renderAllocation(stocks) {
   const rows = allRows.slice(0, 8); // top 8 for legend
   if (!rows.length) return;
 
-  // Assign colors
-  rows.forEach((r, i) => { r.color = SECTOR_COLORS[i % SECTOR_COLORS.length]; });
+  // Assign colors from the shared map so the legend/donut match the table swatches
+  const secColorMap = buildSectorColorMap(stocks);
+  rows.forEach(r => { r.color = secColorMap[r.name] || SECTOR_COLORS[0]; });
 
   const card = document.getElementById('alloc-card');
   const grid = document.getElementById('alloc-grid');
@@ -2158,6 +2184,12 @@ function renderTable(stocks) {
   const per = currentCapital / n;
   const copyIco = '<svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
   const bought = loadBought(currentStrategy);
+  // V11.3: colour each holding's industry pill with its sector colour — the same
+  // map the donut & legend use, so the table reads as one visual system. Built from
+  // the canonical `stocksData` (not the possibly-sorted `stocks` arg) so a column
+  // sort never reshuffles the colours (see buildSectorColorMap).
+  const secColors = buildSectorColorMap(stocksData);
+  const indDot = s => { const k = (s.industry || '').trim(); return k ? `<span class="ind-dot" style="background:${secColors[k] || '#cbd5e1'}"></span>` : ''; };
 
   // Per-stock currency: yahoo_ticker ending with .NS → ₹ (Indian NSE),
   // otherwise → $ (US stocks like S&P 500). Allocation uses the same currency
@@ -2182,7 +2214,7 @@ function renderTable(stocks) {
       <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>
           ${brokerLink(s)}
       </td>
-      <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${escapeHtml(s.industry||'—')}</span></td>
+      <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
       <td class="price right">${curr}${entry.toFixed(2)}</td>
       <td class="alloc-amt right">${fmtAmt(curr, amt)}</td>
       <td class="shares right"><span class="qty">${shares}</span></td>
@@ -2212,7 +2244,7 @@ function renderTable(stocks) {
         </div>
         <div class="sc-num">${i+1}</div>
       </div>
-      <div class="sc-meta"><span class="industry-badge">${escapeHtml(s.industry||'—')}</span></div>
+      <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(s.industry||'—')}</span></div>
       <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">${stockCurr(s)}${entry.toFixed(2)}</span></div>
       <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(stockCurr(s), amt)}</span></div>
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
@@ -2353,11 +2385,13 @@ function renderSectorChips(){
     sectors[k] = (sectors[k] || 0) + 1;
   });
   var entries = Object.entries(sectors).sort(function(a,b){ return b[1]-a[1]; });
+  var secColors = buildSectorColorMap(stocksData);   // V11.3: same colour the table/legend use
   var html = '<button type="button" class="chip" data-sector="" onclick="filterBySector(\'\')">All <span class="chip-n">' + stocksData.length + '</span></button>';
   entries.forEach(function(e){
     var safe = String(e[0]).replace(/'/g,"\\'");
+    var dot = '<span class="chip-dot" style="background:' + (secColors[e[0]] || '#cbd5e1') + '"></span>';
     html += '<button type="button" class="chip" data-sector="' + escapeHtml(e[0]) + '" onclick="filterBySector(\'' + safe + '\')">' +
-      escapeHtml(e[0]) + ' <span class="chip-n">' + e[1] + '</span></button>';
+      dot + escapeHtml(e[0]) + ' <span class="chip-n">' + e[1] + '</span></button>';
   });
   box.innerHTML = html;
   reflectChipState();
@@ -3012,6 +3046,10 @@ th.bought-col .bought-all:indeterminate{ opacity: .65; }
   background:linear-gradient(135deg,#1a50d8,#2563eb);
   color:#fff; border-color:transparent;
   box-shadow:0 6px 14px -6px rgba(26,80,216,0.55);
+}
+.sector-chips .chip-dot{   /* V11.3: sector swatch matching the table pills & legend */
+  width:7px; height:7px; border-radius:50%; flex-shrink:0;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.5);
 }
 .sector-chips .chip-n{
   display:inline-block; min-width:18px; padding:1px 6px;

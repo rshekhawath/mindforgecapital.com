@@ -127,6 +127,21 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .qv-caption{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:520px;margin:10px auto 0;font-size:11px;color:var(--text3);font-weight:500}
 .qv-caption b{color:var(--text2);font-weight:700}
 .qv-dot-label{font-size:5px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:1.4px;stroke-linejoin:round}
+/* V11.3 — premium scatter: the cloud of dots blooms up the first time the panel
+   scrolls into view, and the 3 leader markers carry a soft expanding pulse-ring.
+   Bulletproof like the site's reveal layer: the hidden/animated states live only
+   under .qv-armed, a class JS adds ONLY when motion is allowed — so if JS fails or
+   the reader prefers reduced motion, every dot stays fully visible and static. */
+.qv-axis-tick{font-size:3px;font-weight:700;fill:var(--text3);opacity:.7;letter-spacing:.02em}
+.qv-pulse{opacity:0}
+.qv-armed .qv-dots{opacity:0}
+.qv-armed.qv-in .qv-dots{animation:qv-bloom .9s cubic-bezier(.22,.8,.2,1) both;transform-box:fill-box;transform-origin:50% 92%}
+.qv-armed.qv-in .qv-pulse{animation:qv-pulse 2.6s ease-out infinite;transform-box:fill-box;transform-origin:50% 50%}
+.qv-armed.qv-in .qv-pulse.p2{animation-delay:.5s}
+.qv-armed.qv-in .qv-pulse.p3{animation-delay:1s}
+@keyframes qv-bloom{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes qv-pulse{0%{transform:scale(.55);opacity:.5}70%{opacity:0}100%{transform:scale(2.7);opacity:0}}
+@media(prefers-reduced-motion:reduce){.qv-armed .qv-dots,.qv-armed.qv-in .qv-pulse{animation:none}.qv-armed .qv-dots{opacity:1}}
 @media(max-width:560px){.qv-panel{padding:16px 14px 14px}.qv-corner{font-size:9px}.qv-caption{font-size:10px;justify-content:center}}
 
 /* search */
@@ -530,20 +545,38 @@ function renderQuadrant(){
   s+=`<rect x="14" y="8" width="100" height="100" fill="none" stroke="rgba(37,99,235,0.16)" stroke-width="0.5" rx="2"/>`;
   s+=`<line x1="64" y1="8" x2="64" y2="108" stroke="rgba(37,99,235,0.16)" stroke-width="0.4" stroke-dasharray="2 2"/>`;
   s+=`<line x1="14" y1="58" x2="114" y2="58" stroke="rgba(37,99,235,0.16)" stroke-width="0.4" stroke-dasharray="2 2"/>`;
+  // median reference — the dashed crosshair marks the 50/50 midpoint of each 0–100 pillar
+  s+=`<text class="qv-axis-tick" x="64" y="113.4" text-anchor="middle">50</text>`;
+  s+=`<text class="qv-axis-tick" x="11" y="59.2" text-anchor="end">50</text>`;
   let dots="";
   for(let i=0;i<pts.length;i++){const d=pts[i];dots+=`<circle cx="${X(d._q).toFixed(1)}" cy="${Y(d._v).toFixed(1)}" r="0.8" fill="${MFCScores.color(d._overall)}" opacity="0.42"/>`;}
-  s+=`<g style="pointer-events:none">${dots}</g>`;
-  // featured markers (dedup the 3 leaders by symbol)
+  s+=`<g class="qv-dots" style="pointer-events:none">${dots}</g>`;
+  // featured markers (dedup the 3 leaders by symbol) — each gets a soft pulse-ring
   const top=key=>[...pts].sort((a,b)=>b[key]-a[key])[0];
   const seen={}, feats=[top("_overall"),top("_q"),top("_v")].filter(d=>d&&!seen[d.symbol]&&(seen[d.symbol]=1));
-  feats.forEach(d=>{
+  feats.forEach((d,fi)=>{
     const x=X(d._q),y=Y(d._v),c=MFCScores.color(d._overall);
     const lx=x>88?x-3:x+3, anchor=x>88?"end":"start";
-    s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.1" fill="${c}" stroke="#fff" stroke-width="0.9"/>`;
-    s+=`<text class="qv-dot-label" x="${lx.toFixed(1)}" y="${(y-2.6).toFixed(1)}" text-anchor="${anchor}" fill="${c}">${d.symbol}</text>`;
+    const pcls=fi===1?" p2":fi===2?" p3":"";
+    s+=`<circle class="qv-pulse${pcls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.3" fill="none" stroke="${c}" stroke-width="0.7"/>`;
+    s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.3" fill="${c}" stroke="#fff" stroke-width="1"/>`;
+    s+=`<text class="qv-dot-label" x="${lx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="${anchor}" fill="${c}">${d.symbol}</text>`;
   });
   svg.innerHTML=s;
-  document.getElementById("qvPanel").style.display="";
+  const panel=document.getElementById("qvPanel");
+  panel.style.display="";
+  // Arm the entrance bloom + leader pulse — ONLY when motion is allowed. If JS or
+  // IntersectionObserver is unavailable, or reduced-motion is set, the panel is
+  // never armed, so every dot stays fully visible and static (see CSS).
+  try{
+    if(!panel.dataset.armed && !window.matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window){
+      panel.dataset.armed="1";
+      panel.classList.add("qv-armed");
+      const io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){panel.classList.add("qv-in");io.disconnect();}});},{threshold:0.18});
+      io.observe(panel);
+      setTimeout(function(){panel.classList.add("qv-in");},6000); // safety net: never leave dots hidden
+    }
+  }catch(e){panel.classList.remove("qv-armed");}
 }
 function rollNum(id,target,dec){
   const el=document.getElementById(id);if(!el)return;
