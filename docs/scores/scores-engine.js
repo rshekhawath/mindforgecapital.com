@@ -82,11 +82,22 @@
       fn: function (d) { return (isNum(d.current_price) && isNum(d.sma_50) && d.sma_50 > 0) ? (d.current_price / d.sma_50 - 1) * 100 : null; } },
     { key: "52w_from_high_pct", label: "Proximity to 52W High", dir: "high", unit: "%", d: 1, hint: "Closer to 0 = nearer the year's high" },
   ];
-  var FACTORS = { quality: QUALITY, value: VALUE, growth: GROWTH, momentum: MOMENTUM };
+  // V12.4 — EFFICIENCY pillar: a fifth lens on how productively a business turns its
+  // assets & working capital into sales — built from turnover + working-capital-cycle
+  // fields already in the snapshot. Like Growth & Momentum it sits ALONGSIDE the
+  // headline Integrity Score (Quality × Value), which is deliberately unchanged.
+  var EFFICIENCY = [
+    { key: "asset_turnover",     label: "Asset Turnover",        dir: "high", unit: "x", d: 2 },
+    { key: "inventory_turnover", label: "Inventory Turnover",    dir: "high", unit: "x", d: 2 },
+    { key: "receivable_days",    label: "Receivable Days",       dir: "low",  unit: "d", d: 0, hint: "Fewer days = faster collection" },
+    { key: "cash_conv_cycle",    label: "Cash Conversion Cycle", dir: "low",  unit: "d", d: 0, hint: "Lower (even negative) = supplier-financed" },
+    { key: "capex_to_revenue",   label: "Capex / Revenue",       dir: "low",  unit: "%", d: 1, hint: "Lower = more capital-light" },
+  ];
+  var FACTORS = { quality: QUALITY, value: VALUE, growth: GROWTH, momentum: MOMENTUM, efficiency: EFFICIENCY };
 
   // Minimum factors that must have data before we report a pillar score —
   // guards against grading a stock off one or two stray numbers.
-  var MIN_Q = 4, MIN_V = 3, MIN_G = 2, MIN_M = 2;
+  var MIN_Q = 4, MIN_V = 3, MIN_G = 2, MIN_M = 2, MIN_E = 2;
 
   // ── State ─────────────────────────────────────────────────────────────────
   var BUNDLE = null, BY_SYM = Object.create(null), STOCKS = [];
@@ -170,7 +181,7 @@
   // ── Scoring pass over the whole universe ──────────────────────────────────
   function scoreAll(stocks) {
     var pools = {};
-    QUALITY.concat(VALUE).concat(GROWTH).concat(MOMENTUM).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
+    QUALITY.concat(VALUE).concat(GROWTH).concat(MOMENTUM).concat(EFFICIENCY).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
 
     var scored = 0;
     for (var i = 0; i < stocks.length; i++) {
@@ -179,17 +190,20 @@
       d._vf = breakdown(d, VALUE, pools);
       d._gf = breakdown(d, GROWTH, pools);
       d._mf = breakdown(d, MOMENTUM, pools);
+      d._ef = breakdown(d, EFFICIENCY, pools);
       var qScores = d._qf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       var vScores = d._vf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       var gScores = d._gf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       var mScores = d._mf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
+      var eScores = d._ef.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       d._q = qScores.length >= MIN_Q ? round1(mean(qScores)) : null;
       d._v = vScores.length >= MIN_V ? round1(mean(vScores)) : null;
       d._g = gScores.length >= MIN_G ? round1(mean(gScores)) : null;
       d._m = mScores.length >= MIN_M ? round1(mean(mScores)) : null;
-      // Headline Integrity Score stays Quality × Value (Growth & Momentum are separate lenses).
+      d._e = eScores.length >= MIN_E ? round1(mean(eScores)) : null;
+      // Headline Integrity Score stays Quality × Value (Growth, Momentum & Efficiency are separate lenses).
       d._overall = (d._q != null && d._v != null) ? round1((d._q + d._v) / 2) : null;
-      d._qn = qScores.length; d._vn = vScores.length; d._gn = gScores.length; d._mn = mScores.length;
+      d._qn = qScores.length; d._vn = vScores.length; d._gn = gScores.length; d._mn = mScores.length; d._en = eScores.length;
       if (d._overall != null) scored++;
     }
     computeRanks(stocks);

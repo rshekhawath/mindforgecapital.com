@@ -1366,16 +1366,31 @@ function confirmActivate() {
       closeActivateModal();
       showToast((name || email) + ' activated. Email sent — opening WhatsApp…', 'success');
 
-      // Send WhatsApp to subscriber's number with dashboard link
-      var dashUrl  = data.dashboard_url || 'https://mindforgecapital.com/dashboard.html';
+      // Send WhatsApp to subscriber's number with their dashboard link(s)
       var rawPhone = (phone || '').replace(/\D/g, '');
       if (rawPhone.length === 10) rawPhone = '91' + rawPhone;
       else if (rawPhone.length === 11 && rawPhone.startsWith('0')) rawPhone = '91' + rawPhone.slice(1);
-      if (rawPhone.length >= 11) {
-        // V5.0: WhatsApp message now reflects the actual subscription duration
-        // (previously hard-coded "30 days" regardless of plan).
-        var durLabel = (ADMIN_DURATIONS[String(duration)] || ADMIN_DURATIONS['1']).label;
-        var waMsg = encodeURIComponent(
+      // V5.0: message reflects the actual subscription duration (not a hard-coded "30 days").
+      var durLabel = (ADMIN_DURATIONS[String(duration)] || ADMIN_DURATIONS['1']).label;
+      var waMsg;
+      // V12.4 (Fix): All-Access activation returns {all_access:true, dashboards:[…]} and
+      // NO top-level dashboard_url — the old code fell back to a tokenless generic link,
+      // so the customer's WhatsApp message was a broken dashboard URL. Now we list every
+      // real dashboard link the bundle created.
+      if (data.all_access && Array.isArray(data.dashboards) && data.dashboards.length) {
+        var lines = data.dashboards.map(function (x) {
+          return (x.strategy || 'Strategy') + ':\n' + x.dashboard_url;
+        }).join('\n\n');
+        waMsg = encodeURIComponent(
+          'Hi ' + (name || 'there') + ',\n\n' +
+          'Your MindForge Capital All-Access pass is now active — here are your ' + data.dashboards.length + ' dashboards (keep these private):\n\n' +
+          lines + '\n\n' +
+          'Each is valid for ' + durLabel + '. Use these links anytime to view live portfolio updates.\n\n' +
+          '— MindForge Capital'
+        );
+      } else {
+        var dashUrl = data.dashboard_url || 'https://mindforgecapital.com/dashboard.html';
+        waMsg = encodeURIComponent(
           'Hi ' + (name || 'there') + ',\n\n' +
           'Your MindForge Capital dashboard is now active.\n\n' +
           'Strategy: ' + strategy + '\n' +
@@ -1384,6 +1399,8 @@ function confirmActivate() {
           'Your subscription is valid for ' + durLabel + '. Use this link anytime to view live portfolio updates.\n\n' +
           '— MindForge Capital'
         );
+      }
+      if (rawPhone.length >= 11) {
         window.open('https://wa.me/' + rawPhone + '?text=' + waMsg, '_blank', 'noopener,noreferrer');
       }
 

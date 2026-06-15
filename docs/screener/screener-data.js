@@ -110,7 +110,8 @@
      "max_de","min_current_ratio","min_rev_growth","min_earn_growth",
      "max_ev_ebitda","min_fcf_yield","min_graham_mos",
      "min_opm","max_peg","min_promoter","min_int_cov",
-     "min_gross_margin","min_ebitda_margin"].forEach(function (k) {
+     "min_gross_margin","min_ebitda_margin",
+     "max_price_to_fcf","max_ev_revenue","min_quick_ratio","max_net_debt_ebitda","min_earn_q_growth"].forEach(function (k) {
       f[k] = numOrNull(params.get(k));
     });
     var sector   = params.get("sector") || "";
@@ -152,6 +153,11 @@
       if (!chk(d, "interest_coverage",f.min_int_cov,      null)) continue;
       if (!chk(d, "gross_margin",    f.min_gross_margin,  null)) continue;
       if (!chk(d, "ebitda_margin",   f.min_ebitda_margin, null)) continue;
+      if (!chk(d, "price_to_fcf",    null,                f.max_price_to_fcf)) continue;
+      if (!chk(d, "ev_revenue",      null,                f.max_ev_revenue)) continue;
+      if (!chk(d, "quick_ratio",     f.min_quick_ratio,   null)) continue;
+      if (!chk(d, "net_debt_ebitda", null,                f.max_net_debt_ebitda)) continue;
+      if (!chk(d, "earnings_q_growth",f.min_earn_q_growth, null)) continue;
       if (aboveSma === "true" && !d.above_sma200) continue;
       if (sector && String(d.sector || "").toLowerCase() !== sector.toLowerCase()) continue;
       out.push(d);

@@ -622,6 +622,14 @@ tbody tr.rowlink{cursor:pointer}
         <div class="filter-label">PEG Ratio ≤</div>
         <input class="filter-input" type="number" id="max_peg" placeholder="e.g. 1.5" style="width:100%">
       </div>
+      <div class="filter-group">
+        <div class="filter-label">Price/FCF ≤</div>
+        <input class="filter-input" type="number" id="max_price_to_fcf" placeholder="e.g. 20" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">EV/Revenue ≤</div>
+        <input class="filter-input" type="number" id="max_ev_revenue" placeholder="e.g. 5" style="width:100%">
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -638,6 +646,14 @@ tbody tr.rowlink{cursor:pointer}
         <div class="filter-label">Interest Coverage ≥</div>
         <input class="filter-input" type="number" id="min_int_cov" placeholder="e.g. 3" style="width:100%">
       </div>
+      <div class="filter-group">
+        <div class="filter-label">Quick Ratio ≥</div>
+        <input class="filter-input" type="number" id="min_quick_ratio" placeholder="e.g. 1" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Net Debt/EBITDA ≤</div>
+        <input class="filter-input" type="number" id="max_net_debt_ebitda" placeholder="e.g. 3" style="width:100%">
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -649,6 +665,10 @@ tbody tr.rowlink{cursor:pointer}
       <div class="filter-group">
         <div class="filter-label">Earnings Growth (%) ≥</div>
         <input class="filter-input" type="number" id="min_earn_growth" placeholder="e.g. 10" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Qtr Earnings Growth (%) ≥</div>
+        <input class="filter-input" type="number" id="min_earn_q_growth" placeholder="e.g. 10" style="width:100%">
       </div>
       <div class="filter-group" style="display:flex;align-items:center;gap:8px;padding-top:4px">
         <input type="checkbox" id="above_sma200" style="width:16px;height:16px;cursor:pointer">
@@ -813,6 +833,26 @@ const COLUMNS=[
   {key:"52w_low",       label:"52W Low",      render:d=>d["52w_low"]?`<span class="num">₹${Number(d["52w_low"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"52w_from_high_pct",label:"From 52W H %",render:d=>fmtN(d["52w_from_high_pct"],1), visible:false},
   {key:"beta",          label:"Beta",         render:d=>fmtN(d.beta,2), visible:false},
+  // ── V12.4: deeper fundamentals — surface more of the snapshot (toggle via "Columns") ──
+  {key:"ps_ratio",          label:"P/S",            render:d=>fmtN(d.ps_ratio,2), visible:false},
+  {key:"peg_ratio",         label:"PEG",            render:d=>fmtN(d.peg_ratio,2), visible:false},
+  {key:"ev_revenue",        label:"EV/Rev",         render:d=>fmtN(d.ev_revenue,2), visible:false},
+  {key:"price_to_fcf",      label:"P/FCF",          render:d=>fmtN(d.price_to_fcf,1), visible:false},
+  {key:"eps",               label:"EPS (₹)",        render:d=>fmtN(d.eps,2), visible:false},
+  {key:"book_value",        label:"Book Value",     render:d=>fmtN(d.book_value,1), visible:false},
+  {key:"opcf_margin",       label:"OCF Mgn %",      render:d=>fmtTone(d.opcf_margin,1,"q"), visible:false},
+  {key:"quick_ratio",       label:"Quick Ratio",    render:d=>fmtN(d.quick_ratio,2), visible:false},
+  {key:"net_debt_ebitda",   label:"NetDebt/EBITDA", render:d=>fmtN(d.net_debt_ebitda,2), visible:false},
+  {key:"earnings_q_growth", label:"Q Earn Gr %",    render:d=>fmtTone(d.earnings_q_growth,1,"q"), visible:false},
+  {key:"inventory_turnover",label:"Inv T/O",        render:d=>fmtN(d.inventory_turnover,2), visible:false},
+  {key:"cash_conv_cycle",   label:"Cash Cycle (d)", render:d=>fmtN(d.cash_conv_cycle,0), visible:false},
+  {key:"asset_turnover",    label:"Asset T/O",      render:d=>fmtN(d.asset_turnover,2), visible:false},
+  {key:"institutional_holding",label:"Institut. %", render:d=>fmtN(d.institutional_holding,1), visible:false},
+  {key:"payout_ratio",      label:"Payout %",       render:d=>fmtN(d.payout_ratio,1), visible:false},
+  {key:"net_profit_cr",     label:"Net Profit (Cr)",render:d=>d.net_profit_cr!=null?`<span class="num">${Number(d.net_profit_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:false},
+  {key:"ebitda_cr",         label:"EBITDA (Cr)",    render:d=>d.ebitda_cr!=null?`<span class="num">${Number(d.ebitda_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:false},
+  {key:"fcf_cr",            label:"FCF (Cr)",       render:d=>d.fcf_cr!=null?`<span class="num">${Number(d.fcf_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:false},
+  {key:"52w_from_low_pct",  label:"From 52W L %",   render:d=>fmtN(d["52w_from_low_pct"],1), visible:false},
 ];
 
 let sortKey="market_cap_cr",sortDir=-1;
@@ -870,7 +910,7 @@ async function runScreen(){
   const params=new URLSearchParams();
   ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
    "min_roce","min_roa","min_net_margin","min_opm","min_gross_margin","min_ebitda_margin","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
-   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
+   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth","max_price_to_fcf","max_ev_revenue","min_quick_ratio","max_net_debt_ebitda","min_earn_q_growth"]
     .forEach(f=>{const v=document.getElementById(f)?.value;if(v)params.append(f,v);});
   const sector=document.getElementById("sector_filter").value;
   if(sector)params.append("sector",sector);
@@ -943,7 +983,7 @@ function toggleCol(k,v){const c=COLUMNS.find(x=>x.key===k);if(c){c.visible=v;ren
 function clearFilters(){
   ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
    "min_roce","min_roa","min_net_margin","min_opm","min_gross_margin","min_ebitda_margin","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
-   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
+   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth","max_price_to_fcf","max_ev_revenue","min_quick_ratio","max_net_debt_ebitda","min_earn_q_growth"]
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
   document.getElementById("sector_filter").value="";
@@ -954,7 +994,7 @@ function loadPreset(name){
   // Reset every input (without triggering a screen run) then apply the preset.
   ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
    "min_roce","min_roa","min_net_margin","min_opm","min_gross_margin","min_ebitda_margin","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
-   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
+   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth","max_price_to_fcf","max_ev_revenue","min_quick_ratio","max_net_debt_ebitda","min_earn_q_growth"]
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
   document.getElementById("sector_filter").value="";
