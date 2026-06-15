@@ -108,7 +108,8 @@
     ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe",
      "min_roa","min_roce","min_mcap","max_mcap","min_div","min_net_margin",
      "max_de","min_current_ratio","min_rev_growth","min_earn_growth",
-     "max_ev_ebitda","min_fcf_yield","min_graham_mos"].forEach(function (k) {
+     "max_ev_ebitda","min_fcf_yield","min_graham_mos",
+     "min_opm","max_peg","min_promoter","min_int_cov"].forEach(function (k) {
       f[k] = numOrNull(params.get(k));
     });
     var sector   = params.get("sector") || "";
@@ -144,6 +145,10 @@
       if (!chk(d, "ev_ebitda",       null,                f.max_ev_ebitda)) continue;
       if (!chk(d, "fcf_yield",       f.min_fcf_yield,     null)) continue;
       if (!chk(d, "graham_mos",      f.min_graham_mos,    null)) continue;
+      if (!chk(d, "operating_margin",f.min_opm,           null)) continue;
+      if (!chk(d, "peg_ratio",       null,                f.max_peg)) continue;
+      if (!chk(d, "promoter_holding",f.min_promoter,      null)) continue;
+      if (!chk(d, "interest_coverage",f.min_int_cov,      null)) continue;
       if (aboveSma === "true" && !d.above_sma200) continue;
       if (sector && String(d.sector || "").toLowerCase() !== sector.toLowerCase()) continue;
       out.push(d);

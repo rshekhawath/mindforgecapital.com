@@ -69,11 +69,24 @@
     { key: "earnings_growth",   label: "Earnings Growth",  dir: "high", unit: "%", d: 1 },
     { key: "earnings_q_growth", label: "Quarterly Earnings Growth", dir: "high", unit: "%", d: 1, hint: "Latest quarter, YoY" },
   ];
-  var FACTORS = { quality: QUALITY, value: VALUE, growth: GROWTH };
+  // V12.2 — MOMENTUM pillar: a fourth factor lens (is the stock in an uptrend)
+  // built from price-trend fields already in the snapshot — distance above the
+  // 50/200-day averages and proximity to the 52-week high. Computed factors use
+  // a fn(); raw price/SMA ratios are expressed as "% above the average". Like
+  // Growth, it sits ALONGSIDE the headline Integrity Score (Quality × Value),
+  // which is unchanged — momentum is a trading lens, not a measure of integrity.
+  var MOMENTUM = [
+    { key: "_p2s200", label: "Price vs 200-DMA", dir: "high", unit: "%", d: 1, hint: "% above the 200-day average",
+      fn: function (d) { return (isNum(d.current_price) && isNum(d.sma_200) && d.sma_200 > 0) ? (d.current_price / d.sma_200 - 1) * 100 : null; } },
+    { key: "_p2s50",  label: "Price vs 50-DMA",  dir: "high", unit: "%", d: 1, hint: "% above the 50-day average",
+      fn: function (d) { return (isNum(d.current_price) && isNum(d.sma_50) && d.sma_50 > 0) ? (d.current_price / d.sma_50 - 1) * 100 : null; } },
+    { key: "52w_from_high_pct", label: "Proximity to 52W High", dir: "high", unit: "%", d: 1, hint: "Closer to 0 = nearer the year's high" },
+  ];
+  var FACTORS = { quality: QUALITY, value: VALUE, growth: GROWTH, momentum: MOMENTUM };
 
   // Minimum factors that must have data before we report a pillar score —
   // guards against grading a stock off one or two stray numbers.
-  var MIN_Q = 4, MIN_V = 3, MIN_G = 2;
+  var MIN_Q = 4, MIN_V = 3, MIN_G = 2, MIN_M = 2;
 
   // ── State ─────────────────────────────────────────────────────────────────
   var BUNDLE = null, BY_SYM = Object.create(null), STOCKS = [];
@@ -111,7 +124,7 @@
   // Pull a factor's raw value from a stock, applying per-factor normalisation
   // (dividend_yield: missing means "pays nothing" → 0).
   function rawFor(d, f) {
-    var v = d[f.key];
+    var v = f.fn ? f.fn(d) : d[f.key];   // computed factors (e.g. price vs SMA) supply a fn()
     if (!isNum(v)) return f.zeroFill ? 0 : null;
     return v;
   }
@@ -157,7 +170,7 @@
   // ── Scoring pass over the whole universe ──────────────────────────────────
   function scoreAll(stocks) {
     var pools = {};
-    QUALITY.concat(VALUE).concat(GROWTH).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
+    QUALITY.concat(VALUE).concat(GROWTH).concat(MOMENTUM).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
 
     var scored = 0;
     for (var i = 0; i < stocks.length; i++) {
@@ -165,15 +178,18 @@
       d._qf = breakdown(d, QUALITY, pools);
       d._vf = breakdown(d, VALUE, pools);
       d._gf = breakdown(d, GROWTH, pools);
+      d._mf = breakdown(d, MOMENTUM, pools);
       var qScores = d._qf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       var vScores = d._vf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       var gScores = d._gf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
+      var mScores = d._mf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       d._q = qScores.length >= MIN_Q ? round1(mean(qScores)) : null;
       d._v = vScores.length >= MIN_V ? round1(mean(vScores)) : null;
       d._g = gScores.length >= MIN_G ? round1(mean(gScores)) : null;
-      // Headline Integrity Score stays Quality × Value (Growth is a separate lens).
+      d._m = mScores.length >= MIN_M ? round1(mean(mScores)) : null;
+      // Headline Integrity Score stays Quality × Value (Growth & Momentum are separate lenses).
       d._overall = (d._q != null && d._v != null) ? round1((d._q + d._v) / 2) : null;
-      d._qn = qScores.length; d._vn = vScores.length; d._gn = gScores.length;
+      d._qn = qScores.length; d._vn = vScores.length; d._gn = gScores.length; d._mn = mScores.length;
       if (d._overall != null) scored++;
     }
     return scored;

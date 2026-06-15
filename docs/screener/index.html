@@ -9,7 +9,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=(), browsing-topics=(), serial=(), bluetooth=(), hid=(), midi=(), idle-detection=(), display-capture=(), autoplay=(), screen-wake-lock=(), xr-spatial-tracking=()">
 <script>/* V11.4 clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
 <!-- V11.4 premium PWA/install metadata: consistent, installable, light-rendered -->
 <meta name="color-scheme" content="light">
@@ -470,7 +470,7 @@ tbody tr.rowlink{cursor:pointer}
   .content-title{font-size:20px}
 }
 </style>
-<script src="screener-data.js"></script>
+<script src="screener-data.js?v=122"></script>
 <link rel="stylesheet" href="../assets/mfc-finish.css?v=110">
 </head>
 <body>
@@ -544,6 +544,13 @@ tbody tr.rowlink{cursor:pointer}
           <input class="filter-input" type="number" id="max_pb" placeholder="Max">
         </div>
       </div>
+      <div class="filter-group">
+        <div class="filter-label">P/S Ratio</div>
+        <div class="filter-row">
+          <input class="filter-input" type="number" id="min_ps" placeholder="Min">
+          <input class="filter-input" type="number" id="max_ps" placeholder="Max">
+        </div>
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -579,6 +586,14 @@ tbody tr.rowlink{cursor:pointer}
         <div class="filter-label">Net Margin (%) ≥</div>
         <input class="filter-input" type="number" id="min_net_margin" placeholder="e.g. 10" style="width:100%">
       </div>
+      <div class="filter-group">
+        <div class="filter-label">Operating Margin (%) ≥</div>
+        <input class="filter-input" type="number" id="min_opm" placeholder="e.g. 15" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Promoter Holding (%) ≥</div>
+        <input class="filter-input" type="number" id="min_promoter" placeholder="e.g. 50" style="width:100%">
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -595,6 +610,10 @@ tbody tr.rowlink{cursor:pointer}
         <div class="filter-label">Graham Margin of Safety (%) ≥</div>
         <input class="filter-input" type="number" id="min_graham_mos" placeholder="e.g. 20" style="width:100%">
       </div>
+      <div class="filter-group">
+        <div class="filter-label">PEG Ratio ≤</div>
+        <input class="filter-input" type="number" id="max_peg" placeholder="e.g. 1.5" style="width:100%">
+      </div>
     </div>
 
     <div class="sidebar-section">
@@ -606,6 +625,10 @@ tbody tr.rowlink{cursor:pointer}
       <div class="filter-group">
         <div class="filter-label">Current Ratio ≥</div>
         <input class="filter-input" type="number" id="min_current_ratio" placeholder="e.g. 1.5" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Interest Coverage ≥</div>
+        <input class="filter-input" type="number" id="min_int_cov" placeholder="e.g. 3" style="width:100%">
       </div>
     </div>
 
@@ -835,9 +858,9 @@ async function loadInitialData(){
 
 async function runScreen(){
   const params=new URLSearchParams();
-  ["min_pe","max_pe","min_pb","max_pb","min_roe","max_roe","min_mcap","max_mcap","min_div",
-   "min_roce","min_roa","min_net_margin","max_ev_ebitda","min_fcf_yield","min_graham_mos",
-   "max_de","min_current_ratio","min_rev_growth","min_earn_growth"]
+  ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
+   "min_roce","min_roa","min_net_margin","min_opm","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
+   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
     .forEach(f=>{const v=document.getElementById(f)?.value;if(v)params.append(f,v);});
   const sector=document.getElementById("sector_filter").value;
   if(sector)params.append("sector",sector);
@@ -908,9 +931,9 @@ function toggleColPanel(){const p=document.getElementById("colPanel");p.classLis
 function toggleCol(k,v){const c=COLUMNS.find(x=>x.key===k);if(c){c.visible=v;renderTable();}}
 
 function clearFilters(){
-  ["min_pe","max_pe","min_pb","max_pb","min_roe","max_roe","min_mcap","max_mcap","min_div",
-   "min_roce","min_roa","min_net_margin","max_ev_ebitda","min_fcf_yield","min_graham_mos",
-   "max_de","min_current_ratio","min_rev_growth","min_earn_growth"]
+  ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
+   "min_roce","min_roa","min_net_margin","min_opm","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
+   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
   document.getElementById("sector_filter").value="";
@@ -919,9 +942,9 @@ function clearFilters(){
 }
 function loadPreset(name){
   // Reset every input (without triggering a screen run) then apply the preset.
-  ["min_pe","max_pe","min_pb","max_pb","min_roe","max_roe","min_mcap","max_mcap","min_div",
-   "min_roce","min_roa","min_net_margin","max_ev_ebitda","min_fcf_yield","min_graham_mos",
-   "max_de","min_current_ratio","min_rev_growth","min_earn_growth"]
+  ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
+   "min_roce","min_roa","min_net_margin","min_opm","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
+   "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
   document.getElementById("sector_filter").value="";

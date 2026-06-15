@@ -5,7 +5,7 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
-<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=(), browsing-topics=(), serial=(), bluetooth=(), hid=(), midi=(), idle-detection=(), display-capture=(), autoplay=(), screen-wake-lock=(), xr-spatial-tracking=()">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
@@ -400,6 +400,13 @@ tr.row-bought td.company{text-decoration:line-through;}
 .buy-prog-bar{flex:0 0 220px;background:rgba(5,150,105,0.10);border-radius:6px;height:10px;overflow:hidden;}
 @media (max-width:520px){.buy-prog-bar{flex-basis:100%;}}
 .buy-prog-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),#10b981,#34d399);width:0;transition:width .55s cubic-bezier(.22,1,.36,1);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
+/* V12.2: every order placed — soft green glow + a ✓ before the title */
+.buy-prog-card.is-complete{border-color:rgba(5,150,105,0.45);box-shadow:0 0 0 1px rgba(5,150,105,0.25),0 14px 32px -18px rgba(5,150,105,0.55);background:linear-gradient(135deg,rgba(5,150,105,0.12) 0%,var(--ink2) 75%);}
+.buy-prog-card.is-complete .bp-title::before{content:"✓ ";color:var(--green);font-weight:900;}
+@media (prefers-reduced-motion:no-preference){
+  .buy-prog-card.is-complete{animation:bp-pop .5s cubic-bezier(.22,1,.36,1);}
+  @keyframes bp-pop{0%{transform:scale(.995)}55%{transform:scale(1.012)}100%{transform:scale(1)}}
+}
 .buy-prog-reset{
   background:transparent;border:0.5px solid var(--border2);color:var(--text3);
   font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:6px 12px;border-radius:8px;
@@ -2594,6 +2601,9 @@ function refreshBoughtProgress() {
   document.getElementById('bp-meta').textContent = remaining === 0
     ? 'All set — hold these through your subscription cycle.'
     : remaining + ' to go. Saved automatically in your browser.';
+  // V12.2: celebratory state once every order is placed — a soft green glow +
+  // a ✓ on the title. Toggled by class so it's reduced-motion safe via CSS.
+  card.classList.toggle('is-complete', remaining === 0 && total > 0);
 }
 
 // ── COPY / EXPORT ACTIONS ──────────────────────────────────────────────────
