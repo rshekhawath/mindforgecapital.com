@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()">
 <script>/* V11.4 clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
 <!-- V11.4 premium PWA/install metadata: consistent, installable, light-rendered -->
 <meta name="color-scheme" content="light">
@@ -637,9 +640,19 @@ tbody tr.rowlink{cursor:pointer}
         <option value="dividend_yield">Dividend Yield</option>
         <option value="current_price">Price</option>
         <option value="net_margin">Net Margin</option>
+        <option value="operating_margin">Operating Margin</option>
         <option value="roce">ROCE %</option>
         <option value="roa">ROA %</option>
         <option value="fcf_yield">FCF Yield</option>
+        <option value="earnings_yield">Earnings Yield</option>
+        <option value="ev_ebitda">EV / EBITDA</option>
+        <option value="revenue_growth">Revenue Growth</option>
+        <option value="earnings_growth">Earnings Growth</option>
+        <option value="graham_mos">Graham Margin of Safety</option>
+        <option value="debt_to_equity">Debt / Equity</option>
+        <option value="current_ratio">Current Ratio</option>
+        <option value="promoter_holding">Promoter Holding %</option>
+        <option value="beta">Beta</option>
       </select>
       <select class="filter-select" id="sort_dir">
         <option value="desc">High → Low</option>
@@ -749,12 +762,23 @@ const COLUMNS=[
   {key:"roe",           label:"ROE %",        render:d=>fmtTone(d.roe,1,"q"), visible:true},
   {key:"dividend_yield",label:"Div Yield %",  render:d=>fmtTone(d.dividend_yield,2,"div"), visible:true},
   {key:"net_margin",    label:"Net Margin %", render:d=>fmtTone(d.net_margin,1,"q"), visible:false},
+  {key:"operating_margin",label:"OPM %",      render:d=>fmtTone(d.operating_margin,1,"q"), visible:false},
   {key:"roce",          label:"ROCE %",      render:d=>fmtTone(d.roce,1,"q"), visible:false},
+  {key:"roa",           label:"ROA %",       render:d=>fmtTone(d.roa,1,"q"), visible:false},
   {key:"graham_mos",    label:"Graham MoS%", render:d=>fmtTone(d.graham_mos,1,"gmos"), visible:false},
   {key:"fcf_yield",     label:"FCF Yield %", render:d=>fmtTone(d.fcf_yield,2,"fcf"), visible:false},
+  {key:"earnings_yield",label:"E/Yield %",   render:d=>fmtTone(d.earnings_yield,2,"fcf"), visible:false},
+  {key:"ev_ebitda",     label:"EV/EBITDA",   render:d=>fmtN(d.ev_ebitda,1), visible:false},
   {key:"revenue_cr",    label:"Revenue (Cr)", render:d=>d.revenue_cr?`<span class="num">${Number(d.revenue_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:false},
+  {key:"revenue_growth",label:"Rev Gr %",    render:d=>fmtTone(d.revenue_growth,1,"q"), visible:false},
+  {key:"earnings_growth",label:"Earn Gr %",  render:d=>fmtTone(d.earnings_growth,1,"q"), visible:false},
   {key:"debt_to_equity",label:"D/E",          render:d=>fmtN(d.debt_to_equity,2), visible:false},
+  {key:"current_ratio", label:"Current Ratio",render:d=>fmtN(d.current_ratio,2), visible:false},
+  {key:"interest_coverage",label:"Int Cov",  render:d=>fmtN(d.interest_coverage,1), visible:false},
+  {key:"promoter_holding",label:"Promoter %",render:d=>fmtN(d.promoter_holding,1), visible:false},
   {key:"52w_high",      label:"52W High",     render:d=>d["52w_high"]?`<span class="num">₹${Number(d["52w_high"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
+  {key:"52w_low",       label:"52W Low",      render:d=>d["52w_low"]?`<span class="num">₹${Number(d["52w_low"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
+  {key:"52w_from_high_pct",label:"From 52W H %",render:d=>fmtN(d["52w_from_high_pct"],1), visible:false},
   {key:"beta",          label:"Beta",         render:d=>fmtN(d.beta,2), visible:false},
 ];
 

@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()">
 <script>/* V11.4 clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
 <!-- V11.4 premium PWA/install metadata: consistent, installable, light-rendered -->
 <meta name="color-scheme" content="light">
@@ -84,7 +87,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hero h1 .grad{background:linear-gradient(120deg,#1a50d8,#0891b2 60%,#2dd4bf);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .hero-sub{font-size:16px;color:var(--text2);max-width:760px;line-height:1.6;margin-bottom:22px}
 .hero-sub b{color:var(--white);font-weight:700}
-.hero-sub .q{color:#059669;font-weight:700}.hero-sub .v{color:#1a50d8;font-weight:700}
+.hero-sub .q{color:#059669;font-weight:700}.hero-sub .v{color:#1a50d8;font-weight:700}.hero-sub .g{color:#d97706;font-weight:700}
 .hero-sub a{color:var(--accent2);font-weight:600;cursor:pointer;border-bottom:1px dashed rgba(37,99,235,.4)}
 .hero-sub a:hover{color:var(--accent)}
 
@@ -107,7 +110,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hp-leg b{color:var(--white);font-weight:700;font-variant-numeric:tabular-nums}
 
 /* highlight cards */
-.highlights{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.highlights{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:980px){.highlights{grid-template-columns:repeat(2,1fr)}}
 .hl-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 18px;cursor:pointer;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 18px -10px rgba(37,99,235,.14);display:flex;align-items:center;gap:14px}
 .hl-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--c,#1a50d8)}
 .hl-card:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 36px -16px rgba(26,80,216,.28)}
@@ -279,7 +283,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hero h1{font-size:26px}
 }
 </style>
-<script src="scores-engine.js"></script>
+<script src="scores-engine.js?v=121"></script>
 <link rel="stylesheet" href="../assets/mfc-finish.css?v=110">
 </head>
 <body>
@@ -310,8 +314,9 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
     <span class="hero-badge"><span class="dot"></span>Free · Refreshed daily</span>
     <h1>Integrity <span class="grad">Score</span></h1>
     <p class="hero-sub">
-      Every NSE company graded <b>0–100</b> on two pillars — <span class="q">Quality</span>
-      (profitability, returns &amp; balance-sheet health) and <span class="v">Value</span> (how cheaply it's priced).
+      Every NSE company graded <b>0–100</b> on three pillars — <span class="q">Quality</span>
+      (profitability, returns &amp; balance-sheet health), <span class="v">Value</span> (how cheaply it's priced)
+      and <span class="g">Growth</span> (how fast it's compounding).
       One transparent, data-driven read on a business. <a id="introMethod">How it's calculated →</a>
     </p>
 
@@ -362,7 +367,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
         <span class="qv-corner br">Quality,<br>pricier</span>
         <span class="qv-corner bl">Weaker,<br>pricier</span>
       </div>
-      <div class="qv-caption"><span>Stronger <b>Quality</b> to the right →</span><span>↑ Better <b>Value</b> (cheaper) higher up</span></div>
+      <div class="qv-caption"><span>Stronger <b>Quality</b> to the right →</span><span>↑ Better <b>Value</b> (cheaper) higher up</span><span>Dot size ∝ <b>Growth</b></span></div>
     </div>
   </div>
 
@@ -406,7 +411,8 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
     <h3>How the score works</h3>
     <p>Each stock is ranked against the entire NSE universe on a set of fundamental factors. For every factor a stock
        sits somewhere from the bottom (0) to the top (100) of all companies — those percentile ranks are averaged into
-       two pillar scores, and the pillars are averaged into the Overall Integrity Score.</p>
+       pillar scores. The Overall Integrity Score is the average of Quality &amp; Value; Growth is shown alongside
+       as a separate compounding lens.</p>
     <h4>🟢 Quality &mdash; is it a good business?</h4>
     <div class="method-pills">
       <span class="method-pill">Return on Equity</span><span class="method-pill">Return on Capital</span>
@@ -419,6 +425,11 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
       <span class="method-pill">Earnings Yield</span><span class="method-pill">FCF Yield</span>
       <span class="method-pill">Price / Book</span><span class="method-pill">EV / EBITDA</span>
       <span class="method-pill">Graham Margin of Safety</span><span class="method-pill">Dividend Yield</span>
+    </div>
+    <h4>🟠 Growth &mdash; is it compounding?</h4>
+    <div class="method-pills">
+      <span class="method-pill">Revenue Growth</span><span class="method-pill">Earnings Growth</span>
+      <span class="method-pill">Quarterly Earnings Growth</span>
     </div>
     <h4>Grade key</h4>
     <div class="grade-key">
@@ -460,6 +471,7 @@ const COLUMNS=[
   {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${encodeURIComponent(d.symbol)}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${d.sector?`<span class="sector-pill">${d.sector}</span>`:""}</div>`, nosort:true, cls:"company-col"},
   {key:"_q",            label:"Quality",      render:d=>scoreCell(d._q)},
   {key:"_v",            label:"Value",        render:d=>scoreCell(d._v)},
+  {key:"_g",            label:"Growth",       render:d=>scoreCell(d._g)},
   {key:"_overall",      label:"Integrity",    render:d=>overallCell(d)},
   {key:"current_price", label:"Price (₹)",    render:d=>d.current_price?`<span class="num">₹${Number(d.current_price).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`:`<span class="na">—</span>`},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`},
@@ -500,7 +512,7 @@ function sortBy(k){
   if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}
   sortResults(allResults);currentPage=1;renderTable();
   // reflect what the list is ranked by
-  const lbl={market_cap_cr:"market cap",_overall:"Integrity Score",_q:"Quality",_v:"Value",current_price:"price",roe:"ROE",pe_ratio:"P/E"}[k]||"score";
+  const lbl={market_cap_cr:"market cap",_overall:"Integrity Score",_q:"Quality",_v:"Value",_g:"Growth",current_price:"price",roe:"ROE",pe_ratio:"P/E"}[k]||"score";
   document.getElementById("listMeta").textContent=`Ranked by ${lbl} — ${sortDir<0?"highest":"lowest"} first`;
 }
 
@@ -535,6 +547,7 @@ function renderHero(){
     {kick:"Highest Integrity",key:"_overall",c:"#1a50d8",d:top("_overall")},
     {kick:"Top Quality",key:"_q",c:"#059669",d:top("_q")},
     {kick:"Best Value",key:"_v",c:"#1a50d8",d:top("_v")},
+    {kick:"Top Growth",key:"_g",c:"#d97706",d:top("_g")},
   ];
   document.getElementById("highlights").innerHTML=cards.map(card=>{
     const d=card.d;if(!d)return"";
@@ -562,7 +575,14 @@ function renderQuadrant(){
   s+=`<text class="qv-axis-tick" x="64" y="113.4" text-anchor="middle">50</text>`;
   s+=`<text class="qv-axis-tick" x="11" y="59.2" text-anchor="end">50</text>`;
   let dots="";
-  for(let i=0;i<pts.length;i++){const d=pts[i];dots+=`<circle cx="${X(d._q).toFixed(1)}" cy="${Y(d._v).toFixed(1)}" r="0.8" fill="${MFCScores.color(d._overall)}" opacity="0.42"/>`;}
+  for(let i=0;i<pts.length;i++){
+    const d=pts[i];
+    // V12.1: dot RADIUS encodes Growth — bigger dot = faster compounder. Maps
+    // Growth pillar 0–100 → r 0.45–1.4; stocks without a Growth score fall back
+    // to the previous baseline so they remain visible.
+    const r=d._g==null ? 0.8 : (0.45 + (d._g/100)*0.95);
+    dots+=`<circle cx="${X(d._q).toFixed(1)}" cy="${Y(d._v).toFixed(1)}" r="${r.toFixed(2)}" fill="${MFCScores.color(d._overall)}" opacity="0.42"/>`;
+  }
   s+=`<g class="qv-dots" style="pointer-events:none">${dots}</g>`;
   // featured markers (dedup the 3 leaders by symbol) — each gets a soft pulse-ring
   const top=key=>[...pts].sort((a,b)=>b[key]-a[key])[0];

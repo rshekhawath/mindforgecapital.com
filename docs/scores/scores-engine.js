@@ -60,11 +60,20 @@
     { key: "graham_mos",       label: "Graham Margin of Safety", dir: "high", unit: "%", d: 0 },
     { key: "dividend_yield",   label: "Dividend Yield",    dir: "high", unit: "%", d: 2, zeroFill: true },
   ];
-  var FACTORS = { quality: QUALITY, value: VALUE };
+  // V12.1 — GROWTH pillar: a third complementary lens (how fast the business is
+  // compounding) built from the revenue/earnings growth fields already in the
+  // snapshot. Shown alongside Quality & Value; the headline Integrity Score stays
+  // Quality × Value so existing rankings/scatter are unchanged.
+  var GROWTH = [
+    { key: "revenue_growth",    label: "Revenue Growth",   dir: "high", unit: "%", d: 1 },
+    { key: "earnings_growth",   label: "Earnings Growth",  dir: "high", unit: "%", d: 1 },
+    { key: "earnings_q_growth", label: "Quarterly Earnings Growth", dir: "high", unit: "%", d: 1, hint: "Latest quarter, YoY" },
+  ];
+  var FACTORS = { quality: QUALITY, value: VALUE, growth: GROWTH };
 
   // Minimum factors that must have data before we report a pillar score —
   // guards against grading a stock off one or two stray numbers.
-  var MIN_Q = 4, MIN_V = 3;
+  var MIN_Q = 4, MIN_V = 3, MIN_G = 2;
 
   // ── State ─────────────────────────────────────────────────────────────────
   var BUNDLE = null, BY_SYM = Object.create(null), STOCKS = [];
@@ -148,19 +157,23 @@
   // ── Scoring pass over the whole universe ──────────────────────────────────
   function scoreAll(stocks) {
     var pools = {};
-    QUALITY.concat(VALUE).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
+    QUALITY.concat(VALUE).concat(GROWTH).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
 
     var scored = 0;
     for (var i = 0; i < stocks.length; i++) {
       var d = stocks[i];
       d._qf = breakdown(d, QUALITY, pools);
       d._vf = breakdown(d, VALUE, pools);
+      d._gf = breakdown(d, GROWTH, pools);
       var qScores = d._qf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       var vScores = d._vf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
+      var gScores = d._gf.filter(function (x) { return x.score != null; }).map(function (x) { return x.score; });
       d._q = qScores.length >= MIN_Q ? round1(mean(qScores)) : null;
       d._v = vScores.length >= MIN_V ? round1(mean(vScores)) : null;
+      d._g = gScores.length >= MIN_G ? round1(mean(gScores)) : null;
+      // Headline Integrity Score stays Quality × Value (Growth is a separate lens).
       d._overall = (d._q != null && d._v != null) ? round1((d._q + d._v) / 2) : null;
-      d._qn = qScores.length; d._vn = vScores.length;
+      d._qn = qScores.length; d._vn = vScores.length; d._gn = gScores.length;
       if (d._overall != null) scored++;
     }
     return scored;
