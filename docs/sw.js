@@ -1,10 +1,12 @@
-/* MindForge Capital — minimal service worker (v1)
+/* MindForge Capital — minimal service worker (v2)
  * Strategy: network-first for HTML, cache-first for assets.
  * Deliberately stays out of the way of the live data path: nothing under
  * /script.google.com is cached. Apps Script responses change per-second so
  * a stale cache would mislead subscribers.
+ * v2 (V12.0): cache bumped so the old HTML fallback is purged on activate and
+ * returning visitors land on the V12.0 interactive hero even when offline.
  */
-const CACHE = 'mfc-v1';
+const CACHE = 'mfc-v2';
 const ASSET_PATHS = [
   '/assets/LogoNav.png',
   '/assets/favicon-32.png',

@@ -3594,12 +3594,25 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
 #alloc-donut-svg.mf101-hot .ring-slice{ opacity:.35; }
 #alloc-donut-svg.mf101-hot .ring-slice.mf101-pick{ opacity:1 !important; stroke-width:14.5 !important; }
 
+/* V12.0: the ring centre becomes informative on hover/focus — it shows the
+   focused sector's exact weight + name (legend row OR slice), reverting to the
+   sector count on leave. Completes the bidirectional link (slice → legend row). */
+.alloc-donut .dc-num{ transition: font-size .2s ease, color .2s ease; }
+.donut-center.dc-focus .dc-num{ font-size:23px; color:var(--accent2); }
+.donut-center.dc-focus .dc-lbl{
+  white-space:normal; line-height:1.18; max-width:104px; color:var(--text2);
+  letter-spacing:.03em; text-transform:none; font-size:11px;
+}
+.alloc-row.mf101-rowhot{ background:rgba(26,80,216,0.06); }
+.alloc-row.mf101-rowhot .alloc-bar{ filter:brightness(1.08); }
+
 @media (prefers-reduced-motion: reduce){
   th.sortable::before{ transition:none; }
   th.sortable.sort-asc::before, th.sortable.sort-desc::before{ left:10%; right:10%; opacity:1; }
   .stats-row .stat-card .ico-wrap{ animation:none; transition:none; }
   .stat-card:hover .ico-wrap{ transform:none; }
   #alloc-donut-svg .ring-slice{ transition: stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1); }
+  .alloc-donut .dc-num{ transition:none; }
 }
 </style>
 <script id="mf-v101-dash-js">
@@ -3638,6 +3651,67 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
       grid.addEventListener("mouseout", function(e){ if(rowOf(e)) clearPick(); });
       grid.addEventListener("focusin", function(e){ var r=rowOf(e); if(r) pick(r); });
       grid.addEventListener("focusout",function(e){ if(rowOf(e)) clearPick(); });
+    }catch(e){}
+  });
+})();
+</script>
+<script id="mf-v12-donut-centre">
+/* V12.0 — informative ring centre. On hover/focus of a legend row OR a donut
+   slice, the centre shows that sector's exact weight + name; reverts to the
+   sector count on leave. Also mirrors slice hover onto its legend row, finishing
+   the bidirectional link. Delegated (survives re-renders) and fails silent. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      var grid=document.getElementById("alloc-grid");
+      var svg=document.getElementById("alloc-donut-svg");
+      var num=document.getElementById("donut-center-num");
+      var center=document.querySelector(".donut-center");
+      var lbl=center?center.querySelector(".dc-lbl"):null;
+      if(!grid||!svg||!num||!center||!lbl) return;
+
+      var baseNum=null, baseLbl=null;
+      function show(sector,pct){
+        if(baseNum===null){ baseNum=num.textContent; baseLbl=lbl.textContent; }
+        if(pct) num.textContent=pct;
+        lbl.textContent=sector;
+        center.classList.add("dc-focus");
+      }
+      function restore(){
+        if(baseNum!==null){ num.textContent=baseNum; lbl.textContent=baseLbl; baseNum=baseLbl=null; }
+        center.classList.remove("dc-focus");
+      }
+      // legend row → centre
+      function rowOf(e){ return e.target&&e.target.closest?e.target.closest(".alloc-row"):null; }
+      function fromRow(r){
+        var p=r.querySelector(".alloc-pct");
+        show(r.getAttribute("data-sector")||"", p?p.textContent.trim():"");
+      }
+      grid.addEventListener("mouseover",function(e){ var r=rowOf(e); if(r) fromRow(r); });
+      grid.addEventListener("mouseout", function(e){ if(rowOf(e)) restore(); });
+      grid.addEventListener("focusin", function(e){ var r=rowOf(e); if(r) fromRow(r); });
+      grid.addEventListener("focusout",function(e){ if(rowOf(e)) restore(); });
+      // slice → centre + matching legend row
+      function sliceOf(e){ return e.target&&e.target.closest?e.target.closest(".ring-slice"):null; }
+      function hlRow(sector,on){
+        var rows=grid.querySelectorAll(".alloc-row");
+        for(var i=0;i<rows.length;i++){
+          rows[i].classList.toggle("mf101-rowhot", !!on && rows[i].getAttribute("data-sector")===sector);
+        }
+      }
+      var lastSec=null;
+      svg.addEventListener("mouseover",function(e){
+        var s=sliceOf(e); if(!s) return;
+        var t=s.querySelector("title"); if(!t) return;
+        var txt=t.textContent||"", i=txt.indexOf(" · ");
+        var sec=i>-1?txt.slice(0,i):txt, pct=i>-1?txt.slice(i+3):"";
+        lastSec=sec; show(sec,pct); hlRow(sec,true);
+      });
+      svg.addEventListener("mouseout",function(e){
+        if(sliceOf(e)){ restore(); if(lastSec){ hlRow(lastSec,false); lastSec=null; } }
+      });
     }catch(e){}
   });
 })();

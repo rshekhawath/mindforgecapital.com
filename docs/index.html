@@ -195,6 +195,27 @@ nav {
 .hv-leg.strat .hv-leg-mark { background: linear-gradient(90deg, var(--accent), #2dd4bf); }
 .hv-leg.bench .hv-leg-mark { background: var(--text3); opacity: 0.5; height: 1.5px; border-top: 1.5px dashed var(--text3); background: transparent; }
 
+/* V12.0: interactive hero — strategy switcher chips. Toggling a chip morphs the
+   performance card (numbers + chart + legend + alpha) to that strategy, so the
+   hero showcases all five strategies instead of only Multicap. Degrades to the
+   static Multicap card if JS is unavailable. */
+.hv-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin: -2px 0 16px; }
+.hv-tab {
+  font-family: inherit; font-size: 10.5px; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--text2); background: rgba(37,99,235,0.06);
+  border: 0.5px solid var(--border2); border-radius: 999px;
+  padding: 5px 10px; cursor: pointer; line-height: 1; white-space: nowrap;
+  transition: color .2s, background .2s, border-color .2s, box-shadow .2s, transform .1s;
+}
+.hv-tab:hover { color: var(--white); background: rgba(37,99,235,0.12); border-color: rgba(37,99,235,0.35); }
+.hv-tab.active {
+  color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent; box-shadow: 0 4px 12px -4px rgba(26,80,216,0.55);
+}
+.hv-tab:active { transform: translateY(0.5px); }
+.hv-tab:focus-visible { outline: 2px solid rgba(37,99,235,0.6); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .hv-tab { transition: none; } }
+
 /* ── SCROLL PROGRESS BAR ── */
 .scroll-progress {
   position: fixed; top: 0; left: 0; right: 0; height: 2px;
@@ -1380,6 +1401,16 @@ footer {
   transition: opacity 0.3s ease 1.6s;
 }
 .spark-wrap.animate .spark-end-dot { opacity: 1; }
+/* V12.0: complete the sparkline animation — the gradient area-fill and the dashed
+   benchmark line now fade in as the strategy line draws, instead of popping in
+   instantly. Gated behind no-preference so reduced-motion users see the final
+   state with no extra motion. Opacity-only (SVG-safe). */
+@media (prefers-reduced-motion: no-preference) {
+  .spark-wrap .spark-fill  { opacity: 0; transition: opacity 1s ease 0.45s; }
+  .spark-wrap .spark-bench { opacity: 0; transition: opacity 0.9s ease 0.7s; }
+  .spark-wrap.animate .spark-fill  { opacity: 0.16; }
+  .spark-wrap.animate .spark-bench { opacity: 0.55; }
+}
 .spark-legend {
   display: flex; gap: 12px; align-items: center;
   margin-top: 4px;
@@ -3123,51 +3154,58 @@ textarea:focus-visible, select:focus-visible {
         </ul>
       </div>
 
-      <div class="hero-visual" aria-hidden="true">
-        <div class="hv-card tilt-host">
+      <div class="hero-visual">
+        <div class="hv-card tilt-host" role="group" aria-label="Backtested 5-year performance by strategy">
           <div class="hv-head">
             <span class="hv-title">5Y Backtested Performance</span>
             <span class="hv-pulse">Live data</span>
           </div>
-          <div class="hv-nums">
+          <div class="hv-tabs" id="hv-tabs" role="group" aria-label="Choose a strategy">
+            <button type="button" class="hv-tab" data-hv="ma" aria-pressed="false">MultiAsset</button>
+            <button type="button" class="hv-tab" data-hv="lm" aria-pressed="false">LargeMidcap</button>
+            <button type="button" class="hv-tab" data-hv="sm" aria-pressed="false">SmallMicro</button>
+            <button type="button" class="hv-tab active" data-hv="mc" aria-pressed="true">Multicap</button>
+            <button type="button" class="hv-tab" data-hv="sp" aria-pressed="false">S&amp;P 500</button>
+          </div>
+          <div class="hv-nums" aria-live="polite">
             <div class="hv-num">
-              <div class="val"><!--MFSTAT:mc:cagr-->64.2%<!--/MFSTAT--></div>
-              <div class="lbl">Multicap CAGR</div>
+              <div class="val" id="hv-cagr"><!--MFSTAT:mc:cagr-->64.2%<!--/MFSTAT--></div>
+              <div class="lbl" id="hv-cagr-lbl">Multicap CAGR</div>
             </div>
             <div class="hv-vs">vs</div>
             <div class="hv-num bench">
-              <div class="val"><!--MFSTAT:mc:bench_cagr-->17.26%<!--/MFSTAT--></div>
+              <div class="val" id="hv-bench"><!--MFSTAT:mc:bench_cagr-->17.26%<!--/MFSTAT--></div>
               <div class="lbl">Benchmark</div>
             </div>
           </div>
           <div class="hv-legend">
-            <span class="hv-leg strat"><span class="hv-leg-mark"></span>MindForge Multicap</span>
-            <span class="hv-leg bench"><span class="hv-leg-mark"></span>Nifty 500</span>
+            <span class="hv-leg strat"><span class="hv-leg-mark"></span><span id="hv-leg-strat">MindForge Multicap</span></span>
+            <span class="hv-leg bench"><span class="hv-leg-mark"></span><span id="hv-leg-bench">Nifty 500</span></span>
           </div>
           <div class="hv-chart-wrap">
-            <svg class="hv-chart" viewBox="0 0 400 130" preserveAspectRatio="none">
+            <svg class="hv-chart" viewBox="0 0 400 130" preserveAspectRatio="none" aria-hidden="true" focusable="false">
               <defs>
                 <linearGradient id="hv-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.65"/>
-                  <stop offset="100%" stop-color="#1a50d8" stop-opacity="0"/>
+                  <stop id="hv-grad-top" offset="0%" stop-color="#2dd4bf" stop-opacity="0.65"/>
+                  <stop id="hv-grad-bot" offset="100%" stop-color="#1a50d8" stop-opacity="0"/>
                 </linearGradient>
                 <linearGradient id="hv-stroke" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#1a50d8"/>
-                  <stop offset="100%" stop-color="#2dd4bf"/>
+                  <stop id="hv-stroke-0" offset="0%" stop-color="#1a50d8"/>
+                  <stop id="hv-stroke-1" offset="100%" stop-color="#2dd4bf"/>
                 </linearGradient>
               </defs>
               <line class="grid-line" x1="0" y1="32" x2="400" y2="32"/>
               <line class="grid-line" x1="0" y1="65" x2="400" y2="65"/>
               <line class="grid-line" x1="0" y1="98" x2="400" y2="98"/>
-              <path class="strat-fill" d="M 0 110 C 30 108, 60 100, 90 92 S 150 78, 180 70 S 240 56, 270 44 S 330 22, 400 8 L 400 130 L 0 130 Z"/>
-              <path class="bench-line" d="M 0 116 C 40 114, 80 108, 120 102 S 200 86, 240 78 S 320 60, 400 50"/>
-              <path class="strat-line" d="M 0 110 C 30 108, 60 100, 90 92 S 150 78, 180 70 S 240 56, 270 44 S 330 22, 400 8"/>
-              <circle class="hv-dot" cx="400" cy="8"/>
-              <circle class="hv-dot" cx="400" cy="50" style="stroke:var(--text3); animation-delay:2.6s;"/>
+              <path id="hv-fill" class="strat-fill" d="M 0 110 C 30 108, 60 100, 90 92 S 150 78, 180 70 S 240 56, 270 44 S 330 22, 400 8 L 400 130 L 0 130 Z"/>
+              <path id="hv-bench-line" class="bench-line" d="M 0 116 C 40 114, 80 108, 120 102 S 200 86, 240 78 S 320 60, 400 50"/>
+              <path id="hv-strat-line" class="strat-line" d="M 0 110 C 30 108, 60 100, 90 92 S 150 78, 180 70 S 240 56, 270 44 S 330 22, 400 8"/>
+              <circle id="hv-dot-strat" class="hv-dot" cx="400" cy="8"/>
+              <circle id="hv-dot-bench" class="hv-dot" cx="400" cy="50" style="stroke:var(--text3); animation-delay:2.6s;"/>
             </svg>
           </div>
           <div class="hv-foot">
-            <span class="hv-alpha"><!--MFSTAT:mc:alpha-->+46.95%<!--/MFSTAT--> annual alpha</span>
+            <span class="hv-alpha" id="hv-alpha"><!--MFSTAT:mc:alpha-->+46.95%<!--/MFSTAT--> annual alpha</span>
             <span class="hv-period">2021–2026 · Backtest</span>
           </div>
         </div>
@@ -3603,6 +3641,159 @@ textarea:focus-visible, select:focus-visible {
     </div>
   </div>
 </section>
+
+<script>
+/* ── V12.0: INTERACTIVE HERO — strategy switcher ─────────────────────────────
+   Lets visitors toggle the hero performance card across all five strategies, so
+   the most-viewed element showcases the whole suite instead of only Multicap.
+   Numbers are read from the strategy cards (the single MFSTAT source of truth)
+   AT PARSE TIME — before the count-up script resets them — so the hero can never
+   drift from the published figures. Chart curves are generated from each
+   strategy's CAGR vs its benchmark (growth of the same notional over 5 years),
+   so every shape honestly reflects the numbers. Reduced-motion aware and
+   keyboard-operable; on any error it leaves the static Multicap card intact. */
+(function () {
+  "use strict";
+  try {
+    var card = document.querySelector('.hv-card');
+    var tabs = document.getElementById('hv-tabs');
+    if (!card || !tabs) return;
+
+    var META = {
+      ma: { name: 'MultiAsset',  bench: 'Nifty 50' },
+      lm: { name: 'LargeMidcap', bench: 'Nifty LargeMidcap 250' },
+      sm: { name: 'SmallMicro',  bench: 'Nifty Smallcap 250' },
+      mc: { name: 'Multicap',    bench: 'Nifty 500' },
+      sp: { name: 'S&P 500',     bench: 'S&P 500' }
+    };
+    var COLORS = {
+      ma: ['#0891b2', '#06b6d4'], lm: ['#1a50d8', '#2dd4bf'], sm: ['#d97706', '#f59e0b'],
+      mc: ['#1a50d8', '#2563eb'], sp: ['#0d9488', '#2dd4bf']
+    };
+    function pnum(s) { var v = parseFloat((s || '').replace(/[^0-9.\-]/g, '')); return isFinite(v) ? v : null; }
+
+    // Capture original published figures from the strategy cards.
+    var DATA = {};
+    document.querySelectorAll('.strat-card').forEach(function (c) {
+      var sw = c.querySelector('.spark-wrap[data-spark]'); if (!sw) return;
+      var key = sw.getAttribute('data-spark');
+      var vals = c.querySelectorAll('.strat-metric .val'); if (vals.length < 2) return;
+      var alphaTxt = '', w = document.createTreeWalker(c, NodeFilter.SHOW_COMMENT, null, false), n;
+      while ((n = w.nextNode())) {
+        if (n.nodeValue.indexOf('MFSTAT:' + key + ':alpha') !== -1) {
+          if (n.nextSibling && n.nextSibling.nodeValue) alphaTxt = n.nextSibling.nodeValue.trim();
+          break;
+        }
+      }
+      DATA[key] = {
+        cagrTxt: vals[0].textContent.trim(), benchTxt: vals[1].textContent.trim(), alphaTxt: alphaTxt,
+        cagr: pnum(vals[0].textContent), bench: pnum(vals[1].textContent)
+      };
+    });
+    if (!DATA.mc) return;
+
+    var TOP = 12, BOT = 120, LEFT = 2, RIGHT = 398, N = 5;
+    function compound(r, t) { return Math.pow(1 + r / 100, t); }
+    function smooth(pts) {
+      if (pts.length < 2) return '';
+      var d = 'M ' + pts[0].x.toFixed(2) + ' ' + pts[0].y.toFixed(2);
+      for (var i = 0; i < pts.length - 1; i++) {
+        var p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        d += ' C ' + (p1.x + (p2.x - p0.x) / 6).toFixed(2) + ' ' + (p1.y + (p2.y - p0.y) / 6).toFixed(2) +
+             ', ' + (p2.x - (p3.x - p1.x) / 6).toFixed(2) + ' ' + (p2.y - (p3.y - p1.y) / 6).toFixed(2) +
+             ', ' + p2.x.toFixed(2) + ' ' + p2.y.toFixed(2);
+      }
+      return d;
+    }
+    function build(cagr, bench) {
+      var sv = [], bv = [], i;
+      for (i = 0; i <= N; i++) { sv.push(compound(cagr, i)); bv.push(compound(bench, i)); }
+      var maxV = Math.max(sv[N], bv[N]), minV = 1;
+      function X(i) { return LEFT + (i / N) * (RIGHT - LEFT); }
+      function Y(v) { return BOT - ((v - minV) / (maxV - minV || 1)) * (BOT - TOP); }
+      var sp = sv.map(function (v, i) { return { x: X(i), y: Y(v) }; });
+      var bp = bv.map(function (v, i) { return { x: X(i), y: Y(v) }; });
+      var line = smooth(sp);
+      return { line: line, fill: line + ' L ' + RIGHT.toFixed(2) + ' ' + BOT + ' L ' + LEFT.toFixed(2) + ' ' + BOT + ' Z', bench: smooth(bp), endS: sp[N], endB: bp[N] };
+    }
+
+    var el = {
+      cagr: document.getElementById('hv-cagr'), cagrLbl: document.getElementById('hv-cagr-lbl'),
+      bench: document.getElementById('hv-bench'), legS: document.getElementById('hv-leg-strat'),
+      legB: document.getElementById('hv-leg-bench'), fill: document.getElementById('hv-fill'),
+      line: document.getElementById('hv-strat-line'), bline: document.getElementById('hv-bench-line'),
+      dotS: document.getElementById('hv-dot-strat'), dotB: document.getElementById('hv-dot-bench'),
+      alpha: document.getElementById('hv-alpha'), g0: document.getElementById('hv-stroke-0'),
+      g1: document.getElementById('hv-stroke-1'), gTop: document.getElementById('hv-grad-top'),
+      gBot: document.getElementById('hv-grad-bot')
+    };
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function setColors(key) {
+      var c = COLORS[key] || COLORS.mc;
+      if (el.g0) el.g0.setAttribute('stop-color', c[0]);
+      if (el.g1) el.g1.setAttribute('stop-color', c[1]);
+      if (el.gTop) el.gTop.setAttribute('stop-color', c[1]);
+      if (el.gBot) el.gBot.setAttribute('stop-color', c[0]);
+      if (el.dotS) el.dotS.style.stroke = c[0];
+      var ms = card.querySelector('.hv-leg.strat .hv-leg-mark');
+      if (ms) ms.style.background = 'linear-gradient(90deg,' + c[0] + ',' + c[1] + ')';
+    }
+    function countTo(node, target, dec, suffix) {
+      if (target == null || !node) return;
+      if (reduce) { node.textContent = target.toFixed(dec) + suffix; return; }
+      var start = performance.now(), dur = 700;
+      (function step(now) {
+        var t = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - t, 3);
+        node.textContent = (target * e).toFixed(dec) + suffix;
+        if (t < 1) requestAnimationFrame(step);
+      })(performance.now());
+    }
+    function redraw(p) {
+      el.fill.setAttribute('d', p.fill); el.bline.setAttribute('d', p.bench); el.line.setAttribute('d', p.line);
+      if (el.dotS) { el.dotS.setAttribute('cx', p.endS.x.toFixed(2)); el.dotS.setAttribute('cy', p.endS.y.toFixed(2)); }
+      if (el.dotB) { el.dotB.setAttribute('cx', p.endB.x.toFixed(2)); el.dotB.setAttribute('cy', p.endB.y.toFixed(2)); }
+      if (reduce) return;
+      [el.line, el.bline].forEach(function (ln, idx) {
+        if (!ln) return;
+        var len = ln.getTotalLength ? ln.getTotalLength() : 600;
+        ln.style.animation = 'none'; ln.style.transition = 'none';
+        ln.style.strokeDasharray = len; ln.style.strokeDashoffset = len;
+        ln.getBoundingClientRect();
+        ln.style.transition = 'stroke-dashoffset ' + (idx ? 1.5 : 1.3) + 's cubic-bezier(.4,0,.2,1)' + (idx ? ' .12s' : '');
+        ln.style.strokeDashoffset = '0';
+      });
+      el.fill.style.transition = 'none'; el.fill.style.opacity = '0';
+      el.fill.getBoundingClientRect();
+      el.fill.style.transition = 'opacity 1s ease .25s'; el.fill.style.opacity = '0.18';
+    }
+    function select(key, animate) {
+      var d = DATA[key]; if (!d) return;
+      var m = META[key] || { name: key, bench: 'Benchmark' };
+      setColors(key);
+      if (el.cagrLbl) el.cagrLbl.textContent = m.name + ' CAGR';
+      if (el.legS) el.legS.textContent = 'MindForge ' + m.name;
+      if (el.legB) el.legB.textContent = m.bench;
+      if (el.alpha) el.alpha.textContent = (d.alphaTxt || '') + ' annual alpha';
+      var p = build(d.cagr != null ? d.cagr : 0, d.bench != null ? d.bench : 0);
+      if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); redraw(p); }
+      else { if (el.cagr) el.cagr.textContent = d.cagrTxt; if (el.bench) el.bench.textContent = d.benchTxt; }
+      tabs.querySelectorAll('.hv-tab').forEach(function (b) {
+        var on = b.getAttribute('data-hv') === key;
+        b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      card._hvKey = key;
+    }
+
+    setColors('mc'); card._hvKey = 'mc'; // default: keep static numbers + the CSS first-draw
+    tabs.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('.hv-tab') : null; if (!b) return;
+      var key = b.getAttribute('data-hv');
+      if (key && DATA[key]) select(key, true);
+    });
+  } catch (e) { /* leave the static card untouched */ }
+})();
+</script>
 
 <!-- V7.2: ALL-ACCESS BUNDLE -->
 <section class="bundle-band" aria-label="MindForge All-Access bundle" style="padding:8px 0 28px;">
