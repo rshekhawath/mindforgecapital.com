@@ -470,7 +470,7 @@ tbody tr.rowlink{cursor:pointer}
   .content-title{font-size:20px}
 }
 </style>
-<script src="screener-data.js?v=122"></script>
+<script src="screener-data.js?v=123"></script>
 <link rel="stylesheet" href="../assets/mfc-finish.css?v=110">
 </head>
 <body>
@@ -589,6 +589,14 @@ tbody tr.rowlink{cursor:pointer}
       <div class="filter-group">
         <div class="filter-label">Operating Margin (%) ≥</div>
         <input class="filter-input" type="number" id="min_opm" placeholder="e.g. 15" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">Gross Margin (%) ≥</div>
+        <input class="filter-input" type="number" id="min_gross_margin" placeholder="e.g. 40" style="width:100%">
+      </div>
+      <div class="filter-group">
+        <div class="filter-label">EBITDA Margin (%) ≥</div>
+        <input class="filter-input" type="number" id="min_ebitda_margin" placeholder="e.g. 20" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Promoter Holding (%) ≥</div>
@@ -786,6 +794,8 @@ const COLUMNS=[
   {key:"dividend_yield",label:"Div Yield %",  render:d=>fmtTone(d.dividend_yield,2,"div"), visible:true},
   {key:"net_margin",    label:"Net Margin %", render:d=>fmtTone(d.net_margin,1,"q"), visible:false},
   {key:"operating_margin",label:"OPM %",      render:d=>fmtTone(d.operating_margin,1,"q"), visible:false},
+  {key:"gross_margin",  label:"Gross Mgn %",  render:d=>fmtTone(d.gross_margin,1,"q"), visible:false},
+  {key:"ebitda_margin", label:"EBITDA Mgn %", render:d=>fmtTone(d.ebitda_margin,1,"q"), visible:false},
   {key:"roce",          label:"ROCE %",      render:d=>fmtTone(d.roce,1,"q"), visible:false},
   {key:"roa",           label:"ROA %",       render:d=>fmtTone(d.roa,1,"q"), visible:false},
   {key:"graham_mos",    label:"Graham MoS%", render:d=>fmtTone(d.graham_mos,1,"gmos"), visible:false},
@@ -859,7 +869,7 @@ async function loadInitialData(){
 async function runScreen(){
   const params=new URLSearchParams();
   ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
-   "min_roce","min_roa","min_net_margin","min_opm","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
+   "min_roce","min_roa","min_net_margin","min_opm","min_gross_margin","min_ebitda_margin","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
    "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
     .forEach(f=>{const v=document.getElementById(f)?.value;if(v)params.append(f,v);});
   const sector=document.getElementById("sector_filter").value;
@@ -932,7 +942,7 @@ function toggleCol(k,v){const c=COLUMNS.find(x=>x.key===k);if(c){c.visible=v;ren
 
 function clearFilters(){
   ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
-   "min_roce","min_roa","min_net_margin","min_opm","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
+   "min_roce","min_roa","min_net_margin","min_opm","min_gross_margin","min_ebitda_margin","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
    "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;
@@ -943,7 +953,7 @@ function clearFilters(){
 function loadPreset(name){
   // Reset every input (without triggering a screen run) then apply the preset.
   ["min_pe","max_pe","min_pb","max_pb","min_ps","max_ps","min_roe","max_roe","min_mcap","max_mcap","min_div",
-   "min_roce","min_roa","min_net_margin","min_opm","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
+   "min_roce","min_roa","min_net_margin","min_opm","min_gross_margin","min_ebitda_margin","min_promoter","max_ev_ebitda","min_fcf_yield","min_graham_mos","max_peg",
    "max_de","min_current_ratio","min_int_cov","min_rev_growth","min_earn_growth"]
     .forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   const sma=document.getElementById("above_sma200");if(sma)sma.checked=false;

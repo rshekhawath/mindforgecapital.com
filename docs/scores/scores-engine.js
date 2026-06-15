@@ -192,7 +192,32 @@
       d._qn = qScores.length; d._vn = vScores.length; d._gn = gScores.length; d._mn = mScores.length;
       if (d._overall != null) scored++;
     }
+    computeRanks(stocks);
     return scored;
+  }
+
+  // ── V12.3: rank each scored stock by Overall Integrity Score within its sector
+  // and across the whole universe — turns the 0–100 score into context ("a good
+  // bank, not just good vs everything"). Stored as _secRank/_secSize/_uniRank/
+  // _uniTotal for the company page. Equal scores get distinct stable ranks (ties
+  // broken by the universe sort), which is fine for a "#N of M" display.
+  function computeRanks(stocks) {
+    var ranked = stocks.filter(function (d) { return d._overall != null; });
+    ranked.sort(function (a, b) { return b._overall - a._overall; });
+    var total = ranked.length;
+    var secCount = {};
+    for (var i = 0; i < ranked.length; i++) {
+      var d = ranked[i], sec = (d.sector || "").trim() || "Other";
+      secCount[sec] = (secCount[sec] || 0) + 1;
+      d._uniRank = i + 1;
+      d._uniTotal = total;
+      d._secRank = secCount[sec];
+      d._sec = sec;
+    }
+    // second pass to stamp each sector's total size
+    var secTotal = {};
+    ranked.forEach(function (d) { secTotal[d._sec] = (secTotal[d._sec] || 0) + 1; });
+    ranked.forEach(function (d) { d._secSize = secTotal[d._sec]; });
   }
 
   function breakdown(d, list, pools) {

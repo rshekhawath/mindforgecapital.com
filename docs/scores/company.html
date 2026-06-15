@@ -21,7 +21,7 @@
 <link rel="manifest" href="/manifest.json">
 <title>Stock Scorecard — MindForge Capital</title>
 <meta name="theme-color" content="#1a50d8">
-<script src="scores-engine.js?v=122"></script>
+<script src="scores-engine.js?v=123"></script>
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
@@ -102,6 +102,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .ring-of{font-size:11px;color:var(--text3);font-weight:600;margin-top:2px}
 .sc-overall-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3)}
 .grade-pill{font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;white-space:nowrap}
+/* V12.3: sector + universe rank context under the overall ring */
+.sc-rank{margin-top:2px;text-align:center;font-size:11px;color:var(--text3);line-height:1.5;max-width:150px}
+.sc-rank b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums}
+.sc-rank .sc-rank-top{display:inline-block;margin-top:3px;padding:2px 9px;border-radius:20px;background:rgba(26,80,216,.08);color:var(--accent2);font-weight:700;font-size:10.5px}
 .gp-strong{background:rgba(4,120,87,.10);color:#047857;border:0.5px solid rgba(4,120,87,.22)}
 .gp-good{background:rgba(5,150,105,.08);color:#059669;border:0.5px solid rgba(5,150,105,.2)}
 .gp-fair{background:rgba(26,80,216,.07);color:var(--accent2);border:0.5px solid var(--border2)}
@@ -124,7 +128,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
 /* Factor breakdown */
 .fb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
-@media(max-width:760px){.fb-grid{grid-template-columns:1fr}.sc-top{grid-template-columns:1fr;gap:18px}.sc-overall{flex-direction:row;justify-content:center;gap:18px}}
+@media(max-width:760px){.fb-grid{grid-template-columns:1fr}.sc-top{grid-template-columns:1fr;gap:18px}.sc-overall{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px 18px}.sc-rank{flex-basis:100%}}
 .fb-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
 .fb-card-head{padding:13px 18px;border-bottom:0.5px solid var(--border);background:linear-gradient(180deg,var(--ink3) 0%,rgba(255,255,255,0) 100%);display:flex;align-items:center;justify-content:space-between}
 .fb-card-title{font-size:13px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:7px}
@@ -287,6 +291,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
           <div class="ring-inner"><div class="ring-score" id="overallScore">—</div><div class="ring-of">/ 100</div></div>
         </div>
         <span class="grade-pill gp-na" id="overallGrade">—</span>
+        <div class="sc-rank" id="scRank" hidden></div>
       </div>
       <div class="sc-pillars">
         <div class="pillar">
@@ -485,6 +490,18 @@ function renderScorecard(){
   const og=document.getElementById("overallGrade");
   const grade=MFCScores.grade(o);
   og.textContent=grade.label;og.className=`grade-pill ${gradeCls(o)}`;
+  // V12.3: sector + universe rank context
+  const rk=document.getElementById("scRank");
+  if(rk){
+    if(o!=null && D._uniRank && D._secRank){
+      const pctile=Math.max(1,Math.round(D._uniRank/D._uniTotal*100));
+      rk.innerHTML=`<b>#${D._uniRank}</b> of ${D._uniTotal.toLocaleString("en-IN")} NSE stocks`
+        +`<br>#<b>${D._secRank}</b> of ${D._secSize} in <span id="scRankSec"></span>`
+        +`<br><span class="sc-rank-top">Top ${pctile}% overall</span>`;
+      document.getElementById("scRankSec").textContent=D._sec||D.sector||"sector";
+      rk.hidden=false;
+    } else { rk.hidden=true; }
+  }
   // pillars
   setPillar("q",q,document.getElementById("qScore"),document.getElementById("qFill"),document.getElementById("qSub"),D._qn,8,"#059669");
   setPillar("v",v,document.getElementById("vScore"),document.getElementById("vFill"),document.getElementById("vSub"),D._vn,6,"#1a50d8");
