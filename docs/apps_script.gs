@@ -136,6 +136,8 @@ function doGet(e) {
       return handleGetStocks(e.parameter.token);
     } else if (action === 'prices') {
       return handleGetPrices(e.parameter.tickers);
+    } else if (action === 'chart') {
+      return handleGetChart(e.parameter.ticker, e.parameter.range);
     } else if (action === 'recover') {
       return handleRecover(e.parameter.email, e.parameter.phone);
     } else if (action === 'get_leads') {
@@ -668,6 +670,74 @@ function handleGetPrices(tickers) {
     status: 'ok',
     prices: prices
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// ---- Price-history chart (V12.9) --------------------------------------------
+// Returns the close-price series for ONE ticker over a timeframe, powering the
+// Google-Finance-style chart on the stock pages. Yahoo's chart API is fetched
+// server-side (the browser can't, for CORS), nulls are trimmed, and the result
+// is briefly cached to avoid hammering Yahoo. The frontend calls this directly
+// at the web-app URL (?action=chart&ticker=RELIANCE.NS&range=1d).
+// Response: { status, ticker, range, currency, prev_close, gmtoffset, points:[[t,c],…] }
+function handleGetChart(ticker, range) {
+  if (!ticker) return errorResponse('No ticker provided');
+  range = String(range || '1d').toLowerCase();
+
+  // UI timeframe -> Yahoo {range, interval}. Mirrors 1D/5D/1M/6M/YTD/1Y/5Y/Max.
+  var MAP = {
+    '1d':  { r: '1d',  i: '2m'  },
+    '5d':  { r: '5d',  i: '15m' },
+    '1mo': { r: '1mo', i: '1d'  },
+    '6mo': { r: '6mo', i: '1d'  },
+    'ytd': { r: 'ytd', i: '1d'  },
+    '1y':  { r: '1y',  i: '1d'  },
+    '5y':  { r: '5y',  i: '1wk' },
+    'max': { r: 'max', i: '1mo' }
+  };
+  var spec = MAP[range] || MAP['1d'];
+
+  // Short cache so rapid tab-switching / many viewers don't hammer Yahoo.
+  var cache = CacheService.getScriptCache();
+  var cacheKey = 'chart::' + ticker + '::' + spec.r + '::' + spec.i;
+  try { var hit = cache.get(cacheKey); if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON); } catch (e) {}
+
+  try {
+    var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker)
+            + '?range=' + spec.r + '&interval=' + spec.i + '&includePrePost=false';
+    var response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    if (response.getResponseCode() !== 200) return errorResponse('Upstream ' + response.getResponseCode());
+
+    var data = JSON.parse(response.getContentText());
+    if (!data.chart || !data.chart.result || !data.chart.result.length) return errorResponse('No data for ' + ticker);
+
+    var result = data.chart.result[0];
+    var meta = result.meta || {};
+    var ts = result.timestamp || [];
+    var q = (result.indicators && result.indicators.quote && result.indicators.quote[0]) || {};
+    var closes = q.close || [];
+
+    var points = [];
+    for (var i = 0; i < ts.length; i++) {
+      var c = closes[i];
+      if (c === null || c === undefined) continue;
+      points.push([ts[i], Math.round(c * 100) / 100]);
+    }
+
+    var out = JSON.stringify({
+      status: 'ok',
+      ticker: ticker,
+      range: range,
+      currency: meta.currency || 'INR',
+      prev_close: (meta.chartPreviousClose != null ? meta.chartPreviousClose : meta.previousClose) || null,
+      gmtoffset: meta.gmtoffset || 0,
+      points: points
+    });
+    try { cache.put(cacheKey, out, range === '1d' ? 60 : 300); } catch (e) {}
+    return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    Logger.log('handleGetChart error for ' + ticker + ': ' + err);
+    return errorResponse('Chart fetch failed');
+  }
 }
 
 function handleRecover(email, phone) {

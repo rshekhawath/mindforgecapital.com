@@ -289,6 +289,21 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
   <!-- ── OVERVIEW ── -->
   <div class="tab-content active" id="tab-overview">
+
+    <!-- V12.9: live price chart (timestamped series via the Apps Script chart endpoint) -->
+    <div class="card chart-card" id="priceChartCard">
+      <div class="sc-head">
+        <div>
+          <div class="sc-price" id="scPrice">₹—</div>
+          <div class="sc-chg" id="scChg"></div>
+        </div>
+        <div class="sc-rangebadge" id="scRangeBadge"></div>
+      </div>
+      <div class="sc-tabs" id="scTabs" role="tablist" aria-label="Chart timeframe"></div>
+      <div class="sc-plot" id="scPlot"><div class="sc-skel"><span class="sc-shimmer"></span>Loading chart…</div></div>
+      <div class="sc-foot" id="scFoot"></div>
+    </div>
+
     <div class="two-col">
       <div>
         <div class="card">
@@ -425,6 +440,214 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
   </div>
 </div>
 
+<!-- ============================================================
+     MF VISUAL v12.9 — live price chart (Google-Finance style)
+     Self-contained component. Fetches a timestamped close series from the
+     Apps Script chart endpoint (server-side Yahoo) and draws a responsive
+     SVG line/area chart with 1D/5D/1M/6M/YTD/1Y/5Y/Max tabs + hover readout.
+     On localhost it renders a clearly dev-only synthetic series (anchored to
+     the REAL snapshot price + 52w band) so the UI can be built without the
+     live backend; production always uses real data or a clean error state.
+     ============================================================ -->
+<style id="mf-v129-chart">
+.chart-card{padding:0;overflow:hidden;}
+.sc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 0;flex-wrap:wrap;}
+.sc-price{font-size:30px;font-weight:800;color:var(--white);letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;}
+.sc-chg{font-size:13px;font-weight:700;margin-top:7px;display:inline-flex;align-items:center;gap:8px;min-height:18px;}
+.sc-chg .sc-chip{padding:3px 9px;border-radius:7px;font-variant-numeric:tabular-nums;}
+.sc-chg.up{color:var(--green);} .sc-chg.up .sc-chip{background:rgba(5,150,105,.12);}
+.sc-chg.down{color:var(--red);} .sc-chg.down .sc-chip{background:rgba(220,38,38,.10);}
+.sc-chg .sc-period{color:var(--text3);font-weight:600;}
+.sc-rangebadge{font-size:11px;color:var(--text3);text-align:right;line-height:1.6;}
+.sc-tabs{display:flex;gap:2px;padding:14px 14px 0;flex-wrap:wrap;}
+.sc-tab{appearance:none;border:none;background:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;
+  color:var(--text3);padding:6px 13px;border-radius:8px;transition:background .15s,color .15s;}
+.sc-tab:hover{color:var(--accent2);background:rgba(37,99,235,.06);}
+.sc-tab.active{color:var(--accent);background:rgba(37,99,235,.12);}
+.sc-plot{position:relative;height:268px;margin-top:6px;padding:0;}
+.sc-plot svg{display:block;width:100%;height:100%;overflow:visible;}
+.sc-skel,.sc-err{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-direction:column;color:var(--text3);font-size:13px;}
+.sc-err strong{color:var(--text2);font-weight:700;} .sc-err small{color:var(--text3);font-size:11.5px;max-width:320px;text-align:center;line-height:1.5;}
+.sc-shimmer{width:46px;height:46px;border-radius:50%;border:3px solid rgba(37,99,235,.15);border-top-color:var(--accent);animation:sc-spin .8s linear infinite;}
+@keyframes sc-spin{to{transform:rotate(360deg);}}
+.sc-grid{stroke:rgba(37,99,235,.09);stroke-width:1;}
+.sc-base{stroke:var(--text3);stroke-width:1;stroke-dasharray:3 4;opacity:.55;}
+.sc-axis{fill:var(--text3);font-size:10px;font-variant-numeric:tabular-nums;}
+.sc-cross{stroke:var(--text3);stroke-width:1;opacity:.45;}
+.sc-dot{fill:#fff;stroke-width:2.5;}
+.sc-tip{position:absolute;pointer-events:none;background:var(--ink2);border:0.5px solid var(--border2);border-radius:8px;
+  padding:6px 10px;font-size:11.5px;box-shadow:0 10px 28px -12px rgba(15,23,42,.32);white-space:nowrap;
+  transform:translate(-50%,-128%);opacity:0;transition:opacity .1s;z-index:5;}
+.sc-tip b{color:var(--white);font-size:13px;font-variant-numeric:tabular-nums;} .sc-tip span{color:var(--text3);display:block;margin-top:1px;}
+.sc-foot{padding:4px 20px 16px;font-size:11px;color:var(--text3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.sc-demoflag{color:var(--gold);font-weight:600;}
+@media (prefers-reduced-motion: reduce){.sc-shimmer{animation:none;}}
+@media(max-width:560px){.sc-plot{height:224px;}.sc-price{font-size:25px;}.sc-tab{padding:6px 10px;font-size:12px;}.sc-head{padding:16px 16px 0;}}
+</style>
+<script id="mf-v129-chart-js">
+(function(){
+  "use strict";
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec";
+  var IS_DEV = /^(localhost$|127\.|0\.0\.0\.0|\[?::1)/.test(location.hostname);
+  var TF = [["1d","1D"],["5d","5D"],["1mo","1M"],["6mo","6M"],["ytd","YTD"],["1y","1Y"],["5y","5Y"],["max","Max"]];
+  var S = { sym:null, snap:null, range:"1d", series:null, cache:{}, raf:0 };
+
+  function el(id){ return document.getElementById(id); }
+  function rupee(v){ return "₹"+Number(v).toLocaleString("en-IN",{maximumFractionDigits:2}); }
+  function yfmt(v){ return Number(v).toLocaleString("en-IN",{maximumFractionDigits:(Math.abs(v)<100?2:0)}); }
+  function dfmt(ts,range){
+    var d=new Date(ts*1000),o;
+    if(range==="1d") o={hour:"numeric",minute:"2-digit"};
+    else if(range==="5d") o={day:"numeric",month:"short",hour:"numeric",minute:"2-digit"};
+    else if(range==="1mo"||range==="6mo"||range==="ytd") o={day:"numeric",month:"short"};
+    else if(range==="1y") o={day:"numeric",month:"short",year:"2-digit"};
+    else o={month:"short",year:"numeric"};
+    return d.toLocaleString("en-IN",o).replace(",","");
+  }
+
+  // ---- dev-only synthetic series (localhost preview), anchored to REAL data ----
+  function devSeries(sym, range, snap){
+    var n={"1d":130,"5d":150,"1mo":22,"6mo":128,"ytd":118,"1y":250,"5y":260,"max":190}[range]||120;
+    var last=(snap&&snap.current_price)||1000, lo=(snap&&snap["52w_low"])||last*0.7, hi=(snap&&snap["52w_high"])||last*1.3;
+    var seed=0,s=sym+range; for(var i=0;i<s.length;i++) seed=(seed*31+s.charCodeAt(i))%2147483647;
+    function rnd(){ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }
+    var step=(range==="1d"||range==="5d")?120:86400, now=Math.floor(Date.now()/1000);
+    var vol=(range==="1d")?0.0014:(range==="5d")?0.004:0.02, drift=(range==="1d"||range==="5d")?0:0.0006, v=last, pts=[];
+    // walk BACKWARD from today's real price into the past (newest first), then reverse
+    for(var j=0;j<n;j++){ pts.push([now-j*step, Math.round(v*100)/100]); v=v*(1-(rnd()-0.5)*vol*2-drift); v=Math.max(lo*0.90,Math.min(hi*1.10,v)); }
+    pts.reverse();
+    pts[pts.length-1][1]=Math.round(last*100)/100;
+    var prev=(snap&&snap.day_change!=null)?last/(1+snap.day_change/100):pts[0][1];
+    return {status:"ok",ticker:sym,range:range,currency:"INR",prev_close:Math.round(prev*100)/100,points:pts,_demo:true};
+  }
+
+  function fetchSeries(sym, range, snap){
+    var key=sym+"::"+range;
+    if(S.cache[key]) return Promise.resolve(S.cache[key]);
+    var p;
+    if(IS_DEV){ p=Promise.resolve(devSeries(sym,range,snap)); }
+    else {
+      var yt=sym+((snap&&snap.exchange==="BSE")?".BO":".NS");
+      var url=APPS_SCRIPT_URL+"?action=chart&ticker="+encodeURIComponent(yt)+"&range="+encodeURIComponent(range);
+      p=fetch(url,{credentials:"omit"}).then(function(r){return r.json();}).then(function(j){
+        if(!j||j.status!=="ok"||!j.points||!j.points.length) throw new Error((j&&j.error)||"No data");
+        return j;
+      });
+    }
+    return p.then(function(j){ S.cache[key]=j; return j; });
+  }
+
+  function setHeader(stats, series){
+    var pr=el("scPrice"), cg=el("scChg"), rb=el("scRangeBadge");
+    if(!pr) return;
+    if(!stats){ cg.className="sc-chg"; cg.innerHTML=""; return; }
+    pr.textContent=rupee(stats.price);
+    var diff=stats.price-stats.base, pct=stats.base?diff/stats.base*100:0, up=diff>=0;
+    cg.className="sc-chg "+(up?"up":"down");
+    cg.innerHTML='<span class="sc-chip">'+(up?"▲":"▼")+" "+rupee(Math.abs(diff))+" ("+Math.abs(pct).toFixed(2)+"%)</span>"
+      +'<span class="sc-period">'+stats.label+(stats.when?(" · "+stats.when):"")+"</span>";
+    if(rb&&series&&series.points&&series.points.length){
+      var cs=series.points.map(function(p){return p[1];});
+      rb.innerHTML="High "+rupee(Math.max.apply(null,cs))+"<br>Low "+rupee(Math.min.apply(null,cs));
+    }
+  }
+
+  function render(){
+    var plot=el("scPlot"); if(!plot||!S.series) return;
+    var series=S.series, range=S.range, pts=series.points;
+    var W=Math.max(320, plot.clientWidth||720), H=Math.max(180, plot.clientHeight||268);
+    if(!pts||pts.length<2){ plot.innerHTML='<div class="sc-err"><strong>Chart unavailable</strong><small>No price series was returned for this stock.</small></div>'; return; }
+    var cs=pts.map(function(p){return p[1];});
+    var base=(range==="1d"&&series.prev_close)?series.prev_close:cs[0];
+    var last=cs[cs.length-1], up=last>=base, col=up?"#059669":"#dc2626";
+    var lo=Math.min(Math.min.apply(null,cs),base), hi=Math.max(Math.max.apply(null,cs),base);
+    var pad=(hi-lo)*0.10||(hi*0.02)||1, yMin=lo-pad, yMax=hi+pad;
+    var pL=6,pR=58,pT=14,pB=22, pw=W-pL-pR, ph=H-pT-pB;
+    var X=function(i){return pL+(pts.length<=1?0:(i/(pts.length-1))*pw);};
+    var Y=function(v){return pT+(1-(v-yMin)/(yMax-yMin))*ph;};
+    var line="",i,xi,yi;
+    for(i=0;i<pts.length;i++){ xi=X(i); yi=Y(pts[i][1]); line+=(i?"L":"M")+xi.toFixed(1)+" "+yi.toFixed(1); }
+    var area=line+"L"+X(pts.length-1).toFixed(1)+" "+(pT+ph).toFixed(1)+"L"+X(0).toFixed(1)+" "+(pT+ph).toFixed(1)+"Z";
+    var baseY=Y(base), gid=up?"scgu":"scgd";
+    var yl=[yMax,(yMax+yMin)/2,yMin].map(function(v){return '<text class="sc-axis" x="'+(W-pR+8)+'" y="'+(Y(v)+3).toFixed(1)+'">'+yfmt(v)+"</text>";}).join("");
+    var xl="",NL=Math.min(5,pts.length);
+    for(i=0;i<NL;i++){ var idx=Math.round(i/(NL-1)*(pts.length-1)),xx=X(idx); xl+='<text class="sc-axis" text-anchor="'+(i===0?"start":i===NL-1?"end":"middle")+'" x="'+xx.toFixed(1)+'" y="'+(H-5)+'">'+dfmt(pts[idx][0],range)+"</text>"; }
+    plot.innerHTML='<svg viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="none" role="img" aria-label="Price chart">'
+      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.20"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
+      +'<line class="sc-grid" x1="'+pL+'" y1="'+Y(yMax).toFixed(1)+'" x2="'+(W-pR)+'" y2="'+Y(yMax).toFixed(1)+'"/>'
+      +'<line class="sc-grid" x1="'+pL+'" y1="'+Y(yMin).toFixed(1)+'" x2="'+(W-pR)+'" y2="'+Y(yMin).toFixed(1)+'"/>'
+      +'<line class="sc-base" x1="'+pL+'" y1="'+baseY.toFixed(1)+'" x2="'+(W-pR)+'" y2="'+baseY.toFixed(1)+'"/>'
+      +'<path d="'+area+'" fill="url(#'+gid+')"/>'
+      +'<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="1.7" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>'
+      +'<circle class="sc-dot" cx="'+X(pts.length-1).toFixed(1)+'" cy="'+Y(last).toFixed(1)+'" r="3.4" stroke="'+col+'"/>'
+      +yl+xl
+      +'<g class="sc-hover" style="opacity:0"><line class="sc-cross" y1="'+pT+'" y2="'+(pT+ph).toFixed(1)+'"/><circle class="sc-hdot sc-dot" r="3.4" stroke="'+col+'"/></g>'
+      +'<rect id="scOverlay" x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent" style="cursor:crosshair"/></svg>'
+      +'<div class="sc-tip" id="scTip"></div>';
+    setHeader({price:last,base:base,label:activeLabel(),when:""}, series);
+    wireHover(pts,X,Y,base,range,W,col);
+    var foot=el("scFoot"); if(foot) foot.innerHTML=(series._demo?'<span class="sc-demoflag">⚠ Sample data (localhost preview)</span>':'<span>Source: Yahoo Finance · via MindForge</span>')+'<span>'+(pts.length)+' points</span>';
+  }
+
+  function activeLabel(){ for(var i=0;i<TF.length;i++){ if(TF[i][0]===S.range) return TF[i][1]; } return S.range; }
+
+  function wireHover(pts,X,Y,base,range,W,col){
+    var ov=el("scOverlay"), g=document.querySelector(".sc-hover"), cross=g&&g.querySelector(".sc-cross"),
+        hdot=g&&g.querySelector(".sc-hdot"), tip=el("scTip"), plot=el("scPlot"); if(!ov) return;
+    function at(clientX){
+      var rect=ov.getBoundingClientRect(), rel=(clientX-rect.left)/rect.width*W;
+      var idx=Math.round((rel-X(0))/(X(pts.length-1)-X(0))*(pts.length-1));
+      idx=Math.max(0,Math.min(pts.length-1,idx));
+      var px=X(idx),py=Y(pts[idx][1]);
+      if(g) g.style.opacity="1";
+      if(cross){ cross.setAttribute("x1",px); cross.setAttribute("x2",px); }
+      if(hdot){ hdot.setAttribute("cx",px); hdot.setAttribute("cy",py); }
+      if(tip){ tip.style.left=px+"px"; tip.style.top=py+"px"; tip.innerHTML="<b>"+rupee(pts[idx][1])+"</b><span>"+dfmt(pts[idx][0],range)+"</span>"; tip.style.opacity="1"; }
+      var diff=pts[idx][1]-base,pct=base?diff/base*100:0;
+      setHeader({price:pts[idx][1],base:base,label:activeLabel(),when:dfmt(pts[idx][0],range)}, S.series);
+    }
+    function leave(){ if(g) g.style.opacity="0"; if(tip) tip.style.opacity="0"; var cs=S.series.points; setHeader({price:cs[cs.length-1][1],base:base,label:activeLabel(),when:""},S.series); }
+    ov.addEventListener("mousemove",function(e){ at(e.clientX); });
+    ov.addEventListener("mouseleave",leave);
+    ov.addEventListener("touchstart",function(e){ if(e.touches[0]) at(e.touches[0].clientX); },{passive:true});
+    ov.addEventListener("touchmove",function(e){ if(e.touches[0]) at(e.touches[0].clientX); },{passive:true});
+    ov.addEventListener("touchend",leave);
+  }
+
+  function loadRange(range){
+    S.range=range;
+    Array.prototype.forEach.call(document.querySelectorAll(".sc-tab"),function(b){ b.classList.toggle("active", b.dataset.k===range); b.setAttribute("aria-selected", b.dataset.k===range?"true":"false"); });
+    var plot=el("scPlot"); if(plot) plot.innerHTML='<div class="sc-skel"><span class="sc-shimmer"></span>Loading chart…</div>';
+    fetchSeries(S.sym,range,S.snap).then(function(series){
+      if(S.range!==range) return; // a newer tab won
+      S.series=series; render();
+    }).catch(function(e){
+      if(S.range!==range) return;
+      S.series=null;
+      if(plot) plot.innerHTML='<div class="sc-err"><strong>Chart unavailable</strong><small>'+(IS_DEV?"":"Live charts need the chart endpoint deployed. ")+"Couldn't load price history right now.</small></div>";
+      setHeader(null,null);
+    });
+  }
+
+  function buildTabs(){
+    var t=el("scTabs"); if(!t) return;
+    t.innerHTML=TF.map(function(x){ return '<button class="sc-tab" role="tab" data-k="'+x[0]+'">'+x[1]+"</button>"; }).join("");
+    t.addEventListener("click",function(e){ var b=e.target.closest(".sc-tab"); if(b) loadRange(b.dataset.k); });
+  }
+
+  var rzT;
+  window.addEventListener("resize",function(){ clearTimeout(rzT); rzT=setTimeout(function(){ if(S.series) render(); },150); });
+
+  window.mountStockChart=function(symbol, snapshot){
+    S.sym=symbol; S.snap=snapshot||{}; S.cache={};
+    // seed the header from the real snapshot so it's never blank pre-fetch
+    if(S.snap.current_price){ var pr=el("scPrice"); if(pr) pr.textContent=rupee(S.snap.current_price); }
+    buildTabs();
+    loadRange("1d");
+  };
+})();
+</script>
+
 <script>
 const API = "/api";
 const SYMBOL = (new URLSearchParams(location.search).get("symbol") || "RELIANCE").toUpperCase();
@@ -455,6 +678,7 @@ async function load() {
     document.getElementById("bcSymbol").textContent = D.name || SYMBOL;
     renderHero(); renderKPIs(); renderOverview();
     renderRatios(); renderShareholding(); renderAbout();
+    try { mountStockChart(SYMBOL, D); } catch(e) { console.warn("chart mount failed", e); }
   } catch(e) { toast(`Error: ${e.message}`, "error", 8000); }
 }
 

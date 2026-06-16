@@ -805,6 +805,46 @@ const PRESETS={
   momentum:     {min_mcap:1000, above_sma200:true, sort_by:"roe", sort_dir:"desc"},
 };
 
+// V12.9: plain-language metric definitions shown on column-header hover (a pro
+// screener touch). No double-quotes in values (they sit in a title="" attribute).
+const COL_TIPS={
+  name:"Company, ticker & sector — click any row to open its price chart + full scorecard",
+  current_price:"Latest traded price (₹). The bar below shows where it sits in its 52-week range.",
+  day_change:"Price change vs the previous close, today.",
+  market_cap_cr:"Market capitalisation in ₹ crore (price × shares outstanding).",
+  pe_ratio:"Price ÷ trailing-12m EPS. Lower = cheaper vs earnings; negative = loss-making.",
+  pb_ratio:"Price ÷ book value per share. Lower = cheaper vs net assets.",
+  ps_ratio:"Price ÷ sales per share.",
+  peg_ratio:"P/E ÷ earnings growth — around 1 is reasonably priced for the growth.",
+  ev_ebitda:"Enterprise value ÷ EBITDA — capital-structure-neutral valuation.",
+  ev_revenue:"Enterprise value ÷ revenue.",
+  roe:"Return on equity — net profit ÷ shareholder equity. Higher = more profitable.",
+  roce:"Return on capital employed.",
+  roa:"Return on assets.",
+  dividend_yield:"Annual dividend ÷ price.",
+  net_margin:"Net profit ÷ revenue.",
+  operating_margin:"Operating profit ÷ revenue.",
+  gross_margin:"Gross profit ÷ revenue.",
+  ebitda_margin:"EBITDA ÷ revenue.",
+  opcf_margin:"Operating cash flow ÷ revenue.",
+  debt_to_equity:"Total debt ÷ shareholder equity. Lower = less leveraged.",
+  net_debt_ebitda:"Net debt ÷ EBITDA — years of EBITDA to clear net debt.",
+  current_ratio:"Current assets ÷ current liabilities (short-term liquidity).",
+  quick_ratio:"Liquid assets ÷ current liabilities.",
+  interest_coverage:"EBIT ÷ interest expense — ability to service debt.",
+  fcf_yield:"Free cash flow ÷ market cap.",
+  earnings_yield:"EPS ÷ price (inverse of P/E).",
+  graham_mos:"Graham margin of safety — how far price sits below Graham fair value.",
+  revenue_growth:"Year-on-year revenue growth.",
+  earnings_growth:"Year-on-year earnings growth.",
+  earnings_q_growth:"Latest-quarter year-on-year earnings growth.",
+  promoter_holding:"% of the company held by promoters.",
+  institutional_holding:"% held by institutional investors.",
+  eps:"Earnings per share (trailing 12 months).",
+  book_value:"Net assets per share.",
+  beta:"Volatility vs the market (1 = moves with the index).",
+  price_to_fcf:"Price ÷ free cash flow per share."
+};
 const COLUMNS=[
   {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${d.symbol}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>priceCell(d), visible:true},
@@ -1002,7 +1042,7 @@ function rollResultCount(target){
 
 function renderTable(){
   const vis=COLUMNS.filter(c=>c.visible);
-  document.getElementById("tableHead").innerHTML=`<tr>${vis.map(c=>`<th class="${c.key===sortKey?"sorted":""}" ${c.nosort?"":` onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
+  document.getElementById("tableHead").innerHTML=`<tr>${vis.map(c=>`<th class="${c.key===sortKey?"sorted":""}" title="${COL_TIPS[c.key]||c.label}" ${c.nosort?"":` onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-weight:600;color:var(--text2)">No stocks match your filters</div></td></tr>`
