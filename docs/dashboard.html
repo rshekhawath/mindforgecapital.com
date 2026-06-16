@@ -1389,7 +1389,7 @@ footer p {
     <div class="size-card fade-up" id="size-card" style="display:none;">
       <div class="size-head">
         <h3>Position sizing</h3>
-        <div class="size-meta">Enter your capital — we'll split it equally across the picks so you can place orders straight from the table.</div>
+        <div class="size-meta">Enter your capital — we'll size each pick by its model weight so you can place orders straight from the table.</div>
         <div class="size-summary">
           <span>Per stock: <strong id="size-per-stock">—</strong></span>
           <span>Total allocated: <strong id="size-total-alloc">—</strong></span>
@@ -1640,6 +1640,35 @@ let stocksData = [];
 let currentStrategy = '';
 let currentCapital = 0;
 let _searchQ = '';
+
+// V12.5: positions are sized by each pick's MODEL WEIGHT (weight_pct), not split
+// equally. For the equal-weight equity strategies every weight is identical, so this
+// reduces exactly to capital/N (those strategies are unchanged). For the composite-
+// score-weighted MindForge MultiAsset it honours the published tilt (e.g. NASDAQ
+// 32.5% vs Nifty50 0.8%) — which is the whole point of that strategy. Falls back to
+// an equal split only if NO pick carries a usable weight.
+function sumWeights(list) {
+  let t = 0;
+  for (let i = 0; i < (list || []).length; i++) { const w = Number(list[i].weight_pct) || 0; if (w > 0) t += w; }
+  return t;
+}
+function allocBudget(stock, list, capital) {
+  const n = (list && list.length) || 1;
+  const totalW = sumWeights(list);
+  if (totalW <= 0) return capital / n;            // no weights anywhere → equal split
+  const w = Number(stock.weight_pct) || 0;
+  return capital * (w / totalW);                  // weight-proportional
+}
+// "Meaningfully weighted" = the picks carry a real spread of weights (MultiAsset),
+// vs. equal-weight books where tiny 3.33/3.34 rounding shouldn't flip the label.
+function isWeightedBook(list) {
+  let mn = Infinity, mx = 0, cnt = 0;
+  for (let i = 0; i < (list || []).length; i++) {
+    const w = Number(list[i].weight_pct) || 0;
+    if (w > 0) { cnt++; if (w < mn) mn = w; if (w > mx) mx = w; }
+  }
+  return cnt > 1 && mn > 0 && (mx / mn) > 1.15;
+}
 
 // Per-strategy recommended capital presets (paise-free integers)
 const CAPITAL_PRESETS = {
@@ -2165,25 +2194,26 @@ function setCapital(v, btn, fromInput) {
 
 function refreshSizeSummary() {
   const n = stocksData.length || 1;
-  const per = currentCapital / n;
   let totalAlloc = 0;
   stocksData.forEach(s => {
     const price = Number(s.recommended_price) || 0;
-    const shares = price > 0 ? Math.floor(per / price) : 0;
+    const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
     totalAlloc += shares * price;
   });
   const residue = currentCapital - totalAlloc;
-  document.getElementById('size-per-stock').textContent   = fmtMoney(currentCurrency, per);
+  // For a weighted book (MultiAsset) there is no single "per stock" figure — say so;
+  // otherwise show the equal-split amount as before.
+  document.getElementById('size-per-stock').textContent   = isWeightedBook(stocksData)
+    ? 'by model weight'
+    : fmtMoney(currentCurrency, currentCapital / n);
   document.getElementById('size-total-alloc').textContent = fmtMoney(currentCurrency, totalAlloc);
   document.getElementById('size-residue').textContent     = fmtMoney(currentCurrency, residue);
 }
 
 function updateAllocationCells() {
-  const n = stocksData.length || 1;
-  const per = currentCapital / n;
   stocksData.forEach((s, i) => {
     const price = Number(s.recommended_price) || 0;
-    const shares = price > 0 ? Math.floor(per / price) : 0;
+    const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
     const amt = shares * price;
     const allocCell = document.querySelector('tr[data-row="'+i+'"] .alloc-amt');
     const sharesCell = document.querySelector('tr[data-row="'+i+'"] .shares');
@@ -2229,8 +2259,7 @@ function renderTable(stocks) {
   }
 
   const maxW = Math.max(...stocks.map(s => Number(s.weight_pct) || 0), 1);
-  const n = stocks.length || 1;
-  const per = currentCapital / n;
+  // V12.5: per-stock allocation is weight-proportional (see allocBudget()).
   const copyIco = '<svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
   const bought = loadBought(currentStrategy);
   // V11.3: colour each holding's industry pill with its sector colour — the same
@@ -2251,7 +2280,7 @@ function renderTable(stocks) {
     const entry = Number(s.recommended_price) || 0;
     const w = Number(s.weight_pct) || 0;
     const barPct = (w / maxW) * 100;
-    const shares = entry > 0 ? Math.floor(per / entry) : 0;
+    const shares = entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0;
     const amt = shares * entry;
     const isBought = !!bought[s.ticker];
     const rowCls = isBought ? 'row-bought' : '';
@@ -2281,7 +2310,7 @@ function renderTable(stocks) {
     const entry = Number(s.recommended_price) || 0;
     const w = Number(s.weight_pct) || 0;
     const barPct = (w / maxW) * 100;
-    const shares = entry > 0 ? Math.floor(per / entry) : 0;
+    const shares = entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0;
     const amt = shares * entry;
     const isBought = !!bought[s.ticker];
     const cardCls = isBought ? 'stock-card row-bought' : 'stock-card';
@@ -2462,8 +2491,6 @@ function applySort(){
     renderTable(stocksData);
     return;
   }
-  var n = stocksData.length || 1;
-  var per = currentCapital / n;
   var getters = {
     num:      function(s, i){ return i; },
     company:  function(s){ return (s.company_name || s.ticker || '').toLowerCase(); },
@@ -2472,12 +2499,12 @@ function applySort(){
     price:    function(s){ return Number(s.recommended_price) || 0; },
     alloc:    function(s){
       var p = Number(s.recommended_price) || 0;
-      var sh = p > 0 ? Math.floor(per / p) : 0;
+      var sh = p > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / p) : 0;
       return sh * p;
     },
     shares:   function(s){
       var p = Number(s.recommended_price) || 0;
-      return p > 0 ? Math.floor(per / p) : 0;
+      return p > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / p) : 0;
     },
     weight:   function(s){ return Number(s.weight_pct) || 0; },
   };
@@ -2654,7 +2681,7 @@ function copyAllTickers() {
 function exportCSV() {
   if (!stocksData.length) return;
   const n = stocksData.length || 1;
-  const per = currentCapital / n;
+  // V12.5: allocation is weight-proportional (see allocBudget()).
   // V6.8 M1: derive currency from the book so the S&P 500 ($) export doesn't
   // mis-label its USD columns as "(INR)".
   const ccyCode = (typeof dashCurrency === 'function' && dashCurrency() === '$') ? 'USD' : 'INR';
@@ -2662,7 +2689,7 @@ function exportCSV() {
   const lines = [header.join(',')];
   stocksData.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
-    const shares = price > 0 ? Math.floor(per / price) : 0;
+    const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
     const amt = shares * price;
     const row = [
       i+1,
