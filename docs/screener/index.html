@@ -804,7 +804,7 @@ const PRESETS={
 };
 
 const COLUMNS=[
-  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${d.symbol}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${d.sector?`<span class="sector-pill">${d.sector}</span>`:""}</div>`, visible:true, nosort:true},
+  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${d.symbol}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>d.current_price?`<span class="num">₹${Number(d.current_price).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`:`<span class="na">—</span>`, visible:true},
   {key:"day_change",    label:"Day %",        render:d=>fmtChange(d.day_change), visible:true},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:true},
@@ -868,6 +868,36 @@ function toneClass(v,kind){
   return"";
 }
 function fmtTone(v,d,kind){return v==null?`<span class="na">—</span>`:`<span class="num ${toneClass(v,kind)}">${Number(v).toFixed(d)}</span>`;}
+// V12.7: sector colour-coding — each pill carries its sector's hue (dot + tint),
+// so the table is sector-scannable at a glance. RGB triplets feed rgb(R G B / a)
+// in the CSS; any unmapped sector keeps the neutral pill. Matched by substring so
+// taxonomy variants (e.g. "Financial Services" / "Banks") map to one colour.
+const SECTOR_RGB={
+  "financ":"37 99 235","bank":"37 99 235",
+  "technolog":"8 145 178","info tech":"8 145 178","software":"8 145 178",
+  "energy":"217 119 6","oil":"217 119 6",
+  "health":"5 150 105","pharma":"5 150 105",
+  "consumer cyclical":"124 58 237","discretionary":"124 58 237","durable":"124 58 237","auto":"124 58 237",
+  "consumer defensive":"22 163 74","staple":"22 163 74","fmcg":"22 163 74",
+  "industrial":"79 70 229","capital good":"79 70 229",
+  "material":"234 88 12","metal":"234 88 12","chemical":"234 88 12",
+  "communicat":"225 29 72","telecom":"225 29 72","media":"225 29 72",
+  "utilit":"14 116 144","power":"14 116 144",
+  "real estate":"180 83 9","realty":"180 83 9"
+};
+function sectorRGB(s){
+  if(!s)return null;
+  const k=String(s).toLowerCase();
+  for(const key in SECTOR_RGB){ if(k.indexOf(key)>=0) return SECTOR_RGB[key]; }
+  return null;
+}
+function sectorPill(s){
+  if(!s)return"";
+  const rgb=sectorRGB(s);
+  return rgb
+    ? `<span class="sector-pill sp-tinted" style="--sp:${rgb}">${s}</span>`
+    : `<span class="sector-pill">${s}</span>`;
+}
 function showSkeleton(n){const vis=COLUMNS.filter(c=>c.visible);document.getElementById("tableBody").innerHTML=Array.from({length:n||8},()=>`<tr class="skel-row">${vis.map(()=>`<td><div class="skel"></div></td>`).join("")}</tr>`).join("");}
 function fmtChange(v){
   if(v==null)return`<span class="na">—</span>`;
@@ -1244,6 +1274,59 @@ checkHealth();
   nav .nav-links a{font-size:16px;padding:12px 2px;width:100%;height:auto;border-bottom:0.5px solid var(--border,rgba(37,99,235,0.10));white-space:nowrap;text-align:left}
   nav .nav-links a.nav-cta{margin-top:12px;text-align:center;border-bottom:none;border-radius:10px}
   nav .nav-links a::after{display:none}
+}
+</style>
+
+<!-- ============================================================
+     MF VISUAL v12.7 — Scanner scannability polish (additive, RM-safe)
+     1) Sector colour-coding — each pill carries its sector's hue (a soft
+        dot + tint + border), so the table reads sector-by-sector at a
+        glance. --sp is an "R G B" triplet set inline per row; any
+        unmapped sector keeps the neutral .sector-pill (untouched).
+     2) Day % change reads as a soft tinted pill — gainers/losers pop.
+     3) Mobile: the Company column stays put (sticky-left) while the wide
+        table scrolls sideways, so you never lose which stock a row is.
+     ============================================================ -->
+<style id="mf-v127-screener">
+/* The pill sits in a flex-column cell (.company-cell), so without this it
+   stretches to the full column width — keep it hugging its own content. */
+.company-cell .sector-pill{align-self:flex-start;max-width:100%;}
+.sector-pill.sp-tinted{
+  display:inline-flex;align-items:center;gap:5px;
+  color:rgb(var(--sp));
+  background:rgb(var(--sp) / .08);
+  border-color:rgb(var(--sp) / .22);
+  padding:2px 9px 2px 7px;
+}
+.sector-pill.sp-tinted::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:rgb(var(--sp));flex-shrink:0;
+}
+
+/* Day % change → soft tinted pill (applies to the existing change spans) */
+.change-pos,.change-neg{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 9px;border-radius:20px;font-variant-numeric:tabular-nums;
+}
+.change-pos{background:rgb(5 150 105 / .10);}
+.change-neg{background:rgb(220 38 38 / .09);}
+
+/* Mobile: freeze the Company column while the table scrolls horizontally, so you
+   never lose which stock a row is. Constrain + wrap it to a compact anchor (long
+   Indian company names would otherwise fill the whole screen when pinned). */
+@media(max-width:900px){
+  #resultsTable thead th:first-child,
+  #resultsTable tbody td:first-child{
+    position:sticky;left:0;z-index:2;
+    background:var(--ink2);
+    box-shadow:6px 0 12px -8px rgba(15,23,42,.18);
+    white-space:normal;min-width:148px;max-width:172px;
+  }
+  #resultsTable tbody td:first-child .company-name a{line-height:1.25;}
+  #resultsTable thead th:first-child{
+    background:linear-gradient(180deg,var(--ink3) 0%,var(--ink) 100%);
+  }
+  #resultsTable tbody tr:nth-child(even) td:first-child{background:#f7faff;}
 }
 </style>
 </body>
