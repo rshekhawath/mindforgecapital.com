@@ -5089,5 +5089,36 @@ section[id]{ scroll-margin-top: 80px; }
   .why-card:hover .why-icon{ transform: none !important; }
 }
 </style>
+
+<!-- ============================================================
+     MF VISUAL v13.0 — cursor-spotlight on primary CTAs
+     Extends the strategy cards' magnetic-light to the buttons: a soft glossy
+     highlight tracks the cursor inside each primary CTA. The highlight is white
+     over white button text (imperceptible there) so it only glosses the gradient
+     background. Desktop/pointer only; one delegated listener; RM-safe.
+     ============================================================ -->
+<style id="mf-v130-index">
+.btn-primary, .nav-cta{ position: relative; overflow: hidden; }
+.btn-primary::before, .nav-cta::before{
+  content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  background: radial-gradient(120px circle at var(--bx,50%) var(--by,50%), rgba(255,255,255,.30), transparent 62%);
+  opacity:0; transition: opacity .3s ease;
+}
+@media (pointer:fine){
+  .btn-primary:hover::before, .nav-cta:hover::before{ opacity:1; }
+}
+</style>
+<script id="mf-v130-cta-spotlight">
+(function(){
+  if(!window.matchMedia || !window.matchMedia('(pointer:fine)').matches) return;
+  var SEL='.btn-primary, .nav-cta, .oo-cta';
+  document.addEventListener('pointermove', function(e){
+    var b=e.target.closest ? e.target.closest(SEL) : null; if(!b) return;
+    var r=b.getBoundingClientRect();
+    b.style.setProperty('--bx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+    b.style.setProperty('--by', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+  }, {passive:true});
+})();
+</script>
 </body>
 </html>

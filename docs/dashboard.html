@@ -4021,5 +4021,59 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
   .stat-card:hover .ico-wrap{ transform: none !important; }
 }
 </style>
+
+<!-- ============================================================
+     MF VISUAL v13.0 — living ambient backdrop (dashboard)
+     The marketing hero drifts & floats; the dashboard's backdrop was static.
+     This gives it the same premium, alive atmosphere: the existing ambient
+     gradient (body::before) slowly breathes, and two soft brand orbs (body::after)
+     drift behind the content. Both sit at z-index 0 behind the cards, are
+     pointer-inert, hidden in print, and freeze for reduced-motion users.
+     ============================================================ -->
+<style id="mf-v130-dash">
+body::after{
+  content:''; position:fixed; inset:-6%; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(420px 420px at 86% 6%, rgba(45,212,191,0.14) 0%, transparent 70%),
+    radial-gradient(380px 380px at 4% 92%, rgba(37,99,235,0.12) 0%, transparent 70%),
+    radial-gradient(300px 300px at 50% 120%, rgba(8,145,178,0.08) 0%, transparent 70%);
+}
+@media (prefers-reduced-motion: no-preference){
+  body::before{ animation: v130-drift 30s ease-in-out infinite; will-change: transform; }
+  body::after{  animation: v130-orbs  24s ease-in-out infinite; will-change: transform; }
+}
+@keyframes v130-drift{ 0%,100%{ transform: translate3d(0,0,0) scale(1); } 50%{ transform: translate3d(1.2%,-1%,0) scale(1.05); } }
+@keyframes v130-orbs{  0%,100%{ transform: translate3d(0,0,0) scale(1); } 50%{ transform: translate3d(-2.2%,1.8%,0) scale(1.06); } }
+@media print{ body::after{ display:none !important; } }
+</style>
+
+<!-- ============================================================
+     MF VISUAL v13.0 — cursor-spotlight on primary CTAs (dashboard)
+     Same glossy cursor-tracking highlight as the marketing site, on the dashboard
+     CTAs ("Book your 1:1 Zoom call", nav). Desktop/pointer only; RM-safe.
+     ============================================================ -->
+<style id="mf-v130-cta">
+.btn-primary, .nav-cta, .oo-cta{ position: relative; overflow: hidden; }
+.btn-primary::before, .nav-cta::before, .oo-cta::before{
+  content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+  background: radial-gradient(120px circle at var(--bx,50%) var(--by,50%), rgba(255,255,255,.28), transparent 62%);
+  opacity:0; transition: opacity .3s ease;
+}
+@media (pointer:fine){
+  .btn-primary:hover::before, .nav-cta:hover::before, .oo-cta:hover::before{ opacity:1; }
+}
+</style>
+<script id="mf-v130-cta-spotlight">
+(function(){
+  if(!window.matchMedia || !window.matchMedia('(pointer:fine)').matches) return;
+  var SEL='.btn-primary, .nav-cta, .oo-cta';
+  document.addEventListener('pointermove', function(e){
+    var b=e.target.closest ? e.target.closest(SEL) : null; if(!b) return;
+    var r=b.getBoundingClientRect();
+    b.style.setProperty('--bx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+    b.style.setProperty('--by', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
+  }, {passive:true});
+})();
+</script>
 </body>
 </html>
