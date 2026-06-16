@@ -3966,5 +3966,60 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
 }
 .stat-card .stat-val .unit{ -webkit-text-fill-color:initial; color:var(--text3,#475569); background:none; }
 </style>
+
+<!-- ============================================================
+     MF VISUAL v12.6 — living gradients & tactile KPIs (dashboard)
+     Additive, reduced-motion-safe. The brand-gradient member name and
+     the four KPI numbers gently flow as one (mirrors the marketing
+     hero word), and the KPI icons gain a tactile pop + glow on card
+     hover. Keeps the v12.4 @supports fallback so text never vanishes.
+     ============================================================ -->
+<style id="mf-v126-dash">
+:root{ --v126-ease: cubic-bezier(.22,.8,.2,1); }
+
+/* 1) Brand-gradient name + KPI numbers gently flow. The gradient is
+   re-declared with a 4th stop + wider background-size so the sweep
+   has room to travel; the .unit span keeps its own (reset) colour. */
+.dash-hero h1 .accent{
+  background:linear-gradient(120deg,var(--accent) 0%,var(--accent3) 42%,var(--teal) 72%,var(--accent3) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  background-size:220% auto;
+  animation:v126-flow 9s ease-in-out infinite;
+}
+.stat-card .stat-val{
+  background:linear-gradient(120deg,#0c1831 0%,#1a50d8 44%,#0891b2 72%,#1a50d8 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  background-size:220% auto;
+  animation:v126-flow 10s ease-in-out infinite;
+}
+.stat-card .stat-val .unit{ -webkit-text-fill-color:initial; color:var(--text3,#475569); background:none; }
+@keyframes v126-flow{
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* 2) KPI icons pop + glow on card hover; top hairline brightens.
+   (v8.7 already eases the icon's transform+box-shadow, so we only
+   deepen the hover end-state here — no transition re-declaration.) */
+.stat-card:hover .ico-wrap{
+  transform: translateY(-1px) scale(1.10);
+  box-shadow: 0 10px 22px -10px rgba(26,80,216,.50), 0 0 0 4px rgba(37,99,235,.09);
+}
+.stat-card::before{ transition: opacity .3s var(--v126-ease), height .3s var(--v126-ease); }
+.stat-card:hover::before{ opacity: 1; height: 2px; }
+
+/* Fallback: if background-clip:text is unsupported, show a solid colour
+   (the animation simply has no visible effect — never blank text). */
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  .dash-hero h1 .accent{ color:var(--accent); }
+  .stat-card .stat-val{ color:#1a50d8; }
+}
+@media (prefers-reduced-motion: reduce){
+  .dash-hero h1 .accent,
+  .stat-card .stat-val{ animation: none !important; }
+  .stat-card .ico-wrap{ transition: none !important; }
+  .stat-card:hover .ico-wrap{ transform: none !important; }
+}
+</style>
 </body>
 </html>
