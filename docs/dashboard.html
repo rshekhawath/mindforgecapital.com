@@ -4099,5 +4099,62 @@ body::after{
   .size-card:hover::before,
   .alloc-card:hover::before { opacity: 1; }
 </style>
+<!-- ============================================================================
+     V13.8 — "Crafted chrome & a tactile number-pop" (dashboard · additive, RM-safe)
+     ----------------------------------------------------------------------------
+     Brings two homepage finishes to the member dashboard so the public site and
+     the member app keep reading as one product — added only where genuinely
+     missing (the 1:1-benefit card already sheens, so it is left untouched):
+       1) Scroll-aware nav — the dashboard's sticky bar had NO scrolled state;
+          it now crisps exactly like the public site once you scroll. A tiny
+          body.scrolled toggle mirrors the homepage's mechanism & threshold.
+       2) Number-pop — hovering a KPI tile lifts its value into the brand
+          gradient, the same pop the homepage gives strategy prices.
+       3) Active-capital clarity — the selected capital preset gains a branded
+          teal glow ring so the chosen amount is unmistakable at a glance.
+     Purely additive & decorative; disabled under reduced-motion.
+     ========================================================================== -->
+<style id="mf-v138-dash">
+  :root{ --v138-grad: linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%); --v138-ease: cubic-bezier(.22,.8,.2,1); }
+
+  /* 1) Scroll-aware sticky nav (matches the public site; top state unchanged) */
+  nav{ transition: box-shadow .3s var(--v138-ease), background-color .3s var(--v138-ease), border-color .3s var(--v138-ease); }
+  body.scrolled nav{
+    background: rgba(244,248,255,0.86);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+            backdrop-filter: blur(22px) saturate(1.4);
+    border-bottom-color: rgba(37,99,235,0.16);
+    box-shadow: 0 10px 30px -20px rgba(26,80,216,0.50), 0 1px 0 rgba(255,255,255,0.6) inset;
+  }
+
+  /* 2) KPI numbers → brand gradient on tile hover (unit stays legible) */
+  .stat-card .stat-val{ transition: filter .25s var(--v138-ease); }
+  .stat-card:hover .stat-val{
+    background: var(--v138-grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+  .stat-card:hover .stat-val .unit{ -webkit-text-fill-color: var(--text3); color: var(--text3); }
+
+  /* 3) Active capital preset — branded teal glow ring (upgrades the base shadow) */
+  .size-preset.active{ box-shadow: 0 6px 16px -6px rgba(26,80,216,.55), 0 0 0 3px rgba(45,212,191,.18); }
+
+  @media (prefers-reduced-motion: reduce){
+    nav, .stat-card .stat-val{ transition: none; }
+  }
+</style>
+<script id="mf-v138-nav-scroll-dash">
+/* The dashboard had no scrolled-nav state — toggle body.scrolled on scroll so the
+   V13.8 CSS above can crisp the bar, mirroring the public site's threshold. One
+   passive, rAF-throttled listener; if it fails the nav simply stays at its top
+   appearance — nothing depends on it. */
+(function(){
+  var ticking = false;
+  function apply(){ document.body.classList.toggle('scrolled', (window.pageYOffset||document.documentElement.scrollTop||0) > 24); ticking = false; }
+  function onScroll(){ if(!ticking){ ticking = true; (window.requestAnimationFrame||function(f){f();})(apply); } }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  apply();
+})();
+</script>
 </body>
 </html>

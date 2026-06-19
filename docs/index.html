@@ -5173,5 +5173,45 @@ section[id]{ scroll-margin-top: 80px; }
     .hero-visual::after { animation: none; }
   }
 </style>
+<!-- ============================================================================
+     V13.8 — "Crafted chrome & a tactile number-pop" (additive, reduced-motion-safe)
+     ----------------------------------------------------------------------------
+     The homepage already ships rich polish (scroll-reveal, flagship glow, hero
+     shimmer), so V13.8 is deliberately small and NON-duplicative — two finishes
+     verified absent in the current build:
+       1) Scrolled-nav upgrade — the page already toggles body.scrolled on scroll
+          (today it only adds a faint shadow). That same hook now also crisps the
+          bar's translucency, blur & hairline so the chrome reads as crafted.
+          Reuses the existing toggle — no new listener, top state unchanged.
+       2) Number-pop — hovering a strategy card lifts its headline price into the
+          brand gradient. The member dashboard mirrors this exact pop on its KPI
+          tiles, so the public site and the member app share one tactile language.
+     Purely additive & decorative; disabled under reduced-motion.
+     ========================================================================== -->
+<style id="mf-v138-index">
+  :root{ --v138-grad: linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%); --v138-ease: cubic-bezier(.22,.8,.2,1); }
+
+  /* 1) Richer scrolled-nav — reuses the existing body.scrolled toggle */
+  nav{ transition: box-shadow .3s var(--v138-ease), background-color .3s var(--v138-ease), border-color .3s var(--v138-ease); }
+  body.scrolled nav{
+    background: rgba(244,248,255,0.86);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+            backdrop-filter: blur(22px) saturate(1.4);
+    border-bottom-color: rgba(37,99,235,0.16);
+    box-shadow: 0 10px 30px -20px rgba(26,80,216,0.50), 0 1px 0 rgba(255,255,255,0.6) inset;
+  }
+
+  /* 2) Strategy headline price → brand gradient on card hover */
+  .strat-card .price-amt{ transition: color .25s var(--v138-ease); }
+  .strat-card:hover .price-amt{
+    background: var(--v138-grad);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    nav, .strat-card .price-amt{ transition: none; }
+  }
+</style>
 </body>
 </html>
