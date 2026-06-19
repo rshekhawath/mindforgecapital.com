@@ -4156,5 +4156,49 @@ body::after{
   apply();
 })();
 </script>
+<!-- ============================================================================
+     V13.9 — "Sector warmth & icon glow" (dashboard · additive, RM-safe)
+     ----------------------------------------------------------------------------
+     Two finishes confirmed absent in the dashboard build:
+       1) Allocation swatch pop — alloc-row hover already brightens the bar and
+          adds a background tint, but the coloured sector dot (alloc-swatch) is
+          completely static. Scaling it up with a white ring on row-hover makes
+          the active sector legible at a glance and matches the scale-reveal
+          language used on the homepage's why-icon.
+       2) KPI icon brightness glow — the ico-wrap already rotates and scales on
+          stat-card hover (V8+), but carries no filter/glow whatsoever. Adding
+          brightness + drop-shadow on hover gives the icon the same "warm-lit"
+          feel the sector swatches now get.
+     Purely additive; decorative effects disabled under prefers-reduced-motion.
+     ========================================================================== -->
+<style id="mf-v139-dash">
+  :root{ --v139-ease: cubic-bezier(.22,.8,.2,1); }
+
+  /* 1) Alloc swatch: scale + ring pop on legend row hover */
+  .alloc-swatch{
+    transition: transform .22s var(--v139-ease), box-shadow .22s ease;
+  }
+  .alloc-row:hover .alloc-swatch{
+    transform: scale(1.55);
+    box-shadow: 0 0 0 2.5px rgba(255,255,255,0.88), 0 2px 8px -2px rgba(15,23,42,0.20);
+  }
+
+  /* 2) KPI icon: add filter glow to the existing rotate+scale hover
+     (extends the ico-wrap transition to include filter; no transform override needed
+     — the existing rule still supplies rotate(-4deg) scale(1.06) via earlier CSS) */
+  .stat-card .ico-wrap{
+    transition: transform .35s var(--v139-ease), background .25s ease, filter .3s ease;
+  }
+  .stat-card:hover .ico-wrap{
+    filter: brightness(1.18) drop-shadow(0 4px 12px rgba(37,99,235,0.32));
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .alloc-swatch{ transition: none; }
+    .alloc-row:hover .alloc-swatch{ transform: none !important; box-shadow: none !important; }
+    .stat-card .ico-wrap{ transition: none; }
+    .stat-card:hover .ico-wrap{ filter: none !important; }
+  }
+</style>
 </body>
 </html>

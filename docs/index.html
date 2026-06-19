@@ -5213,5 +5213,45 @@ section[id]{ scroll-margin-top: 80px; }
     nav, .strat-card .price-amt{ transition: none; }
   }
 </style>
+<!-- ============================================================================
+     V13.9 — "Icon warmth & proof gradient" (additive, reduced-motion-safe)
+     ----------------------------------------------------------------------------
+     Two surgical finishes verified absent in the current build:
+       1) Academic-criteria icon glow — the 5 "why factor investing" pills already
+          lift and deepen their shadow on hover (V9.7), but the icon box inside
+          each pill is completely static. A gentle brand-blue halo + lift on
+          .crit-pill:hover .crit-icon gives the icon the same warmth the
+          why-card icons already carry — distinguished by the criteria section's
+          own blue accent rather than purple.
+       2) Social-proof number upgrade — the existing hover turns .proof-num solid
+          accent-blue (#1a50d8). V13.9 upgrades that to the full 3-stop brand
+          gradient, completing the "number-pop" language V13.8 introduced for
+          strategy card prices and dashboard KPI values so all three numeric
+          contexts share one reveal.
+     Purely additive; every effect is disabled under prefers-reduced-motion.
+     ========================================================================== -->
+<style id="mf-v139-index">
+  :root{ --v139-ease: cubic-bezier(.22,.8,.2,1); }
+
+  /* 1) Criteria icon: brand-blue halo + lift on pill hover */
+  .crit-icon{ transition: transform .32s var(--v139-ease), box-shadow .32s ease; }
+  .crit-pill:hover .crit-icon{
+    transform: translateY(-3px) scale(1.08);
+    box-shadow: 0 10px 22px -8px rgba(26,80,216,0.38), 0 0 0 3px rgba(26,80,216,0.09);
+  }
+
+  /* 2) Proof-bar number: upgrade solid-accent hover → 3-stop brand gradient
+     (later CSS wins; fallback is the existing color:var(--accent) from older rule) */
+  .proof-item:hover .proof-num{
+    background: linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .crit-icon{ transition: none; }
+    .crit-pill:hover .crit-icon{ transform: none !important; box-shadow: none !important; }
+  }
+</style>
 </body>
 </html>
