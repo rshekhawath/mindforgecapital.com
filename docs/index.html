@@ -5253,5 +5253,76 @@ section[id]{ scroll-margin-top: 80px; }
     .crit-pill:hover .crit-icon{ transform: none !important; box-shadow: none !important; }
   }
 </style>
+<!-- ============================================================================
+     V14.0 — "Guided edges" (additive, reduced-motion-safe)
+     ----------------------------------------------------------------------------
+     Two finishes verified ABSENT in the current build, applied here AND on the
+     member dashboard so the public site and the member app keep reading as one
+     product:
+       1) Footer link underline — the footer column links only changed colour on
+          hover; they now also grow a brand-gradient underline from the left,
+          extending the site's crafted-chrome language. Scoped to the text link
+          lists only — the social-icon links keep their own per-brand glow.
+       2) CTA arrow glide — primary CTAs end in "→" but the glyph was static. A
+          tiny, idempotent script wraps ONLY the trailing arrow so CSS can nudge
+          it right on hover (hero "Get Started →" + the five strategy
+          "Learn more →" buttons), adding a quiet directional cue. The span is
+          aria-hidden, so what a screen-reader announces is unchanged.
+     Purely additive; every motion effect is disabled under prefers-reduced-motion.
+     ========================================================================== -->
+<style id="mf-v140-index">
+  :root{ --v140-ease: cubic-bezier(.22,.8,.2,1); }
+
+  /* 1) Footer column links: brand-gradient underline grows from the left.
+     Uses background (not ::after) so it can't collide with any pseudo-elements. */
+  footer .footer-col ul a{
+    background-image: linear-gradient(90deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1.5px;
+    padding-bottom: 1px;
+    transition: background-size .32s var(--v140-ease), color .2s ease;
+  }
+  footer .footer-col ul a:hover,
+  footer .footer-col ul a:focus-visible{ background-size: 100% 1.5px; }
+
+  /* 2) CTA arrow glide (the .v140-arr span is injected by the script below) */
+  .v140-arr{ display:inline-block; transition: transform .28s var(--v140-ease); will-change: transform; }
+  @media (pointer:fine){
+    .btn-primary:hover .v140-arr,
+    .strat-cta:hover .v140-arr,
+    .mcta-primary:hover .v140-arr{ transform: translateX(4px); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    footer .footer-col ul a{ transition: color .2s ease; }
+    .v140-arr{ transition: none !important; transform: none !important; }
+  }
+</style>
+<script id="mf-v140-index-js">
+/* Wrap ONLY the trailing "→" in primary CTAs so the V14.0 CSS can glide it on
+   hover. Idempotent + fully guarded: it acts only when an element's last node is
+   a text node whose last visible glyph is the arrow, so it can never mangle
+   markup or double-wrap. Any surprise silently no-ops. */
+(function(){
+  try{
+    var els = document.querySelectorAll('.btn-primary, .strat-cta, .mcta-primary');
+    for (var k=0; k<els.length; k++){
+      var el = els[k];
+      if (el.querySelector('.v140-arr')) continue;
+      var last = el.lastChild;
+      if (!last || last.nodeType !== 3) continue;
+      var t = last.nodeValue, i = t.lastIndexOf('→');
+      if (i < 0 || t.slice(i+1).trim() !== '') continue;
+      last.nodeValue = t.slice(0, i);
+      var s = document.createElement('span');
+      s.className = 'v140-arr';
+      s.setAttribute('aria-hidden','true');
+      s.textContent = '→';
+      el.appendChild(s);
+    }
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

@@ -4200,5 +4200,77 @@ body::after{
     .stat-card:hover .ico-wrap{ filter: none !important; }
   }
 </style>
+<!-- ============================================================================
+     V14.0 — "Guided edges" (dashboard · additive, reduced-motion-safe)
+     ----------------------------------------------------------------------------
+     The same V14.0 pass the public site gets, so the two keep reading as one
+     product — three finishes verified ABSENT in the dashboard build:
+       1) Footer link underline — the footer legal links (Privacy · Terms ·
+          Recover access) only changed colour on hover; they now grow the shared
+          brand-gradient underline, exactly like the homepage footer columns.
+       2) CTA arrow glide — the "Book your 1:1 Zoom call →" arrow was static; a
+          tiny idempotent script wraps the trailing glyph so it nudges right on
+          hover. The span is aria-hidden, so screen-reader output is unchanged.
+       3) Holdings row focus — the table already tints a row on hover (flat fill
+          only); it now also gains a crisp brand-blue left edge so the active row
+          is unmistakable when scanning a long holdings list. box-shadow inset =
+          no layout shift and no border-collapse fights.
+     Purely additive; every motion effect disabled under prefers-reduced-motion.
+     ========================================================================== -->
+<style id="mf-v140-dash">
+  :root{ --v140-ease: cubic-bezier(.22,.8,.2,1); }
+
+  /* 1) Footer legal links: brand-gradient underline grows from the left */
+  footer p a{
+    background-image: linear-gradient(90deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1.5px;
+    padding-bottom: 1px;
+    transition: background-size .32s var(--v140-ease), color .2s ease;
+  }
+  footer p a:hover,
+  footer p a:focus-visible{ background-size: 100% 1.5px; }
+
+  /* 2) CTA arrow glide (the .v140-arr span is injected by the script below) */
+  .v140-arr{ display:inline-block; transition: transform .28s var(--v140-ease); will-change: transform; }
+  @media (pointer:fine){
+    .oo-cta:hover .v140-arr{ transform: translateX(4px); }
+  }
+
+  /* 3) Holdings table: brand-blue left edge on row hover (adds to the existing
+     flat tint; box-shadow inset means zero layout shift) */
+  .table-wrap tbody tr td:first-child{ transition: box-shadow .18s ease; }
+  .table-wrap tbody tr:hover td:first-child{ box-shadow: inset 3px 0 0 0 var(--accent); }
+
+  @media (prefers-reduced-motion: reduce){
+    footer p a{ transition: color .2s ease; }
+    .v140-arr{ transition: none !important; transform: none !important; }
+    .table-wrap tbody tr td:first-child{ transition: none; }
+  }
+</style>
+<script id="mf-v140-dash-js">
+/* Wrap ONLY the trailing "→" in the 1:1 CTA so the V14.0 CSS can glide it on
+   hover. Idempotent + fully guarded (see homepage twin); any surprise no-ops. */
+(function(){
+  try{
+    var els = document.querySelectorAll('.oo-cta');
+    for (var k=0; k<els.length; k++){
+      var el = els[k];
+      if (el.querySelector('.v140-arr')) continue;
+      var last = el.lastChild;
+      if (!last || last.nodeType !== 3) continue;
+      var t = last.nodeValue, i = t.lastIndexOf('→');
+      if (i < 0 || t.slice(i+1).trim() !== '') continue;
+      last.nodeValue = t.slice(0, i);
+      var s = document.createElement('span');
+      s.className = 'v140-arr';
+      s.setAttribute('aria-hidden','true');
+      s.textContent = '→';
+      el.appendChild(s);
+    }
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
