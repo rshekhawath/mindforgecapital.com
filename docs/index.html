@@ -5120,5 +5120,58 @@ section[id]{ scroll-margin-top: 80px; }
   }, {passive:true});
 })();
 </script>
+<!-- ============================================================================
+     V13.6 — "Aurora hairline" finish (additive, reduced-motion-safe)
+     ----------------------------------------------------------------------------
+     A cohesive premium pass that unifies the homepage with the member dashboard:
+       1) Section dividers — the flat top hairlines become the SAME brand-gradient
+          hairline used on the dashboard's KPI tiles & cards, so both pages share
+          one signature accent.
+       2) Hero trust-ticks — gentle staggered fade-up so they enter with the rest
+          of the hero instead of popping in (matches the hero's existing motion).
+       3) Hero performance card — a soft, slowly-breathing brand "aurora" halo
+          sits BEHIND the card (z-index:-1, never clipped, no layout shift).
+     Purely additive: appended last so it wins where intended; every effect is
+     decorative and disabled under prefers-reduced-motion.
+     ========================================================================== -->
+<style id="mf-v136-aurora">
+  /* 1) Unified brand-gradient section hairlines (was: flat var(--border)) */
+  .how, .strategies, .newsletter, .team, .social-proof {
+    border-top: 1px solid transparent;
+    border-image: linear-gradient(90deg,
+      transparent 0%, rgba(37,99,235,0.30) 28%, rgba(8,145,178,0.32) 50%,
+      rgba(37,99,235,0.30) 72%, transparent 100%) 1;
+  }
+  /* social-proof also closes with a bottom hairline — keep it symmetric */
+  .social-proof { border-bottom-width: 1px; }
+
+  /* 2) Hero trust-ticks: staggered fade-up entrance */
+  @keyframes v136-tick { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .hero-benefits li { animation: v136-tick .5s cubic-bezier(.22,.8,.2,1) both; }
+  .hero-benefits li:nth-child(1) { animation-delay: .15s; }
+  .hero-benefits li:nth-child(2) { animation-delay: .28s; }
+  .hero-benefits li:nth-child(3) { animation-delay: .41s; }
+
+  /* 3) Hero performance card: soft brand aurora halo behind the card */
+  .hero-visual { position: relative; }
+  .hero-visual::after {
+    content: ''; position: absolute; z-index: -1; pointer-events: none;
+    inset: -34px -24px -44px -24px; border-radius: 44px;
+    background:
+      radial-gradient(58% 52% at 64% 36%, rgba(37,99,235,0.16) 0%, transparent 70%),
+      radial-gradient(50% 50% at 28% 82%, rgba(8,145,178,0.13) 0%, transparent 72%);
+    filter: blur(30px);
+    animation: v136-halo 11s ease-in-out infinite;
+  }
+  @keyframes v136-halo {
+    0%, 100% { opacity: .85; transform: translate3d(0,0,0) scale(1); }
+    50%      { opacity: 1;   transform: translate3d(0,-8px,0) scale(1.04); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-benefits li { animation: none; }
+    .hero-visual::after { animation: none; }
+  }
+</style>
 </body>
 </html>
