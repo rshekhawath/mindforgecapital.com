@@ -166,11 +166,25 @@ function doGet(e) {
 // ACTION HANDLERS
 // -----------------------------------------------------------------------------
 
+// V14.6 FIX: Google Sheets evaluates any cell value beginning with + = - or @ as
+// a formula. A phone like "+91-7989080493" was therefore stored as the FORMULA
+// =91-7989080493 → -7989080402, corrupting the value so phone-based recovery
+// could never match it (recover() normalises both sides to last-10 digits, but
+// the stored number's digits no longer matched). Prefix a leading apostrophe so
+// Sheets stores it as text; recover() strips non-digits regardless, so it works
+// whether or not the sheet consumes the apostrophe. Applied to every sheet write
+// that persists a phone (subscriptions + leads); email/PDF displays keep the raw.
+function safePhone(p) {
+  var s = String(p == null ? '' : p).trim();
+  if (!s) return '';
+  return /^[=+\-@]/.test(s) ? ("'" + s) : s;
+}
+
 function handleSubscribe(payload) {
   const token = payload.token;
   const email = payload.email;
   const name = payload.name;
-  const phone = payload.phone;
+  const phone = safePhone(payload.phone);
   const strategy = payload.strategy;
   const paymentId = payload.payment_id;
 
@@ -266,7 +280,7 @@ function handleLegacyLead(payload) {
     new Date().toISOString(),
     payload.name || '',
     payload.email || '',
-    payload.phone || '',
+    safePhone(payload.phone),
     payload.strategy || '',
     payload.amount || '',
     'pending'
@@ -295,7 +309,7 @@ function handleSaveLead(payload) {
     ts,
     payload.name  || '',
     payload.email || '',
-    payload.phone || '',
+    safePhone(payload.phone),
     payload.strategy || '',
     payload.price || '',
     'pending',
@@ -317,7 +331,7 @@ function handleActivate(payload) {
   const email    = (payload.email    || '').toLowerCase().trim();
   const strategy = payload.strategy  || '';
   const name     = payload.name      || '';
-  const phone    = payload.phone     || '';
+  const phone    = safePhone(payload.phone);
 
   if (!email || !strategy) {
     return errorResponse('email and strategy are required');

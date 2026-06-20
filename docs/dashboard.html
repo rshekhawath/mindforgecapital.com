@@ -2988,6 +2988,7 @@ async function loadLiveProfit(force){
   if (!priced.length){ card.style.display = 'none'; return; }
 
   card.style.display = 'flex';
+  window._profitAnimated = false;   // V14.6: re-arm the count-up for this load
   setProfitLoading(window._rebalDate);
 
   var yahoos = priced.map(function(s){ return s.yahoo_ticker; }).filter(function(v,i,a){ return a.indexOf(v) === i; });
@@ -3034,6 +3035,23 @@ function setProfitUnavailable(){
   var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
 }
 function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null; }
+// V14.6: count the headline % up from 0 on first paint (a tactile premium touch,
+// matching the KPI count-ups). Only the FIRST render per load animates — capital
+// tweaks re-render instantly. Reduced-motion / hidden-tab safe.
+function _animatePct(el, target){
+  var fmt = function(v){ return (v > 0 ? '+' : '') + v.toFixed(2) + '%'; };
+  if (window._profitAnimated || document.hidden ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    el.textContent = fmt(target); window._profitAnimated = true; return;
+  }
+  window._profitAnimated = true;
+  var dur = 750, start = performance.now();
+  (function step(now){
+    var t = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - t, 3);
+    el.textContent = fmt(target * e);
+    if (t < 1) requestAnimationFrame(step); else el.textContent = fmt(target);
+  })(performance.now());
+}
 function paintLivePrices(){
   var px = window._livePx || {};
   document.querySelectorAll('.px-live').forEach(function(el){
@@ -3067,8 +3085,8 @@ function renderProfitHeadline(){
   var port = wSum > 0 ? (wRet / wSum) : 0;
   card.classList.toggle('is-down', port < -0.05);
   var pct = document.getElementById('pc-pct');
-  pct.textContent = (port > 0 ? '+' : '') + port.toFixed(2) + '%';
   pct.className = 'pc-pct' + (Math.abs(port) <= 0.05 ? ' pc-flat' : '');
+  _animatePct(pct, port);
   // Date label: when month-anchored baselines are in use, show the 1st-of-month
   // rebalance (the actual baseline trading day); otherwise the served run's date.
   var rebal;
