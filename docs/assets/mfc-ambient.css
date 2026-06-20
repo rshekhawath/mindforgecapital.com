@@ -1,0 +1,81 @@
+/* ============================================================================
+   MindForge Capital — V14.2 "Ambient depth" (shared, additive, scoped)
+   ----------------------------------------------------------------------------
+   Brings the homepage's signature aurora + constellation depth to the
+   conversion-funnel pages (signup / login / recover), which previously sat on a
+   single flat radial glow. Everything here is:
+     • SCOPED to `body.mfc-ambient` so it only affects pages that opt in.
+     • DECORATIVE and behind content (the existing body::before glow is z-index:0,
+       .page/.card are z-index:1 — this fixed layer also sits at z-index:0).
+     • reduced-motion-safe (all drift stops under prefers-reduced-motion).
+   It never hides, moves, or restructures any form field — purely background +
+   a gentle card entrance/lift that matches the brand vocabulary.
+   ========================================================================== */
+
+/* ── 1) Ambient aurora + faint constellation dot-grid ──────────────────────── */
+/* Uses body::after (body::before is already the page's base glow), so the two
+   layers compose: base glow → aurora blobs + dot grid → page content. */
+body.mfc-ambient::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    /* two soft, slowly-drifting brand blobs (blue + teal) */
+    radial-gradient(46% 42% at 18% 26%, rgba(37,99,235,0.10) 0%, transparent 70%),
+    radial-gradient(44% 40% at 84% 74%, rgba(8,145,178,0.09) 0%, transparent 72%),
+    /* faint constellation dot-grid — barely-there texture, masked to fade at edges */
+    radial-gradient(rgba(37,99,235,0.05) 1px, transparent 1.4px);
+  background-size: 100% 100%, 100% 100%, 30px 30px;
+  background-position: 0 0, 0 0, 0 0;
+  -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 35%, #000 55%, transparent 100%);
+          mask-image: radial-gradient(ellipse 120% 90% at 50% 35%, #000 55%, transparent 100%);
+  animation: mfc-amb-drift 22s ease-in-out infinite;
+}
+
+@keyframes mfc-amb-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: .9; }
+  50%      { transform: translate3d(0, -10px, 0) scale(1.03); opacity: 1; }
+}
+
+/* ── 2) Card: gentle entrance + premium hover lift ─────────────────────────── */
+body.mfc-ambient .card {
+  animation: mfc-amb-cardin .6s cubic-bezier(.22,.8,.2,1) both;
+  transition: transform .35s cubic-bezier(.22,.8,.2,1),
+              box-shadow .35s cubic-bezier(.22,.8,.2,1);
+}
+@keyframes mfc-amb-cardin {
+  from { opacity: 0; transform: translateY(14px) scale(.99); }
+  to   { opacity: 1; transform: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  body.mfc-ambient .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 22px 60px -22px rgba(37,99,235,0.30),
+                0 8px 28px -16px rgba(8,145,178,0.20);
+  }
+}
+
+/* ── 3) Consistency: ensure every ambient card carries the brand top-hairline ──
+   login/signup already declare .card::before; recover.html does not. Scoping it
+   here (lower specificity, only on opted-in pages) fills that gap so the three
+   pages match — on pages that already define it, the value is identical. */
+body.mfc-ambient .card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(26,108,244,0.45), transparent);
+  border-radius: 24px 24px 0 0;
+  pointer-events: none;
+}
+/* recover.html's .card has no position context of its own — give the scoped
+   card one so the absolutely-positioned hairline anchors correctly. */
+body.mfc-ambient .card { position: relative; }
+
+/* ── reduced-motion: keep the depth, drop the motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  body.mfc-ambient::after { animation: none; }
+  body.mfc-ambient .card  { animation: none; }
+}
