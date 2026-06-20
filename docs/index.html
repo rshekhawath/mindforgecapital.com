@@ -4116,12 +4116,29 @@ function setDuration(durKey) {
     if (sessionStorage.getItem(DISMISS_KEY) === '1') return;
   } catch(_) { /* private mode etc. — fall through and just show */ }
 
-  // Show after a short delay so it doesn't compete with hero render.
-  var openTimer = setTimeout(function(){
+  // V14.3 perf: pop on FIRST user interaction (scroll / pointer / key / touch)
+  // instead of a blind 3.5s timer. The old timer made the bubble a late, mid-size
+  // paint that became the desktop Largest-Contentful-Paint element (~3.6s LCP).
+  // LCP is finalised at the first user input, so showing the nudge only AFTER an
+  // interaction means it can never be the LCP element — desktop LCP now tracks the
+  // hero (~0.6s) — while engaged visitors still get the nudge. A short settle
+  // delay avoids firing on an accidental first event.
+  var openTimer = null;
+  function showBubble(){
     bubble.hidden = false;
-    // Force a paint before adding the class so the transition runs.
     requestAnimationFrame(function(){ bubble.classList.add('fwb-visible'); });
-  }, 3500);
+  }
+  var triggered = false;
+  function onFirstInteract(){
+    if (triggered) return; triggered = true;
+    ['scroll','pointerdown','keydown','touchstart','wheel'].forEach(function(ev){
+      window.removeEventListener(ev, onFirstInteract, { passive: true });
+    });
+    openTimer = setTimeout(showBubble, 600);
+  }
+  ['scroll','pointerdown','keydown','touchstart','wheel'].forEach(function(ev){
+    window.addEventListener(ev, onFirstInteract, { passive: true });
+  });
 
   function dismiss(persist){
     clearTimeout(openTimer);

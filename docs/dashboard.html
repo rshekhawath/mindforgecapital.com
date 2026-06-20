@@ -1336,6 +1336,48 @@ footer p {
       </div>
     </div>
 
+    <!-- LIVE PROFIT SINCE REBALANCE (V14.3) -->
+    <style>
+    .profit-card{display:flex;align-items:stretch;gap:22px;flex-wrap:wrap;margin:0 0 22px;padding:20px 24px;border-radius:16px;
+      background:linear-gradient(120deg,rgba(5,150,105,0.07),rgba(8,145,178,0.05));border:0.5px solid rgba(5,150,105,0.20);
+      position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -16px rgba(5,150,105,.20)}
+    .profit-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,#059669,#0891b2);transition:background .4s}
+    .profit-card.is-down{background:linear-gradient(120deg,rgba(220,38,38,0.06),rgba(217,119,6,0.04));border-color:rgba(220,38,38,0.20)}
+    .profit-card.is-down::before{background:linear-gradient(180deg,#dc2626,#f59e0b)}
+    .pc-left{flex:1;min-width:210px}
+    .pc-label{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+    .pc-label .pc-livedot{width:7px;height:7px;border-radius:50%;background:#059669;box-shadow:0 0 0 0 rgba(5,150,105,.5);animation:pc-pulse 2.2s ease-out infinite}
+    .profit-card.is-down .pc-label .pc-livedot{background:#dc2626}
+    @keyframes pc-pulse{0%{box-shadow:0 0 0 0 rgba(5,150,105,.45)}70%{box-shadow:0 0 0 7px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
+    @media(prefers-reduced-motion:reduce){.pc-livedot{animation:none}}
+    .pc-main{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+    .pc-pct{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;color:#059669}
+    .profit-card.is-down .pc-pct{color:#dc2626}
+    .pc-pct.pc-flat{color:#64748b}
+    .pc-sub{font-size:12.5px;color:#475569;margin-top:9px;line-height:1.55;max-width:520px}
+    .pc-right{display:flex;flex-direction:column;justify-content:center;gap:7px;min-width:130px}
+    .pc-stat{display:flex;align-items:center;gap:8px;font-size:13px;color:#1e3a5f}
+    .pc-stat b{font-variant-numeric:tabular-nums;min-width:20px;text-align:right}
+    .pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .pc-up-dot{background:#059669}.pc-down-dot{background:#dc2626}
+    .pc-asof{font-size:11px;color:#94a3b8;margin-top:2px}
+    @media(max-width:640px){.pc-pct{font-size:32px}.profit-card{padding:18px}.pc-right{flex-direction:row;flex-wrap:wrap;gap:14px}}
+    /* per-row live price + return (inside the Rec. Price cell / mobile card) */
+    td.price .px-rec{display:block;font-weight:600}
+    td.price .px-live{display:block;font-size:12px;font-weight:600;color:#64748b;margin-top:3px;white-space:nowrap}
+    .px-live .ret{font-weight:700}
+    .ret.up{color:#059669}.ret.down{color:#dc2626}.ret.flat{color:#64748b}
+    .sc-val.px-live .ret{margin-left:7px}
+    </style>
+    <div class="profit-card fade-up" id="profit-card" style="display:none;">
+      <div class="pc-left">
+        <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span>Live profit since rebalance <span id="pc-rebal-date"></span></div>
+        <div class="pc-main"><span class="pc-pct" id="pc-pct">—</span></div>
+        <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
+      </div>
+      <div class="pc-right" id="pc-breakdown"></div>
+    </div>
+
     <!-- MEMBER BENEFIT: 1:1 Zoom call (V8.2) -->
     <style>
     .oneonone-card{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:0 0 22px;padding:18px 22px;border-radius:16px;
@@ -1789,6 +1831,7 @@ async function init() {
     if (data.error) { showError('Access Denied', data.error); return; }
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
+    loadLiveProfit();   // V14.3: live profit since rebalance (non-blocking)
   } catch(e) {
     showError('Connection Error', 'Could not connect to the server. Please try again in a moment.');
   }
@@ -2188,6 +2231,8 @@ function setCapital(v, btn, fromInput) {
   refreshSizeSummary();
   // Re-render the allocation/shares columns without rebuilding bars
   updateAllocationCells();
+  // V14.3: the absolute ₹ profit depends on capital — recompute the headline.
+  if (window._livePx) renderProfitHeadline();
   // Persist
   if (currentStrategy) saveCapital(currentStrategy, currentCapital);
 }
@@ -2293,7 +2338,7 @@ function renderTable(stocks) {
           ${brokerLink(s)}
       </td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
-      <td class="price right">${curr}${entry.toFixed(2)}</td>
+      <td class="price right"><span class="px-rec">${curr}${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}" data-curr="${curr}"></span></td>
       <td class="alloc-amt right">${fmtAmt(curr, amt)}</td>
       <td class="shares right"><span class="qty">${shares}</span></td>
       <td class="right">
@@ -2324,6 +2369,7 @@ function renderTable(stocks) {
       </div>
       <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(s.industry||'—')}</span></div>
       <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">${stockCurr(s)}${entry.toFixed(2)}</span></div>
+      <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}" data-curr="${stockCurr(s)}">—</span></div>
       <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(stockCurr(s), amt)}</span></div>
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
       <div class="sc-row"><span class="sc-key">Weight</span><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div>
@@ -2336,6 +2382,8 @@ function renderTable(stocks) {
 
   document.getElementById('last-update-time').textContent = new Date().toLocaleTimeString('en-IN');
   refreshBoughtProgress();
+  // V14.3: re-apply live prices/returns after any re-render (sort, filter, capital).
+  if (window._livePx) paintLivePrices();
 }
 
 // ── MARK-AS-BOUGHT (persisted per strategy) ──────────────────────────────
@@ -2811,12 +2859,154 @@ async function refreshDashboard() {
     if (data.error) { showToast('Refresh failed'); return; }
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
+    loadLiveProfit(true);   // V14.3: force-refresh live prices on manual refresh
     showToast('Data refreshed');
   } catch (e) {
     showToast('Refresh failed');
   } finally {
     if (btn) btn.classList.remove('refreshing');
   }
+}
+
+// ── LIVE PROFIT SINCE REBALANCE (V14.3) ──────────────────────────────────────
+// Shows each holding's return vs the price recommended on the rebalance date,
+// and a portfolio-level weighted profit. Live prices come from the backend
+// (Yahoo proxy): batch ?action=prices first; if that returns nothing (older
+// deployed Apps Script), fall back to the proven per-ticker ?action=chart. The
+// price map is cached in localStorage per calendar day, so it refreshes once a
+// day automatically ("updated everyday") and is instant on same-day reloads.
+function parseRebalanceDate(sub){
+  var rid = (sub && sub.run_id) ? String(sub.run_id) : '';
+  var m = rid.match(/^(\d{4})(\d{2})(\d{2})/);   // e.g. 20260609_230735_MC
+  if (m){ var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])); if (!isNaN(d.getTime())) return d; }
+  if (sub && sub.subscribed_at){ var d2 = new Date(sub.subscribed_at); if (!isNaN(d2.getTime())) return d2; }
+  return null;
+}
+function _pxCacheKey(){ return 'mfc_livepx_' + (token || 'demo'); }
+function _todayKey(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function _loadCachedPx(){
+  try { var raw = localStorage.getItem(_pxCacheKey()); if (!raw) return null;
+        var o = JSON.parse(raw); if (o && o.day === _todayKey() && o.px) return o; } catch(e){}
+  return null;
+}
+function _saveCachedPx(px){
+  try { localStorage.setItem(_pxCacheKey(), JSON.stringify({ day: _todayKey(), at: Date.now(), px: px })); } catch(e){}
+}
+async function _fetchPricesBatch(yahoos){
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=prices&tickers=' + encodeURIComponent(yahoos.join(',')) + '&_=' + Date.now());
+    var data = await res.json();
+    if (data && data.prices){
+      var out = {}, any = false;
+      yahoos.forEach(function(y){ var p = data.prices[y]; if (p && p.price != null){ out[y] = { price: Number(p.price), prev: (p.prev_close != null ? Number(p.prev_close) : null) }; any = true; } });
+      if (any) return out;
+    }
+  } catch(e){}
+  return null;
+}
+async function _fetchPricesViaChart(yahoos){
+  var out = {}, idx = 0, CONC = 5;
+  async function worker(){
+    while (idx < yahoos.length){
+      var y = yahoos[idx++];
+      try {
+        var res = await fetch(APPS_SCRIPT_URL + '?action=chart&ticker=' + encodeURIComponent(y) + '&range=1d&_=' + Date.now());
+        var d = await res.json();
+        if (d && d.status === 'ok' && d.points && d.points.length){
+          out[y] = { price: Number(d.points[d.points.length - 1][1]), prev: (d.prev_close != null ? Number(d.prev_close) : null) };
+        }
+      } catch(e){}
+    }
+  }
+  var workers = []; for (var i = 0; i < Math.min(CONC, yahoos.length); i++) workers.push(worker());
+  await Promise.all(workers);
+  return out;
+}
+async function loadLiveProfit(force){
+  var card = document.getElementById('profit-card');
+  if (!card) return;
+  if (isDemo){ card.style.display = 'none'; return; }   // demo rec-prices are placeholders
+  var sub = window._currentSub || {};
+  var stocks = stocksData || [];
+  window._rebalDate = parseRebalanceDate(sub);
+  var priced = stocks.filter(function(s){ return s.yahoo_ticker && (Number(s.recommended_price) || 0) > 0; });
+  if (!priced.length){ card.style.display = 'none'; return; }
+
+  card.style.display = 'flex';
+  setProfitLoading(window._rebalDate);
+
+  var yahoos = priced.map(function(s){ return s.yahoo_ticker; }).filter(function(v,i,a){ return a.indexOf(v) === i; });
+
+  var cached = force ? null : _loadCachedPx();
+  var px = (cached && cached.px) ? cached.px : null;
+  if (!px){
+    px = await _fetchPricesBatch(yahoos);
+    if (!px) px = await _fetchPricesViaChart(yahoos);
+    if (px && Object.keys(px).length) _saveCachedPx(px);
+  }
+  if (!px || !Object.keys(px).length){ setProfitUnavailable(); return; }
+  window._livePx = px;
+  paintLivePrices();
+  renderProfitHeadline();
+}
+function setProfitLoading(rebal){
+  var d = document.getElementById('pc-rebal-date');
+  if (d) d.textContent = rebal ? ('· ' + rebal.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})) : '';
+  var pct = document.getElementById('pc-pct'); if (pct){ pct.textContent = 'Calculating…'; pct.className = 'pc-pct pc-flat'; }
+  var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Fetching live prices for your holdings…';
+  var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
+  var card = document.getElementById('profit-card'); if (card) card.classList.remove('is-down');
+}
+function setProfitUnavailable(){
+  var pct = document.getElementById('pc-pct'); if (pct){ pct.textContent = '—'; pct.className = 'pc-pct pc-flat'; }
+  var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Live prices are temporarily unavailable — tap Refresh to try again.';
+  var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
+}
+function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null; }
+function paintLivePrices(){
+  var px = window._livePx || {};
+  document.querySelectorAll('.px-live').forEach(function(el){
+    var y = el.getAttribute('data-px'); var rec = Number(el.getAttribute('data-rec')) || 0; var curr = el.getAttribute('data-curr') || '₹';
+    var p = px[y];
+    if (!p || !rec){ el.innerHTML = '—'; return; }
+    var live = p.price; var r = _retPct(rec, live);
+    var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
+    el.innerHTML = curr + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
+  });
+}
+function renderProfitHeadline(){
+  var px = window._livePx || {}; var stocks = stocksData || [];
+  var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, n = 0;
+  stocks.forEach(function(s){
+    var rec = Number(s.recommended_price) || 0; var p = px[s.yahoo_ticker];
+    if (!rec || !p) return;
+    var r = _retPct(rec, p.price); if (r == null) return;
+    var w = Number(s.weight_pct) || 0;
+    wSum += w; wRet += w * r; n++;
+    if (r > 0.05) up++; else if (r < -0.05) down++;
+    var shares = Math.floor(allocBudget(s, stocks, currentCapital) / rec);
+    absGain += shares * rec * (r / 100);
+  });
+  var card = document.getElementById('profit-card');
+  if (!n){ setProfitUnavailable(); return; }
+  var port = wSum > 0 ? (wRet / wSum) : 0;
+  card.classList.toggle('is-down', port < -0.05);
+  var pct = document.getElementById('pc-pct');
+  pct.textContent = (port > 0 ? '+' : '') + port.toFixed(2) + '%';
+  pct.className = 'pc-pct' + (Math.abs(port) <= 0.05 ? ' pc-flat' : '');
+  var rebal = window._rebalDate;
+  var absSign = absGain >= 0 ? '+' : '−';
+  var absStr = fmtMoney(currentCurrency, Math.abs(Math.round(absGain)));
+  var sub = document.getElementById('pc-sub');
+  sub.innerHTML = 'Weighted return across ' + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
+    (rebal ? ' on <strong>' + rebal.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
+    '. On your ' + fmtMoney(currentCurrency, currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.';
+  var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
+  var br = document.getElementById('pc-breakdown');
+  if (br) br.innerHTML =
+    '<div class="pc-stat"><span class="pc-dot pc-up-dot"></span><b>' + up + '</b> up</div>' +
+    '<div class="pc-stat"><span class="pc-dot pc-down-dot"></span><b>' + down + '</b> down</div>' +
+    '<div class="pc-asof">As of ' + new Date().toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '</div>';
 }
 
 init();

@@ -5,8 +5,10 @@
  * a stale cache would mislead subscribers.
  * v2 (V12.0): cache bumped so the old HTML fallback is purged on activate and
  * returning visitors land on the V12.0 interactive hero even when offline.
+ * v3 (V14.3): JS added to the cache-first asset list (was css/img only, so the
+ * shared scripts re-fetched every navigation); cache bumped to re-install.
  */
-const CACHE = 'mfc-v2';
+const CACHE = 'mfc-v3';
 const ASSET_PATHS = [
   '/assets/LogoNav.png',
   '/assets/favicon-32.png',
@@ -48,8 +50,9 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Assets (images, css if ever, etc.): cache-first
-  if (/\.(?:png|jpg|jpeg|webp|svg|ico|css|woff2)$/i.test(url.pathname)) {
+  // Assets (images, css, js, fonts): cache-first. ?v= query versioning keeps
+  // these fresh — a new ?v is a new cache key, so bumping it ships new code.
+  if (/\.(?:png|jpg|jpeg|webp|svg|ico|css|js|woff2)$/i.test(url.pathname)) {
     e.respondWith(
       caches.match(req).then((cached) => cached || fetch(req).then((res) => {
         const copy = res.clone();

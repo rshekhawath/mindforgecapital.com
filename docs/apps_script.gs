@@ -635,32 +635,48 @@ function handleGetPrices(tickers) {
 
   const tickerArray = tickers.split(',').map(t => t.trim()).filter(t => t);
   const prices = {};
+  const cache = CacheService.getScriptCache();
 
   tickerArray.forEach(function(ticker) {
     try {
-      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + ticker + '?interval=1d&range=1d';
-      const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+      // Short per-ticker cache so many subscribers loading their dashboards on the
+      // same day don't each hit Yahoo (mirrors handleGetChart's caching).
+      const cacheKey = 'price::' + ticker;
+      const hit = cache.get(cacheKey);
+      if (hit) { prices[ticker] = JSON.parse(hit); return; }
 
-      if (response.getResponseCode() === 200) {
-        const data = JSON.parse(response.getContentText());
+      // V14.3 FIX: (1) Yahoo now 401/429s requests with no browser User-Agent —
+      // the old call sent none, so this endpoint silently returned {} for every
+      // ticker. (2) The close series lives at result.indicators.quote[0].close,
+      // NOT result.close, so even a 200 produced nothing. Both fixed below to
+      // mirror the proven handleGetChart() path.
+      const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=1d';
+      const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true, headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (response.getResponseCode() !== 200) return;
 
-        if (data.chart && data.chart.result && data.chart.result.length > 0) {
-          const result = data.chart.result[0];
-          const quote = result.meta;
+      const data = JSON.parse(response.getContentText());
+      if (!data.chart || !data.chart.result || !data.chart.result.length) return;
+      const result = data.chart.result[0];
+      const meta = result.meta || {};
+      const q = (result.indicators && result.indicators.quote && result.indicators.quote[0]) || {};
+      const closes = q.close || [];
+      let lastClose = null;
+      for (let i = closes.length - 1; i >= 0; i--) { if (closes[i] != null) { lastClose = closes[i]; break; } }
+      // Prefer the live regular-market price; fall back to the last intraday close.
+      const price = (meta.regularMarketPrice != null ? meta.regularMarketPrice : lastClose);
+      if (price == null) return;
+      const prevClose = (meta.chartPreviousClose != null ? meta.chartPreviousClose
+                        : (meta.previousClose != null ? meta.previousClose : price));
+      const change = prevClose ? ((price - prevClose) / prevClose) * 100 : 0;
 
-          if (result.timestamp && result.close && result.close.length > 0) {
-            const lastClose = result.close[result.close.length - 1];
-            const prevClose = quote.previousClose || lastClose;
-            const change = ((lastClose - prevClose) / prevClose) * 100;
-
-            prices[ticker] = {
-              price: lastClose,
-              prev_close: prevClose,
-              change_pct: change
-            };
-          }
-        }
-      }
+      const entry = {
+        price:      Math.round(price * 100) / 100,
+        prev_close: Math.round(prevClose * 100) / 100,
+        change_pct: Math.round(change * 100) / 100,
+        currency:   meta.currency || null
+      };
+      prices[ticker] = entry;
+      try { cache.put(cacheKey, JSON.stringify(entry), 300); } catch (e) {}
     } catch (err) {
       Logger.log('Error fetching ' + ticker + ': ' + err);
     }
