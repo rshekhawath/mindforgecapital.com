@@ -4272,5 +4272,75 @@ body::after{
   }catch(e){}
 })();
 </script>
+
+<!-- ============================================================================
+     V14.1 — "Living KPI tiles" (dashboard · additive, RM- & touch-safe)
+     ----------------------------------------------------------------------------
+     The marketing site's strategy / why / team cards carry a signature
+     cursor-tracking light + a subtle 3D tilt (.tilt-host + .card-shine). The
+     member dashboard's KPI tiles were the last primary surface WITHOUT it — they
+     only lifted + popped on hover. This brings the exact same magnetic light and
+     gentle parallax to the four KPI tiles, so the public site and the member
+     dashboard read as one product. The top brand hairline is kept above the glow
+     so it never washes out. Scoped to the simple KPI tiles only (the donut /
+     capital panels are left untouched). Desktop/pointer only; fully disabled
+     under reduced-motion and on touch devices.
+     ========================================================================== -->
+<style id="mf-v141-kpi">
+  .stat-card{ transform-style:preserve-3d; }
+  .stat-card .v141-glow{
+    position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:0;
+    background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),
+              rgba(37,99,235,0.13), rgba(45,212,191,0.05) 38%, transparent 62%);
+    opacity:0; transition:opacity .25s ease;
+  }
+  /* Lift real content above the glow — but DON'T touch .ico-wrap, which is
+     position:absolute (top-right); overriding it to relative would drop the icon
+     into the flow. It keeps its absolute position and just gets a higher z-index. */
+  .stat-card > *:not(.v141-glow):not(.ico-wrap){ position:relative; z-index:1; }
+  .stat-card .ico-wrap{ z-index:2; }
+  .stat-card::before{ z-index:3; }            /* keep the brand top hairline above the glow */
+  .stat-card.v141-tilt{ transition: transform .08s linear, box-shadow .3s var(--v138-ease,ease); }
+  @media (prefers-reduced-motion: reduce){
+    .stat-card .v141-glow{ display:none; }
+    .stat-card.v141-tilt{ transform:none !important; }
+  }
+  @media (hover:none),(pointer:coarse){ .stat-card .v141-glow{ display:none; } }
+</style>
+<script id="mf-v141-kpi-spotlight">
+(function(){
+  if(!window.matchMedia || !window.matchMedia('(pointer:fine)').matches) return;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var MAX = 5; // degrees — matches the marketing site's restrained tilt
+  function init(){
+    document.querySelectorAll('.stat-card').forEach(function(card){
+      if(card.querySelector('.v141-glow')) return;          // idempotent
+      var g = document.createElement('span');
+      g.className = 'v141-glow'; g.setAttribute('aria-hidden','true');
+      card.insertBefore(g, card.firstChild);
+      var raf = null;
+      card.addEventListener('pointermove', function(e){
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        if(raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(function(){
+          card.style.setProperty('--mx', (px*100).toFixed(1)+'%');
+          card.style.setProperty('--my', (py*100).toFixed(1)+'%');
+          card.style.transform = 'perspective(900px) rotateX('+((0.5-py)*MAX).toFixed(2)+
+            'deg) rotateY('+((px-0.5)*MAX).toFixed(2)+'deg) translateY(-3px)';
+          g.style.opacity = '1';
+        });
+      }, {passive:true});
+      card.addEventListener('pointerenter', function(){ card.classList.add('v141-tilt'); });
+      card.addEventListener('pointerleave', function(){
+        card.classList.remove('v141-tilt');
+        card.style.transform = ''; g.style.opacity = '0';
+      });
+    });
+  }
+  if(document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
 </body>
 </html>
