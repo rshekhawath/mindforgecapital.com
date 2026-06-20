@@ -1361,6 +1361,12 @@ footer p {
     .pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
     .pc-up-dot{background:#059669}.pc-down-dot{background:#dc2626}
     .pc-asof{font-size:11px;color:#94a3b8;margin-top:2px}
+    /* V14.4: top / lagging performer chips */
+    .pc-leaders{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .pc-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#0c1831;background:rgba(255,255,255,.6);border:0.5px solid rgba(37,99,235,0.14);border-radius:999px;padding:5px 11px}
+    .pc-chip .pc-chip-lbl{color:#64748b;font-weight:700;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+    .pc-chip .pc-chip-ret{font-weight:800;font-variant-numeric:tabular-nums}
+    .pc-chip .pc-chip-ret.up{color:#059669}.pc-chip .pc-chip-ret.down{color:#dc2626}
     @media(max-width:640px){.pc-pct{font-size:32px}.profit-card{padding:18px}.pc-right{flex-direction:row;flex-wrap:wrap;gap:14px}}
     /* per-row live price + return (inside the Rec. Price cell / mobile card) */
     td.price .px-rec{display:block;font-weight:600}
@@ -1374,6 +1380,7 @@ footer p {
         <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span>Live profit since rebalance <span id="pc-rebal-date"></span></div>
         <div class="pc-main"><span class="pc-pct" id="pc-pct">—</span></div>
         <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
+        <div class="pc-leaders" id="pc-leaders"></div>
       </div>
       <div class="pc-right" id="pc-breakdown"></div>
     </div>
@@ -2955,12 +2962,14 @@ function setProfitLoading(rebal){
   var pct = document.getElementById('pc-pct'); if (pct){ pct.textContent = 'Calculating…'; pct.className = 'pc-pct pc-flat'; }
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Fetching live prices for your holdings…';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
+  var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
   var card = document.getElementById('profit-card'); if (card) card.classList.remove('is-down');
 }
 function setProfitUnavailable(){
   var pct = document.getElementById('pc-pct'); if (pct){ pct.textContent = '—'; pct.className = 'pc-pct pc-flat'; }
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Live prices are temporarily unavailable — tap Refresh to try again.';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
+  var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
 }
 function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null; }
 function paintLivePrices(){
@@ -2976,7 +2985,7 @@ function paintLivePrices(){
 }
 function renderProfitHeadline(){
   var px = window._livePx || {}; var stocks = stocksData || [];
-  var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, n = 0;
+  var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, n = 0, best = null, worst = null;
   stocks.forEach(function(s){
     var rec = Number(s.recommended_price) || 0; var p = px[s.yahoo_ticker];
     if (!rec || !p) return;
@@ -2984,6 +2993,8 @@ function renderProfitHeadline(){
     var w = Number(s.weight_pct) || 0;
     wSum += w; wRet += w * r; n++;
     if (r > 0.05) up++; else if (r < -0.05) down++;
+    if (!best || r > best.r) best = { t: s.ticker, r: r };
+    if (!worst || r < worst.r) worst = { t: s.ticker, r: r };
     var shares = Math.floor(allocBudget(s, stocks, currentCapital) / rec);
     absGain += shares * rec * (r / 100);
   });
@@ -3007,6 +3018,18 @@ function renderProfitHeadline(){
     '<div class="pc-stat"><span class="pc-dot pc-up-dot"></span><b>' + up + '</b> up</div>' +
     '<div class="pc-stat"><span class="pc-dot pc-down-dot"></span><b>' + down + '</b> down</div>' +
     '<div class="pc-asof">As of ' + new Date().toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '</div>';
+  // V14.4: top / lagging performer chips
+  var ld = document.getElementById('pc-leaders');
+  if (ld) {
+    function chip(lbl, x){
+      if (!x) return '';
+      var cls = x.r > 0.05 ? 'up' : (x.r < -0.05 ? 'down' : 'flat');
+      var sign = x.r > 0 ? '+' : '';
+      return '<span class="pc-chip"><span class="pc-chip-lbl">' + lbl + '</span>' + escapeHtml(x.t) +
+             ' <span class="pc-chip-ret ' + cls + '">' + sign + x.r.toFixed(1) + '%</span></span>';
+    }
+    ld.innerHTML = (n >= 2 && best && worst && best.t !== worst.t) ? (chip('Top', best) + chip('Lagging', worst)) : '';
+  }
 }
 
 init();

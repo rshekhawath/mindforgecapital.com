@@ -407,6 +407,24 @@ async function verifyOTP() {
 
 function renderSubscriptions(subs) {
   var list = document.getElementById('subs-list');
+  var now = new Date();
+  // V14.4: collapse to ONE row per strategy — newest ACTIVE if any, otherwise the
+  // newest expired one (so the user still gets a renew prompt). Mirrors the
+  // recovery email's newest-per-strategy logic. Without this, a renewed account
+  // shows a long list of superseded duplicate rows.
+  var bestByStrat = {};
+  subs.forEach(function(s){
+    var key = String(s.strategy || '').toLowerCase().trim() || ('__' + (s.token || ''));
+    var exp = new Date(s.expires_at);
+    var active = exp >= now;
+    var cur = bestByStrat[key];
+    if (!cur) { bestByStrat[key] = s; return; }
+    var curExp = new Date(cur.expires_at);
+    var curActive = curExp >= now;
+    if (active && !curActive) bestByStrat[key] = s;            // active beats expired
+    else if (active === curActive && exp > curExp) bestByStrat[key] = s; // else newest expiry
+  });
+  subs = Object.keys(bestByStrat).map(function(k){ return bestByStrat[k]; });
   // Sort: active first, then expired
   subs.sort(function(a, b){
     var ae = new Date(a.expires_at) < new Date();
