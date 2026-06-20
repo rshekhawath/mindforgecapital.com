@@ -2929,6 +2929,54 @@ async function _fetchPricesViaChart(yahoos){
   await Promise.all(workers);
   return out;
 }
+// V14.5: month-anchored baseline. "Profit since rebalance" is measured from each
+// holding's market close on the FIRST trading day of the CURRENT month — the
+// monthly rebalance point — NOT from recommended_price. This keeps the baseline
+// pinned to the 1st even if publish.py is re-run mid-month (which would otherwise
+// re-stamp recommended_price at a later price), and regardless of when the
+// subscriber joined. Baselines only change monthly, so they're cached per month.
+function _monthKey(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1); }
+function _firstOfMonthMs(){ var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).getTime(); }
+function _baseCacheKey(){ return 'mfc_basepx_' + (token || 'demo'); }
+function _loadCachedBase(){
+  try { var raw = localStorage.getItem(_baseCacheKey()); if (!raw) return null;
+        var o = JSON.parse(raw); if (o && o.month === _monthKey() && o.base) return o; } catch(e){}
+  return null;
+}
+function _saveCachedBase(base, baseTs){
+  try { localStorage.setItem(_baseCacheKey(), JSON.stringify({ month: _monthKey(), at: Date.now(), base: base, baseTs: baseTs })); } catch(e){}
+}
+async function _fetchMonthBaselines(yahoos){
+  var out = {}, firstTs = null, firstMs = _firstOfMonthMs(), idx = 0, CONC = 5;
+  async function worker(){
+    while (idx < yahoos.length){
+      var y = yahoos[idx++];
+      try {
+        // range MUST be one the backend MAP knows (1d/5d/1mo/6mo/ytd/1y/5y/max) —
+        // an unknown range silently falls back to a 1-DAY intraday chart. 6mo
+        // (daily) always spans the 1st of the current month.
+        var res = await fetch(APPS_SCRIPT_URL + '?action=chart&ticker=' + encodeURIComponent(y) + '&range=6mo&_=' + Date.now());
+        var d = await res.json();
+        if (d && d.status === 'ok' && d.points && d.points.length){
+          for (var i = 0; i < d.points.length; i++){
+            if (d.points[i][0] * 1000 >= firstMs && d.points[i][1] != null){
+              out[y] = Number(d.points[i][1]);
+              if (firstTs == null || d.points[i][0] < firstTs) firstTs = d.points[i][0];
+              break;
+            }
+          }
+        }
+      } catch(e){}
+    }
+  }
+  var workers = []; for (var i = 0; i < Math.min(CONC, yahoos.length); i++) workers.push(worker());
+  await Promise.all(workers);
+  return { base: out, baseTs: firstTs };
+}
+function _baseFor(yahoo, recFallback){
+  var b = (window._basePx || {})[yahoo];
+  return (b != null && b > 0) ? b : recFallback;
+}
 async function loadLiveProfit(force){
   var card = document.getElementById('profit-card');
   if (!card) return;
@@ -2953,6 +3001,20 @@ async function loadLiveProfit(force){
   }
   if (!px || !Object.keys(px).length){ setProfitUnavailable(); return; }
   window._livePx = px;
+
+  // Month-anchored baselines (cached per month). Failure is non-fatal — _baseFor
+  // falls back to recommended_price, which in normal monthly publishing IS the
+  // 1st-of-month price anyway.
+  var cb = force ? null : _loadCachedBase();
+  if (cb && cb.base && Object.keys(cb.base).length){
+    window._basePx = cb.base; window._baseTs = cb.baseTs;
+  } else {
+    var rb = await _fetchMonthBaselines(yahoos);
+    window._basePx = (rb && rb.base) ? rb.base : {};
+    window._baseTs = rb ? rb.baseTs : null;
+    if (Object.keys(window._basePx).length) _saveCachedBase(window._basePx, window._baseTs);
+  }
+
   paintLivePrices();
   renderProfitHeadline();
 }
@@ -2977,8 +3039,9 @@ function paintLivePrices(){
   document.querySelectorAll('.px-live').forEach(function(el){
     var y = el.getAttribute('data-px'); var rec = Number(el.getAttribute('data-rec')) || 0; var curr = el.getAttribute('data-curr') || '₹';
     var p = px[y];
-    if (!p || !rec){ el.innerHTML = '—'; return; }
-    var live = p.price; var r = _retPct(rec, live);
+    var base = _baseFor(y, rec);
+    if (!p || !base){ el.innerHTML = '—'; return; }
+    var live = p.price; var r = _retPct(base, live);
     var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
     el.innerHTML = curr + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
   });
@@ -2989,7 +3052,8 @@ function renderProfitHeadline(){
   stocks.forEach(function(s){
     var rec = Number(s.recommended_price) || 0; var p = px[s.yahoo_ticker];
     if (!rec || !p) return;
-    var r = _retPct(rec, p.price); if (r == null) return;
+    var base = _baseFor(s.yahoo_ticker, rec);
+    var r = _retPct(base, p.price); if (r == null) return;
     var w = Number(s.weight_pct) || 0;
     wSum += w; wRet += w * r; n++;
     if (r > 0.05) up++; else if (r < -0.05) down++;
@@ -3005,7 +3069,15 @@ function renderProfitHeadline(){
   var pct = document.getElementById('pc-pct');
   pct.textContent = (port > 0 ? '+' : '') + port.toFixed(2) + '%';
   pct.className = 'pc-pct' + (Math.abs(port) <= 0.05 ? ' pc-flat' : '');
-  var rebal = window._rebalDate;
+  // Date label: when month-anchored baselines are in use, show the 1st-of-month
+  // rebalance (the actual baseline trading day); otherwise the served run's date.
+  var rebal;
+  if (window._basePx && Object.keys(window._basePx).length){
+    rebal = window._baseTs ? new Date(window._baseTs * 1000)
+                           : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  } else {
+    rebal = window._rebalDate;
+  }
   var absSign = absGain >= 0 ? '+' : '−';
   var absStr = fmtMoney(currentCurrency, Math.abs(Math.round(absGain)));
   var sub = document.getElementById('pc-sub');
