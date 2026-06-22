@@ -224,7 +224,26 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
 .toast.error{background:#b91c1c}
 @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+/* ── V14.8 "Crafted depth & living data" ── */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .65s cubic-bezier(.22,.8,.2,1),transform .65s cubic-bezier(.22,.8,.2,1)}
+.reveal.in{opacity:1;transform:none}
+.idx-card{transition:transform .28s cubic-bezier(.22,.8,.2,1),box-shadow .28s cubic-bezier(.22,.8,.2,1)}
+.idx-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px -20px rgba(26,80,216,.32)}
+/* semicircular long/short arc gauge */
+.ls-gauge{margin:16px 0 6px;display:flex;flex-direction:column;align-items:center}
+.ls-gauge svg{width:100%;max-width:300px;height:auto;display:block;overflow:visible}
+.ls-gauge-ends{display:flex;justify-content:space-between;width:100%;max-width:300px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:-4px}
+.ls-gauge-ends .e-sht{color:var(--red)}
+.ls-gauge-ends .e-lng{color:var(--green)}
+/* one-time specular sheen across the cash flow cards on reveal */
+.flow-card::after{content:'';position:absolute;top:0;left:-60%;width:42%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-18deg);opacity:0;pointer-events:none;z-index:2}
+.flow-card.in::after{animation:flow-sheen 1.05s ease-out .25s 1}
+@keyframes flow-sheen{0%{left:-60%;opacity:0}16%{opacity:1}100%{left:135%;opacity:0}}
+/* chart gridlines + scale labels */
+svg.barchart .grid{stroke:var(--border2);stroke-width:1;stroke-dasharray:2 4}
+svg.barchart .glab{font-size:9px;fill:var(--text3);font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}.reveal{opacity:1!important;transform:none!important}}
 </style>
 </head>
 <body>
@@ -263,10 +282,10 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
   </section>
 
   <!-- INDEX CONTEXT STRIP -->
-  <div class="idx-strip" id="idxStrip"></div>
+  <div class="idx-strip reveal" id="idxStrip"></div>
 
   <!-- CASH MARKET -->
-  <section class="sec" id="cashSec">
+  <section class="sec reveal" id="cashSec">
     <div class="sec-head">
       <div>
         <h2>Cash market — provisional</h2>
@@ -279,7 +298,7 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
   </section>
 
   <!-- CASH TREND -->
-  <section class="sec">
+  <section class="sec reveal">
     <div class="panel">
       <div class="panel-h">
         <h3>Net flow trend</h3>
@@ -304,7 +323,7 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
   </section>
 
   <!-- DERIVATIVES -->
-  <section class="sec">
+  <section class="sec reveal">
     <div class="sec-head">
       <div>
         <h2>FII derivatives positioning</h2>
@@ -320,7 +339,7 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
         <h3>FII index-futures long/short ratio</h3>
         <div class="gh-sub">Long contracts ÷ short contracts held by FIIs in index futures. Below 1 = net short (cautious / bearish tilt).</div>
         <div><span class="ls-ratio" id="lsRatio"><span class="sk" style="width:120px;height:46px;display:inline-block"></span></span></div>
-        <div class="ls-bar" id="lsBar"></div>
+        <div class="ls-gauge" id="lsArc"></div>
         <div class="ls-foot"><span id="lsLongLab">Long —</span><span id="lsShortLab">Short —</span></div>
         <div class="sentiment neutral" id="sentiment"><span class="big">⏳</span><span>Loading positioning…</span></div>
       </div>
@@ -356,7 +375,7 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
     </div>
   </section>
 
-  <p class="disclaimer">
+  <p class="disclaimer reveal">
     FII/DII figures are <b>provisional disclosures sourced from NSE</b> (cash &amp; participant-wise F&amp;O reports);
     index levels are from public market data. This is a <b>research dashboard, not investment advice</b> or a buy/sell
     recommendation. Provisional cash numbers can be revised by the exchange. Refreshed every market day.
@@ -466,6 +485,8 @@ function renderCash(d){
     const val=parseFloat(raw);
     rollNum(el,val,v=>cr(v));
   });
+  // one-time specular sheen across the cash cards
+  requestAnimationFrame(()=>grid.querySelectorAll(".flow-card").forEach(c=>c.classList.add("in")));
   // combined insight
   const fn=cash.fii&&cash.fii.net!=null?cash.fii.net:null;
   const dn=cash.dii&&cash.dii.net!=null?cash.dii.net:null;
@@ -532,9 +553,14 @@ function drawChart(rows){
     <defs>
       <linearGradient id="gFii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a50d8"/><stop offset="1" stop-color="#0891b2"/></linearGradient>
       <linearGradient id="gDii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+      <filter id="barSh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#1a50d8" flood-opacity="0.18"/></filter>
     </defs>
-    <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3 3"/>
-    ${bars}
+    <line class="grid" x1="${padL}" y1="${padT.toFixed(1)}" x2="${W-padR}" y2="${padT.toFixed(1)}"/>
+    <line class="grid" x1="${padL}" y1="${(H-padB).toFixed(1)}" x2="${W-padR}" y2="${(H-padB).toFixed(1)}"/>
+    <text class="glab" x="${padL}" y="${(padT-3).toFixed(1)}">+${grp(maxV)}</text>
+    <text class="glab" x="${padL}" y="${(H-padB+11).toFixed(1)}">−${grp(maxV)}</text>
+    <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+    <g filter="url(#barSh)">${bars}</g>
   </svg>`;
 }
 
@@ -562,14 +588,29 @@ function renderDerivatives(d){
   rollNum(document.getElementById("lsRatio"),ratio==null?0:ratio,v=>v.toFixed(2));
   // append the ×1 suffix after roll completes
   setTimeout(()=>{const r=document.getElementById("lsRatio");if(r&&!r.querySelector(".x"))r.innerHTML=r.textContent+'<span class="x">: 1</span>';},800);
-  const bar=document.getElementById("lsBar");
-  bar.innerHTML=`<div class="seg lng" style="width:0%"></div><div class="seg sht" style="width:0%"></div>`;
-  requestAnimationFrame(()=>{requestAnimationFrame(()=>{
-    bar.children[0].style.width=longPct.toFixed(1)+"%";
-    bar.children[1].style.width=shortPct.toFixed(1)+"%";
-    bar.children[0].textContent=longPct>=14?`Long ${longPct.toFixed(0)}%`:"";
-    bar.children[1].textContent=shortPct>=14?`Short ${shortPct.toFixed(0)}%`:"";
-  });});
+  // arc gauge — needle sweeps from full-short (-90°) to the long% position
+  (function(){
+    var rot=(longPct-50)*1.8;
+    var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var init=reduce?`rotate(${rot.toFixed(1)} 100 100)`:`rotate(-90 100 100)`;
+    var anim=reduce?"":`<animateTransform attributeName="transform" type="rotate" from="-90 100 100" to="${rot.toFixed(1)} 100 100" begin="0.25s" dur="1.15s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 0.8 0.2 1"/>`;
+    // Literal hex (not var()) — CSS custom properties are not reliably resolved
+    // inside SVG presentation attributes across browsers.
+    document.getElementById("lsArc").innerHTML=
+      `<svg viewBox="0 0 200 120" role="img" aria-label="FII index-futures long/short gauge: ${Math.round(longPct)} percent long, ${Math.round(shortPct)} percent short">
+        <defs><linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#dc2626"/><stop offset="0.5" stop-color="#d97706"/><stop offset="1" stop-color="#059669"/>
+        </linearGradient></defs>
+        <path d="M18 100 A 82 82 0 0 1 182 100" fill="none" stroke="#e4eeff" stroke-width="15" stroke-linecap="round"/>
+        <path d="M18 100 A 82 82 0 0 1 182 100" fill="none" stroke="url(#arcGrad)" stroke-width="15" stroke-linecap="round" opacity="0.9"/>
+        <g transform="${init}">${anim}
+          <line x1="100" y1="100" x2="100" y2="31" stroke="#0c1831" stroke-width="3.5" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="7" fill="#0c1831"/>
+          <circle cx="100" cy="100" r="3" fill="#ffffff"/>
+        </g>
+      </svg>
+      <div class="ls-gauge-ends"><span class="e-sht">Short ${shortPct.toFixed(0)}%</span><span class="e-lng">${longPct.toFixed(0)}% Long</span></div>`;
+  })();
   document.getElementById("lsLongLab").textContent=`Long ${grp(lng)}`;
   document.getElementById("lsShortLab").textContent=`Short ${grp(sht)}`;
   // sentiment
@@ -648,6 +689,19 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 (function(){
   const bar=document.getElementById('scrollProg');if(!bar)return;
   window.addEventListener('scroll',()=>{const s=document.documentElement.scrollTop;const h=document.documentElement.scrollHeight-document.documentElement.clientHeight;bar.style.width=(h>0?(s/h*100):0)+'%';},{passive:true});
+})();
+// reveal-on-scroll (V14.8) — staggered, reduced-motion- & no-IO-safe.
+// A safety-net timeout guarantees content is NEVER left hidden if the
+// IntersectionObserver fails to fire for an element (mirrors scores/ pattern).
+(function(){
+  var els=[].slice.call(document.querySelectorAll('.reveal'));
+  if(!els.length)return;
+  function showAll(){els.forEach(function(e){e.classList.add('in');});}
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce||!('IntersectionObserver' in window)){showAll();return;}
+  var io=new IntersectionObserver(function(ents){ents.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:0.10,rootMargin:'0px 0px -7% 0px'});
+  els.forEach(function(e){io.observe(e);});
+  setTimeout(showAll,2600); // safety net — never leave a section invisible
 })();
 </script>
 </body>
