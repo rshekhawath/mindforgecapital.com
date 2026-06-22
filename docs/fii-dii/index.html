@@ -250,6 +250,13 @@ table.data tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 .inst-row:hover{transform:translateX(3px);box-shadow:0 10px 22px -16px rgba(26,80,216,.45);border-color:var(--border2)}
 .gauge-card,.inst-card,.panel{transition:box-shadow .3s ease}
 .gauge-card:hover,.inst-card:hover{box-shadow:0 16px 38px -22px rgba(26,80,216,.34)}
+/* V15.0 — diverging net-position mini-bars in the participant OI table */
+table.data td .netnum{display:block}
+.dbar{display:block;position:relative;width:74px;height:4px;margin:5px 0 0 auto;background:var(--ink3);border-radius:3px}
+.dbar::before{content:'';position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--border2)}
+.dbar .dfill{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%}
+.dbar .dfill.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
+.dbar .dfill.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}.reveal{opacity:1!important;transform:none!important}}
 </style>
@@ -653,21 +660,22 @@ function renderDerivatives(d){
   const order=["FII","DII","Pro","Client"];
   const dot={FII:"#1a50d8",DII:"#7c3aed",Pro:"#0891b2",Client:"#64748b"};
   const body=document.getElementById("partTblBody");
-  body.innerHTML=order.filter(k=>oi[k]).map(k=>{
-    const p=oi[k];
-    const idxF=netOf(p,"fut_idx_long","fut_idx_short");
-    const stkF=netOf(p,"fut_stk_long","fut_stk_short");
-    const idxO=optBias(p,"opt_idx"),stkO=optBias(p,"opt_stk");
-    return`<tr>
+  const parts=order.filter(k=>oi[k]).map(k=>{const p=oi[k];return{k,p,
+    idxF:netOf(p,"fut_idx_long","fut_idx_short"),stkF:netOf(p,"fut_stk_long","fut_stk_short"),
+    idxO:optBias(p,"opt_idx"),stkO:optBias(p,"opt_stk")};});
+  // diverging mini-bar (net long → green right, net short → red left), scaled to the column's max |net|
+  const maxIdxF=Math.max(1,...parts.map(x=>Math.abs(x.idxF)));
+  const maxStkF=Math.max(1,...parts.map(x=>Math.abs(x.stkF)));
+  const dbar=(v,mx)=>`<span class="dbar"><span class="dfill ${v>=0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span></span>`;
+  body.innerHTML=parts.map(({k,p,idxF,stkF,idxO,stkO})=>`<tr>
       <td><span class="who-chip"><span class="who-dot" style="background:${dot[k]}"></span>${escapeHtml(k)}</span></td>
-      <td class="${sign(idxF)}">${cr(idxF)}</td>
-      <td class="${sign(stkF)}">${cr(stkF)}</td>
+      <td class="${sign(idxF)}"><span class="netnum">${cr(idxF)}</span>${dbar(idxF,maxIdxF)}</td>
+      <td class="${sign(stkF)}"><span class="netnum">${cr(stkF)}</span>${dbar(stkF,maxStkF)}</td>
       <td class="${sign(idxO)}">${cr(idxO)}</td>
       <td class="${sign(stkO)}">${cr(stkO)}</td>
       <td>${grp(p.total_long)}</td>
       <td>${grp(p.total_short)}</td>
-    </tr>`;
-  }).join("");
+    </tr>`).join("");
 }
 
 // ── init ──

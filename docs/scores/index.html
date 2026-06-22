@@ -327,6 +327,22 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .fac-fill{height:100%;border-radius:3px}
 @media (prefers-reduced-motion:reduce){.sc-inner{animation:none}.exp-caret,.sc-report .arr{transition:none}}
 @media(max-width:600px){.sc-wrap{padding:14px 14px 18px}.sc-pillars{grid-template-columns:1fr}}
+/* ── V15.0 "Research-grade" — factor radar + verdict tags ── */
+.sc-verdict{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px}
+.vtag{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;border:0.5px solid;white-space:nowrap}
+.vt-good{color:#047857;background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.22)}
+.vt-mid{color:var(--accent2);background:rgba(37,99,235,.07);border-color:var(--border2)}
+.vt-low{color:#b45309;background:rgba(180,83,9,.08);border-color:rgba(180,83,9,.2)}
+.vt-bad{color:#dc2626;background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.18)}
+.sc-overview{display:grid;grid-template-columns:188px 1fr;gap:18px;align-items:center;margin-bottom:16px}
+.sc-radar{display:flex;flex-direction:column;align-items:center;gap:4px}
+.sc-radar-cap{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.sc-radar-svg{width:100%;max-width:188px;height:auto;overflow:visible}
+.sc-radar-poly{transform-box:view-box;transform-origin:100px 100px;animation:radar-grow .55s cubic-bezier(.22,1,.36,1) both}
+@keyframes radar-grow{from{transform:scale(.08);opacity:0}to{transform:scale(1);opacity:1}}
+.sc-overview .sc-snap{margin-bottom:0}
+@media(max-width:600px){.sc-overview{grid-template-columns:1fr;gap:14px}.sc-radar-svg{max-width:220px}}
+@media (prefers-reduced-motion:reduce){.sc-radar-poly{animation:none}}
 </style>
 </head>
 <body>
@@ -532,6 +548,31 @@ function scPillar(name,score,factors){
   }).join("");
   return`<div class="sc-pillar"><div class="pil-head"><span class="pil-name">${name}</span>${score!=null?`<span class="pil-score" style="color:${c}">${score.toFixed(0)}</span>`:`<span class="pil-na">n/a</span>`}</div>${facs}</div>`;
 }
+function scRadar(d){
+  const pills=[["Q",d._q],["V",d._v],["G",d._g],["M",d._m],["E",d._e]];
+  const cx=100,cy=100,R=72;
+  const pt=(i,r)=>{const a=(-90+i*72)*Math.PI/180;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  let grid="";
+  [0.25,0.5,0.75,1].forEach(f=>{grid+=`<polygon points="${pills.map((_,i)=>pt(i,R*f).map(n=>n.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="rgba(37,99,235,0.2)" stroke-width="0.8"/>`;});
+  let spokes="",labels="";
+  pills.forEach((p,i)=>{
+    const e=pt(i,R);spokes+=`<line x1="${cx}" y1="${cy}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}" stroke="rgba(37,99,235,0.2)" stroke-width="0.8"/>`;
+    const l=pt(i,R+14);labels+=`<text x="${l[0].toFixed(1)}" y="${(l[1]+3.5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="#1e3a5f">${p[0]}</text>`;
+  });
+  const dpts=pills.map((p,i)=>{const s=scNum(p[1])?Math.max(0,Math.min(100,p[1])):0;return pt(i,R*s/100).map(n=>n.toFixed(1)).join(",");}).join(" ");
+  const dots=pills.map((p,i)=>{const s=scNum(p[1])?Math.max(0,Math.min(100,p[1])):0;const c=pt(i,R*s/100);return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.6" fill="#1a50d8"/>`;}).join("");
+  return`<div class="sc-radar"><svg class="sc-radar-svg" viewBox="0 0 200 200" role="img" aria-label="Factor profile radar — Quality ${d._q||"n/a"}, Value ${d._v||"n/a"}, Growth ${d._g||"n/a"}, Momentum ${d._m||"n/a"}, Efficiency ${d._e||"n/a"}"><defs><radialGradient id="radF" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#2563eb" stop-opacity="0.34"/><stop offset="1" stop-color="#0891b2" stop-opacity="0.12"/></radialGradient></defs>${grid}${spokes}<polygon class="sc-radar-poly" points="${dpts}" fill="url(#radF)" stroke="#1a50d8" stroke-width="2" stroke-linejoin="round"/>${dots}${labels}</svg><span class="sc-radar-cap">Factor profile</span></div>`;
+}
+function scTag(label,tone){return `<span class="vtag vt-${tone}">${label}</span>`;}
+function scVerdict(d){
+  const t=[];
+  if(d._overall!=null)t.push(d._overall>=70?["Top integrity","good"]:d._overall>=50?["Sound fundamentals","mid"]:d._overall>=35?["Mixed fundamentals","low"]:["Weak fundamentals","bad"]);
+  if(d._q!=null)t.push(d._q>=70?["High quality","good"]:d._q>=50?["Solid quality","mid"]:d._q>=35?["Modest quality","low"]:["Weak quality","bad"]);
+  if(d._v!=null)t.push(d._v>=65?["Attractively valued","good"]:d._v>=45?["Fairly valued","mid"]:["Richly valued","bad"]);
+  if(d._g!=null)t.push(d._g>=60?["Strong growth","good"]:d._g>=40?["Steady growth","mid"]:["Slowing growth","low"]);
+  if(d._m!=null)t.push(d._m>=55?["Positive trend","good"]:d._m>=40?["Neutral trend","mid"]:["Soft trend","low"]);
+  return t.length?`<div class="sc-verdict">${t.map(x=>scTag(x[0],x[1])).join("")}</div>`:"";
+}
 function buildScorecard(d){
   const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
   let pos=null;
@@ -551,7 +592,7 @@ function buildScorecard(d){
   let ranks="";
   if(d._uniRank)ranks+=`<span class="sc-chip">#<b>${d._uniRank}</b> of ${d._uniTotal} · all NSE</span>`;
   if(d._secRank)ranks+=`<span class="sc-chip">#<b>${d._secRank}</b> of ${d._secSize} · ${scEsc(d.sector&&d.sector.trim()?d.sector:"Other")}</span>`;
-  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div><div class="sc-snap">${snap}${range}</div><div class="sc-pillars">${pillars}</div></div>`;
+  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scVerdict(d)}<div class="sc-overview">${scRadar(d)}<div class="sc-snap">${snap}${range}</div></div><div class="sc-pillars">${pillars}</div></div>`;
 }
 function scCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
 function toggleScorecard(tr){

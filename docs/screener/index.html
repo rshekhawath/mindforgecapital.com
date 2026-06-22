@@ -504,6 +504,13 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 @media (prefers-reduced-motion:reduce){.scn-inner{animation:none}.exp-caret,.scn-report .arr{transition:none}}
 @media(max-width:600px){.scn-wrap{padding:14px 14px 18px}.scn-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:430px){.scn-grid{grid-template-columns:1fr}}
+/* ── V15.0 "Research-grade" — verdict tags ── */
+.scn-verdict{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 15px}
+.vtag{font-size:11.5px;font-weight:700;padding:4px 11px;border-radius:20px;border:0.5px solid;white-space:nowrap}
+.vt-good{color:#047857;background:rgba(5,150,105,.08);border-color:rgba(5,150,105,.22)}
+.vt-mid{color:var(--accent2,#2563eb);background:rgba(37,99,235,.07);border-color:var(--border2,rgba(37,99,235,.2))}
+.vt-low{color:#b45309;background:rgba(180,83,9,.08);border-color:rgba(180,83,9,.2)}
+.vt-bad{color:#dc2626;background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.18)}
 </style>
 </head>
 <body>
@@ -1024,6 +1031,17 @@ function scnRow(label,d,key,code,toneKind){
 function scnSection(title,d,rows){
   return`<div class="scn-sec"><h5>${title}</h5>${rows.map(r=>scnRow(r[0],d,r[1],r[2],r[3])).join("")}</div>`;
 }
+function scnVerdict(d){
+  const t=[],pe=d.pe_ratio,roe=d.roe,rg=d.revenue_growth,de=d.debt_to_equity,dy=d.dividend_yield;
+  if(scnIsNum(roe))t.push(roe>=20?["Highly profitable","good"]:roe>=12?["Profitable","mid"]:roe>=0?["Low returns","low"]:["Lossmaking","bad"]);
+  if(scnIsNum(pe)&&pe>0)t.push(pe<=18?["Attractively valued","good"]:pe<=35?["Fairly valued","mid"]:["Richly valued","bad"]);
+  else if(scnIsNum(d.earnings_yield)&&d.earnings_yield<0)t.push(["Lossmaking","bad"]);
+  if(scnIsNum(rg))t.push(rg>=15?["High growth","good"]:rg>=5?["Growing","mid"]:rg>=0?["Flat revenue","low"]:["Shrinking revenue","bad"]);
+  if(scnIsNum(de)&&!/financ|bank|insur/i.test(d.sector||""))t.push(de<50?["Low debt","good"]:de<150?["Moderate debt","mid"]:["High debt","bad"]);
+  if(scnIsNum(dy)&&dy>=3)t.push(["Strong dividend","good"]);
+  const seen={},out=[];t.forEach(x=>{if(!seen[x[0]]){seen[x[0]]=1;out.push(x);}});
+  return out.length?`<div class="scn-verdict">${out.map(x=>`<span class="vtag vt-${x[1]}">${x[0]}</span>`).join("")}</div>`:"";
+}
 function buildScannerReport(d){
   const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
   let pos=null;
@@ -1043,7 +1061,7 @@ function buildScannerReport(d){
     +scnSection("Per-Share",d,[["EPS","eps","rs2"],["Fwd EPS","eps_forward","rs2"],["Book Value","book_value","rs2"],["Cash / Share","cash_per_share","rs2"],["Revenue / Share","revenue_per_share","rs2"]])
     +scnSection("Size",d,[["Market Cap","market_cap_cr","cr"],["Enterprise Value","enterprise_value_cr","cr"],["Revenue","revenue_cr","cr"],["Net Profit","net_profit_cr","cr"],["EBITDA","ebitda_cr","cr"]])
     +scnSection("Ownership & Trend",d,[["Promoter","promoter_holding","p1"],["Institutional","institutional_holding","p1"],["Public Float","float_pct","p1"],["Beta","beta","r2"],["From 52W High","52w_from_high_pct","p1n"]]);
-  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${range}<div class="scn-grid">${sections}</div></div>`;
+  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scnVerdict(d)}${range}<div class="scn-grid">${sections}</div></div>`;
 }
 function scnCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
 function toggleScannerCard(tr){
