@@ -287,6 +287,47 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 </style>
 <script src="scores-engine.js?v=124"></script>
 <link rel="stylesheet" href="../assets/mfc-finish.css?v=110">
+<style id="mf-v149-scorecard">
+/* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
+.exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--accent3);transition:transform .25s ease}
+tr.expanded .exp-caret{transform:rotate(90deg);color:var(--accent)}
+tbody tr.rowlink.expanded{background:rgba(26,80,216,.06)!important;box-shadow:inset 3px 0 0 var(--accent)}
+tbody tr.detail-row{animation:none!important}
+tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,235,.04),rgba(37,99,235,.012));border-bottom:0.5px solid var(--border2)}
+.sc-wrap{position:sticky;left:0;box-sizing:border-box;padding:18px 20px 22px}
+.sc-inner{animation:sc-in .34s cubic-bezier(.22,1,.36,1) both}
+@keyframes sc-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.sc-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sc-ranks{display:flex;gap:8px;flex-wrap:wrap}
+.sc-chip{font-size:11px;font-weight:600;color:var(--accent2);background:rgba(37,99,235,.07);border:0.5px solid var(--border2);border-radius:20px;padding:4px 11px;white-space:nowrap}
+.sc-chip b{color:var(--white);font-weight:800}
+.sc-report{font-size:12.5px;font-weight:700;color:var(--accent);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.sc-report .arr{transition:transform .25s ease}
+.sc-report:hover .arr{transform:translateX(3px)}
+.sc-snap{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:10px;margin-bottom:16px}
+.snap{background:var(--ink2);border:0.5px solid var(--border);border-radius:10px;padding:9px 12px;min-width:0}
+.snap .k{display:block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.snap .v{font-size:14px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.snap-range{grid-column:1/-1}
+.range-bar{position:relative;height:8px;background:linear-gradient(90deg,rgba(220,38,38,.15),rgba(217,119,6,.15),rgba(5,150,105,.15));border-radius:5px;margin:7px 0 6px}
+.range-bar .mk{position:absolute;top:50%;width:12px;height:12px;background:var(--accent);border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(26,80,216,.45)}
+.range-lab{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--text3);font-variant-numeric:tabular-nums}
+.range-lab .cur{color:var(--white)}
+.sc-pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(216px,1fr));gap:14px}
+.sc-pillar{background:var(--ink2);border:0.5px solid var(--border);border-radius:12px;padding:13px 14px}
+.pil-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--border)}
+.pil-name{font-size:12px;font-weight:800;color:var(--white);letter-spacing:.01em}
+.pil-score{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1}
+.pil-na{font-size:10.5px;color:var(--text3);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.fac{display:grid;grid-template-columns:1fr auto;gap:1px 8px;margin-bottom:9px}
+.fac:last-child{margin-bottom:0}
+.fac-lab{font-size:11.5px;color:var(--text2);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fac-raw{font-size:11.5px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.fac-bar{grid-column:1/-1;height:4px;background:var(--ink3);border-radius:3px;overflow:hidden;margin-top:2px}
+.fac-fill{height:100%;border-radius:3px}
+@media (prefers-reduced-motion:reduce){.sc-inner{animation:none}.exp-caret,.sc-report .arr{transition:none}}
+@media(max-width:600px){.sc-wrap{padding:14px 14px 18px}.sc-pillars{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div class="mf-scroll-prog" id="scrollProg"></div>
@@ -473,9 +514,69 @@ function overallCell(d){
   return`<div class="overall-cell"><span class="overall-num" style="color:${c}">${s.toFixed(0)}</span><span class="grade-pill ${gradeCls(s)}">${g.label}</span></div>`;
 }
 
+// ── V14.9: inline professional scorecard (expandable row detail) ──
+function scNum(v){return typeof v==="number"&&isFinite(v);}
+function scEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function scFmtRaw(v,unit,dec){
+  if(!scNum(v))return"—";
+  const s=Number(v).toLocaleString("en-IN",{minimumFractionDigits:dec||0,maximumFractionDigits:dec||0});
+  return unit==="%"?s+"%":unit==="x"?s+"×":unit==="d"?s+"d":s;
+}
+function scCr(v){return scNum(v)?"₹"+Number(v).toLocaleString("en-IN",{maximumFractionDigits:0})+" Cr":"—";}
+function scPx(v){return Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});}
+function scPillar(name,score,factors){
+  const c=score!=null?MFCScores.color(score):"var(--text3)";
+  const facs=(factors||[]).map(f=>{
+    const fc=f.score!=null?MFCScores.color(f.score):"var(--ink3)";
+    return`<div class="fac"><span class="fac-lab">${f.label}</span><span class="fac-raw">${scFmtRaw(f.raw,f.unit,f.d)}</span><div class="fac-bar"><div class="fac-fill" style="width:${f.score!=null?f.score:0}%;background:${fc}"></div></div></div>`;
+  }).join("");
+  return`<div class="sc-pillar"><div class="pil-head"><span class="pil-name">${name}</span>${score!=null?`<span class="pil-score" style="color:${c}">${score.toFixed(0)}</span>`:`<span class="pil-na">n/a</span>`}</div>${facs}</div>`;
+}
+function buildScorecard(d){
+  const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
+  let pos=null;
+  if(scNum(lo)&&scNum(hi)&&hi>lo&&scNum(cur))pos=Math.max(0,Math.min(100,(cur-lo)/(hi-lo)*100));
+  const snap=[
+    ["Mkt Cap",scCr(d.market_cap_cr)],
+    ["Revenue",scCr(d.revenue_cr)],
+    ["Net Profit",scCr(d.net_profit_cr)],
+    ["EV/EBITDA",scNum(d.ev_ebitda)?Number(d.ev_ebitda).toFixed(1)+"×":"—"],
+    ["EPS",scNum(d.eps)?"₹"+Number(d.eps).toFixed(2):"—"],
+    ["Book Value",scNum(d.book_value)?"₹"+scPx(d.book_value):"—"],
+    ["Div Yield",scNum(d.dividend_yield)?Number(d.dividend_yield).toFixed(2)+"%":"—"],
+    ["Beta",scNum(d.beta)?Number(d.beta).toFixed(2):"—"],
+  ].map(x=>`<div class="snap"><span class="k">${x[0]}</span><span class="v">${x[1]}</span></div>`).join("");
+  const range=pos!=null?`<div class="snap snap-range"><span class="k">52-Week Range</span><div class="range-bar"><div class="mk" style="left:${pos.toFixed(1)}%"></div></div><div class="range-lab"><span>₹${scPx(lo)}</span><span class="cur">₹${scPx(cur)} · ${pos.toFixed(0)}%</span><span>₹${scPx(hi)}</span></div></div>`:"";
+  const pillars=scPillar("Quality",d._q,d._qf)+scPillar("Value",d._v,d._vf)+scPillar("Growth",d._g,d._gf)+scPillar("Momentum",d._m,d._mf)+scPillar("Efficiency",d._e,d._ef);
+  let ranks="";
+  if(d._uniRank)ranks+=`<span class="sc-chip">#<b>${d._uniRank}</b> of ${d._uniTotal} · all NSE</span>`;
+  if(d._secRank)ranks+=`<span class="sc-chip">#<b>${d._secRank}</b> of ${d._secSize} · ${scEsc(d.sector&&d.sector.trim()?d.sector:"Other")}</span>`;
+  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div><div class="sc-snap">${snap}${range}</div><div class="sc-pillars">${pillars}</div></div>`;
+}
+function scCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
+function toggleScorecard(tr){
+  const sym=tr.getAttribute("data-sym");if(!sym)return;
+  const next=tr.nextElementSibling;
+  const isOpen=next&&next.classList.contains("detail-row");
+  // accordion: close any open detail + clear expanded flags
+  document.querySelectorAll("#tableBody tr.detail-row").forEach(r=>r.remove());
+  document.querySelectorAll("#tableBody tr.expanded").forEach(r=>{r.classList.remove("expanded");r.setAttribute("aria-expanded","false");});
+  if(isOpen){tr.setAttribute("aria-expanded","false");return;} // was open → now closed
+  const d=MFCScores.bySym(sym);if(!d)return;
+  const detail=document.createElement("tr");
+  detail.className="detail-row";
+  detail.innerHTML=`<td colspan="${COLUMNS.length}"><div class="sc-wrap" style="width:${scCardWidth()}px">${buildScorecard(d)}</div></td>`;
+  tr.parentNode.insertBefore(detail,tr.nextSibling);
+  tr.classList.add("expanded");
+  tr.setAttribute("aria-expanded","true");
+}
+window.addEventListener("resize",()=>{const w=scCardWidth();document.querySelectorAll("#tableBody .sc-wrap").forEach(el=>{el.style.width=w+"px";});},{passive:true});
+// keyboard access for the expandable rows (Enter/Space) — the inner company link keeps its own behaviour
+document.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target&&e.target.classList&&e.target.classList.contains("rowlink")){e.preventDefault();toggleScorecard(e.target);}});
+
 const COLUMNS=[
-  {key:"_rank",         label:"#",            render:(d,i)=>`<span class="rank-cell">${(currentPage-1)*PAGE_SIZE+i+1}</span>`, nosort:true, cls:"rank-cell"},
-  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${encodeURIComponent(d.symbol)}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${d.sector?`<span class="sector-pill">${d.sector}</span>`:""}</div>`, nosort:true, cls:"company-col"},
+  {key:"_rank",         label:"#",            render:(d,i)=>`<span class="rank-cell"><span class="exp-caret" aria-hidden="true">▸</span>${(currentPage-1)*PAGE_SIZE+i+1}</span>`, nosort:true, cls:"rank-cell"},
+  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${d.sector?`<span class="sector-pill">${d.sector}</span>`:""}</div>`, nosort:true, cls:"company-col"},
   {key:"_q",            label:"Quality",      render:d=>scoreCell(d._q)},
   {key:"_v",            label:"Value",        render:d=>scoreCell(d._v)},
   {key:"_g",            label:"Growth",       render:d=>scoreCell(d._g)},
@@ -503,7 +604,7 @@ function renderTable(){
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">No stocks to show</div></td></tr>`
-    :page.map((d,i)=>`<tr class="rowlink" onclick="location.href='company.html?symbol=${encodeURIComponent(d.symbol)}'">${COLUMNS.map(c=>`<td${c.cls?` class="${c.cls}"`:""}>${c.render(d,i)}</td>`).join("")}</tr>`).join("");
+    :page.map((d,i)=>`<tr class="rowlink" data-sym="${scEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scEsc(d.name||d.symbol)} — expand scorecard" onclick="toggleScorecard(this)" title="Click to expand the full scorecard">${COLUMNS.map(c=>`<td${c.cls?` class="${c.cls}"`:""}>${c.render(d,i)}</td>`).join("")}</tr>`).join("");
   const pages=Math.ceil(allResults.length/PAGE_SIZE);
   const pg=document.getElementById("pagination");
   if(pages<=1){pg.style.display="none";return;}

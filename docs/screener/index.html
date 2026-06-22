@@ -472,6 +472,39 @@ tbody tr.rowlink{cursor:pointer}
 </style>
 <script src="screener-data.js?v=124"></script>
 <link rel="stylesheet" href="../assets/mfc-finish.css?v=110">
+<style id="mf-v149-report">
+/* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
+.exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--accent3,#3b82f6);transition:transform .25s ease}
+tbody tr.expanded .exp-caret{transform:rotate(90deg);color:var(--accent,#1a50d8)}
+tbody tr.rowlink.expanded{background:rgba(26,80,216,.06)!important;box-shadow:inset 3px 0 0 var(--accent,#1a50d8)}
+tbody tr.detail-row{animation:none!important}
+tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,235,.04),rgba(37,99,235,.012));border-bottom:0.5px solid var(--border2,rgba(37,99,235,.2))}
+.scn-wrap{position:sticky;left:0;box-sizing:border-box;padding:18px 20px 22px}
+.scn-inner{animation:scn-in .34s cubic-bezier(.22,1,.36,1) both}
+@keyframes scn-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.scn-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.scn-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.scn-chip{font-size:11px;font-weight:600;color:var(--accent2,#2563eb);background:rgba(37,99,235,.07);border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:20px;padding:4px 11px;white-space:nowrap}
+.scn-report{font-size:12.5px;font-weight:700;color:var(--accent,#1a50d8);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.scn-report .arr{transition:transform .25s ease}.scn-report:hover .arr{transform:translateX(3px)}
+.scn-rangewrap{margin-bottom:16px;max-width:560px}
+.scn-rangewrap .rk{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.range-bar{position:relative;height:8px;background:linear-gradient(90deg,rgba(220,38,38,.15),rgba(217,119,6,.15),rgba(5,150,105,.15));border-radius:5px;margin:0 0 6px}
+.range-bar .mk{position:absolute;top:50%;width:12px;height:12px;background:var(--accent,#1a50d8);border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(26,80,216,.45)}
+.range-lab{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--text3);font-variant-numeric:tabular-nums}
+.range-lab .cur{color:var(--white,#0c1831)}
+.scn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(208px,1fr));gap:13px}
+.scn-sec{background:var(--ink2,#fff);border:0.5px solid var(--border,rgba(37,99,235,.1));border-radius:12px;padding:12px 14px}
+.scn-sec h5{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent2,#2563eb);margin:0 0 9px;padding-bottom:7px;border-bottom:0.5px solid var(--border)}
+.scn-r{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px}
+.scn-r:last-child{margin-bottom:0}
+.scn-r .k{font-size:11.5px;color:var(--text2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scn-r .v{font-size:12px;font-weight:700;color:var(--white,#0c1831);font-variant-numeric:tabular-nums;white-space:nowrap}
+.scn-r .v.v-strong{color:#047857}.scn-r .v.v-good{color:#059669}.scn-r .v.v-weak{color:#b45309}.scn-r .v.v-bad{color:#dc2626}.scn-r .v.na{color:var(--text3);font-weight:500}
+@media (prefers-reduced-motion:reduce){.scn-inner{animation:none}.exp-caret,.scn-report .arr{transition:none}}
+@media(max-width:600px){.scn-wrap{padding:14px 14px 18px}.scn-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:430px){.scn-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <div class="mf-scroll-prog" id="scrollProg"></div>
@@ -847,7 +880,7 @@ const COL_TIPS={
   price_to_fcf:"Price ÷ free cash flow per share."
 };
 const COLUMNS=[
-  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="company.html?symbol=${d.symbol}">${d.name||d.symbol}</a></div><div class="company-sym">${d.symbol}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
+  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><span class="exp-caret" aria-hidden="true">▸</span><a href="company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${scnEsc(d.name||d.symbol)}</a></div><div class="company-sym">${scnEsc(d.symbol)}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>priceCell(d), visible:true},
   {key:"day_change",    label:"Day %",        render:d=>fmtChange(d.day_change), visible:true},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:true},
@@ -958,6 +991,81 @@ function priceCell(d){
     + `<span class="px52" title="52-week ₹${f(lo)} – ₹${f(hi)} · price at ${pct.toFixed(0)}% of range">`
     + `<span class="px52-mark" style="left:${pct.toFixed(1)}%"></span></span></span>`;
 }
+
+// ── V14.9: inline professional equity report (expandable Scanner row) ──
+function scnIsNum(v){return typeof v==="number"&&isFinite(v);}
+function scnFmt(v,code){
+  if(!scnIsNum(v))return["—","na"];
+  const g=(x,d)=>Number(x).toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d});
+  switch(code){
+    case"r2":return[g(v,2),""];
+    case"x1":return[g(v,1)+"×",""];
+    case"x2":return[g(v,2)+"×",""];
+    case"p0":return[g(v,0)+"%",""];
+    case"p1":return[g(v,1)+"%",""];
+    case"p2":return[g(v,2)+"%",""];
+    case"p1g":return[(v>=0?"+":"−")+g(Math.abs(v),1)+"%",v>0?"v-good":v<0?"v-bad":""];
+    case"p1n":return[(v>=0?"+":"−")+g(Math.abs(v),1)+"%",""];
+    case"d0":return[g(v,0)+"d",""];
+    case"rs2":return["₹"+g(v,2),""];
+    case"cr":return["₹"+g(v,0)+" Cr",""];
+    default:return[g(v,1),""];
+  }
+}
+function scnEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function scnRow(label,d,key,code,toneKind){
+  const v=d[key];
+  let r=scnFmt(v,code), cls=r[1];
+  if(toneKind&&scnIsNum(v)){const tc=toneClass(v,toneKind);if(tc)cls=tc;}
+  // non-colour cue for tone (WCAG 1.4.1) — title surfaces the good/bad judgement the hue encodes
+  const tip={"v-strong":"strong","v-good":"good","v-weak":"below average","v-bad":"poor"}[cls];
+  return`<div class="scn-r"><span class="k">${label}</span><span class="v ${cls}"${tip?` title="${tip}"`:""}>${r[0]}</span></div>`;
+}
+function scnSection(title,d,rows){
+  return`<div class="scn-sec"><h5>${title}</h5>${rows.map(r=>scnRow(r[0],d,r[1],r[2],r[3])).join("")}</div>`;
+}
+function buildScannerReport(d){
+  const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
+  let pos=null;
+  if(scnIsNum(lo)&&scnIsNum(hi)&&hi>lo&&scnIsNum(cur))pos=Math.max(0,Math.min(100,(cur-lo)/(hi-lo)*100));
+  const px=v=>Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
+  const range=pos!=null?`<div class="scn-rangewrap"><div class="rk">52-Week Range</div><div class="range-bar"><div class="mk" style="left:${pos.toFixed(1)}%"></div></div><div class="range-lab"><span>₹${px(lo)}</span><span class="cur">₹${px(cur)} · ${pos.toFixed(0)}%</span><span>₹${px(hi)}</span></div></div>`:"";
+  const meta=[];
+  if(d.sector)meta.push(`<span class="scn-chip">${scnEsc(d.sector)}</span>`);
+  if(d.industry)meta.push(`<span class="scn-chip">${scnEsc(d.industry)}</span>`);
+  if(scnIsNum(d.employees))meta.push(`<span class="scn-chip">${Number(d.employees).toLocaleString("en-IN")} employees</span>`);
+  const sections=
+    scnSection("Valuation",d,[["P/E","pe_ratio","r2","pe"],["Fwd P/E","pe_forward","r2"],["P/B","pb_ratio","r2"],["P/S","ps_ratio","r2"],["EV/EBITDA","ev_ebitda","x1"],["EV/Revenue","ev_revenue","x1"],["PEG","peg_ratio","r2"],["Earnings Yield","earnings_yield","p1"],["FCF Yield","fcf_yield","p1","fcf"],["Graham MoS","graham_mos","p0","gmos"],["Dividend Yield","dividend_yield","p2","div"]])
+    +scnSection("Profitability & Returns",d,[["ROE","roe","p1","q"],["ROCE","roce","p1","q"],["ROA","roa","p1","q"],["Net Margin","net_margin","p1","q"],["Operating Margin","operating_margin","p1","q"],["EBITDA Margin","ebitda_margin","p1"]])
+    +scnSection("Growth (YoY)",d,[["Revenue Growth","revenue_growth","p1g"],["Earnings Growth","earnings_growth","p1g"],["Quarterly Earnings","earnings_q_growth","p1g"]])
+    +scnSection("Financial Health",d,[["Debt / Equity","debt_to_equity","r2"],["Current Ratio","current_ratio","x2"],["Quick Ratio","quick_ratio","x2"],["Interest Coverage","interest_coverage","x1"],["Net Debt / EBITDA","net_debt_ebitda","x1"]])
+    +scnSection("Efficiency",d,[["Asset Turnover","asset_turnover","x2"],["Inventory Turnover","inventory_turnover","x2"],["Receivable Days","receivable_days","d0"],["Cash Conv. Cycle","cash_conv_cycle","d0"],["Capex / Revenue","capex_to_revenue","p1"]])
+    +scnSection("Per-Share",d,[["EPS","eps","rs2"],["Fwd EPS","eps_forward","rs2"],["Book Value","book_value","rs2"],["Cash / Share","cash_per_share","rs2"],["Revenue / Share","revenue_per_share","rs2"]])
+    +scnSection("Size",d,[["Market Cap","market_cap_cr","cr"],["Enterprise Value","enterprise_value_cr","cr"],["Revenue","revenue_cr","cr"],["Net Profit","net_profit_cr","cr"],["EBITDA","ebitda_cr","cr"]])
+    +scnSection("Ownership & Trend",d,[["Promoter","promoter_holding","p1"],["Institutional","institutional_holding","p1"],["Public Float","float_pct","p1"],["Beta","beta","r2"],["From 52W High","52w_from_high_pct","p1n"]]);
+  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${range}<div class="scn-grid">${sections}</div></div>`;
+}
+function scnCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
+function toggleScannerCard(tr){
+  const sym=tr.getAttribute("data-sym");if(!sym)return;
+  const next=tr.nextElementSibling;
+  const isOpen=next&&next.classList.contains("detail-row");
+  document.querySelectorAll("#tableBody tr.detail-row").forEach(r=>r.remove());
+  document.querySelectorAll("#tableBody tr.expanded").forEach(r=>{r.classList.remove("expanded");r.setAttribute("aria-expanded","false");});
+  if(isOpen){tr.setAttribute("aria-expanded","false");return;}
+  const d=(allResults||[]).find(x=>x.symbol===sym);if(!d)return;
+  const cols=document.querySelectorAll("#tableHead th").length||1;
+  const detail=document.createElement("tr");
+  detail.className="detail-row";
+  detail.innerHTML=`<td colspan="${cols}"><div class="scn-wrap" style="width:${scnCardWidth()}px">${buildScannerReport(d)}</div></td>`;
+  tr.parentNode.insertBefore(detail,tr.nextSibling);
+  tr.classList.add("expanded");
+  tr.setAttribute("aria-expanded","true");
+}
+// keyboard access for the expandable Scanner rows (Enter/Space)
+document.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target&&e.target.classList&&e.target.classList.contains("rowlink")){e.preventDefault();toggleScannerCard(e.target);}});
+window.addEventListener("resize",()=>{const w=scnCardWidth();document.querySelectorAll("#tableBody .scn-wrap").forEach(el=>{el.style.width=w+"px";});},{passive:true});
+
 function showSkeleton(n){const vis=COLUMNS.filter(c=>c.visible);document.getElementById("tableBody").innerHTML=Array.from({length:n||8},()=>`<tr class="skel-row">${vis.map(()=>`<td><div class="skel"></div></td>`).join("")}</tr>`).join("");}
 function fmtChange(v){
   if(v==null)return`<span class="na">—</span>`;
@@ -1047,7 +1155,7 @@ function renderTable(){
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-weight:600;color:var(--text2)">No stocks match your filters</div></td></tr>`
-    :page.map(d=>`<tr class="rowlink" onclick="location.href='company.html?symbol=${d.symbol}'">${vis.map(c=>`<td>${c.render(d)}</td>`).join("")}</tr>`).join("");
+    :page.map(d=>`<tr class="rowlink" data-sym="${scnEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scnEsc(d.name||d.symbol)} — expand equity report" onclick="toggleScannerCard(this)" title="Click to expand the full equity report">${vis.map(c=>`<td>${c.render(d)}</td>`).join("")}</tr>`).join("");
   const pages=Math.ceil(allResults.length/PAGE_SIZE);
   const pg=document.getElementById("pagination");
   if(pages<=1){pg.style.display="none";return;}
