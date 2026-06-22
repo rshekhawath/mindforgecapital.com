@@ -257,6 +257,22 @@ table.data td .netnum{display:block}
 .dbar .dfill{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%}
 .dbar .dfill.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
 .dbar .dfill.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
+/* V15.1 — FII-vs-DII cash net "tug-of-war" (shared-scale diverging bars) */
+.combined.cmb-rich{flex-direction:column;align-items:stretch;gap:0}
+.cmb-row{display:flex;align-items:center;gap:13px}
+.cmb-tug{margin-top:13px;padding-top:13px;border-top:0.5px solid var(--border)}
+.tug-cap{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:10px}
+.tug-cap .up{color:var(--green)}.tug-cap .down{color:var(--red)}
+.tug-row{display:grid;grid-template-columns:38px 1fr 92px;gap:11px;align-items:center;margin-bottom:9px}
+.tug-row:last-child{margin-bottom:0}
+.tug-nm{font-size:12px;font-weight:800;color:var(--white)}
+.tug-bar{position:relative;height:9px;background:var(--ink3);border-radius:5px}
+.tug-bar::before{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--border2)}
+.tug-fill{position:absolute;top:0;bottom:0;border-radius:5px;max-width:50%}
+.tug-fill.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
+.tug-fill.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
+.tug-v{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.tug-v.up{color:var(--green)}.tug-v.down{color:var(--red)}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}.reveal{opacity:1!important;transform:none!important}}
 </style>
@@ -517,8 +533,13 @@ function renderCash(d){
       ico=tot>=0?"📈":"📉";
       msg=`Both sides net <b>${fSide==='bought'&&dSide==='bought'?'bought':'sold'}</b>. Combined institutional net flow <b class="${tot>=0?'up':'down'}" style="color:${tot>=0?'var(--green)':'var(--red)'}">${cr(tot)} cr</b> on ${escapeHtml(cash.date||d.data_date||"")}.`;
     }
+    // tug-of-war: FII vs DII cash net on a shared scale (who moved the market, by how much)
+    const mx=Math.max(1,Math.abs(fn||0),Math.abs(dn||0));
+    const tugRow=(nm,val)=>{if(val==null)return"";const pos=val>=0;return`<div class="tug-row"><span class="tug-nm">${nm}</span><span class="tug-bar"><span class="tug-fill ${pos?"r":"l"}" style="width:${(Math.abs(val)/mx*50).toFixed(1)}%"></span></span><span class="tug-v ${pos?"up":"down"}">${cr(val)}</span></div>`;};
+    const tug=`<div class="cmb-tug"><div class="tug-cap">Relative net-flow scale · <span class="up">green = bought</span> · <span class="down">red = sold</span> · ₹ cr</div>${tugRow("FII",fn)}${tugRow("DII",dn)}</div>`;
     box.style.display="";
-    box.innerHTML=`<div class="ico">${ico}</div><div class="txt">${msg}</div>`;
+    box.className="combined cmb-rich";
+    box.innerHTML=`<div class="cmb-row"><div class="ico">${ico}</div><div class="txt">${msg}</div></div>${tug}`;
   }
 }
 

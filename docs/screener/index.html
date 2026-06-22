@@ -511,6 +511,13 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .vt-mid{color:var(--accent2,#2563eb);background:rgba(37,99,235,.07);border-color:var(--border2,rgba(37,99,235,.2))}
 .vt-low{color:#b45309;background:rgba(180,83,9,.08);border-color:rgba(180,83,9,.2)}
 .vt-bad{color:#dc2626;background:rgba(220,38,38,.07);border-color:rgba(220,38,38,.18)}
+/* V15.1 — quality checklist (footer of the inline report) */
+.scn-checklist{margin-top:14px;background:var(--ink2,#fff);border:0.5px solid var(--border,rgba(37,99,235,.1));border-radius:12px;padding:13px 15px}
+.chk-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent2,#2563eb);margin-bottom:11px;padding-bottom:8px;border-bottom:0.5px solid var(--border)}
+.chk-score{font-size:11px;font-weight:700;color:var(--accent2,#2563eb);background:rgba(37,99,235,.07);border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:20px;padding:2px 9px;white-space:nowrap;text-transform:none;letter-spacing:0}
+.chk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:7px 16px}
+.chk-item{font-size:12px;font-weight:600;line-height:1.3}
+.chk-ok{color:#047857}.chk-no{color:#dc2626}.chk-na{color:var(--text3);font-weight:500}
 </style>
 </head>
 <body>
@@ -1042,6 +1049,25 @@ function scnVerdict(d){
   const seen={},out=[];t.forEach(x=>{if(!seen[x[0]]){seen[x[0]]=1;out.push(x);}});
   return out.length?`<div class="scn-verdict">${out.map(x=>`<span class="vtag vt-${x[1]}">${x[0]}</span>`).join("")}</div>`:"";
 }
+function scnChecklist(d){
+  const isFin=/financ|bank|insur/i.test(d.sector||"");
+  const raw=[
+    ["ROE > 15%", scnIsNum(d.roe)?d.roe>15:null],
+    ["Net margin > 10%", scnIsNum(d.net_margin)?d.net_margin>10:null],
+    ["Revenue growth > 10%", scnIsNum(d.revenue_growth)?d.revenue_growth>10:null],
+    ["Earnings growth positive", scnIsNum(d.earnings_growth)?d.earnings_growth>0:null],
+    ["P/E under 25", scnIsNum(d.pe_ratio)?(d.pe_ratio>0&&d.pe_ratio<25):null],
+    ["PEG under 1.5", scnIsNum(d.peg_ratio)?(d.peg_ratio>0&&d.peg_ratio<1.5):null],
+    ["Positive free cash flow", scnIsNum(d.fcf_yield)?d.fcf_yield>0:null],
+    ["Pays a dividend", scnIsNum(d.dividend_yield)?d.dividend_yield>0:null],
+    isFin?null:["Low debt (D/E < 0.5)", scnIsNum(d.debt_to_equity)?d.debt_to_equity<50:null],
+    isFin?null:["Current ratio > 1.5", scnIsNum(d.current_ratio)?d.current_ratio>1.5:null],
+    isFin?null:["Interest cover > 3×", scnIsNum(d.interest_coverage)?d.interest_coverage>3:null],
+  ].filter(Boolean);
+  let pass=0,tot=0;
+  const items=raw.map(c=>{if(c[1]===null)return`<span class="chk-item chk-na">– ${c[0]}</span>`;tot++;if(c[1])pass++;return`<span class="chk-item ${c[1]?"chk-ok":"chk-no"}">${c[1]?"✓":"✗"} ${c[0]}</span>`;}).join("");
+  return`<div class="scn-checklist"><div class="chk-head">Quality checklist <span class="chk-score">${pass} / ${tot} passed</span></div><div class="chk-grid">${items}</div></div>`;
+}
 function buildScannerReport(d){
   const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
   let pos=null;
@@ -1061,7 +1087,7 @@ function buildScannerReport(d){
     +scnSection("Per-Share",d,[["EPS","eps","rs2"],["Fwd EPS","eps_forward","rs2"],["Book Value","book_value","rs2"],["Cash / Share","cash_per_share","rs2"],["Revenue / Share","revenue_per_share","rs2"]])
     +scnSection("Size",d,[["Market Cap","market_cap_cr","cr"],["Enterprise Value","enterprise_value_cr","cr"],["Revenue","revenue_cr","cr"],["Net Profit","net_profit_cr","cr"],["EBITDA","ebitda_cr","cr"]])
     +scnSection("Ownership & Trend",d,[["Promoter","promoter_holding","p1"],["Institutional","institutional_holding","p1"],["Public Float","float_pct","p1"],["Beta","beta","r2"],["From 52W High","52w_from_high_pct","p1n"]]);
-  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scnVerdict(d)}${range}<div class="scn-grid">${sections}</div></div>`;
+  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scnVerdict(d)}${range}<div class="scn-grid">${sections}</div>${scnChecklist(d)}</div>`;
 }
 function scnCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
 function toggleScannerCard(tr){

@@ -343,6 +343,24 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .sc-overview .sc-snap{margin-bottom:0}
 @media(max-width:600px){.sc-overview{grid-template-columns:1fr;gap:14px}.sc-radar-svg{max-width:220px}}
 @media (prefers-reduced-motion:reduce){.sc-radar-poly{animation:none}}
+/* ── V15.1 "Peer context" — sector comparison + quality checklist ── */
+.sc-extra{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.sc-extra.sc-extra-1{grid-template-columns:1fr}
+@media(max-width:760px){.sc-extra{grid-template-columns:1fr}}
+.sc-peers,.sc-chk{background:var(--ink2);border:0.5px solid var(--border);border-radius:12px;padding:13px 15px}
+.pc-head,.chk-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--white);margin-bottom:10px;padding-bottom:8px;border-bottom:0.5px solid var(--border)}
+.pc-n,.chk-score{font-size:11px;font-weight:700;color:var(--accent2);background:rgba(37,99,235,.07);border:0.5px solid var(--border2);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.pc-row{display:grid;grid-template-columns:1fr auto auto;gap:6px 14px;align-items:center;margin-bottom:8px}
+.pc-row:last-child{margin-bottom:0}
+.pc-lbl{margin-bottom:6px}
+.pc-lbl .pc-v,.pc-lbl .pc-m{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3)}
+.pc-k{font-size:12px;color:var(--text2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-v{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.pc-v.pc-better{color:#047857}.pc-v.pc-worse{color:#dc2626}
+.pc-m{font-size:12px;color:var(--text3);font-weight:600;font-variant-numeric:tabular-nums;text-align:right;min-width:48px}
+.chk-grid{display:flex;flex-direction:column;gap:7px}
+.chk-item{font-size:12px;font-weight:600;line-height:1.3}
+.chk-ok{color:#047857}.chk-no{color:#dc2626}.chk-na{color:var(--text3);font-weight:500}
 </style>
 </head>
 <body>
@@ -573,6 +591,63 @@ function scVerdict(d){
   if(d._m!=null)t.push(d._m>=55?["Positive trend","good"]:d._m>=40?["Neutral trend","mid"]:["Soft trend","low"]);
   return t.length?`<div class="sc-verdict">${t.map(x=>scTag(x[0],x[1])).join("")}</div>`:"";
 }
+// sector medians (computed once from the full universe, cached)
+let SEC_MED=null;
+function scSectorMedians(){
+  if(SEC_MED)return SEC_MED;
+  SEC_MED={};
+  const all=(window.MFCScores&&MFCScores.all())||[];
+  const keys=["pe_ratio","roe","revenue_growth","net_margin","dividend_yield"];
+  const bySec={};
+  all.forEach(s=>{const sec=(s.sector&&s.sector.trim())||"Other";(bySec[sec]||(bySec[sec]=[])).push(s);});
+  Object.keys(bySec).forEach(sec=>{
+    const m={};
+    keys.forEach(k=>{const v=bySec[sec].map(s=>s[k]).filter(x=>typeof x==="number"&&isFinite(x)).sort((a,b)=>a-b);m[k]=v.length?(v.length%2?v[(v.length-1)/2]:(v[v.length/2-1]+v[v.length/2])/2):null;});
+    SEC_MED[sec]=m;
+  });
+  return SEC_MED;
+}
+function scPeers(d){
+  const sec=(d.sector&&d.sector.trim())||"Other";
+  const med=scSectorMedians()[sec];if(!med)return"";
+  const rows=[
+    {k:"pe_ratio",label:"P/E",dir:"low",f:v=>v.toFixed(1)},
+    {k:"roe",label:"ROE",dir:"high",f:v=>v.toFixed(1)+"%"},
+    {k:"revenue_growth",label:"Rev growth",dir:"high",f:v=>(v>=0?"+":"−")+Math.abs(v).toFixed(1)+"%"},
+    {k:"net_margin",label:"Net margin",dir:"high",f:v=>v.toFixed(1)+"%"},
+    {k:"dividend_yield",label:"Div yield",dir:"high",f:v=>v.toFixed(2)+"%"},
+  ];
+  const out=rows.map(r=>{
+    const v=d[r.k],mv=med[r.k];if(!scNum(v)||!scNum(mv))return"";
+    let better=r.dir==="low"?v<mv:v>mv;
+    if(r.k==="pe_ratio"&&v<=0)better=false;
+    return`<div class="pc-row"><span class="pc-k">${r.label}</span><span class="pc-v ${better?"pc-better":"pc-worse"}">${better?"▲":"▼"} ${r.f(v)}</span><span class="pc-m">${r.f(mv)}</span></div>`;
+  }).filter(Boolean).join("");
+  return out?`<div class="sc-peers"><div class="pc-head"><span>vs ${scEsc(sec)} median</span><span class="pc-n">${d._secSize||"—"} peers</span></div><div class="pc-row pc-lbl"><span class="pc-k"></span><span class="pc-v">This</span><span class="pc-m">Median</span></div>${out}</div>`:"";
+}
+function scChecklist(d){
+  const isFin=/financ|bank|insur/i.test(d.sector||"");
+  const raw=[
+    ["ROE > 15%", scNum(d.roe)?d.roe>15:null],
+    ["Net margin > 10%", scNum(d.net_margin)?d.net_margin>10:null],
+    ["Revenue growth > 10%", scNum(d.revenue_growth)?d.revenue_growth>10:null],
+    ["Earnings growth positive", scNum(d.earnings_growth)?d.earnings_growth>0:null],
+    ["P/E under 25", scNum(d.pe_ratio)?(d.pe_ratio>0&&d.pe_ratio<25):null],
+    ["PEG under 1.5", scNum(d.peg_ratio)?(d.peg_ratio>0&&d.peg_ratio<1.5):null],
+    ["Positive free cash flow", scNum(d.fcf_yield)?d.fcf_yield>0:null],
+    ["Pays a dividend", scNum(d.dividend_yield)?d.dividend_yield>0:null],
+    isFin?null:["Low debt (D/E < 0.5)", scNum(d.debt_to_equity)?d.debt_to_equity<50:null],
+    isFin?null:["Current ratio > 1.5", scNum(d.current_ratio)?d.current_ratio>1.5:null],
+    isFin?null:["Interest cover > 3×", scNum(d.interest_coverage)?d.interest_coverage>3:null],
+  ].filter(Boolean);
+  let pass=0,tot=0;
+  const items=raw.map(c=>{
+    if(c[1]===null)return`<span class="chk-item chk-na">– ${c[0]}</span>`;
+    tot++;if(c[1])pass++;
+    return`<span class="chk-item ${c[1]?"chk-ok":"chk-no"}">${c[1]?"✓":"✗"} ${c[0]}</span>`;
+  }).join("");
+  return`<div class="sc-chk"><div class="chk-head">Quality checklist <span class="chk-score">${pass} / ${tot} passed</span></div><div class="chk-grid">${items}</div></div>`;
+}
 function buildScorecard(d){
   const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
   let pos=null;
@@ -592,7 +667,9 @@ function buildScorecard(d){
   let ranks="";
   if(d._uniRank)ranks+=`<span class="sc-chip">#<b>${d._uniRank}</b> of ${d._uniTotal} · all NSE</span>`;
   if(d._secRank)ranks+=`<span class="sc-chip">#<b>${d._secRank}</b> of ${d._secSize} · ${scEsc(d.sector&&d.sector.trim()?d.sector:"Other")}</span>`;
-  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scVerdict(d)}<div class="sc-overview">${scRadar(d)}<div class="sc-snap">${snap}${range}</div></div><div class="sc-pillars">${pillars}</div></div>`;
+  const extra=[scPeers(d),scChecklist(d)].filter(Boolean);
+  const extraHTML=extra.length?`<div class="sc-extra${extra.length===1?" sc-extra-1":""}">${extra.join("")}</div>`:"";
+  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scVerdict(d)}<div class="sc-overview">${scRadar(d)}<div class="sc-snap">${snap}${range}</div></div>${extraHTML}<div class="sc-pillars">${pillars}</div></div>`;
 }
 function scCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
 function toggleScorecard(tr){
