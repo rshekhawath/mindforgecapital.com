@@ -21,6 +21,18 @@
 <link rel="manifest" href="/manifest.json">
 <title>Integrity Score — MindForge Capital</title>
 <meta name="description" content="Free Integrity Score for every NSE company — each graded 0–100 on Quality (profitability & balance-sheet health) and Value (how cheaply it's priced). Search any stock for a full scorecard.">
+<!-- V15.2 social / Open Graph -->
+<link rel="canonical" href="https://mindforgecapital.com/scores/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MindForge Capital">
+<meta property="og:title" content="Stock Integrity Score — every NSE company, graded 0–100">
+<meta property="og:description" content="Free Quality × Value Integrity Score for 2,000+ NSE companies, with a 5-factor scorecard, sector peer comparison and a quality checklist per stock.">
+<meta property="og:url" content="https://mindforgecapital.com/scores/">
+<meta property="og:image" content="https://mindforgecapital.com/assets/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Stock Integrity Score — MindForge Capital">
+<meta name="twitter:description" content="Every NSE company graded 0–100 on Quality & Value, with a full factor scorecard.">
+<meta name="twitter:image" content="https://mindforgecapital.com/assets/apple-touch-icon.png">
 <meta name="theme-color" content="#1a50d8">
 <style>
 .mf-scroll-prog{position:fixed;top:0;left:0;width:0%;height:3px;z-index:9999;pointer-events:none;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf);transition:width .1s linear}
@@ -285,7 +297,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hero h1{font-size:26px}
 }
 </style>
-<script src="scores-engine.js?v=124"></script>
+<script src="scores-engine.js?v=152"></script>
 <link rel="stylesheet" href="../assets/mfc-finish.css?v=110">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
@@ -361,6 +373,37 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .chk-grid{display:flex;flex-direction:column;gap:7px}
 .chk-item{font-size:12px;font-weight:600;line-height:1.3}
 .chk-ok{color:#047857}.chk-no{color:#dc2626}.chk-na{color:var(--text3);font-weight:500}
+/* V15.2 — contextual conversion CTA in the scorecard */
+.sc-cta{margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 16px;border-radius:12px;background:linear-gradient(120deg,rgba(26,80,216,.07),rgba(8,145,178,.06));border:0.5px solid var(--border2);text-decoration:none;transition:transform .2s,box-shadow .2s}
+.sc-cta:hover{transform:translateY(-1px);box-shadow:0 12px 26px -16px rgba(26,80,216,.4)}
+.sc-cta-ico{font-size:18px;flex-shrink:0}
+.sc-cta-tx{font-size:12.5px;color:var(--text2);line-height:1.45;flex:1;min-width:160px}
+.sc-cta-go{font-size:12.5px;font-weight:800;color:var(--accent);white-space:nowrap;margin-left:auto}
+.sc-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sc-copy{font-size:12px;font-weight:700;color:var(--accent2);background:rgba(37,99,235,.07);border:0.5px solid var(--border2);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.sc-copy:hover{background:rgba(37,99,235,.13);color:var(--accent)}
+/* V15.2 — MOBILE CARD VIEW: stack each row as a labelled card (no horizontal scroll) */
+@media(max-width:600px){
+  #resultsTable{min-width:0!important}
+  #resultsTable,#resultsTable tbody{display:block}
+  #resultsTable thead{display:none}
+  #tableBody tr.rowlink{display:block;border:0.5px solid var(--border2);border-radius:14px;margin:0 0 12px;background:var(--ink2);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 22px -16px rgba(37,99,235,.18);animation:none}
+  #tableBody tr.rowlink:nth-child(even){background:var(--ink2)}
+  #tableBody tr.rowlink.expanded{box-shadow:inset 0 0 0 1.5px var(--accent),0 8px 22px -16px rgba(37,99,235,.25)}
+  #tableBody tr.rowlink td{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 15px;white-space:normal;text-align:right;border-bottom:0.5px solid var(--border)}
+  #tableBody tr.rowlink td:last-child{border-bottom:none}
+  #tableBody tr.rowlink td::before{content:attr(data-label);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);text-align:left;flex-shrink:0}
+  #tableBody td.company-col{display:block!important;padding:13px 15px 11px;border-bottom:0.5px solid var(--border2)}
+  #tableBody td.company-col::before{display:none}
+  #tableBody td.rank-cell{display:none!important}
+  #tableBody .score-cell{min-width:120px;flex-direction:row;align-items:center;gap:8px}
+  #tableBody .score-cell .score-track{flex:1;min-width:40px}
+  #tableBody .overall-cell{min-width:0;justify-content:flex-end}
+  #tableBody tr.detail-row{display:block;width:100%;margin:-6px 0 12px}
+  #tableBody tr.detail-row>td{display:block!important;width:calc(100vw - 28px)!important;max-width:none!important;box-sizing:border-box;padding:0}
+  #tableBody tr.detail-row td::before{display:none}
+  #tableBody .sc-wrap{position:static!important;width:100%!important}
+}
 </style>
 </head>
 <body>
@@ -648,6 +691,19 @@ function scChecklist(d){
   }).join("");
   return`<div class="sc-chk"><div class="chk-head">Quality checklist <span class="chk-score">${pass} / ${tot} passed</span></div><div class="chk-grid">${items}</div></div>`;
 }
+function mfcCopyLink(sym){
+  const url="https://mindforgecapital.com/scores/company.html?symbol="+encodeURIComponent(sym);
+  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject())
+    .then(()=>showToast("🔗 Link to this stock copied","success",2000))
+    .catch(()=>{try{window.prompt("Copy this link:",url);}catch(_){}});
+}
+function scCTA(d){
+  const hi=d._overall!=null&&d._overall>=65;
+  const msg=hi
+    ? "Scores in the upper tier on Quality × Value. Our quant strategies build disciplined portfolios of high-integrity names like this."
+    : "Prefer a ready-made, rules-based portfolio? Our SEBI-registered quant strategies handle the screening, sizing & monthly rebalancing for you.";
+  return `<a class="sc-cta" href="https://mindforgecapital.com/strategies.html"><span class="sc-cta-ico" aria-hidden="true">📈</span><span class="sc-cta-tx">${msg}</span><span class="sc-cta-go">Explore strategies →</span></a>`;
+}
 function buildScorecard(d){
   const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
   let pos=null;
@@ -669,7 +725,7 @@ function buildScorecard(d){
   if(d._secRank)ranks+=`<span class="sc-chip">#<b>${d._secRank}</b> of ${d._secSize} · ${scEsc(d.sector&&d.sector.trim()?d.sector:"Other")}</span>`;
   const extra=[scPeers(d),scChecklist(d)].filter(Boolean);
   const extraHTML=extra.length?`<div class="sc-extra${extra.length===1?" sc-extra-1":""}">${extra.join("")}</div>`:"";
-  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scVerdict(d)}<div class="sc-overview">${scRadar(d)}<div class="sc-snap">${snap}${range}</div></div>${extraHTML}<div class="sc-pillars">${pillars}</div></div>`;
+  return`<div class="sc-inner"><div class="sc-top"><div class="sc-ranks">${ranks}</div><div class="sc-actions"><button class="sc-copy" type="button" onclick="event.stopPropagation();mfcCopyLink('${scEsc(d.symbol)}')" title="Copy a shareable link to this stock">🔗 Link</button><a class="sc-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div></div>${scVerdict(d)}<div class="sc-overview">${scRadar(d)}<div class="sc-snap">${snap}${range}</div></div>${extraHTML}<div class="sc-pillars">${pillars}</div>${scCTA(d)}</div>`;
 }
 function scCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
 function toggleScorecard(tr){
@@ -722,7 +778,7 @@ function renderTable(){
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">No stocks to show</div></td></tr>`
-    :page.map((d,i)=>`<tr class="rowlink" data-sym="${scEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scEsc(d.name||d.symbol)} — expand scorecard" onclick="toggleScorecard(this)" title="Click to expand the full scorecard">${COLUMNS.map(c=>`<td${c.cls?` class="${c.cls}"`:""}>${c.render(d,i)}</td>`).join("")}</tr>`).join("");
+    :page.map((d,i)=>`<tr class="rowlink" data-sym="${scEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scEsc(d.name||d.symbol)} — expand scorecard" onclick="toggleScorecard(this)" title="Click to expand the full scorecard">${COLUMNS.map(c=>`<td${c.cls?` class="${c.cls}"`:""} data-label="${c.label}">${c.render(d,i)}</td>`).join("")}</tr>`).join("");
   const pages=Math.ceil(allResults.length/PAGE_SIZE);
   const pg=document.getElementById("pagination");
   if(pages<=1){pg.style.display="none";return;}

@@ -21,7 +21,8 @@
 <link rel="manifest" href="/manifest.json">
 <title>Stock Scorecard — MindForge Capital</title>
 <meta name="theme-color" content="#1a50d8">
-<script src="scores-engine.js?v=124"></script>
+<script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
+<script src="scores-engine.js?v=152"></script>
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
@@ -415,6 +416,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
       <div class="sc-foot" id="scFoot"></div>
     </div>
 
+    <!-- V15.2: valuation (P/E) trend from the daily history snapshots (self-building) -->
+    <div class="card" id="histTrendCard" style="display:none">
+      <div class="card-header"><span class="card-title">Valuation trend · P/E</span><span class="card-title-sub" id="histTrendSub" style="font-size:12px;font-weight:500;color:var(--text3)"></span></div>
+      <div class="card-body"><div id="histTrend"></div></div>
+    </div>
+
     <div class="two-col">
       <div>
         <div class="card">
@@ -700,15 +707,65 @@ const clsPct=v=>v>0?"kpi-pos":v<0?"kpi-neg":"";
 const tone=(v,kind)=>{if(v==null)return"";if(kind==="q")return v>=25?"v-strong":v>=15?"v-good":v>=0?"":"v-bad";if(kind==="pe")return v<0?"v-bad":v<=18?"v-good":v<=35?"":v<=60?"v-weak":"v-bad";if(kind==="div")return v>=4?"v-strong":v>=2?"v-good":"";return"";};
 function gradeCls(s){const g=MFCScores.grade(s).cls;return g==="v-strong"?"gp-strong":g==="v-good"?"gp-good":g==="v-weak"?"gp-weak":g==="v-bad"?"gp-bad":g==="na"?"gp-na":"gp-fair";}
 
+// ── V15.2: valuation (P/E) trend from the daily history snapshots ──
+function renderHistTrend(sym){
+  const safe=String(sym).replace(/[^A-Za-z0-9._-]/g,"_");
+  fetch("../screener/hist/"+encodeURIComponent(safe)+".json",{cache:"no-cache"})
+    .then(r=>r.ok?r.json():null).then(pts=>{
+      if(!Array.isArray(pts)||!pts.length)return;
+      const card=document.getElementById("histTrendCard"),host=document.getElementById("histTrend"),sub=document.getElementById("histTrendSub");
+      if(!card)return;
+      const dates=pts.map(p=>p[0]);
+      const vals=pts.map(p=>(typeof p[2]==="number"&&isFinite(p[2]))?p[2]:null);
+      const real=vals.filter(v=>v!=null);
+      card.style.display="";
+      if(real.length<2){
+        sub.textContent="";
+        host.innerHTML=`<div style="font-size:13px;color:var(--text3);line-height:1.6">📈 Recording started <b style="color:var(--text2)">${dates[0]}</b>. This valuation trend fills in one trading day per refresh — check back as history accumulates.</div>`;
+        return;
+      }
+      const W=560,H=120,pad=10,n=pts.length;
+      const mn=Math.min.apply(null,real),mx=Math.max.apply(null,real),rng=(mx-mn)||1;
+      const x=i=>pad+(W-2*pad)*(n<=1?0.5:i/(n-1));
+      const y=v=>H-pad-(H-2*pad)*((v-mn)/rng);
+      let dline="",started=false,first=null,last=null;
+      vals.forEach((v,i)=>{if(v==null)return;dline+=(started?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)+" ";started=true;if(first==null)first=v;last=v;});
+      sub.textContent=`${dates[0]} → ${dates[dates.length-1]} · ${pts.length} days`;
+      host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:108px;display:block" role="img" aria-label="P/E trend ${first!=null?first.toFixed(1):""} to ${last!=null?last.toFixed(1):""}"><path d="${dline}" fill="none" stroke="#1a50d8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-top:5px"><span>P/E ${first!=null?first.toFixed(1):"—"}</span><span style="color:#0c1831;font-weight:700">now ${last!=null?last.toFixed(1):"—"}</span></div>`;
+    }).catch(()=>{});
+}
+// ── V15.2: per-stock SEO (meta description, canonical, Open Graph, JSON-LD) ──
+function mfcSEO(D, sym){
+  try{
+    const name=D.name||sym, sector=D.sector||"", px=D.current_price;
+    const canon="https://mindforgecapital.com/scores/company.html?symbol="+encodeURIComponent(sym);
+    const desc=`${name} (${sym})${sector?" · "+sector:""} — NSE stock${px?" at ₹"+Number(px).toLocaleString("en-IN"):""}. Integrity Score, valuation, profitability, growth and a full factor scorecard on MindForge Capital.`;
+    const setMeta=(q,a,k,v)=>{let e=document.head.querySelector(q);if(!e){e=document.createElement("meta");e.setAttribute(a,k);document.head.appendChild(e);}e.setAttribute("content",v);};
+    setMeta('meta[name="description"]',"name","description",desc);
+    setMeta('meta[property="og:title"]',"property","og:title",`${name} (${sym}) Scorecard — MindForge Capital`);
+    setMeta('meta[property="og:description"]',"property","og:description",desc);
+    setMeta('meta[property="og:type"]',"property","og:type","website");
+    setMeta('meta[property="og:url"]',"property","og:url",canon);
+    setMeta('meta[property="og:image"]',"property","og:image","https://mindforgecapital.com/assets/apple-touch-icon.png");
+    setMeta('meta[name="twitter:card"]',"name","twitter:card","summary");
+    let can=document.head.querySelector('link[rel="canonical"]');if(!can){can=document.createElement("link");can.rel="canonical";document.head.appendChild(can);}can.href=canon;
+    const ld={"@context":"https://schema.org","@type":"Corporation","name":name,"tickerSymbol":sym,"description":String(D.description||desc).slice(0,600)};
+    if(D.website)ld.url=D.website; if(D.industry)ld.industry=D.industry;
+    let s=document.getElementById("mfc-jsonld");if(!s){s=document.createElement("script");s.type="application/ld+json";s.id="mfc-jsonld";document.head.appendChild(s);}s.textContent=JSON.stringify(ld);
+  }catch(e){}
+}
 MFCScores.load().then(()=>{
   D=MFCScores.bySym(SYMBOL);
   document.getElementById("loadingState").style.display="none";
   if(!D){document.getElementById("nfSym").textContent=SYMBOL;document.getElementById("notFound").style.display="block";document.getElementById("bcSymbol").textContent="Not found";return;}
   document.getElementById("content").style.display="block";
   document.title=`${D.name||SYMBOL} Scorecard — MindForge Capital`;
+  mfcSEO(D, SYMBOL);
   document.getElementById("bcSymbol").textContent=D.name||SYMBOL;
   renderHero();renderScorecard();renderKPIs();renderOverview();renderRatios();renderShareholding();renderAbout();
   try{ mountStockChart(SYMBOL, D); }catch(e){ console.warn("chart mount failed", e); }
+  try{ renderHistTrend(SYMBOL); }catch(e){ /* trend is best-effort */ }
 }).catch(e=>{
   document.getElementById("loadingState").innerHTML=`<div style="font-size:14px;font-weight:600;color:var(--text2)">Couldn't load scores — please refresh.</div>`;
   toast(`Error: ${e.message}`,"error",8000);

@@ -20,7 +20,10 @@
   var BUNDLE = null;                 // {generated_at, data_through, count, sectors, stocks}
   var BY_SYM = Object.create(null);
   var bundlePromise = null;
-  var DATA_URL = "stocks.json";      // relative to the screener pages
+  // V15.2: the list view loads the LITE bundle (full minus description/website, ~33%
+  // smaller). The per-stock company page sets window.MFC_USE_FULL=1 to load the full
+  // file instead (it needs the business description for the About tab).
+  var DATA_URL = (typeof window !== "undefined" && window.MFC_USE_FULL) ? "stocks.json" : "stocks-lite.json";
 
   function fmtDate(s) {
     try {

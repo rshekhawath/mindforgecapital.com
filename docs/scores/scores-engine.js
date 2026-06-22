@@ -31,7 +31,10 @@
 
   // stocks.json lives with the screener; reuse it rather than shipping a 2nd
   // 6 MB copy. Relative to docs/scores/  ->  docs/screener/stocks.json
-  var DATA_URL = "../screener/stocks.json";
+  // V15.2: load the LITE bundle (full minus description/website, ~33% smaller) — the
+  // scores list/scorecard never show those fields. The per-stock company page sets
+  // window.MFC_USE_FULL=1 to load the full file instead (it needs the description).
+  var DATA_URL = (typeof window !== "undefined" && window.MFC_USE_FULL) ? "../screener/stocks.json" : "../screener/stocks-lite.json";
 
   // ── Factor model ──────────────────────────────────────────────────────────
   // dir:   "high" = bigger is better · "low" = smaller is better
