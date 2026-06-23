@@ -100,7 +100,7 @@ present in the client.
 Edit **`www/js/config.js`**:
 
 - `APPS_SCRIPT_URL` — already set to the live backend. ✅
-- `WHATSAPP_URL` — **set the real support number** (placeholder today).
+- `WHATSAPP_URL` — set to the live MindForge support line (`wa.me/917601032082`, matches the website). ✅
 - **Enabling Kite Connect (live linking):**
   1. Create a Kite Connect app at <https://kite.trade> → get `api_key` + `api_secret`.
   2. Stand up a server-side token exchange (Apps Script action, e.g. `kite_exchange`)
@@ -121,5 +121,5 @@ Edit **`www/js/config.js`**:
   **Appearance** control (Auto / Light / Dark) in Account; applied pre-paint (no flash),
   persisted on-device, and follows the OS live while on Auto.
 - ✅ Capacitor-ready for App Store / Play Store (run `cap add ios|android`).
-- 🔌 Gated on credentials: Kite Connect live linking (api_key), SMS OTP (provider),
-  real WhatsApp number. All wired — drop in the values to activate.
+- 🔌 Gated on credentials: Kite Connect live linking (api_key), SMS OTP (provider).
+  All wired — drop in the values to activate.

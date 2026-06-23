@@ -661,9 +661,13 @@ function handleSetNotify(token, on) {
     const data = sheet.getDataRange().getValues();
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] === token) {
-        sheet.getRange(i + 1, 12).setValue(want);   // col L (1-based 12) = notify flag
+        // Monthly subs (duration_months ≤ 1) don't get rebalance pick emails —
+        // they renew each month; force notify off so they can't arm false reminders.
+        const dm = parseInt(data[i][10], 10) || 1;  // col K (0-based index 10) = duration_months
+        const effective = (dm <= 1 && want === 'on') ? 'off' : want;
+        sheet.getRange(i + 1, 12).setValue(effective);   // col L (1-based 12) = notify flag
         return ContentService.createTextOutput(JSON.stringify({
-          status: 'ok', notify: want
+          status: 'ok', notify: effective
         })).setMimeType(ContentService.MimeType.JSON);
       }
     }

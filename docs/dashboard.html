@@ -2347,7 +2347,11 @@ function renderTable(stocks) {
     const isBought = !!bought[s.ticker];
     const rowCls = isBought ? 'row-bought' : '';
     const curr = stockCurr(s);
-    return `<tr data-row="${i}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
+    // data-row carries the CANONICAL stocksData index (not the sorted position) so
+    // filterStocks/applySectorFilter/updateAllocationCells — which look up
+    // stocksData[data-row] — stay correct after a column sort reorders the rows.
+    const ci = stocksData.indexOf(s);
+    return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company">${escapeHtml(s.company_name||s.ticker)}</td>
@@ -2376,7 +2380,8 @@ function renderTable(stocks) {
     const amt = shares * entry;
     const isBought = !!bought[s.ticker];
     const cardCls = isBought ? 'stock-card row-bought' : 'stock-card';
-    return `<div class="${cardCls}" data-row="${i}" data-ticker="${escapeHtml(s.ticker)}">
+    const ci = stocksData.indexOf(s);   // canonical index — keep filters/cell-updates correct after sort
+    return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}">
       <div class="sc-header">
         <div class="sc-name-wrap">
           <div class="sc-company">${escapeHtml(s.company_name||s.ticker)}</div>
@@ -2834,6 +2839,10 @@ function _setNotifUI(on, email) {
 // when present; otherwise fall back to the locally-saved preference.
 function restoreNotifState() {
   var sub = window._currentSub || {};
+  // Monthly subs (duration_months ≤ 1) never receive rebalance pick emails — hide the toggle.
+  var sec = document.getElementById('notif-section');
+  if ((sub.duration_months || 1) <= 1) { if (sec) sec.style.display = 'none'; return; }
+  if (sec) sec.style.display = '';
   var serverDefined = typeof sub.notify !== 'undefined' && sub.notify !== null && sub.notify !== '';
   var pref = _loadNotifPref();
   var on = serverDefined ? (String(sub.notify).toLowerCase() === 'on') : !!(pref && pref.on);

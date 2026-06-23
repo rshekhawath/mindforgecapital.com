@@ -953,7 +953,7 @@ const COLUMNS=[
   {key:"revenue_cr",    label:"Revenue (Cr)", render:d=>d.revenue_cr?`<span class="num">${Number(d.revenue_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"revenue_growth",label:"Rev Gr %",    render:d=>fmtTone(d.revenue_growth,1,"q"), visible:false},
   {key:"earnings_growth",label:"Earn Gr %",  render:d=>fmtTone(d.earnings_growth,1,"q"), visible:false},
-  {key:"debt_to_equity",label:"D/E",          render:d=>fmtN(d.debt_to_equity,2), visible:false},
+  {key:"debt_to_equity",label:"D/E",          render:d=>fmtN(d.debt_to_equity==null?null:d.debt_to_equity/100,2), visible:false},
   {key:"current_ratio", label:"Current Ratio",render:d=>fmtN(d.current_ratio,2), visible:false},
   {key:"interest_coverage",label:"Int Cov",  render:d=>fmtN(d.interest_coverage,1), visible:false},
   {key:"promoter_holding",label:"Promoter %",render:d=>fmtN(d.promoter_holding,1), visible:false},
@@ -1051,6 +1051,7 @@ function scnFmt(v,code){
   const g=(x,d)=>Number(x).toLocaleString("en-IN",{minimumFractionDigits:d,maximumFractionDigits:d});
   switch(code){
     case"r2":return[g(v,2),""];
+    case"de":return[g(v/100,2)+"×",""];   // debt_to_equity is stored as a percent — show the true ratio (e.g. 36.65 → 0.37×)
     case"x1":return[g(v,1)+"×",""];
     case"x2":return[g(v,2)+"×",""];
     case"p0":return[g(v,0)+"%",""];
@@ -1127,7 +1128,7 @@ function buildScannerReport(d){
     scnSection("Valuation",d,[["P/E","pe_ratio","r2","pe"],["Fwd P/E","pe_forward","r2"],["P/B","pb_ratio","r2"],["P/S","ps_ratio","r2"],["EV/EBITDA","ev_ebitda","x1"],["EV/Revenue","ev_revenue","x1"],["PEG","peg_ratio","r2"],["Earnings Yield","earnings_yield","p1"],["FCF Yield","fcf_yield","p1","fcf"],["Graham MoS","graham_mos","p0","gmos"],["Dividend Yield","dividend_yield","p2","div"]])
     +scnSection("Profitability & Returns",d,[["ROE","roe","p1","q"],["ROCE","roce","p1","q"],["ROA","roa","p1","q"],["Net Margin","net_margin","p1","q"],["Operating Margin","operating_margin","p1","q"],["EBITDA Margin","ebitda_margin","p1"]])
     +scnSection("Growth (YoY)",d,[["Revenue Growth","revenue_growth","p1g"],["Earnings Growth","earnings_growth","p1g"],["Quarterly Earnings","earnings_q_growth","p1g"]])
-    +scnSection("Financial Health",d,[["Debt / Equity","debt_to_equity","r2"],["Current Ratio","current_ratio","x2"],["Quick Ratio","quick_ratio","x2"],["Interest Coverage","interest_coverage","x1"],["Net Debt / EBITDA","net_debt_ebitda","x1"]])
+    +scnSection("Financial Health",d,[["Debt / Equity","debt_to_equity","de"],["Current Ratio","current_ratio","x2"],["Quick Ratio","quick_ratio","x2"],["Interest Coverage","interest_coverage","x1"],["Net Debt / EBITDA","net_debt_ebitda","x1"]])
     +scnSection("Efficiency",d,[["Asset Turnover","asset_turnover","x2"],["Inventory Turnover","inventory_turnover","x2"],["Receivable Days","receivable_days","d0"],["Cash Conv. Cycle","cash_conv_cycle","d0"],["Capex / Revenue","capex_to_revenue","p1"]])
     +scnSection("Per-Share",d,[["EPS","eps","rs2"],["Fwd EPS","eps_forward","rs2"],["Book Value","book_value","rs2"],["Cash / Share","cash_per_share","rs2"],["Revenue / Share","revenue_per_share","rs2"]])
     +scnSection("Size",d,[["Market Cap","market_cap_cr","cr"],["Enterprise Value","enterprise_value_cr","cr"],["Revenue","revenue_cr","cr"],["Net Profit","net_profit_cr","cr"],["EBITDA","ebitda_cr","cr"]])
@@ -1283,7 +1284,7 @@ function renderTable(){
 }
 
 function goPage(p){currentPage=Math.max(1,Math.min(p,Math.ceil(allResults.length/PAGE_SIZE)));renderTable();scrollTo(0,0);}
-function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}allResults.sort((a,b)=>((a[k]??-Infinity)-(b[k]??-Infinity))*sortDir);currentPage=1;renderTable();}
+function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}allResults.sort((a,b)=>{const av=a[k],bv=b[k];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;return(av-bv)*sortDir;});currentPage=1;renderTable();}
 
 function buildColPanel(){
   document.getElementById("colToggleGrid").innerHTML=COLUMNS.filter(c=>c.key!=="_actions"&&c.label).map(c=>`<label class="col-toggle-item"><input type="checkbox" ${c.visible?"checked":""} onchange="toggleCol('${c.key}',this.checked)"> ${c.label}</label>`).join("");

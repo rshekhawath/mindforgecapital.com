@@ -7,7 +7,7 @@
    • API (script.google.com / cross-origin): never touched — always live network,
      never cached (holdings/OTP must be fresh and are credential-bearing).
    ========================================================================== */
-var CACHE = 'mfc-app-v11';
+var CACHE = 'mfc-app-v13';
 var SHELL = [
   './', './index.html',
   './css/app.css',
@@ -39,7 +39,7 @@ self.addEventListener('fetch', function (e) {
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req).then(function (res) {
-        var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put('./index.html', copy); });
+        if (res && res.ok) { var copy = res.clone(); caches.open(CACHE).then(function (c) { c.put('./index.html', copy); }); }
         return res;
       }).catch(function () { return caches.match('./index.html').then(function (m) { return m || caches.match('./'); }); })
     );

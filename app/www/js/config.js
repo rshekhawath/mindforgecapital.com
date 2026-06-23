@@ -13,7 +13,7 @@ window.MFC_CONFIG = {
   SITE_URL: 'https://mindforgecapital.com',
   SCREENER_URL: 'https://mindforgecapital.com/screener/',
   SIGNUP_URL: 'https://mindforgecapital.com/signup.html',
-  WHATSAPP_URL: 'https://wa.me/919999999999', // TODO: confirm the real support number
+  WHATSAPP_URL: 'https://wa.me/917601032082', // MindForge support line (matches the website's 26 wa.me links)
 
   // Session
   SESSION_KEY: 'mfc_app_session_v1',

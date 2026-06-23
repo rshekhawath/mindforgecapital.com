@@ -14,6 +14,7 @@
   var currentToken = null;            // the subscription whose holdings we're viewing
   var holdingsCache = {};             // token -> {subscription, stocks} (for offline/back)
   var capital = 0;                    // allocation-calculator capital
+  var capitalCurr = '';               // currency capital was set for — reset when strategy currency changes
 
   // ── helpers ────────────────────────────────────────────────────────────────
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -353,7 +354,7 @@
     var nInd=Object.keys(industries).length;
     var dl=daysLeft(sub&&sub.expires_at);
     var anyNS=stocks.some(isNS), curr=anyNS?'₹':'$';
-    if(!capital)capital=curr==='₹'?1500000:20000;
+    if(!capital||capitalCurr!==curr){capital=curr==='₹'?1500000:20000;capitalCurr=curr;}
     var secCol=sectorColors(stocks);
     var maxW=Math.max.apply(null,stocks.map(function(s){return Number(s.weight_pct)||0;}).concat([1]));
     // Capital actually deployable once shares are whole numbers — the remainder is
@@ -431,7 +432,7 @@
         });});
         // capital calculator — re-render WITHOUT replaying entrance animations
         var capIn=document.getElementById('capIn');
-        function applyCap(v){capital=Math.max(0,Math.round(Number(String(v).replace(/[^0-9.]/g,''))||0));renderHoldings(token,sub,stocks,active,{skipFx:true});}
+        function applyCap(v){capital=Math.max(0,Math.round(Number(String(v).replace(/[^0-9.]/g,''))||0));capitalCurr=curr;renderHoldings(token,sub,stocks,active,{skipFx:true});}
         if(capIn){capIn.addEventListener('change',function(){applyCap(capIn.value);});}
         appEl.querySelectorAll('[data-cap]').forEach(function(p){p.addEventListener('click',function(){applyCap(p.getAttribute('data-cap'));});});
         // entrances: count up the stats + draw in the donut/legend (first render only)

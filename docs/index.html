@@ -3275,7 +3275,7 @@ textarea:focus-visible, select:focus-visible {
     if(d.data_date) dateEl.textContent=d.data_date;
     var html='';
     var nifty=(d.indices||{})['NIFTY 50'];
-    if(nifty){var up=(nifty.change||0)>=0;var prev=(Number(nifty.price)||0)-(Number(nifty.change)||0);var npct=(nifty.pct!=null&&!isNaN(nifty.pct))?Number(nifty.pct):(prev>0?(Number(nifty.change)||0)/prev*100:0);html+=cellHTML('Nifty 50',fmtN(nifty.price,2),(up?'▲ ':'▼ ')+fmtN(Math.abs(nifty.change),2)+' ('+(up?'+':'−')+Math.abs(npct).toFixed(2)+'%)',up?'up':'down');}
+    if(nifty){var ch=Number(nifty.change)||0;var up=ch>0;var flat=ch===0;var prev=(Number(nifty.price)||0)-ch;var npct=(nifty.pct!=null&&!isNaN(nifty.pct))?Number(nifty.pct):(prev>0?ch/prev*100:0);html+=cellHTML('Nifty 50',fmtN(nifty.price,2),(flat?'→ ':(up?'▲ ':'▼ '))+fmtN(Math.abs(ch),2)+' ('+(up||flat?'+':'−')+Math.abs(npct).toFixed(2)+'%)',up||flat?'up':'down');}
     var fii=(d.cash||{}).fii,dii=(d.cash||{}).dii;
     if(fii){var fp=(fii.net||0)>=0;html+=cellHTML('FII net',fmtCr(fii.net),fp?'Net buying':'Net selling',fp?'up':'down');}
     if(dii){var dp=(dii.net||0)>=0;html+=cellHTML('DII net',fmtCr(dii.net),dp?'Net buying':'Net selling',dp?'up':'down');}
@@ -3743,6 +3743,24 @@ textarea:focus-visible, select:focus-visible {
       mc: ['#1a50d8', '#2563eb'], sp: ['#0d9488', '#2dd4bf']
     };
     function pnum(s) { var v = parseFloat((s || '').replace(/[^0-9.\-]/g, '')); return isFinite(v) ? v : null; }
+    // Resolve a strategy figure robustly, independent of count-up timing. The
+    // rendered text holds the published value until the proof-num animator zeroes
+    // it for its roll-up — at which point the real figure lives in data-count (the
+    // V5.6 MFSTAT sync). So: prefer a non-zero rendered value, else fall back to
+    // data-count. (Under reduced-motion the animator no-ops and the text stays
+    // authoritative.) Fixes the hero tabs showing 0.0% CAGR / 0.00% benchmark when
+    // the capture ran after the cards had already been pre-zeroed.
+    function valNum(el) {
+      var t = pnum(el.textContent);
+      if (t != null && t !== 0) return t;
+      var dc = parseFloat(el.getAttribute('data-count'));
+      return isFinite(dc) ? dc : t;
+    }
+    function valTxt(el, v) {
+      if (v == null) return el.textContent.trim();
+      var dec = parseInt(el.getAttribute('data-decimals') || '1', 10);
+      return (el.getAttribute('data-prefix') || '') + v.toFixed(dec) + (el.getAttribute('data-suffix') || '%');
+    }
 
     // Capture original published figures from the strategy cards.
     var DATA = {};
@@ -3757,9 +3775,10 @@ textarea:focus-visible, select:focus-visible {
           break;
         }
       }
+      var cN = valNum(vals[0]), bN = valNum(vals[1]);
       DATA[key] = {
-        cagrTxt: vals[0].textContent.trim(), benchTxt: vals[1].textContent.trim(), alphaTxt: alphaTxt,
-        cagr: pnum(vals[0].textContent), bench: pnum(vals[1].textContent)
+        cagrTxt: valTxt(vals[0], cN), benchTxt: valTxt(vals[1], bN), alphaTxt: alphaTxt,
+        cagr: cN, bench: bN
       };
     });
     if (!DATA.mc) return;

@@ -143,7 +143,11 @@
       if (!chk(d, "market_cap_cr",   f.min_mcap,          f.max_mcap)) continue;
       if (!chk(d, "dividend_yield",  f.min_div,           null)) continue;
       if (!chk(d, "net_margin",      f.min_net_margin,    null)) continue;
-      if (!chk(d, "debt_to_equity",  null,                f.max_de)) continue;
+      // debt_to_equity is stored as a PERCENT (e.g. 36.65 = 0.37x), but the UI input
+      // and presets express the threshold as a ratio (0.3, 0.5, 1) — so scale the
+      // threshold ×100 to compare on the same scale. Without this the Low Debt /
+      // Compounders presets matched almost nothing.
+      if (!chk(d, "debt_to_equity",  null,                f.max_de == null ? null : f.max_de * 100)) continue;
       if (!chk(d, "current_ratio",   f.min_current_ratio, null)) continue;
       if (!chk(d, "revenue_growth",  f.min_rev_growth,    null)) continue;
       if (!chk(d, "earnings_growth", f.min_earn_growth,   null)) continue;
