@@ -475,8 +475,25 @@
       '<div class="sc-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div></a>';
   }
 
+  // Appearance segmented control (V15.6) — Auto / Light / Dark, mirroring iOS
+  // Settings. Reflects the stored preference; driven by window.MFCTheme (theme.js).
+  function appearanceSegHTML(){
+    var cur=(window.MFCTheme&&window.MFCTheme.get&&window.MFCTheme.get())||'auto';
+    var OPTS=[
+      {k:'auto', label:'Auto', icon:'<circle cx="12" cy="12" r="9"/><path d="M12 21a9 9 0 000-18" fill="currentColor" stroke="none"/>'},
+      {k:'light',label:'Light',icon:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.1 5.1l1.7 1.7M17.2 17.2l1.7 1.7M18.9 5.1l-1.7 1.7M6.8 17.2l-1.7 1.7"/>'},
+      {k:'dark', label:'Dark', icon:'<path d="M21 12.8A8.5 8.5 0 1111.2 3a6.6 6.6 0 009.8 9.8z"/>'}
+    ];
+    return '<div class="seg" id="appearanceSeg" role="group" aria-label="Appearance">'+
+      OPTS.map(function(o){
+        return '<button class="seg-btn'+(o.k===cur?' active':'')+'" data-theme-set="'+o.k+'" aria-pressed="'+(o.k===cur)+'">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+o.icon+'</svg>'+esc(o.label)+'</button>';
+      }).join('')+'</div>'+
+      '<p class="hint" style="margin-top:9px">Auto follows your device’s Light / Dark setting.</p>';
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
-  //  ACCOUNT  (profile · broker linking · sign out)
+  //  ACCOUNT  (profile · broker linking · appearance · sign out)
   // ════════════════════════════════════════════════════════════════════════════
   function viewAccount(){
     var sess=MFCStore.getSession()||{subscriptions:[]};
@@ -506,10 +523,23 @@
         '<a class="broker-opt" href="'+C.WHATSAPP_URL+'" target="_blank" rel="noopener"><div class="broker-logo" style="background:#25D366"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 20l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 018.5-8.5 8.38 8.38 0 018.5 8.5z"/></svg></div><div class="bo-body"><div class="bo-name">WhatsApp support</div><div class="bo-sub">Renewals, billing &amp; help</div></div></a>'+
         '<a class="broker-opt" href="'+C.SITE_URL+'/recover.html" target="_blank" rel="noopener"><div class="broker-logo" style="background:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7.5l9 6 9-6"/></svg></div><div class="bo-body"><div class="bo-name">Email me my dashboard links</div><div class="bo-sub">Recover web access</div></div></a>'+
 
+        '<div class="list-h"><span class="lt">Appearance</span></div>'+
+        appearanceSegHTML()+
+
         '<button class="btn btn-ghost" id="signOut" style="margin-top:20px;color:var(--red);border-color:rgba(220,38,38,.3)">Sign out</button>'+
         '<p class="hint" style="text-align:center;margin-top:16px">MindForge Capital · SEBI-registered Research Analyst<br>Research & education only · not investment advice</p>'+
       '</main>','account',function(){
         renderBrokerSection();
+        // Appearance — Auto / Light / Dark (persists via theme.js; recolours live)
+        var seg=document.getElementById('appearanceSeg');
+        if(seg)seg.querySelectorAll('[data-theme-set]').forEach(function(b){
+          b.addEventListener('click',function(){
+            var v=b.getAttribute('data-theme-set');
+            if(window.MFCTheme)window.MFCTheme.set(v);
+            seg.querySelectorAll('.seg-btn').forEach(function(x){var on=x===b;x.classList.toggle('active',on);x.setAttribute('aria-pressed',on);});
+            toast(v==='auto'?'Appearance · Auto':(v==='dark'?'Dark mode on':'Light mode on'));
+          });
+        });
         document.getElementById('signOut').addEventListener('click',function(){
           MFCStore.signOut();holdingsCache={};currentToken=null;toast('Signed out');location.hash='#/login';
         });

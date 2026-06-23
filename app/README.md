@@ -18,7 +18,7 @@ the **App Store / Play Store with Capacitor** — same code, native shell.
 | **Home** | "My Subscriptions" — every strategy they pay for, with live status. |
 | **Holdings** | This cycle's picks: weights, rec. price, allocation calculator (capital → ₹/qty per stock), sector-coloured pills, and a **Buy on \<broker\>** deeplink per pick. This is the dashboard, reframed as an app screen. |
 | **Scanner** | Opens the live Scanner + Integrity Score tools. |
-| **Account** | Profile, **broker linking**, subscriptions, support, sign out. |
+| **Account** | Profile, **broker linking**, subscriptions, support, **Appearance** (Auto / Light / Dark), sign out. |
 
 ### Broker linking (the headline ask) — two tiers, both shipped
 1. **Deeplink (works today, no credentials).** The member links Zerodha **Kite**,
@@ -71,7 +71,8 @@ app/
 │  ├─ index.html                app shell (CSP, PWA meta, safe-area viewport)
 │  ├─ manifest.webmanifest      installable PWA manifest
 │  ├─ sw.js                     service worker (cache-first shell, network API)
-│  ├─ css/app.css               brand-matched, mobile-first design system
+│  ├─ css/app.css               brand-matched, mobile-first design system (+ system-aware dark theme)
+│  ├─ js/theme.js               appearance manager (Auto/Light/Dark) — runs pre-paint, zero flash
 │  ├─ js/config.js              backend URL + broker config (the one place to edit)
 │  ├─ js/api.js                 Apps Script client (request_otp/verify_otp/stocks/prices)
 │  ├─ js/store.js               on-device session + broker prefs (tokens never in URL)
@@ -116,6 +117,9 @@ Edit **`www/js/config.js`**:
 
 - ✅ Installable PWA: login, subscriptions, holdings/dashboard, allocation calculator,
   scanner links, account, **deeplink broker linking** — all working against the live backend.
+- ✅ **System-aware dark mode** (V15.6): adapts to the device appearance and a member
+  **Appearance** control (Auto / Light / Dark) in Account; applied pre-paint (no flash),
+  persisted on-device, and follows the OS live while on Auto.
 - ✅ Capacitor-ready for App Store / Play Store (run `cap add ios|android`).
 - 🔌 Gated on credentials: Kite Connect live linking (api_key), SMS OTP (provider),
   real WhatsApp number. All wired — drop in the values to activate.

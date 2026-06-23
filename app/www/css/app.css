@@ -4,10 +4,18 @@
    feels native inside a Capacitor shell or an installed PWA.
    ========================================================================== */
 :root{
+  color-scheme:light;
   --accent:#1a50d8; --accent2:#2563eb; --accent3:#3b82f6; --teal:#0891b2; --mint:#2dd4bf;
   --green:#059669; --red:#dc2626; --gold:#d97706;
   --bg:#eef3fe; --card:#ffffff; --ink:#0c1831; --ink2:#1e3a5f; --ink3:#475569;
   --line:rgba(37,99,235,0.12); --line2:rgba(37,99,235,0.22);
+  /* Surface tokens — every "white-ish" hard-coded fill flows through these so a
+     single dark block (`:root[data-theme="dark"]`) can recolour the whole app. */
+  --field:#f4f8ff; --field-focus:#ffffff; --cell:#f5f8ff;
+  --appbar-bg:rgba(238,243,254,.86); --tabbar-bg:rgba(255,255,255,.92);
+  --toast-bg:#0c1831; --skeleton-a:#eaf0fe; --skeleton-b:#f4f8ff;
+  --glass:rgba(255,255,255,.72); --amber-ink:#92580a;
+  --track:rgba(37,99,235,.08); --dbg:rgba(37,99,235,.08);
   --grad:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);
   --r:16px; --r-sm:11px; --r-lg:22px;
   --ease:cubic-bezier(.22,.8,.2,1);
@@ -15,6 +23,27 @@
   --tabbar-h:62px;
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+
+/* ── DARK APPEARANCE ─────────────────────────────────────────────────────────
+   Applied when js/theme.js resolves the appearance to dark (system 'auto' on a
+   dark device, or the member pinned Dark in Account → Appearance). A deep,
+   brand-tinted navy — not flat black — so the blue→teal gradient identity reads
+   as *more* premium in the dark. Only variables change; every component inherits.
+   ────────────────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --accent:#6aa1ff; --accent2:#5b9dff; --accent3:#7db0ff; --teal:#22c3e6; --mint:#2dd4bf;
+  --green:#34d399; --red:#f87171; --gold:#fbbf24;
+  --bg:#0a1020; --card:#131d34; --ink:#eef3fc; --ink2:#bcccea; --ink3:#8595b6;
+  --line:rgba(125,160,240,0.14); --line2:rgba(125,160,240,0.24);
+  --field:rgba(255,255,255,.05); --field-focus:#17223c; --cell:rgba(255,255,255,.045);
+  --appbar-bg:rgba(10,16,32,.72); --tabbar-bg:rgba(15,22,40,.82);
+  --toast-bg:#283452; --skeleton-a:#16203a; --skeleton-b:#202c49;
+  --glass:rgba(255,255,255,.06); --amber-ink:#fcd34d;
+  --track:rgba(255,255,255,.09); --dbg:rgba(255,255,255,.08);
+  --grad:linear-gradient(135deg,#3b82f6 0%,#2563eb 46%,#0891b2 100%);
+  --shadow:0 1px 2px rgba(0,0,0,.45),0 18px 44px -22px rgba(0,0,0,.72);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:rgba(26,80,216,.10);}
 html,body{height:100%;}
@@ -37,7 +66,7 @@ button{font-family:inherit;cursor:pointer;}
 
 /* top app bar */
 .appbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;
-  padding:calc(var(--safe-top) + 10px) 16px 10px;background:rgba(238,243,254,.86);backdrop-filter:blur(16px);
+  padding:calc(var(--safe-top) + 10px) 16px 10px;background:var(--appbar-bg);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
   border-bottom:.5px solid var(--line2);}
 .appbar .logo{display:flex;align-items:center;gap:8px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display';font-weight:800;font-size:16px;}
 .appbar .logo img{width:24px;height:24px;border-radius:7px;}
@@ -79,8 +108,8 @@ button{font-family:inherit;cursor:pointer;}
 /* ── Inputs / OTP ─────────────────────────────────────────────────────────── */
 .field{margin-bottom:14px;}
 .field label{display:block;font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:7px;}
-.input{width:100%;background:#f4f8ff;border:1.5px solid var(--line2);border-radius:13px;padding:14px 15px;font-size:16px;color:var(--ink);transition:border-color .15s,background .15s,box-shadow .15s;}
-.input:focus{outline:none;border-color:var(--accent2);background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.12);}
+.input{width:100%;background:var(--field);border:1.5px solid var(--line2);border-radius:13px;padding:14px 15px;font-size:16px;color:var(--ink);transition:border-color .15s,background .15s,box-shadow .15s;}
+.input:focus{outline:none;border-color:var(--accent2);background:var(--field-focus);box-shadow:0 0 0 4px rgba(37,99,235,.12);}
 .otp-inputs{display:flex;gap:9px;justify-content:space-between;}
 .otp-inputs input{flex:1;min-width:0;text-align:center;font-size:24px;font-weight:800;padding:13px 0;letter-spacing:0;font-variant-numeric:tabular-nums;}
 .hint{font-size:12.5px;color:var(--ink3);margin-top:8px;line-height:1.45;}
@@ -112,11 +141,11 @@ button{font-family:inherit;cursor:pointer;}
 .h-sec{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);background:rgba(37,99,235,.05);border:.5px solid var(--line);border-radius:999px;padding:2px 9px;margin-top:7px;}
 .h-sec .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1.5px rgba(255,255,255,.6);}
 .h-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
-.h-cell{background:#f5f8ff;border-radius:10px;padding:8px 10px;}
+.h-cell{background:var(--cell);border-radius:10px;padding:8px 10px;}
 .h-cell .k{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);}
 .h-cell .v{font-size:15px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
 .h-cell .v.accent{color:var(--accent2);}
-.h-bar{height:5px;border-radius:4px;background:rgba(37,99,235,.08);margin-top:11px;overflow:hidden;}
+.h-bar{height:5px;border-radius:4px;background:var(--track);margin-top:11px;overflow:hidden;}
 .h-bar>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent3));width:0;transition:width .9s var(--ease);}
 .h-buy{margin-top:11px;display:flex;gap:9px;align-items:center;}
 .h-buy .btn{flex:1;}
@@ -142,7 +171,7 @@ button{font-family:inherit;cursor:pointer;}
 
 /* ── Bottom tab bar ───────────────────────────────────────────────────────── */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;height:calc(var(--tabbar-h) + var(--safe-bottom));
-  padding-bottom:var(--safe-bottom);display:flex;background:rgba(255,255,255,.92);backdrop-filter:blur(18px);
+  padding-bottom:var(--safe-bottom);display:flex;background:var(--tabbar-bg);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
   border-top:.5px solid var(--line2);box-shadow:0 -6px 24px -18px rgba(26,80,216,.5);}
 .tabbar.hidden{display:none;}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink3);font-size:10.5px;font-weight:700;background:none;border:none;position:relative;transition:color .15s;}
@@ -154,13 +183,13 @@ button{font-family:inherit;cursor:pointer;}
 .spinner{width:34px;height:34px;border:3px solid rgba(37,99,235,.18);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:30px auto;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .btn .spinner{width:18px;height:18px;border-width:2.5px;margin:0;border-top-color:#fff;border-color:rgba(255,255,255,.4);}
-.skeleton{background:linear-gradient(90deg,#eaf0fe 25%,#f4f8ff 37%,#eaf0fe 63%);background-size:400% 100%;animation:sk 1.3s ease infinite;border-radius:10px;}
+.skeleton{background:linear-gradient(90deg,var(--skeleton-a) 25%,var(--skeleton-b) 37%,var(--skeleton-a) 63%);background-size:400% 100%;animation:sk 1.3s ease infinite;border-radius:10px;}
 @keyframes sk{0%{background-position:100% 0;}100%{background-position:0 0;}}
 .empty{text-align:center;padding:40px 18px;color:var(--ink3);}
 .empty .ico{font-size:40px;margin-bottom:10px;}
 .empty h4{color:var(--ink2);font-size:17px;margin-bottom:6px;}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabbar-h) + var(--safe-bottom) + 16px);transform:translateX(-50%) translateY(20px);
-  background:var(--ink);color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:13px;box-shadow:0 14px 34px -12px rgba(0,0,0,.5);
+  background:var(--toast-bg);color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:13px;box-shadow:0 14px 34px -12px rgba(0,0,0,.5);
   z-index:60;opacity:0;transition:opacity .25s,transform .25s var(--ease);max-width:88%;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.err{background:#7f1d1d;}
@@ -181,7 +210,7 @@ button{font-family:inherit;cursor:pointer;}
 .list-h .lt{font-size:18px;font-weight:800;}
 .list-h .ls{font-size:12px;color:var(--ink3);}
 .note{font-size:12px;color:var(--ink3);line-height:1.5;background:rgba(37,99,235,.05);border:.5px solid var(--line);border-radius:12px;padding:11px 13px;}
-.note.amber{background:rgba(217,119,6,.07);border-color:rgba(217,119,6,.2);color:#92580a;}
+.note.amber{background:rgba(217,119,6,.07);border-color:rgba(217,119,6,.2);color:var(--amber-ink);}
 
 /* ════════════════════════════════════════════════════════════════════════════
    V11.9 — world-class polish. Ports the website's premium design language to the
@@ -234,7 +263,7 @@ button{font-family:inherit;cursor:pointer;}
 .alloc-body{display:grid;grid-template-columns:124px 1fr;gap:16px;align-items:center;margin-top:10px;}
 .donut-wrap{position:relative;width:124px;height:124px;}
 .donut{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 8px 18px rgba(26,80,216,.14));}
-.donut .dbg{stroke:rgba(37,99,235,.08);}
+.donut .dbg{stroke:var(--dbg);}
 .dslice{stroke-dashoffset:0;stroke-linecap:butt;transform-box:fill-box;transform-origin:center;}
 .alloc-card.fx .dslice{animation:dsliceIn .8s var(--ease) both;}
 @keyframes dsliceIn{from{stroke-dashoffset:var(--len);}to{stroke-dashoffset:0;}}
@@ -346,7 +375,7 @@ html,body{overflow-x:clip;}
 
 /* 3) HOLDINGS — capital deployment meter */
 .deploy{margin-top:13px;padding-top:13px;border-top:.5px solid var(--line);}
-.deploy-bar{height:9px;border-radius:5px;background:rgba(37,99,235,.10);overflow:hidden;}
+.deploy-bar{height:9px;border-radius:5px;background:var(--track);overflow:hidden;}
 .deploy-bar>i{display:block;height:100%;border-radius:5px;width:0;
   background:linear-gradient(90deg,var(--accent),var(--mint));transition:width .8s var(--ease);}
 .deploy-meta{display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:12px;color:var(--ink3);flex-wrap:wrap;}
@@ -363,7 +392,7 @@ html,body{overflow-x:clip;}
 /* 5) LOGIN — trust strip */
 .trust-strip{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px;}
 .trust{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--ink2);
-  background:rgba(255,255,255,.72);border:.5px solid var(--line2);border-radius:999px;padding:7px 12px;
+  background:var(--glass);border:.5px solid var(--line2);border-radius:999px;padding:7px 12px;
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 16px -12px rgba(26,80,216,.55);}
 .trust svg{width:13px;height:13px;color:var(--accent);flex-shrink:0;}
 
@@ -533,7 +562,7 @@ html,body{overflow-x:clip;}
 
 /* 2) OTP — light up each digit as it's filled; stronger ring on the active box */
 .otp-inputs input{transition:border-color .15s,background .15s,box-shadow .18s,color .15s,transform .12s var(--ease);}
-.otp-inputs input.filled{border-color:var(--accent2);background:#fff;color:var(--ink);
+.otp-inputs input.filled{border-color:var(--accent2);background:var(--field-focus);color:var(--ink);
   box-shadow:0 0 0 3px rgba(37,99,235,.12),0 6px 16px -10px rgba(26,80,216,.5);}
 .otp-inputs input:focus{box-shadow:0 0 0 4px rgba(37,99,235,.18);}
 @media(prefers-reduced-motion:no-preference){
@@ -654,3 +683,53 @@ html,body{overflow-x:clip;}
 @media(prefers-reduced-motion:reduce){
   .screen.intro > *,.tiles-in > .tile,.tiles-in > .tile::after,.gradtext{animation:none!important;}
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V15.6 — SYSTEM-AWARE DARK MODE + APPEARANCE CONTROL
+   ----------------------------------------------------------------------------
+   The app now adapts to the device appearance (the iOS/Android default) and lets
+   the member pin Auto / Light / Dark from Account → Appearance. The recolour is
+   driven entirely by the `:root[data-theme="dark"]` token block near the top of
+   this file; the pieces below are the new Appearance control + a handful of
+   dark-only finishing touches so the brand's blue→teal identity reads as premium
+   on a deep navy. Reduced-motion-safe; no layout change, no horizontal overflow.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) APPEARANCE — iOS-style segmented control (Auto · Light · Dark) */
+.seg{display:flex;gap:4px;background:var(--track);border:.5px solid var(--line2);
+  border-radius:14px;padding:4px;-webkit-tap-highlight-color:transparent;}
+.seg-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:none;background:transparent;color:var(--ink2);font-weight:700;font-size:13.5px;
+  padding:9px 0;border-radius:10px;transition:background .2s var(--ease),color .2s ease,transform .12s var(--ease);}
+.seg-btn svg{width:15px;height:15px;flex-shrink:0;}
+.seg-btn:active{transform:scale(.96);}
+.seg-btn.active{background:var(--card);color:var(--accent);
+  box-shadow:0 2px 8px -3px rgba(12,24,49,.22),inset 0 1px 0 rgba(255,255,255,.10);}
+@media(prefers-reduced-motion:reduce){.seg-btn{transition:none!important;}.seg-btn:active{transform:none!important;}}
+
+/* 2) DARK-ONLY FINISHING TOUCHES — keep the premium feel on a deep navy.
+   Cards/holdings/tiles gain a faint top-edge highlight so they read as raised
+   glass (Apple's elevated-material look), and the ambient brand orbs glow a
+   touch warmer against the dark backdrop. */
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .tile,
+:root[data-theme="dark"] .holding,
+:root[data-theme="dark"] .sub-card,
+:root[data-theme="dark"] .broker-opt{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);}
+:root[data-theme="dark"] body::before{
+  background:
+    radial-gradient(460px 460px at 88% 2%,  rgba(45,212,191,.16) 0%, transparent 70%),
+    radial-gradient(420px 420px at 1% 88%,  rgba(59,130,246,.18) 0%, transparent 70%),
+    radial-gradient(340px 360px at 52% 116%, rgba(8,145,178,.12) 0%, transparent 72%);
+}
+/* the OTP / capital inputs keep a legible focus ring on dark */
+:root[data-theme="dark"] .input:focus{box-shadow:0 0 0 4px rgba(91,157,255,.20);}
+:root[data-theme="dark"] .otp-inputs input.filled{box-shadow:0 0 0 3px rgba(91,157,255,.20),0 6px 16px -10px rgba(0,0,0,.6);}
+/* the login / app-bar logo is a white-tile PNG — soften its edge into the dark */
+:root[data-theme="dark"] .login-logo,
+:root[data-theme="dark"] .appbar .logo img{box-shadow:0 8px 22px -12px rgba(0,0,0,.7);}
+/* sector dots/swatches carry a bright white ring tuned for light cards; on dark
+   that reads radio-button-ish — soften it so the colour reads, not the halo. */
+:root[data-theme="dark"] .h-sec .dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.16);}
+:root[data-theme="dark"] .leg-sw,
+:root[data-theme="dark"] .dep-dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.18);}
