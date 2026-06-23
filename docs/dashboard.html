@@ -1306,6 +1306,11 @@ footer p {
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
           Rebalance: <strong id="rebalance-date">Monthly</strong>
         </div>
+        <!-- V15.3: data-freshness chip — surfaced from the auto-refresh (15:45 + 23:59 IST). -->
+        <div class="meta-pill mp-fresh" id="pill-fresh" title="Data is auto-refreshed twice every market day at 3:45 PM and 11:59 PM IST." style="display:none">
+          <span class="dot-green mp-fresh-dot" aria-hidden="true"></span>
+          Data <strong id="fresh-when">refreshed</strong>
+        </div>
       </div>
     </div>
 
@@ -3054,13 +3059,19 @@ function _animatePct(el, target){
   })(performance.now());
 }
 function paintLivePrices(){
+  // V15.3 fix: the per-row % must use the SAME rec_price that's shown in the
+  // cell, or the displayed prices and the displayed % drift apart for stocks
+  // held across rebalances (where the V14.5 month-anchor baseline ≠ rec_price).
+  // The portfolio HEADLINE keeps its month-anchor (renderProfitHeadline) —
+  // that's a different question (SIP-style "since this month's rebalance").
+  // Per-row answers "this position's return since we recommended it"; both
+  // make sense and now both are internally consistent in their own scope.
   var px = window._livePx || {};
   document.querySelectorAll('.px-live').forEach(function(el){
     var y = el.getAttribute('data-px'); var rec = Number(el.getAttribute('data-rec')) || 0; var curr = el.getAttribute('data-curr') || '₹';
     var p = px[y];
-    var base = _baseFor(y, rec);
-    if (!p || !base){ el.innerHTML = '—'; return; }
-    var live = p.price; var r = _retPct(base, live);
+    if (!p || !rec){ el.innerHTML = '—'; return; }
+    var live = p.price; var r = _retPct(rec, live);
     var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
     el.innerHTML = curr + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
   });
@@ -3123,6 +3134,24 @@ function renderProfitHeadline(){
   }
 }
 
+// V15.3: data-freshness chip — reads the auto-refresh timestamp from fii-dii.json
+// (smaller payload than stocks.json; updated by the same launchd job). Fails silently
+// if the file isn't reachable.
+(function(){
+  var pill=document.getElementById('pill-fresh'),when=document.getElementById('fresh-when');
+  if(!pill||!when)return;
+  fetch('/fii-dii/fii-dii.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+    if(!d||!d.generated_at)return;
+    var t=new Date(d.generated_at); if(isNaN(t))return;
+    var mins=Math.max(0,Math.round((Date.now()-t.getTime())/60000));
+    var label;
+    if(mins<60) label=mins+'m ago';
+    else if(mins<60*24){ var h=Math.round(mins/60); label=h+'h ago'; }
+    else label=t.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    when.textContent='refreshed '+label;
+    pill.style.display='';
+  }).catch(function(){});
+})();
 init();
 </script>
 <script>

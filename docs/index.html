@@ -3223,6 +3223,69 @@ textarea:focus-visible, select:focus-visible {
   </div>
 </section>
 
+<!-- V15.3: MARKET PULSE — live, lightweight; uses the auto-refreshed fii-dii.json -->
+<section class="mp-section">
+  <div class="container">
+    <a class="mp-card" id="mpCard" href="/fii-dii/" style="display:none">
+      <div class="mp-head">
+        <span class="mp-eyebrow"><span class="mp-pulse-dot"></span>Today's market pulse</span>
+        <span class="mp-date" id="mpDate"></span>
+      </div>
+      <div class="mp-grid" id="mpGrid"></div>
+      <div class="mp-foot">See the full FII / DII activity report <span class="mp-arrow">→</span></div>
+    </a>
+  </div>
+</section>
+<style>
+.mp-section{padding:8px 0 0;position:relative;z-index:1}
+.mp-card{display:block;background:rgba(255,255,255,0.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:0.5px solid rgba(37,99,235,0.16);border-radius:16px;padding:18px 22px;text-decoration:none;color:inherit;box-shadow:0 1px 2px rgba(15,23,42,0.04),0 12px 28px -18px rgba(26,80,216,0.22);transition:transform 0.25s cubic-bezier(.22,.8,.2,1),box-shadow 0.25s ease,border-color 0.2s ease;position:relative;overflow:hidden}
+.mp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf);opacity:0;transition:opacity 0.25s}
+.mp-card:hover{transform:translateY(-2px);box-shadow:0 16px 38px -18px rgba(26,80,216,0.32);border-color:rgba(37,99,235,0.32)}
+.mp-card:hover::before{opacity:1}
+.mp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.mp-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#1a50d8}
+.mp-pulse-dot{width:7px;height:7px;border-radius:50%;background:#059669;box-shadow:0 0 0 0 rgba(5,150,105,0.5);animation:mp-pulse 2.2s infinite}
+@keyframes mp-pulse{0%{box-shadow:0 0 0 0 rgba(5,150,105,0.45)}70%{box-shadow:0 0 0 7px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
+.mp-date{font-size:12px;color:#475569;font-weight:600}
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px;margin-bottom:12px}
+.mp-cell{display:flex;flex-direction:column;gap:3px;padding-left:11px;border-left:2px solid rgba(37,99,235,0.18)}
+.mp-cell.mp-up{border-left-color:#059669}
+.mp-cell.mp-down{border-left-color:#dc2626}
+.mp-k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#475569}
+.mp-v{font-size:19px;font-weight:800;color:#0c1831;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1}
+.mp-chg{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.mp-up .mp-chg,.mp-up .mp-v.mp-tint{color:#059669}
+.mp-down .mp-chg,.mp-down .mp-v.mp-tint{color:#dc2626}
+.mp-foot{font-size:13px;font-weight:600;color:#1a50d8;display:flex;align-items:center;gap:6px}
+.mp-arrow{transition:transform 0.25s}
+.mp-card:hover .mp-arrow{transform:translateX(4px)}
+@media(max-width:600px){.mp-card{padding:16px 18px}.mp-v{font-size:17px}.mp-grid{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){.mp-pulse-dot{animation:none}.mp-card,.mp-arrow{transition:none}}
+</style>
+<script>
+// V15.3 Market Pulse — async, fails silently if fii-dii.json isn't reachable.
+(function(){
+  var card=document.getElementById('mpCard');if(!card)return;
+  function fmtN(v,d){return Number(v).toLocaleString('en-IN',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});}
+  function fmtCr(v){if(v==null||isNaN(v))return '—';var s=v>=0?'+':'−';return s+'₹'+fmtN(Math.abs(Math.round(v)))+' cr';}
+  function cellHTML(label,val,sub,tone){return '<div class="mp-cell mp-'+tone+'"><span class="mp-k">'+label+'</span><span class="mp-v mp-tint">'+val+'</span><span class="mp-chg">'+sub+'</span></div>';}
+  fetch('/fii-dii/fii-dii.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+    if(!d)return;
+    var dateEl=document.getElementById('mpDate'),grid=document.getElementById('mpGrid');
+    if(d.data_date) dateEl.textContent=d.data_date;
+    var html='';
+    var nifty=(d.indices||{})['NIFTY 50'];
+    if(nifty){var up=(nifty.change||0)>=0;html+=cellHTML('Nifty 50',fmtN(nifty.price,2),(up?'▲ ':'▼ ')+fmtN(Math.abs(nifty.change),2)+' ('+(up?'+':'−')+Math.abs(nifty.pct).toFixed(2)+'%)',up?'up':'down');}
+    var fii=(d.cash||{}).fii,dii=(d.cash||{}).dii;
+    if(fii){var fp=(fii.net||0)>=0;html+=cellHTML('FII net',fmtCr(fii.net),fp?'Net buying':'Net selling',fp?'up':'down');}
+    if(dii){var dp=(dii.net||0)>=0;html+=cellHTML('DII net',fmtCr(dii.net),dp?'Net buying':'Net selling',dp?'up':'down');}
+    if(!html)return;
+    grid.innerHTML=html;
+    card.style.display='block';
+  }).catch(function(){});
+})();
+</script>
+
 <!-- SOCIAL PROOF STRIP -->
 <section class="social-proof">
   <div class="container">
