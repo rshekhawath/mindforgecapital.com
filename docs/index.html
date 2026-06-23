@@ -3275,7 +3275,7 @@ textarea:focus-visible, select:focus-visible {
     if(d.data_date) dateEl.textContent=d.data_date;
     var html='';
     var nifty=(d.indices||{})['NIFTY 50'];
-    if(nifty){var up=(nifty.change||0)>=0;html+=cellHTML('Nifty 50',fmtN(nifty.price,2),(up?'▲ ':'▼ ')+fmtN(Math.abs(nifty.change),2)+' ('+(up?'+':'−')+Math.abs(nifty.pct).toFixed(2)+'%)',up?'up':'down');}
+    if(nifty){var up=(nifty.change||0)>=0;var prev=(Number(nifty.price)||0)-(Number(nifty.change)||0);var npct=(nifty.pct!=null&&!isNaN(nifty.pct))?Number(nifty.pct):(prev>0?(Number(nifty.change)||0)/prev*100:0);html+=cellHTML('Nifty 50',fmtN(nifty.price,2),(up?'▲ ':'▼ ')+fmtN(Math.abs(nifty.change),2)+' ('+(up?'+':'−')+Math.abs(npct).toFixed(2)+'%)',up?'up':'down');}
     var fii=(d.cash||{}).fii,dii=(d.cash||{}).dii;
     if(fii){var fp=(fii.net||0)>=0;html+=cellHTML('FII net',fmtCr(fii.net),fp?'Net buying':'Net selling',fp?'up':'down');}
     if(dii){var dp=(dii.net||0)>=0;html+=cellHTML('DII net',fmtCr(dii.net),dp?'Net buying':'Net selling',dp?'up':'down');}

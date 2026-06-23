@@ -3142,7 +3142,10 @@ function renderProfitHeadline(){
   if(!pill||!when)return;
   fetch('/fii-dii/fii-dii.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
     if(!d||!d.generated_at)return;
-    var t=new Date(d.generated_at); if(isNaN(t))return;
+    // generated_at is written in IST without a TZ designator; pin it to +05:30
+    // so the "Xm ago" is correct for viewers in any timezone (no-op for IST).
+    var ga=String(d.generated_at); if(!/(?:[zZ]|[+-]\d\d:?\d\d)$/.test(ga)) ga+='+05:30';
+    var t=new Date(ga); if(isNaN(t))return;
     var mins=Math.max(0,Math.round((Date.now()-t.getTime())/60000));
     var label;
     if(mins<60) label=mins+'m ago';
