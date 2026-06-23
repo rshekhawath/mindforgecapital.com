@@ -147,6 +147,8 @@ function doGet(e) {
       return handleRequestOTP(e.parameter.email);
     } else if (action === 'verify_otp') {
       return handleVerifyOTP(e.parameter.email, e.parameter.otp);
+    } else if (action === 'set_notify') {
+      return handleSetNotify(e.parameter.token, e.parameter.on);
     } else {
       return ContentService.createTextOutput(JSON.stringify({
         status: 'error',
@@ -586,7 +588,8 @@ function handleGetStocks(token) {
         expires_at: subData[i][7],
         payment_id: subData[i][8],
         status: subData[i][9],
-        duration_months: parseInt(subData[i][10], 10) || 1
+        duration_months: parseInt(subData[i][10], 10) || 1,
+        notify: String(subData[i][11] || '').toLowerCase().trim()   // L: rebalance-notify flag (V15.5: exposed so the dashboard toggle can restore its state)
       };
       break;
     }
@@ -640,6 +643,34 @@ function handleGetStocks(token) {
     subscription: subscription,
     stocks: stocks
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// V15.5: arm / disarm the per-subscriber rebalance-notification flag (subscriptions
+// sheet col L) from the member dashboard's toggle. The token is the subscriber's
+// own secret, so it authorises this write. notifyRebalance() (item 11) reads col L
+// on every publish, so flipping it here is what actually makes the toggle start (or
+// stop) the "next month's picks are live" email — closing the loop the dashboard
+// toggle previously left open (it only wrote localStorage).
+function handleSetNotify(token, on) {
+  if (!token) return errorResponse('No token provided');
+  const want = (String(on) === '1' || String(on).toLowerCase() === 'on' || String(on).toLowerCase() === 'true') ? 'on' : 'off';
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(8000); } catch (e) {}
+  try {
+    const sheet = getSheet('subscriptions');
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === token) {
+        sheet.getRange(i + 1, 12).setValue(want);   // col L (1-based 12) = notify flag
+        return ContentService.createTextOutput(JSON.stringify({
+          status: 'ok', notify: want
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return errorResponse('Subscription not found');
+  } finally {
+    try { lock.releaseLock(); } catch (e) {}
+  }
 }
 
 function handleGetPrices(tickers) {

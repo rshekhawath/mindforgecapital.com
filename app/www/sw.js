@@ -7,11 +7,11 @@
    • API (script.google.com / cross-origin): never touched — always live network,
      never cached (holdings/OTP must be fresh and are credential-bearing).
    ========================================================================== */
-var CACHE = 'mfc-app-v5';
+var CACHE = 'mfc-app-v10';
 var SHELL = [
   './', './index.html',
   './css/app.css',
-  './js/config.js', './js/api.js', './js/store.js', './js/brokers.js', './js/demo.js', './js/app.js',
+  './js/config.js', './js/api.js', './js/store.js', './js/brokers.js', './js/demo.js', './js/enhance.js', './js/app.js',
   './manifest.webmanifest',
   './assets/favicon-192.png', './assets/apple-touch-icon.png'
 ];

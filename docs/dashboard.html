@@ -2016,6 +2016,10 @@ function renderDashboard(sub, stocks) {
     window._mfMarketTimer = setInterval(updateMarketStatus, 60000);
   }
 
+  // V15.5: restore the saved rebalance-notification preference (server flag wins,
+  // localStorage fallback) so the toggle no longer resets to OFF on refresh.
+  restoreNotifState();
+
   // Reveal fade-up entrance
   requestAnimationFrame(() => {
     document.querySelectorAll('.fade-up').forEach((el, i) => {
@@ -2776,30 +2780,88 @@ function exportCSV() {
 }
 
 // ── NOTIFICATION PREFERENCES ──
+// V15.5 fix: the rebalance-notification toggle used to reset to OFF on every
+// refresh (nothing read the saved preference back on load) and the choice never
+// reached the server, so the toggle could not actually arm the backend's
+// notifyRebalance() emails. We now (a) persist the preference and RESTORE it on
+// load — preferring the server's notify flag (subscription.notify, exposed by
+// apps_script.gs handleGetStocks) and falling back to localStorage so the UI
+// state survives a refresh even before the backend redeploy lands — and
+// (b) register the choice server-side via ?action=set_notify so the flag the
+// publish flow reads (subscriptions sheet, col L) actually flips.
 var _notifOn = false;
-function toggleNotif() {
-  _notifOn = !_notifOn;
-  const sw = document.getElementById('notif-switch');
-  const lbl = document.getElementById('notif-label');
-  const row = document.getElementById('notif-email-row');
+function _notifKey() { return 'mfc_notif_' + (token || (isDemo ? 'demo' : 'anon')); }
+function _loadNotifPref() {
+  try { var raw = localStorage.getItem(_notifKey()); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function _saveNotifPref(on, email) {
+  try { localStorage.setItem(_notifKey(), JSON.stringify({ on: !!on, email: email || '', savedAt: new Date().toISOString() })); } catch (e) {}
+}
+// Fire-and-forget server registration. The token is the per-subscriber secret, so
+// it authorises the write. Non-fatal: if the deployed backend predates this
+// action it returns "Invalid action" and we keep the local preference (the
+// toggle still persists across refresh); once apps_script.gs is redeployed the
+// flag flips server-side and notifyRebalance() emails the subscriber.
+function _registerNotif(on, email) {
+  if (isDemo || !token) return;
+  try {
+    var url = APPS_SCRIPT_URL + '?action=set_notify&token=' + encodeURIComponent(token) +
+              '&on=' + (on ? '1' : '0') + (email ? '&email=' + encodeURIComponent(email) : '') +
+              '&_=' + Date.now();
+    fetch(url).catch(function () {});
+  } catch (e) {}
+}
+function _setNotifUI(on, email) {
+  _notifOn = !!on;
+  var sw = document.getElementById('notif-switch');
+  var lbl = document.getElementById('notif-label');
+  var row = document.getElementById('notif-email-row');
+  var ok = document.getElementById('notif-success');
+  var input = document.getElementById('notif-email-input');
+  if (!sw) return;
+  if (email && input) input.value = email;
   if (_notifOn) {
-    sw.classList.add('on');
-    lbl.textContent = 'On';
-    row.style.display = 'flex';
-    const sub = window._currentSub;
-    if (sub && sub.email) document.getElementById('notif-email-input').value = sub.email;
+    sw.classList.add('on'); lbl.textContent = 'On';
+    if (row) row.style.display = 'flex';
+    if (ok) ok.style.display = 'block';
   } else {
-    sw.classList.remove('on');
-    lbl.textContent = 'Off';
-    row.style.display = 'none';
-    document.getElementById('notif-success').style.display = 'none';
+    sw.classList.remove('on'); lbl.textContent = 'Off';
+    if (row) row.style.display = 'none';
+    if (ok) ok.style.display = 'none';
+  }
+}
+// Called from renderDashboard() once we know the subscription. Server flag wins
+// when present; otherwise fall back to the locally-saved preference.
+function restoreNotifState() {
+  var sub = window._currentSub || {};
+  var serverDefined = typeof sub.notify !== 'undefined' && sub.notify !== null && sub.notify !== '';
+  var pref = _loadNotifPref();
+  var on = serverDefined ? (String(sub.notify).toLowerCase() === 'on') : !!(pref && pref.on);
+  var email = (pref && pref.email) || sub.email || '';
+  if (serverDefined) _saveNotifPref(on, email);   // keep the device cache in sync with the server
+  _setNotifUI(on, email);
+}
+function toggleNotif() {
+  var turningOn = !_notifOn;
+  var sub = window._currentSub || {};
+  var pref = _loadNotifPref();
+  var email = (pref && pref.email) || sub.email || '';
+  _setNotifUI(turningOn, email);
+  // "If a user has switched it on, save it as a preference" — persist + register
+  // immediately on toggle (defaulting to the account email), so a refresh keeps
+  // it on even if the member never opens the confirm-email row.
+  _saveNotifPref(turningOn, email);
+  _registerNotif(turningOn, email);
+  if (turningOn) {
+    var input = document.getElementById('notif-email-input');
+    if (input) input.focus();
   }
 }
 function saveNotifPref() {
-  const input = document.getElementById('notif-email-input');
-  const email = input.value.trim();
+  var input = document.getElementById('notif-email-input');
+  var email = input.value.trim();
   // Lightweight format check: something@something.tld
-  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  var isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   if (!isValid) {
     input.style.borderColor = 'var(--red)';
     input.focus();
@@ -2807,9 +2869,9 @@ function saveNotifPref() {
     return;
   }
   input.style.borderColor = '';
-  if (token) {
-    localStorage.setItem('mfc_notif_' + token, JSON.stringify({ email, on: true, savedAt: new Date().toISOString() }));
-  }
+  _notifOn = true;
+  _saveNotifPref(true, email);
+  _registerNotif(true, email);
   document.getElementById('notif-email-row').style.display = 'none';
   document.getElementById('notif-success').style.display = 'block';
   showToast('Notifications saved');

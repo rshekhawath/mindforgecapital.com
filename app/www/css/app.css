@@ -166,7 +166,7 @@ button{font-family:inherit;cursor:pointer;}
 .toast.err{background:#7f1d1d;}
 
 /* offline banner */
-.offline{position:fixed;top:0;left:0;right:0;z-index:70;background:#7f1d1d;color:#fff;font-size:12.5px;font-weight:700;text-align:center;padding:calc(var(--safe-top) + 7px) 12px 7px;transform:translateY(-100%);transition:transform .3s var(--ease);}
+.offline{position:fixed;top:0;left:0;right:0;z-index:70;background:#7f1d1d;color:#fff;font-size:12.5px;font-weight:700;text-align:center;padding:calc(var(--safe-top) + 7px) 12px 7px;transform:translateY(-105%);transition:transform .3s var(--ease);}
 .offline.show{transform:none;}
 
 /* reveal */
@@ -256,4 +256,401 @@ button{font-family:inherit;cursor:pointer;}
   .btn-primary:active::after,.tab.active::before,.badge-active .dot::after,
   .alloc-card.fx .dslice,.alloc-card.fx .leg-row{animation:none!important;}
   .h-bar>i::after{display:none;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V13.1 — "LIVING LIGHT" · ports the website's V13.0 premium atmosphere to the
+   app. Three additive, reduced-motion-safe touches:
+     1) a slowly drifting ambient backdrop (soft brand orbs) behind every screen;
+     2) a touch-spotlight gloss that follows your finger on primary CTAs;
+     3) flowing brand-gradient accents on card/tile rails.
+   Everything sits behind the content, is pointer-inert, and freezes for users
+   who prefer reduced motion. No layout, no horizontal overflow.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) LIVING AMBIENT BACKDROP — three soft brand orbs drift behind all content.
+   Fixed + pointer-inert + below #app (z-index 0). The existing per-screen
+   header glow (.screen::before) layers on top for depth. */
+body::before{
+  content:'';position:fixed;inset:-8%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(440px 440px at 88% 3%,  rgba(45,212,191,.13) 0%, transparent 70%),
+    radial-gradient(400px 400px at 2% 86%,  rgba(37,99,235,.12) 0%, transparent 70%),
+    radial-gradient(320px 340px at 52% 116%, rgba(8,145,178,.08) 0%, transparent 72%);
+}
+#app{position:relative;z-index:1;}
+/* Clip the page's horizontal overflow so decorative bleed (the wide .screen::before
+   header glow and the drifting orbs) can never cause a sideways rubber-band on a
+   real phone. `clip` — not `hidden` — so it never creates a scroll container and
+   the sticky app-bar keeps working. (Ignored gracefully on iOS < 16 → no regression.) */
+html,body{overflow-x:clip;}
+@media(prefers-reduced-motion:no-preference){
+  body::before{animation:mfc-orbs 26s ease-in-out infinite;will-change:transform;}
+}
+@keyframes mfc-orbs{0%,100%{transform:translate3d(0,0,0) scale(1);}50%{transform:translate3d(-2.4%,2%,0) scale(1.06);}}
+@media print{body::before{display:none!important;}}
+
+/* 2) TOUCH-SPOTLIGHT ON PRIMARY CTAs — a glossy white highlight blooms at your
+   finger (touch) or tracks the cursor (desktop). The highlight is white over the
+   already-white label, so it's imperceptible on the text and only glosses the
+   gradient background. Driven by js/enhance.js (sets --bx/--by + .lit). */
+.btn-primary::before{
+  content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:radial-gradient(130px circle at var(--bx,50%) var(--by,50%), rgba(255,255,255,.30), transparent 60%);
+  opacity:0;transition:opacity .35s ease;
+}
+.btn-primary.lit::before{opacity:1;}
+
+/* 3) FLOWING GRADIENT ACCENTS — the brand rail on cards/tiles gently flows,
+   echoing the site's V12.x "flowing KPI gradients". */
+@media(prefers-reduced-motion:no-preference){
+  .card-grad::before,.tile::before{background-size:220% 100%;animation:mfc-flow 7s linear infinite;}
+}
+@keyframes mfc-flow{to{background-position:220% 0;}}
+
+@media(prefers-reduced-motion:reduce){
+  .btn-primary::before{transition:none;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V13.2 — SIGNATURE IDENTITY & LIVE-DATA DEPTH
+   ----------------------------------------------------------------------------
+   Additive, brand-matched, reduced-motion-safe. Cohesive touches:
+     1) per-strategy colour identity (driven inline from app.js · strategyAccent());
+     2) Account gradient-initials avatar header + per-strategy swatch on sub rows;
+     3) Holdings capital-deployment meter (deployed vs idle cash);
+     4) top-3 rank medals on the holdings list;
+     5) Login trust strip;
+     6) Scanner "Live · refreshed daily" indicator + active-tab living glow.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 2) ACCOUNT — gradient initials avatar header */
+.acct-head{display:flex;align-items:center;gap:14px;margin:12px 0 4px;}
+.acct-av{width:60px;height:60px;border-radius:18px;background:var(--grad);color:#fff;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-weight:800;font-size:24px;letter-spacing:.02em;box-shadow:0 12px 26px -12px rgba(26,80,216,.6);}
+.acct-id{min-width:0;}
+.acct-nm{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1.1;}
+.acct-em{font-size:13.5px;color:var(--ink3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acct-chip{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;font-weight:800;
+  letter-spacing:.03em;color:var(--green);background:rgba(5,150,105,.12);border-radius:999px;padding:3px 10px;}
+.acct-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(5,150,105,.18);}
+
+/* Account subscription rows — per-strategy colour swatch */
+.acct-sub{display:flex;align-items:center;gap:12px;}
+.acct-sub-sw{width:5px;align-self:stretch;min-height:34px;border-radius:999px;flex-shrink:0;}
+.acct-sub-id{flex:1;min-width:0;}
+.acct-sub-nm{font-weight:800;letter-spacing:-.01em;}
+
+/* 3) HOLDINGS — capital deployment meter */
+.deploy{margin-top:13px;padding-top:13px;border-top:.5px solid var(--line);}
+.deploy-bar{height:9px;border-radius:5px;background:rgba(37,99,235,.10);overflow:hidden;}
+.deploy-bar>i{display:block;height:100%;border-radius:5px;width:0;
+  background:linear-gradient(90deg,var(--accent),var(--mint));transition:width .8s var(--ease);}
+.deploy-meta{display:flex;justify-content:space-between;gap:12px;margin-top:9px;font-size:12px;color:var(--ink3);flex-wrap:wrap;}
+.deploy-meta b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums;}
+.dep-on{display:inline-flex;align-items:center;gap:7px;}
+.dep-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--mint));}
+
+/* 4) HOLDINGS — top-3 rank medals (styles the existing numeric rank chip) */
+.h-rank.medal{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.28);box-shadow:0 4px 10px -4px rgba(0,0,0,.4);}
+.h-rank.m1{background:linear-gradient(135deg,#f3c14e,#c98a00);}   /* gold */
+.h-rank.m2{background:linear-gradient(135deg,#aab4c4,#76849a);}   /* silver */
+.h-rank.m3{background:linear-gradient(135deg,#d3955f,#a05f2e);}   /* bronze */
+
+/* 5) LOGIN — trust strip */
+.trust-strip{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px;}
+.trust{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--ink2);
+  background:rgba(255,255,255,.72);border:.5px solid var(--line2);border-radius:999px;padding:7px 12px;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 16px -12px rgba(26,80,216,.55);}
+.trust svg{width:13px;height:13px;color:var(--accent);flex-shrink:0;}
+
+/* 6) SCANNER — live-data indicator */
+.live-tag{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:10.5px;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--green);}
+.live-dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.live-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--green);animation:dot-pulse 2.1s ease-out infinite;}
+
+/* active tab — soft living glow behind the icon (keeps the existing top indicator) */
+.tab svg,.tab span{position:relative;z-index:1;}
+.tab.active::after{content:'';position:absolute;top:9px;left:50%;transform:translateX(-50%);
+  width:44px;height:26px;border-radius:999px;z-index:0;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(26,80,216,.16),transparent);}
+
+@media(prefers-reduced-motion:reduce){
+  .deploy-bar>i{transition:none!important;width:var(--w,0)!important;}
+  .live-dot::after{animation:none!important;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V13.3 — TACTILE DEPTH & DELIGHT
+   ----------------------------------------------------------------------------
+   Additive, reduced-motion-safe polish that closes the consistency gap between
+   the V11.9 tile/holding press-feedback and the rest of the app, and adds a few
+   premium-feel micro-motion details. Six cohesive touches:
+     1) .sub-card — press scale + hover lift (parity with .tile/.holding);
+     2) .sub-card .sc-chev — drifts right on hover/press (tappable cue);
+     3) .acct-av — slow breathing brand halo (ambient depth);
+     4) .h-rank.medal — gentle radial gleam on top-3 holdings (gold/silver/bronze);
+     5) .tile .t-v — gradient flow accent on numeric KPI values;
+     6) toolCard (Scanner) — soft halo bloom under the icon on press.
+   All gated behind prefers-reduced-motion: motion freezes; static depth stays.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) SUB-CARD — tactile press + hover lift (matches .tile/.holding) */
+.sub-card{transition:transform .16s var(--ease),box-shadow .22s var(--ease);}
+.sub-card[data-token]:active{transform:scale(.985);}
+@media(hover:hover){.sub-card[data-token]:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(12,24,49,.05),0 18px 40px -22px rgba(26,80,216,.42);}}
+
+/* 2) SUB-CARD CHEVRON — drifts right on press / hover (clearer affordance) */
+.sub-card .sc-chev{transition:transform .2s var(--ease),color .2s ease;}
+.sub-card[data-token]:active .sc-chev{transform:translateX(3px);color:var(--accent);}
+@media(hover:hover){.sub-card[data-token]:hover .sc-chev{transform:translateX(3px);color:var(--accent);}}
+
+/* 3) ACCOUNT AVATAR — slow breathing brand halo (echoes living-light) */
+.acct-av{position:relative;}
+.acct-av::after{content:'';position:absolute;inset:-9px;border-radius:24px;pointer-events:none;z-index:-1;
+  background:radial-gradient(closest-side,rgba(26,80,216,.34),rgba(8,145,178,.16) 55%,transparent 75%);
+  opacity:.55;filter:blur(2px);}
+@media(prefers-reduced-motion:no-preference){
+  .acct-av::after{animation:mfc-halo 4.6s ease-in-out infinite;}
+}
+@keyframes mfc-halo{0%,100%{opacity:.45;transform:scale(1);}50%{opacity:.78;transform:scale(1.08);}}
+
+/* 4) HOLDINGS — top-3 medal gleam (a soft sheen drifts across the medal) */
+.h-rank.medal{position:relative;overflow:hidden;isolation:isolate;}
+.h-rank.medal::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+  transform:translateX(-110%);}
+@media(prefers-reduced-motion:no-preference){
+  .h-rank.m1::after{animation:medal-gleam 3.8s ease-in-out infinite;animation-delay:.4s;}
+  .h-rank.m2::after{animation:medal-gleam 3.8s ease-in-out infinite;animation-delay:1s;}
+  .h-rank.m3::after{animation:medal-gleam 3.8s ease-in-out infinite;animation-delay:1.6s;}
+}
+@keyframes medal-gleam{0%,72%{transform:translateX(-110%);}82%{transform:translateX(110%);}100%{transform:translateX(110%);}}
+
+/* 5) TILE VALUES — a flowing gradient accent on numeric KPI values (subtle &
+   only on .tile .t-v, so headings stay solid). Uses the brand gradient + the
+   site's V12.x KPI flow. Doesn't replace the ink colour — applied with
+   background-clip:text on a wrapped span emitted by tileNum() (no span = no fx). */
+.tile .t-v .v-flow{
+  background:linear-gradient(90deg,var(--ink) 0%,var(--accent2) 38%,var(--teal) 62%,var(--ink) 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+@media(prefers-reduced-motion:no-preference){
+  .tile .t-v .v-flow{animation:mfc-flow 8s linear infinite;}
+}
+
+/* 6) SCANNER tool cards — soft halo bloom under the icon on press / hover.
+   Uses the same press scale + lift as .sub-card (toolCard reuses .sub-card). */
+.sub-card .sc-ico{transition:box-shadow .25s ease,transform .25s var(--ease);}
+.sub-card:active .sc-ico,
+.sub-card:hover .sc-ico{box-shadow:0 14px 28px -10px rgba(26,80,216,.55);}
+
+@media(prefers-reduced-motion:reduce){
+  .acct-av::after,.h-rank.medal::after,.tile .t-v .v-flow{animation:none!important;}
+  .sub-card,.sub-card .sc-chev,.sub-card .sc-ico{transition:none!important;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V13.4 — INTERACTIVE ALLOCATION & MOTION FINESSE
+   ----------------------------------------------------------------------------
+   Additive, brand-matched, reduced-motion-safe. Three cohesive touches:
+     1) the sector-allocation donut is now INTERACTIVE — tap a legend row or a
+        slice to spotlight that sector (its slice lifts, the rest dim) and read
+        the exact weight + name in the donut centre; tap again to clear. Wired
+        in app.js · wireDonut(); keyboard-operable via the legend rows.
+     2) the weight + deployment bars now genuinely DRAW IN from 0 (an inline
+        target width used to paint full on frame 1 and skip the transition —
+        app.js now commits width:0 → --w on the next frame), and the deployment
+        % counts up alongside its bar (data-count span, reuses countUp()).
+     3) bottom-tab icons get a tactile press-scale, matching the card/holding
+        press feedback used elsewhere in the app.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) INTERACTIVE DONUT — spotlight a sector, dim the rest, read its weight */
+.donut-c{pointer-events:none;}                 /* let pointer reach the ring slices */
+.leg-row[data-sec],.dslice[data-sec]{cursor:pointer;}
+.dslice{transition:opacity .28s var(--ease),stroke-width .28s var(--ease);}
+.donut.sel-active .dslice:not(.on){opacity:.24;}
+.donut.sel-active .dslice.on{stroke-width:17;}
+.leg-row[data-sec]{border-radius:9px;padding:3px 5px;margin:-3px -5px;outline:none;
+  transition:background .18s ease;-webkit-tap-highlight-color:transparent;}
+@media(hover:hover){.leg-row[data-sec]:hover{background:rgba(37,99,235,.07);}}
+.leg-row[data-sec]:active,.leg-row.on{background:rgba(37,99,235,.11);}
+.leg-row[data-sec]:focus-visible{box-shadow:0 0 0 2px rgba(37,99,235,.45);}
+.donut-pc{font-size:25px;display:inline-flex;align-items:baseline;}
+.donut-pc>i{font-style:normal;font-size:.5em;font-weight:800;margin-left:1px;color:var(--ink3);}
+.donut-nm{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;}
+
+/* 2) BOTTOM-TAB — tactile press-scale (parity with .tile/.holding/.sub-card) */
+.tab{transition:color .15s,transform .12s var(--ease);}
+.tab:active{transform:scale(.93);}
+
+@media(prefers-reduced-motion:reduce){
+  .dslice{transition:none!important;}
+  .tab:active{transform:none!important;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V13.5 — BRANDED STATES & INPUT FINESSE
+   ----------------------------------------------------------------------------
+   Additive, brand-matched, reduced-motion-safe. Three cohesive touches:
+     1) BRANDED EMPTY / ERROR STATES — the placeholder emoji (📭 📈 ⚠️ 📄) are
+        replaced by crisp inline-SVG glyphs in a soft gradient medallion with a
+        gentle breathing halo, so empty states finally match the app's all-SVG
+        premium language. An amber `.warn` variant carries the load-error state.
+     2) OTP CODE-ENTRY FINESSE — each digit box lights up (accent ring + tint +
+        a quick pop) the moment it's filled, and the focused box gets a stronger
+        ring, so entering the sign-in code feels responsive and shows progress.
+        Driven by a `.filled` class toggled in app.js' existing input handlers.
+     3) LOGIN ENTRANCE POLISH — the brand logo gets the same slow breathing halo
+        as the Account avatar, and the trust chips stagger-rise in, giving the
+        first screen a calm, premium choreography.
+   Motion freezes for prefers-reduced-motion; static depth stays. No layout
+   change, no horizontal overflow.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) BRANDED EMPTY / ERROR STATES — gradient-medallion + inline-SVG glyph */
+.empty-ill{width:84px;height:84px;margin:0 auto 16px;border-radius:26px;position:relative;
+  display:flex;align-items:center;justify-content:center;color:var(--accent);
+  background:linear-gradient(160deg,rgba(26,80,216,.13),rgba(8,145,178,.07));
+  border:.5px solid var(--line2);
+  box-shadow:0 18px 36px -22px rgba(26,80,216,.55),inset 0 1px 0 rgba(255,255,255,.7);}
+.empty-ill svg{width:40px;height:40px;}
+.empty-ill::after{content:'';position:absolute;inset:-11px;border-radius:34px;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(26,80,216,.24),rgba(8,145,178,.10) 56%,transparent 76%);opacity:.7;}
+.empty-ill.warn{color:var(--gold);
+  background:linear-gradient(160deg,rgba(217,119,6,.15),rgba(217,119,6,.05));
+  box-shadow:0 18px 36px -22px rgba(217,119,6,.5),inset 0 1px 0 rgba(255,255,255,.7);}
+.empty-ill.warn::after{background:radial-gradient(closest-side,rgba(217,119,6,.26),transparent 74%);}
+@media(prefers-reduced-motion:no-preference){
+  .empty-ill::after{animation:mfc-halo 4.6s ease-in-out infinite;}
+}
+
+/* 2) OTP — light up each digit as it's filled; stronger ring on the active box */
+.otp-inputs input{transition:border-color .15s,background .15s,box-shadow .18s,color .15s,transform .12s var(--ease);}
+.otp-inputs input.filled{border-color:var(--accent2);background:#fff;color:var(--ink);
+  box-shadow:0 0 0 3px rgba(37,99,235,.12),0 6px 16px -10px rgba(26,80,216,.5);}
+.otp-inputs input:focus{box-shadow:0 0 0 4px rgba(37,99,235,.18);}
+@media(prefers-reduced-motion:no-preference){
+  .otp-inputs input.filled{animation:otp-pop .24s var(--ease);}
+}
+@keyframes otp-pop{0%{transform:scale(.88);}60%{transform:scale(1.07);}100%{transform:scale(1);}}
+
+/* 3) LOGIN — breathing logo halo + staggered trust-chip reveal */
+.login-logo{box-shadow:0 12px 30px -12px rgba(26,80,216,.6);}
+@media(prefers-reduced-motion:no-preference){
+  .login-logo{animation:mfc-logoglow 4.8s ease-in-out infinite;}
+  .trust-strip .trust{animation:rise .55s var(--ease) both;}
+  .trust-strip .trust:nth-child(1){animation-delay:.46s;}
+  .trust-strip .trust:nth-child(2){animation-delay:.56s;}
+  .trust-strip .trust:nth-child(3){animation-delay:.66s;}
+}
+@keyframes mfc-logoglow{0%,100%{box-shadow:0 12px 30px -12px rgba(26,80,216,.55);}
+  50%{box-shadow:0 18px 42px -10px rgba(26,80,216,.82);}}
+
+@media(prefers-reduced-motion:reduce){
+  .otp-inputs input{transition:none!important;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V13.7 — CRISP ICON LANGUAGE
+   ----------------------------------------------------------------------------
+   Additive, static (nothing to freeze for reduced-motion). Pairs with the
+   app.js change that swaps the Account screen's last placeholder emoji
+   (💬 ✉ ⚡) for crisp inline-SVG glyphs — finishing the all-SVG language V13.5
+   began. Here, every brand icon tile (the Account support/broker/Kite rows'
+   .broker-logo and the .sc-ico used on Home subscription cards + Scanner tool
+   cards) gets a subtle glassy top-light sheen + a soft resting drop shadow, so
+   each reads as a crafted, slightly three-dimensional app icon rather than a
+   flat colour square — a cohesive lift across Home, Scanner & Account.
+   The glyph (svg) is raised above the sheen; the gloss only catches the icon's
+   coloured corners (white-on-white over a white glyph → imperceptible on it).
+   ════════════════════════════════════════════════════════════════════════════ */
+.broker-logo,.sub-card .sc-ico{position:relative;overflow:hidden;}
+.broker-logo{box-shadow:0 6px 14px -8px rgba(12,24,49,.34);}
+.sub-card .sc-ico{box-shadow:0 7px 16px -9px rgba(26,80,216,.40);}
+.broker-logo svg,.sub-card .sc-ico svg{position:relative;z-index:1;}
+.broker-logo::after,.sub-card .sc-ico::after{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(159deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.06) 46%,transparent 62%);
+}
+/* The Account avatar is the most prominent brand tile — give it the same glass
+   edge via an inset highlight (paints below the initials, so they stay crisp). */
+.acct-av{box-shadow:0 12px 26px -12px rgba(26,80,216,.6),inset 0 1.5px 0 rgba(255,255,255,.40);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V15.5 — COHESIVE CHOREOGRAPHY & FLOW
+   ----------------------------------------------------------------------------
+   Additive, brand-matched, reduced-motion-safe. Brings the Scanner & Account
+   screens up to the Home screen's staggered-entrance polish, animates the
+   Holdings KPI tiles in, lets the hero gradient names gently flow, and gives the
+   KPI tiles a one-time "catching the light" sheen as they arrive. No layout
+   change, no horizontal overflow; every motion freezes for reduced-motion.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) SCREEN ENTRANCE PARITY — any screen tagged `.intro` cascades its direct
+   children in (rise + stagger), matching Home's hand-tuned choreography so
+   Scanner & Account no longer pop in flat. One class drives the whole screen. */
+@media(prefers-reduced-motion:no-preference){
+  .screen.intro > *{animation:rise .5s var(--ease) both;}
+  .screen.intro > *:nth-child(1){animation-delay:.02s;}
+  .screen.intro > *:nth-child(2){animation-delay:.07s;}
+  .screen.intro > *:nth-child(3){animation-delay:.12s;}
+  .screen.intro > *:nth-child(4){animation-delay:.17s;}
+  .screen.intro > *:nth-child(5){animation-delay:.22s;}
+  .screen.intro > *:nth-child(6){animation-delay:.27s;}
+  .screen.intro > *:nth-child(7){animation-delay:.32s;}
+  .screen.intro > *:nth-child(8){animation-delay:.37s;}
+  .screen.intro > *:nth-child(9){animation-delay:.42s;}
+  .screen.intro > *:nth-child(10){animation-delay:.46s;}
+  .screen.intro > *:nth-child(11){animation-delay:.50s;}
+  .screen.intro > *:nth-child(12){animation-delay:.54s;}
+  .screen.intro > *:nth-child(n+13){animation-delay:.58s;}
+}
+
+/* 2) HOLDINGS KPI TILES — draw the four summary tiles in with a quick stagger on
+   first paint (`.tiles-in`; a capital re-calc renders plain `.tiles`, so the
+   entrance never replays as you tweak the amount). */
+@media(prefers-reduced-motion:no-preference){
+  .tiles-in > .tile{animation:rise .5s var(--ease) both;}
+  .tiles-in > .tile:nth-child(1){animation-delay:.04s;}
+  .tiles-in > .tile:nth-child(2){animation-delay:.10s;}
+  .tiles-in > .tile:nth-child(3){animation-delay:.16s;}
+  .tiles-in > .tile:nth-child(4){animation-delay:.22s;}
+  /* 3) one-time sheen sweep — a soft gloss glides across each tile as it lands,
+     so the KPI row reads like glass catching the light. Pure transform of a
+     clipped pseudo-element (the tile is overflow:hidden); fires once. */
+  .tiles-in > .tile::after{
+    content:'';position:absolute;top:0;left:0;width:55%;height:100%;z-index:2;pointer-events:none;
+    background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.4) 50%,transparent 100%);
+    transform:translateX(-160%) skewX(-18deg);
+    animation:tile-sheen 1.05s var(--ease) both;
+  }
+  .tiles-in > .tile:nth-child(1)::after{animation-delay:.20s;}
+  .tiles-in > .tile:nth-child(2)::after{animation-delay:.26s;}
+  .tiles-in > .tile:nth-child(3)::after{animation-delay:.32s;}
+  .tiles-in > .tile:nth-child(4)::after{animation-delay:.38s;}
+}
+@keyframes tile-sheen{from{transform:translateX(-160%) skewX(-16deg);}to{transform:translateX(230%) skewX(-16deg);}}
+
+/* 4) FLOWING HERO GRADIENT — the prominent gradient names ("Riya", "MindForge")
+   gently flow, echoing the website's V12.x flowing-KPI idiom. Background-clip
+   text with a wide multi-stop brand gradient; position animates. */
+.gradtext{
+  background:linear-gradient(90deg,#1a50d8 0%,#2563eb 28%,#0891b2 50%,#2563eb 72%,#1a50d8 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+}
+@media(prefers-reduced-motion:no-preference){
+  .gradtext{animation:mfc-grad-flow 7.5s ease-in-out infinite;}
+}
+@keyframes mfc-grad-flow{0%,100%{background-position:0% 0;}50%{background-position:100% 0;}}
+
+@media(prefers-reduced-motion:reduce){
+  .screen.intro > *,.tiles-in > .tile,.tiles-in > .tile::after,.gradtext{animation:none!important;}
 }

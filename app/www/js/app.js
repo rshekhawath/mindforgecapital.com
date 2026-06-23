@@ -22,12 +22,18 @@
   function fmtINR(n){return (Number(n)||0).toLocaleString('en-IN',{maximumFractionDigits:0});}
   function fmtMoney(curr,n){return curr==='₹'?('₹'+fmtINR(n)):('$'+(Number(n)||0).toLocaleString('en-US',{maximumFractionDigits:0}));}
   var STRAT_NAMES={largemidcap:'LargeMidcap 250',smallmicro:'SmallMicro 500',multicap:'MultiCap',multiasset:'MultiAsset',sp500:'S&P 500',allaccess:'All-Access'};
+  // Per-strategy colour identity (V13.2) — a signature gradient per strategy so each
+  // subscription is recognisable at a glance across Home + Account (vs. one flat blue).
+  var STRAT_ACCENT={largemidcap:'linear-gradient(135deg,#1a50d8,#3b82f6)',smallmicro:'linear-gradient(135deg,#0891b2,#2dd4bf)',multicap:'linear-gradient(135deg,#7c3aed,#a855f7)',multiasset:'linear-gradient(135deg,#d97706,#f59e0b)',sp500:'linear-gradient(135deg,#059669,#10b981)',allaccess:'linear-gradient(135deg,#0c1831,#1e3a5f)'};
+  function strategyKey(s){var key=String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');for(var k in STRAT_NAMES){if(key.indexOf(k)!==-1)return k;}return '';}
   function strategyLabel(s){
     s=String(s||'');
-    var key=s.toLowerCase().replace(/[^a-z0-9]/g,'');           // "MindForge LargeMidcap 250" → "mindforgelargemidcap250"
-    for(var k in STRAT_NAMES){ if(key.indexOf(k)!==-1) return STRAT_NAMES[k]; }
+    var k=strategyKey(s); if(k)return STRAT_NAMES[k];           // "MindForge LargeMidcap 250" → "LargeMidcap 250"
     return s.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}).replace(/Mindforge/i,'MindForge');
   }
+  function strategyAccent(s){var k=strategyKey(s);return (k&&STRAT_ACCENT[k])||'var(--grad)';}
+  // Member initials for the Account avatar (e.g. "Riya Sharma" → "RS").
+  function initials(name){var p=String(name||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return 'MF';return ((p[0].charAt(0)||'')+(p.length>1?p[p.length-1].charAt(0):'')).toUpperCase();}
   function fmtDate(d){if(!d)return '—';var dt=new Date(d);if(isNaN(dt))return esc(d);return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
   function daysLeft(d){if(!d)return null;var dt=new Date(d);if(isNaN(dt))return null;return Math.max(0,Math.ceil((dt-new Date())/86400000));}
 
@@ -63,6 +69,19 @@
     setTimeout(function(){if(!done)el.textContent=to+suf;},dur+250);
   }
 
+  // Branded empty/error illustration (V13.5) — a soft gradient medallion + an
+  // inline-SVG glyph, replacing the old placeholder emoji so empty states match
+  // the app's all-SVG premium language. `warn` switches to the amber error look.
+  var EMPTY_ILL={
+    inbox:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M3.5 13H8l1.6 2.5h4.8L16 13h4.5"/>',
+    chart:'<path d="M4 5v14h16"/><path d="M8 15l3.5-4 3 2.5L20 8"/>',
+    doc:'<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 13h5M10 16.5h5"/>',
+    alert:'<path d="M12 4.5l8.5 15h-17z"/><path d="M12 10v4.2"/><path d="M12 17.4h.01"/>'
+  };
+  function emptyIll(kind,warn){
+    return '<div class="empty-ill'+(warn?' warn':'')+'" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(EMPTY_ILL[kind]||EMPTY_ILL.doc)+'</svg></div>';
+  }
+
   // Sector-allocation donut + legend — the website dashboard's signature data-viz,
   // ported to mobile. Slices draw in (staggered) when the .alloc-card gets .fx.
   function sectorAllocCard(stocks,secCol){
@@ -73,10 +92,11 @@
     rows.forEach(function(r,i){
       var len=(r.w/total)*C, start=-90+(cum/total)*360; cum+=r.w;
       slices+='<circle class="dslice" cx="50" cy="50" r="40" fill="none" stroke="'+(secCol[r.name]||'#cbd5e1')+'" stroke-width="13" '+
+        'data-sec="'+i+'" data-pc="'+((r.w/total)*100).toFixed(1)+'" data-nm="'+esc(r.name)+'" '+
         'stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" style="--len:'+len.toFixed(2)+';transform:rotate('+start.toFixed(2)+'deg);animation-delay:'+(i*80)+'ms"/>';
     });
     var legend=rows.slice(0,6).map(function(r,i){
-      return '<div class="leg-row" style="animation-delay:'+(160+i*60)+'ms"><span class="leg-sw" style="background:'+(secCol[r.name]||'#cbd5e1')+'"></span>'+
+      return '<div class="leg-row" data-sec="'+i+'" role="button" tabindex="0" aria-label="'+esc(r.name)+' '+((r.w/total)*100).toFixed(1)+' percent" style="animation-delay:'+(160+i*60)+'ms"><span class="leg-sw" style="background:'+(secCol[r.name]||'#cbd5e1')+'"></span>'+
         '<span class="leg-nm">'+esc(r.name)+'</span><span class="leg-pc">'+((r.w/total)*100).toFixed(1)+'%</span></div>';
     }).join('');
     if(rows.length>6)legend+='<div class="leg-row" style="animation-delay:'+(160+6*60)+'ms"><span class="leg-sw" style="background:#cbd5e1"></span><span class="leg-nm">+'+(rows.length-6)+' more</span></div>';
@@ -133,11 +153,16 @@
     render(
       '<main class="screen screen--center rise">'+
         '<div style="text-align:center;margin-bottom:26px">'+
-          '<img src="assets/favicon-192.png" alt="" style="width:60px;height:60px;border-radius:17px;box-shadow:0 12px 30px -12px rgba(26,80,216,.6)">'+
+          '<img src="assets/favicon-192.png" alt="" class="login-logo" style="width:60px;height:60px;border-radius:17px">'+
           '<h1 class="h-title" style="margin-top:16px">Welcome to <span class="gradtext">MindForge</span></h1>'+
           '<p class="h-sub" style="margin:0 auto;max-width:300px">Sign in to view your strategy picks and place them with your broker in one tap.</p>'+
         '</div>'+
         '<div class="card card-grad" id="loginCard"></div>'+
+        '<div class="trust-strip rise">'+
+          '<span class="trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/></svg>Bank-grade security</span>'+
+          '<span class="trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg>Passwordless</span>'+
+          '<span class="trust"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>One-tap orders</span>'+
+        '</div>'+
         '<p class="hint" style="text-align:center;margin-top:18px">Not a member yet? <a href="'+C.SIGNUP_URL+'" target="_blank" rel="noopener">Get started →</a></p>'+
       '</main>','',function(){renderEmailStep();});
   }
@@ -177,13 +202,14 @@
     inputs.forEach(function(inp,i){
       inp.addEventListener('input',function(){
         inp.value=inp.value.replace(/\D/g,'').slice(0,1);
+        inp.classList.toggle('filled',!!inp.value);
         if(inp.value&&i<5)inputs[i+1].focus();
         if(inputs.every(function(x){return x.value;}))doVerify(inputs);
       });
       inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!inp.value&&i>0)inputs[i-1].focus();if(e.key==='Enter')doVerify(inputs);});
       inp.addEventListener('paste',function(e){
         var d=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
-        if(d){e.preventDefault();d.split('').forEach(function(ch,k){if(inputs[k])inputs[k].value=ch;});(inputs[Math.min(d.length,5)]).focus();if(d.length===6)doVerify(inputs);}
+        if(d){e.preventDefault();d.split('').forEach(function(ch,k){if(inputs[k]){inputs[k].value=ch;inputs[k].classList.add('filled');}});(inputs[Math.min(d.length,5)]).focus();if(d.length===6)doVerify(inputs);}
       });
     });
     document.getElementById('verifyBtn').addEventListener('click',function(){doVerify(inputs);});
@@ -209,7 +235,7 @@
       location.hash='#/home';
     }).catch(function(err){
       btn.disabled=false;btn.innerHTML='Verify &amp; sign in';errEl.textContent=err.message;
-      inputs.forEach(function(x){x.value='';});inputs[0].focus();
+      inputs.forEach(function(x){x.value='';x.classList.remove('filled');});inputs[0].focus();
     });
   }
 
@@ -228,13 +254,13 @@
       var badge=isActive?'<span class="badge badge-active"><span class="dot"></span>Active</span>':
         (st==='expired'?'<span class="badge badge-expired">Expired</span>':'<span class="badge badge-muted">'+esc(st)+'</span>');
       return '<div class="sub-card rise" style="animation-delay:'+(i*60)+'ms" '+(isActive?'data-token="'+esc(s.token)+'"':'')+'>'+
-        '<div class="sc-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>'+
+        '<div class="sc-ico" style="background:'+strategyAccent(s.strategy)+(isActive?'':';filter:grayscale(.55);opacity:.7')+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>'+
         '<div class="sc-body"><div class="sc-name">'+esc(strategyLabel(s.strategy))+'</div>'+
         '<div class="sc-meta">'+badge+(isActive&&dl!=null?' · renews in '+dl+' day'+(dl===1?'':'s'):'')+'</div></div>'+
         (isActive?'<div class="sc-chev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>':'')+
       '</div>';
     }).join(''):
-      '<div class="empty"><div class="ico">📭</div><h4>No subscriptions yet</h4><p>Subscribe to a strategy to see your monthly picks here.</p>'+
+      '<div class="empty">'+emptyIll('inbox')+'<h4>No subscriptions yet</h4><p>Subscribe to a strategy to see your monthly picks here.</p>'+
       '<a class="btn btn-primary" style="margin-top:14px" href="'+C.SIGNUP_URL+'" target="_blank" rel="noopener">Browse strategies →</a></div>';
 
     render(
@@ -261,7 +287,7 @@
     if(!token){
       if(active.length){currentToken=active[0].token;token=currentToken;}
       else{
-        render(appbarHTML({})+'<main class="screen"><div class="empty"><div class="ico">📈</div><h4>No active strategy</h4><p>Subscribe to a strategy to see its holdings.</p></div></main>','holdings');
+        render(appbarHTML({})+'<main class="screen"><div class="empty">'+emptyIll('chart')+'<h4>No active strategy</h4><p>Subscribe to a strategy to see its holdings.</p></div></main>','holdings');
         return;
       }
     }
@@ -278,7 +304,7 @@
     var p=cached?Promise.resolve(cached):MFCApi.stocks(token).then(function(d){holdingsCache[token]={subscription:d.subscription,stocks:d.stocks};return holdingsCache[token];});
     p.then(function(d){renderHoldings(token,d.subscription,d.stocks,active);})
      .catch(function(err){
-       render(appbarHTML({right:subSwitcher(active,token)})+'<main class="screen"><div class="empty"><div class="ico">⚠️</div><h4>Couldn’t load your picks</h4><p>'+esc(err.message)+'</p><button class="btn btn-ghost" id="retry" style="margin-top:14px;width:auto;padding:11px 20px">Try again</button></div></main>','holdings',function(){
+       render(appbarHTML({right:subSwitcher(active,token)})+'<main class="screen"><div class="empty">'+emptyIll('alert',true)+'<h4>Couldn’t load your picks</h4><p>'+esc(err.message)+'</p><button class="btn btn-ghost" id="retry" style="margin-top:14px;width:auto;padding:11px 20px">Try again</button></div></main>','holdings',function(){
          wireSubSwitcher();var r=document.getElementById('retry');if(r)r.addEventListener('click',function(){viewHoldings(token);});
        });
      });
@@ -289,6 +315,35 @@
       active.map(function(s){return '<option value="'+esc(s.token)+'"'+(s.token===token?' selected':'')+'>'+esc(strategyLabel(s.strategy))+'</option>';}).join('')+'</select>';
   }
   function wireSubSwitcher(){var sw=document.getElementById('subSwitch');if(sw)sw.addEventListener('change',function(){currentToken=sw.value;location.hash='#/holdings/'+encodeURIComponent(sw.value);});}
+
+  // Interactive sector donut (V13.4) — tap a legend row or a slice to spotlight
+  // that sector: its slice lifts, the others dim, and the donut centre swaps to
+  // show the sector's exact weight + name. Tap it again (or pick another) to
+  // change / clear. Re-wired on every holdings render; keyboard-operable
+  // (Enter/Space on a legend row); reduced-motion-safe (CSS freezes the motion).
+  function wireDonut(){
+    var card=appEl.querySelector('.alloc-card'); if(!card)return;
+    var svg=card.querySelector('.donut'), center=card.querySelector('.donut-c');
+    if(!svg||!center)return;
+    var def=center.innerHTML, sel=null;
+    function reset(){sel=null;svg.classList.remove('sel-active');
+      card.querySelectorAll('.dslice.on,.leg-row.on').forEach(function(e){e.classList.remove('on');});
+      center.innerHTML=def;}
+    function pick(i){
+      if(i===sel){reset();return;}
+      sel=i;svg.classList.add('sel-active');
+      card.querySelectorAll('.dslice.on,.leg-row.on').forEach(function(e){e.classList.remove('on');});
+      var slice=svg.querySelector('.dslice[data-sec="'+i+'"]'), row=card.querySelector('.leg-row[data-sec="'+i+'"]');
+      if(slice)slice.classList.add('on');
+      if(row)row.classList.add('on');
+      if(slice)center.innerHTML='<span class="donut-n donut-pc">'+esc(slice.getAttribute('data-pc'))+'<i>%</i></span>'+
+        '<span class="donut-l donut-nm">'+esc(slice.getAttribute('data-nm'))+'</span>';
+    }
+    card.querySelectorAll('[data-sec]').forEach(function(el){
+      el.addEventListener('click',function(){pick(el.getAttribute('data-sec'));});
+      el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(el.getAttribute('data-sec'));}});
+    });
+  }
 
   function renderHoldings(token,sub,stocks,active,opts){
     opts=opts||{}; var skipFx=!!opts.skipFx;   // capital changes re-render without replaying entrances
@@ -301,6 +356,13 @@
     if(!capital)capital=curr==='₹'?1500000:20000;
     var secCol=sectorColors(stocks);
     var maxW=Math.max.apply(null,stocks.map(function(s){return Number(s.weight_pct)||0;}).concat([1]));
+    // Capital actually deployable once shares are whole numbers — the remainder is
+    // idle cash. Surfaced as a deployment meter so members see real uninvested cash.
+    var perStock=capital/n, deployed=0;
+    stocks.forEach(function(s){var pr=Number(s.recommended_price)||0;if(pr>0)deployed+=Math.floor(perStock/pr)*pr;});
+    deployed=Math.round(deployed);
+    var cashLeft=Math.max(0,capital-deployed);
+    var depPct=capital>0?Math.min(100,deployed/capital*100):0;
 
     function holdingHTML(s,i){
       var price=Number(s.recommended_price)||0;
@@ -312,13 +374,13 @@
       var blink=MFCBrokers.orderLink(s);
       var bname=MFCBrokers.current().name;
       return '<div class="holding'+(skipFx?'':' rise')+'" style="'+(skipFx?'':'animation-delay:'+Math.min(i*40,400)+'ms')+'">'+
-        '<div class="h-top"><div class="h-rank">'+(i+1)+'</div>'+
+        '<div class="h-top"><div class="h-rank'+(i<3?' medal m'+(i+1):'')+'">'+(i+1)+'</div>'+
           '<div class="h-name"><div class="h-co">'+esc(s.company_name||s.ticker)+'</div>'+
           '<div class="h-tk" data-copy="'+esc(s.ticker)+'">'+esc(s.ticker)+' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>'+
           (ind?'<div><span class="h-sec">'+dot+esc(ind)+'</span></div>':'')+'</div>'+
           '<div style="text-align:right"><div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em">Weight</div><div style="font-size:18px;font-weight:800;color:var(--accent2)">'+(w?w.toFixed(1)+'%':'—')+'</div></div>'+
         '</div>'+
-        '<div class="h-bar"><i style="--w:'+((w/maxW)*100).toFixed(1)+'%;width:'+((w/maxW)*100).toFixed(1)+'%"></i></div>'+
+        '<div class="h-bar"><i style="--w:'+((w/maxW)*100).toFixed(1)+'%;width:'+(skipFx?((w/maxW)*100).toFixed(1)+'%':'0')+'"></i></div>'+
         '<div class="h-grid">'+
           '<div class="h-cell"><div class="k">Rec. price</div><div class="v">'+c+price.toFixed(2)+'</div></div>'+
           '<div class="h-cell"><div class="k">Allocation</div><div class="v accent">'+fmtMoney(c,amt)+'</div></div>'+
@@ -336,7 +398,7 @@
         '<div class="eyebrow">'+esc(strategyLabel(sub&&sub.strategy))+'</div>'+
         '<h1 class="h-title">This cycle’s picks</h1>'+
         '<p class="h-sub">Place these with your broker and you’re set for the month.</p>'+
-        '<div class="tiles">'+
+        '<div class="tiles'+(skipFx?'':' tiles-in')+'">'+
           tileNum('Total picks',stocks.length,'','equal-weighted')+
           tileNum('Industries',nInd,'','sector-diversified')+
           (dl!=null?tileNum('Renews in',dl,' d',sub&&sub.expires_at?fmtDate(sub.expires_at):''):tile('Renews in','—',sub&&sub.expires_at?fmtDate(sub.expires_at):''))+
@@ -346,16 +408,21 @@
         '<div class="card" style="margin-top:14px">'+
           '<label style="display:block;font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:9px">Position sizing</label>'+
           '<div class="calc">'+
-            '<input class="input" id="capIn" inputmode="numeric" value="'+capital.toLocaleString('en-IN')+'">'+
+            '<input class="input" id="capIn" inputmode="numeric" value="'+capital.toLocaleString(curr==='₹'?'en-IN':'en-US')+'">'+
             (curr==='₹'?['500000','1500000','2500000','5000000'].map(function(v){return '<button class="preset'+(Number(v)===capital?' active':'')+'" data-cap="'+v+'">₹'+(Number(v)/100000)+'L</button>';}).join(''):
               ['10000','25000','50000','100000'].map(function(v){return '<button class="preset'+(Number(v)===capital?' active':'')+'" data-cap="'+v+'">$'+(Number(v)/1000)+'k</button>';}).join(''))+
           '</div>'+
           '<div class="calc-out"><span>Per stock <b>'+fmtMoney(curr,capital/n)+'</b></span><span>'+stocks.length+' picks · equal-weighted</span></div>'+
+          '<div class="deploy">'+
+            '<div class="deploy-bar"><i style="--w:'+depPct.toFixed(1)+'%;width:'+(skipFx?depPct.toFixed(1)+'%':'0')+'"></i></div>'+
+            '<div class="deploy-meta"><span class="dep-on"><span class="dep-dot"></span>Deployed <b>'+fmtMoney(curr,deployed)+'</b> · <span data-count="'+depPct.toFixed(0)+'" data-suffix="%">'+depPct.toFixed(0)+'%</span></span><span>Idle cash <b>'+fmtMoney(curr,cashLeft)+'</b></span></div>'+
+          '</div>'+
         '</div>'+
         '<div class="list-h"><span class="lt">Stock picks</span><span class="ls">'+stocks.length+' holdings</span></div>'+
-        (stocks.length?stocks.map(holdingHTML).join(''):'<div class="empty"><div class="ico">📄</div><h4>No picks published yet</h4><p>New monthly sets are released on the first business day.</p></div>')+
+        (stocks.length?stocks.map(holdingHTML).join(''):'<div class="empty">'+emptyIll('doc')+'<h4>No picks published yet</h4><p>New monthly sets are released on the first business day.</p></div>')+
       '</main>','holdings',function(){
         wireSubSwitcher();
+        wireDonut();
         // copy ticker
         appEl.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
           var t=b.getAttribute('data-copy');
@@ -371,18 +438,28 @@
         if(!skipFx){
           appEl.querySelectorAll('[data-count]').forEach(countUp);
           var ac=appEl.querySelector('.alloc-card'); if(ac)ac.classList.add('fx');
+          // Fill the weight + deployment bars from 0 → their target so the CSS
+          // width transition actually plays. (An inline *target* width paints full
+          // on the first frame and silently skips the animation.) The bars render
+          // at width:0; we force ONE reflow so that 0 commits as the transition's
+          // start value, then set each target — the browser tweens 0 → --w.
+          var bars=appEl.querySelectorAll('.h-bar>i,.deploy-bar>i');
+          if(bars.length){
+            void appEl.offsetHeight;   // flush layout: width:0 is now the "from" state
+            bars.forEach(function(b){b.style.width=b.style.getPropertyValue('--w');});
+          }
         }
       });
   }
   function tile(k,v,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
-  function tileNum(k,num,suffix,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v"><span data-count="'+num+'" data-suffix="'+(suffix||'')+'">'+num+(suffix||'')+'</span></div><div class="t-s">'+esc(s||'')+'</div></div>';}
+  function tileNum(k,num,suffix,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v"><span class="v-flow" data-count="'+num+'" data-suffix="'+(suffix||'')+'">'+num+(suffix||'')+'</span></div><div class="t-s">'+esc(s||'')+'</div></div>';}
 
   // ════════════════════════════════════════════════════════════════════════════
   //  SCANNER  (links to the existing web tools)
   // ════════════════════════════════════════════════════════════════════════════
   function viewScanner(){
     render(appbarHTML({})+
-      '<main class="screen">'+
+      '<main class="screen intro">'+
         '<div class="eyebrow">Free tools</div>'+
         '<h1 class="h-title">Research the market</h1>'+
         '<p class="h-sub">The full NSE Scanner and the Integrity Score scorecards, refreshed daily.</p>'+
@@ -394,7 +471,7 @@
   function toolCard(name,desc,color,url,icon){
     return '<a class="sub-card rise" href="'+esc(url)+'" target="_blank" rel="noopener" style="margin-bottom:12px;text-decoration:none;color:inherit">'+
       '<div class="sc-ico" style="background:'+color+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+icon+'"/></svg></div>'+
-      '<div class="sc-body"><div class="sc-name">'+esc(name)+'</div><div class="sc-meta">'+esc(desc)+'</div></div>'+
+      '<div class="sc-body"><div class="sc-name">'+esc(name)+'</div><div class="sc-meta">'+esc(desc)+'</div><span class="live-tag"><span class="live-dot"></span>Live · refreshed daily</span></div>'+
       '<div class="sc-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div></a>';
   }
 
@@ -403,11 +480,17 @@
   // ════════════════════════════════════════════════════════════════════════════
   function viewAccount(){
     var sess=MFCStore.getSession()||{subscriptions:[]};
+    var nActive=(sess.subscriptions||[]).filter(function(s){return String(s.status).toLowerCase()==='active';}).length;
     render(appbarHTML({})+
-      '<main class="screen">'+
+      '<main class="screen intro">'+
         '<div class="eyebrow">Account</div>'+
-        '<h1 class="h-title">'+esc(sess.name||'Your account')+'</h1>'+
-        '<p class="h-sub">'+esc(sess.email||'')+'</p>'+
+        '<div class="acct-head rise">'+
+          '<div class="acct-av">'+esc(initials(sess.name))+'</div>'+
+          '<div class="acct-id"><div class="acct-nm">'+esc(sess.name||'Your account')+'</div>'+
+            '<div class="acct-em">'+esc(sess.email||'')+'</div>'+
+            (nActive?'<span class="acct-chip"><span class="dot"></span>'+nActive+' active '+(nActive===1?'subscription':'subscriptions')+'</span>':'')+
+          '</div>'+
+        '</div>'+
 
         '<div class="list-h"><span class="lt">Linked broker</span></div>'+
         '<div id="brokerSection"></div>'+
@@ -416,12 +499,12 @@
         (sess.subscriptions&&sess.subscriptions.length?sess.subscriptions.map(function(s){
           var st=String(s.status).toLowerCase();
           var badge=st==='active'?'<span class="badge badge-active"><span class="dot"></span>Active</span>':(st==='expired'?'<span class="badge badge-expired">Expired</span>':'<span class="badge badge-muted">'+esc(st)+'</span>');
-          return '<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><div style="font-weight:800">'+esc(strategyLabel(s.strategy))+'</div><div class="sc-meta">Renews '+fmtDate(s.expires_at)+'</div></div>'+badge+'</div>';
+          return '<div class="card acct-sub"><span class="acct-sub-sw" style="background:'+strategyAccent(s.strategy)+'"></span><div class="acct-sub-id"><div class="acct-sub-nm">'+esc(strategyLabel(s.strategy))+'</div><div class="sc-meta">Renews '+fmtDate(s.expires_at)+'</div></div>'+badge+'</div>';
         }).join(''):'<div class="note">No subscriptions on file.</div>')+
 
         '<div class="list-h"><span class="lt">Support</span></div>'+
-        '<a class="broker-opt" href="'+C.WHATSAPP_URL+'" target="_blank" rel="noopener"><div class="broker-logo" style="background:#25D366">💬</div><div class="bo-body"><div class="bo-name">WhatsApp support</div><div class="bo-sub">Renewals, billing & help</div></div></a>'+
-        '<a class="broker-opt" href="'+C.SITE_URL+'/recover.html" target="_blank" rel="noopener"><div class="broker-logo" style="background:var(--accent)">✉</div><div class="bo-body"><div class="bo-name">Email me my dashboard links</div><div class="bo-sub">Recover web access</div></div></a>'+
+        '<a class="broker-opt" href="'+C.WHATSAPP_URL+'" target="_blank" rel="noopener"><div class="broker-logo" style="background:#25D366"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 20l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 018.5-8.5 8.38 8.38 0 018.5 8.5z"/></svg></div><div class="bo-body"><div class="bo-name">WhatsApp support</div><div class="bo-sub">Renewals, billing &amp; help</div></div></a>'+
+        '<a class="broker-opt" href="'+C.SITE_URL+'/recover.html" target="_blank" rel="noopener"><div class="broker-logo" style="background:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7.5l9 6 9-6"/></svg></div><div class="bo-body"><div class="bo-name">Email me my dashboard links</div><div class="bo-sub">Recover web access</div></div></a>'+
 
         '<button class="btn btn-ghost" id="signOut" style="margin-top:20px;color:var(--red);border-color:rgba(220,38,38,.3)">Sign out</button>'+
         '<p class="hint" style="text-align:center;margin-top:16px">MindForge Capital · SEBI-registered Research Analyst<br>Research & education only · not investment advice</p>'+
@@ -446,9 +529,9 @@
     }).join('');
     // Kite Connect (API) tier
     if(MFCBrokers.kiteEnabled()){
-      html+='<a class="broker-opt" href="'+esc(MFCBrokers.kiteLoginUrl())+'"><div class="broker-logo" style="background:#387ed1">⚡</div><div class="bo-body"><div class="bo-name">Connect Zerodha (live)</div><div class="bo-sub">Kite Connect · live holdings & in-app orders</div></div><div class="bo-state">Connect</div></a>';
+      html+='<a class="broker-opt" href="'+esc(MFCBrokers.kiteLoginUrl())+'"><div class="broker-logo" style="background:#387ed1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div><div class="bo-body"><div class="bo-name">Connect Zerodha (live)</div><div class="bo-sub">Kite Connect · live holdings &amp; in-app orders</div></div><div class="bo-state">Connect</div></a>';
     }else{
-      html+='<div class="note amber" style="margin-top:4px">⚡ <b>Live account linking</b> (Kite Connect — real holdings & in-app orders) is built in and activates once a Kite Connect API key is configured. Until then, the deeplinks above give you one-tap, pre-filled orders.</div>';
+      html+='<div class="note amber" style="margin-top:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> <b>Live account linking</b> (Kite Connect — real holdings &amp; in-app orders) is built in and activates once a Kite Connect API key is configured. Until then, the deeplinks above give you one-tap, pre-filled orders.</div>';
     }
     if(linked)html+='<button class="btn btn-ghost btn-sm" id="unlinkBroker" style="margin-top:10px;width:auto;padding:8px 14px;color:var(--ink3)">Unlink broker</button>';
     host.innerHTML=html;
