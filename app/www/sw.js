@@ -7,7 +7,7 @@
    • API (script.google.com / cross-origin): never touched — always live network,
      never cached (holdings/OTP must be fresh and are credential-bearing).
    ========================================================================== */
-var CACHE = 'mfc-app-v13';
+var CACHE = 'mfc-app-v14';
 var SHELL = [
   './', './index.html',
   './css/app.css',

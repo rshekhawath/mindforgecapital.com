@@ -33,7 +33,14 @@ window.MFCApi = (function () {
         return r.json();
       })
       .then(function (data) {
-        if (!data || data.status === 'error') {
+        // The backend signals failure two ways: most handlers return
+        // errorResponse() → {error:'…'} (NO status field); a few return
+        // {status:'error', error:'…'}. Treat EITHER as an error — matching how the
+        // website pages already check `if (data.error)`. The old check looked only
+        // at status==='error', so every errorResponse() failure slipped through as
+        // success: a wrong OTP "signed in" with zero subs, and an invalid/expired
+        // token rendered an empty "No picks yet" instead of the real message.
+        if (!data || data.status === 'error' || data.error) {
           throw new Error((data && data.error) || 'Something went wrong. Please try again.');
         }
         return data;

@@ -53,7 +53,12 @@
     { key: "operating_margin", label: "Operating Margin",  dir: "high", unit: "%", d: 1 },
     { key: "interest_coverage",label: "Interest Coverage", dir: "high", unit: "x", d: 1 },
     { key: "current_ratio",    label: "Current Ratio",     dir: "high", unit: "x", d: 2 },
-    { key: "debt_to_equity",   label: "Debt / Equity",     dir: "low",  unit: "",  d: 2, posBest: true },
+    // debt_to_equity is stored as a PERCENT (e.g. 36.65 = 0.37×). Divide to the
+    // true ratio via fn() so the factor breakdown shows "0.37×" — matching the
+    // metrics tables on the company pages — instead of "36.65". Percentile scoring
+    // is scale-invariant, so this changes only the displayed raw, never the rank. (V15.8)
+    { key: "debt_to_equity",   label: "Debt / Equity",     dir: "low",  unit: "x", d: 2, posBest: true,
+      fn: function (d) { return isNum(d.debt_to_equity) ? d.debt_to_equity / 100 : null; } },
   ];
   var VALUE = [
     { key: "earnings_yield",   label: "Earnings Yield",    dir: "high", unit: "%", d: 1, hint: "Inverse of P/E" },

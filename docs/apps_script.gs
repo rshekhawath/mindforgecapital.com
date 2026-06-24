@@ -1235,7 +1235,14 @@ function getBaseUrl() {
 }
 
 function errorResponse(error) {
+  // Include BOTH `status:'error'` and `error` so every consumer can detect a
+  // failure however it checks: the website pages test `if (data.error)`, while a
+  // success is `status:'ok'`. Emitting only `{error}` (no status) meant a client
+  // that keyed off `status==='error'` saw no error and treated the failure as
+  // success. Belt-and-suspenders with the member-app api.js guard. (Takes effect
+  // on the next Apps Script redeploy.)
   return ContentService.createTextOutput(JSON.stringify({
+    status: 'error',
     error: error
   })).setMimeType(ContentService.MimeType.JSON);
 }
