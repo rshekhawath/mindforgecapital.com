@@ -206,7 +206,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .table-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px -12px rgba(37,99,235,.14),0 24px 48px -24px rgba(37,99,235,.1)}
 .table-card::before{content:'';display:block;height:2px;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf)}
 table{width:100%;border-collapse:collapse;font-size:13px}
-#resultsTable{min-width:900px}
+#resultsTable{min-width:1000px}
 thead tr{background:linear-gradient(180deg,var(--ink3) 0%,var(--ink) 100%);border-bottom:0.5px solid var(--border2)}
 th{padding:13px 16px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.10em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
 th:hover{color:var(--accent2)}
@@ -231,6 +231,11 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 .num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:var(--text)}
 .num.v-strong{color:#047857;font-weight:700}.num.v-good{color:#059669}.num.v-weak{color:#b45309}.num.v-bad{color:#dc2626}
 .na{color:var(--text3)}
+/* Intrinsic Value (Graham) cell — ₹ fair value + colour-coded upside vs price */
+.iv-cell{display:flex;flex-direction:column;gap:2px;min-width:92px}
+.iv-num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;color:var(--text)}
+.iv-mos{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.iv-mos.iv-strong{color:#047857}.iv-mos.iv-good{color:#059669}.iv-mos.iv-weak{color:#b45309}.iv-mos.iv-bad{color:#dc2626}
 .score-cell{display:flex;flex-direction:column;gap:4px;min-width:74px}
 .score-num{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .score-track{height:5px;background:var(--ink3);border-radius:3px;overflow:hidden}
@@ -590,10 +595,24 @@ function overallCell(d){
   const s=d._overall;const c=MFCScores.color(s),g=MFCScores.grade(s);
   return`<div class="overall-cell"><span class="overall-num" style="color:${c}">${s.toFixed(0)}</span><span class="grade-pill ${gradeCls(s)}">${g.label}</span></div>`;
 }
+// V16.3: Intrinsic Value (Graham number = √(22.5 × EPS × Book Value)) + colour-coded
+// upside vs current price (d._iv, computed once at load). Positive % = trading BELOW
+// fair value (a margin of safety); negative = above. ~84% of NSE names have valid
+// inputs (needs positive EPS & book value); the rest show —.
+function intrinsicCell(d){
+  const g=d.graham_number;
+  if(!scNum(g)||g<=0)return`<span class="na">—</span>`;
+  const px=`₹${Number(g).toLocaleString("en-IN",{maximumFractionDigits:2})}`;
+  const iv=d._iv;
+  if(iv==null)return`<span class="iv-num">${px}</span>`;
+  const cls=iv>=20?"iv-strong":iv>=0?"iv-good":iv>-30?"iv-weak":"iv-bad";
+  const sign=iv>0?"+":"";
+  return`<div class="iv-cell"><span class="iv-num">${px}</span><span class="iv-mos ${cls}">${sign}${iv.toFixed(0)}% vs price</span></div>`;
+}
 
 // ── V14.9: inline professional scorecard (expandable row detail) ──
 function scNum(v){return typeof v==="number"&&isFinite(v);}
-function scEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function scEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function scFmtRaw(v,unit,dec){
   if(!scNum(v))return"—";
   const s=Number(v).toLocaleString("en-IN",{minimumFractionDigits:dec||0,maximumFractionDigits:dec||0});
@@ -715,6 +734,7 @@ function buildScorecard(d){
     ["EV/EBITDA",scNum(d.ev_ebitda)?Number(d.ev_ebitda).toFixed(1)+"×":"—"],
     ["EPS",scNum(d.eps)?"₹"+Number(d.eps).toFixed(2):"—"],
     ["Book Value",scNum(d.book_value)?"₹"+scPx(d.book_value):"—"],
+    ["Intrinsic Value",scNum(d.graham_number)&&d.graham_number>0?"₹"+scPx(d.graham_number):"—"],
     ["Div Yield",scNum(d.dividend_yield)?Number(d.dividend_yield).toFixed(2)+"%":"—"],
     ["Beta",scNum(d.beta)?Number(d.beta).toFixed(2):"—"],
   ].map(x=>`<div class="snap"><span class="k">${x[0]}</span><span class="v">${x[1]}</span></div>`).join("");
@@ -758,6 +778,7 @@ const COLUMNS=[
   {key:"_e",            label:"Efficiency",   render:d=>scoreCell(d._e)},
   {key:"_overall",      label:"Integrity",    render:d=>overallCell(d)},
   {key:"current_price", label:"Price (₹)",    render:d=>d.current_price?`<span class="num">₹${Number(d.current_price).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`:`<span class="na">—</span>`},
+  {key:"_iv",           label:"Intrinsic Value", title:"Graham intrinsic value √(22.5 × EPS × Book Value); % shows upside vs the current price (positive = trading below fair value). Sort to surface the most undervalued names.", render:d=>intrinsicCell(d)},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`},
   {key:"roe",           label:"ROE %",        render:d=>fmtTone(d.roe,1,"q")},
   {key:"pe_ratio",      label:"P/E",          render:d=>fmtTone(d.pe_ratio,1,"pe")},
@@ -774,7 +795,7 @@ function sortResults(arr){
   });
 }
 function renderTable(){
-  document.getElementById("tableHead").innerHTML=`<tr>${COLUMNS.map(c=>`<th class="${c.key===sortKey?"sorted":""}" ${c.nosort?"":`onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
+  document.getElementById("tableHead").innerHTML=`<tr>${COLUMNS.map(c=>`<th class="${c.key===sortKey?"sorted":""}"${c.title?` title="${scEsc(c.title)}"`:""} ${c.nosort?"":`onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">No stocks to show</div></td></tr>`
@@ -796,7 +817,7 @@ function sortBy(k){
   if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}
   sortResults(allResults);currentPage=1;renderTable();
   // reflect what the list is ranked by
-  const lbl={market_cap_cr:"market cap",_overall:"Integrity Score",_q:"Quality",_v:"Value",_g:"Growth",_m:"Momentum",current_price:"price",roe:"ROE",pe_ratio:"P/E"}[k]||"score";
+  const lbl={market_cap_cr:"market cap",_overall:"Integrity Score",_q:"Quality",_v:"Value",_g:"Growth",_m:"Momentum",current_price:"price",_iv:"intrinsic-value upside",roe:"ROE",pe_ratio:"P/E"}[k]||"score";
   document.getElementById("listMeta").textContent=`Ranked by ${lbl} — ${sortDir<0?"highest":"lowest"} first`;
 }
 
@@ -952,7 +973,7 @@ function doSearch(q){
 // ── CSV ──
 function exportCSV(){
   if(!allResults.length){showToast("No data to export","error");return;}
-  const cols=[["symbol","Symbol"],["name","Name"],["sector","Sector"],["current_price","Price"],["market_cap_cr","MktCapCr"],["_q","QualityScore"],["_v","ValueScore"],["_overall","IntegrityScore"],["roe","ROE"],["pe_ratio","PE"]];
+  const cols=[["symbol","Symbol"],["name","Name"],["sector","Sector"],["current_price","Price"],["graham_number","IntrinsicValue"],["market_cap_cr","MktCapCr"],["_q","QualityScore"],["_v","ValueScore"],["_overall","IntegrityScore"],["roe","ROE"],["pe_ratio","PE"]];
   const csv=[cols.map(c=>c[1]).join(","),...allResults.map(d=>cols.map(c=>String(d[c[0]]??"").replace(/,/g,"")).join(","))].join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=`mfc-stock-integrity-scores-${new Date().toISOString().slice(0,10)}.csv`;a.click();
 }
@@ -963,6 +984,9 @@ showSkeleton(12);
 MFCScores.load().then(()=>{
   // Drop stocks with no score from the list entirely.
   ALL=MFCScores.all().filter(d=>d._overall!=null);
+  // V16.3: derive the intrinsic-value upside (Graham number vs current price) once so
+  // the "Intrinsic Value" column can sort by margin of safety — most undervalued first.
+  ALL.forEach(d=>{const g=d.graham_number,p=d.current_price;d._iv=(scNum(g)&&g>0&&scNum(p)&&p>0)?((g-p)/p*100):null;});
   allResults=[...ALL];
   sortResults(allResults);
   currentPage=1;
