@@ -258,7 +258,8 @@
         '<div class="sc-ico" style="background:'+strategyAccent(s.strategy)+(isActive?'':';filter:grayscale(.55);opacity:.7')+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>'+
         '<div class="sc-body"><div class="sc-name">'+esc(strategyLabel(s.strategy))+'</div>'+
         '<div class="sc-meta">'+badge+(isActive&&dl!=null?' · renews in '+dl+' day'+(dl===1?'':'s'):'')+'</div></div>'+
-        (isActive?'<div class="sc-chev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>':'')+
+        (isActive?'<div class="sc-chev"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>'
+          :(st==='expired'?'<a class="sc-renew" href="'+esc(C.WHATSAPP_URL+(C.WHATSAPP_URL.indexOf('?')<0?'?':'&')+'text='+encodeURIComponent('Hi, I’d like to renew my MindForge '+strategyLabel(s.strategy)+' subscription.'))+'" target="_blank" rel="noopener" aria-label="Renew '+esc(strategyLabel(s.strategy))+' on WhatsApp">Renew<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>':''))+
       '</div>';
     }).join(''):
       '<div class="empty">'+emptyIll('inbox')+'<h4>No subscriptions yet</h4><p>Subscribe to a strategy to see your monthly picks here.</p>'+
@@ -403,7 +404,7 @@
           tileNum('Total picks',stocks.length,'','equal-weighted')+
           tileNum('Industries',nInd,'','sector-diversified')+
           (dl!=null?tileNum('Renews in',dl,' d',sub&&sub.expires_at?fmtDate(sub.expires_at):''):tile('Renews in','—',sub&&sub.expires_at?fmtDate(sub.expires_at):''))+
-          tile('Broker',esc(MFCBrokers.current().name),'tap a pick to buy')+
+          tile('Broker',esc(MFCBrokers.current().name),'tap a pick to buy','tile-broker')+
         '</div>'+
         sectorAllocCard(stocks,secCol)+
         '<div class="card" style="margin-top:14px">'+
@@ -452,7 +453,7 @@
         }
       });
   }
-  function tile(k,v,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
+  function tile(k,v,s,cls){return '<div class="tile'+(cls?' '+cls:'')+'"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
   function tileNum(k,num,suffix,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v"><span class="v-flow" data-count="'+num+'" data-suffix="'+(suffix||'')+'">'+num+(suffix||'')+'</span></div><div class="t-s">'+esc(s||'')+'</div></div>';}
 
   // ════════════════════════════════════════════════════════════════════════════

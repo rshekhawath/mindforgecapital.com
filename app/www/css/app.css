@@ -733,3 +733,41 @@ html,body{overflow-x:clip;}
 :root[data-theme="dark"] .h-sec .dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.16);}
 :root[data-theme="dark"] .leg-sw,
 :root[data-theme="dark"] .dep-dot{box-shadow:0 0 0 1.5px rgba(255,255,255,.18);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V16.5 — BRANDED LAUNCH SCREEN · EXPIRED-RENEW CTA · BROKER-TILE FIT
+   ----------------------------------------------------------------------------
+   Additive, brand-matched, reduced-motion-safe. Three cohesive touches:
+     1) BRANDED LAUNCH SCREEN — the cold-start placeholder (was a bare centred
+        spinner, the one un-branded surface in the app) becomes a branded launch
+        screen: the brand logo with the same breathing glow as the Login screen,
+        plus a spinner. Replaced by app.js' first render; also a graceful on-brand
+        fallback if the bundle is slow to parse.
+     2) EXPIRED-SUBSCRIPTION RENEW CTA — expired Home sub-cards were inert (no
+        chevron, no action). They now carry a one-tap "Renew" pill that opens the
+        WhatsApp renewals line with a pre-filled message — a clear path back from a
+        card that previously did nothing.
+     3) BROKER TILE FIT — the Holdings "Broker" tile holds text ("Zerodha Kite"),
+        not a number, so at the numeric 23px it wrapped to two lines on ≤360px
+        phones. Its value renders a touch smaller so the name stays on one line.
+   Motion freezes for prefers-reduced-motion; static depth stays.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) BRANDED LAUNCH SCREEN — mirrors the Login logo treatment (glow + logoglow). */
+.boot{flex:1 1 auto;min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:0 24px;animation:rise .5s var(--ease) both;}
+.boot-logo{width:96px;height:96px;border-radius:26px;display:block;box-shadow:0 14px 34px -12px rgba(26,80,216,.6);}
+.boot .spinner{margin:0 auto;}
+@media(prefers-reduced-motion:no-preference){.boot-logo{animation:mfc-logoglow 4.8s ease-in-out infinite;}}
+@media(prefers-reduced-motion:reduce){.boot{animation:none;}}
+:root[data-theme="dark"] .boot-logo{box-shadow:0 10px 28px -12px rgba(0,0,0,.72);}
+
+/* 2) EXPIRED-SUBSCRIPTION RENEW CTA — secondary-emphasis pill on the right of an
+   expired Home sub-card (matches the app's ghost-action vocabulary). */
+.sc-renew{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:800;color:var(--accent);
+  background:rgba(37,99,235,.08);border:1px solid var(--line2);border-radius:11px;padding:8px 13px;text-decoration:none;
+  transition:transform .15s var(--ease),background .2s,border-color .2s;}
+.sc-renew:active{transform:scale(.96);background:rgba(37,99,235,.15);}
+@media(hover:hover){.sc-renew:hover{background:rgba(37,99,235,.14);border-color:var(--accent2);}}
+
+/* 3) BROKER TILE — long text value (the broker name) stays on one line on ≤360px. */
+.tile-broker .t-v{font-size:18px;line-height:1.25;}
