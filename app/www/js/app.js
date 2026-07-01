@@ -243,6 +243,33 @@
   // ════════════════════════════════════════════════════════════════════════════
   //  HOME  (My Subscriptions)
   // ════════════════════════════════════════════════════════════════════════════
+
+  // V17.0 — "Your portfolio" overview: a signature card for the app's sparsest
+  // screen. A count-up active-strategy stat, the nearest renewal, and a "strategy
+  // mix" bar + legend in each strategy's signature accent (the same gradients on
+  // the sub-card icons + Account swatches). Session-data only — no extra fetch.
+  // Draws in; reduced-motion-safe (CSS freezes the entrance).
+  function pfOverviewHTML(active){
+    if(!active||!active.length)return '';
+    var withDays=active.map(function(s){return {s:s,d:daysLeft(s.expires_at)};}).filter(function(x){return x.d!=null;});
+    withDays.sort(function(a,b){return a.d-b.d;});
+    var near=withDays[0];
+    var segs=active.map(function(s,i){return '<i style="background:'+strategyAccent(s.strategy)+';animation-delay:'+(120+i*70)+'ms"></i>';}).join('');
+    var legend=active.map(function(s,i){return '<span class="pf-leg" style="animation-delay:'+(220+i*70)+'ms"><span class="sw" style="background:'+strategyAccent(s.strategy)+'"></span>'+esc(strategyLabel(s.strategy))+'</span>';}).join('');
+    var renew=near?('<div class="pf-renew"><div class="pf-renew-k">Next renewal</div>'+
+      '<div class="pf-renew-v'+(near.d<=7?' soon':'')+'">'+near.d+' day'+(near.d===1?'':'s')+'</div>'+
+      '<div class="pf-renew-s">'+esc(strategyLabel(near.s.strategy))+'</div></div>'):'';
+    return '<div class="pf-overview card card-grad rise">'+
+      '<div class="pf-top">'+
+        '<div class="pf-stat"><div class="pf-n"><span data-count="'+active.length+'">'+active.length+'</span></div>'+
+        '<div class="pf-k">Active '+(active.length===1?'strategy':'strategies')+'</div></div>'+
+        renew+
+      '</div>'+
+      '<div class="pf-bar" aria-hidden="true">'+segs+'</div>'+
+      '<div class="pf-legend">'+legend+'</div>'+
+    '</div>';
+  }
+
   function viewHome(){
     var sess=MFCStore.getSession()||{subscriptions:[]};
     var subs=sess.subscriptions||[];
@@ -254,7 +281,7 @@
       var dl=daysLeft(s.expires_at);
       var badge=isActive?'<span class="badge badge-active"><span class="dot"></span>Active</span>':
         (st==='expired'?'<span class="badge badge-expired">Expired</span>':'<span class="badge badge-muted">'+esc(st)+'</span>');
-      return '<div class="sub-card rise" style="animation-delay:'+(i*60)+'ms" '+(isActive?'data-token="'+esc(s.token)+'"':'')+'>'+
+      return '<div class="sub-card rise" style="animation-delay:'+(i*60)+'ms'+(isActive?';--sc-accent:'+strategyAccent(s.strategy):'')+'" '+(isActive?'data-token="'+esc(s.token)+'" data-accent="1"':'')+'>'+
         '<div class="sc-ico" style="background:'+strategyAccent(s.strategy)+(isActive?'':';filter:grayscale(.55);opacity:.7')+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div>'+
         '<div class="sc-body"><div class="sc-name">'+esc(strategyLabel(s.strategy))+'</div>'+
         '<div class="sc-meta">'+badge+(isActive&&dl!=null?' · renews in '+dl+' day'+(dl===1?'':'s'):'')+'</div></div>'+
@@ -271,9 +298,11 @@
         '<div class="eyebrow rise">Member dashboard</div>'+
         '<h1 class="h-title rise">Welcome back, <span class="gradtext">'+esc(first)+'</span>.</h1>'+
         '<p class="h-sub rise">'+(active.length?('You have '+active.length+' active '+(active.length===1?'strategy':'strategies')+'. Tap one to view this cycle’s picks.'):'Your subscriptions appear below.')+'</p>'+
+        pfOverviewHTML(active)+
         '<div class="list-h"><span class="lt">Your subscriptions</span></div>'+
         cards+
       '</main>','home',function(){
+        appEl.querySelectorAll('[data-count]').forEach(countUp);
         appEl.querySelectorAll('.sub-card[data-token]').forEach(function(c){
           c.addEventListener('click',function(){currentToken=c.getAttribute('data-token');location.hash='#/holdings/'+encodeURIComponent(currentToken);});
         });
