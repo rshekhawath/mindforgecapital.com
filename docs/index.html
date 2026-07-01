@@ -3310,13 +3310,15 @@ textarea:focus-visible, select:focus-visible {
   // flows + FII index-futures positioning. Transparent (drivers shown); NOT advice.
   function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
   function sentiment(d){
+    var nifty=(d.indices||{})['NIFTY 50'],fii=(d.cash||{}).fii,dii=(d.cash||{}).dii,dh=(d.deriv_history&&d.deriv_history[0])||null;
+    // Prefer the score baked into fii-dii.json by the refresh (single source of
+    // truth); fall back to computing it here if the field is absent (older json).
+    var pre=d.sentiment;
+    if(pre&&typeof pre.score==='number'){return {score:pre.score,label:pre.label,tone:pre.tone,nifty:nifty,fii:fii,dii:dii,fo:dh};}
     var sigs=[],w=[];
-    var nifty=(d.indices||{})['NIFTY 50'];
     if(nifty&&nifty.pct!=null&&!isNaN(nifty.pct)){sigs.push(clamp(Number(nifty.pct),-1,1));w.push(0.30);}
-    var fii=(d.cash||{}).fii,dii=(d.cash||{}).dii;
     if(fii&&fii.net!=null){sigs.push(clamp(Number(fii.net)/4000,-1,1));w.push(0.25);}
     if(dii&&dii.net!=null){sigs.push(clamp(Number(dii.net)/4000,-1,1));w.push(0.20);}
-    var dh=(d.deriv_history&&d.deriv_history[0])||null;
     if(dh&&dh.fii_idxfut_long!=null&&dh.fii_idxfut_short!=null){var t=Number(dh.fii_idxfut_long)+Number(dh.fii_idxfut_short);if(t>0){sigs.push(clamp((Number(dh.fii_idxfut_long)/t)*2-1,-1,1));w.push(0.25);}}
     if(!sigs.length)return null;
     var ws=w.reduce(function(a,b){return a+b;},0)||1;
@@ -3327,7 +3329,7 @@ textarea:focus-visible, select:focus-visible {
   function renderSentiment(d){
     var host=document.getElementById('mpSent');if(!host)return;
     var s=sentiment(d);if(!s){host.style.display='none';return;}
-    var L=sentLabel(s.score),sc=clamp(s.score,2,98),drv=[];
+    var L=(s.label&&s.tone)?{t:s.label,tone:s.tone}:sentLabel(s.score),sc=clamp(s.score,2,98),drv=[];
     if(s.nifty&&s.nifty.pct!=null)drv.push('Nifty <b>'+((Number(s.nifty.change)||0)>=0?'▲':'▼')+Math.abs(Number(s.nifty.pct)||0).toFixed(2)+'%</b>');
     if(s.fii)drv.push('FII <b>'+((Number(s.fii.net)||0)>=0?'buying':'selling')+'</b>');
     if(s.dii)drv.push('DII <b>'+((Number(s.dii.net)||0)>=0?'buying':'selling')+'</b>');

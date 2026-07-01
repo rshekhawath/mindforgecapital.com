@@ -1411,18 +1411,22 @@ footer p {
       function lbl(s){if(s<25)return['Strongly bearish','bear'];if(s<43)return['Bearish','bear'];if(s<=57)return['Neutral','neutral'];if(s<=75)return['Bullish','bull'];return['Strongly bullish','bull'];}
       fetch('/fii-dii/fii-dii.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
         if(!d)return;
-        var sigs=[],w=[];
-        var nf=(d.indices||{})['NIFTY 50'];
-        if(nf&&nf.pct!=null&&!isNaN(nf.pct)){sigs.push(clamp(Number(nf.pct),-1,1));w.push(0.30);}
-        var fii=(d.cash||{}).fii,dii=(d.cash||{}).dii;
-        if(fii&&fii.net!=null){sigs.push(clamp(Number(fii.net)/4000,-1,1));w.push(0.25);}
-        if(dii&&dii.net!=null){sigs.push(clamp(Number(dii.net)/4000,-1,1));w.push(0.20);}
-        var dh=(d.deriv_history&&d.deriv_history[0])||null;
-        if(dh&&dh.fii_idxfut_long!=null&&dh.fii_idxfut_short!=null){var t=Number(dh.fii_idxfut_long)+Number(dh.fii_idxfut_short);if(t>0){sigs.push(clamp((Number(dh.fii_idxfut_long)/t)*2-1,-1,1));w.push(0.25);}}
-        if(!sigs.length)return;
-        var ws=w.reduce(function(a,b){return a+b;},0)||1;
-        var comp=sigs.reduce(function(a,s,i){return a+s*w[i];},0)/ws;
-        var score=Math.round(50+50*comp),L=lbl(score),drv=[];
+        var nf=(d.indices||{})['NIFTY 50'],fii=(d.cash||{}).fii,dii=(d.cash||{}).dii,dh=(d.deriv_history&&d.deriv_history[0])||null;
+        // Prefer the score baked into fii-dii.json by the refresh; else compute here.
+        var score,L,pre=d.sentiment;
+        if(pre&&typeof pre.score==='number'){score=pre.score;L=(pre.label&&pre.tone)?[pre.label,pre.tone]:lbl(score);}
+        else{
+          var sigs=[],w=[];
+          if(nf&&nf.pct!=null&&!isNaN(nf.pct)){sigs.push(clamp(Number(nf.pct),-1,1));w.push(0.30);}
+          if(fii&&fii.net!=null){sigs.push(clamp(Number(fii.net)/4000,-1,1));w.push(0.25);}
+          if(dii&&dii.net!=null){sigs.push(clamp(Number(dii.net)/4000,-1,1));w.push(0.20);}
+          if(dh&&dh.fii_idxfut_long!=null&&dh.fii_idxfut_short!=null){var t=Number(dh.fii_idxfut_long)+Number(dh.fii_idxfut_short);if(t>0){sigs.push(clamp((Number(dh.fii_idxfut_long)/t)*2-1,-1,1));w.push(0.25);}}
+          if(!sigs.length)return;
+          var ws=w.reduce(function(a,b){return a+b;},0)||1;
+          var comp=sigs.reduce(function(a,s,i){return a+s*w[i];},0)/ws;
+          score=Math.round(50+50*comp);L=lbl(score);
+        }
+        var drv=[];
         if(nf&&nf.pct!=null)drv.push('Nifty <b>'+((Number(nf.change)||0)>=0?'▲':'▼')+Math.abs(Number(nf.pct)||0).toFixed(2)+'%</b>');
         if(fii)drv.push('FII <b>'+((Number(fii.net)||0)>=0?'buying':'selling')+'</b>');
         if(dii)drv.push('DII <b>'+((Number(dii.net)||0)>=0?'buying':'selling')+'</b>');
