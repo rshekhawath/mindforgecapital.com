@@ -383,17 +383,27 @@ nav {
 .strat-card.featured::before {
   content: ''; position: absolute;
   top: -40%; left: -40%; right: -40%; bottom: -40%;
-  background: radial-gradient(ellipse at center, rgba(26,108,244,0.08) 0%, transparent 60%);
+  /* V17.2: warm the top-right corner where the gold "Popular" tab now sits so the
+     tab reads as part of the card, not a bolt-on — a faint amber wash layered over
+     the existing blue spotlight. */
+  background:
+    radial-gradient(150px 120px at 82% 6%, rgba(245,158,11,0.09) 0%, transparent 68%),
+    radial-gradient(ellipse at center, rgba(26,108,244,0.08) 0%, transparent 60%);
   pointer-events: none; z-index: 0;
 }
 .strat-card.featured > * { position: relative; z-index: 1; }
 .strat-card.featured .badge-pop {
-  background: linear-gradient(90deg, var(--accent) 0%, #2dd4bf 100%);
+  /* V17.2: authoritative corner-tab rule — out-specifies `.featured > *`
+     (which forces position:relative/z-index:1) so the tab can pin absolutely.
+     Gold (not the old blue→teal) so it pops against the blue featured card. */
+  position: absolute; top: 0; right: 0; z-index: 4;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
   color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 4px 12px;
-  box-shadow: 0 4px 10px -4px rgba(26,80,216,0.5);
+  font-size: 9.5px; font-weight: 700; line-height: 1;
+  letter-spacing: 0.04em;
+  padding: 4px 11px 5px 12px;
+  border-radius: 0 0 0 11px;
+  box-shadow: 0 5px 14px -7px rgba(245,158,11,0.7);
 }
 
 /* ── MOBILE STICKY CTA BAR ── */
@@ -428,7 +438,9 @@ nav {
 
 /* ── MOST POPULAR SHIMMER ── */
 .strat-card.featured .badge-pop {
-  position: relative; overflow: hidden;
+  /* V17.2: keep only the shimmer clip here — positioning now lives on .badge-pop
+     (absolute corner tab). Setting position:relative here would out-specify that. */
+  overflow: hidden;
 }
 .strat-card.featured .badge-pop::after {
   content: ''; position: absolute; inset: 0;
@@ -652,17 +664,24 @@ nav {
 .badge-teal   { background: rgba(0,206,201,0.15);  color: #00cec9; }
 .badge-gold   { background: rgba(232,201,122,0.15); color: #e8c97a; }
 .badge-pop    {
-  /* V5.2 #6: louder so the "Most popular" tag actually catches the eye —
-     was pale-purple-on-purple at 10px, now a punchy gold gradient pill. */
+  /* V17.2: the "Most popular" tag used to sit inline beside the category badge
+     via a space-between flex row. In the 5-up grid each card is only ~200px wide,
+     so the two pills couldn't share a 163px line — BOTH wrapped to two lines and
+     collided. Re-homed as an absolutely-positioned corner tab pinned to the card's
+     top-right, decoupled from the badge line: it never competes for horizontal room,
+     stays wrap-proof at every breakpoint, and reads as a premium "featured" ribbon. */
+  position: absolute;
+  top: 0; right: 0; z-index: 3; margin: 0;
   background: linear-gradient(135deg,#f59e0b,#d97706);
   color: #fff;
-  font-size: 11px; font-weight: 700; padding: 5px 12px;
-  border-radius: 999px;
+  font-size: 10px; font-weight: 700; padding: 6px 12px 6px 13px;
+  border-radius: 0 0 0 13px;
   letter-spacing: .04em; text-transform: uppercase;
-  box-shadow: 0 6px 18px -8px rgba(245,158,11,.65);
+  white-space: nowrap;
+  box-shadow: 0 6px 16px -8px rgba(245,158,11,.7);
   display: inline-flex; align-items: center; gap: 5px;
 }
-.badge-pop::before{ content: '★'; font-size: 11px; line-height: 1; }
+.badge-pop::before{ content: '★'; font-size: 10px; line-height: 1; }
 .strat-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
 .strat-universe { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
 .strat-metrics { display: flex; gap: 0; margin-bottom: 24px; align-items: flex-end; }
@@ -3559,10 +3578,8 @@ textarea:focus-visible, select:focus-visible {
 
       <!-- LargeMidcap -->
       <div class="strat-card featured tilt-host fade-up">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <span class="strat-badge badge-purple">Large &amp; Midcap</span>
-          <span class="badge-pop">Most popular</span>
-        </div>
+        <span class="badge-pop">Popular</span>
+        <span class="strat-badge badge-purple">Large &amp; Midcap</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> LargeMidcap 250</div>
         <div class="strat-universe">25 stocks · Nifty LargeMidcap 250 · Monthly rebalance</div>
         <div class="strat-metrics">
@@ -4945,6 +4962,16 @@ section[id]{ scroll-margin-top: 80px; }
   box-shadow:
     0 1px 0 rgba(255,255,255,0.7) inset,
     0 22px 46px -26px rgba(26,80,216,0.26);
+}
+/* V17.2: the featured card kept its resting glow on hover (a real gap — every other
+   card deepened but this one didn't, so the "recommended" pick gave no lift feedback).
+   Now it lifts strongest of the five, with a whisper of warm amber in the shadow to
+   echo the gold "Popular" tab. */
+.strat-card.featured:hover{
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.7) inset,
+    0 34px 66px -26px rgba(26,80,216,0.34),
+    0 10px 26px -16px rgba(245,158,11,0.28);
 }
 .why-card{
   box-shadow:
