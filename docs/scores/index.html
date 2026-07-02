@@ -126,11 +126,21 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 @media(max-width:1080px){.highlights{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:720px){.highlights{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:440px){.highlights{grid-template-columns:1fr}}
-.hl-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 18px;cursor:pointer;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 18px -10px rgba(37,99,235,.14);display:flex;align-items:center;gap:14px}
+.hl-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 18px;cursor:pointer;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 18px -10px rgba(37,99,235,.14);display:flex;align-items:center;gap:14px;animation:hl-in .45s cubic-bezier(.22,1,.36,1) both}
+/* V17.7: champions cascade in after data load (matches the screener's row stagger) */
+@keyframes hl-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
+.hl-card:nth-child(2){animation-delay:.06s}.hl-card:nth-child(3){animation-delay:.12s}
+.hl-card:nth-child(4){animation-delay:.18s}.hl-card:nth-child(5){animation-delay:.24s}
+.hl-card:nth-child(6){animation-delay:.30s}
+@media(prefers-reduced-motion:reduce){.hl-card{animation:none}}
 .hl-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:var(--c,#1a50d8);transition:width .25s cubic-bezier(.22,.8,.2,1)}
 .hl-card:hover::before{width:5px}
 .hl-card:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 36px -16px rgba(26,80,216,.28)}
-.hl-ring{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;position:relative}
+/* V17.7: ring sweep-in — @property lets the conic angle tween; browsers without
+   it just render the final angle instantly (progressive enhancement) */
+@property --hldeg{syntax:'<angle>';initial-value:0deg;inherits:false}
+.hl-ring{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;position:relative;--hldeg:0deg;background:conic-gradient(var(--c,#1a50d8) 0 var(--hldeg),var(--ink3) var(--hldeg) 360deg);transition:--hldeg .9s cubic-bezier(.22,.8,.2,1)}
+@media(prefers-reduced-motion:reduce){.hl-ring{transition:none}}
 .hl-ring::before{content:'';position:absolute;width:40px;height:40px;border-radius:50%;background:var(--ink2)}
 .hl-ring span{position:relative;z-index:1;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
 .hl-meta{min-width:0;flex:1}
@@ -182,6 +192,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .search-hero input{width:100%;background:var(--ink2);border:1px solid var(--border2);border-radius:14px;color:var(--text);padding:16px 18px 16px 50px;font-size:16px;outline:none;transition:all .2s;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -18px rgba(26,80,216,.3);font-family:inherit}
 .search-hero input:focus{border-color:var(--accent3);box-shadow:0 0 0 4px rgba(37,99,235,0.08),0 14px 34px -18px rgba(26,80,216,.4)}
 .search-hero input::placeholder{color:var(--text3)}
+/* V17.7: "/" focuses the search (hint chip hidden on touch layouts) */
+.search-kbd{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:24px;height:24px;display:grid;place-items:center;font-size:12.5px;font-weight:700;color:var(--text3);background:var(--ink3);border:0.5px solid var(--border2);border-radius:6px;pointer-events:none;transition:opacity .15s}
+.search-hero input:focus~.search-kbd{opacity:0}
+@media(max-width:720px){.search-kbd{display:none}}
 .search-hero .search-icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--accent2);font-size:18px;pointer-events:none}
 .search-dropdown{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);overflow:hidden;display:none;z-index:120;box-shadow:0 16px 40px -12px rgba(15,23,42,0.2);max-height:360px;overflow-y:auto}
 .search-dropdown.show{display:block}
@@ -484,6 +498,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     <div class="search-hero">
       <span class="search-icon">🔍</span>
       <input type="text" id="globalSearch" placeholder="Search any stock — e.g. RELIANCE, TCS, INFY…" autocomplete="off" aria-label="Search stocks">
+      <span class="search-kbd" aria-hidden="true">/</span>
       <div class="search-dropdown" id="searchDropdown"></div>
     </div>
   </section>
@@ -875,12 +890,18 @@ function renderHero(){
   ];
   document.getElementById("highlights").innerHTML=cards.map(card=>{
     const d=card.d;if(!d)return"";
-    const sc=d[card.key],col=MFCScores.color(sc);
+    const sc=d[card.key];
+    // V17.7: ring + score tinted to the card's PILLAR accent (--c) so the six
+    // champions read as distinct lenses — the old MFCScores.color(sc) band
+    // colour made every high scorer identical green. Sweep driven by --hldeg.
     return`<div class="hl-card" style="--c:${card.c}" onclick="location.href='company.html?symbol=${encodeURIComponent(d.symbol)}'">
-      <div class="hl-ring" style="background:conic-gradient(${col} 0 ${sc*3.6}deg, var(--ink3) ${sc*3.6}deg 360deg)"><span style="color:${col}">${sc.toFixed(0)}</span></div>
-      <div class="hl-meta"><div class="hl-kicker">${card.kick}</div><div class="hl-name">${d.name||d.symbol}</div><div class="hl-sym">${d.symbol}</div></div>
+      <div class="hl-ring" data-deg="${(sc*3.6).toFixed(1)}"><span style="color:${card.c}">${sc.toFixed(0)}</span></div>
+      <div class="hl-meta"><div class="hl-kicker">${card.kick}</div><div class="hl-name" title="${scEsc(d.name||d.symbol)}">${d.name||d.symbol}</div><div class="hl-sym">${d.symbol}</div></div>
     </div>`;
   }).join("");
+  const sweepRings=()=>document.querySelectorAll("#highlights .hl-ring[data-deg]").forEach(el=>el.style.setProperty("--hldeg",el.dataset.deg+"deg"));
+  requestAnimationFrame(sweepRings);
+  setTimeout(sweepRings,140); // frame-starved fallback, same as the dist bar
   renderQuadrant();
 }
 
@@ -950,6 +971,13 @@ function rollNum(id,target,dec){
 // ── search ──
 let searchTimer, kbdIndex=-1, lastResults=[];
 const searchEl=document.getElementById("globalSearch");
+// V17.7: "/" jumps to search from anywhere on the page (unless already typing)
+document.addEventListener("keydown",function(e){
+  if(e.key!=="/"||e.metaKey||e.ctrlKey||e.altKey)return;
+  const t=e.target,tag=(t.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea"||tag==="select"||t.isContentEditable)return;
+  e.preventDefault();searchEl.focus();searchEl.select();
+});
 searchEl.addEventListener("input",function(){
   clearTimeout(searchTimer);
   const q=this.value.trim();
