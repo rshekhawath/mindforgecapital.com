@@ -3315,6 +3315,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   background:linear-gradient(90deg,#dc2626 0%,#f59e0b 50%,#059669 100%);box-shadow:inset 0 1px 2px rgba(0,0,0,.14)}
 .mps-needle{position:absolute;top:50%;left:50%;width:16px;height:16px;border-radius:50%;background:#fff;border:2.5px solid #0c1831;
   box-shadow:0 2px 7px rgba(0,0,0,.30);transform:translate(-50%,-50%);transition:left 1.1s cubic-bezier(.22,.8,.2,1)}
+/* V17.8: notches mark the real verdict boundaries (43 / 57 = neutral band) and the
+   needle carries a soft halo in its zone's colour — the read is visible at a glance */
+.mps-meter::before,.mps-meter::after{content:'';position:absolute;top:1.5px;bottom:1.5px;width:1.5px;border-radius:1px;background:rgba(255,255,255,.65)}
+.mps-meter::before{left:43%}
+.mps-meter::after{left:57%}
+.mps-needle.mps-bear{box-shadow:0 2px 7px rgba(0,0,0,.30),0 0 0 4px rgba(220,38,38,.16)}
+.mps-needle.mps-neutral{box-shadow:0 2px 7px rgba(0,0,0,.30),0 0 0 4px rgba(245,158,11,.20)}
+.mps-needle.mps-bull{box-shadow:0 2px 7px rgba(0,0,0,.30),0 0 0 4px rgba(5,150,105,.16)}
 .mps-scale{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#94a3b8;margin-top:7px}
 .mps-drivers{font-size:11.5px;color:#475569;font-weight:600;margin-top:9px;line-height:1.5}
 .mps-drivers b{color:#0c1831;font-weight:700}
@@ -3370,7 +3378,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     if(s.fo&&s.fo.fii_idxfut_long!=null)drv.push('FIIs net <b>'+(Number(s.fo.fii_idxfut_long)>=Number(s.fo.fii_idxfut_short)?'long':'short')+' F&amp;O</b>');
     host.innerHTML='<div class="mps-head"><span class="mps-k"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Market sentiment</span>'+
       '<span class="mps-verdict mps-'+L.tone+'">'+L.t+' · '+s.score+'<i>/100</i></span></div>'+
-      '<div class="mps-meter"><span class="mps-needle" data-left="'+sc+'"></span></div>'+
+      '<div class="mps-meter"><span class="mps-needle mps-'+L.tone+'" data-left="'+sc+'"></span></div>'+
       '<div class="mps-scale"><span>Bearish</span><span>Neutral</span><span>Bullish</span></div>'+
       '<div class="mps-drivers">'+drv.join(' · ')+'</div>';
     var n=host.querySelector('.mps-needle');
@@ -3595,6 +3603,15 @@ html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
   .bf-pipeline{ flex-wrap: wrap; gap: 12px; }
   .bf-stage{ flex: 1 1 calc(33.333% - 12px); }
   .bf-sep{ display: none; }
+  /* V17.8: the one-line recap pill wraps into a misshapen lozenge below 900px —
+     restack it as left-aligned bullet rows instead */
+  .bf-summary{ display: flex; flex-direction: column; align-items: flex-start; gap: 9px;
+    border-radius: 16px; padding: 15px 18px; }
+  .bf-summary .bf-dot{ display: none; }
+  .bf-summary > span:not(.bf-dot){ position: relative; padding-left: 17px; }
+  .bf-summary > span:not(.bf-dot)::before{ content:''; position: absolute; left: 0; top: .5em;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: linear-gradient(135deg,var(--accent3),var(--teal)); opacity: .8; }
 }
 @media (max-width: 620px){
   .build-flow{ padding: 60px 0; }
@@ -3622,7 +3639,7 @@ html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></div>
         <div class="bf-title">The universe</div>
         <div class="bf-desc">Every eligible name in the index — a broad, rules-defined starting field.</div>
-        <span class="bf-chip">up to 500 stocks</span>
+        <span class="bf-chip">Up to 750 stocks</span>
       </div>
       <div class="bf-sep" style="--sc:#2563eb;animation-delay:0.0s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       <div class="bf-stage fade-up reveal-stagger" data-step="02" style="--reveal-delay:80ms;--sc:#2563eb;--sc2:#0d84c3;">
@@ -3630,7 +3647,7 @@ html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12l4-3"/><path d="M3 12h2M12 3v2M19 6l-1.5 1.5"/></svg></div>
         <div class="bf-title">Multi-factor score</div>
         <div class="bf-desc">Each stock scored on peer-reviewed factors — value, quality, momentum &amp; more.</div>
-        <span class="bf-chip">academically validated</span>
+        <span class="bf-chip">Academically Validated</span>
       </div>
       <div class="bf-sep" style="--sc:#0d84c3;animation-delay:0.3s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       <div class="bf-stage fade-up reveal-stagger" data-step="03" style="--reveal-delay:160ms;--sc:#0d84c3;--sc2:#0891b2;">
@@ -3638,7 +3655,7 @@ html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></div>
         <div class="bf-title">Ranked by conviction</div>
         <div class="bf-desc">Sorted highest-first, so only the strongest signals make the cut.</div>
-        <span class="bf-chip">strongest first</span>
+        <span class="bf-chip">Strongest First</span>
       </div>
       <div class="bf-sep" style="--sc:#0891b2;animation-delay:0.6s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       <div class="bf-stage fade-up reveal-stagger" data-step="04" style="--reveal-delay:240ms;--sc:#0891b2;--sc2:#0d9488;">
@@ -3646,7 +3663,7 @@ html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
         <div class="bf-title">Sector-capped</div>
         <div class="bf-desc">No more than three names per industry — diversification is structural, not promised.</div>
-        <span class="bf-chip">≤ 3 per industry</span>
+        <span class="bf-chip">≤ 3 Per Industry</span>
       </div>
       <div class="bf-sep" style="--sc:#0d9488;animation-delay:0.8999999999999999s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
       <div class="bf-stage fade-up reveal-stagger" data-step="05" style="--reveal-delay:320ms;--sc:#0d9488;--sc2:#2dd4bf;">
@@ -3654,13 +3671,13 @@ html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9l6.5 3.75"/><circle cx="12" cy="12" r="9"/></svg></div>
         <div class="bf-title">Your portfolio</div>
         <div class="bf-desc">The top names, held equal-weight until next month's rebalance.</div>
-        <span class="bf-chip">25 · equal-weight</span>
+        <span class="bf-chip">Equal-Weighted Stocks</span>
       </div>
     </div>
     <div class="bf-summary fade-up">
       <span>Up to <b>500</b> candidates</span><span class="bf-dot"></span>
-      <span>scored, ranked &amp; capped into <b>25</b> holdings</span><span class="bf-dot"></span>
-      <span>rebalanced <b>every month</b>, published in full.</span>
+      <span>Scored, Ranked &amp; Capped into <b>Equal Weighted</b> Holdings</span><span class="bf-dot"></span>
+      <span>Rebalanced <b>every month</b>, Published in full.</span>
     </div>
   </div>
 </section>
