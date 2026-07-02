@@ -190,6 +190,34 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   border-color:rgba(37,99,235,0.30);
 }
 
+/* ── PORTFOLIO MAP (V17.3) — the whole book as one sector-coloured mosaic; tile
+   width tracks model weight, colours match the sector donut/legend above. ── */
+.pmap-card{
+  background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:24px 26px;margin-bottom:18px;position:relative;z-index:1;
+  box-shadow:var(--shadow-sm);
+  transition:box-shadow .25s ease, border-color .25s ease;
+}
+.pmap-card:hover{ box-shadow:0 14px 34px -20px rgba(26,80,216,0.40), var(--shadow-sm); border-color:rgba(37,99,235,0.30); }
+.pmap-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.pmap-head h3{ font-size:16px; font-weight:700; color:var(--text); margin:0; }
+.pmap-sub{ font-size:12px; color:var(--text3); }
+.pmap-grid{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+.pmap-tile{
+  flex:1 1 auto; min-width:86px; min-height:58px;
+  border-radius:10px; padding:11px 12px; border:1px solid;
+  display:flex; flex-direction:column; justify-content:space-between; gap:8px; overflow:hidden;
+  transition:transform .18s ease, box-shadow .2s ease, filter .2s ease;
+}
+.pmap-tile:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); filter:saturate(1.18) brightness(1.02); }
+.pmap-ticker{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-weight:700; font-size:12.5px; letter-spacing:.02em; color:var(--white);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pmap-wt{ display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text3); font-variant-numeric:tabular-nums; }
+.pmap-swatch{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+@media (prefers-reduced-motion: reduce){ .pmap-tile:hover{ transform:none; } }
+@media (max-width:600px){ .pmap-card{ padding:20px 18px; } .pmap-tile{ min-width:72px; min-height:52px; padding:9px 10px; } }
+
 /* ── POSITION SIZING (CAPITAL CALCULATOR) ── */
 .size-card{
   background:linear-gradient(160deg,rgba(37,99,235,0.04) 0%,var(--ink2) 60%);
@@ -1275,7 +1303,23 @@ footer p {
     0 12px 26px -14px rgba(26,80,216,0.15);
 }
 </style>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=110">
+<script>/* MFC theme (V17.3): FOUC-free apply + injected nav toggle. Self-contained, no deps. */
+(function(){var D=document,R=D.documentElement;
+function pref(){try{return window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}catch(e){return'light';}}
+function get(){try{return localStorage.getItem('mfc-theme')||pref();}catch(e){return'light';}}
+function apply(t){R.setAttribute('data-theme',t==='dark'?'dark':'light');}
+apply(get());
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+function build(){if(D.getElementById('mfc-theme-toggle'))return;
+var inner=D.querySelector('nav .nav-inner')||D.querySelector('nav');if(!inner)return;
+var b=D.createElement('button');b.id='mfc-theme-toggle';b.className='mfc-theme-toggle';b.type='button';
+b.setAttribute('aria-label','Toggle dark mode');b.title='Toggle light / dark';
+function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MOON;b.setAttribute('aria-pressed',t==='dark'?'true':'false');}
+sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
+var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
+if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
+<link rel="stylesheet" href="assets/mfc-finish.css?v=1736">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -1541,6 +1585,15 @@ footer p {
         </div>
         <div class="alloc-grid" id="alloc-grid"></div>
       </div>
+    </div>
+
+    <!-- PORTFOLIO MAP (V17.3) — full holdings mosaic, coloured by sector -->
+    <div class="pmap-card fade-up" id="pmap-card" style="display:none;">
+      <div class="pmap-head">
+        <h3>Portfolio map</h3>
+        <div class="pmap-sub" id="pmap-sub">Your holdings at a glance</div>
+      </div>
+      <div class="pmap-grid" id="pmap-grid"></div>
     </div>
 
     <!-- POSITION SIZING -->
@@ -2090,6 +2143,7 @@ function renderDashboard(sub, stocks) {
   document.getElementById('stat-industries-sub').textContent = industryCopy;
 
   renderAllocation(stocks);
+  renderPortfolioMap(stocks);   // V17.3: holdings mosaic, coloured by sector
   setupCapitalCalculator(stocks, currentStrategy);
   renderTable(stocks);
   renderSectorChips();  // V5.2 #20: filter chips above the table
@@ -2162,6 +2216,46 @@ function buildSectorColorMap(stocks) {
   Object.entries(agg).sort((a, b) => b[1] - a[1])
     .forEach(([name], i) => { map[name] = SECTOR_COLORS[i % SECTOR_COLORS.length]; });
   return map;
+}
+
+// V17.3: Portfolio map — render the whole book as a sector-coloured mosaic.
+// Tile width tracks model weight; sector colours are taken from the SAME shared
+// map the donut/legend use (built from the canonical `stocks`, never a re-sorted
+// copy — see buildSectorColorMap's note), so a tile's colour matches its sector
+// swatch in the allocation card above. Fails silently if anything is missing.
+function renderPortfolioMap(stocks) {
+  const card = document.getElementById('pmap-card');
+  const grid = document.getElementById('pmap-grid');
+  const sub  = document.getElementById('pmap-sub');
+  if (!card || !grid) return;
+  const list = (stocks || []).filter(s => s && (s.ticker || s.company_name));
+  if (!list.length) { card.style.display = 'none'; return; }
+  const colorMap = buildSectorColorMap(stocks);          // canonical → matches legend
+  const order = {};
+  Object.keys(colorMap).forEach((k, i) => { order[k] = i; }); // weight-desc sector order
+  const maxW = Math.max.apply(null, list.map(s => Number(s.weight_pct) || 1)) || 1;
+  const sorted = list.slice().sort((a, b) => {
+    const ka = (a.industry || 'Unknown').trim() || 'Unknown';
+    const kb = (b.industry || 'Unknown').trim() || 'Unknown';
+    if (order[ka] !== order[kb]) return (order[ka] ?? 99) - (order[kb] ?? 99);
+    return (Number(b.weight_pct) || 0) - (Number(a.weight_pct) || 0);
+  });
+  grid.innerHTML = sorted.map(s => {
+    const sector = (s.industry || 'Unknown').trim() || 'Unknown';
+    const color = colorMap[sector] || SECTOR_COLORS[0];
+    const w = Number(s.weight_pct) || 0;
+    const grow = Math.max(10, Math.round((w / maxW) * 100));
+    const tk = escapeHtml(s.ticker || s.company_name || '—');
+    const nm = escapeHtml(s.company_name || s.ticker || '');
+    return '<div class="pmap-tile" style="flex-grow:' + grow + ';background:' + color + '22;border-color:' + color + '55;"'
+      + ' title="' + nm + ' · ' + escapeHtml(sector) + ' · ' + w.toFixed(1) + '% weight">'
+      + '<span class="pmap-ticker">' + tk + '</span>'
+      + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>' + w.toFixed(1) + '%</span>'
+      + '</div>';
+  }).join('');
+  const secCount = Object.keys(colorMap).length;
+  if (sub) sub.textContent = sorted.length + ' holdings · ' + secCount + ' sectors · tile size = model weight';
+  card.style.display = '';
 }
 
 function renderAllocation(stocks) {

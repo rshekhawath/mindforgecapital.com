@@ -90,3 +90,98 @@ footer::before {
 @media (max-width: 768px) {
   .fab-wa-bubble { display: none !important; }
 }
+
+
+/* ============================================================================
+   V17.3 — SITE-WIDE DARK MODE (shared). Activated by html[data-theme="dark"],
+   set by the per-page theme-boot snippet (FOUC-free) + a nav toggle it injects.
+   The bulk is a CSS-variable flip (body/cards/text/borders/headings all ride the
+   vars, so they invert automatically); below the palette are targeted overrides
+   for hardcoded-light chrome that doesn't ride the variables. Light theme is
+   left completely untouched.
+   ========================================================================== */
+
+/* — the injected nav toggle (both themes) — */
+.mfc-theme-toggle{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:38px; height:38px; border-radius:10px; flex:0 0 auto;
+  background:transparent; border:0.5px solid var(--border2); color:var(--text2);
+  cursor:pointer; padding:0; margin-left:10px; -webkit-appearance:none; appearance:none;
+  transition:color .2s ease, border-color .2s ease, background .2s ease, transform .2s ease;
+}
+.mfc-theme-toggle:hover{ color:var(--accent2); border-color:var(--accent3); background:rgba(37,99,235,0.07); transform:translateY(-1px); }
+.mfc-theme-toggle:active{ transform:translateY(0); }
+.mfc-theme-toggle:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
+.mfc-theme-toggle svg{ width:18px; height:18px; display:block; }
+@media (max-width:768px){ .mfc-theme-toggle{ width:34px; height:34px; margin-left:auto; margin-right:8px; } .mfc-theme-toggle svg{ width:17px; height:17px; } }
+@media (prefers-reduced-motion: reduce){ .mfc-theme-toggle{ transition:none; } .mfc-theme-toggle:hover{ transform:none; } }
+
+/* — palette flip — */
+html[data-theme="dark"]{
+  --ink:#0a1120; --ink2:#111c30; --ink3:#18233c;
+  --white:#eaf1ff;
+  --accent:#2f5fe0; --accent2:#5b8def; --accent3:#83aaff;
+  --gold:#f0a836; --teal:#28bcd8; --green:#16c78d;
+  --text:#e7edfb; --text2:#b2c2de; --text3:#8698b7;
+  --border:rgba(150,180,240,0.15); --border2:rgba(150,180,240,0.27);
+  color-scheme: dark;
+}
+html[data-theme="dark"] body{ background:var(--ink); }
+
+/* — hardcoded-light chrome overrides — */
+html[data-theme="dark"] nav{ background:rgba(9,15,28,0.82); border-bottom:0.5px solid var(--border2); }
+html[data-theme="dark"] body.scrolled nav{ box-shadow:0 10px 30px -18px rgba(0,0,0,0.55); }
+html[data-theme="dark"] .mobile-cta-bar{ background:rgba(9,15,28,0.94); border-top:0.5px solid var(--border2); }
+html[data-theme="dark"] .fab-wa-bubble{ background:var(--ink2); color:var(--text); border-color:var(--border2); }
+/* frosted panels / dropdowns that used a near-white tint */
+html[data-theme="dark"] .nav-links.open,
+html[data-theme="dark"] .mobile-menu,
+html[data-theme="dark"] #primary-nav.open{ background:rgba(11,18,34,0.98); }
+
+/* — V17.3 dark: higher-specificity fixes for hardcoded-light components that ride
+   a scrolled/state selector or an inline rule loaded after this sheet — */
+html[data-theme="dark"] body.scrolled nav{ background:rgba(9,15,28,0.90); border-bottom-color:var(--border2); box-shadow:0 10px 30px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.04) inset; }
+html[data-theme="dark"] .strat-card.featured{ background:linear-gradient(165deg, rgba(70,120,245,0.16) 0%, var(--ink2) 100%); }
+html[data-theme="dark"] .mp-card{ background:rgba(17,28,48,0.72); }
+html[data-theme="dark"] .btn-ghost:hover{ background:rgba(120,160,240,0.12); }
+
+/* — V17.3 dark: content cards that must follow the dark surface. (Chart-image
+   embeds .bt-chart-full/.bt-chart-wrap deliberately stay light — they hold
+   light-background chart PNGs and read as intentional light data cards.) — */
+html[data-theme="dark"] .sample-preview-card,
+html[data-theme="dark"] .mfcalc-card,
+html[data-theme="dark"] .mfc-result,
+html[data-theme="dark"] .mfc-result-mf{ background:var(--ink2); border-color:var(--border2); }
+html[data-theme="dark"] .btn-ghost-page{ background:transparent; }
+html[data-theme="dark"] .btn-ghost-page:hover{ background:rgba(120,160,240,0.12); }
+
+/* — V17.3 dark: "locked" gate fade — fade to the dark surface, not white — */
+html[data-theme="dark"] .sp-gate{ background:linear-gradient(rgba(17,28,48,0) 0%, rgba(17,28,48,0.94) 30%, rgb(17,28,48) 100%); }
+
+/* — V17.3 dark: hero chrome with semi-opaque white fills (caught on 2nd pass) — */
+html[data-theme="dark"] .hero-label{ background:rgba(120,160,240,0.12); }
+html[data-theme="dark"] .btn-ghost{ background:rgba(120,160,240,0.08); border-color:var(--border2); color:var(--accent3); }
+html[data-theme="dark"] .btn-ghost:hover{ background:rgba(120,160,240,0.16); border-color:var(--accent3); }
+html[data-theme="dark"] .hv-card{ background:linear-gradient(160deg, rgba(70,120,245,0.10) 0%, var(--ink2) 60%); }
+html[data-theme="dark"] .proof-bar{ background:rgba(17,28,48,0.72); }
+
+/* — V17.3 dark: dashboard sentiment strip (hardcoded white); keep needle light — */
+html[data-theme="dark"] .ds-sent{ background:var(--ink2); border-color:var(--border2); }
+
+/* — V17.3 dark: text inside cards we darkened above (was hardcoded-dark → low
+   contrast on the now-dark surface). Values keep their semantic colours. — */
+/* homepage "Today's Market Pulse" card */
+html[data-theme="dark"] .mp-date,
+html[data-theme="dark"] .mps-k,
+html[data-theme="dark"] .mp-k,
+html[data-theme="dark"] .mps-drivers{ color:var(--text2); }
+html[data-theme="dark"] .mps-drivers b{ color:var(--text); }
+/* dashboard sentiment strip drivers + 1:1 benefit card */
+html[data-theme="dark"] .ds-sent-drv{ color:var(--text2); }
+html[data-theme="dark"] .ds-sent-drv b{ color:var(--text); }
+html[data-theme="dark"] .oo-sub{ color:var(--text2); }
+html[data-theme="dark"] .oo-title{ color:var(--text); }
+
+/* — V17.3 dark: WhatsApp invite bubble body text (bubble darkened above; eyebrow
+   stays WhatsApp-green, close stays muted) — */
+html[data-theme="dark"] .fab-wa-bubble-text{ color:var(--text); }
