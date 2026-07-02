@@ -3522,33 +3522,74 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .build-flow .container{ position: relative; z-index: 1; }
 .bf-lead{ font-size: 16px; color: var(--text2); font-weight: 300; line-height: 1.7; max-width: 580px; margin: 14px 0 0; }
 .bf-pipeline{ display: flex; align-items: stretch; gap: 10px; margin-top: 54px; }
+/* V17.7: each stage carries --sc/--sc2 (its slice of the brand gradient) so the
+   pipeline literally flows blue → teal across the five cards. */
 .bf-stage{
-  flex: 1 1 0; min-width: 0; position: relative;
+  flex: 1 1 0; min-width: 0; position: relative; overflow: hidden;
   background: var(--ink2); border: 0.5px solid var(--border); border-radius: 16px;
   padding: 26px 20px 24px; text-align: left;
   box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 18px 40px -30px rgba(26,80,216,0.22);
   transition: transform .25s ease, box-shadow .3s ease, border-color .25s ease;
 }
+/* top hairline in the stage's gradient slice — ignites on hover (kpi-card idiom) */
+.bf-stage::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, var(--sc,var(--accent)), var(--sc2,var(--teal)));
+  opacity:.5; transition:opacity .25s ease; }
+.bf-stage:hover::before{ opacity:1; }
+/* faint watermark numeral, top-right */
+.bf-stage::after{ content:attr(data-step); position:absolute; top:2px; right:12px;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-size:58px; font-weight:800; letter-spacing:-.04em; line-height:1;
+  color:var(--sc,var(--accent)); opacity:.07; pointer-events:none; }
 .bf-stage:hover{ transform: translateY(-4px); border-color: var(--border2);
   box-shadow: 0 2px 6px rgba(15,23,42,0.05), 0 30px 60px -30px rgba(26,80,216,0.34); }
-.bf-num{ font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--accent3); opacity: .7; margin-bottom: 15px; }
+@supports (color: color-mix(in srgb, red 50%, transparent)){
+  .bf-stage:hover{ border-color: color-mix(in srgb, var(--sc,#1a50d8) 45%, transparent); }
+}
+.bf-num{ font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--sc,var(--accent3)); opacity: .8; margin-bottom: 15px; }
 .bf-icon{
   width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, rgba(26,108,244,0.14), rgba(45,212,191,0.16)); color: var(--accent2);
+  background: linear-gradient(135deg, rgba(26,108,244,0.14), rgba(45,212,191,0.16)); color: var(--sc,var(--accent2));
   margin-bottom: 16px; transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+@supports (color: color-mix(in srgb, red 50%, transparent)){
+  .bf-icon{ background: linear-gradient(135deg,
+      color-mix(in srgb, var(--sc,#1a50d8) 13%, transparent),
+      color-mix(in srgb, var(--sc2,#2dd4bf) 15%, transparent)); }
 }
 .bf-stage:hover .bf-icon{ transform: scale(1.08) rotate(-4deg); }
 .bf-icon svg{ width: 22px; height: 22px; display: block; }
 .bf-title{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 7px; }
 .bf-desc{ font-size: 12.5px; color: var(--text3); line-height: 1.6; margin-bottom: 14px; }
-.bf-chip{ display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; color: var(--accent2);
+.bf-chip{ display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; color: var(--sc,var(--accent2));
   background: rgba(37,99,235,0.08); border: 0.5px solid var(--border2); border-radius: 999px; padding: 4px 10px; }
-.bf-sep{ flex: 0 0 auto; align-self: center; color: var(--accent3); opacity: .55; display: flex; align-items: center; }
+@supports (color: color-mix(in srgb, red 50%, transparent)){
+  .bf-chip{ background: color-mix(in srgb, var(--sc,#2563eb) 9%, transparent);
+    border-color: color-mix(in srgb, var(--sc,#2563eb) 28%, transparent); }
+}
+.bf-sep{ flex: 0 0 auto; align-self: center; color: var(--sc,var(--accent3)); opacity: .6; display: flex; align-items: center;
+  animation: bf-flow 2.6s ease-in-out infinite; }
 .bf-sep svg{ width: 20px; height: 20px; display: block; }
-.bf-summary{ display: flex; align-items: center; gap: 14px; margin-top: 34px; flex-wrap: wrap;
-  font-size: 13.5px; color: var(--text2); }
+@keyframes bf-flow{ 0%,100%{ transform: translateX(0); opacity:.5; } 50%{ transform: translateX(4px); opacity:.9; } }
+.bf-summary{ display: inline-flex; align-items: center; gap: 14px; margin-top: 34px; flex-wrap: wrap;
+  font-size: 13.5px; color: var(--text2);
+  background: rgba(37,99,235,0.035); border: 0.5px solid var(--border); border-radius: 999px; padding: 11px 20px; }
 .bf-summary b{ color: var(--white); font-weight: 700; }
-.bf-summary .bf-dot{ width: 5px; height: 5px; border-radius: 50%; background: var(--accent3); opacity: .5; }
+.bf-summary .bf-dot{ width: 5px; height: 5px; border-radius: 50%; background: linear-gradient(135deg,var(--accent3),var(--teal)); opacity: .7; }
+@media (prefers-reduced-motion: reduce){ .bf-sep{ animation: none; } }
+/* dark: the fixed stage hexes read dim on dark cards — lift the tinted text/strokes
+   toward white (color-mix; falls back to accent3 where unsupported) */
+html[data-theme="dark"] .bf-num,
+html[data-theme="dark"] .bf-chip,
+html[data-theme="dark"] .bf-icon,
+html[data-theme="dark"] .bf-sep{ color: var(--accent3); }
+@supports (color: color-mix(in srgb, red 50%, transparent)){
+  html[data-theme="dark"] .bf-num,
+  html[data-theme="dark"] .bf-chip,
+  html[data-theme="dark"] .bf-icon,
+  html[data-theme="dark"] .bf-sep{ color: color-mix(in srgb, var(--sc,#5b8def) 55%, #cfe0ff); }
+}
+html[data-theme="dark"] .bf-stage::after{ opacity:.13; }
 /* tablet: 5-across gets tight → wrap to a wrapping flow, drop inline arrows */
 @media (max-width: 900px){
   .bf-pipeline{ flex-wrap: wrap; gap: 12px; }
@@ -3557,13 +3598,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 }
 @media (max-width: 620px){
   .build-flow{ padding: 60px 0; }
-  .bf-pipeline{ flex-direction: column; gap: 10px; margin-top: 34px; }
-  .bf-stage{ flex: 1 1 auto; display: grid; grid-template-columns: 44px 1fr; column-gap: 16px; row-gap: 5px; padding: 18px; align-items: start; }
-  .bf-num{ grid-column: 1 / -1; margin-bottom: 2px; }
-  .bf-icon{ grid-column: 1; grid-row: 2; margin-bottom: 0; }
-  .bf-title{ grid-column: 2; grid-row: 2; align-self: center; }
-  .bf-desc{ grid-column: 2; grid-row: 3; margin-bottom: 4px; }
-  .bf-chip{ grid-column: 2; grid-row: 4; justify-self: start; }
+  .bf-pipeline{ flex-direction: column; gap: 12px; margin-top: 34px; position: relative; }
+  /* V17.7: vertical gradient rail threads the stages together through the card gaps */
+  .bf-pipeline::before{ content:''; position:absolute; left:39px; top:24px; bottom:24px; width:2px;
+    border-radius:2px; background:linear-gradient(180deg,#1a50d8,#2563eb,#0891b2,#2dd4bf); opacity:.4; }
+  .bf-stage{ flex: 1 1 auto; display: grid; grid-template-columns: 44px 1fr auto; column-gap: 16px; row-gap: 5px; padding: 18px; align-items: start; }
+  .bf-stage::after{ content:none; } /* watermark numeral off — .bf-num sits in its spot */
+  .bf-num{ grid-column: 3; grid-row: 1; margin: 0; align-self: center; }
+  .bf-icon{ grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  .bf-title{ grid-column: 2; grid-row: 1; align-self: center; }
+  .bf-desc{ grid-column: 2 / 4; grid-row: 2; margin-bottom: 4px; }
+  .bf-chip{ grid-column: 2 / 4; grid-row: 3; justify-self: start; }
 }
 </style>
 <section class="build-flow" id="how-built">
@@ -3572,39 +3617,39 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <h2 class="fade-up">From a whole universe to your 25.</h2>
     <p class="bf-lead fade-up">Every strategy runs the same disciplined pipeline each month — no overrides, no gut calls. Here's the path from index to portfolio.</p>
     <div class="bf-pipeline">
-      <div class="bf-stage fade-up reveal-stagger" style="--reveal-delay:0ms;">
+      <div class="bf-stage fade-up reveal-stagger" data-step="01" style="--reveal-delay:0ms;--sc:#1a50d8;--sc2:#2563eb;">
         <div class="bf-num">01</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></div>
         <div class="bf-title">The universe</div>
         <div class="bf-desc">Every eligible name in the index — a broad, rules-defined starting field.</div>
         <span class="bf-chip">up to 500 stocks</span>
       </div>
-      <div class="bf-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" style="--reveal-delay:80ms;">
+      <div class="bf-sep" style="--sc:#2563eb;animation-delay:0.0s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="bf-stage fade-up reveal-stagger" data-step="02" style="--reveal-delay:80ms;--sc:#2563eb;--sc2:#0d84c3;">
         <div class="bf-num">02</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12l4-3"/><path d="M3 12h2M12 3v2M19 6l-1.5 1.5"/></svg></div>
         <div class="bf-title">Multi-factor score</div>
         <div class="bf-desc">Each stock scored on peer-reviewed factors — value, quality, momentum &amp; more.</div>
         <span class="bf-chip">academically validated</span>
       </div>
-      <div class="bf-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" style="--reveal-delay:160ms;">
+      <div class="bf-sep" style="--sc:#0d84c3;animation-delay:0.3s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="bf-stage fade-up reveal-stagger" data-step="03" style="--reveal-delay:160ms;--sc:#0d84c3;--sc2:#0891b2;">
         <div class="bf-num">03</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></div>
         <div class="bf-title">Ranked by conviction</div>
         <div class="bf-desc">Sorted highest-first, so only the strongest signals make the cut.</div>
         <span class="bf-chip">strongest first</span>
       </div>
-      <div class="bf-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" style="--reveal-delay:240ms;">
+      <div class="bf-sep" style="--sc:#0891b2;animation-delay:0.6s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="bf-stage fade-up reveal-stagger" data-step="04" style="--reveal-delay:240ms;--sc:#0891b2;--sc2:#0d9488;">
         <div class="bf-num">04</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
         <div class="bf-title">Sector-capped</div>
         <div class="bf-desc">No more than three names per industry — diversification is structural, not promised.</div>
         <span class="bf-chip">≤ 3 per industry</span>
       </div>
-      <div class="bf-sep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" style="--reveal-delay:320ms;">
+      <div class="bf-sep" style="--sc:#0d9488;animation-delay:0.8999999999999999s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="bf-stage fade-up reveal-stagger" data-step="05" style="--reveal-delay:320ms;--sc:#0d9488;--sc2:#2dd4bf;">
         <div class="bf-num">05</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9l6.5 3.75"/><circle cx="12" cy="12" r="9"/></svg></div>
         <div class="bf-title">Your portfolio</div>
