@@ -682,6 +682,14 @@ nav {
   display: inline-flex; align-items: center; gap: 5px;
 }
 .badge-pop::before{ content: '★'; font-size: 10px; line-height: 1; }
+.strat-grid .strat-card .badge-pop {
+  /* V18.3: the MultiAsset "Free" tab sits on a NON-featured card, where the
+     `.strat-card > *:not(.card-shine)` reset (position:relative, (0,2,0),
+     later in source) beats both `.badge-pop` and a two-class fix — so this
+     is pinned at three-class specificity. Values mirror the V17.2 featured
+     corner-tab rule exactly, so the "Popular" tab is unaffected. */
+  position: absolute; top: 0; right: 0; z-index: 4;
+}
 .strat-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
 .strat-universe { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
 .strat-metrics { display: flex; gap: 0; margin-bottom: 24px; align-items: flex-end; }
@@ -3708,8 +3716,9 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
 
     <div class="strat-grid">
 
-      <!-- MultiAsset -->
+      <!-- MultiAsset — free for everyone (V18.3) -->
       <div class="strat-card tilt-host fade-up">
+        <span class="badge-pop" style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 6px 16px -8px rgba(5,150,105,.7);">Free</span>
         <span class="strat-badge badge-teal">Multi-Asset</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> MultiAsset</div>
         <div class="strat-universe">8 assets · Weekly signals · Monthly rebalance</div>
@@ -3757,8 +3766,8 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <div class="strat-footer">
           <div class="strat-min">Recommended Investment <span>₹5,00,000</span></div>
           <div class="price-row">
-            <span class="price-amt" id="ma-price-amt">₹499</span>
-            <span class="price-mo"  id="ma-price-unit">/ month</span>
+            <span class="price-amt" id="ma-price-amt" style="color:#059669;">FREE</span>
+            <span class="price-mo"  id="ma-price-unit">for everyone</span>
           </div>
           <div class="price-annual-note" id="ma-price-note" style="display:none;"></div>
           <a href="multiasset.html" class="strat-cta cta-filled">Learn more →</a>
@@ -4179,9 +4188,9 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
   <div class="container">
     <div style="background:linear-gradient(135deg,#0c1831 0%,#1a50d8 62%,#0891b2 100%);border-radius:20px;padding:34px 32px;color:#fff;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;box-shadow:0 20px 48px -22px rgba(26,80,216,.55);">
       <div style="flex:1 1 300px;min-width:0;">
-        <div style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.16);padding:5px 12px;border-radius:999px;margin-bottom:12px;">Best value · Save ~40%</div>
+        <div style="display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.16);padding:5px 12px;border-radius:999px;margin-bottom:12px;">Best value · Save up to ~50%</div>
         <h2 style="margin:0 0 8px;font-size:clamp(22px,3vw,28px);font-weight:800;letter-spacing:-.02em;color:#fff;line-height:1.15;">MindForge All-Access — Indian Equities</h2>
-        <p style="margin:0;font-size:15px;line-height:1.6;color:rgba(255,255,255,.88);max-width:580px;">One pass for all four Indian-equity strategies — <strong style="color:#fff;">MultiAsset + LargeMidcap 250 + SmallMicro 500 + Multicap</strong>. Defensive ETFs, large &amp; midcaps, high-conviction small/microcaps, and a concentrated full-cap book — together for a single price.</p>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:rgba(255,255,255,.88);max-width:580px;">One pass for all four Indian-equity strategies — <strong style="color:#fff;">LargeMidcap 250 + SmallMicro 500 + Multicap, with MultiAsset free for everyone</strong>. Defensive ETFs, large &amp; midcaps, high-conviction small/microcaps, and a concentrated full-cap book — together for a single price.</p>
       </div>
       <div style="text-align:center;flex:0 0 auto;">
         <div style="font-size:clamp(28px,4vw,36px);font-weight:800;line-height:1;">₹44,990<span style="font-size:15px;font-weight:600;opacity:.82;"> / year</span></div>
@@ -4406,7 +4415,9 @@ window.addEventListener('resize', revealFadeUps, { passive: true });
 //   1mo → 0% off, 3mo → 5%, 6mo → 10%, 12mo → 20%
 // Total is rounded to the nearest rupee (Math.round(monthly × months × (1−disc)))
 // to match the backend's handleActivate expiry/duration computation.
-var STRAT_MONTHLY = { ma: 499, lm: 1499, sm: 2499, mc: 3499, sp: 4999 };
+// V18.3: MultiAsset is FREE for everyone — 0 short-circuits below so its card
+// always reads "FREE for everyone" regardless of the duration toggle.
+var STRAT_MONTHLY = { ma: 0, lm: 1499, sm: 2499, mc: 3499, sp: 4999 };
 var DURATIONS = {
   '1':  { months: 1,  disc: 0.00, unit: '/ month'    },
   '3':  { months: 3,  disc: 0.05, unit: '/ 3 months' },
@@ -4423,6 +4434,15 @@ function setDuration(durKey) {
   });
   Object.keys(STRAT_MONTHLY).forEach(function(key) {
     var monthly = STRAT_MONTHLY[key];
+    if (monthly === 0) {
+      var famt  = document.getElementById(key + '-price-amt');
+      var funit = document.getElementById(key + '-price-unit');
+      var fnote = document.getElementById(key + '-price-note');
+      if (famt)  famt.textContent  = 'FREE';
+      if (funit) funit.textContent = 'for everyone';
+      if (fnote) { fnote.textContent = ''; fnote.style.display = 'none'; }
+      return;
+    }
     var total   = Math.round(monthly * dur.months * (1 - dur.disc));
     var save    = (monthly * dur.months) - total;
     var amt     = document.getElementById(key + '-price-amt');

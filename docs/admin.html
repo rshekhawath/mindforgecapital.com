@@ -756,7 +756,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <label>Strategy *</label>
       <select id="act-strategy" onchange="updateActPrice()">
         <option value="">Select strategy…</option>
-        <option value="MindForge MultiAsset">MindForge MultiAsset — ₹499/month</option>
+        <option value="MindForge MultiAsset">MindForge MultiAsset — FREE</option>
         <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹1,499/month</option>
         <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
         <option value="MindForge Multicap">MindForge Multicap — ₹3,499/month</option>
@@ -1188,7 +1188,7 @@ function declineLead(btn, name, email, timestamp) {
 // strategies.html STRATEGY_PRICES. Single source of truth for the admin's
 // live price preview in the activate modal.
 var ADMIN_STRATEGY_PRICES = {
-  'MindForge MultiAsset':      499,
+  'MindForge MultiAsset':      0,   // V18.3: FREE for everyone — no payment to collect
   'MindForge LargeMidcap 250': 1499,
   'MindForge SmallMicro 500':  2499,
   'MindForge Multicap':        3499,
@@ -1230,7 +1230,13 @@ function updateActPrice(){
     });
   }
 
-  if (monthly && d && box){
+  if (monthly === 0 && d && box){
+    // V18.3: MultiAsset is FREE — show an explicit ₹0 preview so the admin
+    // knows there is no payment to collect before activating.
+    document.getElementById('act-price-total').textContent = 'FREE for ' + d.label;
+    document.getElementById('act-price-meta').textContent  = '(₹0 — free strategy, no payment to collect)';
+    box.style.display = 'block';
+  } else if (monthly && d && box){
     var total = Math.round(monthly * d.months * (1 - d.disc));
     var save  = (monthly * d.months) - total;
     var saveTxt = d.disc > 0 ? '  ·  save ' + admInr(save) + ' (' + Math.round(d.disc * 100) + '% off)' : '';
