@@ -4692,6 +4692,37 @@ body::after{
     nav, .stat-card .stat-val{ transition: none; }
   }
 </style>
+
+<!-- ============================================================
+     MF VISUAL V18.0 — stat-value ink corrections (additive, last-wins).
+     (1) The v12.6 gradient ink sets -webkit-text-fill-color:transparent on
+         every .stat-val, which silently defeats the tone-green/gold/red
+         urgency colours on the subscription card (they only set `color`).
+         Restore them — an expiring subscription must read red/gold again.
+     (2) Dark mode: the v12.6 gradient starts at #0c1831 (near-black), so
+         the four KPI numerals go muddy on the dark surface. Re-ink them
+         with the dark palette's bright blues so they read as lit.
+     ============================================================ -->
+<style id="mf-v180-dash">
+.stat-card.tone-green .stat-val, .stat-card.tone-green:hover .stat-val,
+.stat-card.tone-gold  .stat-val, .stat-card.tone-gold:hover  .stat-val,
+.stat-card.tone-red   .stat-val, .stat-card.tone-red:hover   .stat-val{
+  background:none; -webkit-text-fill-color:currentColor; animation:none;
+}
+html[data-theme="dark"] .stat-card .stat-val{
+  background:linear-gradient(120deg,#9db9ff 0%,#5b8def 44%,#28bcd8 72%,#5b8def 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  background-size:220% auto;
+}
+html[data-theme="dark"] .stat-card.tone-green .stat-val, html[data-theme="dark"] .stat-card.tone-green:hover .stat-val,
+html[data-theme="dark"] .stat-card.tone-gold  .stat-val, html[data-theme="dark"] .stat-card.tone-gold:hover  .stat-val,
+html[data-theme="dark"] .stat-card.tone-red   .stat-val, html[data-theme="dark"] .stat-card.tone-red:hover   .stat-val{
+  background:none; -webkit-text-fill-color:currentColor; animation:none;
+}
+@supports not ((-webkit-background-clip:text) or (background-clip:text)){
+  html[data-theme="dark"] .stat-card .stat-val{ color:#83aaff; }
+}
+</style>
 <script id="mf-v138-nav-scroll-dash">
 /* The dashboard had no scrolled-nav state — toggle body.scrolled on scroll so the
    V13.8 CSS above can crisp the bar, mirroring the public site's threshold. One

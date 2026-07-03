@@ -185,6 +185,11 @@ table.data tbody tr:last-child td{border-bottom:none}
 table.data tbody tr:hover td{background:rgba(37,99,235,.03)}
 table.data tbody tr.tot td{font-weight:700;background:rgba(37,99,235,.04);border-top:0.5px solid var(--border2)}
 td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
+/* V18.0 fix — the tbody colour rule above (table.data tbody td) out-specifies
+   td.pos/td.neg, so the signed net columns were rendering plain body colour.
+   Re-declare at winning specificity + semibold so the signal reads at a glance. */
+table.data tbody td.pos{color:var(--green);font-weight:600}
+table.data tbody td.neg{color:var(--red);font-weight:600}
 .who-chip{display:inline-flex;align-items:center;gap:7px}
 .who-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 /* V16.6 — denser FII/DII data tables on small phones (keeps the .tbl-scroll fallback) */
@@ -192,7 +197,25 @@ td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
   table.data{font-size:12px}
   table.data thead th{font-size:10px;letter-spacing:.02em;padding:9px 9px}
   table.data tbody td{padding:9px 9px}
+  /* V18.0 — pin the leading column while the table pans sideways, so the date /
+     participant stays readable mid-scroll. Solid surface + theme-aware hairline. */
+  table.data thead th:first-child{position:sticky;left:0;z-index:3;background:var(--ink);border-right:0.5px solid var(--border2)}
+  table.data tbody td:first-child{position:sticky;left:0;z-index:2;background:var(--ink2);border-right:0.5px solid var(--border2)}
+  table.data tbody tr:hover td:first-child{background:var(--ink2)}
+  table.data tbody tr.tot td:first-child{background:var(--ink3)}
 }
+/* V18.0 — history & participant rows cascade in as the data lands */
+@keyframes mfc-row-in{to{opacity:1;transform:none}}
+#cashTbl tbody tr,#partTbl tbody tr{opacity:0;transform:translateY(6px);animation:mfc-row-in .45s cubic-bezier(.22,.8,.2,1) forwards;animation-delay:.34s}
+#cashTbl tbody tr:nth-child(1),#partTbl tbody tr:nth-child(1){animation-delay:.02s}
+#cashTbl tbody tr:nth-child(2),#partTbl tbody tr:nth-child(2){animation-delay:.06s}
+#cashTbl tbody tr:nth-child(3),#partTbl tbody tr:nth-child(3){animation-delay:.10s}
+#cashTbl tbody tr:nth-child(4),#partTbl tbody tr:nth-child(4){animation-delay:.14s}
+#cashTbl tbody tr:nth-child(5),#partTbl tbody tr:nth-child(5){animation-delay:.18s}
+#cashTbl tbody tr:nth-child(6){animation-delay:.22s}
+#cashTbl tbody tr:nth-child(7){animation-delay:.26s}
+#cashTbl tbody tr:nth-child(8){animation-delay:.30s}
+@media(prefers-reduced-motion:reduce){#cashTbl tbody tr,#partTbl tbody tr{animation:none;opacity:1;transform:none}}
 
 /* ── DERIVATIVES ── */
 .deriv-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:stretch}
@@ -594,10 +617,14 @@ function renderTrend(d){
   // table: newest first
   const body=document.getElementById("cashTblBody");
   const rows=hist.slice().sort((a,b)=>dkey(b.date)-dkey(a.date)).slice(0,30);
+  // V18.0 — same diverging mini-bar the participant table uses, shared scale
+  // across the visible rows so day-to-day magnitude compares at a glance
+  const maxNet=Math.max(1,...rows.flatMap(r=>[Math.abs(r.fii_net||0),Math.abs(r.dii_net||0)]));
+  const dbar=(v,mx)=>`<span class="dbar"><span class="dfill ${v>=0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span></span>`;
   body.innerHTML=rows.map(r=>`<tr>
     <td>${escapeHtml(r.date)}</td>
-    <td>${grp(r.fii_buy)}</td><td>${grp(r.fii_sell)}</td><td class="${sign(r.fii_net)}">${cr(r.fii_net)}</td>
-    <td>${grp(r.dii_buy)}</td><td>${grp(r.dii_sell)}</td><td class="${sign(r.dii_net)}">${cr(r.dii_net)}</td>
+    <td>${grp(r.fii_buy)}</td><td>${grp(r.fii_sell)}</td><td class="${sign(r.fii_net)}"><span class="netnum">${cr(r.fii_net)}</span>${dbar(r.fii_net||0,maxNet)}</td>
+    <td>${grp(r.dii_buy)}</td><td>${grp(r.dii_sell)}</td><td class="${sign(r.dii_net)}"><span class="netnum">${cr(r.dii_net)}</span>${dbar(r.dii_net||0,maxNet)}</td>
   </tr>`).join("");
 }
 
