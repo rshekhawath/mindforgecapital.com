@@ -2635,6 +2635,69 @@ function openRegModal(strategyName, price, strategyId){
 }
 @media (prefers-reduced-motion: reduce){ .page-hero::before{ animation:none; } }
 </style>
+<!-- ============================================================
+     MF VISUAL V17.9 — strategies hub (additive, RM-safe)
+     The combined-performance KPI card's sparklines were static SVG
+     paths. They now draw themselves in on first reveal (staggered),
+     each finishing with a softly glowing end-dot — the same "living
+     data" idiom as the homepage sparklines.
+     ============================================================ -->
+<style id="mf-v179-hub">
+/* end-dots sit at the path's last point (x=80 — the viewBox edge), so let the
+   svg paint past its box; only the ~2px dot + glow poke out into tile padding */
+.ph-kpi-tile .ph-spark{ overflow:visible; }
+.ph-spark .mf179-line{ stroke-dasharray:100; stroke-dashoffset:100; }
+.ph-kpi-card.mf179-go .mf179-line{ animation:mf179-draw 1.25s cubic-bezier(.4,0,.25,1) forwards; }
+@keyframes mf179-draw{ to{ stroke-dashoffset:0; } }
+.ph-spark .mf179-dot{ opacity:0; filter:drop-shadow(0 0 2.5px rgba(26,80,216,.5)); }
+.ph-kpi-card.mf179-go .mf179-dot{ animation:mf179-dot-in .45s ease-out forwards; }
+@keyframes mf179-dot-in{ to{ opacity:1; } }
+html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(120,180,255,.9)); }
+@media (prefers-reduced-motion: reduce){
+  .ph-spark .mf179-line{ stroke-dasharray:none; stroke-dashoffset:0; animation:none; }
+  .ph-spark .mf179-dot{ opacity:1; animation:none; }
+}
+</style>
+<script id="mf-v179-hub-js">
+/* MF V17.9 — sparkline draw-in (fail-silent). */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      if(!("IntersectionObserver" in window)) return;
+      if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var card=document.querySelector(".ph-kpi-card");
+      if(!card) return;
+      var paths=card.querySelectorAll(".ph-spark path");
+      if(!paths.length) return;
+      paths.forEach(function(p,i){
+        var len, end;
+        try{ len=p.getTotalLength(); end=p.getPointAtLength(len); }catch(err){ return; }
+        p.setAttribute("pathLength","100");
+        p.classList.add("mf179-line");
+        p.style.animationDelay=(0.1+i*0.12).toFixed(2)+"s";
+        /* zero-length round-cap path + non-scaling-stroke = a perfectly round
+           dot in SCREEN units — the svg uses preserveAspectRatio="none", so a
+           <circle> would stretch into a pill on narrow viewports */
+        var c=document.createElementNS("http://www.w3.org/2000/svg","path");
+        c.setAttribute("d","M"+end.x.toFixed(1)+" "+end.y.toFixed(1)+"l0.01 0");
+        c.setAttribute("stroke",p.getAttribute("stroke")||"#1a50d8");
+        c.setAttribute("stroke-width","4.2");
+        c.setAttribute("stroke-linecap","round");
+        c.setAttribute("vector-effect","non-scaling-stroke");
+        c.setAttribute("fill","none");
+        c.setAttribute("class","mf179-dot");
+        c.style.animationDelay=(0.95+i*0.12).toFixed(2)+"s";
+        p.parentNode.appendChild(c);
+      });
+      new IntersectionObserver(function(entries,obs){
+        entries.forEach(function(en){ if(en.isIntersecting){ card.classList.add("mf179-go"); obs.disconnect(); } });
+      },{threshold:0.3}).observe(card);
+    }catch(e){}
+  });
+})();
+</script>
 <script src="assets/mfc-offer.js?v=110" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to

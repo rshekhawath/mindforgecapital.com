@@ -2260,6 +2260,93 @@ function openRegModal(strategyName, price, strategyId){
   .btn-primary-page::after{ content:none; }
 }
 </style>
+<!-- ============================================================
+     MF VISUAL V17.9 — strategy pages (additive, RM-safe)
+     (1) The "How X stacks up" comparison bars — the last static
+         data-viz on these pages — now grow in on scroll-reveal with a
+         staggered ease-out; the MindForge bar carries a recurring soft
+         shine sweep and the % figures fade-rise in after their bars.
+     (2) The hero CAGR figure (highlight stat) upgrades from flat green
+         to a premium green→teal gradient ink (brighter mix on dark).
+     (3) Backtest chart labels pick up the section-label gradient tick.
+     ============================================================ -->
+<style id="mf-v179-strat">
+/* (1) comparison-bar reveal */
+.mf179-cmp .mf179-fill{ transform:scaleX(0); transform-origin:left; position:relative; }
+.mf179-cmp.mf179-go .mf179-fill{ animation:mf179-grow .95s cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes mf179-grow{ to{ transform:scaleX(1); } }
+.mf179-cmp.mf179-go .mf179-brand{ overflow:hidden; }
+.mf179-cmp.mf179-go .mf179-brand::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(105deg,transparent 28%,rgba(255,255,255,.42) 50%,transparent 72%);
+  transform:translateX(-130%);
+  animation:mf179-shine 4.2s ease-in-out 1.4s infinite;
+  pointer-events:none;
+}
+@keyframes mf179-shine{ 0%{ transform:translateX(-130%); } 38%,100%{ transform:translateX(130%); } }
+.mf179-cmp .mf179-val{ opacity:0; transform:translateY(4px); }
+.mf179-cmp.mf179-go .mf179-val{ transition:opacity .55s ease, transform .55s ease; opacity:1; transform:none; }
+
+/* (2) hero CAGR — gradient ink */
+.stat-card.highlight .sv.green{
+  background:linear-gradient(115deg,#059669 0%,#10b981 48%,#0d9488 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+html[data-theme="dark"] .stat-card.highlight .sv.green{
+  background:linear-gradient(115deg,#16c78d 0%,#2dd4bf 55%,#28bcd8 100%);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+}
+
+/* (3) chart-label tick */
+.bt-chart-label::before{
+  content:''; display:inline-block; width:16px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),#0891b2);
+  margin-right:8px; vertical-align:3px; opacity:.9;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .mf179-cmp .mf179-fill{ transform:none; animation:none; }
+  .mf179-cmp.mf179-go .mf179-brand::after{ content:none; }
+  .mf179-cmp .mf179-val{ opacity:1; transform:none; transition:none; }
+}
+</style>
+<script id="mf-v179-strat-js">
+/* MF V17.9 — comparison-bar scroll reveal (same fail-silent injector
+   pattern as v9.9). No-JS / no-IO / reduced-motion keep the static bars. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      if(!("IntersectionObserver" in window)) return;
+      if(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var fills=document.querySelectorAll('.strat-prose div[style*="overflow:hidden"] > div[style*="height:100%"]');
+      if(!fills.length) return;
+      var cmp=null;
+      fills.forEach(function(f,i){
+        f.classList.add("mf179-fill");
+        f.style.animationDelay=(i*0.13)+"s";
+        var s=f.getAttribute("style")||"";
+        if(s.indexOf("var(--accent)")!==-1) f.classList.add("mf179-brand");
+        var val=f.parentNode.nextElementSibling;
+        if(val){ val.classList.add("mf179-val"); val.style.transitionDelay=(0.35+i*0.13).toFixed(2)+"s"; }
+        if(!cmp){
+          var n=f.parentNode;
+          while(n && n.parentNode && !(n.parentNode.classList && n.parentNode.classList.contains("strat-prose"))) n=n.parentNode;
+          if(n && n.classList) cmp=n;
+        }
+      });
+      if(!cmp) return;
+      cmp.classList.add("mf179-cmp");
+      new IntersectionObserver(function(entries,obs){
+        entries.forEach(function(en){
+          if(en.isIntersecting){ cmp.classList.add("mf179-go"); obs.disconnect(); }
+        });
+      },{threshold:0.3}).observe(cmp);
+    }catch(e){}
+  });
+})();
+</script>
 <script src="assets/mfc-offer.js?v=110" defer></script>
 <script src="assets/mfc-reveal.js?v=92" defer></script>
 <script src="assets/mfc-countup.js?v=96" defer></script>

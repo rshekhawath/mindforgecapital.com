@@ -101,12 +101,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .meta-pill strong{color:var(--white);font-weight:700;}
 .meta-pill .ico{display:inline-flex;width:16px;height:16px;color:var(--accent2);}
 .meta-pill .ico svg{width:100%;height:100%;}
-/* V17.0 — verified P&L trust link in the hero meta-row (broker-verified track record) */
-.meta-pill-pnl{color:#059669;text-decoration:none;border-color:rgba(5,150,105,0.28);}
-.meta-pill-pnl .ico{color:#059669;}
-.meta-pill-pnl .mpl-arr{font-size:.85em;transition:transform .2s ease;}
-.meta-pill-pnl:hover{border-color:rgba(5,150,105,0.5);color:#047857;}
-.meta-pill-pnl:hover .mpl-arr{transform:translate(2px,-2px);}
 .dot-green{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 0 3px rgba(5,150,105,.18);animation:nav-pulse 2.6s ease-in-out infinite;}
 .dot-gold{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 0 3px rgba(217,119,6,.18);}
 .dot-red{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;box-shadow:0 0 0 3px rgba(220,38,38,.18);}
@@ -1395,10 +1389,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span class="dot-green mp-fresh-dot" aria-hidden="true"></span>
           Data <strong id="fresh-when">refreshed</strong>
         </div>
-        <a class="meta-pill meta-pill-pnl" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener" title="Our broker-verified live P&L on Zerodha">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg></span>
-          Verified P&amp;L on Zerodha <span class="mpl-arr" aria-hidden="true">↗</span>
-        </a>
       </div>
     </div>
 
@@ -4923,6 +4913,42 @@ body::after{
 .stat-card:hover::before{opacity:1}
 .stat-card:not([class*="tone-"]):hover::before{background:linear-gradient(90deg,transparent,#2563eb,#2dd4bf,transparent)}
 @media (prefers-reduced-motion:reduce){.profit-card::after{display:none}}
+</style>
+<!-- ============================================================
+     MF VISUAL V17.9 — dashboard (additive, RM-safe)
+     The "How to use" steps were the last flat cards on the page: each
+     now carries a ghost step numeral ("01"–"04", echoing the homepage
+     Process watermarks) and the step badge blooms a soft brand ring
+     when its card is hovered.
+     ============================================================ -->
+<style id="mf-v179-dash">
+.howto-grid{ counter-reset:mf179step; }
+.howto-step{ position:relative; overflow:hidden; counter-increment:mf179step; }
+.howto-step::after{
+  content:counter(mf179step, decimal-leading-zero);
+  position:absolute; right:12px; bottom:-12px; z-index:0;
+  font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-size:52px; font-weight:800; letter-spacing:-.04em; line-height:1;
+  color:rgba(26,80,216,.06);
+  pointer-events:none; -webkit-user-select:none; user-select:none;
+  transition:color .25s ease, transform .25s ease;
+}
+.howto-step:hover::after{ color:rgba(26,80,216,.11); transform:translateY(-3px); }
+html[data-theme="dark"] .howto-step::after{ color:rgba(150,180,240,.08); }
+html[data-theme="dark"] .howto-step:hover::after{ color:rgba(150,180,240,.14); }
+.howto-step .num{
+  box-shadow:0 0 0 3px rgba(37,99,235,.10), 0 5px 12px -5px rgba(26,80,216,.40);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.howto-step:hover .num{
+  transform:scale(1.09);
+  box-shadow:0 0 0 5px rgba(37,99,235,.16), 0 7px 16px -5px rgba(26,80,216,.50);
+}
+@media (prefers-reduced-motion: reduce){
+  .howto-step::after, .howto-step .num{ transition:none; }
+  .howto-step:hover::after{ transform:none; }
+  .howto-step:hover .num{ transform:none; }
+}
 </style>
 </body>
 </html>
