@@ -120,6 +120,10 @@ Edit **`www/js/config.js`**:
 - ✅ **System-aware dark mode** (V15.6): adapts to the device appearance and a member
   **Appearance** control (Auto / Light / Dark) in Account; applied pre-paint (no flash),
   persisted on-device, and follows the OS live while on Auto.
+- ✅ **V18.2 visual uplift**: appbar brand hairline, sector-tinted holding rails,
+  gradient-ink numerals, renewal countdown ring, OTP progress track + one-time-code
+  autofill hardening, iconed toasts, styled strategy switcher, deployment-meter
+  ticks, dark-mode remnant sweep.
 - ✅ Capacitor-ready for App Store / Play Store (run `cap add ios|android`).
 - 🔌 Gated on credentials: Kite Connect live linking (api_key), SMS OTP (provider).
   All wired — drop in the values to activate.

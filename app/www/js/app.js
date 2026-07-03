@@ -40,7 +40,13 @@
 
   var toastTimer;
   function toast(msg,isErr){
-    var t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(isErr?' err':'');
+    var t=document.getElementById('toast');
+    // V18.2 — a ✓ / ! glyph so toasts read at a glance; msg appended as a TEXT
+    // node (it can carry user/API strings, so it never goes through innerHTML).
+    t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+      (isErr?'<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.6h.01"/>':'<path d="M20 6L9 17l-5-5"/>')+'</svg>';
+    t.appendChild(document.createTextNode(msg));
+    t.className='toast show'+(isErr?' err':'');
     clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.className='toast';},2600);
   }
 
@@ -105,7 +111,7 @@
       '<div class="alloc-head"><span class="alloc-ttl">Sector allocation</span><span class="alloc-meta">'+rows.length+' sectors · equal-weighted</span></div>'+
       '<div class="alloc-body">'+
         '<div class="donut-wrap"><svg class="donut" viewBox="0 0 100 100" aria-hidden="true"><circle class="dbg" cx="50" cy="50" r="40" fill="none" stroke-width="13"/>'+slices+'</svg>'+
-          '<div class="donut-c"><span class="donut-n" data-count="'+rows.length+'">'+rows.length+'</span><span class="donut-l">sectors</span></div></div>'+
+          '<div class="donut-c"><span class="donut-n ink-grad" data-count="'+rows.length+'">'+rows.length+'</span><span class="donut-l">sectors</span></div></div>'+
         '<div class="legend">'+legend+'</div>'+
       '</div></div>';
   }
@@ -194,23 +200,40 @@
     card.innerHTML=
       '<div style="margin-bottom:6px"><button class="btn-sm btn-ghost" id="editEmail" style="border:none;background:none;padding:0;color:var(--ink3);font-weight:700">← '+esc(loginEmail)+'</button></div>'+
       '<label style="display:block;font-size:13px;font-weight:700;color:var(--ink2);margin:6px 0 9px">Enter the 6-digit code</label>'+
-      '<div class="otp-inputs" id="otpRow">'+[0,1,2,3,4,5].map(function(i){return '<input class="input" inputmode="numeric" maxlength="1" autocomplete="'+(i===0?'one-time-code':'off')+'" data-i="'+i+'">';}).join('')+'</div>'+
+      '<div class="otp-inputs" id="otpRow">'+[0,1,2,3,4,5].map(function(i){return '<input class="input" inputmode="numeric" autocomplete="'+(i===0?'one-time-code':'off')+'" data-i="'+i+'">';}).join('')+'</div>'+
+      '<div class="otp-prog" aria-hidden="true"><i id="otpProg"></i></div>'+
       '<button class="btn btn-primary" id="verifyBtn" style="margin-top:16px">Verify &amp; sign in</button>'+
       '<div class="err" id="loginErr"></div>'+
       '<p class="hint">Didn’t get it? <a href="#" id="resend">Resend code</a> · check spam.</p>';
     var inputs=Array.prototype.slice.call(card.querySelectorAll('#otpRow input'));
+    // V18.2 — the micro progress track under the boxes fills as digits land
+    function syncProg(){var pg=document.getElementById('otpProg');if(!pg)return;var n=inputs.filter(function(x){return x.value;}).length;pg.style.width=(n/6*100)+'%';}
+    // One writer for a digit string starting at box `start` — handles typing
+    // overflow, paste into any box, and iOS/Android one-time-code autofill
+    // (which drops all 6 digits into the focused box as a single input event;
+    // the old maxlength="1" truncated that to one digit and broke autofill).
+    function fillFrom(digits,start){
+      if(digits.length>=6)start=0;
+      digits.split('').forEach(function(ch,k){var b=inputs[start+k];if(b){b.value=ch;b.classList.add('filled');}});
+      inputs[Math.min(start+digits.length,5)].focus();
+      syncProg();
+      if(inputs.every(function(x){return x.value;}))doVerify(inputs);
+    }
     inputs[0].focus();
     inputs.forEach(function(inp,i){
       inp.addEventListener('input',function(){
-        inp.value=inp.value.replace(/\D/g,'').slice(0,1);
-        inp.classList.toggle('filled',!!inp.value);
-        if(inp.value&&i<5)inputs[i+1].focus();
+        var v=inp.value.replace(/\D/g,'');
+        if(v.length>1){inp.value='';fillFrom(v.slice(0,6),i);return;}
+        inp.value=v;
+        inp.classList.toggle('filled',!!v);
+        syncProg();
+        if(v&&i<5)inputs[i+1].focus();
         if(inputs.every(function(x){return x.value;}))doVerify(inputs);
       });
       inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!inp.value&&i>0)inputs[i-1].focus();if(e.key==='Enter')doVerify(inputs);});
       inp.addEventListener('paste',function(e){
         var d=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
-        if(d){e.preventDefault();d.split('').forEach(function(ch,k){if(inputs[k]){inputs[k].value=ch;inputs[k].classList.add('filled');}});(inputs[Math.min(d.length,5)]).focus();if(d.length===6)doVerify(inputs);}
+        if(d){e.preventDefault();fillFrom(d,i);}
       });
     });
     document.getElementById('verifyBtn').addEventListener('click',function(){doVerify(inputs);});
@@ -229,6 +252,13 @@
     errEl.textContent='';
     MFCApi.verifyOtp(loginEmail,otp).then(function(data){
       var subs=data.subscriptions||[];
+      // A verified email with ZERO subscriptions used to toast "Signed in" and
+      // silently bounce back here (isSignedIn() needs ≥1 sub) — explain instead.
+      if(!subs.length){
+        btn.disabled=false;btn.innerHTML='Verify &amp; sign in';
+        errEl.textContent='This email has no subscriptions on file. Use the email you subscribed with, or start a plan first.';
+        return;
+      }
       MFCStore.setSession(loginEmail,subs);
       var active=subs.filter(function(s){return String(s.status).toLowerCase()==='active';});
       currentToken=(active[0]||subs[0]||{}).token||null;
@@ -237,6 +267,7 @@
     }).catch(function(err){
       btn.disabled=false;btn.innerHTML='Verify &amp; sign in';errEl.textContent=err.message;
       inputs.forEach(function(x){x.value='';x.classList.remove('filled');});inputs[0].focus();
+      var pg=document.getElementById('otpProg');if(pg)pg.style.width='0';
     });
   }
 
@@ -299,7 +330,7 @@
         '<h1 class="h-title rise">Welcome back, <span class="gradtext">'+esc(first)+'</span>.</h1>'+
         '<p class="h-sub rise">'+(active.length?('You have '+active.length+' active '+(active.length===1?'strategy':'strategies')+'. Tap one to view this cycle’s picks.'):'Your subscriptions appear below.')+'</p>'+
         pfOverviewHTML(active)+
-        '<div class="list-h"><span class="lt">Your subscriptions</span></div>'+
+        '<div class="list-h"><span class="lt">Your subscriptions</span>'+(subs.length?'<span class="ls">'+subs.length+(subs.length===1?' plan':' plans')+'</span>':'')+'</div>'+
         cards+
       '</main>','home',function(){
         appEl.querySelectorAll('[data-count]').forEach(countUp);
@@ -342,7 +373,7 @@
   }
   function subSwitcher(active,token){
     if(!active||active.length<2)return '';
-    return '<select class="ab-btn" id="subSwitch" style="width:auto;padding:0 8px;font-weight:700;color:var(--ink2)" aria-label="Switch strategy">'+
+    return '<select class="ab-btn" id="subSwitch" aria-label="Switch strategy">'+
       active.map(function(s){return '<option value="'+esc(s.token)+'"'+(s.token===token?' selected':'')+'>'+esc(strategyLabel(s.strategy))+'</option>';}).join('')+'</select>';
   }
   function wireSubSwitcher(){var sw=document.getElementById('subSwitch');if(sw)sw.addEventListener('change',function(){currentToken=sw.value;location.hash='#/holdings/'+encodeURIComponent(sw.value);});}
@@ -367,7 +398,7 @@
       var slice=svg.querySelector('.dslice[data-sec="'+i+'"]'), row=card.querySelector('.leg-row[data-sec="'+i+'"]');
       if(slice)slice.classList.add('on');
       if(row)row.classList.add('on');
-      if(slice)center.innerHTML='<span class="donut-n donut-pc">'+esc(slice.getAttribute('data-pc'))+'<i>%</i></span>'+
+      if(slice)center.innerHTML='<span class="donut-n donut-pc ink-grad">'+esc(slice.getAttribute('data-pc'))+'<i>%</i></span>'+
         '<span class="donut-l donut-nm">'+esc(slice.getAttribute('data-nm'))+'</span>';
     }
     card.querySelectorAll('[data-sec]').forEach(function(el){
@@ -404,12 +435,12 @@
       var dot=ind?'<span class="dot" style="background:'+(secCol[ind]||'#cbd5e1')+'"></span>':'';
       var blink=MFCBrokers.orderLink(s);
       var bname=MFCBrokers.current().name;
-      return '<div class="holding'+(skipFx?'':' rise')+'" style="'+(skipFx?'':'animation-delay:'+Math.min(i*40,400)+'ms')+'">'+
+      return '<div class="holding'+(skipFx?'':' rise')+'" style="--h-acc:'+(ind?(secCol[ind]||'transparent'):'transparent')+(skipFx?'':';animation-delay:'+Math.min(i*40,400)+'ms')+'">'+
         '<div class="h-top"><div class="h-rank'+(i<3?' medal m'+(i+1):'')+'">'+(i+1)+'</div>'+
           '<div class="h-name"><div class="h-co">'+esc(s.company_name||s.ticker)+'</div>'+
           '<div class="h-tk" data-copy="'+esc(s.ticker)+'">'+esc(s.ticker)+' <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></div>'+
           (ind?'<div><span class="h-sec">'+dot+esc(ind)+'</span></div>':'')+'</div>'+
-          '<div style="text-align:right"><div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em">Weight</div><div style="font-size:18px;font-weight:800;color:var(--accent2)">'+(w?w.toFixed(1)+'%':'—')+'</div></div>'+
+          '<div class="h-wt"><div class="h-wt-k">Weight</div><div class="h-wt-v ink-grad">'+(w?w.toFixed(1)+'%':'—')+'</div></div>'+
         '</div>'+
         '<div class="h-bar"><i style="--w:'+((w/maxW)*100).toFixed(1)+'%;width:'+(skipFx?((w/maxW)*100).toFixed(1)+'%':'0')+'"></i></div>'+
         '<div class="h-grid">'+
@@ -432,7 +463,7 @@
         '<div class="tiles'+(skipFx?'':' tiles-in')+'">'+
           tileNum('Total picks',stocks.length,'','equal-weighted')+
           tileNum('Industries',nInd,'','sector-diversified')+
-          (dl!=null?tileNum('Renews in',dl,' d',sub&&sub.expires_at?fmtDate(sub.expires_at):''):tile('Renews in','—',sub&&sub.expires_at?fmtDate(sub.expires_at):''))+
+          (dl!=null?tileRenew(dl,sub&&sub.expires_at?fmtDate(sub.expires_at):''):tile('Renews in','—',sub&&sub.expires_at?fmtDate(sub.expires_at):''))+
           tile('Broker',esc(MFCBrokers.current().name),'tap a pick to buy','tile-broker')+
         '</div>'+
         sectorAllocCard(stocks,secCol)+
@@ -484,6 +515,22 @@
   }
   function tile(k,v,s,cls){return '<div class="tile'+(cls?' '+cls:'')+'"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
   function tileNum(k,num,suffix,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v"><span class="v-flow" data-count="'+num+'" data-suffix="'+(suffix||'')+'">'+num+(suffix||'')+'</span></div><div class="t-s">'+esc(s||'')+'</div></div>';}
+  // V18.2 — the "Renews in" KPI carries a mini countdown ring (days left of a
+  // ~monthly cycle); gold once ≤7 days out. Draws in with the tile entrance on
+  // first paint; a capital re-render (.tiles, no -in) pins it at its value.
+  function tileRenew(dl,dateStr){
+    var CIRC=97.39;                                   // 2π·15.5 — ring circumference
+    var frac=Math.max(0,Math.min(1,dl/30));
+    var off=(CIRC*(1-frac)).toFixed(2);
+    return '<div class="tile tile-renew'+(dl<=7?' soon':'')+'"><div class="t-k">Renews in</div>'+
+      '<div class="t-v"><span class="v-flow" data-count="'+dl+'" data-suffix=" d">'+dl+' d</span></div>'+
+      '<div class="t-s">'+esc(dateStr||'')+'</div>'+
+      '<svg class="renew-ring" viewBox="0 0 38 38" aria-hidden="true">'+
+        '<defs><linearGradient id="rrg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#0891b2"/></linearGradient></defs>'+
+        '<circle class="rr-bg" cx="19" cy="19" r="15.5"/>'+
+        '<circle class="rr-fg" cx="19" cy="19" r="15.5" style="--rc:97.39;--ro:'+off+'"/>'+
+      '</svg></div>';
+  }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  SCANNER  (links to the existing web tools)

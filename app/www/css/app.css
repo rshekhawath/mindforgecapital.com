@@ -194,9 +194,10 @@ button{font-family:inherit;cursor:pointer;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .toast.err{background:#7f1d1d;}
 
-/* offline banner */
-.offline{position:fixed;top:0;left:0;right:0;z-index:70;background:#7f1d1d;color:#fff;font-size:12.5px;font-weight:700;text-align:center;padding:calc(var(--safe-top) + 7px) 12px 7px;transform:translateY(-105%);transition:transform .3s var(--ease);}
-.offline.show{transform:none;}
+/* offline banner — visibility flips with the slide so the hidden banner is
+   also hidden from screen readers (it lives above the viewport otherwise) */
+.offline{position:fixed;top:0;left:0;right:0;z-index:70;background:#7f1d1d;color:#fff;font-size:12.5px;font-weight:700;text-align:center;padding:calc(var(--safe-top) + 7px) 12px 7px;transform:translateY(-105%);visibility:hidden;transition:transform .3s var(--ease),visibility 0s .3s;}
+.offline.show{transform:none;visibility:visible;transition:transform .3s var(--ease);}
 
 /* reveal */
 @keyframes rise{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
@@ -817,4 +818,126 @@ html,body{overflow-x:clip;}
 :root[data-theme="dark"] .pf-bar>i{box-shadow:inset 0 1px 0 rgba(255,255,255,.14);}
 @media(prefers-reduced-motion:reduce){
   .pf-overview .pf-bar>i,.pf-legend .pf-leg{animation:none!important;}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V18.2 — APP PARITY UPLIFT
+   ----------------------------------------------------------------------------
+   Ports the website's V18.x finishing language to the member app. Additive,
+   brand-matched, reduced-motion-safe, dark-consistent. Eight cohesive touches:
+     1) APPBAR BRAND HAIRLINE — the flat border under the app bar becomes the
+        site's V17.8 gradient hairline (blue→teal, fading at the edges).
+     2) SECTOR RAILS ON HOLDINGS — each holding card carries a 3px left rail in
+        its sector's colour (--h-acc from app.js), tying the picks list to the
+        donut/legend the same way Home's accent rails tie cards to the mix bar.
+     3) GRADIENT-INK NUMERALS — the donut centre count/% and each holding's
+        weight % pick up the site's V18.0 gradient-ink family (.ink-grad).
+     4) RENEWAL COUNTDOWN RING — the "Renews in" KPI tile gets a mini SVG ring
+        (days left of a ~monthly cycle), gold once ≤7 days; draws in with the
+        tile entrance, pins instantly on capital re-renders + reduced motion.
+     5) OTP PROGRESS TRACK — a slim 0→100% track under the code boxes fills as
+        digits land (driven by app.js · syncProg()).
+     6) ICONED TOASTS — ✓ / ! glyphs so confirmations read at a glance.
+     7) STRATEGY SWITCHER PILL — the appbar <select> drops the native chrome
+        for the app's pill vocabulary + a custom chevron (data-URI, CSP-safe).
+     8) DEPLOYMENT TICKS — subtle 25/50/75% marks on the deployment meter.
+   Plus a dark-remnant sweep (hard-coded light-blue/white tints that read wrong
+   on the deep navy) and a ≤339px donut-column safeguard.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1) APPBAR — brand gradient hairline (replaces the flat border) */
+.appbar{border-bottom:none;}
+.appbar::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(26,80,216,.38) 18%,rgba(8,145,178,.42) 82%,transparent);}
+:root[data-theme="dark"] .appbar::after{
+  background:linear-gradient(90deg,transparent,rgba(106,161,255,.36) 18%,rgba(34,195,230,.32) 82%,transparent);}
+
+/* 2) HOLDINGS — sector-tinted left rail (colour set inline via --h-acc) */
+.holding{position:relative;}
+.holding::before{content:'';position:absolute;left:0;top:14px;bottom:14px;width:3px;
+  border-radius:0 3px 3px 0;background:var(--h-acc,transparent);opacity:.9;}
+
+/* 3) GRADIENT-INK NUMERALS (site V18.0 idiom — dark inherits lighter accents) */
+.ink-grad{background:linear-gradient(100deg,var(--accent2) 0%,var(--accent) 48%,var(--teal) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;}
+.h-wt{text-align:right;}
+.h-wt-k{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;}
+.h-wt-v{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums;}
+
+/* 4) RENEWAL COUNTDOWN RING */
+.tile-renew{padding-right:58px;}
+.renew-ring{position:absolute;right:9px;top:50%;width:40px;height:40px;
+  transform:translateY(-50%) rotate(-90deg);}
+.renew-ring circle{fill:none;stroke-width:3.6;stroke-linecap:round;}
+.rr-bg{stroke:var(--track);}
+.rr-fg{stroke:url(#rrg);stroke-dasharray:var(--rc);stroke-dashoffset:var(--rc);}
+.tile-renew.soon .rr-fg{stroke:var(--gold);}
+.tile-renew.soon .t-v .v-flow{background:linear-gradient(90deg,var(--gold) 0%,#f59e0b 60%,var(--gold) 100%);
+  background-size:220% 100%;-webkit-background-clip:text;background-clip:text;}
+.tiles:not(.tiles-in) .rr-fg{stroke-dashoffset:var(--ro);}
+@media(prefers-reduced-motion:no-preference){
+  .tiles-in .rr-fg{animation:rr-in .9s var(--ease) .4s both;}
+}
+@keyframes rr-in{from{stroke-dashoffset:var(--rc);}to{stroke-dashoffset:var(--ro);}}
+@media(prefers-reduced-motion:reduce){.rr-fg{animation:none!important;stroke-dashoffset:var(--ro)!important;}}
+
+/* 5) OTP PROGRESS TRACK */
+.otp-prog{height:4px;border-radius:3px;background:var(--track);margin-top:12px;overflow:hidden;}
+.otp-prog>i{display:block;height:100%;width:0;border-radius:3px;background:var(--grad);
+  transition:width .3s var(--ease);}
+@media(prefers-reduced-motion:reduce){.otp-prog>i{transition:none!important;}}
+
+/* 6) ICONED TOASTS */
+.toast{display:flex;align-items:center;gap:8px;}
+.toast svg{width:15px;height:15px;flex-shrink:0;color:var(--mint);}
+.toast.err svg{color:#fecaca;}
+
+/* 7) STRATEGY SWITCHER — pill select with a custom chevron (drops native UI) */
+.appbar select.ab-btn{-webkit-appearance:none;appearance:none;width:auto;max-width:48vw;
+  padding:0 28px 0 13px;font-weight:700;font-size:13px;color:var(--ink2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231e3a5f' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right 10px center;background-size:11px 11px;}
+:root[data-theme="dark"] .appbar select.ab-btn{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23bcccea' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");}
+
+/* 8) DEPLOYMENT METER — 25/50/75% ticks (no repeating-gradient edge artifact) */
+.deploy-bar{position:relative;}
+.deploy-bar::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background-image:linear-gradient(rgba(12,24,49,.10),rgba(12,24,49,.10)),
+    linear-gradient(rgba(12,24,49,.10),rgba(12,24,49,.10)),
+    linear-gradient(rgba(12,24,49,.10),rgba(12,24,49,.10));
+  background-size:1px 100%,1px 100%,1px 100%;
+  background-position:25% 0,50% 0,75% 0;background-repeat:no-repeat;}
+:root[data-theme="dark"] .deploy-bar::after{
+  background-image:linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13)),
+    linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13)),
+    linear-gradient(rgba(255,255,255,.13),rgba(255,255,255,.13));}
+
+/* DARK REMNANT SWEEP — hard-coded light tints re-inked for the deep navy */
+:root[data-theme="dark"] .empty-ill{
+  box-shadow:0 18px 36px -22px rgba(0,0,0,.66),inset 0 1px 0 rgba(255,255,255,.08);}
+:root[data-theme="dark"] .empty-ill.warn{
+  box-shadow:0 18px 36px -22px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);}
+:root[data-theme="dark"] .tiles-in > .tile::after{
+  background:linear-gradient(105deg,transparent 0%,rgba(255,255,255,.13) 50%,transparent 100%);}
+:root[data-theme="dark"] .chip-mini{background:rgba(255,255,255,.06);border-color:var(--line);}
+:root[data-theme="dark"] .preset:not(.active){background:rgba(125,160,240,.12);}
+:root[data-theme="dark"] .h-sec{background:rgba(255,255,255,.05);}
+:root[data-theme="dark"] .h-rank{background:rgba(125,160,240,.14);}
+:root[data-theme="dark"] .h-rank.medal{background:linear-gradient(135deg,#f3c14e,#c98a00);}
+:root[data-theme="dark"] .h-rank.m2{background:linear-gradient(135deg,#aab4c4,#76849a);}
+:root[data-theme="dark"] .h-rank.m3{background:linear-gradient(135deg,#d3955f,#a05f2e);}
+:root[data-theme="dark"] .leg-row[data-sec]:active,
+:root[data-theme="dark"] .leg-row.on{background:rgba(125,160,240,.16);}
+@media(hover:hover){:root[data-theme="dark"] .leg-row[data-sec]:hover{background:rgba(125,160,240,.10);}}
+:root[data-theme="dark"] .sc-renew{background:rgba(125,160,240,.12);}
+:root[data-theme="dark"] .tab.active::after{
+  background:radial-gradient(closest-side,rgba(106,161,255,.20),transparent);}
+
+/* ≤339px SAFEGUARD — the 124px donut column squeezes the legend on the very
+   narrowest phones; narrow it a touch so sector names keep breathing room. */
+@media(max-width:339px){
+  .alloc-body{grid-template-columns:104px 1fr;gap:12px;}
+  .donut-wrap{width:104px;height:104px;}
 }
