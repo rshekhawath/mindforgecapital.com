@@ -5819,5 +5819,75 @@ section[id]{ scroll-margin-top: 80px; }
   }catch(e){}
 })();
 </script>
+
+<!-- ============================================================================
+     V18.4 — Hero value-prop VERB CYCLE
+     ----------------------------------------------------------------------------
+     The accent word in the H1 ("Where data ___ your portfolio.") elegantly
+     cross-fades through the value proposition:
+        engineers → optimizes → reinforces → diversifies
+     Self-contained, idempotent, and fully reduced-motion-safe (stays static on
+     "engineers"). PRESERVES the existing gradient-shimmer + glow on .hero h1 em —
+     it only swaps the word text with an opacity/translateY cross-fade, and
+     reserves the widest word's width up-front so following text NEVER shifts.
+     Pauses in a background tab. The four verbs are width-matched (measured spread
+     ≤16px at hero size) so the reserved box fits all four snugly.
+     ========================================================================== -->
+<script>
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
+  ready(function(){
+    try{
+      if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var em = document.querySelector(".hero h1 em");
+      if(!em || em.dataset.verbCycle) return;
+      em.dataset.verbCycle = "1";
+
+      var WORDS = ["engineers","optimizes","reinforces","diversifies"];
+      var current = (em.textContent||"").trim();
+      var idx = WORDS.indexOf(current);
+      if(idx < 0){ WORDS.unshift(current); idx = 0; }
+
+      // Reserve the widest verb's width so " your portfolio." can never reflow.
+      var cs = getComputedStyle(em);
+      var meas = document.createElement("span");
+      meas.setAttribute("aria-hidden","true");
+      meas.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;pointer-events:none;";
+      meas.style.font = cs.fontStyle+" "+cs.fontWeight+" "+cs.fontSize+"/"+cs.lineHeight+" "+cs.fontFamily;
+      meas.style.letterSpacing = cs.letterSpacing;
+      document.body.appendChild(meas);
+      var maxW = 0;
+      WORDS.forEach(function(w){ meas.textContent = w; maxW = Math.max(maxW, meas.getBoundingClientRect().width); });
+      document.body.removeChild(meas);
+
+      var EASE = "cubic-bezier(.22,.8,.2,1)";
+      var TRANS = "opacity .5s "+EASE+", transform .5s "+EASE;
+      em.style.display    = "inline-block";
+      em.style.minWidth   = Math.ceil(maxW) + "px";
+      em.style.textAlign  = "left";
+      em.style.willChange = "opacity, transform";
+      em.style.transition = TRANS;
+
+      var OUT = 520, HOLD = 2900;
+      function tick(){
+        em.style.opacity = "0";
+        em.style.transform = "translateY(-0.22em)";
+        setTimeout(function(){
+          em.style.transition = "none";
+          idx = (idx + 1) % WORDS.length;
+          em.textContent = WORDS[idx];
+          em.style.transform = "translateY(0.22em)";
+          void em.offsetWidth;                 // lock in the pre-fade-in state
+          em.style.transition = TRANS;
+          em.style.opacity = "1";
+          em.style.transform = "translateY(0)";
+        }, OUT);
+      }
+      setInterval(function(){ if(!document.hidden) tick(); }, HOLD + OUT);
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
