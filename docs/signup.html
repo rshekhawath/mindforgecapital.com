@@ -251,6 +251,25 @@ input[type=email]:focus, input[type=text]:focus, input[type=tel]:focus {
   background: #ffffff !important;
   transform: translateY(-1px);
 }
+/* V18.5: in DARK mode the #ffffff focus above blew the field out to a solid white
+   box — the autofocus'd "Full name" field on the Get-started step made it obvious.
+   Dark-scoped override → lifted navy on focus, plus dark autofill fill so a
+   browser-autofilled value stays readable. Light mode is byte-identical. */
+html[data-theme="dark"] input[type=email]:focus,
+html[data-theme="dark"] input[type=text]:focus,
+html[data-theme="dark"] input[type=tel]:focus {
+  background: #233152 !important;
+}
+html[data-theme="dark"] input[type=email]:-webkit-autofill,
+html[data-theme="dark"] input[type=text]:-webkit-autofill,
+html[data-theme="dark"] input[type=tel]:-webkit-autofill,
+html[data-theme="dark"] input[type=email]:-webkit-autofill:focus,
+html[data-theme="dark"] input[type=text]:-webkit-autofill:focus,
+html[data-theme="dark"] input[type=tel]:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--white) !important;
+  -webkit-box-shadow: 0 0 0 1000px #233152 inset !important;
+  caret-color: var(--white) !important;
+}
 input[type=email]:hover:not(:focus), input[type=text]:hover:not(:focus), input[type=tel]:hover:not(:focus) {
   border-color: rgba(37,99,235,0.45) !important;
 }
@@ -922,6 +941,18 @@ input:focus-visible, select:focus-visible, #reg-tnc:focus-visible{
   box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 10px 20px -12px rgba(26,80,216,.40);
 }
 .trust-chip svg{ width:14px;height:14px;color:var(--accent);flex-shrink:0; }
+/* V18.5: the .trust-chip base uses a 72%-white gradient top stop + white insets
+   (a light-mode "frosted pill" look) that never rode the dark var-flip → the
+   three trust pills washed out silvery-light in dark mode. Dark-scoped override →
+   a subtle dark-translucent pill; text (var(--text2)) + icon (var(--accent))
+   already flip. Light mode is byte-identical. */
+html[data-theme="dark"] .trust-chip{
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(37,99,235,.10));
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 5px 14px -10px rgba(0,0,0,.55);
+}
+html[data-theme="dark"] .trust-chip:hover{
+  box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 10px 20px -12px rgba(0,0,0,.6);
+}
 @media(max-width:480px){
   .trust-chip{ font-size:11px;padding:6px 11px;gap:6px; }
   .brand-eyebrow{ letter-spacing:.12em;gap:8px; }
