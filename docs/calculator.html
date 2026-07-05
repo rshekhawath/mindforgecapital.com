@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Security hardening (mirrors the rest of the site). Chart.js is self-hosted
+     under assets/vendor/ so 'script-src self' covers it — no external CDN needed
+     (the site-wide CSP would block a CDN anyway). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com; form-action 'self'; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<script>/* clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
+
+<meta name="color-scheme" content="light">
+<title>Fee Savings Calculator — AUM Fee vs Flat Subscription | MindForge Capital</title>
+<meta name="description" content="See exactly how much a percentage-based AUM fee quietly costs you over time — and how much you keep by switching to MindForge Capital's flat monthly subscription. Play with your own numbers.">
+<link rel="canonical" href="https://mindforgecapital.com/calculator.html">
+<link rel="icon" href="assets/favicon-32.png" type="image/png">
+<link rel="shortcut icon" href="assets/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#1a50d8">
+<link rel="manifest" href="/manifest.json">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fee Savings Calculator — AUM Fee vs Flat Subscription">
+<meta property="og:description" content="A 2% AUM fee compounds against you. See what you keep on a flat monthly fee.">
+<meta property="og:image" content="https://mindforgecapital.com/assets/LogoNav.png">
+<meta property="og:url" content="https://mindforgecapital.com/calculator.html">
+
+<style>
+:root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--gold:#d97706;--teal:#0891b2;--green:#059669;--text:#0c1831;--text2:#1e3a5f;--text3:#475569;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px; line-height: 1.65;
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+h1, h2, h3, h4 {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 700; letter-spacing: -0.02em; line-height: 1.1;
+}
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1180px; margin: 0 auto; padding: 0 32px; width: 100%; }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(240,245,255,0.96);
+  backdrop-filter: blur(20px);
+  border-bottom: 0.5px solid var(--border2);
+  padding: 0 32px;
+}
+.nav-inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; height: 64px; gap: 40px; }
+.logo { display: flex; align-items: center; }
+.logo img { display: block; }
+.nav-links { display: flex; gap: 30px; margin-left: auto; align-items: center; }
+.nav-links a { font-size: 14px; font-weight: 400; color: var(--text2); transition: color 0.2s; display: inline-flex; align-items: center; height: 40px; line-height: 1; }
+.nav-links a:hover { color: var(--white); }
+.nav-links a.active { color: var(--accent2); font-weight: 600; }
+.nav-cta { background: var(--accent); color: #fff !important; font-size: 14px; font-weight: 600; padding: 10px 22px; border-radius: var(--r-sm); transition: all 0.2s; flex-shrink: 0; }
+.nav-cta:hover { background: #2a5ef5; transform: translateY(-1px); color:#fff !important; }
+.nav-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 8px; margin-left: auto; z-index: 200; }
+.nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--white); border-radius: 2px; transition: all 0.3s; }
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── HERO / INTRO ── */
+.calc-hero { padding: 56px 0 8px; position: relative; overflow: hidden; }
+.calc-hero-bg { position:absolute; inset:0; pointer-events:none; background:
+  radial-gradient(ellipse 700px 380px at 78% 0%, rgba(26,108,244,0.13) 0%, transparent 70%),
+  radial-gradient(ellipse 500px 300px at 10% 30%, rgba(5,150,105,0.06) 0%, transparent 60%); }
+.calc-hero .container { position: relative; z-index: 1; }
+.eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:12px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+  color:var(--accent2); background:rgba(37,99,235,0.08);
+  border:0.5px solid var(--border2); border-radius:999px; padding:6px 14px; margin-bottom:18px;
+}
+.eyebrow .dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 0 3px rgba(5,150,105,0.18); }
+.calc-hero h1 { font-size: clamp(28px, 4.4vw, 46px); color: var(--white); max-width: 820px; margin-bottom: 16px; }
+.calc-hero h1 .hl { color: var(--green); }
+.calc-hero p.lede { font-size: clamp(15px, 1.7vw, 18px); color: var(--text2); max-width: 640px; line-height: 1.6; }
+
+/* ── CALC LAYOUT ── */
+.calc-section { padding: 28px 0 64px; }
+.calc-grid { display: grid; grid-template-columns: minmax(0,0.86fr) minmax(0,1.14fr); gap: 26px; align-items: start; }
+/* min-width:0 so a child's intrinsic size (e.g. the chart canvas) can never force a grid track wider than the viewport */
+.calc-grid > .fc-left, .calc-grid > .fc-right { min-width: 0; }
+
+.card {
+  background: var(--ink2);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--r);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.55) inset, 0 24px 50px -30px rgba(26,80,216,0.20), 0 6px 18px -12px rgba(15,23,42,0.08);
+}
+.card-pad { padding: 26px; }
+.card-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+.card-sub { font-size: 13px; color: var(--text3); line-height: 1.5; }
+
+/* controls */
+.fc-controls .fc-field { margin-top: 22px; }
+.fc-controls .fc-field:first-of-type { margin-top: 18px; }
+.fc-field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.fc-field-head label { font-size: 14px; font-weight: 600; color: var(--text); }
+.fc-field-head .fc-hint { font-size: 11px; color: var(--text3); }
+
+.fc-inputwrap { position: relative; display: inline-flex; align-items: center; width: 156px; }
+.fc-inputwrap .fc-pre, .fc-inputwrap .fc-suf { position: absolute; font-size: 14px; color: var(--text3); font-weight: 600; pointer-events: none; }
+.fc-inputwrap .fc-pre { left: 12px; }
+.fc-inputwrap .fc-suf { right: 12px; }
+.fc-inputwrap input {
+  width: 100%; font-family: inherit; font-size: 15px; font-weight: 700; color: var(--text);
+  background: var(--ink); border: 1px solid var(--border2); border-radius: 10px;
+  padding: 9px 12px; text-align: right; -moz-appearance: textfield; transition: border-color .18s, box-shadow .18s;
+}
+.fc-inputwrap.has-pre input { padding-left: 26px; text-align: right; }
+.fc-inputwrap.has-suf input { padding-right: 30px; }
+.fc-inputwrap input::-webkit-outer-spin-button, .fc-inputwrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.fc-inputwrap input:focus { outline: none; border-color: var(--accent3); box-shadow: 0 0 0 3px rgba(59,130,246,0.16); }
+
+/* value pill next to head */
+.fc-valpill { font-size: 15px; font-weight: 800; color: var(--accent2); font-variant-numeric: tabular-nums; }
+
+/* range slider */
+.fc-range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin-top: 14px; border-radius: 999px; background: var(--border2); outline: none; cursor: pointer; }
+.fc-range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: transparent; }
+.fc-range::-moz-range-track { height: 6px; border-radius: 999px; }
+.fc-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: #fff; border: 2px solid var(--accent2); box-shadow: 0 2px 6px rgba(26,80,216,0.35); cursor: pointer; transition: transform .12s; }
+.fc-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
+.fc-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--accent2); box-shadow: 0 2px 6px rgba(26,80,216,0.35); cursor: pointer; }
+.fc-range:focus-visible { outline: 2px solid var(--accent3); outline-offset: 4px; }
+.fc-scale { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text3); margin-top: 7px; letter-spacing: .01em; }
+
+/* results / KPIs */
+.fc-right { display: flex; flex-direction: column; gap: 22px; }
+.fc-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fc-kpi { border-radius: 13px; padding: 16px 16px 15px; border: 0.5px solid var(--border2); background: var(--ink); position: relative; overflow: hidden; }
+.fc-kpi .k-lbl { font-size: 11.5px; font-weight: 600; color: var(--text3); letter-spacing: .01em; display:flex; align-items:center; gap:7px; }
+.fc-kpi .k-lbl .swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.fc-kpi .k-val { font-size: clamp(20px, 2.4vw, 26px); font-weight: 800; color: var(--text); margin-top: 8px; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.fc-kpi .k-meta { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.fc-kpi.hero { grid-column: 1 / -1; background: linear-gradient(135deg, rgba(5,150,105,0.12), rgba(5,150,105,0.04)); border-color: rgba(5,150,105,0.34); }
+.fc-kpi.hero.neg { background: linear-gradient(135deg, rgba(217,119,6,0.12), rgba(217,119,6,0.04)); border-color: rgba(217,119,6,0.34); }
+.fc-kpi.hero .k-lbl { color: var(--green); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 11px; }
+.fc-kpi.hero.neg .k-lbl { color: var(--gold); }
+.fc-kpi.hero .k-val { font-size: clamp(30px, 4.6vw, 44px); color: var(--green); }
+.fc-kpi.hero.neg .k-val { color: var(--gold); }
+.fc-kpi.hero .k-meta { font-size: 12.5px; color: var(--text2); margin-top: 6px; }
+.fc-pop { animation: fcpop .32s cubic-bezier(.34,1.56,.64,1); }
+@keyframes fcpop { 0%{transform:scale(1);} 40%{transform:scale(1.035);} 100%{transform:scale(1);} }
+@media (prefers-reduced-motion: reduce){ .fc-pop{ animation: none; } }
+
+/* chart */
+.fc-chart-card { padding: 20px 20px 16px; }
+.fc-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+.fc-chart-head h3 { font-size: 15px; color: var(--white); }
+.fc-legend { display: flex; gap: 16px; flex-wrap: wrap; }
+.fc-legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); font-weight: 500; }
+.fc-legend .lg { width: 14px; height: 4px; border-radius: 2px; }
+.fc-canvas-wrap { position: relative; height: 340px; margin-top: 10px; min-width: 0; overflow: hidden; }
+.fc-canvas-wrap canvas { max-width: 100% !important; }
+
+/* fee strip */
+.fc-feestrip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 0.5px solid var(--border); }
+.fc-fee { font-size: 12px; color: var(--text3); }
+.fc-fee b { display: block; font-size: 16px; font-weight: 800; color: var(--text); margin-top: 3px; font-variant-numeric: tabular-nums; }
+.fc-fee.mf b { color: var(--gold); }
+.fc-fee.mfc b { color: var(--accent2); }
+
+/* CTA */
+.fc-cta { margin-top: 22px; text-align: center; }
+.btn-primary { display: inline-block; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; padding: 14px 30px; border-radius: 12px; transition: all .2s; box-shadow: 0 12px 26px -12px rgba(26,80,216,0.5); }
+.btn-primary:hover { background: #2a5ef5; transform: translateY(-1px); }
+.fc-disclaimer { font-size: 11px; color: var(--text3); line-height: 1.55; max-width: 640px; margin: 14px auto 0; text-align: center; }
+
+/* methodology */
+.fc-method { margin-top: 30px; }
+.fc-method summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text2); list-style: none; display: inline-flex; align-items: center; gap: 8px; }
+.fc-method summary::-webkit-details-marker { display: none; }
+.fc-method summary .chev { transition: transform .2s; }
+.fc-method[open] summary .chev { transform: rotate(90deg); }
+.fc-method .m-body { font-size: 13px; color: var(--text3); line-height: 1.7; margin-top: 12px; max-width: 820px; }
+.fc-method .m-body code { background: var(--ink); border: 0.5px solid var(--border2); border-radius: 6px; padding: 1px 6px; font-size: 12px; color: var(--text2); }
+.fc-method ul { margin: 8px 0 0 18px; }
+
+/* footer */
+footer { position: relative; margin-top: auto; border-top: 0.5px solid var(--border2); padding: 40px 0 32px; }
+footer::before { content:""; position:absolute; top:-0.5px; left:0; right:0; height:1px; background:linear-gradient(90deg, transparent, rgba(37,99,235,0.35), transparent); }
+.footer-inner { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 40px; align-items: start; }
+.footer-brand p { font-size: 13px; color: var(--text3); line-height: 1.7; margin-top: 12px; max-width: 280px; }
+.footer-col h3 { font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 14px; letter-spacing: 0.02em; }
+.footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-col li a { font-size: 13px; color: var(--text3); transition: color 0.2s; }
+.footer-col li a:hover { color: var(--white); }
+.footer-bottom { margin-top: 32px; padding-top: 22px; border-top: 0.5px solid var(--border); }
+.footer-bottom p { font-size: 12px; color: var(--text3); line-height: 1.6; }
+.footer-bottom .sebi-line { color: var(--text2); font-weight: 500; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 940px) {
+  .calc-grid { grid-template-columns: 1fr; gap: 20px; }
+  /* payoff first, then chart, then controls */
+  .fc-right { order: 1; }
+  .fc-left { order: 2; }
+  .fc-canvas-wrap { height: 300px; }
+}
+@media (max-width: 768px) {
+  nav { padding: 0 16px; }
+  .nav-inner { gap: 12px; height: 56px; }
+  .nav-hamburger { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+  .nav-links {
+    display: none; position: fixed; top: 56px; left: 0; right: 0;
+    background: rgba(240,245,255,0.98); backdrop-filter: blur(20px);
+    border-bottom: 0.5px solid var(--border2); flex-direction: column; align-items: stretch;
+    padding: 18px 20px 24px; gap: 4px; z-index: 150; box-shadow: 0 8px 32px rgba(26,80,216,0.10);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a { font-size: 16px; padding: 13px 0; height: auto; border-bottom: 0.5px solid var(--border); }
+  .nav-links a:last-child { border-bottom: none; }
+  .nav-links a.nav-cta { display: block; margin-top: 14px; text-align: center; padding: 15px 28px; border-radius: 12px; border-bottom: none; }
+  .container { padding: 0 16px; }
+  .calc-hero { padding: 36px 0 4px; }
+  .card-pad { padding: 20px; }
+  .footer-inner { grid-template-columns: 1fr; gap: 26px; }
+}
+@media (max-width: 420px) {
+  .fc-kpis { grid-template-columns: 1fr; }
+  .fc-inputwrap { width: 138px; }
+}
+</style>
+
+<!-- MFC theme (V17.5 pattern): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. -->
+<script>
+(function(){var D=document,R=D.documentElement;
+function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
+function apply(t){R.setAttribute('data-theme',t==='dark'?'dark':'light');}
+apply(get());
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+function build(){if(D.getElementById('mfc-theme-toggle'))return;
+var inner=D.querySelector('nav .nav-inner')||D.querySelector('nav');if(!inner)return;
+var b=D.createElement('button');b.id='mfc-theme-toggle';b.className='mfc-theme-toggle';b.type='button';
+b.setAttribute('aria-label','Toggle dark mode');b.title='Toggle light / dark';
+function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MOON;b.setAttribute('aria-pressed',t==='dark'?'true':'false');}
+sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();if(window.__fcThemeChanged)window.__fcThemeChanged();});
+var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
+if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();
+</script>
+<link rel="stylesheet" href="assets/mfc-finish.css?v=1750">
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
+    <div class="nav-links" id="primary-nav">
+      <a href="strategies.html">Strategies</a>
+      <a href="screener/">Scanner</a>
+      <a href="scores/">Integrity Score</a>
+      <a href="fii-dii/">FII/DII</a>
+      <a href="calculator.html" class="active" aria-current="page">Fee Calculator</a>
+      <a href="login.html">Sign In</a>
+      <a href="signup.html" class="nav-cta">Get Started</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<section class="calc-hero">
+  <div class="calc-hero-bg"></div>
+  <div class="container">
+    <span class="eyebrow"><span class="dot"></span>Interactive · your numbers</span>
+    <h1>A 2% fee doesn't sound like much.<br>Over 10 years, it quietly costs you <span class="hl">lakhs</span>.</h1>
+    <p class="lede">Percentage-based AUM fees scale with your corpus — the bigger you grow, the more they take. A flat monthly subscription doesn't. Move the sliders and watch the gap compound in real time.</p>
+  </div>
+</section>
+
+<section class="calc-section">
+  <div class="container">
+    <div class="calc-grid">
+
+      <!-- CONTROLS -->
+      <div class="fc-left card">
+        <div class="card-pad fc-controls">
+          <div class="card-title">Your numbers</div>
+          <p class="card-sub">Adjust any input — the results and chart update instantly.</p>
+
+          <div class="fc-field">
+            <div class="fc-field-head">
+              <label for="fc-invest-num">Initial investment</label>
+              <span class="fc-valpill" id="fc-invest-pill">₹15,00,000</span>
+            </div>
+            <div class="fc-inputwrap has-pre">
+              <span class="fc-pre">₹</span>
+              <input type="text" id="fc-invest-num" inputmode="numeric" value="15,00,000" aria-label="Initial investment in rupees">
+            </div>
+            <input type="range" class="fc-range" id="fc-invest-rng" min="500000" max="5000000" step="50000" value="1500000" aria-label="Initial investment">
+            <div class="fc-scale"><span>₹5L</span><span>₹50L</span></div>
+          </div>
+
+          <div class="fc-field">
+            <div class="fc-field-head">
+              <label for="fc-return-num">Expected annual return</label>
+              <span class="fc-valpill" id="fc-return-pill">15.0%</span>
+            </div>
+            <div class="fc-inputwrap has-suf">
+              <input type="number" id="fc-return-num" min="8" max="25" step="0.5" value="15" aria-label="Expected annual return percent">
+              <span class="fc-suf">%</span>
+            </div>
+            <input type="range" class="fc-range" id="fc-return-rng" min="8" max="25" step="0.5" value="15" aria-label="Expected annual return">
+            <div class="fc-scale"><span>8%</span><span>25%</span></div>
+          </div>
+
+          <div class="fc-field">
+            <div class="fc-field-head">
+              <label for="fc-years-num">Investment horizon</label>
+              <span class="fc-valpill" id="fc-years-pill">10 yrs</span>
+            </div>
+            <div class="fc-inputwrap has-suf">
+              <input type="number" id="fc-years-num" min="1" max="30" step="1" value="10" aria-label="Investment horizon in years">
+              <span class="fc-suf">yr</span>
+            </div>
+            <input type="range" class="fc-range" id="fc-years-rng" min="1" max="30" step="1" value="10" aria-label="Investment horizon">
+            <div class="fc-scale"><span>1 yr</span><span>30 yrs</span></div>
+          </div>
+
+          <div class="fc-field">
+            <div class="fc-field-head">
+              <label for="fc-aum-num">Mutual fund AUM fee</label>
+              <span class="fc-valpill" id="fc-aum-pill">2.0%</span>
+            </div>
+            <div class="fc-inputwrap has-suf">
+              <input type="number" id="fc-aum-num" min="0.5" max="3" step="0.1" value="2" aria-label="Mutual fund AUM fee percent">
+              <span class="fc-suf">%</span>
+            </div>
+            <input type="range" class="fc-range" id="fc-aum-rng" min="0.5" max="3" step="0.1" value="2" aria-label="Mutual fund AUM fee">
+            <div class="fc-scale"><span>0.5%</span><span>3.0%</span></div>
+          </div>
+
+          <div class="fc-field">
+            <div class="fc-field-head">
+              <label for="fc-flat-num">MindForge flat monthly fee</label>
+              <span class="fc-valpill" id="fc-flat-pill">₹1,499</span>
+            </div>
+            <div class="fc-inputwrap has-pre">
+              <span class="fc-pre">₹</span>
+              <input type="text" id="fc-flat-num" inputmode="numeric" value="1,499" aria-label="MindForge flat monthly fee in rupees">
+            </div>
+            <input type="range" class="fc-range" id="fc-flat-rng" min="1499" max="4999" step="50" value="1499" aria-label="MindForge flat monthly fee">
+            <div class="fc-scale"><span>₹1,499</span><span>₹4,999</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS + CHART -->
+      <div class="fc-right">
+        <div class="card card-pad">
+          <div class="card-title" style="margin-bottom:16px;">After <span id="fc-yrs-echo">10</span> years, on ₹<span id="fc-cap-echo">15,00,000</span></div>
+          <div class="fc-kpis" aria-live="polite">
+            <div class="fc-kpi hero" id="fc-saved-kpi">
+              <div class="k-lbl" id="fc-saved-lbl">Wealth saved by switching</div>
+              <div class="k-val" id="fc-saved-val">—</div>
+              <div class="k-meta" id="fc-saved-meta">—</div>
+            </div>
+            <div class="fc-kpi">
+              <div class="k-lbl"><span class="swatch" id="sw-mf"></span>Traditional mutual fund</div>
+              <div class="k-val" id="fc-mf-val">—</div>
+              <div class="k-meta" id="fc-mf-meta">—</div>
+            </div>
+            <div class="fc-kpi">
+              <div class="k-lbl"><span class="swatch" id="sw-mfc"></span>MindForge flat fee</div>
+              <div class="k-val" id="fc-mfc-val">—</div>
+              <div class="k-meta" id="fc-mfc-meta">—</div>
+            </div>
+          </div>
+
+          <div class="fc-feestrip">
+            <div class="fc-fee mf">Total AUM fees drained<b id="fc-mf-fees">—</b></div>
+            <div class="fc-fee mfc">Total flat fees paid<b id="fc-mfc-fees">—</b></div>
+          </div>
+        </div>
+
+        <div class="card fc-chart-card">
+          <div class="fc-chart-head">
+            <h3>Portfolio value over time</h3>
+            <div class="fc-legend">
+              <span><span class="lg" id="lg-mf"></span>Mutual fund</span>
+              <span><span class="lg" id="lg-mfc"></span>MindForge</span>
+            </div>
+          </div>
+          <div class="fc-canvas-wrap">
+            <canvas id="fc-chart" role="img" aria-label="Line chart comparing a traditional mutual fund portfolio against a MindForge flat-fee portfolio over the selected horizon"></canvas>
+          </div>
+        </div>
+
+        <div class="fc-cta">
+          <a href="signup.html" class="btn-primary">Switch to a flat fee →</a>
+          <p class="fc-disclaimer">Illustration only, not investment advice or a guarantee of returns. Both scenarios assume the same gross annual return, compounded yearly; the only difference modelled is the fee structure. Real mutual-fund expense ratios, exit loads and taxes vary. Past performance does not indicate future results.</p>
+        </div>
+
+        <details class="fc-method">
+          <summary><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg> How this is calculated</summary>
+          <div class="m-body">
+            Both portfolios start at your initial investment and grow at the same expected annual return, compounded once a year. The only variable is <em>how the fee is charged</em>:
+            <ul>
+              <li><b>Traditional mutual fund (Scenario A):</b> the AUM fee is a percentage skimmed off the return every year, so the portfolio compounds at <code>return − AUM fee</code>. Because it's a percentage of your whole corpus, the rupee cost grows as you do.</li>
+              <li><b>MindForge flat fee (Scenario B):</b> the portfolio compounds at the full <code>return</code>, then a fixed annual amount (<code>monthly fee × 12</code>) is deducted at the end of each year. The fee never scales with your corpus.</li>
+            </ul>
+            "Wealth saved by switching" is simply the difference between the two final corpuses. On smaller portfolios with a low AUM fee, a flat fee can occasionally cost more — the calculator shows that honestly.
+          </div>
+        </details>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=ea8dcc1d" width="80" height="80" alt="MindForge Capital" loading="lazy" decoding="async"></a>
+        <p>Systematic investing, engineered for Indian markets. Built on process, not predictions.</p>
+      </div>
+      <div class="footer-col">
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="strategies.html">Strategies</a></li>
+          <li><a href="calculator.html">Fee calculator</a></li>
+          <li><a href="screener/">Scanner</a></li>
+          <li><a href="scores/">Integrity Score</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Company</h3>
+        <ul>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="terms.html">Terms of service</a></li>
+          <li><a href="recover.html">Recover access</a></li>
+          <li><a href="signup.html">Get started</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p><span class="sebi-line">SEBI-Registered Research Analyst · INH-XXXXXXXXXXX · Sagar Shekhawath</span><br>© 2026 MindForge Capital. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/vendor/chart.umd.min.js"></script>
+<script>
+// Mobile hamburger
+(function(){
+  var btn=document.querySelector('.nav-hamburger'), links=document.querySelector('.nav-links');
+  if(!btn||!links) return;
+  function setHam(o){ btn.classList.toggle('open',o); links.classList.toggle('open',o); btn.setAttribute('aria-expanded',o?'true':'false'); btn.setAttribute('aria-label',o?'Close menu':'Open menu'); }
+  btn.addEventListener('click',function(){ setHam(!btn.classList.contains('open')); });
+  links.querySelectorAll('a').forEach(function(a){ a.addEventListener('click',function(){ setHam(false); }); });
+})();
+</script>
+<script>
+/* ── Fee vs Flat calculator ───────────────────────────────────────────── */
+(function(){
+  'use strict';
+
+  // ── formatting ──
+  function inr(n){ if(!isFinite(n)) return '—'; return '₹'+Math.round(n).toLocaleString('en-IN'); }
+  function compactInr(n){
+    var s = n < 0 ? '-' : '';
+    var a = Math.abs(n);
+    if(a >= 1e7) return s+'₹'+(a/1e7).toFixed(2).replace(/\.?0+$/,'')+'Cr';
+    if(a >= 1e5) return s+'₹'+(a/1e5).toFixed(2).replace(/\.?0+$/,'')+'L';
+    return inr(n);
+  }
+  function grp(n){ return Number(n).toLocaleString('en-IN'); }
+  function digits(s){ var n = Number(String(s==null?'':s).replace(/[^\d]/g,'')); return isFinite(n)?n:0; }
+  function clamp(n,min,max){ return Math.min(max, Math.max(min, n)); }
+
+  // ── config for each control (num field, range field, value pill, kind) ──
+  var CFG = {
+    invest:{ num:'fc-invest-num', rng:'fc-invest-rng', pill:'fc-invest-pill', min:500000, max:5000000, step:50000, kind:'rupee' },
+    ret:   { num:'fc-return-num', rng:'fc-return-rng', pill:'fc-return-pill', min:8, max:25, step:0.5, kind:'pct' },
+    years: { num:'fc-years-num',  rng:'fc-years-rng',  pill:'fc-years-pill',  min:1, max:30, step:1, kind:'yrs' },
+    aum:   { num:'fc-aum-num',    rng:'fc-aum-rng',    pill:'fc-aum-pill',    min:0.5, max:3, step:0.1, kind:'pct' },
+    flat:  { num:'fc-flat-num',   rng:'fc-flat-rng',   pill:'fc-flat-pill',   min:1499, max:4999, step:50, kind:'rupee' }
+  };
+
+  var el = {};
+  Object.keys(CFG).forEach(function(k){
+    var c = CFG[k];
+    el[k] = { num:document.getElementById(c.num), rng:document.getElementById(c.rng), pill:document.getElementById(c.pill) };
+  });
+
+  function snap(v,c){ // snap to step within range
+    var n = clamp(v, c.min, c.max);
+    var steps = Math.round((n - c.min)/c.step);
+    n = c.min + steps*c.step;
+    // fix float drift for decimal steps
+    n = Math.round(n*100)/100;
+    return clamp(n, c.min, c.max);
+  }
+  function pillText(v,c){
+    if(c.kind==='rupee') return '₹'+grp(Math.round(v));
+    if(c.kind==='pct') return v.toFixed(1)+'%';
+    if(c.kind==='yrs') return Math.round(v)+' yr'+(Math.round(v)===1?'':'s');
+    return String(v);
+  }
+  function numText(v,c){
+    if(c.kind==='rupee') return grp(Math.round(v));
+    if(c.kind==='pct') return (Math.round(v*10)/10).toString();
+    return String(Math.round(v));
+  }
+
+  // read current numeric values from the range inputs (source of truth)
+  function readAll(){
+    var out = {};
+    Object.keys(CFG).forEach(function(k){ out[k] = parseFloat(el[k].rng.value); });
+    return out;
+  }
+
+  // ── core math ──
+  function compute(v){
+    var P = v.invest, r = v.ret/100, years = Math.round(v.years), aum = v.aum/100, annualFee = Math.round(v.flat)*12;
+    var mfRate = r - aum;
+    var labels = ['Now'], mfSeries = [P], mfcSeries = [P];
+    var fundBal = P, mfcBal = P, aumFeesPaid = 0;
+    for(var y=1; y<=years; y++){
+      aumFeesPaid += fundBal * aum;      // fee skimmed on the corpus for the year
+      fundBal = fundBal * (1 + mfRate);
+      mfcBal = mfcBal * (1 + r) - annualFee;
+      if(mfcBal < 0) mfcBal = 0;
+      labels.push(y===1?'Yr 1':('Yr '+y));
+      mfSeries.push(fundBal);
+      mfcSeries.push(mfcBal);
+    }
+    return {
+      P:P, years:years, mfRate:mfRate, r:r, aum:aum, annualFee:annualFee,
+      labels:labels, mfSeries:mfSeries, mfcSeries:mfcSeries,
+      mfFinal:fundBal, mfcFinal:mfcBal,
+      saved: mfcBal - fundBal,
+      aumFeesPaid: aumFeesPaid, flatFeesPaid: annualFee*years
+    };
+  }
+
+  // ── theme-aware chart colors ──
+  function themeColors(){
+    var cs = getComputedStyle(document.documentElement);
+    function g(name,fb){ var x=cs.getPropertyValue(name); return (x&&x.trim())||fb; }
+    var dark = document.documentElement.getAttribute('data-theme')==='dark';
+    return {
+      mf:  dark ? '#8698b7' : '#94a3b8',      // muted slate — mutual fund
+      mfFill: dark ? 'rgba(134,152,183,0.10)' : 'rgba(148,163,184,0.12)',
+      mfc: g('--green','#059669'),            // brand success — MindForge
+      grid: dark ? 'rgba(150,180,240,0.10)' : 'rgba(37,99,235,0.08)',
+      tick: g('--text3','#475569'),
+      dark: dark
+    };
+  }
+
+  var chart = null;
+  function buildChart(data){
+    // fast path: chart already exists → update data in place (no destroy/recreate on every drag)
+    if(chart){
+      chart.data.labels = data.labels;
+      chart.data.datasets[0].data = data.mfSeries;
+      chart.data.datasets[1].data = data.mfcSeries;
+      chart.update('none');
+      return;
+    }
+    var c = themeColors();
+    var ctx = document.getElementById('fc-chart').getContext('2d');
+    var cfg = {
+      type:'line',
+      data:{
+        labels:data.labels,
+        datasets:[
+          { label:'Mutual fund', data:data.mfSeries, borderColor:c.mf, backgroundColor:c.mfFill,
+            borderWidth:2, fill:true, tension:0.25, pointRadius:0, pointHoverRadius:5,
+            pointHoverBackgroundColor:c.mf, pointHoverBorderColor:'#fff', pointHoverBorderWidth:2, order:2 },
+          { label:'MindForge', data:data.mfcSeries, borderColor:c.mfc,
+            backgroundColor:function(context){
+              var ch=context.chart, area=ch.chartArea; if(!area) return 'rgba(5,150,105,0.12)';
+              var grad=ch.ctx.createLinearGradient(0,area.top,0,area.bottom);
+              grad.addColorStop(0, c.dark?'rgba(22,199,141,0.30)':'rgba(5,150,105,0.24)');
+              grad.addColorStop(1, c.dark?'rgba(22,199,141,0.02)':'rgba(5,150,105,0.01)');
+              return grad;
+            },
+            borderWidth:3, fill:true, tension:0.25, pointRadius:0, pointHoverRadius:5,
+            pointHoverBackgroundColor:c.mfc, pointHoverBorderColor:'#fff', pointHoverBorderWidth:2, order:1 }
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:false,
+        interaction:{ mode:'index', intersect:false },
+        layout:{ padding:{ top:8, right:6, left:0, bottom:0 } },
+        scales:{
+          x:{ grid:{ display:false }, border:{ display:false },
+              ticks:{ color:c.tick, font:{ size:11 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
+          y:{ grid:{ color:c.grid }, border:{ display:false }, beginAtZero:false,
+              ticks:{ color:c.tick, font:{ size:11 }, maxTicksLimit:6,
+                      callback:function(val){ return compactInr(val); } } }
+        },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            backgroundColor:c.dark?'rgba(17,28,48,0.96)':'rgba(12,24,49,0.96)',
+            titleColor:'#fff', bodyColor:'#e7edfb', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
+            padding:12, cornerRadius:10, displayColors:true, usePointStyle:true, boxPadding:5,
+            callbacks:{
+              title:function(items){ var i=items[0].dataIndex; return i===0?'Today':('Year '+i); },
+              label:function(item){ return '  '+item.dataset.label+': '+compactInr(item.parsed.y); },
+              afterBody:function(items){
+                if(items.length<2) return '';
+                var a=items[0].parsed.y, b=items[1].parsed.y, d=Math.abs(a-b);
+                return '\nGap: '+compactInr(d);
+              }
+            }
+          }
+        }
+      }
+    };
+    chart = new Chart(ctx, cfg);
+  }
+
+  // ── render everything ──
+  var swMf=document.getElementById('sw-mf'), swMfc=document.getElementById('sw-mfc'),
+      lgMf=document.getElementById('lg-mf'), lgMfc=document.getElementById('lg-mfc');
+  function paintSwatches(){
+    var c=themeColors();
+    [swMf,lgMf].forEach(function(e){ if(e) e.style.background=c.mf; });
+    [swMfc,lgMfc].forEach(function(e){ if(e) e.style.background=c.mfc; });
+  }
+
+  function pop(id){
+    var e=document.getElementById(id); if(!e) return;
+    e.classList.remove('fc-pop'); void e.offsetWidth; e.classList.add('fc-pop');
+  }
+
+  function render(popIt){
+    var v = readAll();
+    var d = compute(v);
+
+    // echoes
+    document.getElementById('fc-yrs-echo').textContent = d.years;
+    document.getElementById('fc-cap-echo').textContent = grp(Math.round(d.P));
+
+    // MF + MindForge finals
+    document.getElementById('fc-mf-val').textContent = compactInr(d.mfFinal);
+    document.getElementById('fc-mf-meta').textContent = '@ '+((d.mfRate)*100).toFixed(1)+'% net / yr (after '+ (d.aum*100).toFixed(1) +'% fee)';
+    document.getElementById('fc-mfc-val').textContent = compactInr(d.mfcFinal);
+    document.getElementById('fc-mfc-meta').textContent = '@ '+(d.r*100).toFixed(1)+'% / yr − ₹'+grp(d.annualFee)+' flat / yr';
+
+    // fees strip
+    document.getElementById('fc-mf-fees').textContent = compactInr(d.aumFeesPaid);
+    document.getElementById('fc-mfc-fees').textContent = compactInr(d.flatFeesPaid);
+
+    // hero saved
+    var kpi=document.getElementById('fc-saved-kpi'), lbl=document.getElementById('fc-saved-lbl'),
+        val=document.getElementById('fc-saved-val'), meta=document.getElementById('fc-saved-meta');
+    var saved=d.saved;
+    if(saved >= 0){
+      kpi.classList.remove('neg');
+      lbl.textContent='Wealth saved by switching';
+      val.textContent='+'+compactInr(saved);
+      var pctMore = d.mfFinal>0 ? (saved/d.mfFinal*100) : 0;
+      meta.textContent = pctMore>=0.5
+        ? ('That’s '+pctMore.toFixed(pctMore<10?1:0)+'% more wealth on the same capital over '+d.years+' year'+(d.years>1?'s':'')+'.')
+        : ('Extra you keep over '+d.years+' year'+(d.years>1?'s':'')+' by avoiding the AUM drag.');
+    } else {
+      kpi.classList.add('neg');
+      lbl.textContent='Flat fee costs more here';
+      val.textContent='−'+compactInr(Math.abs(saved));
+      meta.textContent='At this size & fee, the % AUM fee is cheaper. Flat fees win as your corpus grows — try a longer horizon or bigger investment.';
+    }
+
+    buildChart(d);
+    paintSwatches();
+    if(popIt){ pop('fc-saved-val'); pop('fc-mf-val'); pop('fc-mfc-val'); }
+  }
+
+  // ── wire inputs: range <-> number two-way ──
+  function setPillAndEcho(k,c,val){
+    el[k].pill.textContent = pillText(val,c);
+  }
+
+  Object.keys(CFG).forEach(function(k){
+    var c = CFG[k];
+    // range drives everything
+    el[k].rng.addEventListener('input', function(){
+      var val = parseFloat(el[k].rng.value);
+      el[k].num.value = numText(val,c);
+      setPillAndEcho(k,c,val);
+      render(true);
+    });
+    // number field: update on input (live) but only reflect valid partials; snap on change/blur
+    el[k].num.addEventListener('input', function(){
+      var raw;
+      if(c.kind==='rupee'){
+        if(el[k].num.value.replace(/[^\d]/g,'')==='') return; // cleared / still typing — don't snap to min
+        raw = digits(el[k].num.value);
+      } else {
+        raw = parseFloat(el[k].num.value);
+      }
+      if(!isFinite(raw)) return;               // let them keep typing (e.g. empty)
+      var val = snap(raw, c);
+      el[k].rng.value = val;
+      setPillAndEcho(k,c,val);
+      render(true);
+    });
+    el[k].num.addEventListener('change', function(){ // normalize display on commit
+      var raw = c.kind==='rupee' ? digits(el[k].num.value) : parseFloat(el[k].num.value);
+      if(!isFinite(raw)) raw = c.min;
+      var val = snap(raw, c);
+      el[k].rng.value = val;
+      el[k].num.value = numText(val,c);
+      setPillAndEcho(k,c,val);
+      render(true);
+    });
+    el[k].num.addEventListener('blur', function(){
+      var raw = c.kind==='rupee' ? digits(el[k].num.value) : parseFloat(el[k].num.value);
+      if(!isFinite(raw)) raw = c.min;
+      var val = snap(raw, c);
+      el[k].num.value = numText(val,c);
+    });
+  });
+
+  // re-theme chart when the nav toggle flips the theme — destroy so it rebuilds with fresh colors
+  window.__fcThemeChanged = function(){ if(chart){ chart.destroy(); chart = null; } paintSwatches(); render(false); };
+
+  // keep the chart fitted to its container on viewport/orientation changes
+  // (explicit resize is synchronous — doesn't rely on the rAF-throttled observer)
+  var rt;
+  window.addEventListener('resize', function(){
+    clearTimeout(rt);
+    rt = setTimeout(function(){ if(chart){ try{ chart.resize(); }catch(e){} } }, 120);
+  });
+
+  // initial paint
+  function init(){
+    if(typeof Chart === 'undefined'){
+      var w=document.getElementById('fc-chart');
+      if(w){ w.parentNode.innerHTML='<div style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--text3);font-size:13px;">Chart unavailable — refresh to retry.</div>'; }
+    }
+    // sync pills/number fields from ranges once
+    Object.keys(CFG).forEach(function(k){
+      var c=CFG[k], val=parseFloat(el[k].rng.value);
+      el[k].num.value = numText(val,c);
+      setPillAndEcho(k,c,val);
+    });
+    render(false);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
