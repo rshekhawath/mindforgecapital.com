@@ -258,7 +258,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .cmp-card .compare-table tbody tr:last-child td{border-bottom:none;}
   .cmp-card .compare-table tbody tr:hover td{background:rgba(37,99,235,0.035);}
   .cmp-card .compare-table td .v{display:inline-block;padding:3px 10px;border-radius:9px;line-height:1.3;}
-  .cmp-card .compare-table tr.grp-start td{padding-top:22px;}
+  /* — grouped metric bands (Performance / Risk / Pricing) — */
+  .cmp-card .compare-table tr.cmp-grp td{
+    position:static;text-align:left;padding:20px 16px 9px;background:transparent;border-bottom:1px solid var(--border);
+  }
+  .cmp-card .compare-table tbody tr.cmp-grp:first-child td{padding-top:6px;}
+  .cmp-card .compare-table tr.cmp-grp td::after{display:none;}          /* kill the sticky-first-col divider on full-width bands */
+  .cmp-card .compare-table tr.cmp-grp:hover td{background:transparent;}
+  .cmp-grp-inner{display:inline-flex;align-items:center;gap:9px;font-size:10.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--text3);}
+  .cmp-grp-inner::before{content:'';width:16px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent3));flex-shrink:0;}
+  .cmp-grp.g-risk .cmp-grp-inner::before{background:linear-gradient(90deg,var(--gold),#f59e0b);}
+  .cmp-grp.g-price .cmp-grp-inner::before{background:linear-gradient(90deg,var(--green),#10b981);}
   /* — value tiers — */
   .cmp-card .compare-table td.best{color:var(--green);font-weight:800;}
   .cmp-card .compare-table td.best .v{background:rgba(5,150,105,0.13);}
@@ -276,8 +286,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .cmp-card .compare-table thead th:first-child{z-index:4;}
   .cmp-card .compare-table th:first-child::after,
   .cmp-card .compare-table td:first-child::after{content:'';position:absolute;top:0;right:0;bottom:0;width:1px;background:var(--border);}
-  /* — micro bar on the headline CAGR row — */
-  .cmp-bar{display:block;height:4px;border-radius:3px;margin:8px auto 0;background:currentColor;opacity:.30;width:0;max-width:80px;transition:width .7s cubic-bezier(.16,1,.3,1);}
+  /* — proportional mini bar-chart on the headline CAGR row — */
+  .cmp-track{display:block;width:82px;max-width:100%;height:6px;border-radius:4px;margin:9px auto 0;background:rgba(37,99,235,0.10);overflow:hidden;box-shadow:inset 0 0 0 0.5px rgba(37,99,235,0.06);}
+  .cmp-bar{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,currentColor,currentColor);opacity:.55;width:0;transition:width .8s cubic-bezier(.16,1,.3,1);}
+  .cmp-card .compare-table td.best .cmp-bar{opacity:.85;box-shadow:0 0 8px -1px rgba(5,150,105,.5);}
   /* — fee chips — */
   .cmp-free{display:inline-block;font-weight:800;color:var(--green);background:rgba(5,150,105,.13);border-radius:9px;padding:4px 12px;font-size:12.5px;letter-spacing:.02em;}
   .cmp-save{display:inline-block;font-size:10px;color:var(--green);background:rgba(5,150,105,.10);border-radius:6px;padding:1px 7px;margin-top:5px;font-weight:600;white-space:nowrap;}
@@ -295,6 +307,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   html[data-theme="dark"] .cmp-card .compare-table thead th.col-feat{background:linear-gradient(180deg,rgba(120,160,240,0.17),rgba(120,160,240,0.05));}
   html[data-theme="dark"] .cmp-card .compare-table .col-feat{background:linear-gradient(180deg,rgba(120,160,240,0.11),rgba(120,160,240,0.035));}
   html[data-theme="dark"] .cmp-card .compare-table tbody tr:hover td{background:rgba(120,160,240,0.06);}
+  html[data-theme="dark"] .cmp-track{background:rgba(120,160,240,0.14);box-shadow:inset 0 0 0 0.5px rgba(120,160,240,0.10);}
+  html[data-theme="dark"] .cmp-card .compare-table tr.cmp-grp td{border-bottom-color:rgba(120,160,240,0.14);}
   @media(max-width:700px){
     .cmp-card .compare-table{font-size:12px;min-width:680px;}
     .cmp-card .compare-table td,.cmp-card .compare-table thead th{padding:12px 11px;}
@@ -1973,14 +1987,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </tr>
       </thead>
       <tbody>
-        <tr><td class="row-label">Backtested CAGR</td><td class="low"><span class="v"><!--MFSTAT:ma:cagr-->22.1%<!--/MFSTAT--></span><span class="cmp-bar"></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:cagr-->34.9%<!--/MFSTAT--></span><span class="cmp-bar"></span></td><td class="mid"><span class="v"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span><span class="cmp-bar"></span></td><td class="best"><span class="v"><!--MFSTAT:mc:cagr-->59.0%<!--/MFSTAT--></span><span class="cmp-bar"></span></td><td class="mid"><span class="v"><!--MFSTAT:sp:cagr-->28.0%<!--/MFSTAT--></span><span class="cmp-bar"></span></td></tr>
+        <tr class="cmp-grp"><td colspan="6"><span class="cmp-grp-inner">Performance</span></td></tr>
+        <tr><td class="row-label">Backtested CAGR</td><td class="low"><span class="v"><!--MFSTAT:ma:cagr-->22.1%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:cagr-->34.9%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="mid"><span class="v"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="best"><span class="v"><!--MFSTAT:mc:cagr-->59.0%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="mid"><span class="v"><!--MFSTAT:sp:cagr-->28.0%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td></tr>
         <tr><td class="row-label">Benchmark</td><td>Nifty 50</td><td class="col-feat">Nifty LargeMidcap 250</td><td>Nifty Smallcap 250</td><td>Nifty 500</td><td>S&amp;P 500</td></tr>
         <tr><td class="row-label">Benchmark CAGR</td><td><!--MFSTAT:ma:bench_cagr-->10.13%<!--/MFSTAT--></td><td class="col-feat"><!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--></td><td><!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--></td><td><!--MFSTAT:mc:bench_cagr-->17.26%<!--/MFSTAT--></td><td><!--MFSTAT:sp:bench_cagr-->13.30%<!--/MFSTAT--></td></tr>
         <tr><td class="row-label">Alpha <span style="font-weight:500;color:var(--text3);">(annual)</span></td><td class="low"><span class="v"><!--MFSTAT:ma:alpha-->+12.00%<!--/MFSTAT--></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:alpha-->+19.52%<!--/MFSTAT--></span></td><td class="mid"><span class="v"><!--MFSTAT:sm:alpha-->+29.79%<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:mc:alpha-->+41.71%<!--/MFSTAT--></span></td><td class="mid"><span class="v"><!--MFSTAT:sp:alpha-->+14.73%<!--/MFSTAT--></span></td></tr>
-        <tr class="grp-start"><td class="row-label">Sharpe Ratio</td><td class="best"><span class="v"><!--MFSTAT:ma:sharpe-->0.99<!--/MFSTAT--></span></td><td class="best col-feat"><span class="v"><!--MFSTAT:lm:sharpe-->1.36<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:sm:sharpe-->1.37<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:mc:sharpe-->1.49<!--/MFSTAT--></span></td><td class="mid"><span class="v"><!--MFSTAT:sp:sharpe-->0.98<!--/MFSTAT--></span></td></tr>
+        <tr class="cmp-grp g-risk"><td colspan="6"><span class="cmp-grp-inner">Risk profile</span></td></tr>
+        <tr><td class="row-label">Sharpe Ratio</td><td class="best"><span class="v"><!--MFSTAT:ma:sharpe-->0.99<!--/MFSTAT--></span></td><td class="best col-feat"><span class="v"><!--MFSTAT:lm:sharpe-->1.36<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:sm:sharpe-->1.37<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:mc:sharpe-->1.49<!--/MFSTAT--></span></td><td class="mid"><span class="v"><!--MFSTAT:sp:sharpe-->0.98<!--/MFSTAT--></span></td></tr>
         <tr><td class="row-label">Max Drawdown</td><td class="best"><span class="v"><!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:max_dd-->-20.9%<!--/MFSTAT--></span></td><td class="low"><span class="v"><!--MFSTAT:sm:max_dd-->-24.4%<!--/MFSTAT--></span></td><td class="low"><span class="v"><!--MFSTAT:mc:max_dd-->-25.4%<!--/MFSTAT--></span></td><td class="mid"><span class="v"><!--MFSTAT:sp:max_dd-->-15.4%<!--/MFSTAT--></span></td></tr>
         <tr><td class="row-label">Risk Level</td><td><span class="risk-pill risk-low">Low</span></td><td class="col-feat"><span class="risk-pill risk-med">Medium</span></td><td><span class="risk-pill risk-high">High</span></td><td><span class="risk-pill risk-high">High</span></td><td><span class="risk-pill risk-med">Medium</span></td></tr>
-        <tr class="grp-start"><td class="row-label">Min. Investment</td><td>₹5,00,000</td><td class="col-feat">₹15,00,000</td><td>₹25,00,000</td><td>₹35,00,000</td><td>₹1,00,00,000</td></tr>
+        <tr class="cmp-grp g-price"><td colspan="6"><span class="cmp-grp-inner">Pricing &amp; access</span></td></tr>
+        <tr><td class="row-label">Min. Investment</td><td>₹5,00,000</td><td class="col-feat">₹15,00,000</td><td>₹25,00,000</td><td>₹35,00,000</td><td>₹1,00,00,000</td></tr>
         <tr><td class="row-label">Monthly Fee</td><td><span class="cmp-free">FREE</span></td><td class="col-feat">₹1,499</td><td>₹2,499</td><td>₹3,499</td><td>₹4,999</td></tr>
         <tr><td class="row-label">Annual Fee <span style="font-weight:500;color:var(--text3);font-size:10px;">(20% off)</span></td><td><span class="cmp-free">FREE</span></td><td class="col-feat">₹14,390<br><span class="cmp-save">save ₹3,598</span></td><td>₹23,990<br><span class="cmp-save">save ₹5,998</span></td><td>₹33,590<br><span class="cmp-save">save ₹8,398</span></td><td>₹47,990<br><span class="cmp-save">save ₹11,998</span></td></tr>
       </tbody>
@@ -2839,15 +2856,27 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
       var bars=[].slice.call(table.querySelectorAll('.cmp-bar'));
       if(!bars.length) return;
       var vals=bars.map(function(bar){
-        var td=bar.parentNode, v=td.querySelector('.v');
+        var td=bar.closest ? bar.closest('td') : bar.parentNode.parentNode;
+        var v=td?td.querySelector('.v'):null;
         var n=parseFloat((v?v.textContent:'').replace(/[^0-9.\-]/g,''));
         return isFinite(n)?Math.abs(n):0;
       });
       var max=Math.max.apply(null, vals.concat([1]));
       bars.forEach(function(bar,i){
-        var w=Math.max(8, Math.round(vals[i]/max*80));
-        bar.style.width='0px'; void bar.offsetWidth; bar.style.width=w+'px';
+        var w=Math.max(10, Math.round(vals[i]/max*100));   // % of the fixed-width track
+        bar.style.width='0%'; void bar.offsetWidth; bar.style.width=w+'%';
       });
+      /* show the "swipe to compare" hint only when the table actually overflows,
+         at any viewport — the fixed 760px breakpoint missed the ~760–805px band */
+      var scroller=document.querySelector('.compare-scroll');
+      var hint=document.querySelector('.compare-scroll-hint');
+      if(scroller && hint){
+        var syncHint=function(){
+          hint.style.display=(scroller.scrollWidth>scroller.clientWidth+2)?'block':'none';
+        };
+        syncHint();
+        window.addEventListener('resize', syncHint, {passive:true});
+      }
     }catch(e){}
   });
 })();
