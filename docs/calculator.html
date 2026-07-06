@@ -158,6 +158,35 @@ nav {
 @keyframes fcpop { 0%{transform:scale(1);} 40%{transform:scale(1.035);} 100%{transform:scale(1);} }
 @media (prefers-reduced-motion: reduce){ .fc-pop{ animation: none; } }
 
+/* ── V19.1: entrance choreography — this was the one public page missing the
+      site's reveal + sheen language; brings it up to standard ── */
+.fade-up{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .7s cubic-bezier(.22,1,.36,1);will-change:opacity,transform;}
+.fade-up.in{opacity:1;transform:none;}
+.calc-hero .eyebrow.fade-up{transition-delay:.02s;}
+.calc-hero h1.fade-up{transition-delay:.09s;}
+.calc-hero p.lede.fade-up{transition-delay:.17s;}
+.fc-left.fade-up{transition-delay:.05s;}
+.fc-right > .fade-up{transition-delay:.12s;}
+/* one-time sheen sweep across the "wealth saved" hero card as the results arrive */
+.fc-kpi.hero::after{content:'';position:absolute;top:0;left:0;height:100%;width:42%;pointer-events:none;background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.45) 50%,transparent 100%);transform:translateX(-200%) skewX(-16deg);opacity:0;z-index:2;}
+.fc-res-card.in .fc-kpi.hero::after{animation:fcsheen 1.15s cubic-bezier(.22,1,.36,1) .45s 1;}
+@keyframes fcsheen{0%{transform:translateX(-200%) skewX(-16deg);opacity:1;}100%{transform:translateX(320%) skewX(-16deg);opacity:1;}}
+html[data-theme="dark"] .fc-kpi.hero::after{background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.16) 50%,transparent 100%);}
+@media (prefers-reduced-motion: reduce){
+  .fade-up{opacity:1 !important;transform:none !important;transition:none;}
+  .fc-res-card.in .fc-kpi.hero::after{animation:none;}
+}
+
+/* V19.1: site-wide scroll-progress bar (the calculator was the only page without it) */
+.mf-scroll-prog {
+  position: fixed; top: 0; left: 0; height: 3px; width: 0;
+  z-index: 9999; pointer-events: none;
+  background: linear-gradient(90deg, #1a50d8 0%, #2563eb 45%, #0891b2 80%, #2dd4bf 100%);
+  box-shadow: 0 1px 8px rgba(37,99,235,0.35);
+  transition: width .08s linear;
+}
+@media (prefers-reduced-motion: reduce) { .mf-scroll-prog { transition: none; } }
+
 /* chart */
 .fc-chart-card { padding: 20px 20px 16px; }
 .fc-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; flex-wrap: wrap; }
@@ -257,6 +286,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <link rel="stylesheet" href="assets/mfc-finish.css?v=1750">
 </head>
 <body>
+<div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
 
 <nav>
   <div class="nav-inner">
@@ -277,9 +307,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <section class="calc-hero">
   <div class="calc-hero-bg"></div>
   <div class="container">
-    <span class="eyebrow"><span class="dot"></span>Interactive · your numbers</span>
-    <h1>A 2% fee doesn't sound like much.<br>Over 10 years, it quietly costs you <span class="hl">lakhs</span>.</h1>
-    <p class="lede">Percentage-based AUM fees scale with your corpus — the bigger you grow, the more they take. A flat monthly subscription doesn't. Move the sliders and watch the gap compound in real time.</p>
+    <span class="eyebrow fade-up"><span class="dot"></span>Interactive · your numbers</span>
+    <h1 class="fade-up">A 2% fee doesn't sound like much.<br>Over 10 years, it quietly costs you <span class="hl">lakhs</span>.</h1>
+    <p class="lede fade-up">Percentage-based AUM fees scale with your corpus — the bigger you grow, the more they take. A flat monthly subscription doesn't. Move the sliders and watch the gap compound in real time.</p>
   </div>
 </section>
 
@@ -288,7 +318,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <div class="calc-grid">
 
       <!-- CONTROLS -->
-      <div class="fc-left card">
+      <div class="fc-left card fade-up">
         <div class="card-pad fc-controls">
           <div class="card-title">Your numbers</div>
           <p class="card-sub">Adjust any input — the results and chart update instantly.</p>
@@ -362,7 +392,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
       <!-- RESULTS + CHART -->
       <div class="fc-right">
-        <div class="card card-pad">
+        <div class="card card-pad fade-up fc-res-card">
           <div class="card-title" style="margin-bottom:16px;">After <span id="fc-yrs-echo">10</span> years, on ₹<span id="fc-cap-echo">15,00,000</span></div>
           <div class="fc-kpis" aria-live="polite">
             <div class="fc-kpi hero" id="fc-saved-kpi">
@@ -388,7 +418,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
         </div>
 
-        <div class="card fc-chart-card">
+        <div class="card fc-chart-card fade-up">
           <div class="fc-chart-head">
             <h3>Portfolio value over time</h3>
             <div class="fc-legend">
@@ -401,12 +431,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
         </div>
 
-        <div class="fc-cta">
+        <div class="fc-cta fade-up">
           <a href="signup.html" class="btn-primary">Switch to a flat fee →</a>
           <p class="fc-disclaimer">Illustration only, not investment advice or a guarantee of returns. Both scenarios assume the same gross annual return, compounded yearly; the only difference modelled is the fee structure. Real mutual-fund expense ratios, exit loads and taxes vary. Past performance does not indicate future results.</p>
         </div>
 
-        <details class="fc-method">
+        <details class="fc-method fade-up">
           <summary><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg> How this is calculated</summary>
           <div class="m-body">
             Both portfolios start at your initial investment and grow at the same expected annual return, compounded once a year. The only variable is <em>how the fee is charged</em>:
@@ -644,6 +674,28 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     e.classList.remove('fc-pop'); void e.offsetWidth; e.classList.add('fc-pop');
   }
 
+  // one-shot count-up on the very first render so the headline figures "tally in"
+  // like the rest of the site. Robust to no-rAF (a setTimeout snaps to the exact
+  // final text), so a figure is never left stuck mid-count.
+  var _fcFirstPaint = true;
+  var _fcReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function fcCountUp(el, magnitude, sign){
+    if(!el) return;
+    var finalText = el.textContent;
+    if(_fcReduce || typeof requestAnimationFrame !== 'function') return; // final already shown
+    var done=false, start=null, DUR=760;
+    function finish(){ if(done) return; done=true; el.textContent = finalText; }
+    function frame(ts){
+      if(done) return;
+      if(start===null) start=ts;
+      var p=Math.min(1,(ts-start)/DUR), e=1-Math.pow(1-p,3);   // easeOutCubic
+      el.textContent = sign + compactInr(magnitude*e);
+      if(p<1) requestAnimationFrame(frame); else finish();
+    }
+    requestAnimationFrame(frame);
+    setTimeout(finish, DUR+400);   // fallback: guarantees the real value even without rAF
+  }
+
   function render(popIt){
     var v = readAll();
     var d = compute(v);
@@ -683,7 +735,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
     buildChart(d);
     paintSwatches();
-    if(popIt){ pop('fc-saved-val'); pop('fc-mf-val'); pop('fc-mfc-val'); }
+    if(_fcFirstPaint){
+      _fcFirstPaint=false;
+      fcCountUp(val, Math.abs(saved), saved>=0?'+':'−');
+      fcCountUp(document.getElementById('fc-mf-val'), d.mfFinal, '');
+      fcCountUp(document.getElementById('fc-mfc-val'), d.mfcFinal, '');
+    } else if(popIt){ pop('fc-saved-val'); pop('fc-mf-val'); pop('fc-mfc-val'); }
   }
 
   // ── wire inputs: range <-> number two-way ──
@@ -759,6 +816,43 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+<script>
+// MF-SCROLL-PROG v3.4 — site-wide scroll-progress bar (parity with every other page)
+(function() {
+  var bar = document.getElementById('mf-scroll-prog');
+  if (!bar) return;
+  var raf = null;
+  function upd() {
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var p = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    bar.style.width = p + '%';
+    raf = null;
+  }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(upd); }
+  upd();
+  window.addEventListener('scroll', onScroll, {passive: true});
+  window.addEventListener('resize', upd);
+})();
+</script>
+<script>
+/* V19.1 — calculator entrance reveals (defensive, additive; reduced-motion + no-IO safe) */
+(function(){
+  function ready(fn){ if(document.readyState!=='loading') fn(); else document.addEventListener('DOMContentLoaded',fn); }
+  ready(function(){
+    var els=[].slice.call(document.querySelectorAll('.fade-up'));
+    if(!els.length) return;
+    function showAll(){ els.forEach(function(e){ e.classList.add('in'); }); }
+    var reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce || !('IntersectionObserver' in window)){ showAll(); return; }
+    var io=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
+    },{threshold:0.08, rootMargin:'0px 0px -6% 0px'});
+    els.forEach(function(e){ io.observe(e); });
+    setTimeout(showAll, 2600); // safety net — never leave a block invisible
+  });
 })();
 </script>
 <!-- site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
