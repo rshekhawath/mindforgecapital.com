@@ -96,7 +96,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .scorecard{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:20px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -16px rgba(26,80,216,.18)}
 .sc-top{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center}
 .sc-overall{display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0}
-.ring{position:relative;width:150px;height:150px;border-radius:50%;display:grid;place-items:center}
+/* V19.4: overall ring sweeps in (matches the scores/index champion rings + the
+   radar/factor-card entrances on this page — it was the one static scorecard piece).
+   @property lets the conic angle tween; reduced-motion snaps straight to final. */
+@property --ov-deg{syntax:'<angle>';initial-value:0deg;inherits:false}
+.ring{position:relative;width:150px;height:150px;border-radius:50%;display:grid;place-items:center;--ov-deg:0deg;--ov-col:#1a50d8;background:conic-gradient(var(--ov-col) 0 var(--ov-deg),var(--ink3) var(--ov-deg) 360deg);transition:--ov-deg 1s cubic-bezier(.22,.8,.2,1)}
+@media(prefers-reduced-motion:reduce){.ring{transition:none}}
 .ring::before{content:'';position:absolute;width:112px;height:112px;border-radius:50%;background:var(--ink2);box-shadow:inset 0 2px 8px rgba(26,80,216,.06)}
 .ring-inner{position:relative;z-index:1;text-align:center}
 .ring-score{font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
@@ -816,9 +821,23 @@ function renderScorecard(){
   const ring=document.getElementById("overallRing");
   const oc=MFCScores.color(o);
   const pct=o==null?0:o;
-  ring.style.background=`conic-gradient(${oc} 0 ${pct*3.6}deg, var(--ink3) ${pct*3.6}deg 360deg)`;
+  // V19.4: colour + angle now drive the CSS conic-gradient so the arc sweeps in.
+  ring.style.setProperty('--ov-col', oc);
+  ring.style.setProperty('--ov-deg','0deg'); void ring.offsetWidth;   // start empty, force reflow
+  ring.style.setProperty('--ov-deg',(pct*3.6)+'deg');                 // → tween to the score
   const os=document.getElementById("overallScore");
-  os.textContent=o==null?"—":o.toFixed(0);os.style.color=oc;
+  os.style.color=oc;
+  // V19.4: count the headline score up in step with the ring sweep (site-wide
+  // count-up idiom). Robust to no-rAF/reduced-motion — snaps to the final value.
+  (function(el,target){
+    if(target==null){ el.textContent="—"; return; }
+    var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce||typeof requestAnimationFrame!=='function'){ el.textContent=target.toFixed(0); return; }
+    var start=null,DUR=1000,done=false;
+    function fin(){ if(done)return; done=true; el.textContent=target.toFixed(0); }
+    function fr(ts){ if(done)return; if(start===null)start=ts; var p=Math.min(1,(ts-start)/DUR); el.textContent=(target*(1-Math.pow(1-p,3))).toFixed(0); if(p<1)requestAnimationFrame(fr); else fin(); }
+    requestAnimationFrame(fr); setTimeout(fin,DUR+400);
+  })(os,o);
   const og=document.getElementById("overallGrade");
   const grade=MFCScores.grade(o);
   og.textContent=grade.label;og.className=`grade-pill ${gradeCls(o)}`;
