@@ -1777,6 +1777,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <a href="screener/" style="color:var(--text2);">Scanner</a>
       <a href="scores/" style="color:var(--text2);">Integrity Score</a>
       <a href="fii-dii/" style="color:var(--text2);">FII/DII</a>
+      <a href="factor-report/" style="color:var(--text2);">Factor Report</a>
       <a href="calculator.html" style="color:var(--text2);">Fee Calculator</a>
       <a href="recover.html" style="color:var(--text2);">Recover Access</a>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
@@ -1840,45 +1841,301 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </div>
   </section>
 
-  <!-- ── V5.2 #9: SAMPLE PORTFOLIO PREVIEW (gates to signup) ── -->
-  <section class="sample-preview-section">
+  <!-- ── V19.5 #1a+1b: PER-STRATEGY PERFORMANCE, LAST MONTH'S PICKS & FUND COMPARISON ──
+       Replaces the old single-strategy (LargeMidcap only) sample-preview. One
+       tabbed module now covers all five strategies:
+         • last completed month's BACKTESTED return vs its benchmark (labelled)
+         • a sample of last month's model picks (gated for the paid books)
+         • how the category's popular mutual funds compare (real returns + fees)
+       MONTHLY MAINTENANCE: picks live inside MFTOP:xx:N:field comment markers
+       (xx = ma|lm|sm|mc|sp) and the last-month figures inside MFSTAT:xx:lm_*
+       comment markers — update the value between each marker pair when the new
+       rebalance publishes. Nothing else needs to change. -->
+  <section class="ps-section" id="performance">
     <div class="container">
-      <div class="sample-preview-card">
-        <div class="sample-preview-head">
-          <span class="sample-preview-eyebrow">SEE IT BEFORE YOU SUBSCRIBE</span>
-          <h2>Last month's picks — a sample of what subscribers see</h2>
-          <p class="sample-preview-sub">This is only a slice of the LargeMidcap 250 picks. Active subscribers see the full set, with live prices, allocation calculator, and broker deeplinks.</p>
-        </div>
-        <div class="sample-preview-table-wrap">
-          <table class="sample-preview-table">
-            <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
-            <tbody id="sample-preview-body">
-              <tr><td>1</td><td><!--MFTOP:lm:1:company-->Apar Industries Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:1:ticker-->APARINDS<!--/MFTOP--></span></td><td><!--MFTOP:lm:1:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
-              <tr><td>2</td><td><!--MFTOP:lm:2:company-->Vodafone Idea Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:2:ticker-->IDEA<!--/MFTOP--></span></td><td><!--MFTOP:lm:2:industry-->Telecommunication<!--/MFTOP--></td><td class="right">4.0%</td></tr>
-              <tr><td>3</td><td><!--MFTOP:lm:3:company-->Laurus Labs Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:3:ticker-->LAURUSLABS<!--/MFTOP--></span></td><td><!--MFTOP:lm:3:industry-->Healthcare<!--/MFTOP--></td><td class="right">4.0%</td></tr>
-              <tr><td>4</td><td><!--MFTOP:lm:4:company-->Thermax Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:4:ticker-->THERMAX<!--/MFTOP--></span></td><td><!--MFTOP:lm:4:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
-              <tr class="sp-blur"><td>5</td><td><!--MFTOP:lm:5:company-->Hitachi Energy India Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:5:ticker-->POWERINDIA<!--/MFTOP--></span></td><td><!--MFTOP:lm:5:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
-              <!-- The next three rows sit fully behind the .sp-gate card; their
-                   purpose is purely to give the table-wrap the same height as
-                   before so the gate's gradient lands on row 5 the same way it
-                   used to land on the old row 6. Content is generic Nifty
-                   names so nothing strategy-specific leaks via View Source. -->
-              <tr class="sp-blur" aria-hidden="true"><td>6</td><td>Bharti Airtel</td><td><span class="sp-chip">BHARTIARTL</span></td><td>Telecom</td><td class="right">4.0%</td></tr>
-              <tr class="sp-blur" aria-hidden="true"><td>7</td><td>Maruti Suzuki India</td><td><span class="sp-chip">MARUTI</span></td><td>Automobile</td><td class="right">4.0%</td></tr>
-              <tr class="sp-blur" aria-hidden="true"><td>8</td><td>Tata Motors</td><td><span class="sp-chip">TATAMOTORS</span></td><td>Automobile</td><td class="right">4.0%</td></tr>
-            </tbody>
-          </table>
-          <div class="sp-gate">
-            <div class="sp-gate-inner">
-              <div class="sp-gate-icon">🔒</div>
-              <h3>Unlock 20 more picks + full live dashboard</h3>
-              <p>Real-time allocation calculator · broker deeplinks · auto rebalance emails</p>
-              <button class="sidebar-btn" onclick="openRegModal('MindForge LargeMidcap 250', 1499, 'largemidcap')">Get my dashboard — ₹1,499/mo →</button>
-              <div style="font-size:12px;color:var(--text3);margin-top:10px;">or pick another strategy <a href="#strategy-tabs" style="color:var(--accent);text-decoration:underline;">above</a></div>
+      <div class="ps-head">
+        <span class="sample-preview-eyebrow">PERFORMANCE &amp; LAST MONTH'S PICKS</span>
+        <h2>See last month's numbers — and its picks — for every strategy</h2>
+        <p class="sample-preview-sub">Each strategy's last completed month vs its benchmark (backtested), a sample of that month's model holdings, and how the category's popular mutual funds compare on returns and fees. <strong>Subscribers get the current month's full picks live</strong> — with prices, an allocation calculator and one-tap broker deeplinks.</p>
+      </div>
+
+      <div class="ps-tabs" role="tablist" aria-label="Choose a strategy">
+        <button class="ps-tab active" role="tab" aria-selected="true" aria-controls="ps-panel-ma" id="ps-tab-ma" data-ps="ma"><span class="ps-dot" style="background:var(--green)"></span>MultiAsset</button>
+        <button class="ps-tab" role="tab" aria-selected="false" aria-controls="ps-panel-lm" id="ps-tab-lm" data-ps="lm"><span class="ps-dot" style="background:var(--accent2)"></span>LargeMidcap 250</button>
+        <button class="ps-tab" role="tab" aria-selected="false" aria-controls="ps-panel-sm" id="ps-tab-sm" data-ps="sm"><span class="ps-dot" style="background:#7c3aed"></span>SmallMicro 500</button>
+        <button class="ps-tab" role="tab" aria-selected="false" aria-controls="ps-panel-mc" id="ps-tab-mc" data-ps="mc"><span class="ps-dot" style="background:var(--gold)"></span>Multicap</button>
+        <button class="ps-tab" role="tab" aria-selected="false" aria-controls="ps-panel-sp" id="ps-tab-sp" data-ps="sp"><span class="ps-dot" style="background:#4f46e5"></span>S&amp;P 500</button>
+      </div>
+
+      <!-- ═══ MultiAsset (free) ═══ -->
+      <div class="ps-panel active" role="tabpanel" id="ps-panel-ma" aria-labelledby="ps-tab-ma" data-ps-panel="ma">
+        <div class="ps-grid">
+          <div class="ps-card ps-picks-card">
+            <div class="ps-perf">
+              <div class="ps-perf-tag">Backtested track record · <b>free strategy</b></div>
+              <div class="ps-perf-row">
+                <div class="ps-perf-cell win"><span class="ps-perf-lbl">MultiAsset · 5-yr CAGR</span><span class="ps-perf-val"><!--MFSTAT:ma:cagr-->22.1%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-vs">vs</div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty 50</span><span class="ps-perf-val"><!--MFSTAT:ma:bench_cagr-->10.13%<!--/MFSTAT--></span></div>
+              </div>
+              <div class="ps-perf-foot">This month's ETF mix updates live on the dashboard — free to everyone.</div>
             </div>
+            <h3 class="ps-picks-h">Last month's model holdings <span class="ps-picks-note">· 8 ETFs across equity, gold, silver &amp; debt</span></h3>
+            <div class="sample-preview-table-wrap">
+              <table class="sample-preview-table">
+                <thead><tr><th>#</th><th>Holding</th><th>Ticker</th><th>Sleeve</th><th class="right">Weight</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><!--MFTOP:ma:1:company-->NASDAQ 100 ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:1:ticker-->MON100<!--/MFTOP--></span></td><td><!--MFTOP:ma:1:industry-->Intl equity<!--/MFTOP--></td><td class="right">35.1%</td></tr>
+                  <tr><td>2</td><td><!--MFTOP:ma:2:company-->Gold ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:2:ticker-->GOLDBEES<!--/MFTOP--></span></td><td><!--MFTOP:ma:2:industry-->Commodity<!--/MFTOP--></td><td class="right">13.3%</td></tr>
+                  <tr><td>3</td><td><!--MFTOP:ma:3:company-->Nifty Smallcap 250 ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:3:ticker-->HDFCSML250<!--/MFTOP--></span></td><td><!--MFTOP:ma:3:industry-->India equity<!--/MFTOP--></td><td class="right">12.1%</td></tr>
+                  <tr><td>4</td><td><!--MFTOP:ma:4:company-->Nifty Midcap 150 ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:4:ticker-->MID150BEES<!--/MFTOP--></span></td><td><!--MFTOP:ma:4:industry-->India equity<!--/MFTOP--></td><td class="right">11.3%</td></tr>
+                  <tr><td>5</td><td><!--MFTOP:ma:5:company-->Nifty Next 50 ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:5:ticker-->JUNIORBEES<!--/MFTOP--></span></td><td><!--MFTOP:ma:5:industry-->India equity<!--/MFTOP--></td><td class="right">10.7%</td></tr>
+                  <tr><td>6</td><td><!--MFTOP:ma:6:company-->Bharat Bond ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:6:ticker-->EBBETF0431<!--/MFTOP--></span></td><td><!--MFTOP:ma:6:industry-->Debt<!--/MFTOP--></td><td class="right">10.6%</td></tr>
+                  <tr><td>7</td><td><!--MFTOP:ma:7:company-->Silver ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:7:ticker-->SILVERBEES<!--/MFTOP--></span></td><td><!--MFTOP:ma:7:industry-->Commodity<!--/MFTOP--></td><td class="right">5.8%</td></tr>
+                  <tr><td>8</td><td><!--MFTOP:ma:8:company-->Nifty 50 ETF<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:ma:8:ticker-->NIFTYBEES<!--/MFTOP--></span></td><td><!--MFTOP:ma:8:industry-->India equity<!--/MFTOP--></td><td class="right">1.2%</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="ps-cta-row ps-cta-free">
+              <button class="sidebar-btn" onclick="openRegModal('MindForge MultiAsset', 0, 'multiasset')">Get MultiAsset — free →</button>
+              <span class="ps-cta-side">No card required · live picks the moment you join</span>
+            </div>
+          </div>
+          <div class="ps-funds">
+            <div class="ps-funds-h">Comparable <b>multi-asset allocation</b> funds <span>· actual trailing returns, Direct Plan</span></div>
+            <table class="ps-funds-t">
+              <thead><tr><th>Fund</th><th class="r">5-yr CAGR</th><th class="r">Expense ratio</th></tr></thead>
+              <tbody>
+                <tr><td>Quant Multi Asset</td><td class="r">23.8%</td><td class="r">0.60%</td></tr>
+                <tr><td>ICICI Pru Multi Asset</td><td class="r">19.7%</td><td class="r">0.70%</td></tr>
+                <tr><td>SBI Multi Asset Allocation</td><td class="r">15.2%</td><td class="r">~1.0%</td></tr>
+                <tr class="ps-funds-me"><td>MindForge MultiAsset <span>backtested</span></td><td class="r">22.1%</td><td class="r ps-flat">FREE</td></tr>
+              </tbody>
+            </table>
+            <p class="ps-flat-note">Those funds skim <b>0.6–0.7% of your entire corpus every year</b> (regular plans run 1.5%+) — and the rupee cost climbs as you compound. MindForge MultiAsset is <b>free</b>. <a href="calculator.html">See what a % fee really costs →</a></p>
           </div>
         </div>
       </div>
+
+      <!-- ═══ LargeMidcap 250 ═══ -->
+      <div class="ps-panel" role="tabpanel" id="ps-panel-lm" aria-labelledby="ps-tab-lm" data-ps-panel="lm" hidden>
+        <div class="ps-grid">
+          <div class="ps-card ps-picks-card">
+            <div class="ps-perf">
+              <div class="ps-perf-tag">Last completed month · <b><!--MFSTAT:lm:lm_month-->June 2026<!--/MFSTAT--></b> · backtested</div>
+              <div class="ps-perf-row">
+                <div class="ps-perf-cell loss"><span class="ps-perf-lbl">LargeMidcap 250</span><span class="ps-perf-val"><!--MFSTAT:lm:lm_ret-->−0.2%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-vs">vs</div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty LargeMidcap 250</span><span class="ps-perf-val"><!--MFSTAT:lm:lm_bench-->+1.3%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-cagr">5-yr CAGR <b><!--MFSTAT:lm:cagr-->34.9%<!--/MFSTAT--></b> vs <!--MFSTAT:lm:bench_cagr-->15.37%<!--/MFSTAT--></div>
+              </div>
+              <div class="ps-perf-foot">One quiet month — the edge is the 5-year compounding, not any single rebalance.</div>
+            </div>
+            <h3 class="ps-picks-h">Last month's picks <span class="ps-picks-note">· a sample of the 25-stock book</span></h3>
+            <div class="sample-preview-table-wrap">
+              <table class="sample-preview-table">
+                <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
+                <tbody id="sample-preview-body">
+                  <tr><td>1</td><td><!--MFTOP:lm:1:company-->Apar Industries Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:1:ticker-->APARINDS<!--/MFTOP--></span></td><td><!--MFTOP:lm:1:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr><td>2</td><td><!--MFTOP:lm:2:company-->Vodafone Idea Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:2:ticker-->IDEA<!--/MFTOP--></span></td><td><!--MFTOP:lm:2:industry-->Telecommunication<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr><td>3</td><td><!--MFTOP:lm:3:company-->Laurus Labs Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:3:ticker-->LAURUSLABS<!--/MFTOP--></span></td><td><!--MFTOP:lm:3:industry-->Healthcare<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr><td>4</td><td><!--MFTOP:lm:4:company-->Thermax Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:4:ticker-->THERMAX<!--/MFTOP--></span></td><td><!--MFTOP:lm:4:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur"><td>5</td><td><!--MFTOP:lm:5:company-->Hitachi Energy India Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:lm:5:ticker-->POWERINDIA<!--/MFTOP--></span></td><td><!--MFTOP:lm:5:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>6</td><td>Adani Green Energy</td><td><span class="sp-chip">ADANIGREEN</span></td><td>Power</td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>7</td><td>Adani Energy Solutions</td><td><span class="sp-chip">ADANIENSOL</span></td><td>Power</td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>8</td><td>Adani Power</td><td><span class="sp-chip">ADANIPOWER</span></td><td>Power</td><td class="right">4.0%</td></tr>
+                </tbody>
+              </table>
+              <div class="sp-gate">
+                <div class="sp-gate-inner">
+                  <div class="sp-gate-icon">🔒</div>
+                  <h3>Unlock all 25 picks + full live dashboard</h3>
+                  <p>Real-time allocation calculator · broker deeplinks · auto rebalance emails</p>
+                  <button class="sidebar-btn" onclick="openRegModal('MindForge LargeMidcap 250', 1499, 'largemidcap')">Get my dashboard — ₹1,499/mo →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ps-funds">
+            <div class="ps-funds-h">Comparable <b>large &amp; mid cap</b> funds <span>· actual trailing returns, Direct Plan</span></div>
+            <table class="ps-funds-t">
+              <thead><tr><th>Fund</th><th class="r">5-yr CAGR</th><th class="r">Expense ratio</th></tr></thead>
+              <tbody>
+                <tr><td>Motilal Oswal Large &amp; Midcap</td><td class="r">21.3%</td><td class="r">0.75%</td></tr>
+                <tr><td>Bandhan Large &amp; Mid Cap</td><td class="r">20.3%</td><td class="r">0.54%</td></tr>
+                <tr><td>ICICI Pru Large &amp; Mid Cap</td><td class="r">18.6%</td><td class="r">0.77%</td></tr>
+                <tr class="ps-funds-me"><td>MindForge LargeMidcap 250 <span>backtested</span></td><td class="r">34.9%</td><td class="r ps-flat">flat ₹1,499/mo</td></tr>
+              </tbody>
+            </table>
+            <p class="ps-flat-note">A 0.75% expense ratio on ₹15L is <b>₹11,250 every year</b> — and it grows as your corpus compounds (regular plans charge 1.5–2.3%). MindForge is a <b>flat monthly fee</b>, so the upside stays yours. <a href="calculator.html">See your savings →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SmallMicro 500 ═══ -->
+      <div class="ps-panel" role="tabpanel" id="ps-panel-sm" aria-labelledby="ps-tab-sm" data-ps-panel="sm" hidden>
+        <div class="ps-grid">
+          <div class="ps-card ps-picks-card">
+            <div class="ps-perf">
+              <div class="ps-perf-tag">Last completed month · <b><!--MFSTAT:sm:lm_month-->June 2026<!--/MFSTAT--></b> · backtested</div>
+              <div class="ps-perf-row">
+                <div class="ps-perf-cell win"><span class="ps-perf-lbl">SmallMicro 500</span><span class="ps-perf-val"><!--MFSTAT:sm:lm_ret-->+12.0%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-vs">vs</div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty Smallcap 250</span><span class="ps-perf-val"><!--MFSTAT:sm:lm_bench-->+1.5%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-cagr">5-yr CAGR <b><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></b> vs <!--MFSTAT:sm:bench_cagr-->19.14%<!--/MFSTAT--></div>
+              </div>
+              <div class="ps-perf-foot">A strong month for high-conviction small &amp; microcaps — also the strategy's highest-volatility book.</div>
+            </div>
+            <h3 class="ps-picks-h">Last month's picks <span class="ps-picks-note">· a sample of the 25-stock book</span></h3>
+            <div class="sample-preview-table-wrap">
+              <table class="sample-preview-table">
+                <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><!--MFTOP:sm:1:company-->Cupid Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sm:1:ticker-->CUPID<!--/MFTOP--></span></td><td><!--MFTOP:sm:1:industry-->FMCG<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr><td>2</td><td><!--MFTOP:sm:2:company-->Aditya Infotech Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sm:2:ticker-->CPPLUS<!--/MFTOP--></span></td><td><!--MFTOP:sm:2:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr><td>3</td><td><!--MFTOP:sm:3:company-->Thangamayil Jewellery Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sm:3:ticker-->THANGAMAYL<!--/MFTOP--></span></td><td><!--MFTOP:sm:3:industry-->Consumer Durables<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr><td>4</td><td><!--MFTOP:sm:4:company-->MTAR Technologies Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sm:4:ticker-->MTARTECH<!--/MFTOP--></span></td><td><!--MFTOP:sm:4:industry-->Capital Goods<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur"><td>5</td><td><!--MFTOP:sm:5:company-->Sterlite Technologies Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sm:5:ticker-->STLTECH<!--/MFTOP--></span></td><td><!--MFTOP:sm:5:industry-->Telecommunication<!--/MFTOP--></td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>6</td><td>Acutaas Chemicals</td><td><span class="sp-chip">ACUTAAS</span></td><td>Healthcare</td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>7</td><td>Kirloskar Oil Engines</td><td><span class="sp-chip">KIRLOSENG</span></td><td>Capital Goods</td><td class="right">4.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>8</td><td>HFCL Ltd.</td><td><span class="sp-chip">HFCL</span></td><td>Telecom</td><td class="right">4.0%</td></tr>
+                </tbody>
+              </table>
+              <div class="sp-gate">
+                <div class="sp-gate-inner">
+                  <div class="sp-gate-icon">🔒</div>
+                  <h3>Unlock all 25 picks + full live dashboard</h3>
+                  <p>Real-time allocation calculator · broker deeplinks · auto rebalance emails</p>
+                  <button class="sidebar-btn" onclick="openRegModal('MindForge SmallMicro 500', 2499, 'smallmicro')">Get my dashboard — ₹2,499/mo →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ps-funds">
+            <div class="ps-funds-h">Comparable <b>small cap</b> funds <span>· actual trailing returns, Direct Plan</span></div>
+            <table class="ps-funds-t">
+              <thead><tr><th>Fund</th><th class="r">5-yr CAGR</th><th class="r">Expense ratio</th></tr></thead>
+              <tbody>
+                <tr><td>Nippon India Small Cap</td><td class="r">21.9%</td><td class="r">0.70%</td></tr>
+                <tr><td>Invesco India Smallcap</td><td class="r">21.7%</td><td class="r">~0.4%</td></tr>
+                <tr><td>Quant Small Cap</td><td class="r">20.8%</td><td class="r">~0.7%</td></tr>
+                <tr class="ps-funds-me"><td>MindForge SmallMicro 500 <span>backtested</span></td><td class="r">48.9%</td><td class="r ps-flat">flat ₹2,499/mo</td></tr>
+              </tbody>
+            </table>
+            <p class="ps-flat-note">On a ₹25L small-cap book, a 0.7% expense ratio is <b>₹17,500 a year</b> and rises with every rupee you compound (regular plans 1.5–2.3%). MindForge charges a <b>flat monthly fee</b>. <a href="calculator.html">See your savings →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Multicap ═══ -->
+      <div class="ps-panel" role="tabpanel" id="ps-panel-mc" aria-labelledby="ps-tab-mc" data-ps-panel="mc" hidden>
+        <div class="ps-grid">
+          <div class="ps-card ps-picks-card">
+            <div class="ps-perf">
+              <div class="ps-perf-tag">Last completed month · <b><!--MFSTAT:mc:lm_month-->June 2026<!--/MFSTAT--></b> · backtested</div>
+              <div class="ps-perf-row">
+                <div class="ps-perf-cell win"><span class="ps-perf-lbl">Multicap</span><span class="ps-perf-val"><!--MFSTAT:mc:lm_ret-->+2.4%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-vs">vs</div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty 500</span><span class="ps-perf-val"><!--MFSTAT:mc:lm_bench-->+1.4%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-cagr">5-yr CAGR <b><!--MFSTAT:mc:cagr-->59.0%<!--/MFSTAT--></b> vs <!--MFSTAT:mc:bench_cagr-->17.26%<!--/MFSTAT--></div>
+              </div>
+              <div class="ps-perf-foot">A concentrated 10-stock, go-anywhere book — the highest-conviction (and highest-return) backtest.</div>
+            </div>
+            <h3 class="ps-picks-h">Last month's picks <span class="ps-picks-note">· a sample of the 10-stock book</span></h3>
+            <div class="sample-preview-table-wrap">
+              <table class="sample-preview-table">
+                <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><!--MFTOP:mc:1:company-->Kirloskar Oil Eng Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:mc:1:ticker-->KIRLOSENG<!--/MFTOP--></span></td><td><!--MFTOP:mc:1:industry-->Capital Goods<!--/MFTOP--></td><td class="right">10.0%</td></tr>
+                  <tr><td>2</td><td><!--MFTOP:mc:2:company-->Cupid Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:mc:2:ticker-->CUPID<!--/MFTOP--></span></td><td><!--MFTOP:mc:2:industry-->FMCG<!--/MFTOP--></td><td class="right">10.0%</td></tr>
+                  <tr><td>3</td><td><!--MFTOP:mc:3:company-->MTAR Technologies Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:mc:3:ticker-->MTARTECH<!--/MFTOP--></span></td><td><!--MFTOP:mc:3:industry-->Capital Goods<!--/MFTOP--></td><td class="right">10.0%</td></tr>
+                  <tr><td>4</td><td><!--MFTOP:mc:4:company-->Thangamayil Jewellery Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:mc:4:ticker-->THANGAMAYL<!--/MFTOP--></span></td><td><!--MFTOP:mc:4:industry-->Consumer Durables<!--/MFTOP--></td><td class="right">10.0%</td></tr>
+                  <tr class="sp-blur"><td>5</td><td><!--MFTOP:mc:5:company-->Rubicon Research Ltd.<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:mc:5:ticker-->RUBICON<!--/MFTOP--></span></td><td><!--MFTOP:mc:5:industry-->Healthcare<!--/MFTOP--></td><td class="right">10.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>6</td><td>Laurus Labs</td><td><span class="sp-chip">LAURUSLABS</span></td><td>Healthcare</td><td class="right">10.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>7</td><td>Vodafone Idea</td><td><span class="sp-chip">IDEA</span></td><td>Telecom</td><td class="right">10.0%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>8</td><td>Bank of Maharashtra</td><td><span class="sp-chip">MAHABANK</span></td><td>Financials</td><td class="right">10.0%</td></tr>
+                </tbody>
+              </table>
+              <div class="sp-gate">
+                <div class="sp-gate-inner">
+                  <div class="sp-gate-icon">🔒</div>
+                  <h3>Unlock the full 10-stock book + live dashboard</h3>
+                  <p>Real-time allocation calculator · broker deeplinks · auto rebalance emails</p>
+                  <button class="sidebar-btn" onclick="openRegModal('MindForge Multicap', 3499, 'multicap')">Get my dashboard — ₹3,499/mo →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ps-funds">
+            <div class="ps-funds-h">Comparable <b>multicap / flexi-cap</b> funds <span>· actual trailing returns, Direct Plan</span></div>
+            <table class="ps-funds-t">
+              <thead><tr><th>Fund</th><th class="r">5-yr CAGR</th><th class="r">Expense ratio</th></tr></thead>
+              <tbody>
+                <tr><td>Nippon India Multi Cap</td><td class="r">20.3%</td><td class="r">~0.8%</td></tr>
+                <tr><td>Quant Flexi Cap</td><td class="r">19.5%</td><td class="r">0.70%</td></tr>
+                <tr><td>Parag Parikh Flexi Cap</td><td class="r">14.9%</td><td class="r">0.55%</td></tr>
+                <tr class="ps-funds-me"><td>MindForge Multicap <span>backtested</span></td><td class="r">59.0%</td><td class="r ps-flat">flat ₹3,499/mo</td></tr>
+              </tbody>
+            </table>
+            <p class="ps-flat-note">On a ₹35L book, even a 0.7% expense ratio is <b>₹24,500 a year</b> — and it scales with your corpus forever (regular plans 1.5–2.3%). MindForge stays a <b>flat monthly fee</b>. <a href="calculator.html">See your savings →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ S&P 500 ═══ -->
+      <div class="ps-panel" role="tabpanel" id="ps-panel-sp" aria-labelledby="ps-tab-sp" data-ps-panel="sp" hidden>
+        <div class="ps-grid">
+          <div class="ps-card ps-picks-card">
+            <div class="ps-perf">
+              <div class="ps-perf-tag">Last completed month · <b><!--MFSTAT:sp:lm_month-->June 2026<!--/MFSTAT--></b> · backtested</div>
+              <div class="ps-perf-row">
+                <div class="ps-perf-cell win"><span class="ps-perf-lbl">S&amp;P 500 strategy</span><span class="ps-perf-val"><!--MFSTAT:sp:lm_ret-->+2.3%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-vs">vs</div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">S&amp;P 500 index</span><span class="ps-perf-val"><!--MFSTAT:sp:lm_bench-->+1.1%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-cagr">5-yr CAGR <b><!--MFSTAT:sp:cagr-->28.0%<!--/MFSTAT--></b> vs <!--MFSTAT:sp:bench_cagr-->13.30%<!--/MFSTAT--></div>
+              </div>
+              <div class="ps-perf-foot">A momentum-tilted cut of the S&amp;P 500 — priced in USD, held via US-listed equities.</div>
+            </div>
+            <h3 class="ps-picks-h">Last month's picks <span class="ps-picks-note">· a sample of the 30-stock book</span></h3>
+            <div class="sample-preview-table-wrap">
+              <table class="sample-preview-table">
+                <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><!--MFTOP:sp:1:company-->Sandisk<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sp:1:ticker-->SNDK<!--/MFTOP--></span></td><td><!--MFTOP:sp:1:industry-->Information Technology<!--/MFTOP--></td><td class="right">3.3%</td></tr>
+                  <tr><td>2</td><td><!--MFTOP:sp:2:company-->Micron Technology<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sp:2:ticker-->MU<!--/MFTOP--></span></td><td><!--MFTOP:sp:2:industry-->Information Technology<!--/MFTOP--></td><td class="right">3.3%</td></tr>
+                  <tr><td>3</td><td><!--MFTOP:sp:3:company-->Western Digital<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sp:3:ticker-->WDC<!--/MFTOP--></span></td><td><!--MFTOP:sp:3:industry-->Information Technology<!--/MFTOP--></td><td class="right">3.3%</td></tr>
+                  <tr><td>4</td><td><!--MFTOP:sp:4:company-->Seagate Technology<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sp:4:ticker-->STX<!--/MFTOP--></span></td><td><!--MFTOP:sp:4:industry-->Information Technology<!--/MFTOP--></td><td class="right">3.3%</td></tr>
+                  <tr class="sp-blur"><td>5</td><td><!--MFTOP:sp:5:company-->Humana<!--/MFTOP--></td><td><span class="sp-chip"><!--MFTOP:sp:5:ticker-->HUM<!--/MFTOP--></span></td><td><!--MFTOP:sp:5:industry-->Health Care<!--/MFTOP--></td><td class="right">3.3%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>6</td><td>Comfort Systems USA</td><td><span class="sp-chip">FIX</span></td><td>Industrials</td><td class="right">3.3%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>7</td><td>Caterpillar</td><td><span class="sp-chip">CAT</span></td><td>Industrials</td><td class="right">3.3%</td></tr>
+                  <tr class="sp-blur" aria-hidden="true"><td>8</td><td>Centene</td><td><span class="sp-chip">CNC</span></td><td>Health Care</td><td class="right">3.3%</td></tr>
+                </tbody>
+              </table>
+              <div class="sp-gate">
+                <div class="sp-gate-inner">
+                  <div class="sp-gate-icon">🔒</div>
+                  <h3>Unlock all 30 picks + full live dashboard</h3>
+                  <p>Real-time allocation calculator · broker deeplinks · auto rebalance emails</p>
+                  <button class="sidebar-btn" onclick="openRegModal('MindForge S&P 500', 4999, 'sp500')">Get my dashboard — ₹4,999/mo →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="ps-funds">
+            <div class="ps-funds-h">Comparable <b>US / S&amp;P 500 index</b> funds <span>· actual trailing returns, Direct Plan</span></div>
+            <table class="ps-funds-t">
+              <thead><tr><th>Fund</th><th class="r">1-yr</th><th class="r">5-yr CAGR</th><th class="r">Expense ratio</th></tr></thead>
+              <tbody>
+                <tr><td>Motilal Oswal S&amp;P 500 Index</td><td class="r">33.4%</td><td class="r">17.6%</td><td class="r">0.58%</td></tr>
+                <tr class="ps-funds-me"><td>MindForge S&amp;P 500 <span>backtested</span></td><td class="r">—</td><td class="r">28.0%</td><td class="r ps-flat">flat ₹4,999/mo</td></tr>
+              </tbody>
+            </table>
+            <p class="ps-flat-note">Plain index funds track the market and still charge a % of your corpus each year. MindForge runs a momentum-tilted cut of the same 500 for a <b>flat monthly fee</b>. <a href="calculator.html">See your savings →</a></p>
+          </div>
+        </div>
+      </div>
+
+      <p class="ps-disc">Strategy returns and CAGR are <b>backtested / simulated</b>, not realised, and the benchmark's last-month figure is the backtest's benchmark model. Mutual-fund returns are <b>actual</b> trailing returns for the Direct Plan (sourced from public fund pages, ~Jul 2026) and will change over time. Shown for comparison only — not investment advice or a recommendation of any fund. Past performance does not guarantee future results.</p>
     </div>
   </section>
 
@@ -2625,6 +2882,138 @@ function openRegModal(strategyName, price, strategyId){
   .mfcalc-results{ grid-template-columns: 1fr; }
 }
 </style>
+
+<!-- V19.5 #1a+1b: per-strategy performance / picks / fund-comparison module -->
+<style id="mf-v195-perf">
+.ps-section{ padding:60px 0; position:relative; z-index:1; }
+.ps-head{ max-width:920px; margin:0 auto 22px; text-align:left; }
+.ps-head h2{ font-size:clamp(22px,3vw,30px); color:var(--white); margin:10px 0; letter-spacing:-.01em; }
+.ps-tabs{ display:flex; flex-wrap:wrap; gap:8px; max-width:1040px; margin:0 auto 18px; }
+.ps-tab{
+  display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:999px;
+  border:1px solid rgba(37,99,235,.20); background:#fff; color:var(--text2);
+  font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap;
+  transition:background .2s, color .2s, border-color .2s, transform .2s;
+}
+.ps-tab:hover{ background:rgba(37,99,235,.06); color:var(--accent); }
+.ps-tab.active{
+  background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0891b2 100%);
+  color:#fff; border-color:transparent; box-shadow:0 10px 24px -12px rgba(26,80,216,.6);
+}
+.ps-dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 3px rgba(255,255,255,.25) inset; }
+.ps-tab.active .ps-dot{ box-shadow:0 0 0 2px rgba(255,255,255,.55); }
+
+.ps-panel{ display:none; }
+.ps-panel.active{ display:block; animation:ps-fade .35s ease; }
+@keyframes ps-fade{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+
+.ps-grid{ display:grid; grid-template-columns:1.35fr 1fr; gap:20px; max-width:1040px; margin:0 auto; align-items:start; }
+.ps-card{
+  background:#fff; border:1px solid rgba(37,99,235,.18); border-radius:20px; padding:26px 24px;
+  box-shadow:0 1px 2px rgba(12,24,49,.04), 0 18px 48px -22px rgba(26,80,216,.22);
+}
+
+/* perf strip */
+.ps-perf{ border:1px solid rgba(37,99,235,.16); background:linear-gradient(135deg,rgba(37,99,235,.05),rgba(45,212,191,.05)); border-radius:14px; padding:16px 18px; margin-bottom:20px; }
+.ps-perf-tag{ font-size:11.5px; font-weight:600; letter-spacing:.02em; color:var(--text3); text-transform:uppercase; margin-bottom:12px; }
+.ps-perf-tag b{ color:var(--accent); }
+.ps-perf-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ps-perf-cell{ display:flex; flex-direction:column; gap:2px; }
+.ps-perf-lbl{ font-size:11.5px; color:var(--text3); }
+.ps-perf-val{ font-size:26px; font-weight:800; line-height:1; color:var(--white); letter-spacing:-.02em; }
+.ps-perf-cell.win .ps-perf-val{ color:#047857; }
+.ps-perf-cell.loss .ps-perf-val{ color:#b91c1c; }
+.ps-perf-vs{ font-size:12px; font-weight:700; color:var(--text3); align-self:center; padding-top:12px; }
+.ps-perf-cagr{ margin-left:auto; font-size:12.5px; color:var(--text2); align-self:center; text-align:right; }
+.ps-perf-cagr b{ color:var(--white); font-weight:800; }
+.ps-perf-foot{ font-size:12px; color:var(--text3); margin-top:11px; line-height:1.5; }
+
+.ps-picks-h{ font-size:15px; font-weight:700; color:var(--white); margin:0 0 12px; }
+.ps-picks-note{ font-weight:500; color:var(--text3); font-size:13px; }
+.ps-picks-card .sample-preview-table-wrap{ position:relative; }
+
+.ps-cta-row{ margin-top:18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ps-cta-row .sidebar-btn{ display:inline-block; width:auto; padding:13px 26px; }
+.ps-cta-side{ font-size:12.5px; color:var(--text3); }
+
+/* funds comparison card */
+.ps-funds{ background:#fff; border:1px solid rgba(37,99,235,.18); border-radius:20px; padding:22px 22px; box-shadow:0 1px 2px rgba(12,24,49,.04), 0 18px 48px -26px rgba(26,80,216,.18); }
+.ps-funds-h{ font-size:14px; font-weight:700; color:var(--white); margin-bottom:14px; line-height:1.4; }
+.ps-funds-h b{ color:var(--accent); }
+.ps-funds-h span{ display:block; font-size:11px; font-weight:500; color:var(--text3); margin-top:3px; }
+.ps-funds-t{ width:100%; border-collapse:collapse; font-size:13.5px; }
+.ps-funds-t th{ text-align:left; padding:8px 6px; font-size:10.5px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--text3); border-bottom:1px solid var(--border); }
+.ps-funds-t td{ padding:10px 6px; border-bottom:1px solid var(--border); color:var(--text2); }
+.ps-funds-t .r{ text-align:right; white-space:nowrap; }
+.ps-funds-me td{ background:linear-gradient(135deg,rgba(37,99,235,.06),rgba(45,212,191,.06)); color:var(--white); font-weight:700; border-bottom:none; }
+.ps-funds-me td:first-child{ border-radius:8px 0 0 8px; }
+.ps-funds-me td:last-child{ border-radius:0 8px 8px 0; }
+.ps-funds-me span{ display:inline-block; font-size:10px; font-weight:600; color:var(--text3); background:rgba(37,99,235,.08); padding:1px 6px; border-radius:5px; margin-left:5px; vertical-align:middle; }
+.ps-flat{ color:#047857 !important; }
+.ps-flat-note{ font-size:12.5px; color:var(--text2); line-height:1.6; margin:14px 0 0; }
+.ps-flat-note a{ color:var(--accent); font-weight:600; white-space:nowrap; }
+
+.ps-disc{ max-width:1040px; margin:22px auto 0; font-size:11px; color:var(--text3); line-height:1.6; text-align:center; }
+
+@media (max-width:920px){
+  .ps-grid{ grid-template-columns:1fr; }
+  .ps-head, .ps-tabs{ text-align:left; }
+}
+@media (max-width:600px){
+  .ps-card{ padding:20px 16px; }
+  .ps-funds{ padding:18px 16px; }
+  .ps-tabs{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; scrollbar-width:none; }
+  .ps-tabs::-webkit-scrollbar{ display:none; }
+  .ps-perf-cagr{ margin-left:0; width:100%; text-align:left; padding-top:6px; }
+  .ps-perf-val{ font-size:22px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .ps-panel.active{ animation:none; }
+  .ps-tab{ transition:none; }
+}
+/* Dark mode — flip the #fff surfaces so the module matches the rest of the page */
+[data-theme="dark"] .ps-card,
+[data-theme="dark"] .ps-funds{ background:var(--ink2); border-color:var(--border2); }
+[data-theme="dark"] .ps-tab{ background:var(--ink2); border-color:var(--border2); }
+[data-theme="dark"] .ps-tab:hover{ background:rgba(120,160,240,.10); }
+[data-theme="dark"] .ps-perf{ border-color:var(--border2); background:linear-gradient(135deg,rgba(70,120,245,.10),rgba(45,212,191,.06)); }
+[data-theme="dark"] .ps-funds-me td{ background:linear-gradient(135deg,rgba(70,120,245,.16),rgba(45,212,191,.08)); }
+[data-theme="dark"] .ps-perf-cell.win .ps-perf-val{ color:#34d399; }
+[data-theme="dark"] .ps-perf-cell.loss .ps-perf-val{ color:#f87171; }
+[data-theme="dark"] .ps-flat{ color:#34d399 !important; }
+</style>
+<script id="mf-v195-perf-js">
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.ps-tab'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.ps-panel'));
+  if(!tabs.length) return;
+  function activate(key, focus){
+    tabs.forEach(function(t){
+      var on = t.getAttribute('data-ps') === key;
+      t.classList.toggle('active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.setAttribute('tabindex', on ? '0' : '-1');
+      if(on && focus) t.focus();
+    });
+    panels.forEach(function(p){
+      var on = p.getAttribute('data-ps-panel') === key;
+      p.classList.toggle('active', on);
+      if(on){ p.removeAttribute('hidden'); } else { p.setAttribute('hidden',''); }
+    });
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ activate(t.getAttribute('data-ps')); });
+    t.addEventListener('keydown', function(e){
+      if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+        e.preventDefault();
+        var dir = e.key === 'ArrowRight' ? 1 : -1;
+        var next = (i + dir + tabs.length) % tabs.length;
+        activate(tabs[next].getAttribute('data-ps'), true);
+      }
+    });
+  });
+})();
+</script>
 <script id="mfcalc-script">
 (function(){
   // V6.1: cagr values here are fallbacks only — at runtime mfcUpdate() reads

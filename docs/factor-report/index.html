@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=(), browsing-topics=(), serial=(), bluetooth=(), hid=(), midi=(), idle-detection=(), display-capture=(), autoplay=(), screen-wake-lock=(), xr-spatial-tracking=()">
+<script>/* V11.4 clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MindForge Capital">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<title>Monthly Factor Report — India · MindForge Capital</title>
+<meta name="description" content="MindForge Capital's monthly India factor report — how value, momentum, quality and low-volatility factors performed, tracked through their flagship NSE factor indices. Free, updated monthly.">
+<link rel="canonical" href="https://mindforgecapital.com/factor-report/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MindForge Capital">
+<meta property="og:title" content="Monthly Factor Report — India | MindForge Capital">
+<meta property="og:description" content="How value, momentum, quality and low-volatility factors are performing in India, updated every month.">
+<meta property="og:url" content="https://mindforgecapital.com/factor-report/">
+<meta property="og:image" content="https://mindforgecapital.com/assets/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Monthly Factor Report — India | MindForge Capital">
+<meta name="twitter:description" content="How value, momentum, quality and low-volatility factors are performing in India, updated every month.">
+<meta name="twitter:image" content="https://mindforgecapital.com/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#1a50d8">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png">
+<style>
+.mf-scroll-prog{position:fixed;top:0;left:0;width:0%;height:3px;z-index:9999;pointer-events:none;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf);transition:width .1s linear}
+</style>
+<style>
+:root{
+  --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
+  --white:#0c1831;
+  --accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;
+  --gold:#d97706;--teal:#0891b2;--green:#059669;--red:#dc2626;
+  --text:#0c1831;--text2:#1e3a5f;--text3:#475569;
+  --border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);
+  --r:16px;--r-sm:10px;--r-lg:22px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
+  --green-bg:rgba(5,150,105,0.08);--red-bg:rgba(220,38,38,0.07);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 600px at 70% -10%,rgba(37,99,235,0.08) 0%,transparent 60%),radial-gradient(ellipse 500px 400px at 5% 25%,rgba(45,212,191,0.05) 0%,transparent 60%),radial-gradient(ellipse 700px 500px at 95% 75%,rgba(45,212,191,0.03) 0%,transparent 60%)}
+h1,h2,h3,h4{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV (site standard) ── */
+nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.05);padding:0 32px}
+.nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;height:64px;gap:26px}
+.logo{display:flex;align-items:center;flex-shrink:0}
+.logo img{height:44px;width:auto;display:block}
+.nav-links{display:flex;gap:26px;align-items:center;margin-left:auto}
+.nav-links a{font-size:14px;font-weight:400;color:var(--text2);transition:color .2s;white-space:nowrap;display:inline-flex;align-items:center;height:40px;line-height:1;position:relative}
+.nav-links a:hover{color:var(--white)}
+.nav-links a.active{color:var(--white)}
+.nav-links a:not(.nav-cta)::after{content:'';position:absolute;left:0;right:0;bottom:6px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent),#2dd4bf);transform:scaleX(0);transform-origin:center;transition:transform .3s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+.nav-links a:not(.nav-cta).active::after,.nav-links a:not(.nav-cta):hover::after{transform:scaleX(1)}
+.nav-links a.nav-cta{color:#fff}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;margin-left:auto;z-index:300}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .3s}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.nav-cta{background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);background-size:170% 170%;color:#fff;font-size:14px;font-weight:600;padding:10px 22px;border-radius:var(--r-sm);transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s,background-position .55s;white-space:nowrap;box-shadow:0 6px 16px -8px rgba(26,80,216,.55)}
+.nav-cta:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 10px 22px -8px rgba(26,80,216,.7),0 0 0 4px rgba(45,212,191,.10)}
+@media(max-width:1024px){
+  nav{padding:0 16px}
+  .nav-inner{gap:12px;height:56px}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;position:fixed;top:56px;left:0;right:0;margin-left:0;background:rgba(240,245,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border2);flex-direction:column;align-items:stretch;padding:18px 22px 26px;gap:2px;z-index:250;box-shadow:0 8px 32px rgba(26,80,216,0.10)}
+  .nav-links.open{display:flex}
+  .nav-links a{font-size:16px;padding:12px 2px;width:100%;height:auto;border-bottom:0.5px solid var(--border);white-space:nowrap;text-align:left}
+  .nav-links a:hover,.nav-links a.active{background:none}
+  .nav-links a:not(.nav-cta)::after{display:none}
+  .nav-links a.nav-cta{margin-top:14px;text-align:center;padding:15px 28px;font-size:15px;border-bottom:none;border-radius:var(--r-sm)}
+}
+
+.wrap{max-width:1000px;margin:0 auto;padding:0 28px 70px;position:relative;z-index:1}
+@media(max-width:600px){.wrap{padding:0 16px 56px}}
+
+/* ── HERO ── */
+.hero{padding:46px 0 14px;text-align:center;position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);background:linear-gradient(135deg,rgba(26,80,216,.08),rgba(8,145,178,.07));border:0.5px solid var(--border2);padding:7px 15px;border-radius:999px;margin-bottom:18px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(5,150,105,.5);animation:pulseDot 2.2s infinite}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(5,150,105,.45)}70%{box-shadow:0 0 0 7px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
+.hero h1{font-size:clamp(28px,5vw,46px);color:var(--white);margin-bottom:12px}
+.hero h1 .grad{background:linear-gradient(120deg,#1a50d8,#2563eb 40%,#0891b2 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p.sub{font-size:clamp(15px,2vw,18px);color:var(--text2);max-width:680px;margin:0 auto 18px;line-height:1.55}
+.updated{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center;font-size:13px;color:var(--text3);background:var(--ink2);border:0.5px solid var(--border);padding:7px 16px;border-radius:999px;box-shadow:var(--shadow-sm)}
+.updated b{color:var(--text);font-weight:600}
+.updated .sep{width:1px;height:13px;background:var(--border2)}
+@media(max-width:600px){.updated .sep{display:none}}
+
+/* ── SECTIONS / CARDS ── */
+.card{background:var(--ink2);border:0.5px solid var(--border);border-radius:var(--r-lg);box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 44px -26px rgba(26,80,216,.18);padding:28px 30px;margin-top:26px}
+.card h2{font-size:clamp(19px,3vw,25px);color:var(--white);margin-bottom:6px}
+.card .lead{font-size:14px;color:var(--text3);margin-bottom:20px}
+@media(max-width:600px){.card{padding:22px 18px}}
+
+/* ── FACTOR LEADERBOARD ── */
+.fr-board{display:flex;flex-direction:column;gap:2px}
+.fr-row{display:grid;grid-template-columns:26px 1.15fr 1.5fr 82px;align-items:center;gap:14px;padding:14px 6px;border-bottom:1px solid var(--border)}
+.fr-row:last-child{border-bottom:none}
+.fr-rank{font-size:13px;font-weight:800;color:var(--text3);text-align:center;font-variant-numeric:tabular-nums}
+.fr-name{display:flex;flex-direction:column;gap:2px}
+.fr-name b{font-size:15px;color:var(--white);font-weight:700}
+.fr-name span{font-size:11.5px;color:var(--text3)}
+.fr-bar-wrap{position:relative;height:26px;background:linear-gradient(90deg,rgba(220,38,38,.05),rgba(37,99,235,.03) 50%,rgba(5,150,105,.05));border-radius:7px;overflow:hidden}
+.fr-bar-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);z-index:1}
+.fr-bar{position:absolute;top:4px;bottom:4px;border-radius:5px}
+.fr-bar.pos{left:50%;background:linear-gradient(90deg,rgba(5,150,105,.55),var(--green))}
+.fr-bar.neg{right:50%;background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red))}
+.fr-val{font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.fr-val.up{color:var(--green)} .fr-val.down{color:var(--red)}
+.fr-lead-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#047857;background:var(--green-bg);padding:2px 7px;border-radius:5px;margin-left:7px;vertical-align:middle}
+.fr-lag-tag{color:#b91c1c;background:var(--red-bg)}
+@media(max-width:640px){
+  .fr-row{grid-template-columns:22px 1fr 66px;gap:10px}
+  .fr-bar-wrap{display:none}
+}
+
+/* ── COMMENTARY ── */
+.fr-note{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:14px}
+.fr-note:last-child{margin-bottom:0}
+.fr-note b{color:var(--white)}
+.fr-callout{border-left:3px solid var(--accent);background:linear-gradient(135deg,rgba(37,99,235,.05),rgba(45,212,191,.04));border-radius:0 12px 12px 0;padding:16px 18px;margin:18px 0;font-size:14.5px;color:var(--text2);line-height:1.65}
+
+/* ── HOW WE USE IT ── */
+.fr-use-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:4px}
+.fr-use{border:0.5px solid var(--border);border-radius:14px;padding:16px 18px;background:#fff}
+.fr-use b{display:block;color:var(--white);font-size:14.5px;margin-bottom:4px}
+.fr-use span{font-size:13px;color:var(--text3);line-height:1.55}
+.fr-cta{display:inline-flex;align-items:center;gap:8px;margin-top:20px;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);color:#fff;font-weight:700;font-size:14.5px;padding:13px 26px;border-radius:var(--r-sm);box-shadow:0 10px 26px -12px rgba(26,80,216,.6);transition:transform .2s,box-shadow .2s}
+.fr-cta:hover{transform:translateY(-2px);box-shadow:0 16px 34px -12px rgba(26,80,216,.7)}
+@media(max-width:600px){.fr-use-grid{grid-template-columns:1fr}}
+
+/* ── METHODOLOGY / SOURCES ── */
+.fr-meth{font-size:13px;color:var(--text3);line-height:1.7}
+.fr-meth b{color:var(--text2)}
+.fr-meth a{color:var(--accent);font-weight:600}
+.fr-meth ul{margin:10px 0 0 18px}
+.fr-meth li{margin-bottom:5px}
+
+/* ── ARCHIVE ── */
+.fr-archive-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.fr-arch-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:0.5px solid var(--border);border-radius:12px;padding:14px 18px;background:#fff;transition:transform .2s,box-shadow .2s,border-color .2s}
+.fr-arch-item.current{border-color:var(--border2);background:linear-gradient(135deg,rgba(37,99,235,.04),rgba(45,212,191,.03))}
+a.fr-arch-item:hover{transform:translateY(-2px);box-shadow:0 12px 26px -16px rgba(26,80,216,.3);border-color:var(--border2)}
+.fr-arch-item .m{font-weight:700;color:var(--white);font-size:15px}
+.fr-arch-item .d{font-size:12.5px;color:var(--text3)}
+.fr-arch-badge{font-size:11px;font-weight:700;color:var(--accent);background:rgba(37,99,235,.08);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.fr-arch-empty{font-size:13.5px;color:var(--text3);border:1px dashed var(--border2);border-radius:12px;padding:16px 18px;text-align:center}
+
+/* ── FOOTER ── */
+.site-foot{border-top:0.5px solid var(--border2);margin-top:44px;padding:26px 28px 34px;text-align:center;position:relative;z-index:1}
+.site-foot .links{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-bottom:14px;font-size:13.5px}
+.site-foot .links a{color:var(--text2)}
+.site-foot .links a:hover{color:var(--accent)}
+.site-foot .meta{font-size:12px;color:var(--text3);line-height:1.6}
+.site-foot .sebi-line{color:var(--text2);font-weight:600}
+/* Dark mode — flip the #fff surfaces (cards already use var(--ink2)) */
+[data-theme="dark"] .fr-use,
+[data-theme="dark"] .fr-arch-item{ background:var(--ink2); border-color:var(--border2); }
+[data-theme="dark"] .fr-arch-item.current{ background:linear-gradient(135deg,rgba(70,120,245,.12),rgba(45,212,191,.06)); }
+[data-theme="dark"] a.fr-arch-item:hover{ border-color:var(--accent3); }
+[data-theme="dark"] .fr-val.up{ color:#34d399; }
+[data-theme="dark"] .fr-val.down{ color:#f87171; }
+[data-theme="dark"] .fr-lead-tag{ color:#6ee7b7; background:rgba(5,150,105,0.18); }
+[data-theme="dark"] .fr-lag-tag{ color:#fca5a5; background:rgba(220,38,38,0.18); }
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<!-- MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. -->
+<script>
+(function(){var R=document.documentElement;
+function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
+function apply(t){R.setAttribute('data-theme',t==='dark'?'dark':'light');}
+apply(get());
+window.__mfcThemeBoot=function(){
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+var nav=document.querySelector('.nav-links');if(!nav)return;
+var b=document.createElement('button');b.type='button';b.className='mfc-theme-toggle';b.style.cssText='background:none;border:0;cursor:pointer;color:var(--text2);display:inline-flex;align-items:center;padding:8px;width:40px;height:40px;justify-content:center';
+b.setAttribute('aria-label','Toggle dark mode');b.title='Toggle light / dark';
+function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MOON;b.setAttribute('aria-pressed',t==='dark'?'true':'false');}
+sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
+nav.appendChild(b);};
+})();
+</script>
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=1750">
+</head>
+<body>
+<div class="mf-scroll-prog" id="scrollProg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
+      <img src="/assets/LogoNav.png" alt="MindForge Capital" decoding="async" height="36">
+    </a>
+    <div class="nav-links" id="primary-nav">
+      <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+      <a href="../screener/">Scanner</a>
+      <a href="../scores/">Integrity Score</a>
+      <a href="../fii-dii/">FII/DII</a>
+      <a href="index.html" class="active">Factor Report</a>
+      <a href="../calculator.html">Fee Calculator</a>
+      <a href="https://mindforgecapital.com/recover.html">Recover Access</a>
+      <a href="https://mindforgecapital.com/login.html">Sign In</a>
+      <a href="https://mindforgecapital.com/signup.html" class="nav-cta">Get Started</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MONTHLY FACTOR REPORT — reusable template
+       ───────────────────────────────────────────────────────────────────────
+       HOW TO PUBLISH NEXT MONTH (≈10 min, no build step):
+       1. Archive the outgoing edition: copy THIS file to  factor-report/YYYY-MM.html
+          (e.g. 2026-06.html), and in that copy set <meta name="robots"
+          content="noindex,follow"> so only the live /factor-report/ ranks.
+       2. In THIS index.html, update — all clearly marked with FR: comment markers:
+            • the hero month + subtitle
+            • the "Data as of" date
+            • the five FR:factor rows (value, bar width %, up/down class, lead/lag tag)
+            • the commentary paragraphs
+            • the "Sources / as-of" line
+       3. Prepend a link to the just-archived month at the TOP of .fr-archive-list
+          (copy the commented <li> template there).
+       Bar width = |return| / (largest |return| this month) × 50, as a %.
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="eyebrow"><span class="dot"></span>Monthly factor report · India</span>
+    <!--FR:month--><h1>India Factor Report — <span class="grad">June 2026</span></h1><!--/FR:month-->
+    <p class="sub">How the major equity <b>style factors</b> — value, momentum, quality and low volatility — are performing in India, tracked through their flagship NSE factor indices. Free, and updated every month.</p>
+    <div class="updated">
+      <span>Trailing 1-year total return</span><span class="sep"></span>
+      <!--FR:asof--><span>Data as of <b>3 Jul 2026</b></span><!--/FR:asof-->
+    </div>
+  </section>
+
+  <!-- ── FACTOR LEADERBOARD ── -->
+  <section class="card">
+    <h2>The factor scoreboard</h2>
+    <p class="lead">Ranked by trailing 1-year total return. Each factor is represented by its flagship NSE index (tracked via a low-cost index fund, Direct Plan). Nifty 50 is shown as the broad-market baseline.</p>
+    <div class="fr-board">
+      <!--FR:factor value--><div class="fr-row">
+        <div class="fr-rank">1</div>
+        <div class="fr-name"><b>Value <span class="fr-lead-tag">Leader</span></b><span>Nifty500 Value 50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:50.0%"></span></div>
+        <div class="fr-val up">+14.1%</div>
+      </div><!--/FR:factor-->
+      <!--FR:factor lowvol--><div class="fr-row">
+        <div class="fr-rank">2</div>
+        <div class="fr-name"><b>Low Volatility</b><span>Nifty500 Low Volatility 50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:5.0%"></span></div>
+        <div class="fr-val up">+1.4%</div>
+      </div><!--/FR:factor-->
+      <!--FR:factor momentum--><div class="fr-row">
+        <div class="fr-rank">3</div>
+        <div class="fr-name"><b>Momentum</b><span>Nifty500 Momentum 50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:8.5%"></span></div>
+        <div class="fr-val down">−2.4%</div>
+      </div><!--/FR:factor-->
+      <!--FR:baseline--><div class="fr-row">
+        <div class="fr-rank">·</div>
+        <div class="fr-name"><b>Broad market <span style="font-weight:500;color:var(--text3)">(baseline)</span></b><span>Nifty 50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:12.4%"></span></div>
+        <div class="fr-val down">−3.5%</div>
+      </div><!--/FR:baseline-->
+      <!--FR:factor quality--><div class="fr-row">
+        <div class="fr-rank">4</div>
+        <div class="fr-name"><b>Quality <span class="fr-lead-tag fr-lag-tag">Laggard</span></b><span>Nifty200 Quality 30</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:13.5%"></span></div>
+        <div class="fr-val down">−3.8%</div>
+      </div><!--/FR:factor-->
+    </div>
+  </section>
+
+  <!-- ── COMMENTARY ── -->
+  <section class="card">
+    <h2>What led, what lagged</h2>
+    <!--FR:commentary-->
+    <p class="fr-note"><b>Value ran away with it.</b> Over the trailing year the Nifty500 Value 50 returned about <b>+14%</b> while the broad Nifty 50 was slightly negative — a wide, decisive spread. Cheaply-valued cyclicals, PSUs and capital-goods names did the heavy lifting as the market rewarded earnings over narrative.</p>
+    <p class="fr-note"><b>Low Volatility held up; Momentum and Quality did not.</b> Low-vol eked out a small positive return, cushioning the broad-market drawdown as designed. Momentum (−2.4%) edged out the index but still fell, and Quality (−3.8%) was the weakest factor of all — a reminder that the "safe compounders" trade can de-rate hard when leadership rotates toward value.</p>
+    <div class="fr-callout">The one-line takeaway for June 2026: <b>value led, low-volatility defended, and the crowded quality/momentum trade lagged.</b> Factor leadership rotates — which is exactly why a rules-based, multi-factor process beats betting the house on a single style.</div>
+    <!--/FR:commentary-->
+  </section>
+
+  <!-- ── HOW MINDFORGE USES FACTORS ── -->
+  <section class="card">
+    <h2>How MindForge uses factors</h2>
+    <p class="lead">Our strategies are built on these same style factors — combined, risk-weighted and rebalanced monthly, so no single factor's bad year sinks the book.</p>
+    <div class="fr-use-grid">
+      <div class="fr-use"><b>Momentum &amp; trend</b><span>The core engine of LargeMidcap 250, SmallMicro 500 and Multicap — ranking on multi-window momentum and a trend filter.</span></div>
+      <div class="fr-use"><b>Low volatility</b><span>A volatility screen down-weights the most erratic names, so the concentrated books don't chase blow-off risk.</span></div>
+      <div class="fr-use"><b>Quality &amp; value tilts</b><span>52-week strength and liquidity/relative-value checks keep the picks in resilient, tradable companies.</span></div>
+      <div class="fr-use"><b>Multi-asset rotation</b><span>MultiAsset rotates across equity, gold, silver and debt ETFs on momentum + volatility — factor investing beyond just stocks.</span></div>
+    </div>
+    <a class="fr-cta" href="https://mindforgecapital.com/strategies.html">See the strategies these factors power →</a>
+  </section>
+
+  <!-- ── ARCHIVE ── -->
+  <section class="card">
+    <h2>Report archive</h2>
+    <p class="lead">Every month's edition, kept for the record.</p>
+    <ul class="fr-archive-list">
+      <li class="fr-arch-item current">
+        <div><div class="m">June 2026</div><div class="d">Value led · quality &amp; momentum lagged</div></div>
+        <span class="fr-arch-badge">Current edition</span>
+      </li>
+      <!-- FR:archive template — when you archive a month, prepend a link like this:
+      <a class="fr-arch-item" href="2026-06.html">
+        <div><div class="m">June 2026</div><div class="d">Value led · quality &amp; momentum lagged</div></div>
+        <span class="fr-arch-badge">Read →</span>
+      </a>
+      -->
+    </ul>
+    <p class="fr-arch-empty" style="margin-top:12px">This is the first edition. Past reports will be archived here as new months publish.</p>
+  </section>
+
+  <!-- ── METHODOLOGY / SOURCES ── -->
+  <section class="card">
+    <h2>Methodology &amp; sources</h2>
+    <div class="fr-meth">
+      <p>Each factor is represented by its <b>flagship NSE factor index</b>, measured through a low-cost index fund tracking that index (Direct Plan). Returns are <b>trailing 1-year total returns</b> as of the date shown, so every factor is compared on the same clock. Nifty 50 is the broad-market baseline.</p>
+      <ul>
+        <!--FR:sources-->
+        <li><b>Value</b> — Nifty500 Value 50 (UTI Nifty 500 Value 50 Index Fund)</li>
+        <li><b>Low Volatility</b> — Nifty500 Low Volatility 50 (Nippon India Nifty 500 Low Volatility 50 Index Fund)</li>
+        <li><b>Momentum</b> — Nifty500 Momentum 50 (Nippon India Nifty 500 Momentum 50 Index Fund)</li>
+        <li><b>Quality</b> — Nifty200 Quality 30 (UTI Nifty200 Quality 30 Index Fund)</li>
+        <li><b>Baseline</b> — Nifty 50 (UTI Nifty 50 Index Fund)</li>
+        <li>Figures sourced from public fund fact pages (Groww / INDmoney / Value Research), as of <b>3 Jul 2026</b>.</li>
+        <!--/FR:sources-->
+      </ul>
+      <p style="margin-top:12px">Factor and index returns are historical and will change. This report is <b>educational commentary, not investment advice</b> or a recommendation of any index, fund or security. Past performance does not guarantee future results.</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="site-foot">
+  <div class="links">
+    <a href="https://mindforgecapital.com/">Home</a>
+    <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+    <a href="../screener/">Scanner</a>
+    <a href="../scores/">Integrity Score</a>
+    <a href="../fii-dii/">FII/DII</a>
+    <a href="../calculator.html">Fee Calculator</a>
+    <a href="https://mindforgecapital.com/privacy.html">Privacy</a>
+    <a href="https://mindforgecapital.com/terms.html">Terms</a>
+  </div>
+  <p class="meta"><span class="sebi-line">SEBI-Registered Research Analyst · INH-XXXXXXXXXXX · Sagar Shekhawath</span><br>© 2026 MindForge Capital. All rights reserved. Educational information only — not investment advice.</p>
+</footer>
+
+<script>
+// nav hamburger
+(function(){
+  var btn=document.querySelector('.nav-hamburger'),links=document.getElementById('primary-nav');
+  if(!btn||!links)return;
+  function setHam(open){btn.classList.toggle('open',open);links.classList.toggle('open',open);btn.setAttribute('aria-expanded',open?'true':'false');btn.setAttribute('aria-label',open?'Close menu':'Open menu');}
+  btn.addEventListener('click',function(){setHam(!btn.classList.contains('open'));});
+  links.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){setHam(false);});});
+})();
+// scroll progress
+(function(){
+  var bar=document.getElementById('scrollProg');if(!bar)return;
+  window.addEventListener('scroll',function(){var s=document.documentElement.scrollTop;var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;bar.style.width=(h>0?(s/h*100):0)+'%';},{passive:true});
+})();
+// theme toggle (inject into nav after DOM ready)
+if(window.__mfcThemeBoot)window.__mfcThemeBoot();
+</script>
+<!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page -->
+<script src="../assets/mfc-offer.js?v=110" defer></script>
+</body>
+</html>
