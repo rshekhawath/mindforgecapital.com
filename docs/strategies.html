@@ -238,12 +238,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .cmp-card .compare-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;min-width:680px;}
   /* — header — */
   .cmp-card .compare-table thead th{
-    text-align:center;padding:18px 16px 15px;vertical-align:bottom;
+    text-align:center;padding:18px 16px 15px;vertical-align:top;
     background:linear-gradient(180deg,rgba(37,99,235,0.045),transparent);
     border-bottom:1px solid var(--border2);font-weight:600;letter-spacing:0;text-transform:none;color:var(--text2);
   }
+  /* Metric label stays anchored to the bottom of the tall header row so it sits
+     level with the data below; strategy columns top-align (above) so their dots +
+     names line up across every column regardless of whether a badge is present. */
   .cmp-card .compare-table thead th.cmp-metric-h{
-    text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);
+    text-align:left;vertical-align:bottom;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);
   }
   .cmp-strat{display:inline-flex;flex-direction:column;align-items:center;gap:7px;min-width:100px;}
   .cmp-strat .nm{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:var(--white);letter-spacing:-0.01em;line-height:1.15;}
@@ -3013,6 +3016,21 @@ function openRegModal(strategyName, price, strategyId){
       }
     });
   });
+
+  /* Defensive: keep each panel's last-month return colour (win = green /
+     loss = red) in lockstep with the MFSTAT-injected value's sign. The class is
+     hand-authored but the number is refreshed monthly, so a month that flips
+     positive↔negative would otherwise render a red gain or a green loss. */
+  try{
+    var perfCells = document.querySelectorAll('.ps-perf-cell.win, .ps-perf-cell.loss');
+    Array.prototype.forEach.call(perfCells, function(cell){
+      var v = cell.querySelector('.ps-perf-val');
+      if(!v) return;
+      var neg = /[-−–]/.test(v.textContent || '');   // ASCII hyphen, U+2212 minus, en-dash
+      cell.classList.toggle('loss', neg);
+      cell.classList.toggle('win', !neg);
+    });
+  }catch(e){}
 })();
 </script>
 <script id="mfcalc-script">
