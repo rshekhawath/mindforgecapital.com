@@ -15,6 +15,19 @@
   var holdingsCache = {};             // token -> {subscription, stocks} (for offline/back)
   var capital = 0;                    // allocation-calculator capital
   var capitalCurr = '';               // currency capital was set for — reset when strategy currency changes
+  // V20.3 — native page transitions. Set true at the top of a genuine route change
+  // (router()) and consumed once by the next render() so the incoming screen plays a
+  // subtle scale+fade "push". In-place re-renders (the Holdings capital calculator,
+  // which re-renders WITHOUT a hash change) leave it false, so recalculating a
+  // position size never replays the whole-screen transition. Reduced-motion-safe
+  // (the .route-in animation is defined only under prefers-reduced-motion:no-preference).
+  var pendingNav = false;
+
+  // WhatsApp support mark (V20.0) — the REAL, official WhatsApp glyph (the filled
+  // phone-in-speech-bubble, verbatim brand vector), white on the WhatsApp-green
+  // tile. Inline SVG so the strict CSP (img-src 'self' data:) is satisfied.
+  var WA_LOGO = '<svg width="23" height="23" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">'+
+    '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
 
   // ── helpers ────────────────────────────────────────────────────────────────
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -37,6 +50,23 @@
   function initials(name){var p=String(name||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return 'MF';return ((p[0].charAt(0)||'')+(p.length>1?p[p.length-1].charAt(0):'')).toUpperCase();}
   function fmtDate(d){if(!d)return '—';var dt=new Date(d);if(isNaN(dt))return esc(d);return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
   function daysLeft(d){if(!d)return null;var dt=new Date(d);if(isNaN(dt))return null;return Math.max(0,Math.ceil((dt-new Date())/86400000));}
+
+  // V20.1 — a time-aware, "living" greeting for the Home hero. The salutation +
+  // an inline sun/moon glyph + a colour-of-day accent shift with the member's real
+  // local hour (morning → gold sunrise, afternoon → blue sun, evening/night →
+  // indigo moon), and the eyebrow carries today's date — so the app's landing
+  // screen feels personal and current on every open. Pure client clock; the CSS
+  // glyph glow freezes for reduced-motion.
+  function greeting(){
+    var h=new Date().getHours();
+    if(h>=5&&h<12)return {t:'Good morning',k:'morn',
+      ic:'<circle cx="12" cy="13.5" r="3.6"/><path d="M12 4v2.4M4.6 13.5H2.8M21.2 13.5h-1.8M5.9 7.4l1.3 1.3M18.1 7.4l-1.3 1.3M2.5 19.2h19"/>'};
+    if(h>=12&&h<17)return {t:'Good afternoon',k:'noon',
+      ic:'<circle cx="12" cy="12" r="4.4"/><path d="M12 2.4v2.3M12 19.3v2.3M2.4 12h2.3M19.3 12h2.3M5.1 5.1l1.6 1.6M17.3 17.3l1.6 1.6M18.9 5.1l-1.6 1.6M6.7 17.3l-1.6 1.6"/>'};
+    return {t:'Good evening',k:'eve',
+      ic:'<path d="M21 12.8A8.5 8.5 0 1111.2 3a6.6 6.6 0 009.8 9.8z"/>'};
+  }
+  function todDate(){try{return new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});}catch(e){return 'Member dashboard';}}
 
   var toastTimer;
   function toast(msg,isErr){
@@ -145,6 +175,8 @@
   function render(html,activeTab,wire){
     appEl.innerHTML=html+(activeTab?tabbarHTML(activeTab):'');
     currentTab=activeTab||'';
+    // V20.3 — play the whole-screen "push" once per genuine navigation (see pendingNav).
+    if(pendingNav){pendingNav=false;var _scr=appEl.querySelector('.screen');if(_scr)_scr.classList.add('route-in');}
     // wire tab + back + delegated nav
     appEl.querySelectorAll('[data-hash]').forEach(function(b){b.addEventListener('click',function(){location.hash=b.getAttribute('data-hash');});});
     appEl.querySelectorAll('[data-back]').forEach(function(b){b.addEventListener('click',function(){history.length>1?history.back():(location.hash='#/home');});});
@@ -326,8 +358,9 @@
     render(
       appbarHTML({right:'<button class="ab-btn" data-hash="#/account" aria-label="Account"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></button>'})+
       '<main class="screen">'+
-        '<div class="eyebrow rise">Member dashboard</div>'+
-        '<h1 class="h-title rise">Welcome back, <span class="gradtext">'+esc(first)+'</span>.</h1>'+
+        (function(){var g=greeting();return ''+
+          '<div class="eyebrow eyebrow-tod tod-'+g.k+' rise"><span class="tod-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+g.ic+'</svg></span>'+esc(todDate())+'</div>'+
+          '<h1 class="h-title rise">'+g.t+', <span class="gradtext">'+esc(first)+'</span>.</h1>';})()+
         '<p class="h-sub rise">'+(active.length?('You have '+active.length+' active '+(active.length===1?'strategy':'strategies')+'. Tap one to view this cycle’s picks.'):'Your subscriptions appear below.')+'</p>'+
         pfOverviewHTML(active)+
         '<div class="list-h"><span class="lt">Your subscriptions</span>'+(subs.length?'<span class="ls">'+subs.length+(subs.length===1?' plan':' plans')+'</span>':'')+'</div>'+
@@ -434,7 +467,8 @@
       var ind=(s.industry||'').trim();
       var dot=ind?'<span class="dot" style="background:'+(secCol[ind]||'#cbd5e1')+'"></span>':'';
       var blink=MFCBrokers.orderLink(s);
-      var bname=MFCBrokers.current().name;
+      var bcur=MFCBrokers.current();
+      var bname=bcur.name, blogo=bcur.logo||'';
       return '<div class="holding'+(skipFx?'':' rise')+'" style="--h-acc:'+(ind?(secCol[ind]||'transparent'):'transparent')+(skipFx?'':';animation-delay:'+Math.min(i*40,400)+'ms')+'">'+
         '<div class="h-top"><div class="h-rank'+(i<3?' medal m'+(i+1):'')+'">'+(i+1)+'</div>'+
           '<div class="h-name"><div class="h-co">'+esc(s.company_name||s.ticker)+'</div>'+
@@ -449,7 +483,7 @@
           '<div class="h-cell"><div class="k">Shares</div><div class="v">'+shares+'</div></div>'+
         '</div>'+
         '<div class="h-buy">'+
-          (blink?'<a class="btn btn-primary btn-sm" href="'+esc(blink)+'" target="_blank" rel="noopener noreferrer">Buy on '+esc(bname)+' →</a>':'<span class="chip-mini">Link a broker to buy</span>')+
+          (blink?'<a class="btn btn-primary btn-sm" href="'+esc(blink)+'" target="_blank" rel="noopener noreferrer"><span class="bk-glyph">'+blogo+'</span>Buy on '+esc(bname)+' →</a>':'<span class="chip-mini">Link a broker to buy</span>')+
           '<button class="chip-mini" data-copy="'+esc(s.ticker)+'">Copy</button>'+
         '</div>'+
       '</div>';
@@ -464,7 +498,7 @@
           tileNum('Total picks',stocks.length,'','equal-weighted')+
           tileNum('Industries',nInd,'','sector-diversified')+
           (dl!=null?tileRenew(dl,sub&&sub.expires_at?fmtDate(sub.expires_at):''):tile('Renews in','—',sub&&sub.expires_at?fmtDate(sub.expires_at):''))+
-          tile('Broker',esc(MFCBrokers.current().name),'tap a pick to buy','tile-broker')+
+          tileBroker()+
         '</div>'+
         sectorAllocCard(stocks,secCol)+
         '<div class="card" style="margin-top:14px">'+
@@ -480,7 +514,9 @@
             '<div class="deploy-meta"><span class="dep-on"><span class="dep-dot"></span>Deployed <b>'+fmtMoney(curr,deployed)+'</b> · <span data-count="'+depPct.toFixed(0)+'" data-suffix="%">'+depPct.toFixed(0)+'%</span></span><span>Idle cash <b>'+fmtMoney(curr,cashLeft)+'</b></span></div>'+
           '</div>'+
         '</div>'+
-        '<div class="list-h"><span class="lt">Stock picks</span><span class="ls">'+stocks.length+' holdings</span></div>'+
+        '<div class="list-h"><span class="lt">Stock picks</span>'+
+          (stocks.length?'<button class="copy-all" data-copyall aria-label="Copy all '+stocks.length+' tickers to your clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy all '+stocks.length+'</button>':'')+
+        '</div>'+
         (stocks.length?stocks.map(holdingHTML).join(''):'<div class="empty">'+emptyIll('doc')+'<h4>No picks published yet</h4><p>New monthly sets are released on the first business day.</p></div>')+
       '</main>','holdings',function(){
         wireSubSwitcher();
@@ -491,6 +527,14 @@
           if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast(t+' copied');}).catch(function(){toast(t);});
           else toast(t);
         });});
+        // V20.3 — "Copy all" copies every ticker (space-separated) so a member can paste
+        // the whole month's basket straight into a broker watchlist in one go.
+        var copyAll=appEl.querySelector('[data-copyall]');
+        if(copyAll)copyAll.addEventListener('click',function(){
+          var all=stocks.map(function(s){return (s.ticker||'').toUpperCase();}).filter(Boolean).join(' ');
+          if(navigator.clipboard&&all)navigator.clipboard.writeText(all).then(function(){toast(stocks.length+' tickers copied');}).catch(function(){toast('Tickers copied');});
+          else toast(all?'Tickers copied':'Nothing to copy');
+        });
         // capital calculator — re-render WITHOUT replaying entrance animations
         var capIn=document.getElementById('capIn');
         function applyCap(v){capital=Math.max(0,Math.round(Number(String(v).replace(/[^0-9.]/g,''))||0));capitalCurr=curr;renderHoldings(token,sub,stocks,active,{skipFx:true});}
@@ -514,6 +558,17 @@
       });
   }
   function tile(k,v,s,cls){return '<div class="tile'+(cls?' '+cls:'')+'"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
+  // V20.0 — the "Broker" KPI tile now carries the linked broker's REAL logo badge
+  // (white glyph on its brand colour, or Groww's two-tone badge), so the picks
+  // screen visibly reflects where a one-tap order will land — tying the new brand
+  // marks into the Holdings KPI row. Falls back gracefully if no logo is present.
+  function tileBroker(){
+    var b=MFCBrokers.current();
+    var badge=b.logo?'<span class="tb-badge" style="background:'+b.color+'">'+b.logo+'</span>':'';
+    return '<div class="tile tile-broker"><div class="t-k">Broker</div>'+
+      '<div class="t-v tb-v">'+badge+'<span class="tb-nm">'+esc(b.name)+'</span></div>'+
+      '<div class="t-s">tap a pick to buy</div></div>';
+  }
   function tileNum(k,num,suffix,s){return '<div class="tile"><div class="t-k">'+esc(k)+'</div><div class="t-v"><span class="v-flow" data-count="'+num+'" data-suffix="'+(suffix||'')+'">'+num+(suffix||'')+'</span></div><div class="t-s">'+esc(s||'')+'</div></div>';}
   // V18.2 — the "Renews in" KPI carries a mini countdown ring (days left of a
   // ~monthly cycle); gold once ≤7 days out. Draws in with the tile entrance on
@@ -535,21 +590,44 @@
   // ════════════════════════════════════════════════════════════════════════════
   //  SCANNER  (links to the existing web tools)
   // ════════════════════════════════════════════════════════════════════════════
+  // The four style factors the Scanner scores every NSE name on. Colours match the
+  // per-strategy accent palette (STRAT_ACCENT) so the app reads as one system; each
+  // lens carries an inline-SVG glyph in a tinted medallion + a plain-English one-liner.
+  var FACTOR_LENSES=[
+    {nm:'Value',   grad:'linear-gradient(135deg,#0891b2,#2dd4bf)', d:'Priced low vs. earnings, book & cash flow',
+      ic:'<path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0l-7-7A2 2 0 013 12.2V4a2 2 0 012-2h8.2a2 2 0 011.4.6l7 7a2 2 0 010 2.8z"/><path d="M7.5 7.5h.01"/>'},
+    {nm:'Quality', grad:'linear-gradient(135deg,#1a50d8,#3b82f6)', d:'Strong balance sheet, high return on capital',
+      ic:'<path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>'},
+    {nm:'Growth',  grad:'linear-gradient(135deg,#7c3aed,#a855f7)', d:'Rising sales, profits & margins',
+      ic:'<path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/>'},
+    {nm:'Momentum',grad:'linear-gradient(135deg,#d97706,#f59e0b)', d:'Price & earnings trending higher',
+      ic:'<path d="M13 2L3 14h7l-1 8 10-12h-7z"/>'}
+  ];
+  function lensGridHTML(){
+    return '<div class="lens-grid">'+FACTOR_LENSES.map(function(f,i){
+      return '<div class="lens" style="--lc:'+f.grad+';animation-delay:'+(i*55)+'ms">'+
+        '<span class="lens-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+f.ic+'</svg></span>'+
+        '<div class="lens-nm">'+esc(f.nm)+'</div><div class="lens-d">'+esc(f.d)+'</div></div>';
+    }).join('')+'</div>';
+  }
   function viewScanner(){
     render(appbarHTML({})+
       '<main class="screen intro">'+
         '<div class="eyebrow">Free tools</div>'+
         '<h1 class="h-title">Research the market</h1>'+
-        '<p class="h-sub">The full NSE Scanner and the Integrity Score scorecards, refreshed daily.</p>'+
+        '<p class="h-sub">The full NSE Scanner and Integrity Score scorecards, refreshed daily — plus the monthly India Factor Report.</p>'+
         toolCard('Scanner','Filter 2,100+ NSE stocks on value, quality, growth & momentum factors.','#1a50d8',C.SCREENER_URL,'M11 4a7 7 0 105.2 11.7L21 21')+
         toolCard('Integrity Score','Every NSE company graded 0–100 on Quality and Value.','#0891b2',C.SITE_URL+'/scores/','M3 3v18h18M7 14l3-3 3 3 5-6')+
-        '<p class="note" style="margin-top:14px">These open the live tools on mindforgecapital.com in your browser.</p>'+
+        toolCard('Factor Report','This month’s India factor scoreboard — which styles are leading, ranked by trailing return.','#7c3aed',C.SITE_URL+'/factor-report/','M3 20h18M6 20v-4M12 20v-8M18 20v-12','Updated monthly')+
+        '<div class="list-h"><span class="lt">The four factor lenses</span><span class="ls">scored daily</span></div>'+
+        lensGridHTML()+
+        '<p class="note" style="margin-top:14px">The Scanner and scorecards open the live tools on mindforgecapital.com in your browser.</p>'+
       '</main>','scanner');
   }
-  function toolCard(name,desc,color,url,icon){
+  function toolCard(name,desc,color,url,icon,cadence){
     return '<a class="sub-card rise" href="'+esc(url)+'" target="_blank" rel="noopener" style="margin-bottom:12px;text-decoration:none;color:inherit">'+
       '<div class="sc-ico" style="background:'+color+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+icon+'"/></svg></div>'+
-      '<div class="sc-body"><div class="sc-name">'+esc(name)+'</div><div class="sc-meta">'+esc(desc)+'</div><span class="live-tag"><span class="live-dot"></span>Live · refreshed daily</span></div>'+
+      '<div class="sc-body"><div class="sc-name">'+esc(name)+'</div><div class="sc-meta">'+esc(desc)+'</div><span class="live-tag"><span class="live-dot"></span>'+esc(cadence||'Live · refreshed daily')+'</span></div>'+
       '<div class="sc-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div></a>';
   }
 
@@ -598,7 +676,7 @@
         }).join(''):'<div class="note">No subscriptions on file.</div>')+
 
         '<div class="list-h"><span class="lt">Support</span></div>'+
-        '<a class="broker-opt" href="'+C.WHATSAPP_URL+'" target="_blank" rel="noopener"><div class="broker-logo" style="background:#25D366"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-8.5 8.5 8.5 8.5 0 01-3.8-.9L3 20l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 018.5-8.5 8.38 8.38 0 018.5 8.5z"/></svg></div><div class="bo-body"><div class="bo-name">WhatsApp support</div><div class="bo-sub">Renewals, billing &amp; help</div></div></a>'+
+        '<a class="broker-opt" href="'+C.WHATSAPP_URL+'" target="_blank" rel="noopener"><div class="broker-logo" style="background:#25D366">'+WA_LOGO+'</div><div class="bo-body"><div class="bo-name">WhatsApp support</div><div class="bo-sub">Renewals, billing &amp; help</div></div></a>'+
         '<a class="broker-opt" href="'+C.SITE_URL+'/recover.html" target="_blank" rel="noopener"><div class="broker-logo" style="background:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7.5l9 6 9-6"/></svg></div><div class="bo-body"><div class="bo-name">Email me my dashboard links</div><div class="bo-sub">Recover web access</div></div></a>'+
 
         '<div class="list-h"><span class="lt">Appearance</span></div>'+
@@ -637,7 +715,7 @@
     }).join('');
     // Kite Connect (API) tier
     if(MFCBrokers.kiteEnabled()){
-      html+='<a class="broker-opt" href="'+esc(MFCBrokers.kiteLoginUrl())+'"><div class="broker-logo" style="background:#387ed1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg></div><div class="bo-body"><div class="bo-name">Connect Zerodha (live)</div><div class="bo-sub">Kite Connect · live holdings &amp; in-app orders</div></div><div class="bo-state">Connect</div></a>';
+      html+='<a class="broker-opt" href="'+esc(MFCBrokers.kiteLoginUrl())+'"><div class="broker-logo" style="background:#387ed1">'+((MFCBrokers.get('kite')||{}).logo||'')+'</div><div class="bo-body"><div class="bo-name">Connect Zerodha (live)</div><div class="bo-sub">Kite Connect · live holdings &amp; in-app orders</div></div><div class="bo-state">Connect</div></a>';
     }else{
       html+='<div class="note amber" style="margin-top:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> <b>Live account linking</b> (Kite Connect — real holdings &amp; in-app orders) is built in and activates once a Kite Connect API key is configured. Until then, the deeplinks above give you one-tap, pre-filled orders.</div>';
     }
@@ -653,6 +731,7 @@
   //  ROUTER
   // ════════════════════════════════════════════════════════════════════════════
   function router(){
+    pendingNav=true;                    // V20.3 — the next render() plays the route transition
     var hash=location.hash||'';
     if(!MFCStore.isSignedIn()&&hash!=='#/login'){location.replace('#/login');return;}
     if(hash==='#/login'){if(MFCStore.isSignedIn()){location.replace('#/home');return;}return viewLogin();}

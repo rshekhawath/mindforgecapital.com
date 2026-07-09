@@ -31,19 +31,25 @@
    brand-tinted navy — not flat black — so the blue→teal gradient identity reads
    as *more* premium in the dark. Only variables change; every component inherits.
    ────────────────────────────────────────────────────────────────────────── */
+/* V19.9 — dark tokens now MATCH the website (docs/ mfc-finish.css V17.4): the deep
+   #080d1a page, #121d33 cards, the #2f5fe0/#5b8def/#83aaff accent ramp, #28bcd8 teal,
+   #16c78d green, #f0a836 gold, and rgba(150,180,240,·) borders — so the app and the
+   site read as ONE product in dark. Elevation is the site's luminance model too:
+   cards float on a soft brand-blue glow + a top light-catch, not a black drop-shadow
+   (neutral shadows vanish on a dark slab). */
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --accent:#6aa1ff; --accent2:#5b9dff; --accent3:#7db0ff; --teal:#22c3e6; --mint:#2dd4bf;
-  --green:#34d399; --red:#f87171; --gold:#fbbf24;
-  --bg:#0a1020; --card:#131d34; --ink:#eef3fc; --ink2:#bcccea; --ink3:#8595b6;
-  --line:rgba(125,160,240,0.14); --line2:rgba(125,160,240,0.24);
-  --field:rgba(255,255,255,.05); --field-focus:#17223c; --cell:rgba(255,255,255,.045);
-  --appbar-bg:rgba(10,16,32,.72); --tabbar-bg:rgba(15,22,40,.82);
-  --toast-bg:#283452; --skeleton-a:#16203a; --skeleton-b:#202c49;
-  --glass:rgba(255,255,255,.06); --amber-ink:#fcd34d;
+  --accent:#2f5fe0; --accent2:#5b8def; --accent3:#83aaff; --teal:#28bcd8; --mint:#2dd4bf;
+  --green:#16c78d; --red:#f87171; --gold:#f0a836;
+  --bg:#080d1a; --card:#121d33; --ink:#e7edfb; --ink2:#b2c2de; --ink3:#8698b7;
+  --line:rgba(150,180,240,0.16); --line2:rgba(150,180,240,0.30);
+  --field:rgba(255,255,255,.05); --field-focus:#1b2740; --cell:rgba(255,255,255,.045);
+  --appbar-bg:rgba(8,13,26,.74); --tabbar-bg:rgba(14,21,38,.84);
+  --toast-bg:#243352; --skeleton-a:#121d33; --skeleton-b:#1b2740;
+  --glass:rgba(255,255,255,.06); --amber-ink:#f0c476;
   --track:rgba(255,255,255,.09); --dbg:rgba(255,255,255,.08);
   --grad:linear-gradient(135deg,#3b82f6 0%,#2563eb 46%,#0891b2 100%);
-  --shadow:0 1px 2px rgba(0,0,0,.45),0 18px 44px -22px rgba(0,0,0,.72);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 2px 10px -4px rgba(0,0,0,.5),0 18px 42px -22px rgba(47,95,224,.30);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:rgba(26,80,216,.10);}
 html,body{height:100%;}
@@ -941,3 +947,356 @@ html,body{overflow-x:clip;}
   .alloc-body{grid-template-columns:104px 1fr;gap:12px;}
   .donut-wrap{width:104px;height:104px;}
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V19.8 — SCANNER "FACTOR LENSES" MODULE
+   ----------------------------------------------------------------------------
+   The Scanner was the app's sparsest screen — two tool cards, then a large empty
+   band on phones (the polish lived on the cards, but the screen had little to say
+   below them). It now closes with a signature education module: the four style
+   factors the Scanner scores every NSE name on (Value / Quality / Growth /
+   Momentum), each a compact card with a tinted-gradient medallion glyph + a
+   plain-English one-liner, in a 2×2 grid. Colours reuse the per-strategy accent
+   palette (STRAT_ACCENT) so the app reads as one system; a new Factor Report tool
+   card cross-links the site's monthly report. Additive, brand-matched,
+   reduced-motion-safe, dark-consistent (all fills flow through the tokens). The
+   cards inherit the screen's `.intro` stagger-in; the medallions carry the same
+   glass sheen + resting shadow as the Home/Account icon tiles. No layout shift,
+   no horizontal overflow.
+   ════════════════════════════════════════════════════════════════════════════ */
+.lens-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lens{position:relative;overflow:hidden;background:var(--card);border:.5px solid var(--line2);
+  border-radius:var(--r);box-shadow:var(--shadow);padding:14px 14px 15px;
+  transition:transform .16s var(--ease),box-shadow .22s var(--ease);}
+/* a slim colour-of-the-factor rail on top (mirrors .tile::before / .card-grad) */
+.lens::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--lc);opacity:.9;}
+.lens:active{transform:scale(.985);}
+@media(hover:hover){.lens:hover{transform:translateY(-2px);
+  box-shadow:0 1px 2px rgba(12,24,49,.05),0 18px 40px -22px rgba(26,80,216,.42);}}
+.lens-ic{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;
+  color:#fff;background:var(--lc);position:relative;overflow:hidden;box-shadow:0 7px 16px -9px rgba(26,80,216,.5);}
+.lens-ic svg{width:21px;height:21px;position:relative;z-index:1;}
+/* same glassy top-light sheen the V13.7 icon tiles carry, so the medallion reads
+   as a crafted app icon rather than a flat colour square */
+.lens-ic::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(159deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.06) 46%,transparent 62%);}
+.lens-nm{font-weight:800;font-size:15.5px;letter-spacing:-.01em;margin-top:11px;}
+.lens-d{font-size:12px;color:var(--ink3);line-height:1.4;margin-top:3px;}
+@media(prefers-reduced-motion:reduce){.lens{transition:none!important;}.lens:active{transform:none!important;}}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V19.9 — WEBSITE-ALIGNED DARK PALETTE + REAL BROKER LOGOS
+   ----------------------------------------------------------------------------
+   The dark token block near the top of this file now mirrors the website's
+   (docs/ mfc-finish.css) dark palette + luminance elevation, so app and site read
+   as one product. This block covers the new REAL BROKER MARKS: each broker tile
+   (Account "Linked broker" rows + the Kite Connect row) now renders a clean,
+   original inline-SVG brand glyph — Zerodha's bird, Groww's growth arrow, Upstox's
+   "U", WhatsApp's phone-in-bubble — white on the broker's own colour, replacing
+   the old single-letter placeholders. The .broker-logo glass sheen (V13.7) already
+   raises the glyph above it (svg z-index:1). Here we (a) size those glyphs to the
+   42px tile and (b) carry the LINKED broker's mark onto the Holdings "Buy on …"
+   CTA — white glyph on the blue gradient button, so the primary action is branded.
+   ════════════════════════════════════════════════════════════════════════════ */
+.broker-logo svg{display:block;}
+/* linked-broker mark on the Buy CTA — small, white, ahead of the label (the .btn
+   is inline-flex with gap:8, so it sits neatly before "Buy on …"). */
+.bk-glyph{display:inline-flex;align-items:center;justify-content:center;margin:-2px 0;}
+.bk-glyph svg{width:17px;height:17px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.18));}
+/* the Groww / Upstox marks are stroke-drawn — keep their stroke crisp at button size */
+.bk-glyph svg[stroke]{stroke-width:2.4;}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.0 — REAL BROKER MARKS + BRANDED "BROKER" KPI TILE
+   ----------------------------------------------------------------------------
+   The four brand marks (Account "Linked broker" rows, the Kite Connect row, the
+   WhatsApp support tile and the Holdings "Buy on …" CTA) are now the REAL logos:
+   Zerodha's corporate mark, WhatsApp's official glyph, Groww's true two-tone
+   chart-wave badge and Upstox's "u" spiral (lifted from the Upstox brand vector).
+   Here the Holdings "Broker" KPI tile picks up a small brand badge carrying that
+   same real mark, so the picks screen visibly shows where a one-tap order lands.
+   Groww's badge is a full-bleed two-tone SVG (it carries preserveAspectRatio),
+   so the attribute-selector lets it fill the badge while the white-glyph marks
+   stay centred at a legible size. Reduced-motion-safe; light + dark via tokens.
+   ════════════════════════════════════════════════════════════════════════════ */
+.tile-broker .tb-v{display:flex;align-items:center;gap:8px;font-size:16px;line-height:1.2;}
+.tb-badge{width:26px;height:26px;flex-shrink:0;border-radius:8px;overflow:hidden;position:relative;
+  display:inline-flex;align-items:center;justify-content:center;color:#fff;
+  box-shadow:0 5px 12px -7px rgba(12,24,49,.5),inset 0 1px 0 rgba(255,255,255,.14);}
+.tb-badge svg{width:16px;height:16px;display:block;}
+/* Groww's full-bleed two-tone badge (its SVG carries preserveAspectRatio) fills
+   the whole chip instead of sitting as a centred glyph. */
+.tb-badge svg[preserveAspectRatio]{width:100%;height:100%;}
+.tb-nm{font-weight:800;letter-spacing:-.01em;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;}
+/* the same glassy top-light sheen the other icon tiles carry (V13.7) */
+.tb-badge::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(159deg,rgba(255,255,255,.32) 0%,rgba(255,255,255,.05) 46%,transparent 62%);}
+.tb-badge svg{position:relative;z-index:1;}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.1 — TIME-AWARE HOME GREETING + BROKER-GLYPH & SUPPORT-ROW POLISH
+   ----------------------------------------------------------------------------
+   Three cohesive touches, all additive / brand-matched / reduced-motion-safe /
+   dark-consistent (fills flow through the tokens):
+     1) LIVING GREETING — the Home hero now opens with a time-of-day salutation
+        (app.js · greeting()) whose eyebrow drops the gradient bar for a small
+        sun/moon medallion + today's date, and whose colour-of-day accent shifts
+        with the member's real local hour (morning gold → afternoon blue → evening
+        indigo). The medallion carries a soft, slow glow (frozen for reduced-motion).
+     2) BROKER "BUY" GLYPH — the linked-broker mark on the Holdings "Buy on …" CTA
+        (and the Broker KPI badge) reads as a crafted mini app-icon: Groww's
+        full-bleed two-tone badge gets rounded corners + a hairline edge instead of
+        rendering as a raw hard-edged square on the blue button.
+     3) SUPPORT-ROW NAME INK — the Account "Support" rows are <a> tags, so their
+        .bo-name used to inherit the anchor's accent blue while the (div) broker
+        rows stayed ink; pin .bo-name to --ink so every row title reads the same.
+   ════════════════════════════════════════════════════════════════════════════ */
+/* 1) LIVING GREETING — time-of-day eyebrow medallion + colour-of-day accent */
+.eyebrow-tod{gap:9px;}
+.eyebrow-tod::before{display:none;}          /* the medallion replaces the bar */
+.tod-ic{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;
+  border-radius:7px;color:#fff;background:var(--tod);flex-shrink:0;
+  box-shadow:0 4px 11px -4px var(--tod-sh),inset 0 1px 0 rgba(255,255,255,.28);}
+.tod-ic svg{width:13px;height:13px;}
+.tod-morn{--tod:linear-gradient(135deg,#f59e0b,#fbbf24);--tod-sh:rgba(245,158,11,.62);}
+.tod-noon{--tod:linear-gradient(135deg,#0891b2,#2563eb);--tod-sh:rgba(8,145,178,.58);}
+.tod-eve{--tod:linear-gradient(135deg,#6366f1,#8b5cf6);--tod-sh:rgba(99,102,241,.58);}
+@media(prefers-reduced-motion:no-preference){
+  .tod-ic{animation:tod-glow 3.8s ease-in-out infinite;}
+}
+@keyframes tod-glow{0%,100%{box-shadow:0 4px 11px -4px var(--tod-sh),inset 0 1px 0 rgba(255,255,255,.28);}
+  50%{box-shadow:0 6px 17px -3px var(--tod-sh),inset 0 1px 0 rgba(255,255,255,.28);}}
+@media(prefers-reduced-motion:reduce){.tod-ic{animation:none!important;}}
+
+/* 2) BROKER "BUY" GLYPH — round Groww's full-bleed badge so it reads as a mini
+   app-icon on the CTA / KPI badge rather than a raw square (the white-glyph marks
+   are transparent-bg so rounding is a no-op for them). */
+.bk-glyph svg[preserveAspectRatio]{border-radius:5px;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.28);}
+.tb-badge svg[preserveAspectRatio]{border-radius:inherit;}
+
+/* 3) SUPPORT-ROW NAME INK — titles read as ink on every broker-opt row */
+.broker-opt .bo-name{color:var(--ink);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.2 · app-package v1.1.0 — CROSS-PLATFORM MOBILE HARDENING
+   ----------------------------------------------------------------------------
+   A full QA pass found the app already saturated (V11.9→V20.1: tokenised spacing
+   & type, safe-area insets, reduced-motion + dark parity everywhere). These are
+   the genuine remaining iOS/Android compatibility gaps — additive, low-risk, no
+   layout change, no horizontal overflow:
+     1) TEXT-SIZE LOCK — pin text-size-adjust so a landscape rotation or the OS
+        "Larger Text" setting can't auto-inflate copy, break the hand-tuned type
+        scale, or induce sideways overflow (a classic iOS Safari ↔ Android WebView
+        rendering discrepancy).
+     2) NATIVE-FEEL LONG-PRESS — suppress the iOS long-press callout on app CHROME
+        only (buttons, tab bar, icon medallions, brand logos) so press-and-hold on
+        a control doesn't pop "Copy / Share / Save Image". Body text, tickers and
+        support links stay fully selectable.
+     3) BRAND CARET — the text caret in the email / OTP / capital fields picks up
+        the accent instead of the platform-default black bar.
+   ════════════════════════════════════════════════════════════════════════════ */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+button,.btn,.tab,.seg-btn,.broker-logo,.sc-ico,.tb-badge,.acct-av,.lens-ic,.tod-ic,
+.bk-glyph,.boot-logo,.appbar .logo img{-webkit-touch-callout:none;}
+.input,.otp-inputs input{caret-color:var(--accent2);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.3 — NATIVE PAGE TRANSITIONS + "COPY ALL" BASKET UTILITY
+   ----------------------------------------------------------------------------
+   Two additive upgrades, both brand-matched / dark-consistent / reduced-motion-safe:
+
+   1) NATIVE PAGE TRANSITION. Every genuine navigation (a tab tap, a drill into a
+      strategy, a back) now plays a subtle whole-screen "push": the incoming
+      `.screen` scales up from .986 + rises 5px + fades in over .33s. It layers
+      over — never fights — the existing per-element `.rise`/`.intro` stagger (those
+      move the hero content on the Y axis; this settles the whole surface forward),
+      giving the app a cohesive, iOS-like screen-change feel instead of a hard swap.
+      Gated in JS (app.js · pendingNav) to ROUTE changes only, so the in-place
+      Holdings capital re-render never replays it. transform-origin is pinned to the
+      top so a tall scroll view grows downward (the top edge stays put under the
+      sticky app-bar). `.screen` is a sibling of the fixed tab-bar + sticky app-bar,
+      so the transform is fully contained — no chrome ever moves, no overflow.
+
+   2) "COPY ALL" — the Stock-picks header carries a tappable chip that copies every
+      ticker (space-separated) to the clipboard, so a member can paste the whole
+      month's basket into a broker watchlist in one action (app.js wires it; a toast
+      confirms "N tickers copied"). Styled as the existing `.preset`/`.chip-mini`
+      tap-chips so it belongs, with the same tactile press-scale.
+   ════════════════════════════════════════════════════════════════════════════ */
+@media(prefers-reduced-motion:no-preference){
+  .screen.route-in{animation:route-in .33s var(--ease) both;transform-origin:50% 0;}
+}
+@keyframes route-in{from{opacity:0;transform:scale(.986) translateY(5px);}to{opacity:1;transform:none;}}
+
+.list-h .copy-all{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.01em;
+  color:var(--accent);background:rgba(37,99,235,.07);border:1px solid var(--line2);border-radius:10px;padding:6px 11px;
+  align-self:center;transition:transform .14s var(--ease),background .15s,box-shadow .2s;}
+.list-h .copy-all svg{width:13px;height:13px;}
+.list-h .copy-all:active{transform:scale(.95);}
+@media(hover:hover){.list-h .copy-all:hover{background:rgba(37,99,235,.13);box-shadow:0 6px 16px -10px rgba(26,80,216,.5);}}
+@media(prefers-reduced-motion:reduce){.list-h .copy-all{transition:none!important;}}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.4 — LIGHT-MODE LUMINANCE UPLIFT  +  BROKER-TILE FIT FIX
+   ----------------------------------------------------------------------------
+   The dark theme already carries a bespoke luminance model (V17.4/V19.9: cards
+   float on a soft brand-glow + a top light-catch). LIGHT mode, by contrast, was
+   flat-white cards on a pale-blue field. This block gives light the same crafted
+   materiality — WITHOUT touching dark (every rule is scoped to
+   `:root[data-theme="light"]`, which theme.js always resolves before first paint).
+   All additive, static (nothing to freeze for reduced-motion), no layout shift,
+   no horizontal overflow:
+
+     1) LIT-GLASS SURFACES — every card/tile/holding/sub-card/lens/broker row picks
+        up a whisper-subtle top-lit vertical gradient (bright top → faint cool base)
+        so a surface reads as a physical, lit pane of glass rather than a flat
+        rectangle. Driven by a new --surface token so it stays one edit.
+     2) LAYERED ELEVATION — the light --shadow token becomes a three-stop shadow
+        (a crisp inset top light-catch + a soft near shadow + a deep brand-tinted
+        ambient), so cards sit ON the page with real depth. Every var(--shadow)
+        surface inherits it for free — no per-component override, no specificity war.
+     3) SIGNATURE BRAND AURA — the two hero data cards (Home "Your portfolio"
+        overview + the sector-allocation card) and the Login card gain a soft
+        blue→teal corner glow, marking them as the app's centrepieces. Painted as a
+        background layer so it's clipped to the card's radius (no overflow).
+     4) GLOSSY PRIMARY CTA — the gradient button gains an inner top highlight + a
+        second near-shadow, so it reads as a glossy, pressable pill.
+     5) RECESSED INPUT WELLS — the email + capital fields get a faint inset shadow
+        so they read as recessed wells (OTP boxes keep their own filled treatment).
+
+   FIX (both themes): the Holdings "Broker" KPI tile regained a two-line wrap on
+   ≤360px once V20.0 added the broker badge beside the name — the badge ate the
+   width the V16.5 one-line fit relied on. The value type + badge shrink a touch so
+   "Zerodha Kite" sits on one line again on common Android widths.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── FIX · Broker KPI tile fit (theme-agnostic) ─────────────────────────────── */
+.tile-broker .tb-v{font-size:15px;gap:7px;}
+.tb-badge{width:24px;height:24px;border-radius:7px;}
+.tb-badge svg{width:15px;height:15px;}
+
+/* ── 2) LAYERED ELEVATION — richer light shadow (inset light-catch + depth) ──── */
+:root[data-theme="light"]{
+  --surface:linear-gradient(180deg,#ffffff 0%,#fafcff 55%,#f5f8ff 100%);
+  --shadow:inset 0 1px 0 rgba(255,255,255,.85),
+    0 1px 2px rgba(12,24,49,.05),
+    0 5px 12px -6px rgba(26,80,216,.16),
+    0 22px 44px -26px rgba(26,80,216,.34);
+}
+
+/* ── 1) LIT-GLASS SURFACES — subtle top-lit pane on every card-like surface ──── */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .tile,
+:root[data-theme="light"] .holding,
+:root[data-theme="light"] .sub-card,
+:root[data-theme="light"] .lens,
+:root[data-theme="light"] .broker-opt{background:var(--surface);}
+
+/* ── 3) SIGNATURE BRAND AURA — hero data cards + Login card get a corner glow.
+   Layered as a background (clipped to the rounded box — no overflow) so it sits
+   over the lit-glass surface. Same specificity as the rule above; declared after
+   so it wins for these three surfaces. ──────────────────────────────────────── */
+:root[data-theme="light"] .card-grad,
+:root[data-theme="light"] .alloc-card{
+  background:
+    radial-gradient(135% 105% at 100% 0%, rgba(8,145,178,.06) 0%, transparent 52%),
+    radial-gradient(120% 100% at 0% 100%, rgba(26,80,216,.045) 0%, transparent 55%),
+    var(--surface);
+}
+
+/* ── 4) GLOSSY PRIMARY CTA — inner top highlight + a second near-shadow ──────── */
+:root[data-theme="light"] .btn-primary{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.30),
+    0 2px 6px -2px rgba(26,80,216,.40),
+    0 12px 24px -12px rgba(26,80,216,.72);}
+
+/* ── 5) RECESSED INPUT WELLS — email + capital fields only (OTP keeps its own
+   filled/focus treatment; both states are declared so the focus ring survives) ─ */
+:root[data-theme="light"] .field .input,
+:root[data-theme="light"] .calc .input{box-shadow:inset 0 1px 2px rgba(12,24,49,.055);}
+:root[data-theme="light"] .field .input:focus,
+:root[data-theme="light"] .calc .input:focus{
+  box-shadow:inset 0 1px 2px rgba(12,24,49,.05),0 0 0 4px rgba(37,99,235,.12);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.5 — MODERN SHELL: FLOATING GLASS TAB DOCK · PILL ACTIONS · QUIET APP BAR
+   ----------------------------------------------------------------------------
+   The app's structural chrome still read as 2014 iOS: a full-width bottom tab
+   bar welded to the screen edges with a top-indicator line, squarish 13px
+   buttons, and an always-on app-bar hairline. This release modernises the SHELL
+   itself (the part every screen shares), not another content surface:
+
+     1) FLOATING GLASS TAB DOCK — the tab bar detaches from the edges into a
+        centred, fully-rounded "island" (12px off the bottom, max 400px wide)
+        with stronger glass (blur + saturate), a hairline edge and a real
+        floating shadow. The active tab drops the 2014 top-indicator + radial
+        glow for a soft brand-tinted CAPSULE behind the icon (the iOS 18 /
+        Material 3 idiom) that pops in with a spring. Content scrolls beneath
+        the dock through the glass.
+     2) PILL ACTION LANGUAGE — every action control goes fully rounded: primary
+        / ghost CTAs, the small "Buy on …" button, capital presets, copy chips,
+        the Renew pill and the app-bar icon buttons (now circular) + strategy-
+        switcher pill. One geometry for everything tappable.
+     3) QUIET APP BAR — the gradient hairline (and its elevation shadow) now
+        fade in only once the screen scrolls; at rest the header sits flush on
+        the page for an edge-less, cleaner open.
+     4) SOFTER GEOMETRY — the radius tokens ease up (16→18 · 11→12 · 22→24) so
+        cards/tiles/holdings read as today's softer, friendlier surfaces.
+
+   All additive overrides at the end of the cascade; both themes via tokens;
+   reduced-motion freezes the capsule spring (covered by the V11.9 reduce block
+   that already kills .tab.active::before animation). The dock stays fixed —
+   route transitions transform .screen only, so no chrome ever moves.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 4) SOFTER GEOMETRY — token-level, every surface inherits ─────────────── */
+:root{--r:18px;--r-sm:12px;--r-lg:24px;}
+
+/* ── 1) FLOATING GLASS TAB DOCK ───────────────────────────────────────────── */
+.tabbar{
+  left:14px;right:14px;bottom:calc(var(--safe-bottom) + 12px);
+  margin:0 auto;max-width:400px;
+  height:var(--tabbar-h);padding:0 8px;
+  border:.5px solid var(--line2);border-top:.5px solid var(--line2);
+  border-radius:999px;overflow:hidden;
+  -webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);
+  box-shadow:0 2px 8px -4px rgba(12,24,49,.16),0 24px 48px -22px rgba(26,80,216,.5),
+    inset 0 1px 0 rgba(255,255,255,.5);
+}
+:root[data-theme="dark"] .tabbar{
+  box-shadow:0 2px 10px -4px rgba(0,0,0,.5),0 24px 48px -22px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.08);
+}
+/* the screen + toast clear the floating dock (it sits 12px off the bottom now) */
+.screen{padding-bottom:calc(var(--tabbar-h) + var(--safe-bottom) + 38px);}
+.toast{bottom:calc(var(--tabbar-h) + var(--safe-bottom) + 30px);}
+
+/* active tab — brand-tinted capsule behind the icon (replaces the top bar + glow) */
+.tab.active::before{
+  content:'';position:absolute;top:7px;left:50%;width:54px;height:29px;
+  border-radius:999px;background:linear-gradient(135deg,rgba(26,80,216,.14),rgba(8,145,178,.12));
+  box-shadow:inset 0 0 0 .5px rgba(26,80,216,.10);
+  transform:translateX(-50%);animation:tab-cap .38s var(--ease);
+}
+@keyframes tab-cap{0%{transform:translateX(-50%) scale(.55);opacity:0;}
+  60%{transform:translateX(-50%) scale(1.1);}100%{transform:translateX(-50%) scale(1);opacity:1;}}
+:root[data-theme="dark"] .tab.active::before{
+  background:linear-gradient(135deg,rgba(91,141,239,.22),rgba(40,188,216,.14));
+  box-shadow:inset 0 0 0 .5px rgba(131,170,255,.14);}
+/* retire the 2014 indicator's companion glow (both themes) */
+.tab.active::after,
+:root[data-theme="dark"] .tab.active::after{content:none;}
+.tab.active span{font-weight:800;}
+
+/* ── 2) PILL ACTION LANGUAGE — one fully-rounded geometry for every action ── */
+.btn,.btn-sm{border-radius:999px;}
+.appbar .ab-btn{border-radius:999px;}
+.preset,.chip-mini,.list-h .copy-all,.sc-renew{border-radius:999px;}
+
+/* ── 3) QUIET APP BAR — hairline + elevation only once the screen scrolls ─── */
+.appbar::after{opacity:0;transition:opacity .25s ease;}
+.appbar.scrolled::after{opacity:1;}
+
+/* hero titles breathe a touch more (modern large-title feel) */
+.h-title{font-size:28px;letter-spacing:-.025em;}

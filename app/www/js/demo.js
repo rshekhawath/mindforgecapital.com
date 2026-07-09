@@ -66,7 +66,7 @@
     b.textContent = 'DEMO';
     b.setAttribute('aria-hidden', 'true');
     b.style.cssText = 'position:fixed;z-index:200;left:10px;' +
-      'bottom:calc(var(--tabbar-h,62px) + env(safe-area-inset-bottom,0px) + 12px);' +
+      'bottom:calc(var(--tabbar-h,62px) + env(safe-area-inset-bottom,0px) + 22px);' +
       'background:#d97706;color:#fff;font:800 10px/1 -apple-system,BlinkMacSystemFont,sans-serif;' +
       'letter-spacing:.12em;padding:5px 9px;border-radius:7px;box-shadow:0 6px 16px -6px rgba(0,0,0,.45);pointer-events:none;';
     document.body.appendChild(b);

@@ -14,7 +14,9 @@
   "use strict";
   var KEY = 'mfc_app_theme_v1';
   // theme-color drives the iOS status bar / Android toolbar tint when installed.
-  var META = { dark: '#0a1020', light: '#1a50d8' };
+  // dark matches the V19.9 website-aligned page bg (--bg #080d1a) so the status
+  // bar blends into the app surface instead of sitting a shade lighter.
+  var META = { dark: '#080d1a', light: '#1a50d8' };
   var root = document.documentElement;
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
