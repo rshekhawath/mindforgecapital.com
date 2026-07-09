@@ -292,3 +292,30 @@ html[data-theme="dark"] .meta-pill{
   .nav-links{ gap:16px; }
 }
 .nav-links a:not(.nav-cta){ white-space:nowrap; }
+
+/* ============================================================================
+   V20.7 — CROSS-DOCUMENT VIEW TRANSITIONS (shared, additive, progressive)
+   ----------------------------------------------------------------------------
+   Same-origin page-to-page navigations now cross-fade with a whisper of lift
+   instead of hard-cutting, so the multi-page site (marketing pages, the five
+   strategy pages, the dashboard, factor report, FII/DII, auth …) reads as one
+   continuous, app-like surface. Purely progressive enhancement: browsers
+   without cross-document view-transition support just navigate normally, with
+   zero visual or behavioural change. Fully reduced-motion-safe — under the
+   reduce query every transition collapses to an instant cut.
+   Because this ships in the shared sheet loaded on EVERY page, both the old and
+   the new document opt in, which is what cross-document transitions require.
+   ========================================================================== */
+@view-transition { navigation: auto; }
+
+@keyframes mf-vt-out { from { opacity: 1; }                                  to { opacity: 0; } }
+@keyframes mf-vt-in  { from { opacity: 0; transform: translateY(7px) scale(.994); } to { opacity: 1; transform: none; } }
+
+::view-transition-old(root) { animation: mf-vt-out .16s ease both; }
+::view-transition-new(root) { animation: mf-vt-in  .34s cubic-bezier(.22,.8,.2,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}

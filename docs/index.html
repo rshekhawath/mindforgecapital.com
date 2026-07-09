@@ -3189,7 +3189,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=1760">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=1770">
 </head>
 <body>
 
@@ -5876,24 +5876,36 @@ section[id]{ scroll-margin-top: 80px; }
       if(idx < 0){ WORDS.unshift(current); idx = 0; }
 
       // Reserve the widest verb's width so " your portfolio." can never reflow.
-      var cs = getComputedStyle(em);
-      var meas = document.createElement("span");
-      meas.setAttribute("aria-hidden","true");
-      meas.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;pointer-events:none;";
-      meas.style.font = cs.fontStyle+" "+cs.fontWeight+" "+cs.fontSize+"/"+cs.lineHeight+" "+cs.fontFamily;
-      meas.style.letterSpacing = cs.letterSpacing;
-      document.body.appendChild(meas);
-      var maxW = 0;
-      WORDS.forEach(function(w){ meas.textContent = w; maxW = Math.max(maxW, meas.getBoundingClientRect().width); });
-      document.body.removeChild(meas);
+      // Re-measured on resize / orientation change so the reservation always
+      // tracks the CURRENT hero font size (it steps down on tablet & mobile) —
+      // a stale, once-only measurement would leave a wide gap or a late reflow
+      // after the accent word when the viewport changes.
+      function reserveWidth(){
+        var cs = getComputedStyle(em);
+        var meas = document.createElement("span");
+        meas.setAttribute("aria-hidden","true");
+        meas.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;pointer-events:none;";
+        meas.style.font = cs.fontStyle+" "+cs.fontWeight+" "+cs.fontSize+"/"+cs.lineHeight+" "+cs.fontFamily;
+        meas.style.letterSpacing = cs.letterSpacing;
+        document.body.appendChild(meas);
+        var maxW = 0;
+        WORDS.forEach(function(w){ meas.textContent = w; maxW = Math.max(maxW, meas.getBoundingClientRect().width); });
+        document.body.removeChild(meas);
+        em.style.minWidth = Math.ceil(maxW) + "px";
+      }
 
       var EASE = "cubic-bezier(.22,.8,.2,1)";
       var TRANS = "opacity .5s "+EASE+", transform .5s "+EASE;
       em.style.display    = "inline-block";
-      em.style.minWidth   = Math.ceil(maxW) + "px";
       em.style.textAlign  = "left";
       em.style.willChange = "opacity, transform";
       em.style.transition = TRANS;
+      reserveWidth();
+
+      var rzT;
+      window.addEventListener("resize", function(){
+        clearTimeout(rzT); rzT = setTimeout(reserveWidth, 150);
+      }, {passive:true});
 
       var OUT = 520, HOLD = 2900;
       function tick(){
