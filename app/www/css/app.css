@@ -1300,3 +1300,81 @@ button,.btn,.tab,.seg-btn,.broker-logo,.sc-ico,.tb-badge,.acct-av,.lens-ic,.tod-
 
 /* hero titles breathe a touch more (modern large-title feel) */
 .h-title{font-size:28px;letter-spacing:-.025em;}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V20.6 — GROUPED SURFACES & CONTEXT-AWARE CHROME
+   ----------------------------------------------------------------------------
+   The last "2014 iOS" signal after V20.5's modern shell was the LIST pattern:
+   every row (Account's brokers / subscriptions / support, Scanner's tools)
+   floated as its own bordered card with a 10–12px gap — card spam. This release
+   adopts today's INSET GROUPED LIST idiom (iOS Settings / Material 3):
+     1) .group — one rounded surface per section; rows lose their own card
+        chrome and sit on inset hairline separators; rows press-TINT (they live
+        inside one surface now) instead of lifting; the linked broker reads as
+        an inset accent rail + tint instead of a whole-card focus ring.
+     2) CONTEXT-AWARE APP BAR — at rest the bar shows the MindForge wordmark;
+        once the screen scrolls, it cross-fades into the current screen's title
+        (the native iOS collapsing-large-title feel). Driven by the existing
+        .scrolled toggle; app.js passes the title via appbarHTML({ctx}).
+     3) QUIETER WEIGHT BARS — the full-width 5px blue bar under every holding
+        (equal weights ⇒ all bars 100%) read as a heavy divider; slimmer + a
+        touch softer so the data reads without the noise.
+     4) SKELETON GEOMETRY PARITY — loading blocks share the card radius token.
+   All additive, both themes via tokens, reduced-motion-safe. No layout shift,
+   no horizontal overflow.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1) INSET GROUPED LISTS ─────────────────────────────────────────────────── */
+.group{background:var(--card);border:.5px solid var(--line2);border-radius:var(--r);
+  box-shadow:var(--shadow);overflow:hidden;}
+:root[data-theme="light"] .group{background:var(--surface);}
+:root[data-theme="dark"] .group{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);}
+.group>*{position:relative;}
+.group>.broker-opt,.group>.sub-card,.group>.card.acct-sub{
+  background:transparent;border:none;border-radius:0;box-shadow:none;margin:0!important;}
+/* theme-scoped row resets — the V20.4 lit-glass (light) and V15.6 elevation
+   (dark) per-row rules outrank the base reset above, so re-zero them here */
+:root[data-theme="light"] .group>.broker-opt,
+:root[data-theme="light"] .group>.sub-card,
+:root[data-theme="light"] .group>.card.acct-sub,
+:root[data-theme="dark"] .group>.broker-opt,
+:root[data-theme="dark"] .group>.sub-card,
+:root[data-theme="dark"] .group>.card.acct-sub{background:transparent;box-shadow:none;}
+/* inset hairline separators between rows */
+.group>*+*::before{content:'';position:absolute;top:0;left:16px;right:16px;height:.5px;background:var(--line2);}
+/* rows press-tint instead of lifting (they live inside one surface now) */
+.group>.sub-card,.group>.broker-opt{transition:background .18s ease;}
+.group>.sub-card:active,.group>.broker-opt:active,
+:root[data-theme="light"] .group>.sub-card:active,
+:root[data-theme="light"] .group>.broker-opt:active{transform:none;background:rgba(37,99,235,.06);}
+@media(hover:hover){
+  .group>.sub-card:hover,
+  :root[data-theme="light"] .group>.sub-card:hover{transform:none;box-shadow:none;background:rgba(37,99,235,.05);}
+  .group>.sub-card:hover .sc-ico{box-shadow:0 7px 16px -9px rgba(26,80,216,.40);}
+}
+:root[data-theme="dark"] .group>.sub-card:active,
+:root[data-theme="dark"] .group>.broker-opt:active{background:rgba(125,160,240,.10);}
+@media(hover:hover){:root[data-theme="dark"] .group>.sub-card:hover{background:rgba(125,160,240,.08);}}
+/* linked broker — inset accent rail + tint (replaces the whole-card ring) */
+.group>.broker-opt.linked,
+:root[data-theme="light"] .group>.broker-opt.linked{box-shadow:inset 3px 0 0 0 var(--accent2);background:rgba(37,99,235,.055);}
+:root[data-theme="dark"] .group>.broker-opt.linked{box-shadow:inset 3px 0 0 0 var(--accent3);background:rgba(125,160,240,.10);}
+
+/* ── 2) CONTEXT-AWARE APP BAR — wordmark ⇄ screen title on scroll ───────────── */
+/* the logo block doubles as the flexible spacer (app.js drops the .spacer div on
+   logo bars), so the absolute .ab-ctx gets exactly the free width every time */
+.appbar .logo{position:relative;flex:1;min-width:0;}
+.ab-brand{transition:opacity .22s ease,transform .22s var(--ease);}
+.ab-ctx{position:absolute;left:32px;right:0;top:50%;transform:translateY(calc(-50% + 9px));opacity:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:opacity .22s ease,transform .22s var(--ease);pointer-events:none;}
+.appbar.scrolled .ab-brand{opacity:0;transform:translateY(-9px);}
+.appbar.scrolled .ab-ctx{opacity:1;transform:translateY(-50%);}
+@media(prefers-reduced-motion:reduce){.ab-brand,.ab-ctx{transition:none!important;}}
+
+/* ── 3) QUIETER WEIGHT BARS ─────────────────────────────────────────────────── */
+.h-bar{height:4px;}
+.h-bar>i{opacity:.92;}
+
+/* ── 4) SKELETON GEOMETRY PARITY ────────────────────────────────────────────── */
+.skeleton{border-radius:var(--r-sm);}

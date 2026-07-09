@@ -163,10 +163,16 @@
 
   function appbarHTML(opts){
     opts=opts||{};
+    // V20.6 — context-aware app bar: at rest the bar shows the brand wordmark;
+    // once the screen scrolls (.scrolled), it cross-fades into the screen's own
+    // title (opts.ctx) — the native iOS collapsing-large-title feel. CSS-driven.
     return '<header class="appbar">'+
-      (opts.back?'<button class="ab-btn" data-back="1" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>':
-        '<div class="logo"><img src="assets/favicon-192.png" alt=""><span>MindForge</span></div>')+
-      '<div class="spacer"></div>'+
+      (opts.back?'<button class="ab-btn" data-back="1" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><div class="spacer"></div>':
+        // the logo block doubles as the flexible spacer, so .ab-ctx (absolute,
+        // left:32/right:0 inside it) always gets exactly the free width left by
+        // whatever right-side control this screen carries.
+        '<div class="logo"><img src="assets/favicon-192.png" alt=""><span class="ab-brand">MindForge</span>'+
+        (opts.ctx?'<span class="ab-ctx" aria-hidden="true">'+esc(opts.ctx)+'</span>':'')+'</div>')+
       (opts.right||'')+
     '</header>';
   }
@@ -355,12 +361,12 @@
       '<div class="empty">'+emptyIll('inbox')+'<h4>No subscriptions yet</h4><p>Subscribe to a strategy to see your monthly picks here.</p>'+
       '<a class="btn btn-primary" style="margin-top:14px" href="'+C.SIGNUP_URL+'" target="_blank" rel="noopener">Browse strategies →</a></div>';
 
+    var g=greeting();
     render(
-      appbarHTML({right:'<button class="ab-btn" data-hash="#/account" aria-label="Account"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></button>'})+
+      appbarHTML({ctx:g.t+', '+first,right:'<button class="ab-btn" data-hash="#/account" aria-label="Account"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg></button>'})+
       '<main class="screen">'+
-        (function(){var g=greeting();return ''+
           '<div class="eyebrow eyebrow-tod tod-'+g.k+' rise"><span class="tod-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+g.ic+'</svg></span>'+esc(todDate())+'</div>'+
-          '<h1 class="h-title rise">'+g.t+', <span class="gradtext">'+esc(first)+'</span>.</h1>';})()+
+          '<h1 class="h-title rise">'+g.t+', <span class="gradtext">'+esc(first)+'</span>.</h1>'+
         '<p class="h-sub rise">'+(active.length?('You have '+active.length+' active '+(active.length===1?'strategy':'strategies')+'. Tap one to view this cycle’s picks.'):'Your subscriptions appear below.')+'</p>'+
         pfOverviewHTML(active)+
         '<div class="list-h"><span class="lt">Your subscriptions</span>'+(subs.length?'<span class="ls">'+subs.length+(subs.length===1?' plan':' plans')+'</span>':'')+'</div>'+
@@ -382,13 +388,13 @@
     if(!token){
       if(active.length){currentToken=active[0].token;token=currentToken;}
       else{
-        render(appbarHTML({})+'<main class="screen"><div class="empty">'+emptyIll('chart')+'<h4>No active strategy</h4><p>Subscribe to a strategy to see its holdings.</p></div></main>','holdings');
+        render(appbarHTML({ctx:'Holdings'})+'<main class="screen"><div class="empty">'+emptyIll('chart')+'<h4>No active strategy</h4><p>Subscribe to a strategy to see its holdings.</p></div></main>','holdings');
         return;
       }
     }
     currentToken=token;
     // skeleton while loading
-    render(appbarHTML({right:subSwitcher(active,token)})+
+    render(appbarHTML({ctx:'This cycle’s picks',right:subSwitcher(active,token)})+
       '<main class="screen"><div class="skeleton" style="height:26px;width:55%;margin:6px 0 16px"></div>'+
       '<div class="tiles">'+[0,0,0,0].map(function(){return '<div class="skeleton" style="height:70px"></div>';}).join('')+'</div>'+
       '<div class="skeleton" style="height:96px;margin-top:14px"></div>'+
@@ -399,7 +405,7 @@
     var p=cached?Promise.resolve(cached):MFCApi.stocks(token).then(function(d){holdingsCache[token]={subscription:d.subscription,stocks:d.stocks};return holdingsCache[token];});
     p.then(function(d){renderHoldings(token,d.subscription,d.stocks,active);})
      .catch(function(err){
-       render(appbarHTML({right:subSwitcher(active,token)})+'<main class="screen"><div class="empty">'+emptyIll('alert',true)+'<h4>Couldn’t load your picks</h4><p>'+esc(err.message)+'</p><button class="btn btn-ghost" id="retry" style="margin-top:14px;width:auto;padding:11px 20px">Try again</button></div></main>','holdings',function(){
+       render(appbarHTML({ctx:'This cycle’s picks',right:subSwitcher(active,token)})+'<main class="screen"><div class="empty">'+emptyIll('alert',true)+'<h4>Couldn’t load your picks</h4><p>'+esc(err.message)+'</p><button class="btn btn-ghost" id="retry" style="margin-top:14px;width:auto;padding:11px 20px">Try again</button></div></main>','holdings',function(){
          wireSubSwitcher();var r=document.getElementById('retry');if(r)r.addEventListener('click',function(){viewHoldings(token);});
        });
      });
@@ -489,7 +495,7 @@
       '</div>';
     }
 
-    render(appbarHTML({right:subSwitcher(active,token)})+
+    render(appbarHTML({ctx:'This cycle’s picks',right:subSwitcher(active,token)})+
       '<main class="screen">'+
         '<div class="eyebrow">'+esc(strategyLabel(sub&&sub.strategy))+'</div>'+
         '<h1 class="h-title">This cycle’s picks</h1>'+
@@ -611,21 +617,25 @@
     }).join('')+'</div>';
   }
   function viewScanner(){
-    render(appbarHTML({})+
+    render(appbarHTML({ctx:'Research the market'})+
       '<main class="screen intro">'+
         '<div class="eyebrow">Free tools</div>'+
         '<h1 class="h-title">Research the market</h1>'+
         '<p class="h-sub">The full NSE Scanner and Integrity Score scorecards, refreshed daily — plus the monthly India Factor Report.</p>'+
+        // V20.6 — the three tools sit in ONE inset grouped list (hairline
+        // separators), not three floating cards.
+        '<div class="group">'+
         toolCard('Scanner','Filter 2,100+ NSE stocks on value, quality, growth & momentum factors.','#1a50d8',C.SCREENER_URL,'M11 4a7 7 0 105.2 11.7L21 21')+
         toolCard('Integrity Score','Every NSE company graded 0–100 on Quality and Value.','#0891b2',C.SITE_URL+'/scores/','M3 3v18h18M7 14l3-3 3 3 5-6')+
         toolCard('Factor Report','This month’s India factor scoreboard — which styles are leading, ranked by trailing return.','#7c3aed',C.SITE_URL+'/factor-report/','M3 20h18M6 20v-4M12 20v-8M18 20v-12','Updated monthly')+
+        '</div>'+
         '<div class="list-h"><span class="lt">The four factor lenses</span><span class="ls">scored daily</span></div>'+
         lensGridHTML()+
         '<p class="note" style="margin-top:14px">The Scanner and scorecards open the live tools on mindforgecapital.com in your browser.</p>'+
       '</main>','scanner');
   }
   function toolCard(name,desc,color,url,icon,cadence){
-    return '<a class="sub-card rise" href="'+esc(url)+'" target="_blank" rel="noopener" style="margin-bottom:12px;text-decoration:none;color:inherit">'+
+    return '<a class="sub-card" href="'+esc(url)+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">'+
       '<div class="sc-ico" style="background:'+color+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+icon+'"/></svg></div>'+
       '<div class="sc-body"><div class="sc-name">'+esc(name)+'</div><div class="sc-meta">'+esc(desc)+'</div><span class="live-tag"><span class="live-dot"></span>'+esc(cadence||'Live · refreshed daily')+'</span></div>'+
       '<div class="sc-chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></div></a>';
@@ -654,7 +664,7 @@
   function viewAccount(){
     var sess=MFCStore.getSession()||{subscriptions:[]};
     var nActive=(sess.subscriptions||[]).filter(function(s){return String(s.status).toLowerCase()==='active';}).length;
-    render(appbarHTML({})+
+    render(appbarHTML({ctx:'Account'})+
       '<main class="screen intro">'+
         '<div class="eyebrow">Account</div>'+
         '<div class="acct-head rise">'+
@@ -669,15 +679,17 @@
         '<div id="brokerSection"></div>'+
 
         '<div class="list-h"><span class="lt">Subscriptions</span></div>'+
-        (sess.subscriptions&&sess.subscriptions.length?sess.subscriptions.map(function(s){
+        (sess.subscriptions&&sess.subscriptions.length?'<div class="group">'+sess.subscriptions.map(function(s){
           var st=String(s.status).toLowerCase();
           var badge=st==='active'?'<span class="badge badge-active"><span class="dot"></span>Active</span>':(st==='expired'?'<span class="badge badge-expired">Expired</span>':'<span class="badge badge-muted">'+esc(st)+'</span>');
           return '<div class="card acct-sub"><span class="acct-sub-sw" style="background:'+strategyAccent(s.strategy)+'"></span><div class="acct-sub-id"><div class="acct-sub-nm">'+esc(strategyLabel(s.strategy))+'</div><div class="sc-meta">Renews '+fmtDate(s.expires_at)+'</div></div>'+badge+'</div>';
-        }).join(''):'<div class="note">No subscriptions on file.</div>')+
+        }).join('')+'</div>':'<div class="note">No subscriptions on file.</div>')+
 
         '<div class="list-h"><span class="lt">Support</span></div>'+
+        '<div class="group">'+
         '<a class="broker-opt" href="'+C.WHATSAPP_URL+'" target="_blank" rel="noopener"><div class="broker-logo" style="background:#25D366">'+WA_LOGO+'</div><div class="bo-body"><div class="bo-name">WhatsApp support</div><div class="bo-sub">Renewals, billing &amp; help</div></div></a>'+
         '<a class="broker-opt" href="'+C.SITE_URL+'/recover.html" target="_blank" rel="noopener"><div class="broker-logo" style="background:var(--accent)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7.5l9 6 9-6"/></svg></div><div class="bo-body"><div class="bo-name">Email me my dashboard links</div><div class="bo-sub">Recover web access</div></div></a>'+
+        '</div>'+
 
         '<div class="list-h"><span class="lt">Appearance</span></div>'+
         appearanceSegHTML()+
@@ -705,7 +717,9 @@
   function renderBrokerSection(){
     var host=document.getElementById('brokerSection');if(!host)return;
     var linked=MFCStore.getBroker();
-    var html=MFCBrokers.list().map(function(b){
+    // V20.6 — one inset grouped list (hairline separators); the linked broker
+    // reads as an inset accent rail + tint instead of a whole-card ring.
+    var html='<div class="group">'+MFCBrokers.list().map(function(b){
       var on=linked&&linked.id===b.id;
       return '<div class="broker-opt'+(on?' linked':'')+'" data-broker="'+b.id+'">'+
         '<div class="broker-logo" style="background:'+b.color+'">'+b.logo+'</div>'+
@@ -716,8 +730,10 @@
     // Kite Connect (API) tier
     if(MFCBrokers.kiteEnabled()){
       html+='<a class="broker-opt" href="'+esc(MFCBrokers.kiteLoginUrl())+'"><div class="broker-logo" style="background:#387ed1">'+((MFCBrokers.get('kite')||{}).logo||'')+'</div><div class="bo-body"><div class="bo-name">Connect Zerodha (live)</div><div class="bo-sub">Kite Connect · live holdings &amp; in-app orders</div></div><div class="bo-state">Connect</div></a>';
+      html+='</div>';
     }else{
-      html+='<div class="note amber" style="margin-top:4px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> <b>Live account linking</b> (Kite Connect — real holdings &amp; in-app orders) is built in and activates once a Kite Connect API key is configured. Until then, the deeplinks above give you one-tap, pre-filled orders.</div>';
+      html+='</div>';
+      html+='<div class="note amber" style="margin-top:10px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M13 2L3 14h7l-1 8 10-12h-7z"/></svg> <b>Live account linking</b> (Kite Connect — real holdings &amp; in-app orders) is built in and activates once a Kite Connect API key is configured. Until then, the deeplinks above give you one-tap, pre-filled orders.</div>';
     }
     if(linked)html+='<button class="btn btn-ghost btn-sm" id="unlinkBroker" style="margin-top:10px;width:auto;padding:8px 14px;color:var(--ink3)">Unlink broker</button>';
     host.innerHTML=html;
