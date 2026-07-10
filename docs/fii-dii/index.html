@@ -115,6 +115,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .idx-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;transition:width .25s cubic-bezier(.22,.8,.2,1)}
 .idx-card.up::after{background:linear-gradient(var(--green),rgba(5,150,105,.3))}
 .idx-card.down::after{background:linear-gradient(var(--red),rgba(220,38,38,.3))}
+/* V21.1: cursor-tracked spotlight (matches the homepage/dashboard card idiom).
+   Uses ::before (::after is the up/down accent rail); --mx/--my set by JS on
+   desktop pointers, rests centred otherwise. Theme-agnostic subtle overlay. */
+.idx-card{--mx:50%;--my:50%}
+.idx-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(220px circle at var(--mx) var(--my),rgba(45,212,191,.10) 0%,rgba(37,99,235,.06) 34%,transparent 62%);opacity:0;transition:opacity .3s ease}
+.idx-card:hover::before{opacity:1}
 .up{color:var(--green)} .down{color:var(--red)}
 @media(max-width:600px){.idx-strip{grid-template-columns:1fr;gap:10px}}
 
@@ -809,6 +815,19 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
   var io=new IntersectionObserver(function(ents){ents.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:0.10,rootMargin:'0px 0px -7% 0px'});
   els.forEach(function(e){io.observe(e);});
   setTimeout(showAll,2600); // safety net — never leave a section invisible
+})();
+</script>
+<!-- V21.1: cursor-tracked spotlight on the index cards (desktop pointers only), delegated so it covers the JS-rendered cards -->
+<script>
+(function(){
+  try { if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return; } catch(e){ return; }
+  document.addEventListener('mousemove', function(e){
+    var c = e.target.closest && e.target.closest('.idx-card');
+    if (!c) return;
+    var r = c.getBoundingClientRect();
+    c.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+    c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+  }, { passive: true });
 })();
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
