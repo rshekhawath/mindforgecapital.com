@@ -84,8 +84,11 @@
   // one-line nav (V19.6) never overflows at its tightest desktop width (~1025px);
   // it also ties to the hero's "engineers your portfolio".
   ready(function () {
+    // V21.2: check the cookie (the dashboard's primary session store) first, then
+    // localStorage — so the nav reflects the session even when localStorage is blocked.
     var signedIn = false;
-    try { signedIn = !!localStorage.getItem("mfc_dash_token"); } catch (e) { return; }
+    try { signedIn = /(?:^|;\s*)mfc_dash_token=[^;]/.test(document.cookie); } catch (e) {}
+    if (!signedIn) { try { signedIn = !!localStorage.getItem("mfc_dash_token"); } catch (e) {} }
     if (!signedIn) return;
     var links = document.querySelectorAll('nav a[href*="login.html"]');
     for (var i = 0; i < links.length; i++) {

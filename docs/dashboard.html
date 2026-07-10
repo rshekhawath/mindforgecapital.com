@@ -1846,16 +1846,36 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8
 // V11.4 security: the dashboard token is a bearer credential. Keep it OUT of the
 // visible URL and browser history (OWASP best practice) — read it once, stash it,
 // then strip ?token from the address bar.
-// V21.0 fix: PERSIST in localStorage (was sessionStorage → died on tab-close /
-// new-tab, so members were forced to re-login every time they navigated to another
-// page and back). localStorage keeps the session across tabs and browser restarts;
-// a "Sign out" control (nav) + auto-clear on Access Denied bound it. sessionStorage
-// is still read as a one-time fallback so any in-flight old-code session migrates.
-// Bulletproof: every step is guarded; if Storage/history are unavailable we leave
-// the URL untouched, so an emailed dashboard link can never break. The token still
-// rides over HTTPS to the backend exactly as before; only the address bar changes.
+// V21.0 → V21.2: PERSIST the session across navigation (was sessionStorage → died on
+// tab-close/new-tab, forcing re-login on every page). V21.2 makes persistence
+// BULLETPROOF: a first-party COOKIE is the primary store (survives navigation, new
+// tabs and restarts, and — crucially — keeps working when localStorage throws / is
+// blocked, e.g. Safari private mode or strict privacy settings, which was still
+// re-logging some members out). localStorage + sessionStorage are written/read too
+// (belt & suspenders + migration). Read order: cookie → localStorage → sessionStorage.
+// The token still rides over HTTPS to the backend exactly as before.
 const DASH_TOKEN_KEY = 'mfc_dash_token';
+function _cookieGet(k){
+  try { var m = document.cookie.match(new RegExp('(?:^|;\\s*)' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; }
+  catch(e){ return ''; }
+}
+function readDashToken(){
+  var c = _cookieGet(DASH_TOKEN_KEY); if (c) return c;
+  try { var l = localStorage.getItem(DASH_TOKEN_KEY); if (l) return l; } catch(e){}
+  try { var s = sessionStorage.getItem(DASH_TOKEN_KEY); if (s) return s; } catch(e){}
+  return null;
+}
+function writeDashToken(t){
+  try {
+    var sec = (location.protocol === 'https:') ? '; Secure' : '';
+    // 1-year first-party cookie; Lax so it survives top-level navigations but not CSRF.
+    document.cookie = DASH_TOKEN_KEY + '=' + encodeURIComponent(t) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
+  } catch(e){}
+  try { localStorage.setItem(DASH_TOKEN_KEY, t); } catch(e){}
+  try { sessionStorage.setItem(DASH_TOKEN_KEY, t); } catch(e){}
+}
 function clearDashSession(){
+  try { document.cookie = DASH_TOKEN_KEY + '=; path=/; max-age=0; SameSite=Lax'; } catch(e){}
   try { localStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
   try { sessionStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
 }
@@ -1864,13 +1884,12 @@ const token = (function () {
   let t = params.get('token');
   try {
     if (t) {
-      localStorage.setItem(DASH_TOKEN_KEY, t);
-      sessionStorage.removeItem(DASH_TOKEN_KEY);   // retire the old per-tab copy
+      writeDashToken(t);
       params.delete('token');                 // strip ONLY token; keep ?demo etc.
       const qs = params.toString();
       window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
     } else {
-      t = localStorage.getItem(DASH_TOKEN_KEY) || sessionStorage.getItem(DASH_TOKEN_KEY) || t;
+      t = readDashToken() || t;
     }
   } catch (e) { /* storage/history blocked → fall back to the URL token as-is */ }
   return t;
@@ -2035,12 +2054,20 @@ async function init() {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=stocks&token=' + encodeURIComponent(token) + '&_=' + Date.now());
     const data = await res.json();
-    // V21.0: a backend data.error is a DEFINITIVE auth failure (invalid token /
-    // expired subscription) — a network blip throws and lands in the catch below as
-    // "Connection Error" instead. So discard the persisted token here, otherwise a
-    // stale one would keep bouncing the member to this page (and login's "Continue"
-    // shortcut would loop). A fresh emailed link / re-login re-establishes it.
-    if (data.error) { clearDashSession(); showError('Access Denied', data.error); return; }
+    // V21.2 fix: only DISCARD the saved session on a DEFINITIVE auth failure —
+    // "Subscription not found / expired / not active" (backend handleGetStocks).
+    // A TRANSIENT backend hiccup returns {error:'Server error'} (doGet catch) and a
+    // network blip throws → "Connection Error"; clearing the token on those was
+    // logging valid members out on a momentary glitch, forcing a needless re-login
+    // (the very bug being chased). On a transient error we KEEP the token so the next
+    // load / retry re-authenticates. (V21.0 cleared on ANY data.error — too eager.)
+    if (data.error) {
+      if (/subscription|expired|not active|inactive|no token|invalid token|unauthor|access denied/i.test(data.error)) {
+        clearDashSession();
+      }
+      showError('Access Denied', data.error);
+      return;
+    }
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
     loadLiveProfit();   // V14.3: live profit since rebalance (non-blocking)

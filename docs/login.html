@@ -566,8 +566,11 @@ document.addEventListener('keydown', function(e) {
 // one-tap "Continue to your dashboard" shortcut so a member returning to Sign In
 // (e.g. via the nav after browsing other pages) isn't forced through OTP again.
 (function(){
+  // V21.2: check the cookie too (the dashboard's primary store), not just
+  // localStorage — so the shortcut still shows when localStorage is blocked.
   var has = false;
-  try { has = !!localStorage.getItem('mfc_dash_token'); } catch(e){}
+  try { has = /(?:^|;\s*)mfc_dash_token=[^;]/.test(document.cookie); } catch(e){}
+  if (!has) { try { has = !!localStorage.getItem('mfc_dash_token'); } catch(e){} }
   if (!has) return;
   var box = document.getElementById('resume-session');
   if (box) box.style.display = 'block';
@@ -711,7 +714,7 @@ input:focus-visible{
 <style id="mf-v18-sebi">
 .sebi-line{display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--text3,#475569);font-weight:600;text-transform:uppercase;padding:4px 10px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.16);border-radius:999px;margin-bottom:8px;}
 </style>
-<script src="assets/mfc-offer.js?v=112" defer></script>
+<script src="assets/mfc-offer.js?v=113" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
