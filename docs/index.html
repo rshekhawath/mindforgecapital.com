@@ -874,7 +874,11 @@ footer {
   .crit-tiny{font-size:11px;color:var(--text3);}
 
 /* ── SOCIAL PROOF STRIP ── */
-.social-proof { padding: 28px 0; border-top: 0.5px solid var(--border); border-bottom: 0.5px solid var(--border); background: var(--ink2); }
+/* V21.4: the proof strip is a floating card (.proof-bar, below). It used to sit in a
+   full-width white (--ink2) band with hairline edges — a white card on a white band
+   read as one flat stripe that broke the site's "cards on the light-blue page bg"
+   rhythm. Make the SECTION transparent so the card floats like every other section. */
+.social-proof { padding: 12px 0 48px; background: transparent; }
 .proof-bar { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: nowrap; }
 .proof-item { display: flex; flex-direction: column; align-items: center; padding: 10px 28px; flex-shrink: 0; }
 .proof-num { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 800; color: var(--white); letter-spacing: -0.02em; }
@@ -2244,11 +2248,10 @@ body.scrolled nav {
 }
 
 /* Social-proof strip — subtle outer shadow for depth */
-.social-proof {
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.7),
-    0 1px 30px -20px rgba(26,80,216,0.18);
-}
+/* V21.4: the inset white top-highlight + glow belonged to the old white BAND; on the
+   now-transparent section it would paint a stray full-width hairline. The depth now
+   lives on the .proof-bar card itself (its own border + shadow). */
+.social-proof { box-shadow: none; }
 
 /* Refined hover on factor pills (defensive — they already have hover) */
 .factor-pill { cursor: default; }
@@ -4933,7 +4936,9 @@ function setDuration(durKey) {
 /* Social-proof → floating glass card, hover-lift items, gradient alpha */
 .proof-bar{
   background:rgba(255,255,255,.78); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-  border:1px solid rgba(37,99,235,.12); border-radius:20px;
+  /* V21.4: radius/border aligned to the site card standard (--r 16px, 0.5px @0.16)
+     so the proof card matches the Market Pulse card directly above it. */
+  border:0.5px solid rgba(37,99,235,.16); border-radius:16px;
   box-shadow:var(--v13-shadow); padding:24px 20px;
 }
 .proof-item{ transition:transform .25s var(--v13-ease); }
