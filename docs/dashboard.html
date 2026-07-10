@@ -1349,6 +1349,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <a href="factor-report/" style="color:var(--text2);">Factor Report</a>
       <a href="calculator.html" style="color:var(--text2);">Fee Calculator</a>
       <a href="login.html" style="color:var(--text2);">My Account</a>
+      <a href="login.html" id="nav-signout" style="color:var(--text2);">Sign out</a>
       <span class="nav-badge">Member Dashboard</span>
     </div>
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
@@ -1373,7 +1374,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <h3 id="error-title">Access Denied</h3>
     <p id="error-msg">This link is invalid or your subscription has expired.</p>
     <br>
-    <p style="font-size:13px;color:var(--text3);">Lost your link? <a href="recover.html" style="color:var(--accent);text-decoration:underline;">Recover dashboard access →</a></p>
+    <p style="font-size:13px;color:var(--text3);"><a href="login.html" style="color:var(--accent);text-decoration:underline;">Sign in again →</a> &nbsp;·&nbsp; Lost your link? <a href="recover.html" style="color:var(--accent);text-decoration:underline;">Recover dashboard access →</a></p>
   </div>
 </div>
 
@@ -1843,28 +1844,46 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
 // V11.4 security: the dashboard token is a bearer credential. Keep it OUT of the
-// visible URL and browser history (OWASP best practice) — read it once, stash it in
-// sessionStorage for in-session reloads, then strip ?token from the address bar.
+// visible URL and browser history (OWASP best practice) — read it once, stash it,
+// then strip ?token from the address bar.
+// V21.0 fix: PERSIST in localStorage (was sessionStorage → died on tab-close /
+// new-tab, so members were forced to re-login every time they navigated to another
+// page and back). localStorage keeps the session across tabs and browser restarts;
+// a "Sign out" control (nav) + auto-clear on Access Denied bound it. sessionStorage
+// is still read as a one-time fallback so any in-flight old-code session migrates.
 // Bulletproof: every step is guarded; if Storage/history are unavailable we leave
 // the URL untouched, so an emailed dashboard link can never break. The token still
 // rides over HTTPS to the backend exactly as before; only the address bar changes.
+const DASH_TOKEN_KEY = 'mfc_dash_token';
+function clearDashSession(){
+  try { localStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
+  try { sessionStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
+}
 const token = (function () {
   const params = new URLSearchParams(window.location.search);
   let t = params.get('token');
   try {
     if (t) {
-      sessionStorage.setItem('mfc_dash_token', t);
+      localStorage.setItem(DASH_TOKEN_KEY, t);
+      sessionStorage.removeItem(DASH_TOKEN_KEY);   // retire the old per-tab copy
       params.delete('token');                 // strip ONLY token; keep ?demo etc.
       const qs = params.toString();
       window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
     } else {
-      t = sessionStorage.getItem('mfc_dash_token') || t;
+      t = localStorage.getItem(DASH_TOKEN_KEY) || sessionStorage.getItem(DASH_TOKEN_KEY) || t;
     }
   } catch (e) { /* storage/history blocked → fall back to the URL token as-is */ }
   return t;
 })();
 const demoMode = new URLSearchParams(window.location.search).get('demo');
 const isDemo = demoMode === '1' || demoMode === 'sp500' || demoMode === 'multicap';
+
+// V21.0: Sign out — clear the persisted session, then go to the sign-in page.
+(function(){
+  var so = document.getElementById('nav-signout');
+  if (!so) return;
+  so.addEventListener('click', function(e){ e.preventDefault(); clearDashSession(); window.location.href = 'login.html'; });
+})();
 
 let stocksData = [];
 let currentStrategy = '';
@@ -2016,7 +2035,12 @@ async function init() {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=stocks&token=' + encodeURIComponent(token) + '&_=' + Date.now());
     const data = await res.json();
-    if (data.error) { showError('Access Denied', data.error); return; }
+    // V21.0: a backend data.error is a DEFINITIVE auth failure (invalid token /
+    // expired subscription) — a network blip throws and lands in the catch below as
+    // "Connection Error" instead. So discard the persisted token here, otherwise a
+    // stale one would keep bouncing the member to this page (and login's "Continue"
+    // shortcut would loop). A fresh emailed link / re-login re-establishes it.
+    if (data.error) { clearDashSession(); showError('Access Denied', data.error); return; }
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
     loadLiveProfit();   // V14.3: live profit since rebalance (non-blocking)

@@ -69,4 +69,31 @@
       try { sessionStorage.setItem("mfc-offer-dismissed", "1"); } catch (e) {}
     });
   });
+
+  // V21.0: reflect an active member session in the nav. When a dashboard token is
+  // stored on this device, the public "Sign In" link becomes a direct "Portfolio"
+  // link (→ dashboard.html) so a signed-in member is never bounced back through the
+  // login page while browsing the marketing / tool pages. Runs independently of the
+  // offer strip above. Text-scoped to the "Sign In" link only (the dashboard's own
+  // nav has "My Account"/"Sign out" and never loads this script). Path-safe: it
+  // rewrites only the "login.html" segment, preserving the href's prefix/domain, so
+  // it works from both root pages (login.html) and the absolute-URL subdir tool
+  // pages. Self-healing: a stale token is cleared by the dashboard on Access Denied,
+  // so the label reverts to "Sign In" on the next load. Label is "Portfolio" (not
+  // "Dashboard") — measured to render at the SAME width as "Sign In", so the tuned
+  // one-line nav (V19.6) never overflows at its tightest desktop width (~1025px);
+  // it also ties to the hero's "engineers your portfolio".
+  ready(function () {
+    var signedIn = false;
+    try { signedIn = !!localStorage.getItem("mfc_dash_token"); } catch (e) { return; }
+    if (!signedIn) return;
+    var links = document.querySelectorAll('nav a[href*="login.html"]');
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i];
+      if ((a.textContent || "").trim() === "Sign In") {
+        a.setAttribute("href", (a.getAttribute("href") || "login.html").replace(/login\.html/, "dashboard.html"));
+        a.textContent = "Portfolio";
+      }
+    }
+  });
 })();
