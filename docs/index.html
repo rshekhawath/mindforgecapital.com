@@ -178,6 +178,9 @@ nav {
   opacity: 0; animation: hv-fadein 0.4s ease-out 2.4s forwards;
 }
 @keyframes hv-fadein { to { opacity: 1; } }
+/* V20.8: the comet is decorative "live data" motion — suppress it entirely when the
+   viewer prefers reduced motion (the static end-dot above already marks the latest point). */
+@media (prefers-reduced-motion: reduce) { .hv-comet { display: none; } }
 .hv-foot {
   display: flex; align-items: center; justify-content: space-between;
   border-top: 0.5px solid var(--border2); padding-top: 16px;
@@ -3276,6 +3279,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
                   <stop id="hv-stroke-0" offset="0%" stop-color="#1a50d8"/>
                   <stop id="hv-stroke-1" offset="100%" stop-color="#2dd4bf"/>
                 </linearGradient>
+                <!-- V20.8: soft halo for the live "comet" tracer that glides the strategy line -->
+                <filter id="hv-comet-glow" x="-250%" y="-250%" width="600%" height="600%">
+                  <feGaussianBlur stdDeviation="2.4" result="b"/>
+                  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
               </defs>
               <line class="grid-line" x1="0" y1="32" x2="400" y2="32"/>
               <line class="grid-line" x1="0" y1="65" x2="400" y2="65"/>
@@ -3285,6 +3293,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <path id="hv-strat-line" class="strat-line" d="M 0 110 C 30 108, 60 100, 90 92 S 150 78, 180 70 S 240 56, 270 44 S 330 22, 400 8"/>
               <circle id="hv-dot-strat" class="hv-dot" cx="400" cy="8"/>
               <circle id="hv-dot-bench" class="hv-dot" cx="400" cy="50" style="stroke:var(--text3); animation-delay:2.6s;"/>
+              <!-- V20.8: "living data" — a soft comet glides along the active strategy line,
+                   following #hv-strat-line via mpath (auto-tracks the path when a tab swaps it).
+                   Declarative SMIL (no rAF), fades at the loop seam, hidden under reduced-motion. -->
+              <g id="hv-comet" class="hv-comet" opacity="0">
+                <circle class="hv-comet-glow" r="5.4" fill="#2dd4bf" opacity="0.34" filter="url(#hv-comet-glow)"/>
+                <circle class="hv-comet-core" r="2.3" fill="#eafffb"/>
+                <animateMotion dur="5.2s" begin="2.2s" repeatCount="indefinite" calcMode="linear">
+                  <mpath href="#hv-strat-line" xlink:href="#hv-strat-line"/>
+                </animateMotion>
+                <animate attributeName="opacity" values="0;1;1;1;0" keyTimes="0;0.06;0.5;0.9;1" dur="5.2s" begin="2.2s" repeatCount="indefinite"/>
+              </g>
             </svg>
           </div>
           <div class="hv-foot">
@@ -4136,7 +4155,8 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       dotS: document.getElementById('hv-dot-strat'), dotB: document.getElementById('hv-dot-bench'),
       alpha: document.getElementById('hv-alpha'), g0: document.getElementById('hv-stroke-0'),
       g1: document.getElementById('hv-stroke-1'), gTop: document.getElementById('hv-grad-top'),
-      gBot: document.getElementById('hv-grad-bot')
+      gBot: document.getElementById('hv-grad-bot'),
+      cometGlow: document.querySelector('#hv-comet .hv-comet-glow') // V20.8: tracer halo tint
     };
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -4147,6 +4167,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       if (el.gTop) el.gTop.setAttribute('stop-color', c[1]);
       if (el.gBot) el.gBot.setAttribute('stop-color', c[0]);
       if (el.dotS) el.dotS.style.stroke = c[0];
+      if (el.cometGlow) el.cometGlow.setAttribute('fill', c[1]); // tracer halo matches the line's leading colour
       var ms = card.querySelector('.hv-leg.strat .hv-leg-mark');
       if (ms) ms.style.background = 'linear-gradient(90deg,' + c[0] + ',' + c[1] + ')';
     }

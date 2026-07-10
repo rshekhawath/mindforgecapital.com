@@ -266,6 +266,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .alloc-donut .ring-bg{fill:none;stroke:rgba(37,99,235,0.07);}
 .alloc-donut .ring-slice{fill:none;stroke-linecap:butt;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1);}
 .alloc-donut .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.alloc-donut .donut-comet{pointer-events:none;}
+@media (prefers-reduced-motion: reduce){ .alloc-donut .donut-comet{ display:none; } }
 .alloc-donut .dc-num{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:800;color:var(--white);line-height:1;letter-spacing:-.02em;}
 .alloc-donut .dc-lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-top:6px;}
 .alloc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;width:100%;}
@@ -2355,6 +2357,11 @@ function renderDonut(rows) {
     html += `<circle class="ring-slice" cx="${CX}" cy="${CY}" r="${R}" stroke-width="${STROKE}" stroke="${r.color}" stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"><title>${escapeHtml(r.name)} · ${r.pct.toFixed(1)}%</title></circle>`;
     cum += frac;
   });
+  // V20.8: "living data" — a soft point of light orbits the ring (the dashboard's
+  // counterpart to the homepage hero-chart comet). Declarative SMIL, re-created on
+  // every render, pointer-transparent, and suppressed under reduced-motion (CSS).
+  html += `<defs><filter id="donut-comet-glow" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  html += `<g class="donut-comet" pointer-events="none"><circle cx="${CX}" cy="${CY - R}" r="3" fill="#2dd4bf" opacity="0.85" filter="url(#donut-comet-glow)"/><circle cx="${CX}" cy="${CY - R}" r="1.4" fill="#f0fffb"/><animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 ${CX} ${CY}" to="360 ${CX} ${CY}" dur="7s" repeatCount="indefinite" calcMode="linear"/></g>`;
   svg.innerHTML = html;
 }
 
