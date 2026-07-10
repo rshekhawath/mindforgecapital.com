@@ -26,7 +26,11 @@
   if (D.getElementById('mfc-chrome-style')) return;                       // idempotent
 
   var hasProg = D.querySelector('.mf-scroll-prog, #mf-scroll-prog, #scroll-progress, .scroll-progress');
-  var hasTop  = D.querySelector('.back-to-top, #back-to-top, .mfc-btt');
+  // V21.3: also recognise the dashboard's own back-to-top (#mf-fab-top / .mf-fab-top),
+  // which previously slipped past this guard → a SECOND injected .mfc-btt stacked on
+  // top of it in the bottom-right corner. Detect every known variant so no page ends
+  // up with two return-to-top controls.
+  var hasTop  = D.querySelector('.back-to-top, #back-to-top, .mfc-btt, .mf-fab-top, #mf-fab-top');
   if (hasProg && hasTop) return;                                          // already fully equipped
 
   var reduce = W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches;

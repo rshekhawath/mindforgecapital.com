@@ -101,6 +101,48 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .meta-pill strong{color:var(--white);font-weight:700;}
 .meta-pill .ico{display:inline-flex;width:16px;height:16px;color:var(--accent2);}
 .meta-pill .ico svg{width:100%;height:100%;}
+
+/* ── V21.3: STRATEGY SWITCHER (on the "Strategy:" hero pill) ────────────────── */
+.meta-pill.has-switcher{ position:relative; cursor:pointer; padding-right:12px; user-select:none; }
+.meta-pill.has-switcher:hover{ border-color:rgba(37,99,235,0.42); }
+.meta-pill.has-switcher.open{ z-index:200; border-color:var(--accent2); box-shadow:0 10px 26px -14px rgba(37,99,235,0.5); }
+.meta-pill.has-switcher:focus-visible{ outline:2px solid var(--accent2); outline-offset:2px; }
+.strat-caret{ display:inline-flex; width:14px; height:14px; margin-left:1px; color:var(--accent2);
+  transition:transform .22s cubic-bezier(.22,.8,.2,1); }
+.strat-caret svg{ width:100%; height:100%; }
+.meta-pill.has-switcher.open .strat-caret{ transform:rotate(180deg); }
+
+.strat-menu{
+  position:fixed; top:0; left:0; min-width:240px; max-width:calc(100vw - 24px);
+  background:var(--ink2); border:0.5px solid var(--border2); border-radius:14px;
+  padding:6px; z-index:500;
+  box-shadow:0 22px 50px -20px rgba(15,23,42,0.4), 0 6px 18px -12px rgba(15,23,42,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  opacity:0; transform:translateY(-6px) scale(.98); transform-origin:top left;
+  pointer-events:none; visibility:hidden;
+  transition:opacity .2s ease, transform .22s cubic-bezier(.22,.8,.2,1), visibility .2s;
+}
+.strat-menu.open{ opacity:1; transform:none; pointer-events:auto; visibility:visible; }
+.strat-menu-head{
+  font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--text3); padding:6px 10px 7px; }
+.strat-opt{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  background:transparent; border:0; border-radius:10px; padding:9px 10px; cursor:pointer;
+  font-family:inherit; font-size:13.5px; font-weight:600; color:var(--text);
+  transition:background .16s ease, color .16s ease; }
+.strat-opt:hover{ background:rgba(37,99,235,0.08); }
+.strat-opt:focus-visible{ outline:2px solid var(--accent2); outline-offset:-2px; }
+.strat-opt.is-active{ background:rgba(37,99,235,0.10); color:var(--accent); }
+.strat-opt-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto;
+  background:linear-gradient(135deg,var(--accent),var(--teal)); box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
+.strat-opt.is-active .strat-opt-dot{ box-shadow:0 0 0 3px rgba(37,99,235,0.2); }
+.strat-opt-name{ flex:1 1 auto; white-space:nowrap; }
+.strat-opt-check{ display:inline-flex; width:15px; height:15px; flex:0 0 auto; color:var(--accent); }
+.strat-opt-check svg{ width:100%; height:100%; }
+@media (prefers-reduced-motion: reduce){
+  .strat-caret, .strat-menu{ transition:none; }
+}
 .dot-green{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 0 3px rgba(5,150,105,.18);animation:nav-pulse 2.6s ease-in-out infinite;}
 .dot-gold{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 0 3px rgba(217,119,6,.18);}
 .dot-red{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;box-shadow:0 0 0 3px rgba(220,38,38,.18);}
@@ -1391,7 +1433,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="meta-pill" id="pill-status">
           <span class="dot-green"></span> Subscription active until <strong id="expiry-date">—</strong>
         </div>
-        <div class="meta-pill">
+        <div class="meta-pill" id="pill-strategy">
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></span>
           Strategy: <strong id="strategy-name">—</strong>
         </div>
@@ -1878,6 +1920,45 @@ function clearDashSession(){
   try { document.cookie = DASH_TOKEN_KEY + '=; path=/; max-age=0; SameSite=Lax'; } catch(e){}
   try { localStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
   try { sessionStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
+  clearStratRegistry();                                  // V21.3: drop the saved strategy⇄token map on sign-out
+}
+
+// ── V21.3: STRATEGY SWITCHER — a cookie-persisted registry of the strategies this
+// member can open. Each dashboard token unlocks exactly ONE strategy (an All-Access
+// buyer is issued a separate token/link per strategy), so we remember every
+// {strategy → token} pair the member has successfully loaded on this device. Once
+// two or more are known, the "Strategy:" hero pill becomes a switcher: picking
+// another strategy swaps the active mfc_dash_token cookie and reloads — no need to
+// dig the other access links out of email again. Stored primarily in a first-party
+// cookie (survives new tabs / restarts, and keeps working when localStorage is
+// blocked — same resilience contract as the session token), mirrored to localStorage.
+const STRAT_REG_KEY = 'mfc_dash_strats';
+function _cookieSet(k, v){
+  try {
+    var sec = (location.protocol === 'https:') ? '; Secure' : '';
+    document.cookie = k + '=' + encodeURIComponent(v) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
+  } catch(e){}
+}
+function readStratRegistry(){
+  var raw = _cookieGet(STRAT_REG_KEY);
+  if (!raw) { try { raw = localStorage.getItem(STRAT_REG_KEY) || ''; } catch(e){} }
+  if (!raw) return {};
+  try { var o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; } catch(e){ return {}; }
+}
+function recordStrat(strategy, tok){
+  strategy = String(strategy || '').trim();
+  if (!strategy || !tok) return readStratRegistry();
+  var reg = readStratRegistry();
+  if (reg[strategy] === tok) return reg;                 // already current — no write
+  reg[strategy] = tok;
+  var json = JSON.stringify(reg);
+  _cookieSet(STRAT_REG_KEY, json);
+  try { localStorage.setItem(STRAT_REG_KEY, json); } catch(e){}
+  return reg;
+}
+function clearStratRegistry(){
+  try { document.cookie = STRAT_REG_KEY + '=; path=/; max-age=0; SameSite=Lax'; } catch(e){}
+  try { localStorage.removeItem(STRAT_REG_KEY); } catch(e){}
 }
 const token = (function () {
   const params = new URLSearchParams(window.location.search);
@@ -2126,6 +2207,136 @@ function _animateCount(el, target, opts) {
   setTimeout(function() { el.innerHTML = target_n + unitHtml; }, dur + 250);
 }
 
+// ── V21.3: STRATEGY SWITCHER ────────────────────────────────────────────────
+// Turns the "Strategy:" hero pill into a dropdown when the member can open two or
+// more strategies on this device. Demo mode seeds the three demo fixtures so the
+// control is fully demonstrable; real sessions accumulate {strategy → token} pairs
+// in the cookie-backed registry (recordStrat) as each access link is opened.
+const _DEMO_STRATS = {
+  'MindForge LargeMidcap 250': '1',
+  'MindForge Multicap':        'multicap',
+  'MindForge S&P 500':         'sp500'
+};
+let _stratMenuWired = false;
+function setupStrategySwitcher(activeStrategy){
+  const pill = document.getElementById('pill-strategy');
+  if (!pill) return;
+
+  // Build the switchable set + how to open each entry.
+  let entries;
+  if (isDemo){
+    entries = Object.keys(_DEMO_STRATS).map(n => ({ name:n, kind:'demo', value:_DEMO_STRATS[n] }));
+  } else {
+    const reg = recordStrat(activeStrategy, token);      // remember this strategy, then read the whole map
+    entries = Object.keys(reg).map(n => ({ name:n, kind:'token', value:reg[n] }));
+  }
+
+  // Fewer than two known strategies → nothing to switch between; keep the plain pill.
+  if (entries.length < 2){ pill.classList.remove('has-switcher'); return; }
+
+  entries.sort((a,b) => a.name.localeCompare(b.name));
+
+  // Upgrade the pill to an interactive combobox (idempotent — safe on re-render).
+  pill.classList.add('has-switcher');
+  pill.setAttribute('role', 'button');
+  pill.setAttribute('tabindex', '0');
+  pill.setAttribute('aria-haspopup', 'listbox');
+  pill.setAttribute('aria-expanded', 'false');
+  pill.setAttribute('title', 'Switch strategy');
+
+  if (!pill.querySelector('.strat-caret')){
+    const caret = document.createElement('span');
+    caret.className = 'strat-caret';
+    caret.setAttribute('aria-hidden', 'true');
+    caret.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    pill.appendChild(caret);
+  }
+
+  // The menu is a body-level fixed portal (id strat-portal-menu), NOT a child of the
+  // pill. That deliberately escapes every ancestor stacking-context and overflow clip
+  // on the hero — the hero and the stats grid live in separate .container wrappers, so
+  // an in-place absolute menu was painted over / clipped by the stats cards below.
+  let menu = document.getElementById('strat-portal-menu');
+  if (!menu){
+    menu = document.createElement('div');
+    menu.id = 'strat-portal-menu';
+    menu.className = 'strat-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.setAttribute('aria-label', 'Choose strategy');
+    document.body.appendChild(menu);
+  }
+  menu.innerHTML =
+    '<div class="strat-menu-head">Your strategies</div>' +
+    entries.map(function(e){
+      const active = (e.name === activeStrategy);
+      return '<button type="button" class="strat-opt' + (active ? ' is-active' : '') + '" role="option"' +
+             ' aria-selected="' + (active ? 'true' : 'false') + '"' +
+             ' data-kind="' + e.kind + '" data-value="' + encodeURIComponent(e.value) + '">' +
+             '<span class="strat-opt-dot" aria-hidden="true"></span>' +
+             '<span class="strat-opt-name">' + e.name + '</span>' +
+             '<span class="strat-opt-check" aria-hidden="true">' +
+               (active ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') +
+             '</span></button>';
+    }).join('');
+
+  // Anchor the fixed menu under the pill, clamped to the viewport's right/left edges.
+  function positionMenu(){
+    const r = pill.getBoundingClientRect();
+    menu.style.minWidth = Math.max(240, Math.round(r.width)) + 'px';
+    const w = menu.offsetWidth;               // layout width (transform-agnostic)
+    let left = r.left;
+    if (left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
+    if (left < 12) left = 12;
+    menu.style.left = Math.round(left) + 'px';
+    menu.style.top  = Math.round(r.bottom + 8) + 'px';
+  }
+  function openMenu(){ positionMenu(); menu.classList.add('open'); pill.classList.add('open'); pill.setAttribute('aria-expanded','true'); }
+  function closeMenu(){ menu.classList.remove('open'); pill.classList.remove('open'); pill.setAttribute('aria-expanded','false'); }
+  function toggleMenu(){ pill.classList.contains('open') ? closeMenu() : openMenu(); }
+
+  function chooseStrategy(kind, value){
+    if (kind === 'demo'){
+      window.location.href = 'dashboard.html?demo=' + encodeURIComponent(value);
+    } else {
+      writeDashToken(value);                 // persist the chosen strategy's token as the active session…
+      window.location.href = 'dashboard.html';   // …then reload clean; init() reads it back from the cookie
+    }
+  }
+
+  // Wire interaction handlers once. pill + menu are stable elements (menu markup is
+  // rebuilt in place on re-render), so first-call closures stay valid.
+  if (!_stratMenuWired){
+    _stratMenuWired = true;
+
+    pill.addEventListener('click', function(ev){ ev.stopPropagation(); toggleMenu(); });
+
+    menu.addEventListener('click', function(ev){
+      const opt = ev.target.closest && ev.target.closest('.strat-opt');
+      if (!opt) return;
+      ev.stopPropagation();
+      if (opt.classList.contains('is-active')){ closeMenu(); return; }
+      chooseStrategy(opt.getAttribute('data-kind'), decodeURIComponent(opt.getAttribute('data-value')));
+    });
+
+    pill.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar'){
+        if (ev.target === pill){ ev.preventDefault(); toggleMenu(); }
+      } else if (ev.key === 'Escape'){
+        closeMenu(); pill.focus();
+      }
+    });
+
+    // Click outside (neither pill nor menu) closes; Escape closes; scroll dismisses;
+    // resize keeps it anchored while open.
+    document.addEventListener('click', function(ev){
+      if (!pill.contains(ev.target) && !menu.contains(ev.target)) closeMenu();
+    });
+    document.addEventListener('keyup', function(ev){ if (ev.key === 'Escape') closeMenu(); });
+    window.addEventListener('scroll', function(){ if (pill.classList.contains('open')) closeMenu(); }, { passive:true });
+    window.addEventListener('resize', function(){ if (pill.classList.contains('open')) positionMenu(); }, { passive:true });
+  }
+}
+
 function renderDashboard(sub, stocks) {
   window._currentSub = sub;
   document.getElementById('state-loading').style.display = 'none';
@@ -2141,6 +2352,7 @@ function renderDashboard(sub, stocks) {
 
   currentStrategy = sub.strategy || '';
   document.getElementById('strategy-name').textContent = currentStrategy || '—';
+  setupStrategySwitcher(currentStrategy);   // V21.3: turn the pill into a switcher when ≥2 strategies are known
 
   // 1:1 Zoom call benefit — personalise the WhatsApp booking message
   var _ooc = document.getElementById('oneonone-cta');
@@ -4799,6 +5011,18 @@ html[data-theme="dark"] .stat-card.tone-red   .stat-val, html[data-theme="dark"]
 html[data-theme="dark"] .table-wrap::after{
   background:linear-gradient(90deg,transparent,rgba(18,29,51,0.92));
 }
+/* V21.3 — strategy switcher rides the CSS vars, so only the hardcoded-light
+   accents need a dark pass: the menu's white top-highlight + contact shadow, and
+   the blue tints (which read too faint on the dark surface). */
+html[data-theme="dark"] .strat-menu{
+  box-shadow:0 24px 54px -20px rgba(0,0,0,0.66), 0 6px 18px -10px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+html[data-theme="dark"] .strat-opt:hover{ background:rgba(120,160,240,0.12); }
+html[data-theme="dark"] .strat-opt.is-active{ background:rgba(120,160,240,0.15); color:var(--accent3); }
+html[data-theme="dark"] .strat-opt.is-active .strat-opt-check,
+html[data-theme="dark"] .strat-opt.is-active{ color:var(--accent3); }
+html[data-theme="dark"] .meta-pill.has-switcher.open{ box-shadow:0 12px 30px -14px rgba(0,0,0,0.6); border-color:var(--accent3); }
 </style>
 <script id="mf-v138-nav-scroll-dash">
 /* The dashboard had no scrolled-nav state — toggle body.scrolled on scroll so the
@@ -5058,6 +5282,6 @@ html[data-theme="dark"] .howto-step:hover::after{ color:rgba(150,180,240,.14); }
   .howto-step:hover .num{ transform:none; }
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=2"></script>
+<script defer src="assets/mfc-chrome.js?v=3"></script>
 </body>
 </html>
