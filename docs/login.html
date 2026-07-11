@@ -491,6 +491,27 @@ function renderSubscriptions(subs) {
     if (ae !== be) return ae ? 1 : -1;
     return new Date(b.expires_at) - new Date(a.expires_at);
   });
+  // V21.5: seed the dashboard's strategy-switcher registry with EVERY active
+  // {strategy → token} we just learned about, so the moment the member opens
+  // any one strategy the pill switcher offers all of them. V21.3 accumulated
+  // the map one-strategy-at-a-time as each access link was clicked, so a user
+  // who signed in fresh and only opened Multicap couldn't hop to their other
+  // four subs without re-verifying OTP. Same cookie key (mfc_dash_strats), same
+  // JSON shape ({[strategy]: token}) as dashboard.html — no backend change.
+  try {
+    var _reg = {};
+    subs.forEach(function(s){
+      var name = String(s.strategy || '').trim();
+      var tok  = String(s.token || '');
+      if (!name || !tok) return;
+      if (new Date(s.expires_at) < new Date()) return;  // active only
+      _reg[name] = tok;
+    });
+    var _json = JSON.stringify(_reg);
+    var _sec = (location.protocol === 'https:') ? '; Secure' : '';
+    document.cookie = 'mfc_dash_strats=' + encodeURIComponent(_json) + '; path=/; max-age=31536000; SameSite=Lax' + _sec;
+    try { localStorage.setItem('mfc_dash_strats', _json); } catch(e){}
+  } catch(e){}
   list.innerHTML = subs.map(function(sub) {
     var expiry = new Date(sub.expires_at);
     var expired = expiry < new Date();
