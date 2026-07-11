@@ -103,14 +103,29 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .meta-pill .ico svg{width:100%;height:100%;}
 
 /* ── V21.3: STRATEGY SWITCHER (on the "Strategy:" hero pill) ────────────────── */
-.meta-pill.has-switcher{ position:relative; cursor:pointer; padding-right:12px; user-select:none; }
-.meta-pill.has-switcher:hover{ border-color:rgba(37,99,235,0.42); }
+/* V21.6: make the pill unmistakably an interactive control. The lone 14px caret
+   read as decoration beside the three non-clickable meta-pills, so members never
+   discovered they could switch (the whole point of the feature). Now: an accent-
+   tinted body + a solid caret "chip" (a universally-recognised dropdown affordance)
+   + a subtle one-time attention nudge on the member's first switch-capable visit. */
+/* !important mirrors the MF-VISUAL-v9.2 glass-pill rule below (which is !important);
+   the more specific .has-switcher selector then wins the tint + border. */
+.meta-pill.has-switcher{ position:relative; cursor:pointer; user-select:none; padding-right:7px;
+  background:linear-gradient(180deg,rgba(37,99,235,0.13),rgba(37,99,235,0.045)) !important;
+  border:0.5px solid rgba(37,99,235,0.40) !important; }
+.meta-pill.has-switcher:hover{ border-color:rgba(37,99,235,0.60) !important; box-shadow:0 7px 20px -11px rgba(37,99,235,0.45); }
 .meta-pill.has-switcher.open{ z-index:200; border-color:var(--accent2); box-shadow:0 10px 26px -14px rgba(37,99,235,0.5); }
 .meta-pill.has-switcher:focus-visible{ outline:2px solid var(--accent2); outline-offset:2px; }
-.strat-caret{ display:inline-flex; width:14px; height:14px; margin-left:1px; color:var(--accent2);
-  transition:transform .22s cubic-bezier(.22,.8,.2,1); }
+.strat-caret{ display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; margin-left:5px; padding:4px; border-radius:7px; color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 2px 7px -2px rgba(37,99,235,0.55);
+  transition:transform .22s cubic-bezier(.22,.8,.2,1), background .18s ease; }
 .strat-caret svg{ width:100%; height:100%; }
+.meta-pill.has-switcher:hover .strat-caret{ background:linear-gradient(135deg,var(--accent2),var(--accent3)); }
 .meta-pill.has-switcher.open .strat-caret{ transform:rotate(180deg); }
+@keyframes stratNudge{ 0%,100%{ box-shadow:0 0 0 0 rgba(37,99,235,0); } 40%{ box-shadow:0 0 0 6px rgba(37,99,235,0.15); } }
+.meta-pill.has-switcher.nudge{ animation:stratNudge 1.7s ease 2; }
 
 .strat-menu{
   position:fixed; top:0; left:0; min-width:240px; max-width:calc(100vw - 24px);
@@ -142,6 +157,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .strat-opt-check svg{ width:100%; height:100%; }
 @media (prefers-reduced-motion: reduce){
   .strat-caret, .strat-menu{ transition:none; }
+  .meta-pill.has-switcher.nudge{ animation:none; }
 }
 .dot-green{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 0 3px rgba(5,150,105,.18);animation:nav-pulse 2.6s ease-in-out infinite;}
 .dot-gold{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 0 3px rgba(217,119,6,.18);}
@@ -1916,11 +1932,17 @@ function writeDashToken(t){
   try { localStorage.setItem(DASH_TOKEN_KEY, t); } catch(e){}
   try { sessionStorage.setItem(DASH_TOKEN_KEY, t); } catch(e){}
 }
-function clearDashSession(){
+// V21.6: `opts.keepRegistry` preserves the strategy⇄token map. Sign-out wipes
+// everything (a clean slate is intended), but a DEFINITIVE auth error on ONE token
+// must NOT nuke the whole switcher — that would strand a member's other four working
+// strategies over a single expired/revoked sub. The caller removes just the dead
+// entry (removeStratByToken) and keeps the rest.
+function clearDashSession(opts){
+  opts = opts || {};
   try { document.cookie = DASH_TOKEN_KEY + '=; path=/; max-age=0; SameSite=Lax'; } catch(e){}
   try { localStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
   try { sessionStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
-  clearStratRegistry();                                  // V21.3: drop the saved strategy⇄token map on sign-out
+  if (!opts.keepRegistry) clearStratRegistry();          // V21.3: drop the saved strategy⇄token map on sign-out
 }
 
 // ── V21.3: STRATEGY SWITCHER — a cookie-persisted registry of the strategies this
@@ -1959,6 +1981,18 @@ function recordStrat(strategy, tok){
 function clearStratRegistry(){
   try { document.cookie = STRAT_REG_KEY + '=; path=/; max-age=0; SameSite=Lax'; } catch(e){}
   try { localStorage.removeItem(STRAT_REG_KEY); } catch(e){}
+}
+// V21.6: drop ONLY the strategy whose token has died (expired/revoked), leaving every
+// other strategy in the switcher intact. Used on a definitive auth error so one bad
+// sub can't wipe the member's whole switcher.
+function removeStratByToken(tok){
+  if (!tok) return;
+  var reg = readStratRegistry(), changed = false;
+  Object.keys(reg).forEach(function(k){ if (reg[k] === tok){ delete reg[k]; changed = true; } });
+  if (!changed) return;
+  var json = JSON.stringify(reg);
+  _cookieSet(STRAT_REG_KEY, json);
+  try { localStorage.setItem(STRAT_REG_KEY, json); } catch(e){}
 }
 const token = (function () {
   const params = new URLSearchParams(window.location.search);
@@ -2144,7 +2178,12 @@ async function init() {
     // load / retry re-authenticates. (V21.0 cleared on ANY data.error — too eager.)
     if (data.error) {
       if (/subscription|expired|not active|inactive|no token|invalid token|unauthor|access denied/i.test(data.error)) {
-        clearDashSession();
+        // V21.6: clear the dead SESSION token, but KEEP the strategy switcher registry —
+        // only drop this one dead strategy from it. Previously clearDashSession() wiped
+        // the whole map, stranding the member's other (working) strategies on a single
+        // expired sub.
+        clearDashSession({ keepRegistry: true });
+        removeStratByToken(token);
       }
       showError('Access Denied', data.error);
       return;
@@ -2243,6 +2282,17 @@ function setupStrategySwitcher(activeStrategy){
   pill.setAttribute('aria-haspopup', 'listbox');
   pill.setAttribute('aria-expanded', 'false');
   pill.setAttribute('title', 'Switch strategy');
+
+  // V21.6: one-time attention nudge so a first-time member actually notices the
+  // pill is a switcher. Fires at most once per device (localStorage flag), then
+  // never again — returning members aren't nagged.
+  try {
+    if (!localStorage.getItem('mfc_strat_switch_hinted')){
+      localStorage.setItem('mfc_strat_switch_hinted', '1');
+      pill.classList.add('nudge');
+      setTimeout(function(){ pill.classList.remove('nudge'); }, 3800);
+    }
+  } catch(e){}
 
   if (!pill.querySelector('.strat-caret')){
     const caret = document.createElement('span');
@@ -5023,6 +5073,16 @@ html[data-theme="dark"] .strat-opt.is-active{ background:rgba(120,160,240,0.15);
 html[data-theme="dark"] .strat-opt.is-active .strat-opt-check,
 html[data-theme="dark"] .strat-opt.is-active{ color:var(--accent3); }
 html[data-theme="dark"] .meta-pill.has-switcher.open{ box-shadow:0 12px 30px -14px rgba(0,0,0,0.6); border-color:var(--accent3); }
+/* V21.6 — the tinted body + caret chip read too faint on the dark surface; lift the
+   tint and use the brighter accent3 for the chip so it still pops as a control. */
+html[data-theme="dark"] .meta-pill.has-switcher{
+  background:linear-gradient(180deg,rgba(120,160,240,0.20),rgba(120,160,240,0.07)) !important;
+  border:0.5px solid rgba(120,160,240,0.38) !important; }
+html[data-theme="dark"] .meta-pill.has-switcher:hover{ border-color:rgba(120,160,240,0.58) !important; box-shadow:0 8px 22px -12px rgba(0,0,0,0.6); }
+html[data-theme="dark"] .strat-caret{ background:linear-gradient(135deg,var(--accent2),var(--accent3)); box-shadow:0 2px 8px -2px rgba(0,0,0,0.5); }
+html[data-theme="dark"] .meta-pill.has-switcher:hover .strat-caret{ background:linear-gradient(135deg,var(--accent3),var(--accent2)); }
+html[data-theme="dark"] .meta-pill.has-switcher.nudge{ animation-name:stratNudgeDark; }
+@keyframes stratNudgeDark{ 0%,100%{ box-shadow:0 0 0 0 rgba(120,160,240,0); } 40%{ box-shadow:0 0 0 6px rgba(120,160,240,0.22); } }
 </style>
 <script id="mf-v138-nav-scroll-dash">
 /* The dashboard had no scrolled-nav state — toggle body.scrolled on scroll so the
