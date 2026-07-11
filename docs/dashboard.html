@@ -227,6 +227,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .stat-card.tone-green .stat-val{color:var(--green);}
 .stat-card.tone-gold  .stat-val{color:var(--gold);}
 .stat-card.tone-red   .stat-val{color:var(--red);}
+/* V21.9: rebalance cycle micro-meter — how far through the monthly cycle we are,
+   "charging up" toward the next model run. Same visual language as the status
+   pill's .sub-prog-bar; fill animates via the shared [data-bar] width applier. */
+.stat-meter{height:4px;border-radius:3px;background:rgba(37,99,235,0.10);overflow:hidden;margin-top:10px;}
+.stat-meter i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--accent2),#2dd4bf);transition:width 1s cubic-bezier(.22,1,.36,1);}
 
 /* ── SECTOR ALLOCATION CARD ── */
 .alloc-card{
@@ -1490,6 +1495,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="stat-label">Next rebalance</div>
         <div class="stat-val" id="stat-next">—<span class="unit">days</span></div>
         <div class="stat-sub" id="stat-next-sub">model regenerates monthly</div>
+        <div class="stat-meter" id="reb-meter" style="display:none"><i id="reb-meter-fill" data-bar="0%"></i></div>
       </div>
     </div>
 
@@ -2453,6 +2459,19 @@ function renderDashboard(sub, stocks) {
   _animateCount(document.getElementById('stat-next'), daysToReb, {unitHtml: '<span class="unit">' + (daysToReb === 1 ? 'day' : 'days') + '</span>'});
   document.getElementById('stat-next-sub').textContent = 'on ' + nextReb.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
   document.getElementById('rebalance-date').textContent = nextReb.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' (monthly)';
+  // V21.9: cycle micro-meter — % of the monthly cycle elapsed (1st → 1st), so the
+  // KPI shows position in the cycle, not just the countdown. Width animates via
+  // the shared [data-bar] applier that runs after render.
+  const rebMeter = document.getElementById('reb-meter'), rebFill = document.getElementById('reb-meter-fill');
+  if (rebMeter && rebFill) {
+    const cycStart = new Date(nextReb.getFullYear(), nextReb.getMonth() - 1, 1);
+    const cycLen = Math.max(1, daysBetween(cycStart, nextReb));
+    const cycDone = Math.min(cycLen, Math.max(0, daysBetween(cycStart, now)));
+    const cycPct = Math.round(cycDone / cycLen * 100);
+    rebFill.setAttribute('data-bar', cycPct + '%');
+    rebMeter.title = cycPct + '% through this cycle — new picks in ' + daysToReb + ' day' + (daysToReb === 1 ? '' : 's');
+    rebMeter.style.display = '';
+  }
 
   // Total stocks
   _animateCount(document.getElementById('stat-stocks'), stocks.length);
@@ -5055,6 +5074,8 @@ html[data-theme="dark"] .stat-card.tone-red   .stat-val, html[data-theme="dark"]
 @supports not ((-webkit-background-clip:text) or (background-clip:text)){
   html[data-theme="dark"] .stat-card .stat-val{ color:#83aaff; }
 }
+/* V21.9 — rebalance cycle micro-meter: lift the hardcoded-light track on dark */
+html[data-theme="dark"] .stat-meter{ background:rgba(120,150,255,0.14); }
 /* V18.1 — the 601–1265px horizontal-scroll hint fade on the picks table was a
    hardcoded white gradient (white smear on the dark surface at iPad widths);
    fade to the dark card surface (#121d33 = dark --ink2) instead */
