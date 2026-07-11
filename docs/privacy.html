@@ -510,6 +510,79 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   nav .nav-links a::after{display:none}
 }
 </style>
+<style id="mf-v218-toc">
+/* V21.8 — "On this page" rail on the legal pages (wide desktop only).
+   Auto-built from the .section h2 list by the script below; scroll-spy
+   highlights the section in view. Pure progressive enhancement — below
+   1320px (or if JS fails) the page renders exactly as before. */
+@media (min-width:1320px){ html{ scroll-padding-top:88px; } }
+.legal-toc{
+  display:none; position:fixed; top:150px; left:calc(50% + 442px); width:196px;
+  max-height:calc(100vh - 230px); overflow-y:auto; z-index:5;
+  padding:2px 2px 6px 0; scrollbar-width:thin;
+}
+@media (min-width:1320px){ .legal-toc{ display:block; } }
+.legal-toc .lt-head{
+  font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--text3); padding:0 0 10px 14px;
+}
+.legal-toc a{
+  display:block; font-size:12.5px; line-height:1.45; font-weight:500;
+  color:var(--text3); text-decoration:none; padding:5px 10px 5px 13px;
+  border-left:2px solid var(--border,rgba(37,99,235,0.10));
+  transition:color .18s ease, border-color .18s ease, background .18s ease;
+}
+.legal-toc a:hover{ color:var(--text); }
+.legal-toc a.active{
+  color:var(--accent); border-left-color:var(--accent);
+  background:linear-gradient(90deg,rgba(37,99,235,0.07),transparent 78%);
+}
+html[data-theme="dark"] .legal-toc a.active{
+  background:linear-gradient(90deg,rgba(96,150,255,0.13),transparent 78%);
+}
+@media (prefers-reduced-motion: reduce){ .legal-toc a{ transition:none; } }
+</style>
+<script id="mf-v218-toc-js">
+(function(){
+  var heads = Array.prototype.slice.call(document.querySelectorAll('.content .section h2'));
+  if (heads.length < 4) return;
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  /* div + role (not <nav>): the bare `nav{}` top-bar rule would leak its
+     background/blur/border onto a real <nav> element */
+  var toc = document.createElement('div');
+  toc.className = 'legal-toc';
+  toc.setAttribute('role', 'navigation');
+  toc.setAttribute('aria-label', 'On this page');
+  var html = '<div class="lt-head">On this page</div>';
+  heads.forEach(function(h, i){
+    if (!h.id){
+      var slug = h.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').split('-').slice(0,5).join('-');
+      h.id = 'sec-' + (i + 1) + (slug ? '-' + slug : '');
+    }
+    html += '<a href="#' + h.id + '">' + esc(h.textContent.replace(/^\d+\.\s*/,'')) + '</a>';
+  });
+  toc.innerHTML = html;
+  document.body.appendChild(toc);
+  var links = toc.querySelectorAll('a');
+  var current = -1, pending = null;
+  function spy(){
+    pending = null;
+    var idx = 0;
+    for (var i = 0; i < heads.length; i++){
+      if (heads[i].getBoundingClientRect().top <= 170) idx = i;
+    }
+    if (idx !== current){
+      current = idx;
+      for (var j = 0; j < links.length; j++) links[j].classList.toggle('active', j === idx);
+    }
+  }
+  /* setTimeout throttle (not rAF) so the spy also runs in throttled tabs */
+  window.addEventListener('scroll', function(){
+    if (pending == null) pending = setTimeout(spy, 90);
+  }, {passive:true});
+  spy();
+})();
+</script>
 <script defer src="assets/mfc-chrome.js?v=3"></script>
 </body>
 </html>

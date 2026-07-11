@@ -1005,6 +1005,40 @@ html[data-theme="dark"] .trust-chip:hover{
   nav .nav-links a::after{display:none}
 }
 </style>
+<style id="mf-v218-aurora">
+/* V21.8 — aurora ring on the auth card. A slow conic arc of brand blue→teal
+   travels the card border — the moving twin of the static ::before hairline.
+   Drawn by a masked ::after (free on .card), so zero markup changes. Browsers
+   without @property show a static arc; reduced-motion pins it in place. */
+@property --mfa218 { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+.card::after{
+  content:''; position:absolute; inset:-1.5px; border-radius:26px; padding:1.5px;
+  background:conic-gradient(from var(--mfa218,0deg),
+    rgba(26,108,244,0) 0turn,
+    rgba(26,108,244,0.50) 0.14turn,
+    rgba(45,212,191,0.48) 0.26turn,
+    rgba(26,108,244,0) 0.40turn,
+    rgba(26,108,244,0) 1turn);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  pointer-events:none;
+  animation:mfa218-spin 11s linear infinite;
+}
+@keyframes mfa218-spin{ to{ --mfa218:1turn; } }
+html[data-theme="dark"] .card::after{
+  background:conic-gradient(from var(--mfa218,0deg),
+    rgba(96,150,255,0) 0turn,
+    rgba(96,150,255,0.62) 0.14turn,
+    rgba(45,212,191,0.56) 0.26turn,
+    rgba(96,150,255,0) 0.40turn,
+    rgba(96,150,255,0) 1turn);
+}
+@media (prefers-reduced-motion: reduce){
+  .card::after{ animation:none; }
+}
+</style>
 <script defer src="assets/mfc-chrome.js?v=3"></script>
 </body>
 </html>
