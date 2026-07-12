@@ -319,6 +319,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   font-size:12.5px;color:var(--text3);margin-top:12px;
 }
 .size-summary strong{color:var(--white);font-weight:700;font-variant-numeric:tabular-nums;}
+/* V22.0: capital-deployment micro-meter — how much of the entered capital the
+   whole-share sizing actually puts to work (residue stays in cash). Same visual
+   language as the V21.9 rebalance cycle meter; hidden until computed. */
+.size-deploy{display:flex;align-items:center;gap:10px;margin-top:12px;max-width:420px;}
+.size-deploy-track{flex:1;height:4px;border-radius:3px;background:rgba(37,99,235,0.10);overflow:hidden;}
+.size-deploy-track i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--accent2),#2dd4bf);transition:width 1s cubic-bezier(.22,1,.36,1);}
+.size-deploy-lbl{font-size:11.5px;font-weight:700;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
 .alloc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
 .alloc-head h3{font-size:16px;color:var(--white);font-weight:700;}
 .alloc-head .alloc-meta{font-size:12px;color:var(--text3);}
@@ -1690,6 +1697,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span>Total allocated: <strong id="size-total-alloc">—</strong></span>
           <span>Cash residue: <strong id="size-residue">—</strong></span>
         </div>
+        <div class="size-deploy" id="size-deploy" style="display:none;">
+          <span class="size-deploy-track" aria-hidden="true"><i id="size-deploy-fill" data-bar="0%"></i></span>
+          <span class="size-deploy-lbl" id="size-deploy-lbl">—</span>
+        </div>
       </div>
       <div>
         <div class="size-input-wrap">
@@ -2823,6 +2834,25 @@ function refreshSizeSummary() {
     : fmtMoney(currentCurrency, currentCapital / n);
   document.getElementById('size-total-alloc').textContent = fmtMoney(currentCurrency, totalAlloc);
   document.getElementById('size-residue').textContent     = fmtMoney(currentCurrency, residue);
+  // V22.0: capital-deployment micro-meter — % of the entered capital the whole-share
+  // sizing puts to work. First paint animates via the shared [data-bar] applier
+  // (refreshSizeSummary runs before it during render); capital tweaks afterwards
+  // write the width directly and the CSS transition tweens it. Fails silently.
+  try {
+    const dep = document.getElementById('size-deploy'), depFill = document.getElementById('size-deploy-fill'),
+          depLbl = document.getElementById('size-deploy-lbl');
+    if (dep && depFill && depLbl) {
+      if (currentCapital > 0 && totalAlloc > 0) {
+        const depPct = Math.min(100, Math.max(0, totalAlloc / currentCapital * 100));
+        const depStr = depPct >= 99.95 ? '100' : depPct.toFixed(1);
+        depFill.setAttribute('data-bar', depStr + '%');
+        if (depFill.style.width) depFill.style.width = depStr + '%';   // post-applier updates
+        depLbl.textContent = depStr + '% deployed';
+        dep.title = depStr + '% of your capital goes into orders — ' + fmtMoney(currentCurrency, Math.max(0, residue)) + ' stays in cash (whole shares only)';
+        dep.style.display = '';
+      } else { dep.style.display = 'none'; }
+    }
+  } catch(e){}
 }
 
 function updateAllocationCells() {
@@ -5076,6 +5106,7 @@ html[data-theme="dark"] .stat-card.tone-red   .stat-val, html[data-theme="dark"]
 }
 /* V21.9 — rebalance cycle micro-meter: lift the hardcoded-light track on dark */
 html[data-theme="dark"] .stat-meter{ background:rgba(120,150,255,0.14); }
+html[data-theme="dark"] .size-deploy-track{ background:rgba(120,150,255,0.14); }
 /* V18.1 — the 601–1265px horizontal-scroll hint fade on the picks table was a
    hardcoded white gradient (white smear on the dark surface at iPad widths);
    fade to the dark card surface (#121d33 = dark --ink2) instead */

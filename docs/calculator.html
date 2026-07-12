@@ -206,6 +206,17 @@ html[data-theme="dark"] .fc-kpi.hero::after{background:linear-gradient(100deg,tr
 .fc-fee b { display: block; font-size: 16px; font-weight: 800; color: var(--text); margin-top: 3px; font-variant-numeric: tabular-nums; }
 .fc-fee.mf b { color: var(--gold); }
 .fc-fee.mfc b { color: var(--accent2); }
+/* V22.0: proportional fee bars — the two totals drawn to the same scale, so the
+   gap between "what the AUM fee drains" and "what the flat fee costs" is visceral,
+   not just numeric. Widths update live with the sliders (CSS width transition). */
+.fc-feebar { display: block; height: 5px; border-radius: 3px; background: rgba(37,99,235,0.08); margin-top: 8px; overflow: hidden; }
+.fc-feebar i { display: block; height: 100%; width: 0; border-radius: 3px; transition: width .5s cubic-bezier(.22,1,.36,1); }
+.fc-fee.mf .fc-feebar i { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.fc-fee.mfc .fc-feebar i { background: linear-gradient(90deg, var(--accent2), #2dd4bf); }
+.fc-feemult { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; color: var(--green); background: rgba(5,150,105,0.10); border: 1px solid rgba(5,150,105,0.25); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; white-space: nowrap; }
+.fc-feemult.neg { color: var(--gold); background: rgba(217,119,6,0.10); border-color: rgba(217,119,6,0.28); }
+html[data-theme="dark"] .fc-feebar { background: rgba(120,150,255,0.14); }
+@media (prefers-reduced-motion: reduce){ .fc-feebar i { transition: none; } }
 
 /* CTA */
 .fc-cta { margin-top: 22px; text-align: center; }
@@ -424,8 +435,8 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
 
           <div class="fc-feestrip">
-            <div class="fc-fee mf">Total AUM fees drained<b id="fc-mf-fees">—</b></div>
-            <div class="fc-fee mfc">Total flat fees paid<b id="fc-mfc-fees">—</b></div>
+            <div class="fc-fee mf">Total AUM fees drained<b id="fc-mf-fees">—</b><span class="fc-feebar" aria-hidden="true"><i id="fc-feebar-mf"></i></span></div>
+            <div class="fc-fee mfc">Total flat fees paid<span class="fc-feemult" id="fc-feemult" style="display:none;"></span><b id="fc-mfc-fees">—</b><span class="fc-feebar" aria-hidden="true"><i id="fc-feebar-mfc"></i></span></div>
           </div>
         </div>
 
@@ -724,6 +735,28 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     // fees strip
     document.getElementById('fc-mf-fees').textContent = compactInr(d.aumFeesPaid);
     document.getElementById('fc-mfc-fees').textContent = compactInr(d.flatFeesPaid);
+    // V22.0: proportional fee bars + "N× less" chip — both totals drawn to the same
+    // scale so the gap is visual, not just numeric. Derived entirely from numbers
+    // already computed above; guarded so a missing element can never break render.
+    try {
+      var _bMf = document.getElementById('fc-feebar-mf'), _bMfc = document.getElementById('fc-feebar-mfc'),
+          _chip = document.getElementById('fc-feemult');
+      if (_bMf && _bMfc) {
+        var _mx = Math.max(d.aumFeesPaid, d.flatFeesPaid, 1);
+        _bMf.style.width  = (d.aumFeesPaid  / _mx * 100).toFixed(1) + '%';
+        _bMfc.style.width = (d.flatFeesPaid / _mx * 100).toFixed(1) + '%';
+      }
+      if (_chip) {
+        var _mult = d.flatFeesPaid > 0 ? d.aumFeesPaid / d.flatFeesPaid : 0;
+        if (_mult >= 1.05) {
+          _chip.textContent = (_mult >= 10 ? Math.round(_mult) : _mult.toFixed(1)) + '× less in fees';
+          _chip.classList.remove('neg'); _chip.style.display = '';
+        } else if (_mult > 0 && _mult <= 0.95) {
+          _chip.textContent = 'costs more here';
+          _chip.classList.add('neg'); _chip.style.display = '';
+        } else { _chip.style.display = 'none'; }
+      }
+    } catch(e){}
 
     // hero saved
     var kpi=document.getElementById('fc-saved-kpi'), lbl=document.getElementById('fc-saved-lbl'),
