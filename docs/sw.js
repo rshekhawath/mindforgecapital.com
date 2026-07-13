@@ -7,9 +7,16 @@
  * returning visitors land on the V12.0 interactive hero even when offline.
  * v3 (V14.3): JS added to the cache-first asset list (was css/img only, so the
  * shared scripts re-fetched every navigation); cache bumped to re-install.
+ * v4 (V22.4): the website is now the installed iOS/Android app (Add to Home
+ * Screen), so the app SHELL is precached at install — the two entry documents
+ * (login = the app's start_url, and the homepage the navigation fallback serves)
+ * — so the installed app opens even on a cold offline launch. Cache bumped to
+ * re-install and purge the v3 entries.
  */
-const CACHE = 'mfc-v3';
+const CACHE = 'mfc-v4';
 const ASSET_PATHS = [
+  '/login.html',                    // manifest start_url — the installed app's entry
+  '/index.html',                    // offline navigation fallback (see fetch handler)
   '/assets/LogoNav.png',
   '/assets/favicon-32.png',
   '/assets/favicon-192.png',

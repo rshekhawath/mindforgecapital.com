@@ -115,4 +115,16 @@
   onScroll();
   W.addEventListener('scroll', onScroll, { passive: true });
   W.addEventListener('resize', onScroll, { passive: true });
+
+  // — PWA install/offline (V22.4) —
+  // The website IS the iOS/Android app now (installed via Add to Home Screen /
+  // Install app), so it must register the service worker on every page — not just
+  // the dashboard. This shared chrome loads on 17 pages, so registering here makes
+  // the whole site installable + offline-capable in one place. register() de-dupes
+  // by URL (idempotent), the scope is the whole origin, and it fails silently.
+  if ('serviceWorker' in navigator) {
+    W.addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () {});
+    });
+  }
 })();
