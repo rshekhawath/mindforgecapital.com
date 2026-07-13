@@ -124,6 +124,12 @@ Edit **`www/js/config.js`**:
   gradient-ink numerals, renewal countdown ring, OTP progress track + one-time-code
   autofill hardening, iconed toasts, styled strategy switcher, deployment-meter
   ticks, dark-mode remnant sweep.
+- ✅ **V22.3 living-data release**: **live P&L since rebalance** on Holdings (the
+  backend's `prices` quote proxy — per-pick live price + % vs rec. price and a
+  weight-weighted portfolio strip with refresh, same rec-price baseline as the
+  website dashboard), a **first-run onboarding** carousel (3 swipeable slides,
+  shown once before Login), and **pull-to-refresh** on Holdings (branded, touch-only).
+  A capital re-calc also no longer jumps the screen back to the top.
 - ✅ Capacitor-ready for App Store / Play Store (run `cap add ios|android`).
 - 🔌 Gated on credentials: Kite Connect live linking (api_key), SMS OTP (provider).
   All wired — drop in the values to activate.

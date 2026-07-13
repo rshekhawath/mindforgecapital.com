@@ -1028,7 +1028,7 @@ html,body{overflow-x:clip;}
    the whole chip instead of sitting as a centred glyph. */
 .tb-badge svg[preserveAspectRatio]{width:100%;height:100%;}
 .tb-nm{font-weight:800;letter-spacing:-.01em;min-width:0;
-  overflow:hidden;text-overflow:ellipsis;}
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* the same glassy top-light sheen the other icon tiles carry (V13.7) */
 .tb-badge::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
   background:linear-gradient(159deg,rgba(255,255,255,.32) 0%,rgba(255,255,255,.05) 46%,transparent 62%);}
@@ -1378,3 +1378,142 @@ button,.btn,.tab,.seg-btn,.broker-logo,.sc-ico,.tb-badge,.acct-av,.lens-ic,.tod-
 
 /* ── 4) SKELETON GEOMETRY PARITY ────────────────────────────────────────────── */
 .skeleton{border-radius:var(--r-sm);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   V22.3 — LIVE P&L · FIRST-RUN ONBOARDING · PULL-TO-REFRESH
+   ----------------------------------------------------------------------------
+   Three NEW surfaces (the saturated screens are untouched), all additive,
+   brand-matched, reduced-motion-safe, dark-consistent via the tokens:
+     1) LIVE P&L SINCE REBALANCE — the app now uses the backend's quote proxy
+        (?action=prices, the website dashboard's live-profit source). Each pick
+        gains a live-price row (price + % vs rec. price, green/red), and a
+        portfolio "Live since rebalance" strip (weight-weighted, same rec_price
+        baseline as the site) lands above the picks list with a refresh button.
+        Quotes are applied IN PLACE — no re-render, no entrance replay.
+     2) FIRST-RUN ONBOARDING — a 3-slide scroll-snap carousel before Login
+        (once per install): a mini picks-basket mock, the real broker marks,
+        and the four factor-lens medallions — the app introducing itself in its
+        own established visual vocabulary.
+     3) PULL-TO-REFRESH — the native gesture on Holdings: a branded chip drops
+        under the app bar, arrow flips at the threshold, spins while the picks
+        + quotes re-fetch. Touch-only; desktop keeps the strip's refresh button.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1) LIVE P&L — per-pick live row ───────────────────────────────────────── */
+.h-live-slot:empty,.live-strip-slot:empty{display:none;}
+.h-live{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px;padding-top:10px;
+  border-top:.5px dashed var(--line2);font-size:12px;}
+.hl-px{display:inline-flex;align-items:center;gap:7px;font-weight:700;color:var(--ink2);font-variant-numeric:tabular-nums;}
+.hl-dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.hl-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--green);animation:dot-pulse 2.1s ease-out infinite;}
+.hl-pc{font-weight:800;font-variant-numeric:tabular-nums;padding:2px 10px;border-radius:999px;font-size:11.5px;}
+.h-live.up .hl-pc{color:var(--green);background:rgba(5,150,105,.10);}
+.h-live.dn .hl-pc{color:var(--red);background:rgba(220,38,38,.08);}
+:root[data-theme="dark"] .h-live.up .hl-pc{background:rgba(22,199,141,.13);}
+:root[data-theme="dark"] .h-live.dn .hl-pc{background:rgba(248,113,113,.12);}
+.hl-k{color:var(--ink3);font-size:10.5px;font-weight:600;margin-left:auto;letter-spacing:.02em;}
+@media(prefers-reduced-motion:no-preference){.h-live{animation:rise .45s var(--ease) both;}}
+
+/* ── 1b) LIVE P&L — portfolio strip ────────────────────────────────────────── */
+.live-strip{display:flex;align-items:center;gap:13px;margin-top:14px;position:relative;overflow:hidden;
+  background:var(--card);border:.5px solid var(--line2);border-radius:var(--r);box-shadow:var(--shadow);padding:13px 15px;}
+:root[data-theme="light"] .live-strip{background:var(--surface);}
+:root[data-theme="dark"] .live-strip{box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.05);}
+.live-strip::before{content:'';position:absolute;left:0;top:13px;bottom:13px;width:3.5px;border-radius:0 4px 4px 0;background:var(--green);}
+.live-strip.dn::before{background:var(--red);}
+.ls-ic{width:40px;height:40px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;background:linear-gradient(135deg,#059669,#10b981);
+  box-shadow:0 7px 16px -9px rgba(5,150,105,.55);}
+.live-strip.dn .ls-ic{background:linear-gradient(135deg,#dc2626,#ef4444);box-shadow:0 7px 16px -9px rgba(220,38,38,.55);}
+.ls-ic svg{width:20px;height:20px;position:relative;z-index:1;}
+.ls-ic::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(159deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.06) 46%,transparent 62%);}
+.ls-body{flex:1;min-width:0;}
+.ls-k{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);}
+.ls-v{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums;}
+.live-strip.up .ls-v{color:var(--green);}
+.live-strip.dn .ls-v{color:var(--red);}
+.ls-s{font-size:11.5px;color:var(--ink3);margin-top:1px;}
+.ls-refresh{width:36px;height:36px;border-radius:999px;border:1px solid var(--line2);background:transparent;
+  color:var(--ink3);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .15s var(--ease),background .15s;}
+.ls-refresh:active{transform:scale(.92);background:rgba(37,99,235,.08);}
+.ls-refresh svg{width:15px;height:15px;}
+.ls-refresh.spin svg{animation:spin .7s linear infinite;}
+@media(prefers-reduced-motion:no-preference){.live-strip{animation:rise .5s var(--ease) both;}}
+
+/* ── 2) ONBOARDING ─────────────────────────────────────────────────────────── */
+.ob{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+.ob-head{display:flex;align-items:center;justify-content:space-between;
+  padding:calc(var(--safe-top) + 14px) 18px 0;}
+.ob-skip{background:none;border:none;color:var(--ink3);font-weight:700;font-size:14px;padding:8px 10px;border-radius:999px;}
+.ob-skip:active{background:rgba(37,99,235,.08);}
+.ob-track{display:flex;flex:1;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;}
+.ob-track::-webkit-scrollbar{display:none;}
+.ob-slide{flex:0 0 100%;min-width:100%;scroll-snap-align:center;scroll-snap-stop:always;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px 30px;}
+.ob-t{font-size:25px;margin-top:28px;letter-spacing:-.025em;}
+.ob-s{color:var(--ink3);font-size:14.5px;line-height:1.55;max-width:320px;margin-top:9px;}
+.ob-foot{width:100%;max-width:420px;margin:0 auto;padding:8px 22px calc(var(--safe-bottom) + 22px);}
+.ob-dots{display:flex;justify-content:center;gap:7px;margin-bottom:16px;}
+.ob-dot{width:7px;height:7px;border-radius:999px;background:var(--line2);border:none;padding:0;
+  transition:width .25s var(--ease),background .25s ease;}
+.ob-dot.on{width:22px;background:var(--grad);}
+/* slide art — a soft brand stage, contents composed from existing vocabulary */
+.ob-art{width:210px;height:210px;border-radius:36px;display:flex;align-items:center;justify-content:center;position:relative;
+  background:linear-gradient(160deg,rgba(26,80,216,.11),rgba(8,145,178,.06));
+  border:.5px solid var(--line2);
+  box-shadow:0 22px 44px -26px rgba(26,80,216,.5),inset 0 1px 0 rgba(255,255,255,.55);}
+.ob-art::after{content:'';position:absolute;inset:-14px;border-radius:44px;z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(26,80,216,.20),rgba(8,145,178,.09) 56%,transparent 76%);opacity:.7;}
+:root[data-theme="dark"] .ob-art{box-shadow:0 22px 44px -26px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.07);}
+@media(prefers-reduced-motion:no-preference){.ob-art::after{animation:mfc-halo 4.6s ease-in-out infinite;}}
+/* slide 1 — mini picks basket */
+.ob-mock{width:152px;display:flex;flex-direction:column;gap:13px;}
+.ob-mrow{display:flex;align-items:center;gap:8px;}
+.ob-rank.h-rank{width:22px;height:22px;font-size:11px;border-radius:7px;}
+.ob-line{flex:1;height:7px;border-radius:4px;background:var(--track);position:relative;overflow:hidden;}
+.ob-line>i{position:absolute;inset:0 auto 0 0;width:var(--w,60%);border-radius:4px;
+  background:linear-gradient(90deg,var(--accent),var(--mint));}
+.ob-wt{font-size:10.5px;font-weight:800;color:var(--ink2);font-variant-numeric:tabular-nums;}
+/* slide 2 — pick → broker flow */
+.ob-flow{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.ob-pick{font-size:11.5px;font-weight:800;color:var(--accent);background:rgba(37,99,235,.08);
+  border:1px solid var(--line2);border-radius:999px;padding:7px 13px;white-space:nowrap;}
+.ob-brokers{display:flex;gap:11px;}
+/* slide 3 — factor-lens medallions */
+.ob-lenses{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ob-lens{width:58px;height:58px;border-radius:17px;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;box-shadow:0 8px 18px -9px rgba(26,80,216,.55);}
+.ob-lens svg{width:25px;height:25px;position:relative;z-index:1;}
+.ob-lens::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(159deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.06) 46%,transparent 62%);}
+/* entrance — art pieces + copy cascade in once at mount */
+@media(prefers-reduced-motion:no-preference){
+  .ob-art,.ob-t,.ob-s{animation:rise .5s var(--ease) both;}
+  .ob-t{animation-delay:.10s;}.ob-s{animation-delay:.16s;}
+  .ob-mrow,.ob-brokers .broker-logo,.ob-lens{animation:rise .5s var(--ease) both;}
+  .ob-foot .btn{animation:rise .5s var(--ease) .22s both;}
+}
+
+/* ── 3) PULL-TO-REFRESH ────────────────────────────────────────────────────── */
+.ptr{position:fixed;top:calc(var(--safe-top) + 18px);left:50%;z-index:35;width:42px;height:42px;margin-left:-21px;
+  border-radius:999px;background:var(--card);border:.5px solid var(--line2);box-shadow:var(--shadow);
+  display:flex;align-items:center;justify-content:center;color:var(--accent);pointer-events:none;
+  opacity:0;transform:translateY(calc(var(--d,0px) - 66px));
+  transition:transform .3s var(--ease),opacity .25s ease;}
+.ptr svg{width:19px;height:19px;transition:transform .2s var(--ease);}
+.ptr.pull{opacity:1;transition:opacity .15s ease;}   /* track the finger 1:1 while pulling */
+.ptr.ready svg{transform:rotate(180deg);}
+.ptr.load{opacity:1;transition:transform .3s var(--ease),opacity .25s ease;}
+.ptr.load svg{opacity:0;}
+.ptr.load::after{content:'';position:absolute;width:19px;height:19px;border-radius:50%;
+  border:2.5px solid rgba(37,99,235,.22);border-top-color:var(--accent);animation:spin .7s linear infinite;}
+:root[data-theme="dark"] .ptr.load::after{border-color:rgba(131,170,255,.25);border-top-color:var(--accent3);}
+
+@media(prefers-reduced-motion:reduce){
+  .h-live,.live-strip,.ob-art,.ob-t,.ob-s,.ob-mrow,.ob-brokers .broker-logo,.ob-lens,.ob-foot .btn,
+  .ob-art::after,.hl-dot::after{animation:none!important;}
+  .ob-dot,.ptr,.ptr svg,.ls-refresh{transition:none!important;}
+}

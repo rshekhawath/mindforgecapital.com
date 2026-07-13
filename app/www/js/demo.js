@@ -55,7 +55,25 @@
     // brief delay so the skeleton loader is visible, like the real fetch
     return new Promise(function (res) { setTimeout(function () { res({ status: 'ok', subscription: sub, stocks: list }); }, 320); });
   };
-  MFCApi.prices = function () { return Promise.resolve({ status: 'ok', prices: {} }); };
+  // V22.3 — realistic demo quotes (deterministic drift vs rec. price, mixed
+  // up/down) so the Holdings live-P&L chips + "Live since rebalance" strip show
+  // both states in the demo, with the same brief delay as a real quote fetch.
+  var DRIFT = {
+    'INFY.NS': 4.6, 'TCS.NS': -2.1, 'HDFCBANK.NS': 3.2, 'ICICIBANK.NS': 1.4, 'RELIANCE.NS': -1.2,
+    'LT.NS': 6.8, 'MARUTI.NS': 2.4, 'SUNPHARMA.NS': -3.4, 'BHARTIARTL.NS': 5.1, 'ITC.NS': 0.8,
+    'DIXON.NS': 9.4, 'POLYCAB.NS': -4.2, 'KEI.NS': 7.6, 'CDSL.NS': 3.9, 'BSE.NS': 12.3,
+    'RADICO.NS': -1.8, 'APARINDS.NS': 5.7, 'JYOTHYLAB.NS': 2.2
+  };
+  MFCApi.prices = function () {
+    var px = {};
+    Object.keys(STOCKS).forEach(function (k) {
+      STOCKS[k].forEach(function (s) {
+        var p = s.recommended_price * (1 + (DRIFT[s.yahoo_ticker] || 0) / 100);
+        px[s.yahoo_ticker] = { price: Math.round(p * 100) / 100, prev_close: Math.round(p * 0.996 * 100) / 100 };
+      });
+    });
+    return new Promise(function (res) { setTimeout(function () { res({ status: 'ok', prices: px }); }, 600); });
+  };
 
   // ── seed a demo session so the app opens straight to the dashboard ─────────
   MFCStore.setSession(DEMO_EMAIL, SUBS);

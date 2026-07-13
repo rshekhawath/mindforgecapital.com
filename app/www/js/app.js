@@ -13,6 +13,7 @@
   var currentTab = '';
   var currentToken = null;            // the subscription whose holdings we're viewing
   var holdingsCache = {};             // token -> {subscription, stocks} (for offline/back)
+  var pricesCache = {};               // V22.3: token -> {px:{YAHOO:{price,prev}}, at} — live quotes, session-lived
   var capital = 0;                    // allocation-calculator capital
   var capitalCurr = '';               // currency capital was set for — reset when strategy currency changes
   // V20.3 — native page transitions. Set true at the top of a genuine route change
@@ -178,7 +179,12 @@
   }
 
   // ── render plumbing ──────────────────────────────────────────────────────────
-  function render(html,activeTab,wire){
+  // V22.3 — opts.keepScroll: an IN-PLACE re-render (the Holdings capital
+  // calculator) restores the member's scroll position instead of jumping to the
+  // top mid-interaction; genuine navigations still open at the top.
+  function render(html,activeTab,wire,opts){
+    opts=opts||{};
+    var keepY=opts.keepScroll?(window.scrollY||0):0;
     appEl.innerHTML=html+(activeTab?tabbarHTML(activeTab):'');
     currentTab=activeTab||'';
     // V20.3 — play the whole-screen "push" once per genuine navigation (see pendingNav).
@@ -187,7 +193,83 @@
     appEl.querySelectorAll('[data-hash]').forEach(function(b){b.addEventListener('click',function(){location.hash=b.getAttribute('data-hash');});});
     appEl.querySelectorAll('[data-back]').forEach(function(b){b.addEventListener('click',function(){history.length>1?history.back():(location.hash='#/home');});});
     if(wire)wire();
-    window.scrollTo(0,0);
+    window.scrollTo(0,opts.keepScroll?keepY:0);
+    // keep the app-bar's scrolled state honest after any re-render
+    var _ab=document.querySelector('.appbar');if(_ab)_ab.classList.toggle('scrolled',(window.scrollY||0)>4);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  ONBOARDING  (V22.3 — first run only: 3 swipeable slides before Login)
+  // ----------------------------------------------------------------------------
+  //  A scroll-snap carousel introducing the app in its own visual vocabulary:
+  //  a mini picks-basket mock, the real broker marks, and the factor-lens
+  //  medallions. Shown ONCE (localStorage flag; storage-denied private mode is
+  //  treated as "seen" so nobody gets trapped re-onboarding every launch).
+  //  Skip / Get started both land on the normal Login screen.
+  // ════════════════════════════════════════════════════════════════════════════
+  var OB_KEY='mfc_app_onboard_v1';
+  function obSeen(){try{return localStorage.getItem(OB_KEY)==='1';}catch(e){return true;}}
+  function obArt(k){
+    if(k==='picks'){
+      var rows=[{m:'m1',w:88,pc:'10.0%'},{m:'m2',w:66,pc:'10.0%'},{m:'m3',w:47,pc:'10.0%'}];
+      return '<div class="ob-art"><div class="ob-mock">'+rows.map(function(r,i){
+        return '<div class="ob-mrow" style="animation-delay:'+(200+i*110)+'ms"><span class="ob-rank h-rank medal '+r.m+'">'+(i+1)+'</span>'+
+          '<span class="ob-line"><i style="--w:'+r.w+'%"></i></span><span class="ob-wt">'+r.pc+'</span></div>';
+      }).join('')+'</div></div>';
+    }
+    if(k==='broker'){
+      return '<div class="ob-art"><div class="ob-flow">'+
+        '<span class="ob-pick">INFY · 64 shares · Buy →</span>'+
+        '<div class="ob-brokers">'+MFCBrokers.list().map(function(b,i){
+          return '<div class="broker-logo" style="background:'+b.color+';animation-delay:'+(260+i*110)+'ms">'+b.logo+'</div>';
+        }).join('')+'</div></div></div>';
+    }
+    return '<div class="ob-art"><div class="ob-lenses">'+FACTOR_LENSES.map(function(f,i){
+      return '<span class="ob-lens" style="background:'+f.grad+';animation-delay:'+(200+i*90)+'ms">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+f.ic+'</svg></span>';
+    }).join('')+'</div></div>';
+  }
+  function viewOnboarding(){
+    var SLIDES=[
+      {k:'picks', t:'Your picks, every cycle', s:'Each strategy publishes a fresh, equal-weighted basket of stocks every month — weights, prices and position sizing included.'},
+      {k:'broker',t:'One tap to your broker',  s:'Link Zerodha Kite, Groww or Upstox once — every pick becomes a pre-filled order link in your broker.'},
+      {k:'tools', t:'Research like a pro',     s:'The NSE Scanner, Integrity Scores and the monthly Factor Report — the desk’s tools, in your pocket.'}
+    ];
+    render(
+      '<div class="ob">'+
+        '<div class="ob-head"><div class="logo" style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px"><img src="assets/favicon-192.png" alt="" style="width:24px;height:24px;border-radius:7px">MindForge</div>'+
+        '<button class="ob-skip" id="obSkip">Skip</button></div>'+
+        '<div class="ob-track" id="obTrack">'+SLIDES.map(function(sl){
+          return '<div class="ob-slide">'+obArt(sl.k)+'<h1 class="ob-t">'+sl.t+'</h1><p class="ob-s">'+sl.s+'</p></div>';
+        }).join('')+'</div>'+
+        '<div class="ob-foot">'+
+          '<div class="ob-dots" role="tablist" aria-label="Onboarding progress">'+SLIDES.map(function(_,i){
+            return '<button class="ob-dot'+(i===0?' on':'')+'" data-ob="'+i+'" aria-label="Slide '+(i+1)+'"></button>';
+          }).join('')+'</div>'+
+          '<button class="btn btn-primary" id="obNext">Next</button>'+
+        '</div>'+
+      '</div>','',function(){
+        var track=document.getElementById('obTrack');
+        var dots=Array.prototype.slice.call(appEl.querySelectorAll('.ob-dot'));
+        var next=document.getElementById('obNext');
+        var n=SLIDES.length;
+        function idx(){return Math.max(0,Math.min(n-1,Math.round(track.scrollLeft/Math.max(1,track.clientWidth))));}
+        function sync(){
+          var i=idx();
+          dots.forEach(function(d,k){d.classList.toggle('on',k===i);});
+          next.textContent=(i===n-1)?'Get started':'Next';
+        }
+        function goTo(i){
+          var x=i*track.clientWidth;
+          if(prefersReduced()||!track.scrollTo){track.scrollLeft=x;sync();}
+          else track.scrollTo({left:x,behavior:'smooth'});
+        }
+        function finish(){try{localStorage.setItem(OB_KEY,'1');}catch(e){}viewLogin();}
+        track.addEventListener('scroll',sync,{passive:true});
+        dots.forEach(function(d){d.addEventListener('click',function(){goTo(Number(d.getAttribute('data-ob')));});});
+        next.addEventListener('click',function(){var i=idx();if(i>=n-1)finish();else goTo(i+1);});
+        document.getElementById('obSkip').addEventListener('click',finish);
+      });
   }
 
   // ════════════════════════════════════════════════════════════════════════════
@@ -195,6 +277,7 @@
   // ════════════════════════════════════════════════════════════════════════════
   var loginEmail='', resendAt=0;
   function viewLogin(){
+    if(!obSeen())return viewOnboarding();     // V22.3 — first run: intro slides once
     render(
       '<main class="screen screen--center rise">'+
         '<div style="text-align:center;margin-bottom:26px">'+
@@ -446,6 +529,105 @@
     });
   }
 
+  // ── V22.3 · LIVE P&L SINCE REBALANCE ─────────────────────────────────────────
+  // The app finally uses the backend's ?action=prices quote proxy (the website
+  // dashboard's live-profit source). Quotes are fetched once per strategy per
+  // session (or on demand via pull-to-refresh / the strip's refresh button) and
+  // applied IN PLACE — no re-render, so entrances never replay and scroll never
+  // jumps. Every % is measured against recommended_price, the same baseline the
+  // per-row table and the website use (V16.3 rule: one baseline, no disagreement).
+  function fetchLive(token,stocks,force){
+    // No navigator.onLine gate — Android WebViews are known to misreport it
+    // (false while connected); a failed fetch is silent + cheap, so just try.
+    var entry=pricesCache[token];
+    if(entry&&!force)return Promise.resolve(false);
+    var ys=(stocks||[]).map(function(s){return s.yahoo_ticker;}).filter(Boolean);
+    if(!ys.length)return Promise.resolve(false);
+    return MFCApi.prices(ys.join(',')).then(function(d){
+      var map=(d&&d.prices)||{},out={},any=false;
+      ys.forEach(function(y){var p=map[y];if(p&&p.price!=null&&Number(p.price)>0){out[y]={price:Number(p.price),prev:p.prev_close!=null?Number(p.prev_close):null};any=true;}});
+      if(!any)return false;
+      pricesCache[token]={px:out,at:Date.now()};
+      if(currentTab==='holdings'&&currentToken===token)applyLivePrices(token,stocks);
+      return true;
+    }).catch(function(){return false;});   // quotes are best-effort — fail silent
+  }
+  function applyLivePrices(token,stocks){
+    var entry=pricesCache[token],px=entry&&entry.px;
+    if(!px)return;
+    var slots=appEl.querySelectorAll('.h-live-slot');
+    var quoted=0,wSum=0,retSum=0;
+    (stocks||[]).forEach(function(s,i){
+      var rec=Number(s.recommended_price)||0;
+      var lv=s.yahoo_ticker?px[s.yahoo_ticker]:null;
+      var slot=slots[i];
+      if(!lv||!(rec>0)){if(slot)slot.innerHTML='';return;}
+      var pct=(lv.price/rec-1)*100,up=pct>=0,c=curOf(s);
+      var w=Number(s.weight_pct)||1;quoted++;wSum+=w;retSum+=w*(lv.price/rec-1);
+      if(slot)slot.innerHTML='<div class="h-live '+(up?'up':'dn')+'">'+
+        '<span class="hl-px"><span class="hl-dot"></span>Live '+c+lv.price.toFixed(2)+'</span>'+
+        '<span class="hl-pc">'+(up?'▲ +':'▼ ')+pct.toFixed(2)+'%</span>'+
+        '<span class="hl-k">vs rec. price</span></div>';
+    });
+    var strip=document.getElementById('liveStrip');
+    if(!strip)return;
+    if(!quoted||!wSum){strip.innerHTML='';return;}
+    var tot=retSum/wSum*100,up2=tot>=0;
+    var at=new Date(entry.at),hh=at.getHours(),mm=at.getMinutes();
+    var t12=(hh%12||12)+':'+(mm<10?'0':'')+mm+(hh<12?' am':' pm');
+    strip.innerHTML='<div class="live-strip '+(up2?'up':'dn')+'">'+
+      '<div class="ls-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+
+        (up2?'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>':'<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>')+'</svg></div>'+
+      '<div class="ls-body"><div class="ls-k">Live since rebalance</div>'+
+      '<div class="ls-v">'+(up2?'+':'')+tot.toFixed(2)+'%</div>'+
+      '<div class="ls-s">'+quoted+'/'+stocks.length+' picks quoted · '+t12+'</div></div>'+
+      '<button class="ls-refresh" data-pxrefresh aria-label="Refresh live prices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"/></svg></button></div>';
+    var rb=strip.querySelector('[data-pxrefresh]');
+    if(rb)rb.addEventListener('click',function(){
+      rb.classList.add('spin');
+      fetchLive(token,stocks,true).then(function(ok){
+        rb.classList.remove('spin');
+        if(!ok)toast('Couldn’t refresh quotes right now',true);
+      }).catch(function(){rb.classList.remove('spin');toast('Couldn’t refresh quotes right now',true);});
+    });
+  }
+
+  // ── V22.3 · PULL-TO-REFRESH (Holdings) ───────────────────────────────────────
+  // The native mobile gesture: pull down from the top of the picks screen to
+  // re-fetch this cycle's picks + live quotes. Touch-only (desktop keeps the
+  // strip's refresh button), horizontal swipes are ignored, and the indicator is
+  // part of #app so any navigation naturally clears it.
+  function wirePtr(onRefresh){
+    if(!('ontouchstart' in window))return;
+    var scr=appEl.querySelector('main.screen');if(!scr)return;
+    var ind=document.createElement('div');
+    ind.className='ptr';ind.setAttribute('aria-hidden','true');
+    ind.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v11M6.5 10.5L12 16l5.5-5.5"/></svg>';
+    appEl.appendChild(ind);
+    var TH=74,startX=0,startY=0,d=0,active=false,fired=false;
+    function setD(v){d=v;ind.style.setProperty('--d',v+'px');ind.classList.toggle('ready',v>=TH);}
+    scr.addEventListener('touchstart',function(e){
+      if((window.scrollY||0)>0||e.touches.length!==1){active=false;return;}
+      startX=e.touches[0].clientX;startY=e.touches[0].clientY;active=true;fired=false;
+    },{passive:true});
+    scr.addEventListener('touchmove',function(e){
+      if(!active||fired)return;
+      var dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;
+      if(!ind.classList.contains('pull')&&Math.abs(dx)>Math.abs(dy)){active=false;return;}   // horizontal pan → not a pull
+      if(dy<=0||(window.scrollY||0)>0){ind.classList.remove('pull');setD(0);return;}
+      if(e.cancelable)e.preventDefault();
+      ind.classList.add('pull');
+      setD(Math.min(dy*0.45,104));
+    },{passive:false});
+    function end(){
+      if(!active)return;active=false;
+      if(d>=TH&&!fired){fired=true;ind.classList.add('load');setD(58);setTimeout(onRefresh,320);}
+      else{ind.classList.remove('pull','ready');setD(0);}
+    }
+    scr.addEventListener('touchend',end,{passive:true});
+    scr.addEventListener('touchcancel',end,{passive:true});
+  }
+
   function renderHoldings(token,sub,stocks,active,opts){
     opts=opts||{}; var skipFx=!!opts.skipFx;   // capital changes re-render without replaying entrances
     stocks=stocks||[];
@@ -488,6 +670,7 @@
           '<div class="h-cell"><div class="k">Allocation</div><div class="v accent">'+fmtMoney(c,amt)+'</div></div>'+
           '<div class="h-cell"><div class="k">Shares</div><div class="v">'+shares+'</div></div>'+
         '</div>'+
+        '<div class="h-live-slot"></div>'+
         '<div class="h-buy">'+
           (blink?'<a class="btn btn-primary btn-sm" href="'+esc(blink)+'" target="_blank" rel="noopener noreferrer"><span class="bk-glyph">'+blogo+'</span>Buy on '+esc(bname)+' →</a>':'<span class="chip-mini">Link a broker to buy</span>')+
           '<button class="chip-mini" data-copy="'+esc(s.ticker)+'">Copy</button>'+
@@ -520,6 +703,7 @@
             '<div class="deploy-meta"><span class="dep-on"><span class="dep-dot"></span>Deployed <b>'+fmtMoney(curr,deployed)+'</b> · <span data-count="'+depPct.toFixed(0)+'" data-suffix="%">'+depPct.toFixed(0)+'%</span></span><span>Idle cash <b>'+fmtMoney(curr,cashLeft)+'</b></span></div>'+
           '</div>'+
         '</div>'+
+        '<div class="live-strip-slot" id="liveStrip"></div>'+
         '<div class="list-h"><span class="lt">Stock picks</span>'+
           (stocks.length?'<button class="copy-all" data-copyall aria-label="Copy all '+stocks.length+' tickers to your clipboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy all '+stocks.length+'</button>':'')+
         '</div>'+
@@ -527,6 +711,11 @@
       '</main>','holdings',function(){
         wireSubSwitcher();
         wireDonut();
+        // V22.3 — live P&L: apply session quotes instantly, else fetch once and
+        // fill in place; pull down from the top to force-refresh picks + quotes.
+        applyLivePrices(token,stocks);
+        fetchLive(token,stocks);
+        wirePtr(function(){delete holdingsCache[token];delete pricesCache[token];viewHoldings(token);});
         // copy ticker
         appEl.querySelectorAll('[data-copy]').forEach(function(b){b.addEventListener('click',function(){
           var t=b.getAttribute('data-copy');
@@ -561,7 +750,7 @@
             bars.forEach(function(b){b.style.width=b.style.getPropertyValue('--w');});
           }
         }
-      });
+      },{keepScroll:skipFx});   // V22.3 — a capital re-calc no longer jumps to the top
   }
   function tile(k,v,s,cls){return '<div class="tile'+(cls?' '+cls:'')+'"><div class="t-k">'+esc(k)+'</div><div class="t-v">'+v+'</div><div class="t-s">'+esc(s||'')+'</div></div>';}
   // V20.0 — the "Broker" KPI tile now carries the linked broker's REAL logo badge
