@@ -2609,7 +2609,7 @@ function renderPortfolioMap(stocks) {
     const grow = Math.max(10, Math.round((w / maxW) * 100));
     const tk = escapeHtml(s.ticker || s.company_name || '—');
     const nm = escapeHtml(s.company_name || s.ticker || '');
-    return '<div class="pmap-tile" style="--pmi:' + i + ';flex-grow:' + grow + ';background:' + color + '22;border-color:' + color + '55;"'
+    return '<div class="pmap-tile" data-sector="' + escapeHtml(sector) + '" style="--pmi:' + i + ';flex-grow:' + grow + ';background:' + color + '22;border-color:' + color + '55;--lens-c:' + color + ';"'
       + ' title="' + nm + ' · ' + escapeHtml(sector) + ' · ' + w.toFixed(1) + '% weight">'
       + '<span class="pmap-ticker">' + tk + '</span>'
       + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>' + w.toFixed(1) + '%</span>'
@@ -5394,6 +5394,148 @@ html[data-theme="dark"] .howto-step:hover::after{ color:rgba(150,180,240,.14); }
   .howto-step:hover .num{ transform:none; }
 }
 </style>
+<!-- ============================================================
+     MF VISUAL V22.2 — dashboard sector lens + map polish (additive, RM-safe)
+     (1) Portfolio-map last-row fix: an invisible greedy flex filler stops the
+         final row's tiles from ballooning to full width, so tile width keeps
+         tracking model weight ("tile size = model weight" stays honest).
+     (2) Sector lens: the existing legend↔donut cross-highlight (v10.1/V12.0)
+         now reaches the portfolio map — hovering a legend row or donut slice
+         spotlights that sector's tiles (rest dim); hovering a map tile lights
+         its legend row + donut slice + the informative ring centre. Completes
+         the legend ↔ donut ↔ map triangle. Delegated + fail-silent.
+     (3) Dark-mode finish: the 1:1 Zoom banner's sheen was a 40%-white band —
+         far too loud on the dark surface; it now passes as a faint cool glint.
+     ============================================================ -->
+<style id="mf-v222-dash">
+/* (1) last-row filler — absorbs leftover space so real tiles keep their
+   weight-proportional width; zero-size, borderless, invisible */
+.pmap-grid::after{ content:''; flex:99999 1 0%; min-width:0; height:0; padding:0; border:none; }
+/* (2) sector lens on the map */
+.pmap-tile{ transition:transform .18s ease, box-shadow .2s ease, filter .2s ease, opacity .22s ease; }
+.pmap-grid.mf222-hot .pmap-tile{ opacity:.30; filter:saturate(.6); }
+.pmap-grid.mf222-hot .pmap-tile.mf222-pick{
+  opacity:1; filter:saturate(1.15);
+  box-shadow:0 0 0 1.5px var(--lens-c, rgba(37,99,235,.6)), 0 10px 24px -14px rgba(26,80,216,.45);
+}
+html[data-theme="dark"] .pmap-grid.mf222-hot .pmap-tile{ opacity:.34; }
+/* (3) dark sheen calm-down (light keeps the V9.6 white pass) */
+html[data-theme="dark"] .oneonone-card::after{
+  background:linear-gradient(100deg,transparent 0%,rgba(148,184,255,.10) 50%,transparent 100%);
+}
+@media (prefers-reduced-motion: reduce){
+  .pmap-tile{ transition:none; }
+}
+</style>
+<script id="mf-v222-dash-js">
+/* MF V22.2 — sector lens: legend/donut hover → map tiles; map tile hover →
+   legend row + donut slice + ring centre. Delegated on the stable containers
+   (survives re-renders), touch-safe (hover-only), fails silent. */
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      var legend=document.getElementById("alloc-grid");
+      var svg=document.getElementById("alloc-donut-svg");
+      var pgrid=document.getElementById("pmap-grid");
+      if(!pgrid) return;
+      function mapLens(sector){
+        var tiles=pgrid.querySelectorAll(".pmap-tile");
+        if(!sector){ pgrid.classList.remove("mf222-hot");
+          for(var i=0;i<tiles.length;i++) tiles[i].classList.remove("mf222-pick");
+          return; }
+        var any=false;
+        for(var j=0;j<tiles.length;j++){
+          var hit=tiles[j].getAttribute("data-sector")===sector;
+          tiles[j].classList.toggle("mf222-pick",hit);
+          if(hit) any=true;
+        }
+        pgrid.classList.toggle("mf222-hot",any);
+      }
+      /* legend row hover → map */
+      if(legend){
+        legend.addEventListener("mouseover",function(e){
+          var r=e.target&&e.target.closest?e.target.closest(".alloc-row"):null;
+          if(r) mapLens(r.getAttribute("data-sector"));
+        });
+        legend.addEventListener("mouseout",function(e){
+          var r=e.target&&e.target.closest?e.target.closest(".alloc-row"):null;
+          if(r) mapLens(null);
+        });
+      }
+      /* donut slice hover → map (sector name lives in the slice <title>) */
+      if(svg){
+        svg.addEventListener("mouseover",function(e){
+          var s=e.target&&e.target.closest?e.target.closest(".ring-slice"):null;
+          if(!s) return;
+          var t=s.querySelector("title"); if(!t) return;
+          var txt=t.textContent||"", i=txt.indexOf(" · ");
+          mapLens(i>-1?txt.slice(0,i):txt);
+        });
+        svg.addEventListener("mouseout",function(e){
+          var s=e.target&&e.target.closest?e.target.closest(".ring-slice"):null;
+          if(s) mapLens(null);
+        });
+      }
+      /* map tile hover → sibling tiles + legend row + donut slice + centre */
+      var num=document.getElementById("donut-center-num");
+      var center=document.querySelector(".donut-center");
+      var lbl=center?center.querySelector(".dc-lbl"):null;
+      var baseNum=null, baseLbl=null;
+      function centreShow(sector,pct){
+        if(!num||!center||!lbl) return;
+        if(baseNum===null){ baseNum=num.textContent; baseLbl=lbl.textContent; }
+        if(pct) num.textContent=pct;
+        lbl.textContent=sector;
+        center.classList.add("dc-focus");
+      }
+      function centreRestore(){
+        if(!num||!center||!lbl) return;
+        if(baseNum!==null){ num.textContent=baseNum; lbl.textContent=baseLbl; baseNum=baseLbl=null; }
+        center.classList.remove("dc-focus");
+      }
+      function donutPick(sector,on){
+        if(!svg) return;
+        var slices=svg.querySelectorAll(".ring-slice"), hit=null;
+        for(var i=0;i<slices.length;i++){
+          var t=slices[i].querySelector("title");
+          var match=!!on&&!!t&&t.textContent.indexOf(sector+" ·")===0;
+          slices[i].classList.toggle("mf101-pick",match);
+          if(match) hit=t.textContent;
+        }
+        svg.classList.toggle("mf101-hot",!!hit);
+        return hit;
+      }
+      function legendPick(sector,on){
+        if(!legend) return;
+        var rows=legend.querySelectorAll(".alloc-row");
+        for(var i=0;i<rows.length;i++)
+          rows[i].classList.toggle("mf101-rowhot",!!on&&rows[i].getAttribute("data-sector")===sector);
+      }
+      var lastTileSec=null;
+      pgrid.addEventListener("mouseover",function(e){
+        var tile=e.target&&e.target.closest?e.target.closest(".pmap-tile"):null;
+        if(!tile) return;
+        var sec=tile.getAttribute("data-sector"); if(!sec||sec===lastTileSec) return;
+        lastTileSec=sec;
+        mapLens(sec); legendPick(sec,true);
+        var hit=donutPick(sec,true);
+        var pct=hit&&hit.indexOf(" · ")>-1?hit.slice(hit.indexOf(" · ")+3):"";
+        centreShow(sec,pct);
+      });
+      pgrid.addEventListener("mouseout",function(e){
+        var tile=e.target&&e.target.closest?e.target.closest(".pmap-tile"):null;
+        if(!tile) return;
+        var to=e.relatedTarget&&e.relatedTarget.closest?e.relatedTarget.closest(".pmap-tile"):null;
+        if(to&&to.getAttribute("data-sector")===lastTileSec) return;
+        lastTileSec=null;
+        mapLens(null); legendPick(null,false); donutPick("",false); centreRestore();
+      });
+    }catch(e){}
+  });
+})();
+</script>
 <script defer src="assets/mfc-chrome.js?v=3"></script>
 </body>
 </html>
