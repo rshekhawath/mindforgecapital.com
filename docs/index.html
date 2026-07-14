@@ -181,6 +181,33 @@ nav {
 /* V20.8: the comet is decorative "live data" motion — suppress it entirely when the
    viewer prefers reduced motion (the static end-dot above already marks the latest point). */
 @media (prefers-reduced-motion: reduce) { .hv-comet { display: none; } }
+
+/* V22.8: interactive hover readout — a snap-to-year crosshair + value tooltip that
+   lets the reader scrub the backtest and compare the strategy vs its benchmark at
+   each year. Pointer-fine only (wired in JS); purely additive over the existing
+   render + comet; the dots land exactly on the drawn curves (year points). */
+.hv-hover-line { stroke: var(--accent2, #2563eb); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; transition: opacity .16s ease; }
+.hv-hover-dot  { stroke: #fff; stroke-width: 2; opacity: 0; pointer-events: none; transition: opacity .16s ease; }
+.hv-chart-wrap.hv-active .hv-hover-line,
+.hv-chart-wrap.hv-active .hv-hover-dot { opacity: 1; }
+.hv-tip {
+  position: absolute; z-index: 5; top: 0; left: 0; pointer-events: none;
+  padding: 8px 11px; border-radius: 10px; background: #fff;
+  border: 0.5px solid rgba(37,99,235,0.16);
+  box-shadow: 0 10px 26px -10px rgba(15,30,60,0.32), 0 2px 6px rgba(15,30,60,0.07);
+  opacity: 0; transform: translateY(3px);
+  transition: opacity .16s ease, transform .16s ease; white-space: nowrap;
+}
+.hv-chart-wrap.hv-active .hv-tip { opacity: 1; transform: translateY(0); }
+.hv-tip-yr  { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 5px; }
+.hv-tip-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 12px; line-height: 1.45; }
+.hv-tip-row + .hv-tip-row { margin-top: 3px; }
+.hv-tip-name { display: inline-flex; align-items: center; gap: 6px; color: var(--text2); font-weight: 500; }
+.hv-tip-sw   { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+.hv-tip-val  { font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; color: var(--text); }
+html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--border2); box-shadow: 0 14px 32px -12px rgba(0,0,0,0.62); }
+@media (prefers-reduced-motion: reduce) { .hv-hover-line, .hv-hover-dot, .hv-tip { transition: none; } }
+
 .hv-foot {
   display: flex; align-items: center; justify-content: space-between;
   border-top: 0.5px solid var(--border2); padding-top: 16px;
@@ -4250,6 +4277,70 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       var key = b.getAttribute('data-hv');
       if (key && DATA[key]) select(key, true);
     });
+
+    // V22.8: interactive hover readout — a snap-to-year crosshair + tooltip that
+    // scrubs the backtest, comparing the strategy vs its benchmark growth (×) at
+    // each year. Pointer-fine only; the dots land exactly on the drawn year points;
+    // recomputed live so it always follows the active tab.
+    try {
+      var wrap = card.querySelector('.hv-chart-wrap'), svg = card.querySelector('.hv-chart');
+      var fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
+      if (wrap && svg && fine) {
+        var NS = 'http://www.w3.org/2000/svg';
+        var mk = function (tag, attrs, cls) {
+          var n = document.createElementNS(NS, tag);
+          for (var k in attrs) n.setAttribute(k, attrs[k]);
+          if (cls) n.setAttribute('class', cls);
+          return n;
+        };
+        var hLine = mk('line', { x1: 0, y1: 4, x2: 0, y2: BOT, 'stroke-linecap': 'round' }, 'hv-hover-line');
+        var hDotB = mk('circle', { r: 3.4, fill: 'var(--text3)' }, 'hv-hover-dot');
+        var hDotS = mk('circle', { r: 4, fill: '#1a50d8' }, 'hv-hover-dot');
+        svg.appendChild(hLine); svg.appendChild(hDotB); svg.appendChild(hDotS);
+
+        var tip = document.createElement('div'); tip.className = 'hv-tip';
+        tip.innerHTML = '<div class="hv-tip-yr"></div>' +
+          '<div class="hv-tip-row"><span class="hv-tip-name"><i class="hv-tip-sw hv-tip-sw-s"></i><span class="hv-tip-nm-s"></span></span><span class="hv-tip-val hv-tip-val-s"></span></div>' +
+          '<div class="hv-tip-row"><span class="hv-tip-name"><i class="hv-tip-sw hv-tip-sw-b"></i><span class="hv-tip-nm-b"></span></span><span class="hv-tip-val hv-tip-val-b"></span></div>';
+        wrap.appendChild(tip);
+        var q = function (s) { return tip.querySelector(s); };
+
+        var ptsFor = function (key) {
+          var d = DATA[key] || DATA.mc, cg = d.cagr || 0, bn = d.bench || 0, sv = [], bv = [], i;
+          for (i = 0; i <= N; i++) { sv.push(compound(cg, i)); bv.push(compound(bn, i)); }
+          var maxV = Math.max(sv[N], bv[N]), minV = 1;
+          return { sv: sv, bv: bv,
+            X: function (i) { return LEFT + (i / N) * (RIGHT - LEFT); },
+            Y: function (v) { return BOT - ((v - minV) / (maxV - minV || 1)) * (BOT - TOP); } };
+        };
+        var move = function (e) {
+          var key = card._hvKey || 'mc', m = META[key] || META.mc, c = COLORS[key] || COLORS.mc;
+          var P = ptsFor(key), rect = wrap.getBoundingClientRect();
+          if (!rect.width) return;
+          var i = Math.max(0, Math.min(N, Math.round(((e.clientX - rect.left) / rect.width) * N)));
+          var vx = P.X(i), sy = P.Y(P.sv[i]), by = P.Y(P.bv[i]);
+          hLine.setAttribute('x1', vx); hLine.setAttribute('x2', vx);
+          hDotS.setAttribute('cx', vx); hDotS.setAttribute('cy', sy); hDotS.setAttribute('fill', c[0]);
+          hDotB.setAttribute('cx', vx); hDotB.setAttribute('cy', by);
+          q('.hv-tip-yr').textContent = 'YEAR ' + i + ' · ' + (2021 + i);
+          q('.hv-tip-nm-s').textContent = 'MindForge ' + m.name;
+          q('.hv-tip-nm-b').textContent = m.bench;
+          q('.hv-tip-sw-s').style.background = 'linear-gradient(90deg,' + c[0] + ',' + c[1] + ')';
+          q('.hv-tip-sw-b').style.background = 'var(--text3)';
+          q('.hv-tip-val-s').textContent = '×' + P.sv[i].toFixed(1);
+          q('.hv-tip-val-b').textContent = '×' + P.bv[i].toFixed(1);
+          var sx = vx * rect.width / 400, py = Math.min(sy, by) * rect.height / 130;
+          var tw = tip.offsetWidth, th = tip.offsetHeight;
+          var left = Math.max(2, Math.min(rect.width - tw - 2, sx - tw / 2));
+          var top = py - th - 12; if (top < 0) top = py + 14;
+          tip.style.left = left + 'px'; tip.style.top = top + 'px';
+          wrap.classList.add('hv-active');
+        };
+        wrap.addEventListener('pointermove', move, { passive: true });
+        wrap.addEventListener('pointerdown', move, { passive: true });
+        wrap.addEventListener('pointerleave', function () { wrap.classList.remove('hv-active'); }, { passive: true });
+      }
+    } catch (e2) { /* readout is a progressive enhancement */ }
   } catch (e) { /* leave the static card untouched */ }
 })();
 </script>
