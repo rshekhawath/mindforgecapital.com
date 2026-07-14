@@ -3432,12 +3432,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     if(s.dii)drv.push('DII <b>'+((Number(s.dii.net)||0)>=0?'buying':'selling')+'</b>');
     if(s.fo&&s.fo.fii_idxfut_long!=null)drv.push('FIIs net <b>'+(Number(s.fo.fii_idxfut_long)>=Number(s.fo.fii_idxfut_short)?'long':'short')+' F&amp;O</b>');
     host.innerHTML='<div class="mps-head"><span class="mps-k"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Market sentiment</span>'+
-      '<span class="mps-verdict mps-'+L.tone+'">'+L.t+' · '+s.score+'<i>/100</i></span></div>'+
+      '<span class="mps-verdict mps-'+L.tone+'">'+L.t+' · <span class="mps-score">'+s.score+'</span><i>/100</i></span></div>'+
       '<div class="mps-meter"><span class="mps-needle mps-'+L.tone+'" data-left="'+sc+'"></span></div>'+
       '<div class="mps-scale"><span>Bearish</span><span>Neutral</span><span>Bullish</span></div>'+
       '<div class="mps-drivers">'+drv.join(' · ')+'</div>';
-    var n=host.querySelector('.mps-needle');
-    if(n)requestAnimationFrame(function(){requestAnimationFrame(function(){n.style.left=n.getAttribute('data-left')+'%';});});
+    // V22.7: count the score up from the neutral midpoint as the needle sweeps to it.
+    var n=host.querySelector('.mps-needle'),scEl=host.querySelector('.mps-score');
+    var rmS=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if(n)requestAnimationFrame(function(){requestAnimationFrame(function(){
+      n.style.left=n.getAttribute('data-left')+'%';
+      if(scEl&&!rmS){var f0=50,st0=performance.now();(function stp(now){var p=Math.min(1,(now-st0)/1100),e=1-Math.pow(1-p,3);scEl.textContent=Math.round(f0+(s.score-f0)*e);if(p<1)requestAnimationFrame(stp);})(performance.now());}
+    });});
   }
   fetch('/fii-dii/fii-dii.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
     if(!d)return;
@@ -4186,6 +4191,24 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         if (t < 1) requestAnimationFrame(step);
       })(performance.now());
     }
+    // V22.7: count the alpha figure up in lockstep with CAGR + benchmark on a
+    // tab switch (it used to hard-swap). Sign-aware; lands exactly on the
+    // published text so rounding never drifts from the MFSTAT value.
+    function countAlpha(node, txt) {
+      if (!node) return;
+      var full = (txt || '—') + ' annual alpha';
+      var m = (txt || '').match(/([+\-−])?\s*([\d.]+)/);
+      if (reduce || !m) { node.textContent = full; return; }
+      var sign = (m[1] === '-' || m[1] === '−') ? '−' : (m[1] === '+' ? '+' : '');
+      var mag = parseFloat(m[2]); if (!isFinite(mag)) { node.textContent = full; return; }
+      var dec = (m[2].split('.')[1] || '').length;
+      var start = performance.now(), dur = 700;
+      (function step(now) {
+        var t = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - t, 3);
+        node.textContent = t < 1 ? (sign + (mag * e).toFixed(dec) + '% annual alpha') : full;
+        if (t < 1) requestAnimationFrame(step);
+      })(performance.now());
+    }
     function redraw(p) {
       el.fill.setAttribute('d', p.fill); el.bline.setAttribute('d', p.bench); el.line.setAttribute('d', p.line);
       if (el.dotS) { el.dotS.setAttribute('cx', p.endS.x.toFixed(2)); el.dotS.setAttribute('cy', p.endS.y.toFixed(2)); }
@@ -4211,10 +4234,9 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       if (el.cagrLbl) el.cagrLbl.textContent = m.name + ' CAGR';
       if (el.legS) el.legS.textContent = 'MindForge ' + m.name;
       if (el.legB) el.legB.textContent = m.bench;
-      if (el.alpha) el.alpha.textContent = (d.alphaTxt || '') + ' annual alpha';
       var p = build(d.cagr != null ? d.cagr : 0, d.bench != null ? d.bench : 0);
-      if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); redraw(p); }
-      else { if (el.cagr) el.cagr.textContent = d.cagrTxt; if (el.bench) el.bench.textContent = d.benchTxt; }
+      if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); countAlpha(el.alpha, d.alphaTxt); redraw(p); }
+      else { if (el.cagr) el.cagr.textContent = d.cagrTxt; if (el.bench) el.bench.textContent = d.benchTxt; if (el.alpha) el.alpha.textContent = (d.alphaTxt || '') + ' annual alpha'; }
       tabs.querySelectorAll('.hv-tab').forEach(function (b) {
         var on = b.getAttribute('data-hv') === key;
         b.classList.toggle('active', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');

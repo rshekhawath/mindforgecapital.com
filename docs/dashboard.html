@@ -1570,12 +1570,18 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         if(fii)drv.push('FII <b>'+((Number(fii.net)||0)>=0?'buying':'selling')+'</b>');
         if(dii)drv.push('DII <b>'+((Number(dii.net)||0)>=0?'buying':'selling')+'</b>');
         document.getElementById('dsSentDate').textContent=d.data_date?('· '+d.data_date):'';
-        var v=document.getElementById('dsSentV');v.className='ds-sent-v '+L[1];v.innerHTML=L[0]+' · '+score+'<i>/100</i>';
+        var v=document.getElementById('dsSentV');v.className='ds-sent-v '+L[1];v.innerHTML=L[0]+' · <span id="dsSentScore">'+score+'</span><i>/100</i>';
         document.getElementById('dsSentDrv').innerHTML=drv.join(' · ');
         var n=document.getElementById('dsSentNeedle');
         n.className='ds-sent-needle '+L[1];
         host.style.display='block';
-        requestAnimationFrame(function(){requestAnimationFrame(function(){n.style.left=clamp(score,2,98)+'%';});});
+        // V22.7: count the score up from the neutral midpoint in step with the needle sweep.
+        var rmS=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+        var scEl=document.getElementById('dsSentScore');
+        requestAnimationFrame(function(){requestAnimationFrame(function(){
+          n.style.left=clamp(score,2,98)+'%';
+          if(scEl&&!rmS){var f0=50,st0=performance.now();(function stp(now){var p=Math.min(1,(now-st0)/1100),e=1-Math.pow(1-p,3);scEl.textContent=Math.round(f0+(score-f0)*e);if(p<1)requestAnimationFrame(stp);})(performance.now());}
+        });});
       }).catch(function(){});
     })();
     </script>

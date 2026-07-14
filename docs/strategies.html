@@ -2168,11 +2168,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
           <label for="mfc-strat" style="margin-top:8px;">Strategy</label>
           <select id="mfc-strat" onchange="mfcUpdate()">
-            <option value="largemidcap" data-cagr="37.0" selected>MindForge LargeMidcap 250 (<!--MFSTAT:lm:cagr-->34.9%<!--/MFSTAT--> CAGR)</option>
-            <option value="smallmicro" data-cagr="47.8">MindForge SmallMicro 500 (<!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--> CAGR)</option>
-            <option value="multiasset" data-cagr="24.9">MindForge MultiAsset (<!--MFSTAT:ma:cagr-->22.1%<!--/MFSTAT--> CAGR)</option>
-            <option value="multicap" data-cagr="64.2">MindForge Multicap (<!--MFSTAT:mc:cagr-->59.0%<!--/MFSTAT--> CAGR)</option>
-            <option value="sp500" data-cagr="27.3">MindForge S&amp;P 500 (<!--MFSTAT:sp:cagr-->28.0%<!--/MFSTAT--> CAGR)</option>
+            <option value="largemidcap" data-cagr="34.9" selected>MindForge LargeMidcap 250 (<!--MFSTAT:lm:cagr-->34.9%<!--/MFSTAT--> CAGR)</option>
+            <option value="smallmicro" data-cagr="48.9">MindForge SmallMicro 500 (<!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--> CAGR)</option>
+            <option value="multiasset" data-cagr="22.1">MindForge MultiAsset (<!--MFSTAT:ma:cagr-->22.1%<!--/MFSTAT--> CAGR)</option>
+            <option value="multicap" data-cagr="59.0">MindForge Multicap (<!--MFSTAT:mc:cagr-->59.0%<!--/MFSTAT--> CAGR)</option>
+            <option value="sp500" data-cagr="28.0">MindForge S&amp;P 500 (<!--MFSTAT:sp:cagr-->28.0%<!--/MFSTAT--> CAGR)</option>
           </select>
           <label for="mfc-years" style="margin-top:8px;">Horizon</label>
           <select id="mfc-years" onchange="mfcUpdate()">
@@ -3041,15 +3041,16 @@ function openRegModal(strategyName, price, strategyId){
   // V6.1: cagr values here are fallbacks only — at runtime mfcUpdate() reads
   // the live CAGR from the selected <option>'s "(NN.N% CAGR)" label, which is
   // MFSTAT-driven and refreshed by runner/publish.py every month. This keeps
-  // the calculator's maths in lockstep with the dropdown the user sees (they
-  // had drifted: pre-V6.1 the table held the stale V5.2 38.4/49.6/25.1/29.0
-  // while the labels already showed the current 37.0/47.8/24.9/27.3).
+  // the calculator's maths in lockstep with the dropdown the user sees.
+  // V22.7: re-synced these fallbacks (+ the <option data-cagr> attrs) to the
+  // current MFSTAT figures — they had drifted to the stale 37.0/47.8/24.9/64.2/27.3
+  // set while the labels already showed the live 34.9/48.9/22.1/59.0/28.0.
   var MFC_STRATS = {
-    largemidcap: { cagr: 0.370, bench: 0.1537, name: 'LargeMidcap 250',  benchName: 'Nifty LargeMidcap 250' },
-    smallmicro:  { cagr: 0.478, bench: 0.1914, name: 'SmallMicro 500',   benchName: 'Nifty Smallcap 250'    },
-    multiasset:  { cagr: 0.249, bench: 0.1013, name: 'MultiAsset',       benchName: 'Nifty 50'              },
-    multicap:    { cagr: 0.642, bench: 0.1726, name: 'Multicap',         benchName: 'Nifty 500'             },
-    sp500:       { cagr: 0.273, bench: 0.1330, name: 'S&P 500',          benchName: 'S&P 500'               },
+    largemidcap: { cagr: 0.349, bench: 0.1537, name: 'LargeMidcap 250',  benchName: 'Nifty LargeMidcap 250' },
+    smallmicro:  { cagr: 0.489, bench: 0.1914, name: 'SmallMicro 500',   benchName: 'Nifty Smallcap 250'    },
+    multiasset:  { cagr: 0.221, bench: 0.1013, name: 'MultiAsset',       benchName: 'Nifty 50'              },
+    multicap:    { cagr: 0.590, bench: 0.1726, name: 'Multicap',         benchName: 'Nifty 500'             },
+    sp500:       { cagr: 0.280, bench: 0.1330, name: 'S&P 500',          benchName: 'S&P 500'               },
   };
   // Pull the live CAGR (decimal) out of the selected option's label text so
   // the computation always matches what's shown. Falls back to the table.
