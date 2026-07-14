@@ -319,3 +319,45 @@ html[data-theme="dark"] .meta-pill{
   ::view-transition-old(*),
   ::view-transition-new(*) { animation: none !important; }
 }
+
+/* ============================================================================
+   V22.5 — SMOOTH THEME TRANSITION (shared, additive, motion-safe)
+   ----------------------------------------------------------------------------
+   Toggling dark / light used to HARD-CUT: every surface flipped colour in a
+   single frame. Now the whole page gently cross-fades between palettes, so the
+   theme switch reads as one continuous morph (felt on every page — marketing,
+   dashboard, tools, auth) instead of a jarring snap.
+
+   How it stays safe:
+   • The transition is gated behind `html.mfc-theming`, a class the toggle adds
+     ONLY on an explicit click and strips ~560ms later. The FOUC-free boot
+     snippet sets data-theme with the class absent → the initial paint never
+     animates (no first-load flash).
+   • Because the window is transient, the `* !important` transition can't bleed
+     into — or slow down — the site's tuned hover/press micro-interactions; they
+     resume their own timings the instant the class is removed.
+   • Only the palette-carrying properties transition (background/border/text/
+     fill). box-shadow is deliberately left to snap so the dark-mode glow
+     elevation and the featured card's breathing animation never hitch.
+   • Fully reduced-motion-safe — under `reduce` the class is inert and the flip
+     stays instant.
+   The toggle glyph (sun ⇄ moon) spins through the same gate, so the control
+   itself acknowledges the switch.
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  html.mfc-theming,
+  html.mfc-theming * {
+    transition:
+      background-color .45s ease,
+      border-color     .45s ease,
+      color            .40s ease,
+      fill             .40s ease,
+      stroke           .40s ease !important;
+  }
+  /* nudge the toggle glyph so the click is acknowledged as the page morphs */
+  html.mfc-theming .mfc-theme-toggle svg { animation: mfc-theme-spin .5s cubic-bezier(.22,.8,.2,1) both; }
+  @keyframes mfc-theme-spin {
+    from { transform: rotate(-150deg) scale(.6); opacity: .35; }
+    to   { transform: none; opacity: 1; }
+  }
+}

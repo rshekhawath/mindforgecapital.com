@@ -9,6 +9,9 @@
    sub-copy says so, and the strip is suppressed entirely on
    signup.html?strategy=allaccess (where the headline would directly
    contradict the bundle the visitor came to buy).
+   V22.5: the strip gained a slow, infrequent "living glint" (a soft light band
+   drifts across once every ~9s, then rests) — behind the copy, reduced-motion
+   safe. Tasteful life on the site's topmost chrome without touching the copy.
    ========================================================================== */
 (function () {
   "use strict";
@@ -47,7 +50,13 @@
     css.id = "mfc-offer-css";
     css.textContent =
       "#mfc-offer-bar{position:relative;z-index:120;background:linear-gradient(90deg,#1a50d8 0%,#2563eb 48%,#0891b2 100%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 6px 18px -10px rgba(26,80,216,.5);}" +
-      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 44px 8px 16px;position:relative;font-size:13.5px;line-height:1.3;}" +
+      /* V22.5: a slow, infrequent "living glint" — a soft light band drifts across
+         the strip once every ~9s, then rests. Sits BEHIND the copy (inner is z:1)
+         so text/CTA stay crisp and the CTA's drop-shadow is never clipped (no
+         overflow:hidden on the bar). Purely decorative; paused for reduced-motion. */
+      "#mfc-offer-bar::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.14) 50%,transparent 58%);background-size:220% 100%;background-position:135% 0;animation:mfc-offer-glint 9s ease-in-out infinite;}" +
+      "@keyframes mfc-offer-glint{0%{background-position:135% 0;}34%{background-position:-35% 0;}100%{background-position:-35% 0;}}" +
+      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 44px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
       "#mfc-offer-bar .mfc-offer-gift{font-size:15px;flex-shrink:0;}" +
       "#mfc-offer-bar .mfc-offer-text{font-weight:500;color:rgba(255,255,255,.96);}" +
       "#mfc-offer-bar .mfc-offer-text strong{font-weight:800;letter-spacing:.01em;}" +
@@ -58,7 +67,7 @@
       "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
       "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
-      "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}}";
+      "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}#mfc-offer-bar::after{animation:none;}}";
 
     (document.head || document.documentElement).appendChild(css);
     document.body.insertBefore(bar, document.body.firstChild);

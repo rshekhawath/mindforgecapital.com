@@ -12,8 +12,12 @@
  * (login = the app's start_url, and the homepage the navigation fallback serves)
  * — so the installed app opens even on a cold offline launch. Cache bumped to
  * re-install and purge the v3 entries.
+ * v5 (V22.5): the smooth theme-transition release touches the two precached
+ * shell documents (index.html + login.html carry the toggle gate) and the
+ * cache-first shared asset mfc-finish.css. Cache bumped so activate purges the
+ * v4 entries and the offline shell re-installs with the current HTML.
  */
-const CACHE = 'mfc-v4';
+const CACHE = 'mfc-v5';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
