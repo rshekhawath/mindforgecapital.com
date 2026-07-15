@@ -155,9 +155,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 
   .disclaimer-strip{font-size:11px;color:var(--text3);margin-top:48px;padding-top:24px;border-top:0.5px solid var(--border);line-height:1.6;}
 
-  /* ── SKELETON LOADING ── */
-  .bt-chart-img{min-height:200px;background:linear-gradient(90deg,#eef2f8 25%,#fafbfd 50%,#eef2f8 75%);background-size:200% 100%;animation:skeleton-shimmer 1.6s infinite;}
-  .bt-chart-img.loaded{background:none;animation:none;min-height:0;}
+  /* ── SKELETON LOADING ── (no min-height on purpose: the img width/height attrs reserve the correct aspect-ratio box, so short/wide charts never stretch and there is no load-in layout shift even before JS runs; the .loaded class below just stops the shimmer once the image arrives) */
+  .bt-chart-img{background:linear-gradient(90deg,#eef2f8 25%,#fafbfd 50%,#eef2f8 75%);background-size:200% 100%;animation:skeleton-shimmer 1.6s infinite;}
+  .bt-chart-img.loaded{background:none;animation:none;}
   @keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
   /* ── SHARPE TOOLTIP ── */
@@ -2145,6 +2145,9 @@ function openRegModal(strategyName, price, strategyId){
       Array.prototype.forEach.call(charts,function(card){
         var img=card.querySelector(".bt-chart-img");
         if(!img) return;
+        /* Skeleton: mark loaded so the shimmer + min-height:200px clear (parity with strategies.html — otherwise short charts stay stretched on mobile). */
+        if(img.complete&&img.naturalWidth>0) img.classList.add("loaded");
+        else { img.addEventListener("load",function(){img.classList.add("loaded");}); img.addEventListener("error",function(){img.classList.add("loaded");}); }
         var label=card.querySelector(".bt-chart-label");
         var cap=label?((label.childNodes[0]&&label.childNodes[0].nodeValue)||label.textContent||"").trim():"";
         var hint=document.createElement("span");
