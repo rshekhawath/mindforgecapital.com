@@ -6070,5 +6070,64 @@ section[id]{ scroll-margin-top: 80px; }
   });
 })();
 </script>
+<!-- ============================================================
+     MF VISUAL v22.9 — homepage hero: interactive legend spotlight
+     (additive · RM-safe · GPU-cheap · pure progressive enhancement).
+     The hero backtest legend ("MindForge X" / "Nifty …") was an inert
+     label pair. Hovering a legend entry now SPOTLIGHTS its curve — the
+     pointed series brightens + thickens while the other dims — bringing
+     the member dashboard's donut legend↔slice cross-highlight idiom
+     (V10.1 / V12.0) to the site's most-viewed visual. Legend-driven
+     only, so it never touches the V22.8 pointer scrub, the SMIL comet,
+     or the tab-swap redraw; the default (non-hover) paint is unchanged.
+     ============================================================ -->
+<style id="mf-v229-hero-legend">
+  .hv-card .strat-line, .hv-card .bench-line,
+  .hv-card .strat-fill, .hv-card .hv-leg{
+    transition: opacity .25s ease, stroke-width .2s ease, color .2s ease;
+  }
+  /* affordance — the legend labels read as interactive on a fine pointer */
+  .hv-legend .hv-leg{ cursor: default; }
+  .hv-legend .hv-leg:hover{ color: var(--text); }
+  /* spotlight the strategy curve */
+  .hv-card.hv-spot-strat .strat-line{ stroke-width: 3; }
+  .hv-card.hv-spot-strat .bench-line{ opacity: .16; }
+  .hv-card.hv-spot-strat #hv-dot-bench{ opacity: .25 !important; }
+  .hv-card.hv-spot-strat .hv-leg.bench{ opacity: .38; }
+  /* spotlight the benchmark curve */
+  .hv-card.hv-spot-bench .bench-line{ opacity: 1; stroke-width: 2.2; }
+  .hv-card.hv-spot-bench .strat-line{ opacity: .3; }
+  .hv-card.hv-spot-bench .strat-fill{ opacity: .05; }
+  .hv-card.hv-spot-bench #hv-dot-strat{ opacity: .25 !important; }
+  .hv-card.hv-spot-bench .hv-leg.strat{ opacity: .38; }
+  @media (prefers-reduced-motion: reduce){
+    .hv-card .strat-line, .hv-card .bench-line,
+    .hv-card .strat-fill, .hv-card .hv-leg{ transition: none; }
+  }
+</style>
+<script id="mf-v229-hero-legend-js">
+(function(){
+  "use strict";
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded", fn); }
+  ready(function(){
+    try{
+      var card = document.querySelector('.hv-card');
+      if(!card) return;
+      var legS = card.querySelector('.hv-leg.strat');
+      var legB = card.querySelector('.hv-leg.bench');
+      if(!legS || !legB) return;
+      function spot(kind){
+        card.classList.toggle('hv-spot-strat', kind === 'strat');
+        card.classList.toggle('hv-spot-bench', kind === 'bench');
+      }
+      function clear(){ card.classList.remove('hv-spot-strat', 'hv-spot-bench'); }
+      legS.addEventListener('mouseenter', function(){ spot('strat'); });
+      legB.addEventListener('mouseenter', function(){ spot('bench'); });
+      legS.addEventListener('mouseleave', clear);
+      legB.addEventListener('mouseleave', clear);
+    }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
