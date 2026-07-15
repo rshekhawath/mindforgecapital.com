@@ -533,6 +533,19 @@ function priceFor(strategy, durKey){
   return { total: total, months: d.months, disc: d.disc, label: d.label, save: (m.monthly * d.months) - total, monthly: m.monthly };
 }
 
+// V23.1 — build the premium order-summary markup from figures priceFor() already
+// computed. Presentation only; introduces no new pricing. `o.pill`/`o.save` are
+// omitted when empty (e.g. a 1-month plan with no multi-month saving).
+function osHTML(o){
+  var pill = o.pill ? '<span class="os-pill ' + (o.pillFree ? 'os-pill-free' : 'os-pill-save') + '">' + o.pill + '</span>' : '';
+  var save = o.save ? '<div class="os-save' + (o.saveFree ? ' os-save-free' : '') + '">' + o.save + '</div>' : '';
+  return '<div class="os-top"><span class="os-eyebrow">Your plan</span>' + pill + '</div>' +
+         '<div class="os-price-row"><span class="os-total' + (o.totalFree ? ' os-total-free' : '') + '">' + o.total + '</span>' +
+         '<span class="os-per">' + o.per + '</span></div>' +
+         save +
+         '<div class="os-desc">' + o.desc + '</div>';
+}
+
 function onStrategyChange() {
   var sel = document.getElementById('reg-strategy').value;
   var durSel = document.getElementById('reg-duration');
@@ -609,19 +622,31 @@ function onStrategyChange() {
   if (sel && m) {
     var p = priceFor(sel, durKey);
     if (isBundle) {
-      note.innerHTML = '<strong>' + inr(p.total) + '</strong> for ' + p.label +
-        ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">save ' + inr(p.save) + ' vs month-to-month</span>' +
-        '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + m.desc + '</span>';
+      var bundlePct = Math.round(p.save / (p.save + p.total) * 100);
+      note.innerHTML = osHTML({
+        pill: 'Save ' + bundlePct + '%',
+        total: inr(p.total),
+        per: 'for ' + p.label,
+        save: 'Save ' + inr(p.save) + ' vs subscribing separately',
+        desc: m.desc
+      });
     } else if (isFree) {
-      note.innerHTML = '<strong style="color:#059669;">FREE</strong> for ' + p.label +
-        ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">no payment required</span>' +
-        '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + m.desc + '</span>';
+      note.innerHTML = osHTML({
+        pill: 'Free', pillFree: true,
+        total: '₹0', totalFree: true,
+        per: 'for ' + p.label,
+        save: 'No payment required — full dashboard access', saveFree: true,
+        desc: m.desc
+      });
     } else {
-      var saveTxt = p.disc > 0
-        ? ' &nbsp;·&nbsp; <span style="color:#059669;font-weight:700;">save ' + inr(p.save) + ' (' + Math.round(p.disc * 100) + '% off)</span>'
-        : '';
-      note.innerHTML = '<strong>' + inr(p.total) + '</strong> for ' + p.label + saveTxt +
-        '<br><span style="color:var(--text3);margin-top:3px;display:block;">' + inr(m.monthly) + '/month base — ' + m.desc + '</span>';
+      var pct = Math.round(p.disc * 100);
+      note.innerHTML = osHTML({
+        pill: p.disc > 0 ? 'Save ' + pct + '%' : '',
+        total: inr(p.total),
+        per: 'for ' + p.label,
+        save: p.disc > 0 ? 'You save ' + inr(p.save) + ' vs paying monthly' : '',
+        desc: inr(m.monthly) + '/month base · ' + m.desc
+      });
     }
     note.style.display = 'block';
   } else {
@@ -922,6 +947,44 @@ input:focus-visible, select:focus-visible, #reg-tnc:focus-visible{
 
 <style id="mf-v18-sebi">
 .sebi-line{display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--text3,#475569);font-weight:600;text-transform:uppercase;padding:4px 10px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.16);border-radius:999px;margin-bottom:8px;}
+</style>
+
+<!-- V23.1 — premium "Your plan" order-summary card. Presentation only: it renders
+     the exact same figures priceFor() already computes (total, period, saving,
+     description); no new pricing claims. Restyles the plain strategy-note into a
+     structured summary with a prominent price, a saving/free pill, and a brand
+     left-accent — so the subscription decision moment matches the rest of the site. -->
+<style id="mf-v231-order-summary">
+#strategy-note.strategy-note{
+  padding:13px 15px 13px 17px;
+  font-size:13px;
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(180deg, rgba(37,99,235,0.06), rgba(8,145,178,0.035));
+  border:0.5px solid var(--border2);
+  border-radius:11px;
+}
+#strategy-note.strategy-note::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3.5px;
+  background:linear-gradient(180deg, var(--accent), var(--teal, #0891b2));
+}
+.os-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:7px; }
+.os-eyebrow{ font-size:10px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; color:var(--accent2); }
+.os-pill{ font-size:10.5px; font-weight:800; letter-spacing:.02em; padding:3px 9px; border-radius:999px; white-space:nowrap; line-height:1.35; }
+.os-pill-save{ color:#047857; background:rgba(5,150,105,0.12); }
+.os-pill-free{ color:#047857; background:rgba(5,150,105,0.14); }
+.os-price-row{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.os-total{ font-size:23px; font-weight:800; color:var(--text); letter-spacing:-0.02em; line-height:1.02; }
+.os-total-free{ color:#047857; }
+.os-per{ font-size:13px; font-weight:600; color:var(--text2); }
+.os-save{ margin-top:5px; font-size:12px; font-weight:700; color:#047857; }
+.os-desc{ margin-top:8px; font-size:12px; line-height:1.5; color:var(--text3); }
+/* dark: brighter greens read cleanly on the dark card surface */
+html[data-theme="dark"] #strategy-note.strategy-note{ background:linear-gradient(180deg, rgba(95,145,255,0.10), rgba(40,188,216,0.05)); }
+html[data-theme="dark"] .os-pill-save,
+html[data-theme="dark"] .os-pill-free{ color:#16c78d; background:rgba(22,199,141,0.15); }
+html[data-theme="dark"] .os-save,
+html[data-theme="dark"] .os-total-free{ color:#16c78d; }
 </style>
 
 <!-- MF VISUAL v8.6 — Get Started header refresh: retire the chart glyph for a

@@ -202,6 +202,25 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .stat-card.tone-red::before{background:linear-gradient(90deg,transparent 0%,rgba(220,38,38,0.5) 50%,transparent 100%);}
 .stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:rgba(37,99,235,0.32);}
 .stat-card:hover::after{opacity:1;}
+/* V23.1 — the top-accent hairline was the one static hairline on an otherwise
+   "living" dashboard: let a soft light travel along it once as each neutral card
+   rises in (staggered just after the card entrance). Layered so the original
+   centred glow stays at rest; scoped off the tone (alert) cards so their solid
+   coloured hairline is untouched; reduced-motion safe. */
+.stat-card:not(.tone-green):not(.tone-gold):not(.tone-red)::before{
+  background:
+    linear-gradient(90deg,transparent,rgba(150,190,255,0.95),transparent) no-repeat,
+    linear-gradient(90deg,transparent 0%,rgba(37,99,235,0.4) 50%,transparent 100%) no-repeat;
+  background-size:34% 100%, 100% 100%;
+  background-position:-70% 0, 0 0;
+  animation:mf-hairline-sheen 1.15s cubic-bezier(.4,0,.2,1) .55s both;
+}
+@keyframes mf-hairline-sheen{ to{ background-position:170% 0, 0 0; } }
+@media (prefers-reduced-motion: reduce){
+  .stat-card:not(.tone-green):not(.tone-gold):not(.tone-red)::before{
+    animation:none; background:linear-gradient(90deg,transparent 0%,rgba(37,99,235,0.4) 50%,transparent 100%); background-size:auto; background-position:0 0;
+  }
+}
 .stat-card .ico-wrap{
   position:absolute;top:18px;right:18px;
   width:34px;height:34px;border-radius:10px;
