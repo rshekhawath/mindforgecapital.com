@@ -26,6 +26,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 <meta name="theme-color" content="#1a50d8">
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
 <script src="screener-data.js?v=152"></script>
+<script src="../assets/mfc-company.js?v=2341"></script>
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
@@ -312,7 +313,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <div class="tab active"  onclick="switchTab('overview',this)">Overview</div>
     <div class="tab"         onclick="switchTab('ratios',this)">Ratios & Valuation</div>
     <div class="tab"         onclick="switchTab('shareholding',this)">Shareholding</div>
-    <div class="tab"         onclick="switchTab('about',this)">About</div>
+    <div class="tab"         onclick="switchTab('about',this)">Company</div>
   </div>
 
   <!-- ── OVERVIEW ── -->
@@ -732,6 +733,7 @@ async function load() {
     document.getElementById("bcSymbol").textContent = D.name || SYMBOL;
     renderHero(); renderKPIs(); renderOverview();
     renderRatios(); renderShareholding(); renderAbout();
+    try { if (window.MFCCompany) MFCCompany.render(D); } catch(e) { console.warn("company deep-dive failed", e); }
     try { mountStockChart(SYMBOL, D); } catch(e) { console.warn("chart mount failed", e); }
   } catch(e) { toast(`Error: ${e.message}`, "error", 8000); }
 }
