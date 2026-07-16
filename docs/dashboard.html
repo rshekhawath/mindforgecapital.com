@@ -1380,6 +1380,21 @@ footer p {
   transform: scaleY(1.05);
   transform-origin: bottom;
 }
+/* V23.2 — sector-allocation bars now gleam on row-hover, matching the
+   position-sizing weight-bars (reuses the mf-weight-gleam keyframe). Additive —
+   the brightness/scaleY refine above is kept; the .alloc-bar-wrap already clips
+   (overflow:hidden). RM-safe. */
+.alloc-bar { position: relative; }
+.alloc-bar::after {
+  content:''; position:absolute; top:0; bottom:0; left:0; width:55%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+  transform: translateX(-120%);
+  pointer-events:none;
+}
+.alloc-row:hover .alloc-bar::after { animation: mf-weight-gleam .85s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .alloc-bar::after { display:none; }
+}
 
 /* —— Disclaimer panel: subtle refined edge —— */
 .disclaimer {

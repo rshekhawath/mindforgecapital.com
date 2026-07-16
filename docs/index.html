@@ -5466,6 +5466,23 @@ section[id]{ scroll-margin-top: 80px; }
   .bundle-band .container > div::after{ animation:none; content:none; }
   .bundle-band a[href*="allaccess"]{ transition:none; }
 }
+/* V23.2 — All-Access CTA gets the site's signature primary-CTA shine sweep.
+   It's the one homepage primary CTA that never had the .btn-primary/.strat-cta
+   ::after sheen (it's a bare inline-styled <a>). The button is WHITE, so the
+   sheen is tinted brand-blue (a white sheen would be invisible on white).
+   Additive — the existing lift + bloom (above) is untouched. RM-safe. */
+.bundle-band a[href*="allaccess"]{ position:relative; overflow:hidden; }
+.bundle-band a[href*="allaccess"]::after{
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:linear-gradient(110deg, transparent 30%, rgba(26,80,216,.12) 50%, transparent 70%);
+  transform:translateX(-120%);
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.bundle-band a[href*="allaccess"]:hover::after{ transform:translateX(120%); }
+@media (prefers-reduced-motion: reduce){
+  .bundle-band a[href*="allaccess"]::after{ display:none; }
+}
 </style>
 <!-- ============================================================
      MF VISUAL v10.1 — homepage (additive, RM-safe)
