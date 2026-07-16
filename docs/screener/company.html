@@ -26,7 +26,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 <meta name="theme-color" content="#1a50d8">
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
 <script src="screener-data.js?v=152"></script>
-<script src="../assets/mfc-company.js?v=2341"></script>
+<script src="../assets/mfc-company.js?v=2353"></script>
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
@@ -691,12 +691,16 @@ document.title = `${SYMBOL} — MindForge Capital`;
 // ── Helpers ──────────────────────────────────────────────
 const fmtI  = (v,p="")  => v == null ? "—" : `${p}${Number(v).toLocaleString("en-IN", {maximumFractionDigits:2})}`;
 const fmtN  = (v,d=2)   => v == null ? "—" : Number(v).toFixed(d);
+// Sign sits OUTSIDE the currency ("−₹1.40L Cr", not "₹-1.40L Cr"), and a value
+// that rounds to zero never prints as "−₹0 Cr".
 const fmtCr = v => {
   if (!v && v !== 0) return "—";
-  const c = v / 1e7;
-  if (Math.abs(c) >= 1e5) return `₹${(c/1e5).toFixed(2)}L Cr`;
-  if (Math.abs(c) >= 1000) return `₹${(c/1000).toFixed(2)}K Cr`;
-  return `₹${c.toFixed(0)} Cr`;
+  const c = v / 1e7, a = Math.abs(c);
+  let s = c < 0 ? "−" : "";
+  if (a >= 1e5) return `${s}₹${(a/1e5).toFixed(2)}L Cr`;
+  if (a >= 1000) return `${s}₹${(a/1000).toFixed(2)}K Cr`;
+  if (a.toFixed(0) === "0") s = "";
+  return `${s}₹${a.toFixed(0)} Cr`;
 };
 const fmtPct = v => v == null ? "—" : `${v >= 0 ? "+" : ""}${Number(v).toFixed(2)}%`;
 const clsPct = v => v > 0 ? "kpi-pos" : v < 0 ? "kpi-neg" : "";
@@ -932,7 +936,7 @@ function renderRatios() {
     rI("Current Ratio",    D.current_ratio   ? fmtN(D.current_ratio,2)   : "—"),
     rI("Quick Ratio",      D.quick_ratio     ? fmtN(D.quick_ratio,2)     : "—"),
     rI("D/E Ratio",        D.debt_to_equity  ? fmtN(D.debt_to_equity/100,2)  : "—"),
-    rI("Debt / Assets",    D.debt_to_assets  ? fmtN(D.debt_to_assets,2)  : "—"),
+    rI("Working Capital",  D.working_capital_cr != null ? fmtCr(D.working_capital_cr*1e7) : "—", "Current assets − liabilities"),
     rI("Interest Coverage",D.interest_coverage?fmtN(D.interest_coverage,2):"—"),
     rI("Net Debt / EBITDA",D.net_debt_ebitda !=null ? fmtN(D.net_debt_ebitda,2) : "—", "Leverage relative to earnings"),
     rI("Net Debt",         fmtCr(D.net_debt)),
@@ -942,7 +946,7 @@ function renderRatios() {
   ].join("");
 
   document.getElementById("ratioEff").innerHTML = [
-    rI("Asset Turnover",     D.asset_turnover     ? fmtN(D.asset_turnover,2)     : "—"),
+    rI("Op. CF Margin",      D.opcf_margin       != null ? `${fmtN(D.opcf_margin,2)}%` : "—", "Operating cash flow / revenue"),
     rI("Inventory Turnover", D.inventory_turnover ? fmtN(D.inventory_turnover,2) : "—"),
     rI("Receivable Days",    D.receivable_days    ? `${fmtN(D.receivable_days,1)} days` : "—"),
     rI("Payable Days",       D.payable_days       ? `${fmtN(D.payable_days,1)} days`   : "—"),
@@ -975,19 +979,19 @@ function renderShareholding() {
     <div class="hold-bar-wrap">
       <div class="hold-bar-seg" style="width:${promoVal}%;background:#1a50d8"></div>
       <div class="hold-bar-seg" style="width:${instVal}%;background:#0891b2"></div>
-      <div class="hold-bar-seg" style="width:${pubVal}%;background:#e4eeff"></div>
+      <div class="hold-bar-seg" style="width:${pubVal}%;background:var(--ink3)"></div>
     </div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px">
       <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1a50d8;display:inline-block"></span>Promoter / Insider <strong>${promoVal > 0 ? promoVal.toFixed(2)+"%" : "N/A"}</strong></span>
       <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#0891b2;display:inline-block"></span>Institutional <strong>${instVal > 0 ? instVal.toFixed(2)+"%" : "N/A"}</strong></span>
-      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#e4eeff;border:0.5px solid var(--border2);display:inline-block"></span>Public / Other <strong>~${pubVal.toFixed(2)}%</strong></span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--ink3);border:0.5px solid var(--border2);display:inline-block"></span>Public / Other <strong>~${pubVal.toFixed(2)}%</strong></span>
     </div>
     <br>
     <table class="qs-table">
       <tr><td>Shares Outstanding</td><td>${D.shares_outstanding ? (D.shares_outstanding/1e7).toFixed(2)+" Cr" : "—"}</td></tr>
       <tr><td>Float Shares</td><td>${D.float_pct ? D.float_pct.toFixed(2)+"% of total" : "—"}</td></tr>
-      <tr><td>Short % of Float</td><td>${D.short_pct != null ? D.short_pct.toFixed(2)+"%" : "—"}</td></tr>
-      <tr><td>Short Ratio (days)</td><td>${D.short_ratio != null ? D.short_ratio.toFixed(2) : "—"}</td></tr>
+      <tr><td>Free-Float Mkt Cap</td><td>${(D.market_cap != null && D.float_pct != null) ? fmtCr(D.market_cap * D.float_pct/100) : "—"}</td></tr>
+      <tr><td>Promoter / Insider</td><td>${promo != null ? promo.toFixed(2)+"%" : "—"}</td></tr>
     </table>`;
 
   document.getElementById("mktPosition").innerHTML = [
