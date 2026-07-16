@@ -24,6 +24,41 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 <link rel="icon" href="/assets/favicon-32.png" type="image/png">
 <title>Company — Scanner</title>
 <meta name="theme-color" content="#1a50d8">
+<!-- SEO · per-symbol head, resolved SYNCHRONOUSLY from the URL — same rationale
+     as scores/company.html: mfcSEO() only writes the real title/canonical/
+     description after the 6 MB stocks.json lands, so without this every company
+     URL served by this one file shares the generic "Company — Scanner" head with
+     no canonical. The symbol is in the URL and needs no data to read. -->
+<script>
+(function(){try{
+  var raw = new URLSearchParams(location.search).get("symbol") || "RELIANCE";
+  var sym = raw.toUpperCase().replace(/[^A-Z0-9&.\-]/g, "").slice(0, 24);
+  if (!sym) return;
+  var canon = "https://mindforgecapital.com/screener/company.html?symbol=" + encodeURIComponent(sym);
+  var title = sym + " Share Price & Fundamentals — MindForge Capital";
+  var desc  = sym + " (NSE) — fundamentals, valuation, profitability, growth and a quality "
+            + "scorecard, refreshed daily from company filings on MindForge Capital.";
+  var head = document.head;
+  document.title = title;
+  function meta(sel, attr, key, val) {
+    var e = head.querySelector(sel);
+    if (!e) { e = document.createElement("meta"); e.setAttribute(attr, key); head.appendChild(e); }
+    e.setAttribute("content", val);
+  }
+  meta('meta[name="description"]',        "name",     "description",     desc);
+  meta('meta[property="og:title"]',       "property", "og:title",        title);
+  meta('meta[property="og:description"]', "property", "og:description",  desc);
+  meta('meta[property="og:type"]',        "property", "og:type",         "website");
+  meta('meta[property="og:url"]',         "property", "og:url",          canon);
+  meta('meta[property="og:site_name"]',   "property", "og:site_name",    "MindForge Capital");
+  meta('meta[property="og:image"]',       "property", "og:image",        "https://mindforgecapital.com/assets/apple-touch-icon.png");
+  meta('meta[name="twitter:card"]',       "name",     "twitter:card",    "summary");
+  meta('meta[name="twitter:site"]',       "name",     "twitter:site",    "@MindForgeCap");
+  var c = head.querySelector('link[rel="canonical"]');
+  if (!c) { c = document.createElement("link"); c.rel = "canonical"; head.appendChild(c); }
+  c.href = canon;
+}catch(e){}})();
+</script>
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
 <script src="screener-data.js?v=152"></script>
 <script src="../assets/mfc-company.js?v=2353"></script>
