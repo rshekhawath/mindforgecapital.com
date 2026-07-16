@@ -133,6 +133,19 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-alpha.neg{color:#b91c1c;background:var(--red-bg)}
 .fr-row.is-leader{background:linear-gradient(90deg,rgba(5,150,105,.055),transparent 62%);border-radius:10px}
 .fr-row.is-laggard{background:linear-gradient(90deg,rgba(220,38,38,.045),transparent 62%);border-radius:10px}
+/* V23.3 — the scoreboard comes alive: the diverging bars grow out from the
+   centre line on reveal (the site's bar-draw idiom — every other bar viz already
+   animates in; this flagship monthly board was the last static one), and a
+   row-hover brightens that factor's bar (a focus affordance, matching the
+   dashboard's data-row hover). The collapse is applied by JS ONLY, so no-JS /
+   reduced-motion keep the full inline widths (the board always stays readable). */
+.fr-bar{transition:transform .85s cubic-bezier(.22,1,.36,1),filter .2s ease}
+.fr-bar.pos{transform-origin:left center}
+.fr-bar.neg{transform-origin:right center}
+.fr-board.fr-anim .fr-bar{transform:scaleX(0)}
+.fr-board.fr-anim.fr-in .fr-bar{transform:scaleX(1)}
+.fr-row:hover .fr-bar{filter:brightness(1.09) saturate(1.06)}
+@media(prefers-reduced-motion:reduce){.fr-bar{transition:none}}
 .fr-spread{display:flex;align-items:flex-start;gap:10px;margin-top:16px;padding:13px 16px;border:0.5px dashed var(--border2);border-radius:12px;background:linear-gradient(135deg,rgba(37,99,235,.04),rgba(45,212,191,.03));font-size:13.5px;color:var(--text2);line-height:1.55}
 .fr-spread svg{flex:0 0 auto;margin-top:2px;color:var(--accent2)}
 .fr-spread b{color:var(--white)}
@@ -344,6 +357,25 @@ nav.appendChild(b);};
       </div><!--/FR:factor-->
     </div>
   </section>
+  <!-- V23.3: scoreboard bar-draw reveal — collapses the diverging bars before
+       paint, then grows them from the centre line when the board scrolls into
+       view. Progressive: no-JS / reduced-motion keep the full inline widths. -->
+  <script>
+  (function(){
+    try{
+      var board=document.querySelector('.fr-board');
+      if(!board||!('IntersectionObserver' in window)) return;
+      if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      board.classList.add('fr-anim');                 // collapse bars (scaleX 0) pre-paint
+      var reveal=function(){ board.classList.add('fr-in'); };
+      var io=new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(e.isIntersecting){ reveal(); io.disconnect(); } });
+      },{threshold:0.25});
+      io.observe(board);
+      setTimeout(reveal,1600);                          // safety-net: never stay collapsed
+    }catch(e){}
+  })();
+  </script>
 
   <!-- ── COMMENTARY ── -->
   <section class="card">
