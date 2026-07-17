@@ -24,8 +24,11 @@
  * (hero title/period + the corrected figures) and the V24.0 data-count fix that
  * stops count-ups animating BACK to the old numbers. An installed app serving
  * the v6 offline shell would replay exactly that bug, so the cache is bumped.
+ * v8 (V24.1): the MultiAsset window redefinition (full Feb-2023 span for both
+ * legs) changes index.html's MFSTAT values + data-count targets again — same
+ * precached-shell rationale as v6/v7.
  */
-const CACHE = 'mfc-v7';
+const CACHE = 'mfc-v8';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
