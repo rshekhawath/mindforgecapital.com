@@ -534,6 +534,33 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
     </div>
 
+    <!-- V23.8 — backtest methodology & known limitations. Written to state plainly
+         how the published CAGR / alpha figures are produced and where they are
+         known to be optimistic. Deliberately names the direction of each bias
+         rather than gesturing at "backtests have limitations". -->
+    <div class="section">
+      <h2>11. Backtest methodology &amp; known limitations</h2>
+      <p>Every performance figure on this website is <strong>backtested and hypothetical</strong> — a simulation of what a rules-based model would have selected in the past. No client money was managed over these periods and no orders were placed. This section sets out how those numbers are produced and, more importantly, <strong>where they are known to be optimistic</strong>. It is published so the figures can be read with the same caveats we apply to them internally.</p>
+
+      <h3 style="font-size:16px;margin:22px 0 8px;">How the simulation works</h3>
+      <p>Each strategy ranks a fixed universe of listed stocks on a published factor model, takes the top-ranked names subject to a per-sector cap, holds them for one month, then re-ranks and rebalances. Returns are equal-weighted across holdings and are net of an assumed one-way transaction cost (5&ndash;20 bps depending on the strategy).</p>
+
+      <h3 style="font-size:16px;margin:22px 0 8px;">Known limitations — stated plainly</h3>
+      <ul>
+        <li><strong>Survivorship bias — the most material limitation, and it inflates the returns shown.</strong> Each strategy's universe is built from the companies that are listed <em>today</em>. Companies that were delisted, suspended, merged away or wound up during the backtest window are simply absent from that list, so the simulation never holds them and never takes their losses. The published returns are therefore <strong>higher than a bias-free simulation would produce</strong>, by an amount we cannot currently measure. Correcting it requires point-in-time index constituents and price history for dead companies — data we do not have. We disclose this rather than estimate a correction we cannot substantiate.</li>
+        <li><strong>The benchmark is a fixed long-run reference, not the index's actual path.</strong> The benchmark CAGR shown beside each strategy is a constant, sourced from published index factsheets, compounded smoothly across the window — it is not the index's realised return over the same period. Two consequences: "months beating the benchmark" really means "months above a constant hurdle", and benchmark Sharpe and benchmark drawdown are shown as "&mdash;" because a smooth curve has neither by construction. Note this bias runs <strong>opposite</strong> to survivorship: over the published window the actual indices returned <em>less</em> than the long-run constants used, so on this axis the stated alpha is conservative. The two biases push in opposite directions and we do not claim to know the net effect.</li>
+        <li><strong>Costs are assumed, and are on the optimistic side.</strong> The transaction-cost assumption is a flat one-way rate applied to turnover. It does not separately model STT, exchange and regulatory charges, bid-ask spread, or market impact — which matter most in the small- and micro-cap names, where turnover is highest.</li>
+        <li><strong>Stale prices in thin names.</strong> Illiquid stocks that do not trade every session carry their previous close forward, which understates measured volatility and can flatter any volatility-sensitive factor.</li>
+        <li><strong>Window lengths differ by strategy.</strong> Multicap, LargeMidcap, SmallMicro and S&amp;P 500 are simulated over roughly five years (2021&ndash;2026). <strong>MultiAsset is simulated over Feb 2023 &ndash; Jun 2026</strong>, a materially shorter period, because one of its constituent ETFs has no history before then. A shorter window is a less reliable guide than a longer one.</li>
+        <li><strong>The SmallMicro benchmark does not include microcap.</strong> It is labelled against a Smallcap 250 + Microcap 250 reference, but the Nifty Microcap 250 index only launched in Jan 2024, so no comparable long-run series exists for the combined index.</li>
+        <li><strong>One historical window is not a forecast.</strong> These results describe a single, largely rising market. They are not a projection, not a promise, and give no assurance that the same rules will produce similar results in future.</li>
+      </ul>
+
+      <div class="highlight-box" style="border-left:3px solid #d97706;background:rgba(217,119,6,0.06);">
+        <strong style="color:#d97706;">In one line.</strong> The published backtest returns should be read as an <strong>optimistic upper bound</strong> on what these rules would have delivered — not as a track record, and not as an expectation. Backtested performance has inherent limitations, does not reflect actual trading, and is not indicative of future results.
+      </div>
+    </div>
+
   </div>
 </div>
 
