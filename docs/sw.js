@@ -20,8 +20,12 @@
  * (the .hv-tab min-height). The shared assets it also touches ride their own
  * ?v= bumps, but a precached document has no query to bust — so the cache is
  * bumped to purge v5 and re-install the offline shell with the current HTML.
+ * v7 (V24.0): index.html changed twice since v6 was cut — the V23.9 republish
+ * (hero title/period + the corrected figures) and the V24.0 data-count fix that
+ * stops count-ups animating BACK to the old numbers. An installed app serving
+ * the v6 offline shell would replay exactly that bug, so the cache is bumped.
  */
-const CACHE = 'mfc-v6';
+const CACHE = 'mfc-v7';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
