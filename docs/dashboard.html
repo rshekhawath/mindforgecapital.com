@@ -375,7 +375,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 /* ── Subscription progress + renew CTA ── */
 .sub-prog{display:inline-flex;align-items:center;gap:6px;margin-left:8px;}
 .sub-prog-bar{width:64px;height:5px;background:rgba(37,99,235,0.10);border-radius:3px;overflow:hidden;}
-.sub-prog-fill{height:100%;background:linear-gradient(90deg,var(--green),#34d399);border-radius:3px;width:0;transition:width 1s cubic-bezier(.22,1,.36,1);}
+/* V23.7: display:block is load-bearing — this fill is a <span>, so it defaulted
+   to display:inline, where width/height simply do not apply to a non-replaced
+   element. The [data-bar] applier was setting width:NN% all along and the
+   browser was discarding it, so the fill measured 0×0 and the subscription
+   meter only ever showed its empty track — the green/gold/danger urgency colour
+   below never reached the screen. The V21.9 .stat-meter i twin (line ~253) got
+   display:block and has always rendered correctly. */
+.sub-prog-fill{display:block;height:100%;background:linear-gradient(90deg,var(--green),#34d399);border-radius:3px;width:0;transition:width 1s cubic-bezier(.22,1,.36,1);}
 .sub-prog-fill.warn{background:linear-gradient(90deg,var(--gold),#fbbf24);}
 .sub-prog-fill.danger{background:linear-gradient(90deg,var(--red),#f87171);}
 .renew-cta{
@@ -4047,6 +4054,21 @@ init();
 .bought-cb{
   width: 22px; height: 22px;
   cursor: pointer;
+}
+/* V23.7: the 44px above sizes the CELL, but the table renders a bare <input>
+   (only the mobile card view wraps one in a <label>), so a click on the cell's
+   padding never reached the box — the real target stayed 22×22, under the
+   24×24 WCAG 2.2 SC 2.5.8 floor, and the select-all in the header was 18×18.
+   This pseudo-element makes the INPUT's own hit area 44×44 without touching
+   either visual size. It stays inside the 44×59 cell, so adjacent rows are
+   still unreachable by a stray thumb. (Safe on a checkbox because .bought-cb
+   is appearance:none — the same reason its :checked::after tick works.) */
+.bought-cb::before{
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 44px; height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 /* Copy ticker — quick success flash */

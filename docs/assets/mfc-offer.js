@@ -63,7 +63,10 @@
       "#mfc-offer-bar .mfc-offer-sub{opacity:.85;font-weight:500;}" +
       "#mfc-offer-bar .mfc-offer-cta{margin-left:auto;flex-shrink:0;background:#fff;color:#1a50d8;font-weight:700;font-size:12.5px;text-decoration:none;padding:6px 14px;border-radius:8px;white-space:nowrap;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 4px 12px -6px rgba(0,0,0,.4);}" +
       "#mfc-offer-bar .mfc-offer-cta:hover{transform:translateY(-1px);box-shadow:0 8px 18px -6px rgba(0,0,0,.5);}" +
-      "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.85);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;}" +
+      // V23.7: padding:2px 6px left the dismiss button 23.7px wide — a hair under
+      // the 24×24 WCAG 2.2 SC 2.5.8 floor, on every page of the site. Centring on
+      // a 26px min box clears it and squares up the previously 23.7×24 hit area.
+      "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.85);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;}" +
       "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
       "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +

@@ -65,6 +65,67 @@
     return sign + "₹" + r.toLocaleString("en-IN") + " Cr";
   }
   function el(id) { return document.getElementById(id); }
+
+  // ── V23.7: grow-on-reveal ──────────────────────────────────────────────────
+  //    The V23.5 panels declared `transition:width .8s` on their bars but painted
+  //    each bar at its FINAL width in the same frame it was inserted — a CSS
+  //    transition only fires on a *change*, so nothing ever animated and the
+  //    newest surfaces were the only bars on the site that snapped into place
+  //    (the dashboard's .alloc-bar and the factor-report's .fr-bar both grow).
+  //    Panels render their bars at the zero state carrying a data-grow-* target;
+  //    this wires them to animate to it as each card scrolls into view — which
+  //    also covers the Company tab being hidden at load, since an element inside
+  //    display:none never intersects and so grows the moment the tab is opened.
+  var REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  function applyGrow(node) {
+    var w = node.getAttribute("data-grow-w"), l = node.getAttribute("data-grow-left");
+    if (w != null) node.style.width = w;
+    if (l != null) node.style.left = l;
+    node.removeAttribute("data-grow-w");
+    node.removeAttribute("data-grow-left");
+  }
+  function growOnReveal(root) {
+    if (!root) return;
+    var nodes = root.querySelectorAll("[data-grow-w],[data-grow-left]");
+    if (!nodes.length) return;
+    // No IO (or motion is unwelcome) → land on the final value immediately, so
+    // a panel is never left stuck at its zero state.
+    if (REDUCED || !("IntersectionObserver" in window)) {
+      Array.prototype.forEach.call(nodes, applyGrow);
+      return;
+    }
+    // Observe each bar's CARD, never the bar: at the zero state a bar is 0px
+    // wide, and a zero-area target is exactly the case where intersection
+    // ratios are least dependable. The card always has real area, and watching
+    // it lets one card's bars cascade together in document order.
+    var groups = [], byCard = [];
+    Array.prototype.forEach.call(nodes, function (n) {
+      var card = (n.closest && n.closest(".card")) || root;
+      var i = byCard.indexOf(card);
+      if (i < 0) { byCard.push(card); groups.push([n]); } else { groups[i].push(n); }
+    });
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        var members = groups[byCard.indexOf(en.target)] || [];
+        // Next frame: the zero state has to be painted once before the change,
+        // or the browser coalesces both values and skips the transition.
+        requestAnimationFrame(function () {
+          members.forEach(function (n, i) {
+            if (i === 0) return applyGrow(n);
+            setTimeout(function () { applyGrow(n); }, i * 70); // cascade in order
+          });
+        });
+      });
+    // threshold 0 + a negative bottom margin, deliberately: a ratio-based
+    // threshold is unreachable for any card taller than ~5x the viewport, and
+    // these cards grow with the data. This fires once the card's top edge
+    // crosses ~88% of the viewport, whatever its height.
+    }, { threshold: 0, rootMargin: "0px 0px -12% 0px" });
+    byCard.forEach(function (c) { io.observe(c); });
+  }
+
   function quantile(sorted, q) {
     if (!sorted.length) return null;
     var pos = (sorted.length - 1) * q, base = Math.floor(pos), rest = pos - base;
@@ -118,7 +179,7 @@
     .mfx-line{font-size:12.5px;color:var(--text2);line-height:1.6}
     .mfx-line b{color:var(--white)}
     .mfx-own-bar{display:flex;height:12px;border-radius:6px;overflow:hidden;border:0.5px solid var(--border);margin:4px 0 6px}
-    .mfx-own-seg{height:100%}
+    .mfx-own-seg{height:100%;transition:width .8s cubic-bezier(.22,1,.36,1)}
     .mfx-own-key{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--text3)}
     .mfx-own-key span{display:inline-flex;align-items:center;gap:5px}
     .mfx-sw{width:10px;height:10px;border-radius:2px;display:inline-block}
@@ -152,7 +213,7 @@
     .mfx-ctx-val{font-size:13px;font-weight:800;color:var(--white);font-variant-numeric:tabular-nums;white-space:nowrap}
     .mfx-track{position:relative;height:8px;border-radius:6px;background:linear-gradient(90deg,var(--ink) 0%,var(--ink3) 100%);border:0.5px solid var(--border)}
     .mfx-median{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text3);border-radius:2px;opacity:.7}
-    .mfx-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--ink2);box-shadow:0 1px 4px rgba(8,15,30,.3);z-index:2}
+    .mfx-dot{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--ink2);box-shadow:0 1px 4px rgba(8,15,30,.3);z-index:2;transition:left .9s cubic-bezier(.22,1,.36,1)}
     .mfx-ctx-foot{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text3);margin-top:6px;font-variant-numeric:tabular-nums}
     .mfx-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--text3);margin-top:2px}
     .mfx-legend span{display:inline-flex;align-items:center;gap:6px}
@@ -210,7 +271,7 @@
     .mfx-sig-i.up .mfx-sig-d{background:var(--green)}
     .mfx-sig-i.dn .mfx-sig-d{background:var(--gold)}
     .mfx-sig-none{font-size:12.5px;color:var(--text3);line-height:1.6;font-style:italic}
-    @media (prefers-reduced-motion: reduce){.mfx-table tbody tr,.mfx-fl-bar,.mfx-bs-b,.mfx-cc-b{transition:none}}
+    @media (prefers-reduced-motion: reduce){.mfx-table tbody tr,.mfx-fl-bar,.mfx-bs-b,.mfx-cc-b,.mfx-own-seg,.mfx-dot{transition:none}}
     @media (max-width:1024px){.mfx-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:860px){.mfx-sig{grid-template-columns:1fr;gap:20px}}
     @media (max-width:640px){
@@ -358,6 +419,8 @@
           '<div class="mfx-legend"><span><span class="mfx-dot" style="position:static;width:11px;height:11px;background:var(--accent)"></span>This company</span><span><span style="width:2px;height:12px;background:var(--text3);display:inline-block;border-radius:2px"></span>Sector median</span></div>' +
         "</div>" +
       "</div>";
+
+    growOnReveal(tab); // ownership split bar (the later panels wire their own)
   }
 
   function snapshotHTML(D) {
@@ -382,9 +445,9 @@
       var p = promo || 0, i = inst || 0, pub = Math.max(0, 100 - p - i);
       out.push('<div><div class="mfx-line" style="margin-bottom:2px"><b>Ownership</b></div>' +
         '<div class="mfx-own-bar">' +
-          (p > 0 ? '<div class="mfx-own-seg" style="width:' + p + "%;background:#1a50d8\"></div>" : "") +
-          (i > 0 ? '<div class="mfx-own-seg" style="width:' + i + "%;background:#0891b2\"></div>" : "") +
-          '<div class="mfx-own-seg" style="width:' + pub + '%;background:var(--ink3)"></div>' +
+          (p > 0 ? '<div class="mfx-own-seg" data-grow-w="' + p + '%" style="width:0;background:#1a50d8"></div>' : "") +
+          (i > 0 ? '<div class="mfx-own-seg" data-grow-w="' + i + '%" style="width:0;background:#0891b2"></div>' : "") +
+          '<div class="mfx-own-seg" data-grow-w="' + pub + '%" style="width:0;background:var(--ink3)"></div>' +
         "</div>" +
         '<div class="mfx-own-key">' +
           '<span><span class="mfx-sw" style="background:#1a50d8"></span>Promoter <b style="color:var(--white)">' + (promo != null ? fx(promo, 1) + "%" : "N/A") + "</b></span>" +
@@ -514,7 +577,9 @@
       out.push(
         '<div class="mfx-ctx-row">' +
           '<div class="mfx-ctx-head"><div class="mfx-ctx-label">' + m.label + " <small>· " + m.sub + '</small></div><div class="mfx-ctx-val" style="color:' + dotColor + '">' + m.fmt(self) + "</div></div>" +
-          '<div class="mfx-track"><div class="mfx-median" style="left:' + posOf(p50) + '%"></div><div class="mfx-dot" style="left:' + posOf(self) + "%;background:" + dotColor + '"></div></div>' +
+          // The dot departs FROM the sector median and travels to where this
+          // company actually sits — the distance it covers is the story.
+          '<div class="mfx-track"><div class="mfx-median" style="left:' + posOf(p50) + '%"></div><div class="mfx-dot" data-grow-left="' + posOf(self) + '%" style="left:' + posOf(p50) + "%;background:" + dotColor + '"></div></div>' +
           '<div class="mfx-ctx-foot"><span>' + m.fmt(p10) + "</span><span style='color:" + dotColor + ";font-weight:600'>" + verdict + "</span><span>" + m.fmt(p90) + "</span></div>" +
         "</div>"
       );
@@ -524,6 +589,7 @@
     title.textContent = "How " + (D.symbol || "it") + " compares within " + secClean;
     body.innerHTML = out.join("");
     card.style.display = "";
+    growOnReveal(card);
   }
 
   // ══ V23.5 ═════════════════════════════════════════════════════════════════
@@ -603,7 +669,7 @@
           '<div class="mfx-fl-val">' + (neg ? '<span style="color:var(--red)">' + crStr(s.v) + "</span>" : crStr(s.v)) +
             '<small style="color:' + (neg ? "var(--red)" : "var(--text3)") + '">' + fx(pct, 1) + "% of revenue</small></div>" +
         "</div>" +
-        '<div class="mfx-fl-track">' + (neg ? "" : '<div class="mfx-fl-bar" style="width:' + w.toFixed(1) + "%;background:" + s.color + '"></div>') + "</div>" +
+        '<div class="mfx-fl-track">' + (neg ? "" : '<div class="mfx-fl-bar" data-grow-w="' + w.toFixed(1) + '%" style="width:0;background:' + s.color + '"></div>') + "</div>" +
         (neg ? '<div class="mfx-fl-neg">Negative — nothing remains at this line</div>' : "") +
       "</div>";
     }).join("");
@@ -615,6 +681,7 @@
         : "For every <b>₹100</b> of revenue, the company currently <b>loses ₹" + fx(Math.abs(np) / f.rev * 100, 2) + "</b> once every cost, interest and tax is counted.");
     }
     card.style.display = "";
+    growOnReveal(card);
   }
 
   // ── Balance sheet & solvency ──────────────────────────────────────────────
@@ -629,7 +696,7 @@
       if (v == null) return "";
       var w = mx > 0 ? Math.max(1.5, v / mx * 100) : 0;
       return '<div class="mfx-bs-row"><div class="mfx-bs-k">' + k + '</div>' +
-        '<div class="mfx-bs-t"><div class="mfx-bs-b" style="width:' + w.toFixed(1) + "%;background:" + color + '"></div></div>' +
+        '<div class="mfx-bs-t"><div class="mfx-bs-b" data-grow-w="' + w.toFixed(1) + '%" style="width:0;background:' + color + '"></div></div>' +
         '<div class="mfx-bs-v">' + crStr(v) + "</div></div>";
     }
     bars.innerHTML = bar("Cash", cash, "linear-gradient(90deg,#0891b2,#22d3ee)") + bar("Debt", debt, "linear-gradient(90deg,#b45309,#f59e0b)");
@@ -663,6 +730,7 @@
         : "Total debt exceeds cash by <b>" + crStr(nd) + "</b>" + (nde != null && Math.abs(nde) < 50 ? ", or about <b>" + fx(nde, 1) + " years</b> of EBITDA." : "."));
     }
     card.style.display = "";
+    growOnReveal(card);
   }
 
   // ── Cash conversion cycle ─────────────────────────────────────────────────
@@ -692,7 +760,7 @@
     ];
     body.innerHTML = rows.map(function (r) {
       return '<div class="mfx-cc-row"><div class="mfx-cc-k">' + r[0] + "<small>" + r[1] + "</small></div>" +
-        '<div class="mfx-cc-t"><div class="mfx-cc-b" style="width:' + (r[2] / mx * 100).toFixed(1) + "%;background:" + r[3] + '"></div></div>' +
+        '<div class="mfx-cc-t"><div class="mfx-cc-b" data-grow-w="' + (r[2] / mx * 100).toFixed(1) + '%" style="width:0;background:' + r[3] + '"></div></div>' +
         '<div class="mfx-cc-v">' + Math.round(r[2]) + "d</div></div>";
     }).join("");
 
@@ -702,6 +770,7 @@
         : "The cycle is <b>negative (" + Math.round(ccc) + " days)</b> — suppliers are paid after customers pay, so the business is effectively funded by its own supply chain.";
     }
     card.style.display = "";
+    growOnReveal(card);
   }
 
   // ── "What the numbers show" — derived strengths & watch-outs ──────────────

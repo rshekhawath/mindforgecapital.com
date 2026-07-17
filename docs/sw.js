@@ -16,8 +16,12 @@
  * shell documents (index.html + login.html carry the toggle gate) and the
  * cache-first shared asset mfc-finish.css. Cache bumped so activate purges the
  * v4 entries and the offline shell re-installs with the current HTML.
+ * v6 (V23.7): the tap-target pass edits the precached shell document index.html
+ * (the .hv-tab min-height). The shared assets it also touches ride their own
+ * ?v= bumps, but a precached document has no query to bust — so the cache is
+ * bumped to purge v5 and re-install the offline shell with the current HTML.
  */
-const CACHE = 'mfc-v5';
+const CACHE = 'mfc-v6';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
