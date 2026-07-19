@@ -27,8 +27,12 @@
  * v8 (V24.1): the MultiAsset window redefinition (full Feb-2023 span for both
  * legs) changes index.html's MFSTAT values + data-count targets again — same
  * precached-shell rationale as v6/v7.
+ * v9 (V24.2): the live-portfolio pivot restructures the precached index.html
+ * hero (live strip + demoted backtest pair). live-perf.json itself is NOT
+ * cached here — it must always come from the network so the LIVE figure is
+ * never a stale offline copy.
  */
-const CACHE = 'mfc-v8';
+const CACHE = 'mfc-v9';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

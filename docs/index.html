@@ -155,6 +155,28 @@ nav {
 }
 .hv-num.bench .val { background: none; -webkit-text-fill-color: var(--text2); color: var(--text2); font-weight: 600; font-size: 22px; }
 .hv-vs { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 6px; }
+/* ── V24.2: live-cycle strip — the card's PRIMARY stat once live-perf.json lands.
+   display:none until .live-ready, so a failed fetch leaves the pre-pivot,
+   backtest-first card untouched. With live present, .has-live demotes the
+   backtest pair below it. ── */
+.hv-live { display: none; }
+.hv-live.live-ready { display: block; margin: -2px 0 16px; padding: 13px 15px 12px; border: 1px solid rgba(5,150,105,0.28); border-radius: 12px; background: linear-gradient(135deg, rgba(5,150,105,0.07), rgba(45,212,191,0.05)); }
+.hv-live-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.hv-live-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 800; letter-spacing: 0.14em; color: var(--green); border: 1px solid rgba(5,150,105,0.35); border-radius: 999px; padding: 2.5px 8px; transform: translateY(-4px); }
+.hv-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: hv-live-pulse 1.8s ease-in-out infinite; }
+@keyframes hv-live-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+.hv-live-val { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.hv-live-val.up, .hv-live-bench.up { color: var(--green); }
+.hv-live-val.down, .hv-live-bench.down { color: #dc2626; }
+.hv-live-val.flat, .hv-live-bench.flat { color: var(--text2); }
+.hv-live-cyc { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
+.hv-live-sub { margin-top: 7px; font-size: 12px; color: var(--text3); }
+.hv-live-sub strong { color: var(--text2); font-weight: 600; }
+.hv-live-bench { font-weight: 700; font-variant-numeric: tabular-nums; }
+.hv-card.has-live .hv-num .val { font-size: 22px; }
+.hv-card.has-live .hv-num.bench .val { font-size: 17px; }
+.hv-card.has-live .hv-nums { margin-bottom: 18px; }
+@media (prefers-reduced-motion: reduce) { .hv-live-dot { animation: none; } }
 .hv-chart-wrap { position: relative; height: 130px; margin: 0 -4px 18px; }
 .hv-chart { width: 100%; height: 100%; display: block; }
 .hv-chart .grid-line { stroke: var(--border2); stroke-width: 0.5; stroke-dasharray: 2 4; opacity: 0.7; }
@@ -3286,7 +3308,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="hero-visual">
         <div class="hv-card tilt-host" role="group" aria-label="Backtested performance by strategy">
           <div class="hv-head">
-            <span class="hv-title">Backtested Performance</span>
+            <span class="hv-title">Portfolio Performance</span>
             <span class="hv-pulse">Live data</span>
           </div>
           <div class="hv-tabs" id="hv-tabs" role="group" aria-label="Choose a strategy">
@@ -3296,15 +3318,30 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <button type="button" class="hv-tab active" data-hv="mc" aria-pressed="true">Multicap</button>
             <button type="button" class="hv-tab" data-hv="sp" aria-pressed="false">S&amp;P 500</button>
           </div>
+          <!-- V24.2 pivot: the LIVE cycle figure is the card's primary stat. Hidden
+               until /live-perf.json lands (data-live-wrap → .live-ready), so a failed
+               fetch degrades to the backtest-first layout that shipped before. The
+               mc:* data-live slots give the DEFAULT tab its values even if the hero
+               script never runs; tab switches re-fill them from window.MFCLive. -->
+          <div class="hv-live" data-live-wrap aria-live="polite">
+            <div class="hv-live-top">
+              <span class="hv-live-badge"><span class="hv-live-dot"></span>LIVE</span>
+              <span class="hv-live-val flat" id="hv-live-val" data-live="mc:live">—</span>
+              <span class="hv-live-cyc">this cycle</span>
+            </div>
+            <div class="hv-live-sub">vs <span id="hv-live-benchname" data-live="mc:benchname">benchmark</span>
+              <span class="hv-live-bench flat" id="hv-live-bench" data-live="mc:bench">—</span>
+              · model portfolio since <strong data-live="rebal">the last rebalance</strong></div>
+          </div>
           <div class="hv-nums" aria-live="polite">
             <div class="hv-num">
               <div class="val" id="hv-cagr"><!--MFSTAT:mc:cagr-->66.7%<!--/MFSTAT--></div>
-              <div class="lbl" id="hv-cagr-lbl">Multicap CAGR</div>
+              <div class="lbl" id="hv-cagr-lbl">Multicap · backtest CAGR</div>
             </div>
             <div class="hv-vs">vs</div>
             <div class="hv-num bench">
               <div class="val" id="hv-bench"><!--MFSTAT:mc:bench_cagr-->11.49%<!--/MFSTAT--></div>
-              <div class="lbl">Benchmark</div>
+              <div class="lbl">Benchmark · backtest</div>
             </div>
           </div>
           <div class="hv-legend">
@@ -4271,14 +4308,38 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       el.fill.getBoundingClientRect();
       el.fill.style.transition = 'opacity 1s ease .25s'; el.fill.style.opacity = '0.18';
     }
+    // V24.2: paint the live-cycle strip for a strategy from window.MFCLive
+    // (populated by assets/mfc-live.js). Deliberately does NOT touch the strip's
+    // visibility — mfc-live.js reveals it only once real data has landed, so a
+    // failed fetch leaves the pre-pivot card intact.
+    function fillLive(key) {
+      var d = window.MFCLive && window.MFCLive.strategies && window.MFCLive.strategies[key];
+      if (!d) return;
+      function put(node, v) {
+        if (!node || v == null || !isFinite(v)) return;
+        var sign = v > 0 ? '+' : v < 0 ? '−' : '+';
+        node.textContent = sign + Math.abs(v).toFixed(2) + '%';
+        node.classList.remove('up', 'down', 'flat');
+        node.classList.add(v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat');
+      }
+      put(document.getElementById('hv-live-val'), d.live_pct);
+      put(document.getElementById('hv-live-bench'), d.bench_pct);
+      var bn = document.getElementById('hv-live-benchname');
+      if (bn && d.bench_name) bn.textContent = d.bench_name;
+    }
+    document.addEventListener('mfc-live-ready', function () {
+      card.classList.add('has-live');
+      fillLive(card._hvKey || 'mc');
+    });
     function select(key, animate) {
       var d = DATA[key]; if (!d) return;
       var m = META[key] || { name: key, bench: 'Benchmark', period: '' };
       setColors(key);
-      if (el.cagrLbl) el.cagrLbl.textContent = m.name + ' CAGR';
+      if (el.cagrLbl) el.cagrLbl.textContent = m.name + ' · backtest CAGR';
       if (el.legS) el.legS.textContent = 'MindForge ' + m.name;
       if (el.legB) el.legB.textContent = m.bench;
       if (el.period && m.period) el.period.textContent = m.period;
+      fillLive(key);   // V24.2: the live-cycle strip follows the selected strategy
       var p = build(d.cagr != null ? d.cagr : 0, d.bench != null ? d.bench : 0);
       if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); countAlpha(el.alpha, d.alphaTxt); redraw(p); }
       else { if (el.cagr) el.cagr.textContent = d.cagrTxt; if (el.bench) el.bench.textContent = d.benchTxt; if (el.alpha) el.alpha.textContent = (d.alphaTxt || '') + ' annual alpha'; }
@@ -5665,6 +5726,7 @@ section[id]{ scroll-margin-top: 80px; }
 </style>
 <script src="assets/mfc-offer.js?v=115" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
+<script src="assets/mfc-live.js?v=2420" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.

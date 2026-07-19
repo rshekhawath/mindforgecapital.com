@@ -471,6 +471,15 @@ tbody tr:hover{background:rgba(37,99,235,0.05);}
 td{padding:14px 18px;color:var(--text2);vertical-align:middle;}
 td.right{text-align:right;}
 td.company{color:var(--white);font-weight:600;}
+/* V24.2: company name → Scanner deep-link. Inherits the cell's ink so rows stay
+   calm; the dashed underline + arrow only assert themselves on hover. */
+.company-link{color:inherit;text-decoration:none;border-bottom:1px dashed rgba(148,163,184,.45);padding-bottom:1px;transition:color .15s,border-color .15s;}
+.company-link .cl-ico{margin-left:4px;opacity:0;transition:opacity .15s;vertical-align:baseline;}
+.company-link:hover{color:var(--accent2);border-bottom-color:var(--accent2);}
+.company-link:hover .cl-ico{opacity:.9;}
+.company-link:focus-visible{outline:2px solid rgba(37,99,235,.6);outline-offset:2px;border-radius:3px;}
+.sc-company .company-link{border-bottom-color:rgba(148,163,184,.35);}
+tr.row-bought .company-link{color:inherit;}
 td.ticker{
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size:12px;font-weight:800;color:var(--accent2);letter-spacing:.03em;
@@ -2984,7 +2993,7 @@ function renderTable(stocks) {
     return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company">${escapeHtml(s.company_name||s.ticker)}</td>
+      <td class="company">${companyCell(s)}</td>
       <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>
           ${brokerLink(s)}
       </td>
@@ -3014,7 +3023,7 @@ function renderTable(stocks) {
     return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}">
       <div class="sc-header">
         <div class="sc-name-wrap">
-          <div class="sc-company">${escapeHtml(s.company_name||s.ticker)}</div>
+          <div class="sc-company">${companyCell(s)}</div>
           <div class="sc-ticker" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)">${escapeHtml(s.ticker)}${copyIco}</div>
         </div>
         <div class="sc-num">${i+1}</div>
@@ -3123,6 +3132,21 @@ function brokerLink(s){
          '" title="Open ' + escapeHtml(s.ticker) + ' on ' + escapeHtml(b.name) + '" ' +
          'style="background:' + b.color + '14;color:' + b.color + ';border-color:' + b.color + '33;">' +
          escapeHtml(b.name) + ' →</a>';
+}
+
+// V24.2: deep-link each pick's company name to its Scanner company page.
+// Only NSE equities have a page in the snapshot (~2,100 symbols) — ETF picks
+// (MultiAsset books; industry === 'ETF') and US names (S&P 500; yahoo_ticker
+// without the .NS suffix) get NO link rather than a dead "Company not found"
+// landing. New tab, so the member's capital input / bought-state stay put.
+function companyCell(s){
+  var name = escapeHtml(s.company_name || s.ticker);
+  var y = s.yahoo_ticker || '';
+  if (!/\.NS$/i.test(y) || (s.industry || '') === 'ETF') return name;
+  return '<a class="company-link" href="/screener/company.html?symbol=' +
+         encodeURIComponent(s.ticker) + '" target="_blank" rel="noopener" ' +
+         'title="View ' + escapeHtml(s.ticker) + ' company page">' + name +
+         '<svg class="cl-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>';
 }
 
 // V5.2 #20 + #21: sector filter chips + click-on-sector-allocation filtering.
