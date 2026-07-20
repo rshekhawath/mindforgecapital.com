@@ -60,6 +60,12 @@
     document.querySelectorAll("[data-live-wrap]").forEach(function (w) {
       w.classList.add("live-ready");
     });
+    // V24.3: hosts are containers whose layout shifts once live data is in —
+    // strategy cards demote their backtest metrics, the strategy-page KPI grid
+    // grows a 6th column. Like the wraps, nothing happens on a failed fetch.
+    document.querySelectorAll("[data-live-host]").forEach(function (h) {
+      h.classList.add("has-live");
+    });
     try {
       document.dispatchEvent(new CustomEvent("mfc-live-ready", { detail: data }));
     } catch (e) {}
@@ -94,7 +100,57 @@
       ".live-chip .up{color:var(--green,#059669);}" +
       ".live-chip .down{color:#dc2626;}" +
       ".live-chip .flat{color:var(--text2,#1e3a5f);}" +
-      "@media (prefers-reduced-motion:reduce){.live-strip .ls-dot,.live-chip .ls-dot{animation:none;}}";
+      "@media (prefers-reduced-motion:reduce){.live-strip .ls-dot,.live-chip .ls-dot{animation:none;}}" +
+      /* ── V24.3: deeper pivot surfaces ─────────────────────────────────────
+         Homepage strategy cards: the live metric is appended LAST in the DOM
+         (so the hero's DATA harvest of .strat-metric .val[0]/[1] and the
+         :first-child divider rule keep working) and flex-ordered to render
+         FIRST. It carries .live-val, deliberately NOT .val, so nothing that
+         indexes .val ever sees it. */
+      ".strat-metric-live{display:none;order:-1;}" +
+      /* the live metric is a FULL-WIDTH headline row above the backtest pair —
+         five cards share one desktop row, so a third side-by-side metric gets
+         flex-squeezed (min-width:0) into text overlap. Wrapping instead keeps
+         the original two-metric geometry intact underneath. */
+      ".strat-card.has-live .strat-metrics{flex-wrap:wrap;}" +
+      /* card-scoped (0,3,0): the homepage's late body <style> re-declares
+         .strat-grid .strat-metric{flex:1 1 0;min-width:0} at (0,2,0), which
+         TIES a bare .strat-metric-live.live-ready and wins on source order —
+         the extra .strat-card class settles the cascade without !important. */
+      /* column like the card's other metrics (value over label) — a row form
+         overflows the ~160px five-across cards, and the page's inherited
+         justify-content:flex-end packs that overflow off the LEFT edge. */
+      ".strat-card .strat-metric-live.live-ready{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;flex:1 1 100%;min-width:100%;padding:0 0 10px;margin:0 0 10px;border-right:none;border-bottom:0.5px solid var(--border2,rgba(37,99,235,.2));}" +
+      ".strat-metric-live .live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}" +
+      ".strat-metric-live .live-val.up{color:var(--green,#059669);}" +
+      ".strat-metric-live .live-val.down{color:#dc2626;}" +
+      ".strat-metric-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
+      ".strat-metric-live .lbl{display:flex;align-items:center;gap:5px;white-space:nowrap;}" +
+      /* with live present, the card's backtest metrics step back */
+      ".strat-card.has-live .strat-metric .val{font-size:19px;}" +
+      ".strat-card.has-live .strat-metric:last-child .val{font-size:15px;}" +
+      ".strat-card.has-live .strat-metric:first-child{padding-right:14px;margin-right:14px;}" +
+      /* Strategy-page KPI row: a LIVE card leads the grid; the 5-col template
+         becomes 6-col only when the card is actually shown. */
+      ".stat-card.stat-live{display:none;}" +
+      ".stats-bar.has-live{grid-template-columns:repeat(6,1fr);}" +
+      "@media(max-width:960px){.stats-bar.has-live{grid-template-columns:1fr 1fr;}}" +
+      ".stat-card.stat-live.live-ready{display:block;border:1px solid rgba(5,150,105,.35);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(45,212,191,.04));}" +
+      ".stat-card.stat-live .live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:30px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;}" +
+      ".stat-card.stat-live .live-val.up{color:var(--green,#059669);}" +
+      ".stat-card.stat-live .live-val.down{color:#dc2626;}" +
+      ".stat-card.stat-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
+      ".stat-card.stat-live .sl .ls-dot{display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-2px;}" +
+      ".stats-bar.has-live .stat-card .sv{font-size:24px;}" +
+      /* strategies.html cards: the live chip becomes the emphatic line and the
+         backtest summary steps back (sibling/:has — no JS reflow). */
+      ".live-chip.live-ready{font-size:13px;font-weight:600;color:var(--text2,#1e3a5f);}" +
+      ".live-chip.live-ready b{font-size:15px;}" +
+      ".ps-perf-cagr:has(+ .live-chip.live-ready){font-size:11.5px;color:var(--text3,#475569);}" +
+      ".ps-perf:has(.live-chip.live-ready) .ps-perf-val{font-size:16px;}" +
+      /* the pulsing dot in the two V24.3 contexts (strip/chip rules are scoped) */
+      ".strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);display:inline-block;animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
+      "@media (prefers-reduced-motion:reduce){.strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{animation:none;}}";
     document.head.appendChild(st);
   }
 

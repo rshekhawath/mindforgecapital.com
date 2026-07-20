@@ -31,8 +31,10 @@
  * hero (live strip + demoted backtest pair). live-perf.json itself is NOT
  * cached here — it must always come from the network so the LIVE figure is
  * never a stale offline copy.
+ * v10 (V24.3): the deeper pivot adds live metrics to index.html's strategy
+ * cards (precached shell doc changed again — same rationale chain).
  */
-const CACHE = 'mfc-v9';
+const CACHE = 'mfc-v10';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
