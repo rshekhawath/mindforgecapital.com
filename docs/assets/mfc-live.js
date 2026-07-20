@@ -150,7 +150,23 @@
       ".ps-perf:has(.live-chip.live-ready) .ps-perf-val{font-size:16px;}" +
       /* the pulsing dot in the two V24.3 contexts (strip/chip rules are scoped) */
       ".strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);display:inline-block;animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
-      "@media (prefers-reduced-motion:reduce){.strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{animation:none;}}";
+      "@media (prefers-reduced-motion:reduce){.strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{animation:none;}}" +
+      /* ── V24.6: strategy-page SIDEBAR live card ───────────────────────────
+         The sticky sidebar previously showed only the backtest snapshot, so a
+         reader scrolling the page had the simulated figure pinned beside them
+         and the live one far above. This mirrors it: same fail-soft contract
+         (display:none until .live-ready), same data-live slots. */
+      ".sidebar-live{display:none;}" +
+      ".sidebar-live.live-ready{display:block;border:1px solid rgba(5,150,105,.35);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(45,212,191,.04));}" +
+      ".sidebar-live h3{display:flex;align-items:center;gap:7px;}" +
+      ".sidebar-live .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);display:inline-block;animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
+      ".sidebar-live .sl-live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:32px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;}" +
+      ".sidebar-live .sl-live-val.up{color:var(--green,#059669);}" +
+      ".sidebar-live .sl-live-val.down{color:#dc2626;}" +
+      ".sidebar-live .sl-live-val.flat{color:var(--text2,#1e3a5f);}" +
+      ".sidebar-live .sl-live-cyc{font-size:11px;color:var(--text3,#475569);margin:4px 0 12px;}" +
+      ".sidebar-live .sl-live-note{font-size:10.5px;color:var(--text3,#475569);margin-top:12px;line-height:1.5;}" +
+      "@media (prefers-reduced-motion:reduce){.sidebar-live .ls-dot{animation:none;}}";
     document.head.appendChild(st);
   }
 

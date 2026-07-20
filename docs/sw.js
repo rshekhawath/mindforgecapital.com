@@ -42,8 +42,12 @@
  * and index.html — a precached shell doc — carries new ?v= query strings for the
  * two shared scripts that changed with it. A precached document has no query to
  * bust, so the cache name is again the version.
+ * v13 (V24.6): the simulated "+32.01% annual alpha · LIVE" claim is off the
+ * precached index.html proof bar, and its strategy cards now label the headline
+ * figure "5Y Backtest CAGR". An installed app serving the v12 shell would keep
+ * presenting a backtested number as a live one, so the cache is bumped.
  */
-const CACHE = 'mfc-v12';
+const CACHE = 'mfc-v13';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
