@@ -38,8 +38,12 @@
  * login.html — the installed app's start_url, also precached — changed too. An
  * installed app on the v10 shell would keep offering both dead strategies and
  * link to pages that now 404, so the cache is bumped to purge and re-install.
+ * v12 (V24.5): the dashboard's dual-currency path is gone (every book is NSE/₹),
+ * and index.html — a precached shell doc — carries new ?v= query strings for the
+ * two shared scripts that changed with it. A precached document has no query to
+ * bust, so the cache name is again the version.
  */
-const CACHE = 'mfc-v11';
+const CACHE = 'mfc-v12';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

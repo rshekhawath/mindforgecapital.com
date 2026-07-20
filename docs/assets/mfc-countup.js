@@ -1,7 +1,7 @@
 /* ============================================================================
    MFC count-up — hero stat tiles roll from 0 to their value on first view.
    ----------------------------------------------------------------------------
-   V9.6, shared + additive. Used by the five strategy pages, whose hero
+   V9.6, shared + additive. Used by the three strategy pages, whose hero
    .stat-card .sv values are static text (the homepage proof strip and the
    dashboard already animate their own numbers — this fills the gap with the
    same easing/duration so the whole site feels uniform).
@@ -9,7 +9,7 @@
    Safety rules:
      • Only animates a value whose text is a bare number like "37.0%",
        "+21.68%", "-25.4%", "1.55" or "25" — anything else ("Medium",
-       "₹3,499", "17,47,042") is left untouched.
+       "₹2,499", "17,47,042") is left untouched.
      • Rewrites ONLY the first non-empty text node inside the element, so
        <!--MFSTAT:...--> comment markers around the value survive intact
        (the publish pipeline depends on them).

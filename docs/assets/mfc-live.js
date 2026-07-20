@@ -3,7 +3,7 @@
    ----------------------------------------------------------------------------
    Fetches /live-perf.json (aggregate model-portfolio movement since the last
    rebalance — % only, never holdings) and fills any element that declares a
-   data-live slot. One implementation for the homepage hero, the five strategy
+   data-live slot. One implementation for the homepage hero, the three strategy
    pages and the strategies index.
 
    Slots:

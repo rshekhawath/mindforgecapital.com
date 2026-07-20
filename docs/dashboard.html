@@ -2524,16 +2524,10 @@ function renderDashboard(sub, stocks) {
   applySectorFilter();
   var bp = document.getElementById('broker-picker'); // V5.2 #2: sync broker picker
   if (bp) bp.value = getBroker();
-  // V9.3: make the broker UI currency-aware. A USD-denominated book prices in $,
-  // so the
-  // India-only brokers (Kite/Zerodha/ICICI Direct) don't apply — hide Kite (it
-  // can't trade US stocks) and reword the how-to so US members see relevant names.
-  var kiteOpt = bp && bp.querySelector('option[value="kite"]');
-  if (kiteOpt) kiteOpt.style.display = (currentCurrency === '$') ? 'none' : '';
+  // V24.5: every book is NSE, so the India-only brokers always apply — the V9.3
+  // branch that hid Kite and reworded the how-to for USD books is gone.
   var htb = document.getElementById('howto-broker-text');
-  if (htb) htb.textContent = (currentCurrency === '$')
-    ? 'Groww, INDmoney, Vested — any platform that offers US stocks works. Use the Copy tickers button to paste the list at once.'
-    : 'Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.';
+  if (htb) htb.textContent = 'Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.';
   updateMarketStatus();
   // Set the market-status poll exactly once — refreshDashboard re-enters renderDashboard.
   if (!window._mfMarketTimer) {
@@ -2732,25 +2726,15 @@ function parseINR(s){
 }
 
 // ── CURRENCY ───────────────────────────────────────────────────────────────
-// US books carry yahoo_tickers WITHOUT a .NS suffix → price in $.
-// Indian books (.NS) → ₹. The position-sizing calculator reads `currentCurrency`
-// so capital, per-stock and allocation figures all share ONE currency and the
-// share math (capital ÷ price) isn't mixing ₹ with $.
-let currentCurrency = '₹';
-function dashCurrency() {
-  return (stocksData || []).some(s => s && s.yahoo_ticker && !/\.NS$/i.test(s.yahoo_ticker)) ? '$' : '₹';
+// V24.5: every book is NSE-listed and priced in rupees, so the old dual-currency
+// path (a currency sniffed from ticker suffixes, dollar formatting, NYSE
+// market hours, US broker deeplinks) was removed along with the one US strategy
+// that consumed it. These are now plain ₹ formatters.
+function fmtNum(v) {
+  return fmtINR(Math.round(Number(v) || 0));
 }
-function fmtNum(curr, v) {
-  v = Math.round(Number(v) || 0);
-  return curr === '$' ? v.toLocaleString('en-US', {maximumFractionDigits: 0}) : fmtINR(v);
-}
-function fmtMoney(curr, v) { return curr + fmtNum(curr, v); }
-function shortMoney(curr, v) {
-  if (curr !== '$') return shortLakhs(v);
-  if (v >= 1000000) return '$' + (v/1000000).toFixed(v % 1000000 ? 1 : 0).replace(/\.0$/,'') + 'M';
-  if (v >= 1000)    return '$' + Math.round(v/1000) + 'K';
-  return '$' + v;
-}
+function fmtMoney(v) { return '₹' + fmtNum(v); }
+function shortMoney(v) { return shortLakhs(v); }
 
 // ── POSITION SIZING ──────────────────────────────────────────────────────
 function capitalStorageKey(strategy) {
@@ -2769,29 +2753,27 @@ function saveCapital(strategy, v) {
 function setupCapitalCalculator(stocks, strategy) {
   if (!stocks || !stocks.length) return;
   const card = document.getElementById('size-card');
-  currentCurrency = dashCurrency();
   const presets = (CAPITAL_PRESETS[strategy] || CAPITAL_PRESETS._default);
   // Use saved capital if present; otherwise recommended preset
   const saved = loadSavedCapital(strategy);
   currentCapital = saved > 0 ? saved : presets.recommended;
 
-  // Currency-aware input chrome (₹ for NSE books, $ for a USD book)
   const prefixEl = document.getElementById('size-prefix');
-  if (prefixEl) prefixEl.textContent = currentCurrency;
+  if (prefixEl) prefixEl.textContent = '₹';
   const input = document.getElementById('size-input');
-  input.placeholder = currentCurrency === '$' ? '100,000' : '1,00,000';
+  input.placeholder = '1,00,000';
 
   // Render preset buttons
   const presetEl = document.getElementById('size-presets');
   presetEl.innerHTML = presets.options.map(v => {
     const cls = v === currentCapital ? 'size-preset active' : 'size-preset';
-    return `<button class="${cls}" data-val="${v}" onclick="setCapital(${v}, this)">${shortMoney(currentCurrency, v)}</button>`;
+    return `<button class="${cls}" data-val="${v}" onclick="setCapital(${v}, this)">${shortMoney(v)}</button>`;
   }).join('');
 
-  input.value = fmtNum(currentCurrency, currentCapital);
+  input.value = fmtNum(currentCapital);
   input.addEventListener('input', e => {
     const v = parseINR(e.target.value);
-    e.target.value = v ? fmtNum(currentCurrency, v) : '';
+    e.target.value = v ? fmtNum(v) : '';
     setCapital(v, null, true);
   });
 
@@ -2812,7 +2794,7 @@ function setCapital(v, btn, fromInput) {
   document.querySelectorAll('.size-preset').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === currentCapital));
   // Sync input value if not coming from input
   if (!fromInput) {
-    document.getElementById('size-input').value = currentCapital ? fmtNum(currentCurrency, currentCapital) : '';
+    document.getElementById('size-input').value = currentCapital ? fmtNum(currentCapital) : '';
   }
   refreshSizeSummary();
   // Re-render the allocation/shares columns without rebuilding bars
@@ -2836,9 +2818,9 @@ function refreshSizeSummary() {
   // otherwise show the equal-split amount as before.
   document.getElementById('size-per-stock').textContent   = isWeightedBook(stocksData)
     ? 'by model weight'
-    : fmtMoney(currentCurrency, currentCapital / n);
-  document.getElementById('size-total-alloc').textContent = fmtMoney(currentCurrency, totalAlloc);
-  document.getElementById('size-residue').textContent     = fmtMoney(currentCurrency, residue);
+    : fmtMoney(currentCapital / n);
+  document.getElementById('size-total-alloc').textContent = fmtMoney(totalAlloc);
+  document.getElementById('size-residue').textContent     = fmtMoney(residue);
   // V22.0: capital-deployment micro-meter — % of the entered capital the whole-share
   // sizing puts to work. First paint animates via the shared [data-bar] applier
   // (refreshSizeSummary runs before it during render); capital tweaks afterwards
@@ -2853,7 +2835,7 @@ function refreshSizeSummary() {
         depFill.setAttribute('data-bar', depStr + '%');
         if (depFill.style.width) depFill.style.width = depStr + '%';   // post-applier updates
         depLbl.textContent = depStr + '% deployed';
-        dep.title = depStr + '% of your capital goes into orders — ' + fmtMoney(currentCurrency, Math.max(0, residue)) + ' stays in cash (whole shares only)';
+        dep.title = depStr + '% of your capital goes into orders — ' + fmtMoney(Math.max(0, residue)) + ' stays in cash (whole shares only)';
         dep.style.display = '';
       } else { dep.style.display = 'none'; }
     }
@@ -2867,12 +2849,12 @@ function updateAllocationCells() {
     const amt = shares * price;
     const allocCell = document.querySelector('tr[data-row="'+i+'"] .alloc-amt');
     const sharesCell = document.querySelector('tr[data-row="'+i+'"] .shares');
-    if (allocCell) allocCell.textContent = fmtMoney(currentCurrency, amt);
+    if (allocCell) allocCell.textContent = fmtMoney(amt);
     if (sharesCell) sharesCell.innerHTML = '<span class="qty">' + shares + '</span>';
     // Mobile
     const mAlloc = document.querySelector('.stock-card[data-row="'+i+'"] .sc-alloc');
     const mShares = document.querySelector('.stock-card[data-row="'+i+'"] .sc-shares');
-    if (mAlloc) mAlloc.textContent = fmtMoney(currentCurrency, amt);
+    if (mAlloc) mAlloc.textContent = fmtMoney(amt);
     if (mShares) mShares.textContent = shares;
   });
 }
@@ -2919,11 +2901,8 @@ function renderTable(stocks) {
   const secColors = buildSectorColorMap(stocksData);
   const indDot = s => { const k = (s.industry || '').trim(); return k ? `<span class="ind-dot" style="background:${secColors[k] || '#cbd5e1'}"></span>` : ''; };
 
-  // Per-stock currency: yahoo_ticker ending with .NS → ₹ (Indian NSE),
-  // otherwise → $ (US stocks). Allocation uses the same currency
-  // as the price so subscribers can do direct broker math.
-  const stockCurr = s => (s.yahoo_ticker && /\.NS$/i.test(s.yahoo_ticker)) ? '₹' : '$';
-  const fmtAmt = (curr, n) => curr === '₹' ? ('₹' + fmtINR(n)) : ('$' + n.toLocaleString('en-US', {maximumFractionDigits: 0}));
+  // V24.5: every book is NSE-listed, so price and allocation are always ₹.
+  const fmtAmt = n => '₹' + fmtINR(n);
 
   // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {
@@ -2934,7 +2913,6 @@ function renderTable(stocks) {
     const amt = shares * entry;
     const isBought = !!bought[s.ticker];
     const rowCls = isBought ? 'row-bought' : '';
-    const curr = stockCurr(s);
     // data-row carries the CANONICAL stocksData index (not the sorted position) so
     // filterStocks/applySectorFilter/updateAllocationCells — which look up
     // stocksData[data-row] — stay correct after a column sort reorders the rows.
@@ -2947,8 +2925,8 @@ function renderTable(stocks) {
           ${brokerLink(s)}
       </td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
-      <td class="price right"><span class="px-rec">${curr}${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}" data-curr="${curr}"></span></td>
-      <td class="alloc-amt right">${fmtAmt(curr, amt)}</td>
+      <td class="price right"><span class="px-rec">₹${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
+      <td class="alloc-amt right">${fmtAmt(amt)}</td>
       <td class="shares right"><span class="qty">${shares}</span></td>
       <td class="right">
         <div class="weight-cell">
@@ -2978,9 +2956,9 @@ function renderTable(stocks) {
         <div class="sc-num">${i+1}</div>
       </div>
       <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(s.industry||'—')}</span></div>
-      <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">${stockCurr(s)}${entry.toFixed(2)}</span></div>
-      <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}" data-curr="${stockCurr(s)}">—</span></div>
-      <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(stockCurr(s), amt)}</span></div>
+      <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">₹${entry.toFixed(2)}</span></div>
+      <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></div>
+      <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(amt)}</span></div>
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
       <div class="sc-row"><span class="sc-key">Weight</span><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div>
       <div class="sc-bar-wrap"><div class="sc-bar" data-bar="${barPct.toFixed(1)}%"></div></div>
@@ -3036,33 +3014,25 @@ var BROKERS = {
             link: function(s){
               // Kite supports a query-pre-fill URL on the order page
               var t = (s.ticker || '').toUpperCase();
-              var seg = (s.yahoo_ticker && !/\.NS$/i.test(s.yahoo_ticker)) ? 'NASDAQ' : 'NSE';
-              // US side not supported by Kite India — fall back to a search
-              if (seg === 'NASDAQ') return null;
-              return 'https://kite.zerodha.com/chart/web/' + seg + '/' + encodeURIComponent(t);
+              return 'https://kite.zerodha.com/chart/web/NSE/' + encodeURIComponent(t);
             } },
   groww:  { name: 'Groww',  color: '#00b386',
             link: function(s){
               var t = (s.ticker || '').toUpperCase();
-              if (s.yahoo_ticker && !/\.NS$/i.test(s.yahoo_ticker)) {
-                return 'https://groww.in/us-stocks/' + encodeURIComponent(t.toLowerCase());
-              }
               return 'https://groww.in/stocks/' + encodeURIComponent(t.toLowerCase());
             } },
   upstox: { name: 'Upstox', color: '#371777',
             link: function(s){
               var t = (s.ticker || '').toUpperCase();
-              // Upstox search-page deeplink (works for both NSE and US)
+              // Upstox search-page deeplink
               return 'https://upstox.com/search?q=' + encodeURIComponent(t);
             } },
 };
 function getBroker(){
   try { var saved = localStorage.getItem('mfc-broker'); if (saved) return saved; } catch(e){}
-  // V9.3: US books default to Groww, not Kite. Kite India's row deeplink
-  // returns null for US tickers (it can't trade them), which would leave EVERY row
-  // without a broker button. Groww has real US-stock links. Indian (.NS) books are
-  // unchanged — Kite stays their default.
-  return (typeof currentCurrency !== 'undefined' && currentCurrency === '$') ? 'groww' : 'kite';
+  // V24.5: every book is NSE, so Kite is always the default (the V9.3 US-book
+  // Groww fallback existed only because Kite India can't trade US tickers).
+  return 'kite';
 }
 function setBroker(key){
   if (!BROKERS[key]) return;
@@ -3085,9 +3055,9 @@ function brokerLink(s){
 
 // V24.2: deep-link each pick's company name to its Scanner company page.
 // Only NSE equities have a page in the snapshot (~2,100 symbols) — ETF picks
-// (MultiAsset books; industry === 'ETF') and US names (yahoo_ticker
-// without the .NS suffix) get NO link rather than a dead "Company not found"
-// landing. New tab, so the member's capital input / bought-state stay put.
+// (MultiAsset books; industry === 'ETF') get NO link rather than a dead
+// "Company not found" landing. The .NS test also guards a missing/odd
+// yahoo_ticker. New tab, so capital input / bought-state stay put.
 function companyCell(s){
   var name = escapeHtml(s.company_name || s.ticker);
   var y = s.yahoo_ticker || '';
@@ -3355,10 +3325,8 @@ function exportCSV() {
   if (!stocksData.length) return;
   const n = stocksData.length || 1;
   // V12.5: allocation is weight-proportional (see allocBudget()).
-  // V6.8 M1: derive currency from the book so a USD ($) export doesn't
-  // mis-label its USD columns as "(INR)".
-  const ccyCode = (typeof dashCurrency === 'function' && dashCurrency() === '$') ? 'USD' : 'INR';
-  const header = ['#','Company','Ticker','Industry','Recommended Price (' + ccyCode + ')','Weight (%)','Allocation (' + ccyCode + ')','Shares'];
+  // V24.5: every book is ₹, so the export is unconditionally INR-labelled.
+  const header = ['#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
   const lines = [header.join(',')];
   stocksData.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
@@ -3490,17 +3458,13 @@ function saveNotifPref() {
 }
 
 function updateMarketStatus() {
-  // Pick the exchange based on the dashboard's current currency:
-  //   ₹ → NSE  (IST 9:15–15:30, Mon–Fri)
-  //   $ → NYSE (ET   9:30–16:00, Mon–Fri)
-  // Pre-V4.8 this was IST-only, so US-book subscribers saw "Market closed"
-  // during US trading hours.
-  const isUS = (currentCurrency === '$');
-  const tz   = isUS ? 'America/New_York' : 'Asia/Kolkata';
-  const open = isUS ? (9*60 + 30) : (9*60 + 15);
-  const close= isUS ? (16*60)     : (15*60 + 30);
-  const label= isUS ? 'NYSE'      : 'NSE';
-  const hours= isUS ? '9:30–16:00 ET' : '9:15–15:30 IST';
+  // V24.5: every book trades on the NSE, so the NYSE branch added in V4.8 for
+  // the S&P 500 book is gone — this is IST-only again.
+  const tz   = 'Asia/Kolkata';
+  const open = 9*60 + 15;
+  const close= 15*60 + 30;
+  const label= 'NSE';
+  const hours= '9:15–15:30 IST';
 
   const local = new Date(new Date().toLocaleString('en-US', {timeZone: tz}));
   const h = local.getHours(), m = local.getMinutes(), d = local.getDay();
@@ -3564,7 +3528,7 @@ async function refreshDashboard() {
 // day automatically ("updated everyday") and is instant on same-day reloads.
 function parseRebalanceDate(sub){
   var rid = (sub && sub.run_id) ? String(sub.run_id) : '';
-  var m = rid.match(/^(\d{4})(\d{2})(\d{2})/);   // e.g. 20260609_230735_MC
+  var m = rid.match(/^(\d{4})(\d{2})(\d{2})/);   // e.g. 20260609_230735_SMC
   if (m){ var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])); if (!isNaN(d.getTime())) return d; }
   if (sub && sub.subscribed_at){ var d2 = new Date(sub.subscribed_at); if (!isNaN(d2.getTime())) return d2; }
   return null;
@@ -3686,12 +3650,12 @@ function paintLivePrices(){
   // aggregate of these per-row returns — they can never drift apart.
   var px = window._livePx || {};
   document.querySelectorAll('.px-live').forEach(function(el){
-    var y = el.getAttribute('data-px'); var rec = Number(el.getAttribute('data-rec')) || 0; var curr = el.getAttribute('data-curr') || '₹';
+    var y = el.getAttribute('data-px'); var rec = Number(el.getAttribute('data-rec')) || 0;
     var p = px[y];
     if (!p || !rec){ el.innerHTML = '—'; return; }
     var live = p.price; var r = _retPct(rec, live);
     var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
-    el.innerHTML = curr + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
+    el.innerHTML = '₹' + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
   });
 }
 function renderProfitHeadline(){
@@ -3723,11 +3687,11 @@ function renderProfitHeadline(){
   // falling back to the subscription date) — i.e. when these rec_prices were set.
   var rebal = window._rebalDate;
   var absSign = absGain >= 0 ? '+' : '−';
-  var absStr = fmtMoney(currentCurrency, Math.abs(Math.round(absGain)));
+  var absStr = fmtMoney(Math.abs(Math.round(absGain)));
   var sub = document.getElementById('pc-sub');
   sub.innerHTML = 'Weighted return across ' + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
     (rebal ? ' on <strong>' + rebal.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
-    '. On your ' + fmtMoney(currentCurrency, currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.';
+    '. On your ' + fmtMoney(currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.';
   var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
   var br = document.getElementById('pc-breakdown');
   if (br) br.innerHTML =
