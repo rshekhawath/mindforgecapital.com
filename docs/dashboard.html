@@ -2083,7 +2083,7 @@ const token = (function () {
   return t;
 })();
 const demoMode = new URLSearchParams(window.location.search).get('demo');
-const isDemo = demoMode === '1' || demoMode === 'sp500' || demoMode === 'multicap';
+const isDemo = demoMode === '1';
 
 // V21.0: Sign out — clear the persisted session, then go to the sign-in page.
 (function(){
@@ -2131,10 +2131,6 @@ const CAPITAL_PRESETS = {
   'MindForge MultiAsset':      { recommended: 500000,  options: [200000, 500000, 1000000, 2000000] },
   'MindForge LargeMidcap 250': { recommended: 1500000, options: [500000, 1500000, 2500000, 5000000] },
   'MindForge SmallMicro 500':  { recommended: 2500000, options: [1000000, 2500000, 5000000, 10000000] },
-  'MindForge Multicap':        { recommended: 3500000, options: [1500000, 3500000, 7000000, 14000000] },
-  // S&P 500 is priced in USD — presets are in dollars (≈ ₹1cr ≈ $120k) so the
-  // capital, per-stock and allocation figures all stay in one currency.
-  'MindForge S&P 500':         { recommended: 120000,  options: [50000, 120000, 250000, 500000] },
   _default:                      { recommended: 500000,  options: [100000, 500000, 1500000, 2500000] }
 };
 
@@ -2142,52 +2138,6 @@ const CAPITAL_PRESETS = {
 function _demoData(mode) {
   const now = new Date();
   const exp = new Date(); exp.setDate(exp.getDate() + 18);
-  // ?demo=sp500 → a USD book so the $ currency path (price, allocation,
-  // capital calculator) can be previewed without a live S&P 500 token.
-  if (mode === 'sp500') {
-    const usd = [
-      {ticker:'AAPL',  yahoo_ticker:'AAPL',  company_name:'Apple',              industry:'Information Technology', recommended_price:212.45, weight_pct:3.33},
-      {ticker:'MSFT',  yahoo_ticker:'MSFT',  company_name:'Microsoft',          industry:'Information Technology', recommended_price:438.10, weight_pct:3.33},
-      {ticker:'NVDA',  yahoo_ticker:'NVDA',  company_name:'NVIDIA',             industry:'Information Technology', recommended_price:131.26, weight_pct:3.33},
-      {ticker:'AMZN',  yahoo_ticker:'AMZN',  company_name:'Amazon',             industry:'Consumer Discretionary', recommended_price:197.12, weight_pct:3.33},
-      {ticker:'GOOGL', yahoo_ticker:'GOOGL', company_name:'Alphabet',           industry:'Communication Services', recommended_price:178.30, weight_pct:3.33},
-      {ticker:'META',  yahoo_ticker:'META',  company_name:'Meta Platforms',     industry:'Communication Services', recommended_price:589.40, weight_pct:3.33},
-      {ticker:'BRK-B', yahoo_ticker:'BRK-B', company_name:'Berkshire Hathaway', industry:'Financials',             recommended_price:467.80, weight_pct:3.33},
-      {ticker:'JPM',   yahoo_ticker:'JPM',   company_name:'JPMorgan Chase',     industry:'Financials',             recommended_price:243.55, weight_pct:3.33},
-      {ticker:'V',     yahoo_ticker:'V',     company_name:'Visa',               industry:'Financials',             recommended_price:312.90, weight_pct:3.33},
-      {ticker:'LLY',   yahoo_ticker:'LLY',   company_name:'Eli Lilly',          industry:'Health Care',            recommended_price:782.15, weight_pct:3.34},
-      {ticker:'UNH',   yahoo_ticker:'UNH',   company_name:'UnitedHealth',       industry:'Health Care',            recommended_price:521.70, weight_pct:3.34},
-      {ticker:'XOM',   yahoo_ticker:'XOM',   company_name:'Exxon Mobil',        industry:'Energy',                 recommended_price:118.60, weight_pct:3.34},
-    ];
-    return {
-      subscription: {
-        name: 'Alex', email: 'alex@example.com', strategy: 'MindForge S&P 500',
-        expires_at: exp.toISOString(), subscribed_at: now.toISOString(), status: 'active'
-      },
-      stocks: usd
-    };
-  }
-  if (mode === 'multicap') {
-    const mc = [
-      {ticker:'RELIANCE',   yahoo_ticker:'RELIANCE.NS',   company_name:'Reliance Industries',         industry:'Oil & Gas',          recommended_price:2945.85, weight_pct:10.0},
-      {ticker:'HDFCBANK',   yahoo_ticker:'HDFCBANK.NS',   company_name:'HDFC Bank',                   industry:'Banks',              recommended_price:1672.90, weight_pct:10.0},
-      {ticker:'INFY',       yahoo_ticker:'INFY.NS',       company_name:'Infosys',                     industry:'IT Services',        recommended_price:1543.20, weight_pct:10.0},
-      {ticker:'BHARTIARTL', yahoo_ticker:'BHARTIARTL.NS', company_name:'Bharti Airtel',               industry:'Telecom',            recommended_price:1582.30, weight_pct:10.0},
-      {ticker:'TITAN',      yahoo_ticker:'TITAN.NS',      company_name:'Titan Company',               industry:'Consumer Durables',  recommended_price:3540.20, weight_pct:10.0},
-      {ticker:'DIXON',      yahoo_ticker:'DIXON.NS',      company_name:'Dixon Technologies',          industry:'Consumer Durables',  recommended_price:14250.00, weight_pct:10.0},
-      {ticker:'POLYCAB',    yahoo_ticker:'POLYCAB.NS',    company_name:'Polycab India',               industry:'Capital Goods',      recommended_price:6890.40, weight_pct:10.0},
-      {ticker:'KPITTECH',   yahoo_ticker:'KPITTECH.NS',   company_name:'KPIT Technologies',           industry:'IT Services',        recommended_price:1485.30, weight_pct:10.0},
-      {ticker:'CDSL',       yahoo_ticker:'CDSL.NS',       company_name:'Central Depository Services', industry:'Financial Services', recommended_price:1620.50, weight_pct:10.0},
-      {ticker:'GLENMARK',   yahoo_ticker:'GLENMARK.NS',   company_name:'Glenmark Pharmaceuticals',    industry:'Pharma',             recommended_price:1542.60, weight_pct:10.0},
-    ];
-    return {
-      subscription: {
-        name: 'Arjun', email: 'arjun@example.com', strategy: 'MindForge Multicap',
-        expires_at: exp.toISOString(), subscribed_at: now.toISOString(), status: 'active'
-      },
-      stocks: mc
-    };
-  }
   const stocks = [
     {ticker:'INFY',       company_name:'Infosys',                          industry:'IT Services',                  recommended_price:1543.20, weight_pct:4.00},
     {ticker:'TCS',        company_name:'Tata Consultancy Services',        industry:'IT Services',                  recommended_price:3812.55, weight_pct:4.00},
@@ -2321,13 +2271,11 @@ function _animateCount(el, target, opts) {
 
 // ── V21.3: STRATEGY SWITCHER ────────────────────────────────────────────────
 // Turns the "Strategy:" hero pill into a dropdown when the member can open two or
-// more strategies on this device. Demo mode seeds the three demo fixtures so the
-// control is fully demonstrable; real sessions accumulate {strategy → token} pairs
-// in the cookie-backed registry (recordStrat) as each access link is opened.
+// more strategies on this device. Demo mode seeds the demo fixture so the control
+// is still reachable; real sessions accumulate {strategy → token} pairs in the
+// cookie-backed registry (recordStrat) as each access link is opened.
 const _DEMO_STRATS = {
-  'MindForge LargeMidcap 250': '1',
-  'MindForge Multicap':        'multicap',
-  'MindForge S&P 500':         'sp500'
+  'MindForge LargeMidcap 250': '1'
 };
 let _stratMenuWired = false;
 function setupStrategySwitcher(activeStrategy){
@@ -2557,7 +2505,7 @@ function renderDashboard(sub, stocks) {
   let industryCopy;
   if (!industries.size)                            industryCopy = '—';
   else if (/multiasset/i.test(currentStrategy))    industryCopy = 'multi-asset diversified';
-  else                                             industryCopy = 'sector-diversified, capped at ' + (/s&p/i.test(currentStrategy) ? 4 : /multicap/i.test(currentStrategy) ? 2 : 3) + ' per';
+  else                                             industryCopy = 'sector-diversified, capped at 3 per';
   document.getElementById('stat-industries-sub').textContent = industryCopy;
 
   renderAllocation(stocks);
@@ -2576,7 +2524,8 @@ function renderDashboard(sub, stocks) {
   applySectorFilter();
   var bp = document.getElementById('broker-picker'); // V5.2 #2: sync broker picker
   if (bp) bp.value = getBroker();
-  // V9.3: make the broker UI currency-aware. The S&P 500 book is in USD, so the
+  // V9.3: make the broker UI currency-aware. A USD-denominated book prices in $,
+  // so the
   // India-only brokers (Kite/Zerodha/ICICI Direct) don't apply — hide Kite (it
   // can't trade US stocks) and reword the how-to so US members see relevant names.
   var kiteOpt = bp && bp.querySelector('option[value="kite"]');
@@ -2783,7 +2732,7 @@ function parseINR(s){
 }
 
 // ── CURRENCY ───────────────────────────────────────────────────────────────
-// US books (S&P 500) carry yahoo_tickers WITHOUT a .NS suffix → price in $.
+// US books carry yahoo_tickers WITHOUT a .NS suffix → price in $.
 // Indian books (.NS) → ₹. The position-sizing calculator reads `currentCurrency`
 // so capital, per-stock and allocation figures all share ONE currency and the
 // share math (capital ÷ price) isn't mixing ₹ with $.
@@ -2826,7 +2775,7 @@ function setupCapitalCalculator(stocks, strategy) {
   const saved = loadSavedCapital(strategy);
   currentCapital = saved > 0 ? saved : presets.recommended;
 
-  // Currency-aware input chrome (₹ for NSE books, $ for the S&P 500 book)
+  // Currency-aware input chrome (₹ for NSE books, $ for a USD book)
   const prefixEl = document.getElementById('size-prefix');
   if (prefixEl) prefixEl.textContent = currentCurrency;
   const input = document.getElementById('size-input');
@@ -2971,7 +2920,7 @@ function renderTable(stocks) {
   const indDot = s => { const k = (s.industry || '').trim(); return k ? `<span class="ind-dot" style="background:${secColors[k] || '#cbd5e1'}"></span>` : ''; };
 
   // Per-stock currency: yahoo_ticker ending with .NS → ₹ (Indian NSE),
-  // otherwise → $ (US stocks like S&P 500). Allocation uses the same currency
+  // otherwise → $ (US stocks). Allocation uses the same currency
   // as the price so subscribers can do direct broker math.
   const stockCurr = s => (s.yahoo_ticker && /\.NS$/i.test(s.yahoo_ticker)) ? '₹' : '$';
   const fmtAmt = (curr, n) => curr === '₹' ? ('₹' + fmtINR(n)) : ('$' + n.toLocaleString('en-US', {maximumFractionDigits: 0}));
@@ -3109,7 +3058,7 @@ var BROKERS = {
 };
 function getBroker(){
   try { var saved = localStorage.getItem('mfc-broker'); if (saved) return saved; } catch(e){}
-  // V9.3: US (S&P 500) books default to Groww, not Kite. Kite India's row deeplink
+  // V9.3: US books default to Groww, not Kite. Kite India's row deeplink
   // returns null for US tickers (it can't trade them), which would leave EVERY row
   // without a broker button. Groww has real US-stock links. Indian (.NS) books are
   // unchanged — Kite stays their default.
@@ -3136,7 +3085,7 @@ function brokerLink(s){
 
 // V24.2: deep-link each pick's company name to its Scanner company page.
 // Only NSE equities have a page in the snapshot (~2,100 symbols) — ETF picks
-// (MultiAsset books; industry === 'ETF') and US names (S&P 500; yahoo_ticker
+// (MultiAsset books; industry === 'ETF') and US names (yahoo_ticker
 // without the .NS suffix) get NO link rather than a dead "Company not found"
 // landing. New tab, so the member's capital input / bought-state stay put.
 function companyCell(s){
@@ -3406,7 +3355,7 @@ function exportCSV() {
   if (!stocksData.length) return;
   const n = stocksData.length || 1;
   // V12.5: allocation is weight-proportional (see allocBudget()).
-  // V6.8 M1: derive currency from the book so the S&P 500 ($) export doesn't
+  // V6.8 M1: derive currency from the book so a USD ($) export doesn't
   // mis-label its USD columns as "(INR)".
   const ccyCode = (typeof dashCurrency === 'function' && dashCurrency() === '$') ? 'USD' : 'INR';
   const header = ['#','Company','Ticker','Industry','Recommended Price (' + ccyCode + ')','Weight (%)','Allocation (' + ccyCode + ')','Shares'];
@@ -3544,7 +3493,7 @@ function updateMarketStatus() {
   // Pick the exchange based on the dashboard's current currency:
   //   ₹ → NSE  (IST 9:15–15:30, Mon–Fri)
   //   $ → NYSE (ET   9:30–16:00, Mon–Fri)
-  // Pre-V4.8 this was IST-only, so S&P 500 subscribers saw "Market closed"
+  // Pre-V4.8 this was IST-only, so US-book subscribers saw "Market closed"
   // during US trading hours.
   const isUS = (currentCurrency === '$');
   const tz   = isUS ? 'America/New_York' : 'Asia/Kolkata';

@@ -33,8 +33,13 @@
  * never a stale offline copy.
  * v10 (V24.3): the deeper pivot adds live metrics to index.html's strategy
  * cards (precached shell doc changed again — same rationale chain).
+ * v11 (V24.4): Multicap and S&P 500 are retired. index.html (a precached shell
+ * doc) loses two hero tabs, two strategy cards and the All-Access band, and
+ * login.html — the installed app's start_url, also precached — changed too. An
+ * installed app on the v10 shell would keep offering both dead strategies and
+ * link to pages that now 404, so the cache is bumped to purge and re-install.
  */
-const CACHE = 'mfc-v10';
+const CACHE = 'mfc-v11';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

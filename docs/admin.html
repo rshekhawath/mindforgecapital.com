@@ -284,7 +284,6 @@
     .strat-multiasset  { background: #dbeafe; color: #1e40af; }
     .strat-largemidcap { background: #d1fae5; color: #065f46; }
     .strat-smallmicro  { background: #ede9fe; color: #5b21b6; }
-    .strat-sp500       { background: #fef3c7; color: #92400e; }
     .strat-other       { background: #f1f5f9; color: #475569; }
 
     .status-badge {
@@ -679,7 +678,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <option value="multiasset">MultiAsset</option>
       <option value="largemidcap">LargeMidcap</option>
       <option value="smallmicro">SmallMicro</option>
-      <option value="sp500">S&amp;P 500</option>
     </select>
     <button class="btn-refresh" id="btn-refresh" onclick="loadLeads()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
@@ -701,9 +699,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <option value="MindForge MultiAsset">Force: MindForge MultiAsset</option>
         <option value="MindForge LargeMidcap 250">Force: MindForge LargeMidcap 250</option>
         <option value="MindForge SmallMicro 500">Force: MindForge SmallMicro 500</option>
-        <option value="MindForge Multicap">Force: MindForge Multicap</option>
-        <option value="MindForge S&amp;P 500">Force: MindForge S&amp;P 500</option>
-        <option value="MindForge All-Access (Indian Equities)">Force: All-Access (→ 4 dashboards)</option>
       </select>
       <select id="bulk-duration" style="padding:8px 12px;border:1px solid #dbeafe;border-radius:8px;font-size:13px;">
         <option value="1">1 month</option>
@@ -760,9 +755,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <option value="MindForge MultiAsset">MindForge MultiAsset — FREE</option>
         <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹1,499/month</option>
         <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
-        <option value="MindForge Multicap">MindForge Multicap — ₹3,499/month</option>
-        <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹4,999/month</option>
-        <option value="MindForge All-Access (Indian Equities)">MindForge All-Access (Indian Equities) — 4 strategies</option>
       </select>
     </div>
 
@@ -971,15 +963,14 @@ function renderTable(leads) {
   document.getElementById('leads-table').style.display = 'table';
 
   tbody.innerHTML = leads.map(function(lead) {
-    // Strip spaces AND ampersands so "MindForge S&P 500" → "mindforgesp500"
-    // matches the sp500 branch below. Keeping the two normalizations in sync
-    // with filterTable() ensures pill colour + dropdown filter behave the same.
+    // Strip spaces AND ampersands before matching. Keeping this normalization
+    // in sync with filterTable() ensures the pill colour and the dropdown filter
+    // behave the same for any legacy strategy name still sitting in the sheet.
     var stratKey = String(lead.strategy || '').toLowerCase().replace(/[\s&]+/g, '');
     var stratClass = 'strat-other';
     if (stratKey.includes('multiasset'))  stratClass = 'strat-multiasset';
     else if (stratKey.includes('largemid')) stratClass = 'strat-largemidcap';
     else if (stratKey.includes('smallmicro')) stratClass = 'strat-smallmicro';
-    else if (stratKey.includes('sp500')) stratClass = 'strat-sp500';
 
     var status      = String(lead.status || '').toLowerCase();
     var isActivated = status === 'activated';
@@ -1064,9 +1055,9 @@ function filterTable() {
       s(l.email).toLowerCase().includes(q) ||
       s(l.phone).toLowerCase().includes(q);
     var matchStatus = !status || l.status === status;
-    // Normalize the lead's strategy name to a comparable key. We strip spaces
-    // AND ampersands so "MindForge S&P 500" → "mindforgesp500" matches the
-    // dropdown's "sp500" value (previously the '&' broke the .includes()).
+    // Normalize the lead's strategy name to a comparable key. Spaces AND
+    // ampersands are stripped so a name like "MindForge S&P 500" still matches
+    // an "sp500"-shaped key (a bare '&' used to break the .includes()).
     var leadKey = s(l.strategy).toLowerCase().replace(/[\s&]+/g,'');
     var matchStrat  = !strategy || leadKey.includes(strategy);
     return matchQ && matchStatus && matchStrat;
@@ -1191,9 +1182,7 @@ function declineLead(btn, name, email, timestamp) {
 var ADMIN_STRATEGY_PRICES = {
   'MindForge MultiAsset':      0,   // V18.3: FREE for everyone — no payment to collect
   'MindForge LargeMidcap 250': 1499,
-  'MindForge SmallMicro 500':  2499,
-  'MindForge Multicap':        3499,
-  'MindForge S&P 500':         4999
+  'MindForge SmallMicro 500':  2499
 };
 var ADMIN_DURATIONS = {
   '1':  { months: 1,  disc: 0.00, label: '1 month'  },

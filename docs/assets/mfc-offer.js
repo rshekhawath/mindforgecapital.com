@@ -5,10 +5,8 @@
    page (above the sticky nav, so it scrolls away while the nav stays pinned).
    Purely additive; reduced-motion safe; remembers dismissal for the session.
    New members get their first month free — communicated here + on the signup flow.
-   V10.0: the offer does NOT apply to the All-Access bundle. The strip's
-   sub-copy says so, and the strip is suppressed entirely on
-   signup.html?strategy=allaccess (where the headline would directly
-   contradict the bundle the visitor came to buy).
+   V24.4: the All-Access bundle is retired, so the exclusion it required is
+   gone from the sub-copy and the strip no longer suppresses itself for it.
    V22.5: the strip gained a slow, infrequent "living glint" (a soft light band
    drifts across once every ~9s, then rests) — behind the copy, reduced-motion
    safe. Tasteful life on the site's topmost chrome without touching the copy.
@@ -27,12 +25,6 @@
 
     var onSignup = /signup\.html$/i.test(location.pathname);
 
-    // V10.0: All-Access is excluded from the offer — never show the strip to
-    // a visitor deep-linked into the bundle signup.
-    try {
-      if (onSignup && /(^|[?&])strategy=allaccess(&|$)/i.test(location.search)) return;
-    } catch (e) {}
-
     var bar = document.createElement("div");
     bar.id = "mfc-offer-bar";
     bar.setAttribute("role", "region");
@@ -41,7 +33,7 @@
       '<div class="mfc-offer-inner">' +
         '<span class="mfc-offer-gift" aria-hidden="true">🎁</span>' +
         '<span class="mfc-offer-text"><strong>1st month FREE</strong><span class="mfc-offer-tail"> for all new members</span>' +
-          '<span class="mfc-offer-sub"> · only pay from month two · not applicable on All-Access</span></span>' +
+          '<span class="mfc-offer-sub"> · only pay from month two</span></span>' +
         (onSignup ? "" : '<a class="mfc-offer-cta" href="signup.html">Get started →</a>') +
         '<button class="mfc-offer-x" type="button" aria-label="Dismiss offer">×</button>' +
       "</div>";

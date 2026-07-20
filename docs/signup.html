@@ -395,9 +395,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <option value="MindForge MultiAsset">MindForge MultiAsset — FREE</option>
           <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹1,499/month</option>
           <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹2,499/month</option>
-          <option value="MindForge Multicap">MindForge Multicap — ₹3,499/month</option>
-          <option value="MindForge S&amp;P 500">MindForge S&amp;P 500 — ₹4,999/month</option>
-          <option value="MindForge All-Access (Indian Equities)">MindForge All-Access (Indian Equities) — ₹44,990/year</option>
         </select>
         <div class="strategy-note" id="strategy-note"></div>
       </div>
@@ -514,14 +511,8 @@ var STRATEGY_META = {
   // V18.3: MultiAsset is FREE for everyone — no payment, full dashboard access.
   'MindForge MultiAsset':       { monthly: 0, free: true, desc: '8 ETFs across equity, gold, silver & bonds. Defensive, diversified. Rec. investment ₹5,00,000.' },
   'MindForge LargeMidcap 250':  { monthly: 1499, desc: '25 stocks from Nifty LargeMidcap 250. Most popular plan. Rec. investment ₹15,00,000.' },
-  'MindForge SmallMicro 500':   { monthly: 2499, desc: '25 small & micro-cap stocks. Highest conviction. Rec. investment ₹25,00,000.' },
-  'MindForge Multicap':         { monthly: 3499, desc: '10 high-conviction stocks across the full market-cap spectrum — large, mid, small & micro. Concentrated multicap momentum. Rec. investment ₹35,00,000.' },
-  'MindForge S&P 500':          { monthly: 4999, desc: '30 US large-cap stocks from the S&P 500. Rec. investment ₹1,00,00,000.' },
-  // V7.2: All-Access bundle — MultiAsset + LargeMidcap 250 + SmallMicro 500 under one
-  // pass. Fixed price; offered for 6 & 12 months only (no 1/3-month).
-  'MindForge All-Access (Indian Equities)': { bundle: true, prices: { '6': 24990, '12': 44990 }, desc: 'All four Indian-equity strategies — LargeMidcap 250 + SmallMicro 500 + Multicap, with MultiAsset free for everyone — under one pass. Save up to ~50% vs subscribing separately.' }
+  'MindForge SmallMicro 500':   { monthly: 2499, desc: '25 small & micro-cap stocks. Highest conviction. Rec. investment ₹25,00,000.' }
 };
-var BUNDLE_COMBINED_MONTHLY = 1499 + 2499 + 3499; // 7497 — the three PAID Indian-equity strategies (MultiAsset is free), for the "save vs month-to-month" figure
 // Duration → discount (item 9): 1mo 0%, 3mo 5%, 6mo 10%, 12mo 20%
 var DURATIONS = {
   '1':  { months: 1,  disc: 0.00, label: '1 month'  },
@@ -532,14 +523,6 @@ var DURATIONS = {
 function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
 function priceFor(strategy, durKey){
   var m = STRATEGY_META[strategy]; if (!m) return null;
-  if (m.bundle) {
-    var bk = (durKey === '6' || durKey === '12') ? durKey : '12';   // bundle: 6 or 12 only
-    var bd = DURATIONS[bk];
-    var btotal = m.prices[bk];
-    var separate = BUNDLE_COMBINED_MONTHLY * bd.months;             // the 3 strategies month-to-month
-    return { total: btotal, months: bd.months, disc: 0, label: bd.label,
-             save: separate - btotal, monthly: Math.round(btotal / bd.months), bundle: true };
-  }
   var d = DURATIONS[durKey] || DURATIONS['1'];
   var total = Math.round(m.monthly * d.months * (1 - d.disc));
   return { total: total, months: d.months, disc: d.disc, label: d.label, save: (m.monthly * d.months) - total, monthly: m.monthly };
@@ -563,22 +546,15 @@ function onStrategyChange() {
   var durSel = document.getElementById('reg-duration');
   var note = document.getElementById('strategy-note');
   var m = STRATEGY_META[sel];
-  var isBundle = !!(m && m.bundle);
   var isFree = !!(m && m.free);
 
-  // V10.0: the 1st-month-free launch offer does NOT apply to the All-Access
-  // bundle (it is already up to ~50% off vs subscribing separately, and is sold as
-  // a 6/12-month pass — there is no "month one" to waive). The banner above
-  // the form flips to an explicit exclusion note while the bundle is
-  // selected, and restores the standard offer copy for the five single
-  // strategies (and for the empty default).
+  // The 1st-month-free launch offer banner: MultiAsset is free outright, so it
+  // gets its own message; every other strategy gets the standard offer copy
+  // (including the empty default).
   var fmbIcon = document.getElementById('fmb-icon');
   var fmbText = document.getElementById('fmb-text');
   if (fmbIcon && fmbText) {
-    if (isBundle) {
-      fmbIcon.textContent = 'ℹ️';
-      fmbText.innerHTML = '<strong>The 1st-month-free offer does not apply to All-Access.</strong> The bundle is already up to ~50% off vs subscribing separately — billing starts with month one of your pass.';
-    } else if (isFree) {
+    if (isFree) {
       // V18.3: MultiAsset is entirely free — the "1st month free" framing would
       // undersell it, so the banner flips to the free-for-everyone message.
       fmbIcon.textContent = '🎉';
@@ -589,26 +565,21 @@ function onStrategyChange() {
     }
   }
 
-  // V7.2: the All-Access bundle is offered for 6 & 12 months only. V9.6: the
-  // 1/3-month options are physically removed from the <select> for the bundle
-  // (iOS pickers ignore hidden/disabled on <option>) and restored for single
-  // strategies; a stale 1/3-month selection bounces to 1 year.
+  // V9.6 legacy: the 1/3-month options were physically removed from the <select>
+  // for the (now retired) All-Access bundle, because iOS pickers ignore
+  // hidden/disabled on <option>. Every remaining plan offers all four durations,
+  // so restore any option a previously-rendered bundle selection had pulled out.
   if (durSel) {
     if (!durSel._shortOpts) {
       durSel._shortOpts = ['1','3'].map(function(key){
         return durSel.querySelector('option[value="' + key + '"]');
       }).filter(Boolean);
     }
-    if (isBundle) {
-      if (durSel.value === '1' || durSel.value === '3') durSel.value = '12';
-      durSel._shortOpts.forEach(function(o){ if (o.parentNode === durSel) durSel.removeChild(o); });
-    } else {
-      durSel._shortOpts.forEach(function(o, i){
-        if (o.parentNode !== durSel) durSel.insertBefore(o, durSel.options[i] || null);
-      });
-    }
+    durSel._shortOpts.forEach(function(o, i){
+      if (o.parentNode !== durSel) durSel.insertBefore(o, durSel.options[i] || null);
+    });
   }
-  var durKey = (durSel || {}).value || (isBundle ? '12' : '1');
+  var durKey = (durSel || {}).value || '1';
 
   // Rewrite each Duration <option> label so it shows the actual total for this plan.
   if (durSel) {
@@ -617,9 +588,7 @@ function onStrategyChange() {
       var d   = DURATIONS[key];
       if (!opt || !d) return;
       var bv = (key === '12') ? '  ★ Best value' : '';
-      if (isBundle) {
-        if (key === '6' || key === '12') opt.textContent = d.label + ' — ' + inr(m.prices[key]) + bv;
-      } else if (isFree) {
+      if (isFree) {
         opt.textContent = d.label + ' — FREE';
       } else if (m) {
         var total = Math.round(m.monthly * d.months * (1 - d.disc));
@@ -633,16 +602,7 @@ function onStrategyChange() {
 
   if (sel && m) {
     var p = priceFor(sel, durKey);
-    if (isBundle) {
-      var bundlePct = Math.round(p.save / (p.save + p.total) * 100);
-      note.innerHTML = osHTML({
-        pill: 'Save ' + bundlePct + '%',
-        total: inr(p.total),
-        per: 'for ' + p.label,
-        save: 'Save ' + inr(p.save) + ' vs subscribing separately',
-        desc: m.desc
-      });
-    } else if (isFree) {
+    if (isFree) {
       note.innerHTML = osHTML({
         pill: 'Free', pillFree: true,
         total: '₹0', totalFree: true,
@@ -801,7 +761,7 @@ function resetForm() {
   document.getElementById('reg-phone').value = '';
   document.getElementById('reg-strategy').value = '';
   document.getElementById('strategy-note').style.display = 'none';
-  onStrategyChange(); // V10.0: restores the offer banner + duration labels after a bundle signup
+  onStrategyChange(); // V10.0: restores the offer banner + duration labels after a signup
   // Force re-acceptance of T&C on every fresh submission.
   var tnc = document.getElementById('reg-tnc');
   if (tnc) tnc.checked = false;
@@ -819,10 +779,7 @@ function resetForm() {
   var map = {
     'multiasset':  'MindForge MultiAsset',
     'largemidcap': 'MindForge LargeMidcap 250',
-    'smallmicro':  'MindForge SmallMicro 500',
-    'multicap':    'MindForge Multicap',
-    'sp500':       'MindForge S&P 500',
-    'allaccess':   'MindForge All-Access (Indian Equities)'
+    'smallmicro':  'MindForge SmallMicro 500'
   };
   var sel = document.getElementById('reg-strategy');
   if (map[s]) {
@@ -1064,7 +1021,7 @@ html[data-theme="dark"] .trust-chip:hover{
 .free-month-banner .fmb-text{ font-size:13px;line-height:1.5;color:var(--text2); }
 .free-month-banner .fmb-text strong{ color:#047857;font-weight:800; }
 </style>
-<script src="assets/mfc-offer.js?v=115" defer></script>
+<script src="assets/mfc-offer.js?v=2440" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
