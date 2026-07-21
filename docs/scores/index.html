@@ -427,10 +427,22 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .sc-copy{font-size:12px;font-weight:700;color:var(--accent2);background:rgba(37,99,235,.07);border:0.5px solid var(--border2);border-radius:8px;padding:4px 10px;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
 .sc-copy:hover{background:rgba(37,99,235,.13);color:var(--accent)}
 /* V15.2 — MOBILE CARD VIEW: stack each row as a labelled card (no horizontal scroll) */
+/* V25.0: the sort bar exists only in card mode (<=600px); hidden elsewhere,
+   where the real <thead> provides sorting. */
+.mob-sort{display:none}
 @media(max-width:600px){
   #resultsTable{min-width:0!important}
   #resultsTable,#resultsTable tbody{display:block}
   #resultsTable thead{display:none}
+  /* V25.0 — mobile sort bar; see the screener for the shared rationale */
+  .mob-sort{display:flex;align-items:center;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:11px 14px 12px;margin:0;border-bottom:0.5px solid var(--border)}
+  .mob-sort::-webkit-scrollbar{display:none}
+  .ms-lbl{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);flex:0 0 auto;padding-right:2px}
+  .ms-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;color:var(--text2);background:var(--ink);border:0.5px solid var(--border2);border-radius:999px;padding:8px 13px;min-height:34px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+  .ms-chip:active{transform:translateY(.5px)}
+  .ms-chip.on{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;font-weight:700}
+  .ms-chip i{font-style:normal;font-size:11px;opacity:.9}
+  .ms-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   /* V24.9 — REBUILT. Thirteen columns transposed into thirteen full-width
      label|value rows ran 513px a card: barely 1.6 stocks per phone screen, and
      the five pillar lenses — the entire point of this page — were buried as
@@ -560,6 +572,11 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
   </div>
 
   <div class="table-card">
+    <!-- V25.0: mobile sort bar — card mode hides <thead>, where all sorting
+         lived, so on a phone this lister could not be sorted at all. Chips are
+         generated in renderTable() from the same COLUMNS array as the header
+         and call the same sortBy(), so the two can never drift. -->
+    <div class="mob-sort" id="mobSort" role="group" aria-label="Sort results"></div>
     <table id="resultsTable">
       <thead id="tableHead"></thead>
       <tbody id="tableBody">
@@ -852,6 +869,8 @@ function sortResults(arr){
 }
 function renderTable(){
   document.getElementById("tableHead").innerHTML=`<tr>${COLUMNS.map(c=>`<th class="${c.key===sortKey?"sorted":""}"${c.title?` title="${scEsc(c.title)}"`:""} ${c.nosort?"":`onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
+  const _ms=document.getElementById("mobSort");
+  if(_ms) _ms.innerHTML=`<span class="ms-lbl">Sort</span>`+COLUMNS.filter(c=>!c.nosort).map(c=>`<button type="button" class="ms-chip${c.key===sortKey?" on":""}" aria-pressed="${c.key===sortKey}" onclick="sortBy('${c.key}')">${c.label}${c.key===sortKey?`<i aria-hidden="true">${sortDir>0?"↑":"↓"}</i>`:""}</button>`).join("");
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">No stocks to show</div></td></tr>`

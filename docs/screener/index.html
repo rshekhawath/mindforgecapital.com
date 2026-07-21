@@ -564,6 +564,19 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .scn-cta-ico{font-size:18px;flex-shrink:0}
 .scn-cta-tx{font-size:12.5px;color:var(--text2);line-height:1.45;flex:1;min-width:160px}
 .scn-cta-go{font-size:12.5px;font-weight:800;color:var(--accent,#1a50d8);white-space:nowrap;margin-left:auto}
+/* V25.0 — mobile sort bar (card mode only; <thead> is display:none there) */
+.mob-sort{display:none}
+@media(max-width:600px){
+  .mob-sort{display:flex;align-items:center;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:11px 14px 12px;margin:0;border-bottom:0.5px solid var(--border,rgba(37,99,235,.1))}
+  .mob-sort::-webkit-scrollbar{display:none}
+  .ms-lbl{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);flex:0 0 auto;padding-right:2px}
+  .ms-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;color:var(--text2);background:var(--ink,#f6f8fe);border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:999px;padding:8px 13px;min-height:34px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+  .ms-chip:active{transform:translateY(.5px)}
+  .ms-chip.on{color:#fff;background:linear-gradient(135deg,var(--accent,#1a50d8),var(--accent2,#2563eb));border-color:transparent;font-weight:700}
+  .ms-chip i{font-style:normal;font-size:11px;opacity:.9}
+  .ms-chip:focus-visible{outline:2px solid var(--accent,#1a50d8);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){.ms-chip{transition:none}}
+}
 /* V24.9 — MOBILE CARD VIEW, REBUILT. V15.2 transposed the table: every column
    became a full-width label|value row, so one stock ran 355px and barely two fit
    a phone screen — punishing on a page whose whole job is SCANNING. The card is
@@ -884,6 +897,11 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 
     <!-- Table -->
     <div class="table-card">
+      <!-- V25.0: mobile sort bar. Card mode hides <thead>, which is where ALL
+           sorting lived — so on a phone this Scanner could not be sorted at all.
+           Chips are generated in renderTable() from the same COLUMNS array that
+           builds the header and call the same sortBy(), so they cannot drift. -->
+      <div class="mob-sort" id="mobSort" role="group" aria-label="Sort results"></div>
       <div class="tbl-scroll">
       <table id="resultsTable">
         <thead id="tableHead"></thead>
@@ -1311,6 +1329,8 @@ function rollResultCount(target){
 function renderTable(){
   const vis=COLUMNS.filter(c=>c.visible);
   document.getElementById("tableHead").innerHTML=`<tr>${vis.map(c=>`<th class="${c.key===sortKey?"sorted":""}" title="${COL_TIPS[c.key]||c.label}" ${c.nosort?"":` onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
+  const _ms=document.getElementById("mobSort");
+  if(_ms) _ms.innerHTML=`<span class="ms-lbl">Sort</span>`+vis.filter(c=>!c.nosort).map(c=>`<button type="button" class="ms-chip${c.key===sortKey?" on":""}" aria-pressed="${c.key===sortKey}" onclick="sortBy('${c.key}')">${c.label}${c.key===sortKey?`<i aria-hidden="true">${sortDir>0?"↑":"↓"}</i>`:""}</button>`).join("");
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-weight:600;color:var(--text2)">No stocks match your filters</div></td></tr>`
