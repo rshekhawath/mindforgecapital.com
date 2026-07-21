@@ -431,18 +431,30 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
   #resultsTable{min-width:0!important}
   #resultsTable,#resultsTable tbody{display:block}
   #resultsTable thead{display:none}
-  #tableBody tr.rowlink{display:block;border:0.5px solid var(--border2);border-radius:14px;margin:0 0 12px;background:var(--ink2);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 22px -16px rgba(37,99,235,.18);animation:none}
+  /* V24.9 — REBUILT. Thirteen columns transposed into thirteen full-width
+     label|value rows ran 513px a card: barely 1.6 stocks per phone screen, and
+     the five pillar lenses — the entire point of this page — were buried as
+     identical rows. Now a 3-column grid: identity header with a corner rank
+     badge, an Integrity/Price/Intrinsic hero, then the pillars as compact
+     score tiles. Also fixes the company header inheriting text-align:right. */
+  #tableBody tr.rowlink{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;border:0.5px solid var(--border2);border-radius:14px;margin:0 0 12px;background:var(--ink2);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 22px -16px rgba(37,99,235,.18);overflow:hidden}
   #tableBody tr.rowlink:nth-child(even){background:var(--ink2)}
   #tableBody tr.rowlink.expanded{box-shadow:inset 0 0 0 1.5px var(--accent),0 8px 22px -16px rgba(37,99,235,.25)}
-  #tableBody tr.rowlink td{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 15px;white-space:normal;text-align:right;border-bottom:0.5px solid var(--border)}
-  #tableBody tr.rowlink td:last-child{border-bottom:none}
-  #tableBody tr.rowlink td::before{content:attr(data-label);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);text-align:left;flex-shrink:0;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #tableBody td.company-col{display:block!important;padding:13px 15px 11px;border-bottom:0.5px solid var(--border2)}
+  #tableBody tr.rowlink td{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:3px;padding:9px 13px 10px;white-space:normal;text-align:left;border-bottom:none;min-width:0}
+  #tableBody tr.rowlink td::before{content:attr(data-label);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  #tableBody td.company-col{grid-column:1/-1;display:block!important;text-align:left!important;padding:13px 58px 11px 14px;border-bottom:0.5px solid var(--border2)}
   #tableBody td.company-col::before{display:none}
-  #tableBody td.rank-cell{display:none!important}
-  #tableBody .score-cell{min-width:120px;flex-direction:row;align-items:center;gap:8px}
-  #tableBody .score-cell .score-track{flex:1;min-width:40px}
-  #tableBody .overall-cell{min-width:0;justify-content:flex-end}
+  /* rank rides the corner as a leaderboard badge (it was display:none) */
+  #tableBody td.rank-cell{position:absolute;top:9px;right:12px;padding:0;border:none;background:none;z-index:1;display:block;width:max-content}
+  #tableBody td.rank-cell::before{display:none}
+  #tableBody td.rank-cell .rank-cell{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--accent2);background:rgba(37,99,235,.08);border:0.5px solid var(--border2);border-radius:999px;padding:2px 9px}
+  /* hero row: the composite score leads, price and intrinsic value beside it */
+  #tableBody td[data-label="Integrity"],#tableBody td[data-label="Price (₹)"],#tableBody td[data-label="Intrinsic Value"]{padding-top:11px;border-bottom:0.5px solid var(--border)}
+  #tableBody .overall-cell{min-width:0;flex-direction:row;align-items:center;gap:7px;flex-wrap:wrap}
+  #tableBody .overall-cell .overall-num{font-size:22px;font-weight:800;line-height:1}
+  /* pillar tiles: number over a full-width mini track */
+  #tableBody .score-cell{min-width:0;width:100%;flex-direction:column;align-items:flex-start;gap:4px}
+  #tableBody .score-cell .score-track{width:100%;min-width:0;flex:none}
   #tableBody tr.detail-row{display:block;width:100%;margin:-6px 0 12px}
   #tableBody tr.detail-row>td{display:block!important;width:calc(100vw - 28px)!important;max-width:none!important;box-sizing:border-box;padding:0}
   #tableBody tr.detail-row td::before{display:none}

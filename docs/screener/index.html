@@ -564,19 +564,30 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .scn-cta-ico{font-size:18px;flex-shrink:0}
 .scn-cta-tx{font-size:12.5px;color:var(--text2);line-height:1.45;flex:1;min-width:160px}
 .scn-cta-go{font-size:12.5px;font-weight:800;color:var(--accent,#1a50d8);white-space:nowrap;margin-left:auto}
-/* V15.2 — MOBILE CARD VIEW: each result row becomes a labelled card (no h-scroll) */
+/* V24.9 — MOBILE CARD VIEW, REBUILT. V15.2 transposed the table: every column
+   became a full-width label|value row, so one stock ran 355px and barely two fit
+   a phone screen — punishing on a page whose whole job is SCANNING. The card is
+   now a 3-column grid: a left-aligned identity header, a price/change hero, then
+   the ratios as compact label-over-value tiles. ~200px a card, 4 to a screen. */
 @media(max-width:600px){
   #resultsTable{min-width:0!important}
   #resultsTable,#resultsTable tbody{display:block}
   #resultsTable thead{display:none}
-  #tableBody tr.rowlink{display:block;border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:14px;margin:0 0 12px;background:var(--ink2,#fff);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 22px -16px rgba(37,99,235,.18)}
+  #tableBody tr.rowlink{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:14px;margin:0 0 12px;background:var(--ink2,#fff);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 22px -16px rgba(37,99,235,.18);overflow:hidden}
   #tableBody tr.rowlink.expanded{box-shadow:inset 0 0 0 1.5px var(--accent,#1a50d8),0 8px 22px -16px rgba(37,99,235,.25)}
-  #tableBody tr.rowlink td{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 15px;white-space:normal;text-align:right;border-bottom:0.5px solid var(--border,rgba(37,99,235,.1))}
-  #tableBody tr.rowlink td:last-child{border-bottom:none}
-  #tableBody tr.rowlink td::before{content:attr(data-label);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);text-align:left;flex-shrink:0}
-  #tableBody td[data-label="Company"]{display:block!important;text-align:left!important;padding:13px 15px 11px;border-bottom:0.5px solid var(--border2,rgba(37,99,235,.2))}
+  /* every ratio cell: tiny caps label stacked over its value */
+  #tableBody tr.rowlink td{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;padding:9px 13px 10px;white-space:normal;text-align:left;border-bottom:none;min-width:0}
+  #tableBody tr.rowlink td::before{content:attr(data-label);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);line-height:1.2}
+  /* identity header spans the card */
+  #tableBody td[data-label="Company"]{grid-column:1/-1;display:block!important;text-align:left!important;padding:13px 14px 11px;border-bottom:0.5px solid var(--border2,rgba(37,99,235,.2))}
   #tableBody td[data-label="Company"]::before{display:none}
-  #tableBody .px-wrap{align-items:flex-end}
+  /* hero: price takes two thirds, day-change sits beside it */
+  #tableBody td[data-label="Price (₹)"]{grid-column:1/3;padding-top:11px}
+  #tableBody td[data-label="Price (₹)"] .num{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  #tableBody td[data-label="Day %"]{grid-column:3/4;align-items:flex-start;padding-top:11px}
+  #tableBody tr.rowlink td[data-label="Price (₹)"],#tableBody tr.rowlink td[data-label="Day %"]{border-bottom:0.5px solid var(--border,rgba(37,99,235,.1))}
+  #tableBody .px-wrap{align-items:flex-start;width:100%}
+  #tableBody .px52{width:100%;max-width:120px}
   #tableBody tr.detail-row{display:block;width:100%}
   #tableBody tr.detail-row>td{display:block!important;width:calc(100vw - 28px)!important;max-width:none!important;box-sizing:border-box;padding:0}
   #tableBody tr.detail-row td::before{display:none}
