@@ -233,7 +233,13 @@ html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--b
 .hv-foot {
   display: flex; align-items: center; justify-content: space-between;
   border-top: 0.5px solid var(--border2); padding-top: 16px;
+  /* V24.7: the alpha chip gained "· backtest" in V24.6 and needs ~316px, but a
+     nowrap row only offers ~198px on a 390px phone — the chip has
+     overflow:hidden, so the label silently truncated to "annual alpha ·".
+     Allow the row to wrap and let the chip keep its intrinsic width. */
+  flex-wrap: wrap; gap: 8px 12px;
 }
+.hv-foot .hv-alpha { flex: 0 0 auto; }
 .hv-alpha {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(5,150,105,0.10); color: #047857;
@@ -672,7 +678,12 @@ html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--b
 /* V24.4: three strategies, so three columns (was a hardcoded 5 — which left two
    dead cells and squeezed the cards to ~200px once Multicap and S&P 500 went). */
 .strat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-@media (max-width: 900px)  { .strat-grid { grid-template-columns: 1fr; } }
+/* V24.7: below 900 the three cards stack. Cap and centre them — a full-width
+   745px card on an iPad portrait looks stretched, and a 2-up would strand one
+   card in an orphan row. minmax(0,…) still lets them shrink on phones. */
+@media (max-width: 900px)  {
+  .strat-grid { grid-template-columns: minmax(0, 460px); justify-content: center; }
+}
 
 .strat-card {
   background: var(--ink2);
@@ -934,13 +945,14 @@ footer {
 .proof-pnl .proof-arr { font-size:.66em; color:#059669; transition:transform .2s; }
 .proof-pnl:hover { color:#047857 !important; }
 .proof-pnl:hover .proof-arr { transform:translate(2px,-2px); }
-/* V19.3: the 5-item proof-bar overflowed its container on iPad LANDSCAPE (~1024:
-   a nowrap row needs ~1001px but the container is ~958px) and left a lone 5th item
-   on iPad PORTRAIT (768, 2-up). Wrap into a centred grid BEFORE it can overflow —
-   3-up on tablets (5 → a balanced 3 + 2 centred), 2-up on phones, 1-up on tiny. */
+/* V19.3: the proof-bar overflowed its container on iPad LANDSCAPE (~1024: a nowrap
+   row was wider than the ~958px container). Wrap into a centred grid BEFORE it can
+   overflow. V24.7: the bar is FOUR items since the simulated-alpha claim was
+   removed, so the old 3-up (which gave 5 → a balanced 3+2) now strands a lone 4th.
+   4-up keeps one tidy row on tablets; ≤768 hands over to the 2×2 card grid. */
 @media (max-width: 1080px) {
-  .proof-bar { flex-wrap: wrap; justify-content: center; gap: 0; }
-  .proof-item { padding: 14px 10px; width: 33.333%; }
+  .proof-bar { flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 0; }
+  .proof-item { padding: 14px 10px; width: 25%; }
   /* keep the wide "SEBI Registered" item inside a third at tablet widths so all
      three columns stay even (it doesn't shrink, so a 22px numeral would force 2-up) */
   .proof-num { font-size: 19px; }
@@ -987,7 +999,7 @@ footer {
   .hero-card { display: none; }
   .steps { grid-template-columns: 1fr; gap: 12px; }
   .step { border-radius: var(--r) !important; }
-  .strat-grid { grid-template-columns: 1fr; }
+  .strat-grid { grid-template-columns: minmax(0, 460px); justify-content: center; }
   .nl-inner { grid-template-columns: 1fr; }
   .strategies-header { grid-template-columns: 1fr; }
   .team-grid { grid-template-columns: 1fr; }
@@ -1194,8 +1206,8 @@ footer {
   /* ── Footer inner (in case 900px breakpoint doesn't cover all phones) ── */
   .footer-inner { grid-template-columns: 1fr !important; gap: 28px; }
 
-  /* ── Strategy cards grid ── */
-  .strat-grid { grid-template-columns: 1fr !important; }
+  /* ── Strategy cards grid (V24.7: capped + centred, not full-bleed) ── */
+  .strat-grid { grid-template-columns: minmax(0, 460px) !important; justify-content: center; }
 }
 
 @media (max-width: 480px) {
@@ -5780,8 +5792,12 @@ section[id]{ scroll-margin-top: 80px; }
      2×2 stat grid with hairline cross-dividers and aligned labels — one
      deliberate block instead of four floating items. Appended last so it wins
      the cascade over the V13 `.proof-bar` flex rules.
+     V24.7: this card now owns everything up to 900px, not 768. In the 769–900
+     band the 4-up row gives ~163px cells — too narrow for "SEBI Registered" and
+     "Backtested track record", which wrap to different heights and then stagger
+     against the flex row's centre alignment. 4-up resumes above 900px.
      ════════════════════════════════════════════════════════════════════════ */
-  @media (max-width: 768px){
+  @media (max-width: 900px){
     .social-proof{ padding: 22px 0; }
     .social-proof .proof-bar{
       display: grid;
@@ -5812,10 +5828,10 @@ section[id]{ scroll-margin-top: 80px; }
     .social-proof .proof-bar .proof-item:nth-child(3){ border-top: none; }
     .social-proof .proof-bar .proof-item:nth-child(1),
     .social-proof .proof-bar .proof-item:nth-child(5){ border-left: none; }
-    /* V17.0: the 5th cell (Verified P&L) sits alone in row 3 of the 2-col grid —
-       span it across both columns so it reads as a centred full-width trust footer
-       (top hairline divides it from the 2×2 stats; no stray left edge). */
-    .social-proof .proof-bar .proof-item:last-child{ grid-column: 1 / -1; border-left: none; }
+    /* V17.0 spanned the LAST cell across both columns because, with five items,
+       it sat alone in row 3. V24.7: there are four items, so they already tile a
+       clean 2×2 — spanning the last one would push it into a third row and leave
+       cell 3 stranded (exactly the reported bug). Span removed deliberately. */
     .social-proof .proof-bar .proof-item:hover{ transform: none; } /* no lift inside one card */
     .social-proof .proof-bar .proof-divider{ display: none; }
     .social-proof .proof-num{ font-size: 21px; line-height: 1.12; }

@@ -46,8 +46,12 @@
  * precached index.html proof bar, and its strategy cards now label the headline
  * figure "5Y Backtest CAGR". An installed app serving the v12 shell would keep
  * presenting a backtested number as a live one, so the cache is bumped.
+ * v14 (V24.7): responsive fixes to the precached index.html shell — the 4-item
+ * proof bar no longer strands a cell on tablets/phones, the hero alpha chip no
+ * longer truncates its "· backtest" label, and stacked strategy cards are capped
+ * instead of stretching full-bleed. Bumped so installed apps re-install the shell.
  */
-const CACHE = 'mfc-v13';
+const CACHE = 'mfc-v14';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
