@@ -3656,6 +3656,10 @@ function paintLivePrices(){
     var live = p.price; var r = _retPct(rec, live);
     var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
     el.innerHTML = '₹' + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
+    // V24.8: fade each price in the FIRST time it lands (the cells used to pop
+    // into existence). Marked per-element so the 30s repoll — and a sort/filter
+    // re-render, which reuses painted cells — never re-flashes the table.
+    if (!el.dataset.pxSeen) { el.dataset.pxSeen = '1'; el.classList.add('px-in'); }
   });
 }
 function renderProfitHeadline(){
@@ -5425,6 +5429,16 @@ html[data-theme="dark"] .oneonone-card::after{
 @media (prefers-reduced-motion: reduce){
   .pmap-tile{ transition:none; }
 }
+
+/* ── V24.8: live-price cells fade in on FIRST paint ──────────────────────────
+   The 50 .px-live cells popped into existence the moment prices landed, while
+   every other value on this dashboard eases in. Gated by a per-element
+   data-px-seen flag set in paintLivePrices(), so the 30s repoll and any
+   sort/filter re-render leave already-painted cells completely alone. */
+.px-live.px-in{ animation: mf248-px-in .42s cubic-bezier(.22,1,.36,1); }  /* no fill-mode:
+   `both` would hold opacity:0 if the animation never ran, hiding a live price. */
+@keyframes mf248-px-in{ from{ opacity:0; transform:translateY(3px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce){ .px-live.px-in{ animation:none; } }
 </style>
 <script id="mf-v222-dash-js">
 /* MF V22.2 — sector lens: legend/donut hover → map tiles; map tile hover →

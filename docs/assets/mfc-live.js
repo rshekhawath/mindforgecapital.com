@@ -28,6 +28,42 @@
     return sign + Math.abs(v).toFixed(2) + "%";
   }
   function cls(v) { return v > 0.05 ? "up" : v < -0.05 ? "down" : "flat"; }
+
+  /* V24.8: the live figures used to HARD-SET while the backtest figures beside
+     them counted up — on a strategy page's KPI row the backtest and benchmark
+     cards animate (mfc-countup.js targets ".stat-card .sv") and the LIVE card,
+     which the V24.2 pivot made the lead metric, snapped. This completes that
+     idiom rather than adding a new one.
+
+     Contract: the tween always LANDS on `finalText` verbatim — the caller's
+     fmtPct() output, including its U+2212 minus — so no rounding path can ever
+     publish a figure that differs from the JSON. Reduced-motion snaps; a frozen
+     rAF clock is caught by a setTimeout backstop that also snaps. */
+  var REDUCED = false;
+  try { REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  function countTo(el, target, finalText) {
+    if (REDUCED || typeof requestAnimationFrame !== "function" || !isFinite(target)) {
+      el.textContent = finalText; return;
+    }
+    var DUR = 750, done = false;
+    function land() { if (done) return; done = true; el.textContent = finalText; }
+    // backstop: if rAF never runs (background tab / throttled harness), snap.
+    setTimeout(land, DUR + 400);
+    var t0 = null;
+    requestAnimationFrame(function step(ts) {
+      if (done) return;
+      if (t0 === null) t0 = ts;
+      var t = Math.min(1, (ts - t0) / DUR);
+      var e = 1 - Math.pow(1 - t, 3);              // easeOutCubic, as elsewhere
+      if (t < 1) {
+        var v = target * e;
+        var sign = v > 0 ? "+" : v < 0 ? "−" : "+";
+        el.textContent = sign + Math.abs(v).toFixed(2) + "%";
+        requestAnimationFrame(step);
+      } else { land(); }
+    });
+  }
   function fmtDate(iso) {
     try {
       var d = new Date(iso + "T00:00:00");
@@ -52,8 +88,14 @@
         if (spec[1] === "benchname") val = s.bench_name;
       }
       if (val == null) return;
-      el.textContent = val;
-      if (isPct) { el.classList.remove("up", "down", "flat"); el.classList.add(cls(num)); }
+      if (isPct) {
+        // tint first so the number counts up already wearing its final colour
+        el.classList.remove("up", "down", "flat");
+        el.classList.add(cls(num));
+        countTo(el, num, val);
+      } else {
+        el.textContent = val;
+      }
       any = true;
     });
     if (!any) return;
@@ -166,7 +208,24 @@
       ".sidebar-live .sl-live-val.flat{color:var(--text2,#1e3a5f);}" +
       ".sidebar-live .sl-live-cyc{font-size:11px;color:var(--text3,#475569);margin:4px 0 12px;}" +
       ".sidebar-live .sl-live-note{font-size:10.5px;color:var(--text3,#475569);margin-top:12px;line-height:1.5;}" +
-      "@media (prefers-reduced-motion:reduce){.sidebar-live .ls-dot{animation:none;}}";
+      "@media (prefers-reduced-motion:reduce){.sidebar-live .ls-dot{animation:none;}}" +
+      /* ── V24.8: the live surfaces used to POP into existence — the wrappers go
+         display:none → shown the instant the fetch lands, while every other
+         reveal on the site rises in. One shared entrance for all six live
+         containers; `both` so the from-state never flashes before it runs. */
+      "@keyframes mfc-live-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}" +
+      ".live-strip.live-ready,.live-chip.live-ready,.hv-live.live-ready," +
+      ".stat-card.stat-live.live-ready,.strat-metric-live.live-ready," +
+      /* NO fill-mode, deliberately. `both` would HOLD the from-state (opacity:0)
+         whenever the animation cannot run — e.g. these chips also live inside
+         strategies.html's hidden .ps-panel tabs — so a figure could render
+         permanently invisible. Without a fill the worst case is simply "no
+         animation, fully visible", which is the correct failure mode for a
+         page whose whole point is showing a number. */
+      ".sidebar-live.live-ready{animation:mfc-live-in .5s cubic-bezier(.22,1,.36,1);}" +
+      "@media (prefers-reduced-motion:reduce){.live-strip.live-ready,.live-chip.live-ready," +
+      ".hv-live.live-ready,.stat-card.stat-live.live-ready,.strat-metric-live.live-ready," +
+      ".sidebar-live.live-ready{animation:none;}}";
     document.head.appendChild(st);
   }
 

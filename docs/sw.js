@@ -50,8 +50,10 @@
  * proof bar no longer strands a cell on tablets/phones, the hero alpha chip no
  * longer truncates its "· backtest" label, and stacked strategy cards are capped
  * instead of stretching full-bleed. Bumped so installed apps re-install the shell.
+ * v15 (V24.8): index.html (precached shell) carries the new mfc-live.js ?v, whose
+ * live figures now count up and whose live containers rise in.
  */
-const CACHE = 'mfc-v14';
+const CACHE = 'mfc-v15';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
