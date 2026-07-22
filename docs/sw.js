@@ -56,8 +56,14 @@
  * figure up on a strategy switch too — the backtest CAGR/bench beside it always
  * animated, the live value snapped. An installed app serving the v15 shell would
  * keep snapping it, so the cache is bumped to re-install the current shell.
+ * v17 (V25.3): BOTH precached shell documents (index.html and login.html) now
+ * reference mfc-finish.css?v=1790, which carries the site-wide fix for the
+ * theme toggle being stranded in the middle of the mobile nav. A precached
+ * document has no query to bust, so an installed app serving the v16 shell
+ * would keep requesting ?v=1780 and keep the broken nav indefinitely — the
+ * cache name is the only version these two documents have.
  */
-const CACHE = 'mfc-v16';
+const CACHE = 'mfc-v17';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

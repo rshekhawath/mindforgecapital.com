@@ -568,7 +568,13 @@ footer p{font-size:12px;color:var(--text3);}
   border-radius: 50%;
   background: radial-gradient(circle, rgba(45,212,191,0.16) 0%, transparent 70%);
   filter: blur(40px);
-  top: -80px; right: -60px;
+  /* V25.3: was `top:-80px; right:-60px`. `.page-hero` is `overflow:hidden`, so
+     an orb hung off the corner got sliced by the hero's rectangular edge while
+     its gradient was still near peak alpha — painting a hard-edged rectangle
+     in the top-right corner. Inset by percentage like the homepage's
+     `.hero-bg::before` (top:8%; right:12%), which has always sat fully inside
+     its own overflow:hidden hero, so the clip never crosses a visible pixel. */
+  top: 8%; right: 12%;
   animation: page-orb 16s ease-in-out infinite;
   pointer-events: none;
   z-index: -1;
@@ -1659,7 +1665,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=1780">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=1790">
 </head>
 <body data-route="multiasset">
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -2062,13 +2068,33 @@ function openRegModal(strategyName, price, strategyId){
   width:280px; height:280px; border-radius:50%;
   background:radial-gradient(circle, rgba(96,165,250,0.14) 0%, transparent 70%);
   filter:blur(40px);
-  bottom:-90px; left:-70px;
+  /* V25.3: was `bottom:-90px; left:-70px` — same corner-clipping bug as the
+     teal ::after orb above, in the bottom-left. Matches the homepage's
+     `.hero-bg::after` (bottom:12%; left:8%). */
+  bottom:12%; left:8%;
   animation:mf98-orb 19s ease-in-out infinite;
   pointer-events:none; z-index:-1;
 }
 @keyframes mf98-orb{
   0%,100%{ transform:translate(0,0) scale(1); }
   50%    { transform:translate(30px,-24px) scale(1.08); }
+}
+/* V25.3: on a narrow hero the 320/280px orbs nearly fill the container, so
+   even the corrected percentage insets left only ~3px of clearance — and the
+   float animation translates up to 25px, which would push the orb back under
+   the overflow:hidden clip and re-create the hard edge. Shrink them and inset
+   further below 720px so the clip never crosses a visible pixel at any point
+   of the animation. */
+@media (max-width:720px){
+  .page-hero::after{ width:200px; height:200px; top:10%; right:14%; }
+  .page-hero::before{ width:180px; height:180px; bottom:14%; left:14%; }
+  /* The float translate (up to 30px) is what forced the tight fit: at 358px of
+     hero the orb has ~150px of edge clearance and needs half-box+blur+amplitude.
+     Dropping just the translate on phones buys back that 30px, so the clip can
+     never reach a visible pixel — and a 40px-blurred ambient wash drifting by
+     30px is imperceptible on a phone anyway. The scale/opacity life of the page
+     is unaffected; every other animation is untouched. */
+  .page-hero::after, .page-hero::before{ animation:none; }
 }
 
 /* (2) charts advertise the zoom affordance */

@@ -606,7 +606,13 @@ footer p{font-size:12px;color:var(--text3);}
   border-radius: 50%;
   background: radial-gradient(circle, rgba(45,212,191,0.16) 0%, transparent 70%);
   filter: blur(40px);
-  top: -80px; right: -60px;
+  /* V25.3: was `top:-80px; right:-60px`. `.page-hero` is `overflow:hidden`, so
+     an orb hung off the corner got sliced by the hero's rectangular edge while
+     its gradient was still near peak alpha — painting a hard-edged rectangle
+     in the top-right corner. Inset by percentage like the homepage's
+     `.hero-bg::before` (top:8%; right:12%), which has always sat fully inside
+     its own overflow:hidden hero, so the clip never crosses a visible pixel. */
+  top: 8%; right: 12%;
   animation: page-orb 16s ease-in-out infinite;
   pointer-events: none;
   z-index: -1;
@@ -1751,7 +1757,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=1780">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=1790">
 </head>
 <body data-route="strategies">
 <script>
@@ -1810,16 +1816,19 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <div class="ph-kpi-tile">
             <div class="ph-kpi-val ph-green"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></div>
             <div class="ph-kpi-lbl">MultiAsset · backtest CAGR</div>
+            <div class="ph-kpi-cycle" data-live-wrap><span class="ls-dot"></span><span class="lv-tag">LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span>since last rebalance</span></div>
             <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 20 C 12 18, 24 15, 36 12 S 60 8, 80 4" fill="none" stroke="#0891b2" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div class="ph-kpi-tile">
             <div class="ph-kpi-val ph-blue"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></div>
             <div class="ph-kpi-lbl">LargeMidcap · backtest CAGR</div>
+            <div class="ph-kpi-cycle" data-live-wrap><span class="ls-dot"></span><span class="lv-tag">LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span>since last rebalance</span></div>
             <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 19, 24 14, 36 10 S 60 4, 80 2" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div class="ph-kpi-tile" style="grid-column:1 / -1;">
             <div class="ph-kpi-val ph-gold"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></div>
             <div class="ph-kpi-lbl">SmallMicro 500 · backtest CAGR</div>
+            <div class="ph-kpi-cycle" data-live-wrap><span class="ls-dot"></span><span class="lv-tag">LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span>since last rebalance</span></div>
             <!-- V18.7: this tile is full-width (grid-column 1/-1), so an 80-wide
                  viewBox stretched ~2.25x flattened the curve vs the half tiles.
                  Widen the viewBox to 180 and rescale x so it renders at the same
@@ -1831,6 +1840,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span>5-year backtest · 2021–2026</span>
           <span>·</span>
           <span>Updated Jul 2026</span>
+          <span class="ph-kpi-cycle-foot" data-live-wrap>· LIVE since the <b data-live="rebal">—</b> rebalance</span>
         </div>
       </div>
     </div>
@@ -1906,6 +1916,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
                 <tr class="ps-funds-me"><td>MindForge MultiAsset <span>backtested</span></td><td class="r">22.9%</td><td class="r ps-flat">FREE</td></tr>
               </tbody>
             </table>
+            <p class="ps-funds-live" data-live-wrap><span class="ls-dot"></span><span><b>MindForge MultiAsset</b> is <b class="mf-live-num" data-live="ma:live">—</b> since the <b data-live="rebal">—</b> rebalance</span><span class="lv-note">· model portfolio, a since-rebalance move — not a 5-year figure</span></p>
             <p class="ps-flat-note">Those funds skim <b>0.6–0.7% of your entire corpus every year</b> (regular plans run 1.5%+) — and the rupee cost climbs as you compound. MindForge MultiAsset is <b>free</b>. <a href="calculator.html">See what a % fee really costs →</a></p>
           </div>
         </div>
@@ -1962,6 +1973,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
                 <tr class="ps-funds-me"><td>MindForge LargeMidcap 250 <span>backtested</span></td><td class="r">36.6%</td><td class="r ps-flat">flat ₹1,499/mo</td></tr>
               </tbody>
             </table>
+            <p class="ps-funds-live" data-live-wrap><span class="ls-dot"></span><span><b>MindForge LargeMidcap 250</b> is <b class="mf-live-num" data-live="lm:live">—</b> since the <b data-live="rebal">—</b> rebalance</span><span class="lv-note">· model portfolio, a since-rebalance move — not a 5-year figure</span></p>
             <p class="ps-flat-note">A 0.75% expense ratio on ₹15L is <b>₹11,250 every year</b> — and it grows as your corpus compounds (regular plans charge 1.5–2.3%). MindForge is a <b>flat monthly fee</b>, so the upside stays yours. <a href="calculator.html">See your savings →</a></p>
           </div>
         </div>
@@ -2018,6 +2030,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
                 <tr class="ps-funds-me"><td>MindForge SmallMicro 500 <span>backtested</span></td><td class="r">48.9%</td><td class="r ps-flat">flat ₹2,499/mo</td></tr>
               </tbody>
             </table>
+            <p class="ps-funds-live" data-live-wrap><span class="ls-dot"></span><span><b>MindForge SmallMicro 500</b> is <b class="mf-live-num" data-live="sm:live">—</b> since the <b data-live="rebal">—</b> rebalance</span><span class="lv-note">· model portfolio, a since-rebalance move — not a 5-year figure</span></p>
             <p class="ps-flat-note">On a ₹25L small-cap book, a 0.7% expense ratio is <b>₹17,500 a year</b> and rises with every rupee you compound (regular plans 1.5–2.3%). MindForge charges a <b>flat monthly fee</b>. <a href="calculator.html">See your savings →</a></p>
           </div>
         </div>
@@ -2108,6 +2121,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <tbody>
         <tr class="cmp-grp"><td colspan="4"><span class="cmp-grp-inner">Performance</span></td></tr>
         <tr><td class="row-label">Backtested CAGR</td><td class="low"><span class="v"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="best"><span class="v"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td></tr>
+        <!-- V25.3: the real figure, directly under the simulated one. Its own row
+             (not a second number in the CAGR row) because the period differs —
+             the label carries "since last rebalance" so the two are never read
+             on the same clock. Hidden entirely until live-perf.json lands. -->
+        <tr class="cmp-live-row" data-live-wrap><td class="row-label">Live <span class="lv-sub">(since last rebalance)</span></td><td><span class="mf-live-num" data-live="ma:live">—</span></td><td class="col-feat"><span class="mf-live-num" data-live="lm:live">—</span></td><td><span class="mf-live-num" data-live="sm:live">—</span></td></tr>
         <tr><td class="row-label">Benchmark</td><td>Nifty 50</td><td class="col-feat">Nifty LargeMidcap 250</td><td>Nifty Smallcap 250</td></tr>
         <tr><td class="row-label">Benchmark CAGR</td><td><!--MFSTAT:ma:bench_cagr-->10.13%<!--/MFSTAT--></td><td class="col-feat"><!--MFSTAT:lm:bench_cagr-->13.82%<!--/MFSTAT--></td><td><!--MFSTAT:sm:bench_cagr-->16.92%<!--/MFSTAT--></td></tr>
         <tr><td class="row-label">Alpha <span style="font-weight:500;color:var(--text3);">(annual)</span></td><td class="low"><span class="v"><!--MFSTAT:ma:alpha-->+12.77%<!--/MFSTAT--></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:alpha-->+22.81%<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:sm:alpha-->+32.01%<!--/MFSTAT--></span></td></tr>
@@ -2141,6 +2159,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:28px;font-weight:800;color:#0891b2;letter-spacing:-.02em;"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></span>
           <span style="font-size:12px;color:var(--text3);">CAGR · 5Y backtest</span>
         </div>
+        <div class="hub-live" data-live-wrap><span class="ls-dot"></span><span style="font-weight:800;letter-spacing:.1em;font-size:9.5px;color:var(--green);">LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span>since last rebalance</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore MultiAsset →</span>
       </a>
       <a href="largemidcap.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
@@ -2152,6 +2171,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:28px;font-weight:800;color:#1a50d8;letter-spacing:-.02em;"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span>
           <span style="font-size:12px;color:var(--text3);">CAGR · 5Y backtest</span>
         </div>
+        <div class="hub-live" data-live-wrap><span class="ls-dot"></span><span style="font-weight:800;letter-spacing:.1em;font-size:9.5px;color:var(--green);">LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span>since last rebalance</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore LargeMidcap 250 →</span>
       </a>
       <a href="smallmicro.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
@@ -2163,6 +2183,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:28px;font-weight:800;color:#d97706;letter-spacing:-.02em;"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span>
           <span style="font-size:12px;color:var(--text3);">CAGR · 5Y backtest</span>
         </div>
+        <div class="hub-live" data-live-wrap><span class="ls-dot"></span><span style="font-weight:800;letter-spacing:.1em;font-size:9.5px;color:var(--green);">LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span>since last rebalance</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore SmallMicro 500 →</span>
       </a>
     </div>
@@ -3004,13 +3025,33 @@ function openRegModal(strategyName, price, strategyId){
   width:280px; height:280px; border-radius:50%;
   background:radial-gradient(circle, rgba(96,165,250,0.14) 0%, transparent 70%);
   filter:blur(40px);
-  bottom:-90px; left:-70px;
+  /* V25.3: was `bottom:-90px; left:-70px` — same corner-clipping bug as the
+     teal ::after orb above, in the bottom-left. Matches the homepage's
+     `.hero-bg::after` (bottom:12%; left:8%). */
+  bottom:12%; left:8%;
   animation:mf98-orb 19s ease-in-out infinite;
   pointer-events:none; z-index:-1;
 }
 @keyframes mf98-orb{
   0%,100%{ transform:translate(0,0) scale(1); }
   50%    { transform:translate(30px,-24px) scale(1.08); }
+}
+/* V25.3: on a narrow hero the 320/280px orbs nearly fill the container, so
+   even the corrected percentage insets left only ~3px of clearance — and the
+   float animation translates up to 25px, which would push the orb back under
+   the overflow:hidden clip and re-create the hard edge. Shrink them and inset
+   further below 720px so the clip never crosses a visible pixel at any point
+   of the animation. */
+@media (max-width:720px){
+  .page-hero::after{ width:200px; height:200px; top:10%; right:14%; }
+  .page-hero::before{ width:180px; height:180px; bottom:14%; left:14%; }
+  /* The float translate (up to 30px) is what forced the tight fit: at 358px of
+     hero the orb has ~150px of edge clearance and needs half-box+blur+amplitude.
+     Dropping just the translate on phones buys back that 30px, so the clip can
+     never reach a visible pixel — and a 40px-blurred ambient wash drifting by
+     30px is imperceptible on a phone anyway. The scale/opacity life of the page
+     is unaffected; every other animation is untouched. */
+  .page-hero::after, .page-hero::before{ animation:none; }
 }
 @media (prefers-reduced-motion: reduce){ .page-hero::before{ animation:none; } }
 </style>
@@ -3079,6 +3120,86 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 </script>
 <script src="assets/mfc-offer.js?v=2440" defer></script>
 <script src="assets/mfc-live.js?v=2481" defer></script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     V25.3 — REAL LIVE RETURN ON THE FOUR BACKTEST-ONLY SURFACES
+     ──────────────────────────────────────────────────────────────────────────
+     This page had four places that showed a simulated CAGR and nothing else:
+     the hero "Combined performance" card, the fund-comparison tables, the
+     "Compare all strategies" matrix and the "Explore each strategy" hub cards.
+     Each now carries the real figure from live-perf.json beside the backtest.
+
+     TWO RULES THIS BLOCK EXISTS TO ENFORCE (both are house rules, not taste):
+     1. FAIL-SOFT. Every new element is a [data-live-wrap] that is display:none
+        until mfc-live.js adds .live-ready, so a failed/slow fetch leaves the
+        page exactly as it was rather than showing an empty "—" next to a
+        headline return. Nothing here is visible without real data behind it.
+     2. NEVER CONFLATE THE TWO CLOCKS. The live figure is model movement SINCE
+        THE LAST REBALANCE — days, not years — so putting a bare "−0.30%" next
+        to a "22.9%" 5-year CAGR would read as a catastrophic collapse. Every
+        placement below therefore carries its own "since last rebalance"
+        wording; the period is never left to the reader to infer.
+     Values, tint (.up/.down/.flat) and the count-up all come from the shared
+     mfc-live.js slot resolver — no figure is computed or formatted here.
+     ══════════════════════════════════════════════════════════════════════ -->
+<style id="mf-v253-live">
+/* shared bits for all four placements */
+#main-content .ls-dot{ width:5px; height:5px; border-radius:50%; background:var(--green); flex:0 0 auto;
+  animation:mfc-live-pulse 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion:reduce){ #main-content .ls-dot{ animation:none; } }
+.mf-live-num{ font-weight:800; font-variant-numeric:tabular-nums; }
+.mf-live-num.up{ color:var(--green); }
+.mf-live-num.down{ color:#dc2626; }
+.mf-live-num.flat{ color:var(--text2); }
+
+/* (A) hero "Combined performance" tiles.
+   NB: the class is .ph-kpi-cycle, NOT .ph-kpi-live — the head pill that reads
+   "Backtest" already owns .ph-kpi-live, and a `display:none` default on that
+   name hid the very label that marks the big CAGRs as simulated. Caught in
+   validation; the name stays distinct deliberately. */
+.ph-kpi-cycle{ display:none; }
+.ph-kpi-cycle.live-ready{
+  display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+  margin-top:7px; padding-top:7px; border-top:0.5px solid var(--border);
+  font-size:11px; color:var(--text3); letter-spacing:.01em; line-height:1.35;
+}
+.ph-kpi-cycle .lv-tag{ font-size:9px; font-weight:800; letter-spacing:.12em; color:var(--green); }
+.ph-kpi-foot .ph-kpi-cycle-foot{ display:none; }
+.ph-kpi-foot .ph-kpi-cycle-foot.live-ready{ display:inline; }
+
+/* (B) fund-comparison tables — a caption line, NOT a cell in the 5-yr CAGR
+   column: a since-rebalance move and a 5-year CAGR are different units and
+   must never share a column header. */
+.ps-funds-live{ display:none; }
+.ps-funds-live.live-ready{
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  margin-top:10px; padding:8px 11px; border-radius:9px;
+  border:0.5px solid rgba(5,150,105,.26);
+  background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(45,212,191,.04));
+  font-size:12px; color:var(--text2); line-height:1.5;
+}
+.ps-funds-live .lv-note{ color:var(--text3); }
+
+/* (C) "Compare all strategies" matrix — a whole extra row */
+tr.cmp-live-row{ display:none; }
+tr.cmp-live-row.live-ready{ display:table-row; }
+tr.cmp-live-row .row-label .lv-sub{ font-weight:500; color:var(--text3); }
+tr.cmp-live-row td{ font-variant-numeric:tabular-nums; }
+
+/* (D) "Explore each strategy in depth" hub cards */
+.hub-live{ display:none; }
+.hub-live.live-ready{
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  margin:-6px 0 14px; font-size:11.5px; color:var(--text3);
+}
+
+[data-theme="dark"] .ps-funds-live.live-ready{
+  border-color:rgba(52,211,153,.24);
+  background:linear-gradient(135deg,rgba(5,150,105,.10),rgba(45,212,191,.05));
+}
+[data-theme="dark"] .mf-live-num.up{ color:#34d399; }
+[data-theme="dark"] .mf-live-num.down{ color:#f87171; }
+</style>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.

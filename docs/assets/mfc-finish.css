@@ -113,7 +113,22 @@ footer::before {
 .mfc-theme-toggle:active{ transform:translateY(0); }
 .mfc-theme-toggle:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
 .mfc-theme-toggle svg{ width:18px; height:18px; display:block; }
-@media (max-width:768px){ .mfc-theme-toggle{ width:34px; height:34px; margin-left:auto; margin-right:8px; } .mfc-theme-toggle svg{ width:17px; height:17px; } }
+@media (max-width:768px){
+  .mfc-theme-toggle{ width:34px; height:34px; margin-left:auto; margin-right:8px; }
+  .mfc-theme-toggle svg{ width:17px; height:17px; }
+  /* V25.3 — the toggle was stranded in the MIDDLE of the mobile nav, site-wide.
+     `.nav-hamburger` carries `margin-left:auto` in every page's own stylesheet
+     and the toggle above carries one too; on a phone `.nav-links` is
+     display:none, so those are the only two auto margins left and flexbox
+     splits the free space EVENLY between them. Measured identically on
+     strategies and scores: both resolve to margin-left:109px, leaving a 129px
+     gap with the toggle floating at x=173 in a 390px nav.
+     Only ONE auto margin should do the pushing. The toggle keeps its (it is
+     injected before the hamburger), and the hamburger's is collapsed — scoped
+     by a sibling combinator so it only applies where a toggle actually exists,
+     leaving any page without one untouched. */
+  .mfc-theme-toggle ~ .nav-hamburger{ margin-left:0; }
+}
 @media (prefers-reduced-motion: reduce){ .mfc-theme-toggle{ transition:none; } .mfc-theme-toggle:hover{ transform:none; } }
 
 /* — palette flip — */
