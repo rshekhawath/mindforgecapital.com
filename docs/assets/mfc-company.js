@@ -271,6 +271,64 @@
     .mfx-sig-i.up .mfx-sig-d{background:var(--green)}
     .mfx-sig-i.dn .mfx-sig-d{background:var(--gold)}
     .mfx-sig-none{font-size:12.5px;color:var(--text3);line-height:1.6;font-style:italic}
+    /* ══ V25.4: THE QUANT LENS ══════════════════════════════════════════════
+       Report-grade valuation arithmetic, derived per stock from the snapshot.
+       Every panel hides itself when its inputs are missing rather than
+       printing a placeholder — see the coverage note above each render fn. */
+    /* Tone colours live in CSS, not inline styles, so dark mode can lift them —
+       the light-theme red/green are too dark to read on the dark ink. */
+    .t-bad{color:var(--red)} .t-warn{color:var(--gold)} .t-good{color:var(--green)}
+    [data-theme="dark"] .t-bad{color:#f87171} [data-theme="dark"] .t-good{color:#34d399}
+    [data-theme="dark"] .t-warn{color:#fbbf24}
+    .mfx-ql-lead{font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 16px}
+    .mfx-ql-lead b{color:var(--white)}
+    .mfx-hero{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;padding:15px 17px;border-radius:12px;margin-bottom:16px;
+      border:0.5px solid var(--border2);background:linear-gradient(135deg,rgba(37,99,235,.05),rgba(45,212,191,.035))}
+    .mfx-hero-v{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+      font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+    .mfx-hero-t{font-size:12.5px;color:var(--text2);line-height:1.5;flex:1 1 220px;min-width:0}
+    .mfx-hero.warn{border-color:rgba(217,119,6,.35);background:linear-gradient(135deg,rgba(217,119,6,.07),rgba(217,119,6,.03))}
+    .mfx-hero.bad{border-color:rgba(220,38,38,.32);background:linear-gradient(135deg,rgba(220,38,38,.07),rgba(220,38,38,.03))}
+    .mfx-hero.good{border-color:rgba(5,150,105,.32);background:linear-gradient(135deg,rgba(5,150,105,.07),rgba(5,150,105,.03))}
+    .mfx-ladder{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+    .mfx-ladder th{text-align:right;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);
+      padding:0 0 9px;border-bottom:0.5px solid var(--border2)}
+    .mfx-ladder th:first-child{text-align:left}
+    .mfx-ladder td{text-align:right;padding:10px 0;border-bottom:0.5px solid var(--border);color:var(--text2)}
+    .mfx-ladder td:first-child{text-align:left;color:var(--white);font-weight:600}
+    .mfx-ladder tr:last-child td{border-bottom:none}
+    .mfx-ladder tr.is-central td{background:rgba(37,99,235,.05)}
+    .mfx-ladder tr.is-central td:first-child{box-shadow:inset 3px 0 0 0 var(--accent2);padding-left:10px}
+    .mfx-ladder .req{font-weight:800;color:var(--white)}
+    .mfx-ql-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:4px}
+    .mfx-ql-cell{padding:13px 14px;border:0.5px solid var(--border);border-radius:11px;background:var(--ink)}
+    .mfx-ql-cell-l{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+    .mfx-ql-cell-v{font-size:19px;font-weight:800;color:var(--white);font-variant-numeric:tabular-nums;line-height:1.15}
+    .mfx-ql-cell-s{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.45}
+    /* market-wide percentile strip */
+    .mfx-pct-row{display:grid;grid-template-columns:150px 1fr 78px;align-items:center;gap:12px;margin-bottom:13px;font-size:12px}
+    .mfx-pct-row:last-child{margin-bottom:0}
+    .mfx-pct-k{color:var(--text2);font-weight:600;line-height:1.3}
+    .mfx-pct-k small{display:block;font-size:10.5px;color:var(--text3);font-weight:500}
+    .mfx-pct-t{position:relative;height:9px;border-radius:5px;overflow:hidden;
+      background:linear-gradient(90deg,rgba(5,150,105,.20),rgba(217,119,6,.20) 55%,rgba(220,38,38,.24))}
+    /* The marker's LEFT encodes the percentile, so it is set at first paint and
+       never transitioned: a frozen/never-started animation clock would
+       otherwise leave a 98th-percentile stock sitting at the median and read as
+       fact. Only opacity reveals — the V25.2 rule that a decoration must never
+       own the correctness of a number. */
+    .mfx-pct-b{position:absolute;top:-3px;width:3px;height:15px;border-radius:2px;background:var(--white);
+      box-shadow:0 0 0 2px var(--ink2);opacity:0;animation:mfx-pct-in .5s ease-out .15s forwards}
+    @keyframes mfx-pct-in{to{opacity:1}}
+    @media (prefers-reduced-motion:reduce){.mfx-pct-b{opacity:1;animation:none}}
+    .mfx-pct-v{text-align:right;font-weight:800;color:var(--white);font-variant-numeric:tabular-nums}
+    .mfx-pct-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:9px;letter-spacing:.03em}
+    @media (max-width:640px){
+      .mfx-hero-v{font-size:25px}
+      .mfx-pct-row{grid-template-columns:104px 1fr 62px;gap:9px}
+      .mfx-ladder{font-size:11.5px}
+      .mfx-ql-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
     @media (prefers-reduced-motion: reduce){.mfx-table tbody tr,.mfx-fl-bar,.mfx-bs-b,.mfx-cc-b,.mfx-own-seg,.mfx-dot{transition:none}}
     @media (max-width:1024px){.mfx-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media (max-width:860px){.mfx-sig{grid-template-columns:1fr;gap:20px}}
@@ -408,6 +466,35 @@
         '<div class="card-body"><div class="mfx-sig" id="mfxSigBody"></div>' +
           '<p class="mfx-foot">These are <b>automated observations</b> computed from the latest snapshot against fixed thresholds — data points to research further, not recommendations or investment advice.</p>' +
         "</div>" +
+      "</div>" +
+      // ══ V25.4: the quant lens ══════════════════════════════════════════
+      '<div class="card" id="mfxImpliedCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">What this price implies</span><span class="mfx-src">reverse-DCF · arithmetic, not a forecast</span></div>' +
+        '<div class="card-body"><p class="mfx-ql-lead" id="mfxImpliedLead"></p><div id="mfxImpliedHero"></div>' +
+          '<div class="mfx-tablewrap"><table class="mfx-ladder" id="mfxImpliedTable"></table></div>' +
+          '<p class="mfx-foot" id="mfxImpliedFoot"></p></div>' +
+      "</div>" +
+      '<div class="card" id="mfxYieldCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">What you earn for the risk</span><span class="mfx-src">earnings yield vs the risk-free rate</span></div>' +
+        '<div class="card-body"><div id="mfxYieldHero"></div><div class="mfx-ql-grid" id="mfxYieldGrid"></div>' +
+          '<p class="mfx-foot" id="mfxYieldFoot"></p></div>' +
+      "</div>" +
+      '<div class="card" id="mfxPctCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">Where this sits in the whole market</span><span class="mfx-src" id="mfxPctSrc">percentile vs every listed stock</span></div>' +
+        '<div class="card-body"><div id="mfxPctBody"></div>' +
+          '<div class="mfx-pct-scale"><span>Cheapest / best</span><span>Median</span><span>Most expensive / worst</span></div>' +
+          '<p class="mfx-foot" id="mfxPctFoot"></p></div>' +
+      "</div>" +
+      '<div class="card" id="mfxWcCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">What growth would cost</span><span class="mfx-src">working capital needed to fund it</span></div>' +
+        '<div class="card-body"><p class="mfx-ql-lead" id="mfxWcLead"></p><div id="mfxWcHero"></div>' +
+          '<div class="mfx-ql-grid" id="mfxWcGrid"></div><p class="mfx-foot" id="mfxWcFoot"></p></div>' +
+      "</div>" +
+      '<div class="card" id="mfxReRateCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">Multiple sensitivity</span><span class="mfx-src">same earnings, different multiple</span></div>' +
+        '<div class="card-body"><p class="mfx-ql-lead" id="mfxReRateLead"></p>' +
+          '<div class="mfx-tablewrap"><table class="mfx-ladder" id="mfxReRateTable"></table></div>' +
+          '<p class="mfx-foot" id="mfxReRateFoot"></p></div>' +
       "</div>" +
       '<div class="card" id="mfxPeersCard" style="display:none">' +
         '<div class="card-header"><span class="card-title" id="mfxPeersTitle">Peers</span><span class="mfx-src">by market cap</span></div>' +
@@ -842,6 +929,293 @@
     card.style.display = "";
   }
 
+
+  // ══ V25.4 — THE QUANT LENS ═════════════════════════════════════════════════
+  // Report-grade valuation arithmetic, computed per stock from the snapshot.
+  //
+  // WHAT THIS DELIBERATELY IS NOT: none of these panels issues a rating, a
+  // recommendation or a target price. Everything below is descriptive
+  // arithmetic on figures already on the page — "at this price, these are the
+  // numbers that have to be true" — because auto-generating buy/sell calls and
+  // price targets across ~2,000 stocks is a research RECOMMENDATION under SEBI
+  // RA rules, with per-call disclosure duties that a batch process cannot meet.
+  // The framing (and the foot notes) keep this on the analysis side of that line.
+  //
+  // COVERAGE (measured over the 2,126-stock snapshot, not assumed):
+  //   market_cap_cr 95.9 · net_profit_cr 99.1 · pe_ratio 85.1 · earnings_yield
+  //   85.3 · cash_conv_cycle 85.5 · revenue_cr 99.0 · ebitda_cr 91.3 · eps 96.0
+  // Fields below 50% (peg_ratio 3.8, employees 28.7) are never used here.
+
+  var QL = {
+    REQ_RETURN: 0.12,   // required annual return an equity investor is assumed to want
+    HORIZON: 5,         // years
+    // India 10-year G-Sec. Kept as a dated constant so the vintage is visible in
+    // the UI rather than silently ageing — update this pair together.
+    RF_PCT: 7.06,
+    RF_ASOF: "Jul 2026"
+  };
+
+  function pctileOf(sortedVals, v) {
+    if (!sortedVals.length) return null;
+    var below = 0;
+    for (var i = 0; i < sortedVals.length; i++) { if (sortedVals[i] < v) below++; else break; }
+    return Math.round(below / sortedVals.length * 100);
+  }
+  function colOf(all, key, positiveOnly) {
+    return all.map(function (s) { return num(s && s[key]); })
+      .filter(function (v) { return v != null && (!positiveOnly || v > 0); })
+      .sort(function (a, b) { return a - b; });
+  }
+
+  // ── (1) Reverse-DCF: the growth the price is asking for ───────────────────
+  function renderImplied(D, all) {
+    var card = el("mfxImpliedCard"); if (!card) return;
+    var mcap = num(D.market_cap_cr), pat = num(D.net_profit_cr);
+    // Needs a positive profit base — a reverse-DCF off a loss is meaningless.
+    if (mcap == null || mcap <= 0 || pat == null || pat <= 0) { card.style.display = "none"; return; }
+
+    var grow = Math.pow(1 + QL.REQ_RETURN, QL.HORIZON);
+    var needCap = mcap * grow;                       // market cap required in 5 years
+    function reqCagr(exitPe) {
+      var needPat = needCap / exitPe;
+      if (needPat <= 0) return null;
+      return (Math.pow(needPat / pat, 1 / QL.HORIZON) - 1) * 100;
+    }
+
+    // Central exit multiple = this sector's median P/E, so the ladder is
+    // calibrated to how the market actually prices these businesses rather
+    // than to a number picked by hand.
+    var sec = clean(D.sector), central = null;
+    if (sec && all && all.length) {
+      var peers = all.filter(function (x) { return x && !x.error && clean(x.sector) === sec; });
+      var pes = colOf(peers, "pe_ratio", true);
+      if (pes.length >= 8) central = quantile(pes, 0.5);
+    }
+    var ladder = [15, 25, 35, 50];
+    if (central != null) { ladder.push(Math.round(central)); }
+    ladder = ladder.filter(function (v, i, a) { return v > 0 && a.indexOf(v) === i; }).sort(function (a, b) { return a - b; });
+
+    var rows = ladder.map(function (pe) {
+      var need = needCap / pe, cg = reqCagr(pe);
+      var isCentral = central != null && Math.round(central) === pe;
+      return '<tr class="' + (isCentral ? "is-central" : "") + '"><td>' + fx(pe, 0) + "×" +
+        (isCentral ? ' <small style="font-weight:500;color:var(--text3)">sector median</small>' : "") + "</td>" +
+        "<td>" + crStr(need) + "</td>" +
+        '<td class="req">' + (cg == null ? "—" : fx(cg, 1) + "%") + "</td></tr>";
+    }).join("");
+
+    el("mfxImpliedTable").innerHTML =
+      "<thead><tr><th>Exit P/E in " + QL.HORIZON + " yrs</th><th>Profit needed then</th><th>Implied annual profit change</th></tr></thead><tbody>" + rows + "</tbody>";
+
+    var centralCagr = central != null ? reqCagr(Math.round(central)) : reqCagr(25);
+    var actual = num(D.earnings_growth);
+    var tone = centralCagr == null ? "" : (centralCagr > 35 ? "bad" : centralCagr > 20 ? "warn" : "good");
+    // A cheap enough stock produces a NEGATIVE required growth rate — profits
+    // could shrink and the price would still clear the hurdle. That is the most
+    // useful thing the panel can say about a value name, but it needs its own
+    // sentence: "−14% of growth needed" is nonsense phrasing.
+    var exitTxt = (central != null ? fx(central, 0) + "× (its sector median)" : "25×");
+    // U+2212, matching the minus every other figure on the site uses.
+    var lastTxt = (actual != null ? " Last reported year: <b>" + (actual >= 0 ? "+" : "\u2212") + fx(Math.abs(actual), 1) + "%</b>." : "");
+    var negative = centralCagr != null && centralCagr < 0;
+    el("mfxImpliedHero").innerHTML =
+      '<div class="mfx-hero ' + tone + '">' +
+        '<span class="mfx-hero-v t-' + (tone || "good") + '">' +
+          (centralCagr == null ? "—" : (negative ? "−" + fx(Math.abs(centralCagr), 1) : fx(centralCagr, 1)) + "%") + "</span>" +
+        '<span class="mfx-hero-t">' +
+          (centralCagr == null ? "" : negative
+            ? "a year is how fast profits could <b>fall</b> for " + QL.HORIZON + " years while this price still delivered a " +
+              fx(QL.REQ_RETURN * 100, 0) + "% annual return, if it still trades at " + exitTxt + " by then." + lastTxt
+            : "a year, for " + QL.HORIZON + " years — the profit growth this price needs to deliver a " +
+              fx(QL.REQ_RETURN * 100, 0) + "% annual return, if it still trades at " + exitTxt + " by then." + lastTxt) +
+        "</span>" +
+      "</div>";
+
+    el("mfxImpliedLead").innerHTML =
+      "Rather than forecasting, this works backwards from what you pay today. At <b>" + crStr(mcap) +
+      "</b> the market must be worth <b>" + crStr(needCap) + "</b> in " + QL.HORIZON + " years to return " +
+      fx(QL.REQ_RETURN * 100, 0) + "% a year. Against a trailing profit of <b>" + crStr(pat) +
+      "</b>, here is the growth each exit multiple would demand.";
+
+    el("mfxImpliedFoot").innerHTML =
+      "Assumes a " + fx(QL.REQ_RETURN * 100, 0) + "% required annual return over " + QL.HORIZON +
+      " years and no change in share count. This is <b>arithmetic on the current price, not a forecast, rating or target</b> — " +
+      "a high implied growth rate says the price is demanding a lot, not that the company will or will not deliver it.";
+    card.style.display = "";
+  }
+
+  // ── (2) Earnings yield vs the risk-free rate ──────────────────────────────
+  function renderYield(D) {
+    var card = el("mfxYieldCard"); if (!card) return;
+    var ey = num(D.earnings_yield);
+    if (ey == null) { card.style.display = "none"; return; }
+    var spread = ey - QL.RF_PCT;
+    var tone = spread >= 2 ? "good" : spread >= 0 ? "warn" : "bad";
+    var col = tone === "good" ? "var(--green)" : tone === "warn" ? "var(--gold)" : "var(--red)";
+
+    el("mfxYieldHero").innerHTML =
+      '<div class="mfx-hero ' + tone + '">' +
+        '<span class="mfx-hero-v t-' + tone + '">' + (spread >= 0 ? "+" : "\u2212") + fx(Math.abs(spread), 2) + "%</span>" +
+        '<span class="mfx-hero-t">' +
+          (spread >= 0
+            ? "more than a government bond pays. The company's earnings yield of <b>" + fx(ey, 2) + "%</b> sits above the " + fx(QL.RF_PCT, 2) + "% 10-year G-Sec — you are being paid something for taking equity risk."
+            : "<b>less</b> than a government bond pays. The company's earnings yield of <b>" + fx(ey, 2) + "%</b> sits below the " + fx(QL.RF_PCT, 2) + "% 10-year G-Sec, so the price implies all of the return has to come from growth.") +
+        "</span>" +
+      "</div>";
+
+    var cells = [];
+    function cell(l, v, s, c) { cells.push('<div class="mfx-ql-cell"><div class="mfx-ql-cell-l">' + l + '</div><div class="mfx-ql-cell-v' + (c ? " t-" + c : "") + '">' + v + '</div><div class="mfx-ql-cell-s">' + s + "</div></div>"); }
+    cell("Earnings yield", fx(ey, 2) + "%", "Trailing profit ÷ market cap", tone);
+    cell("10-yr G-Sec", fx(QL.RF_PCT, 2) + "%", "Risk-free, as of " + QL.RF_ASOF);
+    var fy = num(D.fcf_yield); if (fy != null) cell("Free-cash-flow yield", fx(fy, 2) + "%", "Cash left after capex", fy < 0 ? "bad" : "");
+    var dy = num(D.dividend_yield); if (dy != null && dy > 0) cell("Dividend yield", fx(dy, 2) + "%", "Paid out in cash");
+    el("mfxYieldGrid").innerHTML = cells.join("");
+    el("mfxYieldFoot").innerHTML =
+      "Earnings yield is the inverse of the P/E — what the business earns each year per rupee you pay. " +
+      "Comparing it to the risk-free rate is a sanity check on how much of the return depends on growth, <b>not a valuation verdict</b>.";
+    card.style.display = "";
+  }
+
+  // ── (3) Percentile vs the ENTIRE market (the sector card covers sector) ───
+  function renderMarketPct(D, all) {
+    var card = el("mfxPctCard"), body = el("mfxPctBody");
+    if (!card || !body || !all || all.length < 200) { if (card) card.style.display = "none"; return; }
+    var live = all.filter(function (x) { return x && !x.error; });
+
+    // Enterprise value and EBITDA are not meaningful for lenders and insurers —
+    // debt is raw material there, not financing — so those two rows are dropped
+    // for financials rather than printed as if they compared to a manufacturer.
+    var isFin = /financial/i.test(clean(D.sector) || "") ||
+                /bank|insur|capital market|asset manage|financial|nbfc|housing finance/i.test(clean(D.industry) || "");
+    var specs = [
+      { key: "pe_ratio",   label: "P/E ratio",     sub: "earnings multiple", pos: true, hiIsExpensive: true,  fmt: function (v) { return fx(v, 1) + "×"; } },
+      { key: "pb_ratio",   label: "Price / Book",  sub: "book multiple",     pos: true, hiIsExpensive: true,  fmt: function (v) { return fx(v, 2) + "×"; } },
+      { key: "ev_ebitda",  label: "EV / EBITDA",   sub: "enterprise value",  pos: true, hiIsExpensive: true,  skipFin: true, fmt: function (v) { return fx(v, 1) + "×"; } },
+      { key: "ev_revenue", label: "EV / Sales",    sub: "enterprise value",  pos: true, hiIsExpensive: true,  skipFin: true, fmt: function (v) { return fx(v, 2) + "×"; } },
+      { key: "roe",        label: "Return on equity", sub: "quality",        pos: false, hiIsExpensive: false, fmt: function (v) { return pctS(v, 1); } },
+      { key: "cash_conv_cycle", label: "Cash cycle", sub: "working capital", pos: false, hiIsExpensive: true, skipFin: true, fmt: function (v) { return fx(v, 0) + " days"; } }
+    ];
+
+    var out = [], n = 0;
+    specs.forEach(function (m) {
+      if (m.skipFin && isFin) return;
+      var self = num(D[m.key]); if (self == null) return;
+      if (m.pos && self <= 0) return;
+      var vals = colOf(live, m.key, m.pos);
+      if (vals.length < 200) return;
+      var pc = pctileOf(vals, self); if (pc == null) return;
+      n = Math.max(n, vals.length);
+      // For "expensive is bad" metrics a high percentile is red; for quality
+      // metrics a high percentile is green — the track gradient is fixed, so
+      // flip the READING, not the bar.
+      var bad = m.hiIsExpensive ? pc >= 80 : pc <= 20;
+      var good = m.hiIsExpensive ? pc <= 20 : pc >= 80;
+      var verdict = m.hiIsExpensive
+        ? (pc >= 50 ? "pricier than " + pc + "%" : "cheaper than " + (100 - pc) + "%")
+        : (pc >= 50 ? "better than " + pc + "%" : "below " + (100 - pc) + "%");
+      out.push(
+        '<div class="mfx-pct-row">' +
+          '<div class="mfx-pct-k">' + m.label + "<small>" + verdict + "</small></div>" +
+          '<div class="mfx-pct-t"><span class="mfx-pct-b" style="left:' + Math.max(1, Math.min(99, pc)) + '%"></span></div>' +
+          '<div class="mfx-pct-v' + (bad ? " t-bad" : good ? " t-good" : "") + '">' + m.fmt(self) + "</div>" +
+        "</div>"
+      );
+    });
+    if (!out.length) { card.style.display = "none"; return; }
+    body.innerHTML = out.join("");
+    var src = el("mfxPctSrc"); if (src) src.textContent = "percentile vs " + n.toLocaleString("en-IN") + " listed stocks";
+    el("mfxPctFoot").innerHTML =
+      "Each marker is this company's position across every listed stock that reports the metric. " +
+      "For the multiples, further right means <b>more expensive</b>; for return on equity, further right means <b>higher quality</b>. " +
+      "A cash cycle further right means <b>more days of working capital tied up</b>.";
+    card.style.display = "";
+  }
+
+  // ── (4) What growth would cost — the working-capital drag ─────────────────
+  function renderGrowthCost(D) {
+    var card = el("mfxWcCard"); if (!card) return;
+    var rev = num(D.revenue_cr), ccc = num(D.cash_conv_cycle), ebitda = num(D.ebitda_cr);
+    if (rev == null || rev <= 0 || ccc == null || ccc <= 0) { card.style.display = "none"; return; }
+
+    // Every extra rupee of sales has to be carried for `ccc` days before it
+    // comes back as cash — so growth pre-funds itself out of the balance sheet.
+    function needFor(growthPct) { return rev * (growthPct / 100) * (ccc / 365); }
+    var scenarios = [25, 50, 80];
+    var cells = [];
+    scenarios.forEach(function (g) {
+      var need = needFor(g);
+      var share = (ebitda != null && ebitda > 0) ? (need / ebitda * 100) : null;
+      cells.push('<div class="mfx-ql-cell"><div class="mfx-ql-cell-l">Grow sales ' + g + '%</div>' +
+        '<div class="mfx-ql-cell-v' + (share != null && share > 100 ? " t-bad" : "") + '">' + crStr(need) + "</div>" +
+        '<div class="mfx-ql-cell-s">' + (share != null ? fx(share, 0) + "% of a year's EBITDA" : "of extra working capital") + "</div></div>");
+    });
+    el("mfxWcGrid").innerHTML = cells.join("");
+
+    var need50 = needFor(50), share50 = (ebitda != null && ebitda > 0) ? (need50 / ebitda * 100) : null;
+    var tone = share50 == null ? "" : share50 > 100 ? "bad" : share50 > 50 ? "warn" : "good";
+    el("mfxWcHero").innerHTML =
+      '<div class="mfx-hero ' + tone + '">' +
+        '<span class="mfx-hero-v t-' + (tone || "good") + '">' +
+          (share50 == null ? crStr(need50) : fx(share50, 0) + "%") + "</span>" +
+        '<span class="mfx-hero-t">' +
+          (share50 == null
+            ? "of extra working capital would be tied up to grow sales by half, on a " + fx(ccc, 0) + "-day cash cycle."
+            : "of a full year's EBITDA would be swallowed by working capital just to grow sales <b>50%</b> — " +
+              crStr(need50) + " locked up on a <b>" + fx(ccc, 0) + "-day</b> cash cycle" +
+              (share50 > 100 ? ". Growth here consumes more than the business generates." : ".")) +
+        "</span>" +
+      "</div>";
+
+    el("mfxWcLead").innerHTML =
+      "Sales growth is not free. Money goes out for inventory and sits in receivables long before customers pay, so every extra rupee of revenue must be carried for the length of the cash cycle — <b>" +
+      fx(ccc, 0) + " days</b> here.";
+    el("mfxWcFoot").innerHTML =
+      "Estimated as extra revenue × (cash cycle ÷ 365), before any capital spending. " +
+      "It assumes the current cash cycle holds as the business scales — a company that collects faster as it grows would need less.";
+    card.style.display = "";
+  }
+
+  // ── (5) Multiple sensitivity — same earnings, different multiple ──────────
+  function renderReRate(D, all) {
+    var card = el("mfxReRateCard"); if (!card) return;
+    var eps = num(D.eps), px = num(D.current_price), pe = num(D.pe_ratio);
+    if (eps == null || eps <= 0 || px == null || px <= 0) { card.style.display = "none"; return; }
+    var sec = clean(D.sector);
+    if (!sec || !all || !all.length) { card.style.display = "none"; return; }
+    var peers = all.filter(function (x) { return x && !x.error && clean(x.sector) === sec; });
+    var pes = colOf(peers, "pe_ratio", true);
+    if (pes.length < 8) { card.style.display = "none"; return; }
+
+    var marks = [
+      ["Sector 25th percentile", quantile(pes, 0.25)],
+      ["Sector median",          quantile(pes, 0.50)],
+      ["Sector 75th percentile", quantile(pes, 0.75)]
+    ];
+    if (pe != null && pe > 0) marks.push(["Where it trades today", pe]);
+    marks.sort(function (a, b) { return a[1] - b[1]; });
+
+    var rows = marks.map(function (m) {
+      var implied = eps * m[1];
+      var delta = (implied / px - 1) * 100;
+      var isNow = m[0] === "Where it trades today";
+      var tcls = isNow ? "" : (delta >= 0 ? "t-good" : "t-bad");
+      return '<tr class="' + (isNow ? "is-central" : "") + '"><td>' + m[0] + "</td>" +
+        "<td>" + fx(m[1], 1) + "×</td>" +
+        '<td class="req">₹' + Math.round(implied).toLocaleString("en-IN") + "</td>" +
+        '<td class="' + tcls + '" style="font-weight:700">' + (isNow ? "—" : (delta >= 0 ? "+" : "\u2212") + fx(Math.abs(delta), 0) + "%") + "</td></tr>";
+    }).join("");
+
+    el("mfxReRateTable").innerHTML =
+      "<thead><tr><th>If it were valued at</th><th>P/E</th><th>Price on today's EPS</th><th>vs now</th></tr></thead><tbody>" + rows + "</tbody>";
+    el("mfxReRateLead").innerHTML =
+      "Holding earnings completely still at <b>₹" + fx(eps, 2) + "</b> per share, this is what the price would be at other points of the <b>" +
+      esc(sec) + "</b> sector's own P/E range. It isolates the multiple from the business.";
+    el("mfxReRateFoot").innerHTML =
+      "Today's earnings × another company's multiple. <b>Not a target price, forecast or recommendation</b> — " +
+      "earnings move too, and a stock can deserve to trade away from its sector for a long time.";
+    card.style.display = "";
+  }
+
   // ── entry point ───────────────────────────────────────────────────────────
   function render(D) {
     if (!D) return;
@@ -854,12 +1228,17 @@
     try { renderBalanceSheet(D); } catch (e) {}
     try { renderCashCycle(D); } catch (e) {}
     try { renderSignals(D); } catch (e) {}
+    try { renderYield(D); } catch (e) {}
+    try { renderGrowthCost(D); } catch (e) {}
     universe().then(function (all) {
       all = all || [];
       try { fillCap(D, all); } catch (e) {}
       try { renderScale(D, all); } catch (e) {}
       try { renderPeers(D, all); } catch (e) {}
       try { renderSectorContext(D, all); } catch (e) {}
+      try { renderImplied(D, all); } catch (e) {}
+      try { renderMarketPct(D, all); } catch (e) {}
+      try { renderReRate(D, all); } catch (e) {}
     }).catch(function () {});
   }
 
