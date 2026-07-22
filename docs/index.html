@@ -4185,15 +4185,41 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
     // (populated by assets/mfc-live.js). Deliberately does NOT touch the strip's
     // visibility — mfc-live.js reveals it only once real data has landed, so a
     // failed fetch leaves the pre-pivot card intact.
-    function fillLive(key) {
+    function fillLive(key, animate) {
       var d = window.MFCLive && window.MFCLive.strategies && window.MFCLive.strategies[key];
       if (!d) return;
       function put(node, v) {
         if (!node || v == null || !isFinite(v)) return;
-        var sign = v > 0 ? '+' : v < 0 ? '−' : '+';
-        node.textContent = sign + Math.abs(v).toFixed(2) + '%';
+        // tint first so the figure counts up already wearing its final colour
         node.classList.remove('up', 'down', 'flat');
         node.classList.add(v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat');
+        var sign = v > 0 ? '+' : v < 0 ? '−' : '+';
+        var finalText = sign + Math.abs(v).toFixed(2) + '%';
+        // V25.1: on a strategy switch the backtest CAGR/bench beside this figure
+        // count up (select()'s countTo) while the LIVE value — the metric the
+        // V24.2 pivot promoted to lead — SNAPPED. Complete the V24.8 count-up
+        // idiom on the switch path too. Sign-aware (live cycles go negative) and
+        // always lands on finalText verbatim, incl. its U+2212 minus, so no
+        // rounding path can publish a figure that differs from live-perf.json.
+        // Snaps on the initial paint (mfc-live.js already tweens it there via the
+        // data-live slot), on reduced-motion, or a frozen rAF clock (backstop).
+        if (!animate || reduce || typeof requestAnimationFrame !== 'function') {
+          node.textContent = finalText; return;
+        }
+        var DUR = 750, tok = (node._lvTok = (node._lvTok || 0) + 1), done = false;
+        function land() { if (done) return; done = true; node.textContent = finalText; }
+        setTimeout(function () { if (node._lvTok === tok) land(); }, DUR + 400);
+        var t0 = null;
+        requestAnimationFrame(function step(ts) {
+          if (done || node._lvTok !== tok) return;         // a newer switch supersedes
+          if (t0 === null) t0 = ts;
+          var t = Math.min(1, (ts - t0) / DUR), e = 1 - Math.pow(1 - t, 3);
+          if (t < 1) {
+            var vv = v * e, s2 = vv > 0 ? '+' : vv < 0 ? '−' : '+';
+            node.textContent = s2 + Math.abs(vv).toFixed(2) + '%';
+            requestAnimationFrame(step);
+          } else { land(); }
+        });
       }
       put(document.getElementById('hv-live-val'), d.live_pct);
       put(document.getElementById('hv-live-bench'), d.bench_pct);
@@ -4212,7 +4238,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       if (el.legS) el.legS.textContent = 'MindForge ' + m.name;
       if (el.legB) el.legB.textContent = m.bench;
       if (el.period && m.period) el.period.textContent = m.period;
-      fillLive(key);   // V24.2: the live-cycle strip follows the selected strategy
+      fillLive(key, animate);   // V24.2: the live-cycle strip follows the selected strategy; V25.1: counts up on switch
       var p = build(d.cagr != null ? d.cagr : 0, d.bench != null ? d.bench : 0);
       if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); countAlpha(el.alpha, d.alphaTxt); redraw(p); }
       else { if (el.cagr) el.cagr.textContent = d.cagrTxt; if (el.bench) el.bench.textContent = d.benchTxt; if (el.alpha) el.alpha.textContent = (d.alphaTxt || '') + ' annual alpha · backtest'; }
