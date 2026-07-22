@@ -139,10 +139,21 @@ nav {
 /* value pill next to head */
 .fc-valpill { font-size: 15px; font-weight: 800; color: var(--accent2); font-variant-numeric: tabular-nums; }
 
-/* range slider */
-.fc-range { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin-top: 14px; border-radius: 999px; background: var(--border2); outline: none; cursor: pointer; }
-.fc-range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: transparent; }
-.fc-range::-moz-range-track { height: 6px; border-radius: 999px; }
+/* range slider
+   V25.2 — the five sliders ARE the Fee Calculator, and on a phone they were the
+   hardest thing on the page to grab. MEASURED with elementFromPoint stepped 1px
+   at a time down each control (not eyeballed): at the thumb the control
+   hit-tested 20px tall — under the 24px WCAG 2.2 SC 2.5.8 floor this site
+   adopted back in V23.7 for .hv-tab — and on the bare track, i.e. tapping the
+   bar to jump the value, just 6px, because that is the input's own box height
+   and the 20px thumb only overflows it visually.
+   The fix keeps the LOOK identical: the visible 6px bar moves off the element's
+   own background onto the track pseudo-elements, and the element box grows to
+   28px of transparent, grabbable area centred on that bar. margin-top drops
+   14px → 3px so the bar's centre stays exactly where it was (3+14 == 14+3). */
+.fc-range { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; margin-top: 3px; border-radius: 999px; background: transparent; outline: none; cursor: pointer; }
+.fc-range::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--border2); }
+.fc-range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--border2); }
 .fc-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: #fff; border: 2px solid var(--accent2); box-shadow: 0 2px 6px rgba(26,80,216,0.35); cursor: pointer; transition: transform .12s; }
 .fc-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
 .fc-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--accent2); box-shadow: 0 2px 6px rgba(26,80,216,0.35); cursor: pointer; }

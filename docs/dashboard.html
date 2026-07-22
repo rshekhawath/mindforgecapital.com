@@ -568,7 +568,13 @@ tr.row-bought td.company{text-decoration:line-through;}
 }
 .buy-prog-reset:hover{color:var(--text2);border-color:rgba(37,99,235,0.30);}
 .sc-bought-row{display:flex;align-items:center;gap:10px;padding-top:6px;border-top:0.5px solid var(--border);margin-top:4px;font-size:13px;color:var(--text2);}
-.sc-bought-row label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;}
+/* V25.2 — "Order placed" is the one thing a member taps 25 times on a phone,
+   and its target measured 110x21: the 20px checkbox plus a label row that was
+   only as tall as its 13px text, so BOTH fell under the 24px WCAG 2.2 SC 2.5.8
+   floor this site adopted in V23.7 (.hv-tab). The label is the real target —
+   clicking it toggles the box (verified) — so giving the label a 24px
+   min-height fixes it without resizing the checkbox or reflowing the card. */
+.sc-bought-row label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;min-height:24px;}
 .stock-card.row-bought{opacity:.7;}
 .stock-card.row-bought .sc-company{text-decoration:line-through;}
 
@@ -790,8 +796,29 @@ footer a:hover{color:var(--accent);}
 #stocks-tbody tr:not(.skel-row){
   animation:mf-row-in .42s cubic-bezier(.22,1,.36,1) both;
 }
+/* V25.2 — the phone's holdings list cascades in like the desktop table's.
+   The <tr> above has carried this stagger (plus a per-row inline
+   animation-delay) since it shipped, but `.stock-card` — the ≤600px
+   rendering of the SAME holdings, i.e. the dashboard's primary content on a
+   phone — matched no rule at all and popped in (measured: animationName
+   "none", getAnimations() 0). Restoring an existing idiom on the one code
+   path it never reached, not adding a new effect layer.
+   On `both` and the V24.8 fail-visible rule: `backwards` does hold opacity:0
+   through the inline delay, but that is safe HERE and only here — a
+   .stock-card exists solely because renderTable() wrote it, so there is no
+   path on which the markup survives while the animation never runs (the
+   V24.8 hazard was a chip sitting in a display:none tab in static HTML). The
+   delay is capped at 360ms, well under the desktop row's own 600ms. */
+.stock-card{
+  animation:mf-row-in .42s cubic-bezier(.22,1,.36,1) both;
+}
+/* Fail-visible backstop — see revealHoldingsBackstop(). Applied by JS once the
+   cascade has had time to run, so a frozen/never-started animation timeline
+   can never leave the holdings list stranded at the keyframe's opacity:0. */
+#stocks-tbody tr:not(.skel-row).mf-anim-done, .stock-card.mf-anim-done{ animation:none; }
 @media (prefers-reduced-motion: reduce){
   #stocks-tbody tr:not(.skel-row){animation:none;}
+  .stock-card{animation:none;}
 }
 
 /* ── Empty state (no stocks loaded) ─────────────────────────── */
@@ -2947,7 +2974,10 @@ function renderTable(stocks) {
     const isBought = !!bought[s.ticker];
     const cardCls = isBought ? 'stock-card row-bought' : 'stock-card';
     const ci = stocksData.indexOf(s);   // canonical index — keep filters/cell-updates correct after sort
-    return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}">
+    // V25.2: same stagger the desktop <tr> above gets, so the phone's holdings
+    // cascade instead of popping. Capped lower (360ms) than the row's 600ms —
+    // cards are ~5x taller, so anything past the first few lands off-screen.
+    return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" style="animation-delay:${Math.min(i*45, 360)}ms;">
       <div class="sc-header">
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
@@ -2972,6 +3002,36 @@ function renderTable(stocks) {
   refreshBoughtProgress();
   // V14.3: re-apply live prices/returns after any re-render (sort, filter, capital).
   if (window._livePx) paintLivePrices();
+  revealHoldingsBackstop();
+}
+
+/* V25.2 — fail-visible backstop for the holdings stagger entrance.
+   Both the desktop <tr> and (as of V25.2) the mobile .stock-card enter with
+   `animation:mf-row-in ... both`, whose `backwards` half holds opacity:0
+   through the per-row inline delay. That is the right look, but it means a
+   document whose animation timeline never advances renders the ENTIRE
+   holdings list — the dashboard's primary content — invisible. Not
+   hypothetical: measured exactly that in a hidden document, where
+   document.timeline.currentTime stayed at 0 and all 25 cards sat at opacity 0
+   with playState "running". The desktop rows have carried the same exposure,
+   unguarded, since the stagger shipped.
+   So: once the cascade has had time to finish, strip the animation. The
+   keyframe's to-state IS the element's natural state (opacity 1, no
+   translate), so on the normal path this is a no-op — and on a frozen clock
+   it is the difference between a blank list and a readable one. Same
+   safety-net device as the factor board's setTimeout(reveal,1600) and
+   mfc-live.js's snap timer: never let a decoration own visibility. */
+function revealHoldingsBackstop() {
+  var DONE = 'mf-anim-done';                 // → animation:none (CSS)
+  var LAST = 360 + 420 + 260;                // max delay + duration + slack
+  clearTimeout(window._holdRevealT);
+  window._holdRevealT = setTimeout(function () {
+    // :not(.skel-row) matches the convention every other rule here uses — the
+    // loading skeleton must keep its own shimmer if one is ever on the row.
+    document.querySelectorAll('#stocks-tbody tr:not(.skel-row), .stock-card').forEach(function (el) {
+      el.classList.add(DONE);
+    });
+  }, LAST);
 }
 
 // ── MARK-AS-BOUGHT (persisted per strategy) ──────────────────────────────

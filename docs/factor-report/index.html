@@ -151,9 +151,29 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-spread{display:flex;align-items:flex-start;gap:10px;margin-top:16px;padding:13px 16px;border:0.5px dashed var(--border2);border-radius:12px;background:linear-gradient(135deg,rgba(37,99,235,.04),rgba(45,212,191,.03));font-size:13.5px;color:var(--text2);line-height:1.55}
 .fr-spread svg{flex:0 0 auto;margin-top:2px;color:var(--accent2)}
 .fr-spread b{color:var(--white)}
+/* V25.2 — the scoreboard keeps its scoreboard on a phone.
+   Until now ≤640px simply did `.fr-bar-wrap{display:none}`: the diverging bar
+   AND its centre zero-line — the only at-a-glance "who is above/below flat"
+   cue on the page — vanished, leaving a plain name/number list, and the V23.3
+   bar-draw reveal animated five invisible elements. Same DOM, restacked: the
+   row becomes two grid rows (identity + value on top, a FULL-WIDTH diverging
+   bar beneath), so mobile gains the visual instead of losing it. */
 @media(max-width:640px){
-  .fr-row{grid-template-columns:22px 1fr 66px;gap:10px}
-  .fr-bar-wrap{display:none}
+  .fr-row{
+    grid-template-columns:22px minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    column-gap:10px;row-gap:7px;
+    padding:13px 8px;
+  }
+  .fr-rank{grid-column:1;grid-row:1;align-self:start;padding-top:2px}
+  .fr-name{grid-column:2;grid-row:1;min-width:0}
+  .fr-val{grid-column:3;grid-row:1;align-self:start}
+  .fr-bar-wrap{
+    display:block;                 /* was display:none — the whole point */
+    grid-column:1/-1;grid-row:2;
+    height:20px;border-radius:6px;
+  }
+  .fr-bar{top:3px;bottom:3px;border-radius:4px}
 }
 
 /* ── COMMENTARY ── */
