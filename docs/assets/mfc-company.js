@@ -339,6 +339,110 @@
       .mfx-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
       .mfx-tile-v{font-size:15.5px}
     }
+
+    /* ══ V25.5 — COUNT-AWARE TILE GRIDS ═══════════════════════════════════
+       Both tile grids render a VARIABLE number of tiles (each one is guarded
+       by its own field-coverage check), and both were sized for the maximum
+       count. Measured on the live page: .mfx-tiles renders 6 for MTARTECH and
+       the fixed 4-column rule left 4+2 — two double-width orphans; .mfx-metrics
+       used auto-fit/132px and packed 5 across at 820px, orphaning the 6th on a
+       row of its own. The renderer knows the count, so it stamps data-n and the
+       column count is chosen to divide it evenly. This is the standing
+       count-coupled-CSS rule: a grid tuned for one item count is wrong for
+       every other one.
+       Two devices, applied at every breakpoint: pick a column count that
+       DIVIDES the item count where one exists, and where none does (5 and 7),
+       stretch the final tile across the remainder so the last row still ends
+       flush. Note the specificity trap this walked into first time: an
+       attribute selector (0,2,0) outranks the plain .mfx-tiles rule inside a
+       narrower media query (0,1,0), so a 6-tile grid stayed 3-up on a 390px
+       phone and clipped "Shares outstanding". Every narrower override below is
+       therefore written at attribute specificity too. */
+    .mfx-tiles[data-n="1"]{grid-template-columns:minmax(0,1fr)}
+    .mfx-tiles[data-n="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .mfx-tiles[data-n="3"],.mfx-tiles[data-n="5"],.mfx-tiles[data-n="6"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .mfx-tiles[data-n="5"] > :last-child,
+    .mfx-tiles[data-n="7"] > :last-child{grid-column:span 2}
+    .mfx-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .mfx-metrics[data-n="1"]{grid-template-columns:minmax(0,1fr)}
+    .mfx-metrics[data-n="2"],.mfx-metrics[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .mfx-metrics[data-n="5"] > :last-child{grid-column:span 2}
+    @media (max-width:1024px){
+      .mfx-tiles[data-n="4"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+      /* the tablet base is 3 columns, which leaves 8 tiles at 3+3+2 */
+      .mfx-tiles[data-n="8"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .mfx-tiles[data-n="7"] > :last-child{grid-column:span 3}
+    }
+    @media (max-width:640px){
+      /* a phone holds two tiles per row and no more — three clipped the labels */
+      .mfx-tiles[data-n]{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .mfx-tiles[data-n="1"]{grid-template-columns:minmax(0,1fr)}
+      .mfx-tiles[data-n="3"] > :last-child,
+      .mfx-tiles[data-n="5"] > :last-child,
+      .mfx-tiles[data-n="7"] > :last-child{grid-column:span 2}
+      .mfx-tiles[data-n="4"] > :last-child,
+      .mfx-tiles[data-n="6"] > :last-child,
+      .mfx-tiles[data-n="8"] > :last-child{grid-column:auto}
+    }
+    @media (max-width:520px){
+      .mfx-metrics,.mfx-metrics[data-n]{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .mfx-metrics[data-n="1"]{grid-template-columns:minmax(0,1fr)}
+      .mfx-metrics[data-n="3"] > :last-child,
+      .mfx-metrics[data-n="5"] > :last-child{grid-column:span 2}
+    }
+
+    /* ══ V25.5 — THE REPORT SPINE ═════════════════════════════════════════
+       V23.5 and V25.4 each appended their panels to the Company tab, and it
+       had quietly become 15 stacked cards / ~5,400px of uninterrupted scroll
+       with no headings and no way to reach anything — measured against 618px
+       (Shareholding), 1,319px (Ratios) and 1,379px (Overview) for the other
+       three tabs. The cards are now grouped into four titled sections fronted
+       by a sticky, scroll-spying contents bar, so the tab reads as a report
+       with a structure rather than a wall.
+       The bar copies the V21.8 legal-page rail's mechanics — a setTimeout
+       (never rAF) scroll throttle, so it also runs in a throttled/background
+       tab — and bleeds to the container's own gutters so cards scroll UNDER
+       an opaque bar rather than beside it. */
+    .mfx-nav{
+      position:sticky;top:var(--mfx-navh,58px);z-index:30;
+      display:flex;gap:7px;align-items:center;
+      margin:-6px -32px 20px;padding:10px 32px;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+      background:var(--ink);border-bottom:0.5px solid var(--border);
+    }
+    .mfx-nav::-webkit-scrollbar{display:none}
+    .mfx-nav-a{
+      flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;
+      padding:7px 13px;border-radius:999px;text-decoration:none;cursor:pointer;
+      font-size:12px;font-weight:600;white-space:nowrap;
+      color:var(--text3);border:0.5px solid var(--border2);background:var(--ink2);
+      transition:color .18s ease,border-color .18s ease,background .18s ease;
+    }
+    .mfx-nav-a:hover{color:var(--accent2);border-color:var(--accent3)}
+    .mfx-nav-a.is-on{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+    .mfx-nav-a.is-on .mfx-nav-n{opacity:.8}
+    .mfx-nav-n{font-size:10px;font-weight:800;opacity:.6;font-variant-numeric:tabular-nums}
+    /* the jump target must clear BOTH sticky bars (site nav + this one) */
+    .mfx-sec{scroll-margin-top:calc(var(--mfx-navh,58px) + 66px)}
+    .mfx-sec-h{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+    .mfx-sec:first-child .mfx-sec-h{margin-top:2px}
+    .mfx-sec-n{
+      flex:0 0 auto;width:23px;height:23px;border-radius:8px;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:800;color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--teal));
+      box-shadow:0 4px 12px -6px rgba(37,99,235,.55);
+    }
+    .mfx-sec-t{font-size:14.5px;font-weight:800;color:var(--white);letter-spacing:-.01em;white-space:nowrap}
+    .mfx-sec-s{font-size:11.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+    .mfx-sec-r{flex:1 1 auto;min-width:10px;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+    @media (max-width:760px){.mfx-sec-s{display:none}}
+    @media (max-width:600px){
+      .mfx-nav{margin:-4px -14px 16px;padding:9px 14px;gap:6px}
+      .mfx-nav-a{padding:6px 11px;font-size:11.5px}
+      .mfx-sec-h{margin:24px 0 12px}
+    }
+    @media (prefers-reduced-motion:reduce){.mfx-nav-a{transition:none}}
     `;
     var s = document.createElement("style");
     s.id = "mfx-style";
@@ -426,7 +530,19 @@
       ["Website", D.website ? '<a href="' + esc(D.website) + '" target="_blank" rel="noopener">' + esc(D.website.replace(/^https?:\/\//, "")) + "</a>" : "—"],
     ];
 
+    // V25.5 — each group of cards is wrapped in a titled section so the report
+    // has a spine the sticky contents bar can navigate. A section whose cards
+    // all hide themselves (missing fields) is hidden by buildReportNav().
+    function sec(id, n, title, subtitle, inner) {
+      return '<section class="mfx-sec" id="mfxSec' + id + '" data-sec-title="' + esc(title) + '">' +
+        '<div class="mfx-sec-h"><span class="mfx-sec-n">' + n + '</span>' +
+        '<h3 class="mfx-sec-t">' + esc(title) + "</h3>" +
+        '<span class="mfx-sec-s">' + esc(subtitle) + "</span>" +
+        '<span class="mfx-sec-r"></span></div>' + inner + "</section>";
+    }
+
     tab.innerHTML =
+      sec("Business", 1, "The business", "what it does, how big it is, who owns it",
       '<div class="card">' +
         '<div class="card-header"><span class="card-title">Business — what ' + esc(name) + " does</span><span class=\"mfx-src\">Public filings · Yahoo Finance</span></div>" +
         '<div class="card-body"><p class="mfx-desc" id="mfxFullDesc">' + (D.description ? esc(D.description) : "No business description is available for this company in the current snapshot.") + "</p></div>" +
@@ -446,7 +562,8 @@
           '<div class="card-header"><span class="card-title">Dividend, ownership &amp; risk</span></div>' +
           '<div class="card-body"><div class="mfx-snap">' + snapshotHTML(D) + "</div></div>" +
         "</div>" +
-      "</div>" +
+      "</div>") +
+      sec("Financials", 2, "The financials", "where the money goes and what is left",
       '<div class="two-col">' +
         '<div class="card" id="mfxFlowCard" style="display:none">' +
           '<div class="card-header"><span class="card-title">How the money flows</span><span class="mfx-src">% of revenue</span></div>' +
@@ -466,8 +583,9 @@
         '<div class="card-body"><div class="mfx-sig" id="mfxSigBody"></div>' +
           '<p class="mfx-foot">These are <b>automated observations</b> computed from the latest snapshot against fixed thresholds — data points to research further, not recommendations or investment advice.</p>' +
         "</div>" +
-      "</div>" +
+      "</div>") +
       // ══ V25.4: the quant lens ══════════════════════════════════════════
+      sec("Valuation", 3, "The valuation", "what today's price is asking of the business",
       '<div class="card" id="mfxImpliedCard" style="display:none">' +
         '<div class="card-header"><span class="card-title">What this price implies</span><span class="mfx-src">reverse-DCF · arithmetic, not a forecast</span></div>' +
         '<div class="card-body"><p class="mfx-ql-lead" id="mfxImpliedLead"></p><div id="mfxImpliedHero"></div>' +
@@ -495,7 +613,11 @@
         '<div class="card-body"><p class="mfx-ql-lead" id="mfxReRateLead"></p>' +
           '<div class="mfx-tablewrap"><table class="mfx-ladder" id="mfxReRateTable"></table></div>' +
           '<p class="mfx-foot" id="mfxReRateFoot"></p></div>' +
-      "</div>" +
+      "</div>") +
+      // title is passed RAW — sec() escapes it for both the heading and the
+      // data-sec-title the contents bar reads back, so pre-escaping it here
+      // would double-encode and print a literal "&amp;".
+      sec("Peers", 4, "Peers & sector", "how it reads next to comparable businesses",
       '<div class="card" id="mfxPeersCard" style="display:none">' +
         '<div class="card-header"><span class="card-title" id="mfxPeersTitle">Peers</span><span class="mfx-src">by market cap</span></div>' +
         '<div class="card-body"><p class="mfx-note" id="mfxPeersNote"></p><div class="mfx-tablewrap"><table class="mfx-table" id="mfxPeersTable"></table></div></div>' +
@@ -505,7 +627,7 @@
         '<div class="card-body"><div class="mfx-ctx" id="mfxSectorBody"></div>' +
           '<div class="mfx-legend"><span><span class="mfx-dot" style="position:static;width:11px;height:11px;background:var(--accent)"></span>This company</span><span><span style="width:2px;height:12px;background:var(--text3);display:inline-block;border-radius:2px"></span>Sector median</span></div>' +
         "</div>" +
-      "</div>";
+      "</div>");
 
     growOnReveal(tab); // ownership split bar (the later panels wire their own)
   }
@@ -716,6 +838,9 @@
 
     if (t.length < 3) { card.style.display = "none"; return; }
     body.innerHTML = t.join("");
+    // V25.5 — the tile count is data-dependent (3–8); publish it so the CSS can
+    // pick a column count that divides it evenly instead of orphaning a row.
+    body.setAttribute("data-n", String(t.length));
     card.style.display = "";
   }
 
@@ -809,7 +934,7 @@
     if (de != null) { var der = de / 100; met("Debt / equity", fx(der, 2) + "×", der <= 0.5 ? "var(--green)" : der <= 1 ? "var(--white)" : "var(--gold)", der <= 0.5 ? "Lightly geared" : der <= 1 ? "Moderately geared" : "Highly geared"); }
     var wc = num(D.working_capital_cr);
     if (wc != null) met("Working capital", crStr(wc), wc >= 0 ? "var(--white)" : "var(--gold)", "Current assets − liabilities");
-    if (mets) mets.innerHTML = m.join("");
+    if (mets) { mets.innerHTML = m.join(""); mets.setAttribute("data-n", String(m.length)); }
 
     if (foot) {
       foot.innerHTML = nd == null ? "" : (nd < 0
@@ -1217,6 +1342,140 @@
   }
 
   // ── entry point ───────────────────────────────────────────────────────────
+  // ── V25.5: the report contents bar ────────────────────────────────────────
+  //    Built LAST, once every panel has decided whether it can render, so a
+  //    section with no surviving cards (a loss-making company loses the
+  //    reverse-DCF, a lender loses the cash-conversion cycle, a name outside
+  //    the universe loses peers) is dropped from both the page and the bar
+  //    rather than left as an empty heading. Idempotent: the universe promise
+  //    can call it after the synchronous pass already did.
+  function buildReportNav() {
+    var tab = el("tab-about"); if (!tab) return;
+
+    var secs = [].slice.call(tab.querySelectorAll(".mfx-sec"));
+    if (!secs.length) return;
+
+    var live = secs.filter(function (s) {
+      s.style.display = "";
+      var cards = s.querySelectorAll(".card");
+      for (var i = 0; i < cards.length; i++) {
+        // a card is live if it isn't explicitly hidden AND actually has a box
+        if (cards[i].style.display !== "none") return true;
+      }
+      s.style.display = "none";
+      return false;
+    });
+
+    var old = tab.querySelector(".mfx-nav");
+    // One section left is not a table of contents — don't pretend otherwise.
+    if (live.length < 2) { if (old) old.remove(); return; }
+
+    var nav = old || document.createElement("div");
+    if (!old) {
+      nav.className = "mfx-nav";
+      nav.setAttribute("role", "navigation");
+      nav.setAttribute("aria-label", "Report contents");
+    }
+    nav.innerHTML = live.map(function (s, i) {
+      return '<a class="mfx-nav-a" href="#' + s.id + '" data-t="' + s.id + '">' +
+        '<span class="mfx-nav-n">' + (i + 1) + "</span>" +
+        esc(s.getAttribute("data-sec-title") || "Section " + (i + 1)) + "</a>";
+    }).join("");
+    if (!old) tab.insertBefore(nav, tab.firstChild);
+
+    var links = [].slice.call(nav.querySelectorAll(".mfx-nav-a"));
+
+    // The site nav is position:sticky/top:0 and its height changes with the
+    // breakpoint (57px phone, taller on desktop), so measure rather than
+    // hard-code the offset this bar parks under.
+    function syncNavH() {
+      var n = document.querySelector("nav");
+      var h = n ? Math.round(n.getBoundingClientRect().height) : 58;
+      if (h > 0) document.documentElement.style.setProperty("--mfx-navh", h + "px");
+    }
+    syncNavH();
+
+    var current = -1;
+    function setActive(i) {
+      if (i === current || i < 0) return;
+      current = i;
+      links.forEach(function (l, j) { l.classList.toggle("is-on", j === i); });
+      // keep the active chip in view on a phone, where the bar itself scrolls
+      var on = links[i];
+      if (on && nav.scrollWidth > nav.clientWidth + 4) {
+        nav.scrollTo({ left: Math.max(0, on.offsetLeft - nav.clientWidth / 2 + on.offsetWidth / 2), behavior: "smooth" });
+      }
+    }
+
+    links.forEach(function (a, i) {
+      a.addEventListener("click", function (ev) {
+        // Scroll manually so the URL never picks up a hash the page doesn't own.
+        ev.preventDefault();
+        var t = document.getElementById(a.getAttribute("data-t"));
+        if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+        setActive(i);
+      });
+    });
+
+    // ── scroll-spy ────────────────────────────────────────────────────────
+    // The active chip is derived from geometry by pick(), which needs no
+    // events at all and is therefore also what gives the bar a correct state
+    // on its very first paint. Two independent triggers re-run it:
+    //   • an IntersectionObserver on a 1px trip line under the two sticky bars
+    //     (exactly one section straddles it), and
+    //   • a setTimeout-throttled window-scroll handler — the V21.8 legal-rail
+    //     idiom, deliberately not rAF so it survives a throttled tab.
+    // Either alone would do in a normal browser; keeping both means the bar
+    // still tracks if one is unavailable, and pick() is idempotent so a double
+    // trigger costs a no-op. (Neither callback can be exercised in the local
+    // preview harness, which drives no frames — rAF, IO delivery and scroll
+    // all stay silent there. pick() itself is verified directly instead.)
+    function pick() {
+      if (!tab.offsetParent) return;                  // Company tab isn't showing
+      var navH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--mfx-navh")) || 58;
+      var line = navH + 96, idx = 0;
+      for (var i = 0; i < live.length; i++) {
+        if (live[i].getBoundingClientRect().top <= line) idx = i;
+      }
+      setActive(idx);
+    }
+    nav._pick = pick;                                  // exposed for verification
+
+    var io = null;
+    function wireSpy() {
+      syncNavH();
+      if (!("IntersectionObserver" in window)) return;
+      if (io) io.disconnect();
+      var navH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--mfx-navh")) || 58;
+      var top = Math.round(navH + 96);
+      var bottom = Math.max(0, Math.round(window.innerHeight - top - 1));
+      io = new IntersectionObserver(function () { pick(); },
+        { rootMargin: "-" + top + "px 0px -" + bottom + "px 0px", threshold: 0 });
+      live.forEach(function (s) { io.observe(s); });
+    }
+    wireSpy();
+    setActive(0);
+    pick();
+
+    if (!nav._spyWired) {
+      nav._spyWired = true;
+      var pending = null, rz = null;
+      window.addEventListener("scroll", function () {
+        if (pending == null) pending = setTimeout(function () { pending = null; pick(); }, 90);
+      }, { passive: true });
+      // innerHeight feeds the trip line's bottom inset, and the site nav's
+      // height changes at the hamburger breakpoint — re-measure both.
+      window.addEventListener("resize", function () {
+        clearTimeout(rz);
+        rz = setTimeout(function () { wireSpy(); pick(); }, 140);
+      }, { passive: true });
+      // the tab strip swaps panels without scrolling — re-pick when ours appears
+      document.addEventListener("click", function (e) {
+        if (e.target && e.target.classList && e.target.classList.contains("tab")) setTimeout(pick, 60);
+      }, true);
+    }
+  }
+
   function render(D) {
     if (!D) return;
     try { injectStyle(); } catch (e) {}
@@ -1230,6 +1489,14 @@
     try { renderSignals(D); } catch (e) {}
     try { renderYield(D); } catch (e) {}
     try { renderGrowthCost(D); } catch (e) {}
+    // The contents bar is built ONCE, after the universe-dependent panels have
+    // settled — never on the synchronous pass. Peers and sector context are
+    // both universe-backed, so an early build would always show a 3-chip bar
+    // that grew a 4th chip a moment later, on every stock. The timer is only a
+    // hang guard: universe() itself never rejects.
+    var navBuilt = false;
+    function navOnce() { if (navBuilt) return; navBuilt = true; try { buildReportNav(); } catch (e) {} }
+    setTimeout(navOnce, 5000);
     universe().then(function (all) {
       all = all || [];
       try { fillCap(D, all); } catch (e) {}
@@ -1239,7 +1506,7 @@
       try { renderImplied(D, all); } catch (e) {}
       try { renderMarketPct(D, all); } catch (e) {}
       try { renderReRate(D, all); } catch (e) {}
-    }).catch(function () {});
+    }).catch(function () {}).then(navOnce);
   }
 
   window.MFCCompany = { render: render };

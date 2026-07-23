@@ -61,7 +61,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 </script>
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
 <script src="screener-data.js?v=152"></script>
-<script src="../assets/mfc-company.js?v=2545"></script>
+<script src="../assets/mfc-company.js?v=2555"></script>
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
@@ -147,7 +147,13 @@ html[data-theme="dark"] .nav-port-btn:hover{background:rgba(120,160,240,.16);bor
 /* HERO */
 .hero-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -14px rgba(26,80,216,.20),0 30px 60px -30px rgba(26,80,216,.14);position:relative;overflow:hidden}
 .hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf)}
-.company-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+/* V25.5 — was flex + flex-wrap. Once the price block wrapped onto its own line
+   (any phone) it kept `text-align:right`, so the price floated at the far right
+   of an otherwise left-aligned card with a wide empty gutter beside it. A
+   2-column grid cannot wrap at all: the title column shrinks instead, and below
+   640px the header stacks with the price left-aligned like everything else. */
+.company-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:20px}
+.company-header > :first-child{min-width:0;overflow-wrap:anywhere}
 .company-title{font-size:24px;font-weight:800;color:var(--white);letter-spacing:-.025em}
 .sym-tag{background:rgba(26,80,216,0.08);border:0.5px solid rgba(26,80,216,0.2);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--accent2)}
 .company-name-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
@@ -160,7 +166,12 @@ html[data-theme="dark"] .nav-port-btn:hover{background:rgba(120,160,240,.16);bor
 .price-note{font-size:11px;color:var(--text3);margin-top:4px}
 
 /* KPI GRID */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:20px}
+/* V25.5 — the strip is ALWAYS exactly 12 KPIs (renderKPIs builds a fixed list),
+   and auto-fill packed 7 across at 1280px, leaving a ragged 7+5. 12 divides by
+   6/4/3/2, so a fixed ladder gives a complete rectangle at every width. */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:20px}
+@media(max-width:1180px){.kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:880px){.kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .kpi-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s;box-shadow:0 1px 2px rgba(15,23,42,.04),0 4px 12px -6px rgba(37,99,235,.12)}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--teal));opacity:.6;transition:opacity .25s}
 .kpi-card:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 32px -16px rgba(26,80,216,.25)}
@@ -193,15 +204,26 @@ html[data-theme="dark"] .nav-port-btn:hover{background:rgba(120,160,240,.16);bor
 .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 @media(max-width:960px){.two-col,.three-col{grid-template-columns:1fr}}
+@media(max-width:640px){
+  /* the header stacks — the price must stop hugging the right edge */
+  .company-header{grid-template-columns:minmax(0,1fr);gap:14px}
+  .price-block{text-align:left;padding-top:12px;border-top:0.5px solid var(--border)}
+}
 @media(max-width:600px){
   .container{padding:16px 14px}
-  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .kpi-card{padding:13px 14px}
   .kpi-value{font-size:18px}
   .company-title{font-size:21px}
   .current-price{font-size:28px}
   .two-col,.three-col{gap:12px}
 }
+/* V25.5 — below ~388px two KPI columns can no longer hold the widest value
+   ("₹17.44L Cr" measures 148px against a 149px box at 390px), so stack. This
+   matches scores/company.html, which carried the same rule at max-width:480px
+   — a breakpoint that stacked perfectly readable 2-column phones and left the
+   two company pages rendering the SAME strip differently at 390px. */
+@media(max-width:388px){.kpi-grid{grid-template-columns:minmax(0,1fr)}.kpi-card{padding:12px 14px}}
 
 /* Price & Trend panel */
 .pt-price{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:18px}

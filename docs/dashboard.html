@@ -2635,7 +2635,11 @@ function renderPortfolioMap(stocks) {
     const grow = Math.max(10, Math.round((w / maxW) * 100));
     const tk = escapeHtml(s.ticker || s.company_name || '—');
     const nm = escapeHtml(s.company_name || s.ticker || '');
-    return '<div class="pmap-tile" data-sector="' + escapeHtml(sector) + '" style="--pmi:' + i + ';flex-grow:' + grow + ';background:' + color + '22;border-color:' + color + '55;--lens-c:' + color + ';"'
+    // V25.5: data-y / data-rec let the Return view match a tile to its live
+    // price without re-deriving anything from the visible label.
+    return '<div class="pmap-tile" data-sector="' + escapeHtml(sector) + '"'
+      + ' data-y="' + escapeHtml(s.yahoo_ticker || '') + '" data-rec="' + (Number(s.recommended_price) || 0) + '"'
+      + ' style="--pmi:' + i + ';flex-grow:' + grow + ';background:' + color + '22;border-color:' + color + '55;--lens-c:' + color + ';"'
       + ' title="' + nm + ' · ' + escapeHtml(sector) + ' · ' + w.toFixed(1) + '% weight">'
       + '<span class="pmap-ticker">' + tk + '</span>'
       + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>' + w.toFixed(1) + '%</span>'
@@ -5607,6 +5611,236 @@ html[data-theme="dark"] .oneonone-card::after{
       });
     }catch(e){}
   });
+})();
+</script>
+<!-- ================================================================
+     MF V25.5 — PORTFOLIO MAP: a RETURN view beside the weight view
+     ----------------------------------------------------------------
+     The map already answers "how is my capital spread?" — tile width is
+     model weight and tile colour is sector. It could not answer the
+     question a member actually opens the dashboard for: "which of these
+     is working?" That answer was only available by reading 25 rows of
+     the picks table one at a time.
+     Every input already exists on the page: window._livePx (the 30s
+     price poll) and each pick's recommended_price. So the map gains a
+     second reading of the SAME mosaic — size still means weight, colour
+     now means live return since the rebalance. Nothing is recomputed:
+     the per-tile % is _retPct(rec, live), the identical basis the table
+     cells and the profit headline use, so the three can never disagree.
+     Fail-soft by construction: the toggle is only injected once live
+     prices have landed, and a tile with no price keeps the weight view.
+     ================================================================ -->
+<style id="mf-v255-pmap">
+.pmap-head .pmap-sub{ margin-left:auto; }
+.pmap-tog{
+  display:inline-flex; flex:0 0 auto; padding:2px; border-radius:999px;
+  border:0.5px solid var(--border2); background:var(--ink3); gap:2px;
+}
+.pmap-tog button{
+  -webkit-appearance:none; appearance:none; border:0; cursor:pointer;
+  padding:5px 12px; border-radius:999px; background:transparent;
+  font:inherit; font-size:11.5px; font-weight:700; letter-spacing:.01em;
+  color:var(--text3); transition:color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.pmap-tog button:hover{ color:var(--text); }
+.pmap-tog button[aria-pressed="true"]{
+  color:var(--white); background:var(--ink2);
+  box-shadow:0 1px 2px rgba(15,23,42,.06), 0 4px 12px -8px rgba(26,80,216,.5);
+}
+.pmap-tog button:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+
+/* Return view — the SIZE of a tile still encodes weight; only the colour
+   changes meaning, so the two views stay the same mosaic. Seven buckets
+   rather than a continuous ramp: a member reads "which band is this in",
+   and discrete bands survive both themes without per-theme JS. */
+.pmap-grid.mf255-ret .pmap-tile{ background:var(--rt-bg,var(--ink3)) !important; border-color:var(--rt-bd,var(--border2)) !important; }
+.pmap-grid.mf255-ret .pmap-wt{ display:none; }
+.pmap-ret{ display:none; font-size:10.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+.pmap-grid.mf255-ret .pmap-ret{ display:block; }
+/* Scoped to the card, NOT to .pmap-tile: the legend swatches carry only the
+   band class, so a `.pmap-tile.rt-*` selector left them transparent. These
+   rules declare custom properties only, so sharing them costs nothing. */
+#pmap-card .rt-up3{ --rt-bg:rgba(5,150,105,.30); --rt-bd:rgba(5,150,105,.62); }
+#pmap-card .rt-up2{ --rt-bg:rgba(5,150,105,.20); --rt-bd:rgba(5,150,105,.46); }
+#pmap-card .rt-up1{ --rt-bg:rgba(5,150,105,.11); --rt-bd:rgba(5,150,105,.30); }
+#pmap-card .rt-flat{ --rt-bg:rgba(100,116,139,.12); --rt-bd:rgba(100,116,139,.32); }
+#pmap-card .rt-dn1{ --rt-bg:rgba(220,38,38,.10); --rt-bd:rgba(220,38,38,.28); }
+#pmap-card .rt-dn2{ --rt-bg:rgba(220,38,38,.19); --rt-bd:rgba(220,38,38,.45); }
+#pmap-card .rt-dn3{ --rt-bg:rgba(220,38,38,.30); --rt-bd:rgba(220,38,38,.62); }
+#pmap-card .rt-na{ --rt-bg:var(--ink3); --rt-bd:var(--border2); }
+.pmap-grid.mf255-ret .rt-up1 .pmap-ret,
+.pmap-grid.mf255-ret .rt-up2 .pmap-ret,
+.pmap-grid.mf255-ret .rt-up3 .pmap-ret{ color:var(--green); }
+.pmap-grid.mf255-ret .rt-dn1 .pmap-ret,
+.pmap-grid.mf255-ret .rt-dn2 .pmap-ret,
+.pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:var(--red); }
+.pmap-grid.mf255-ret .rt-flat .pmap-ret,
+.pmap-grid.mf255-ret .rt-na .pmap-ret{ color:var(--text3); }
+/* dark: the same bands, lifted — the light red/green are too dark on the ink */
+html[data-theme="dark"] #pmap-card .rt-up3{ --rt-bg:rgba(52,211,153,.30); --rt-bd:rgba(52,211,153,.60); }
+html[data-theme="dark"] #pmap-card .rt-up2{ --rt-bg:rgba(52,211,153,.20); --rt-bd:rgba(52,211,153,.44); }
+html[data-theme="dark"] #pmap-card .rt-up1{ --rt-bg:rgba(52,211,153,.11); --rt-bd:rgba(52,211,153,.28); }
+html[data-theme="dark"] #pmap-card .rt-dn1{ --rt-bg:rgba(248,113,113,.11); --rt-bd:rgba(248,113,113,.28); }
+html[data-theme="dark"] #pmap-card .rt-dn2{ --rt-bg:rgba(248,113,113,.20); --rt-bd:rgba(248,113,113,.44); }
+html[data-theme="dark"] #pmap-card .rt-dn3{ --rt-bg:rgba(248,113,113,.31); --rt-bd:rgba(248,113,113,.60); }
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-up1 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-up2 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-up3 .pmap-ret{ color:#34d399; }
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn1 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn2 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
+
+/* legend — only shown in the return view */
+.pmap-key{ display:none; align-items:center; gap:9px; margin-top:13px; font-size:10.5px; color:var(--text3); flex-wrap:wrap; }
+.pmap-card.mf255-on .pmap-key{ display:flex; }
+.pmap-key-bar{ display:flex; height:7px; border-radius:4px; overflow:hidden; width:150px; flex:0 0 auto; }
+.pmap-key-bar i{ flex:1 1 0; background:var(--rt-bg,var(--ink3)); }
+@media (max-width:600px){
+  .pmap-head .pmap-sub{ margin-left:0; }
+  .pmap-tog{ margin-left:auto; }
+}
+@media (prefers-reduced-motion: reduce){ .pmap-tog button{ transition:none; } }
+</style>
+<script id="mf-v255-pmap-js">
+(function(){
+  "use strict";
+  var KEY = 'mfc_pmap_view';           // remembered per browser, like the other dashboard prefs
+  var BANDS = [
+    { max: -10, cls: 'rt-dn3' }, { max: -4, cls: 'rt-dn2' }, { max: -1, cls: 'rt-dn1' },
+    { max:   1, cls: 'rt-flat' }, { max:  4, cls: 'rt-up1' }, { max: 10, cls: 'rt-up2' },
+    { max: Infinity, cls: 'rt-up3' }
+  ];
+  var ALL = 'rt-dn3 rt-dn2 rt-dn1 rt-flat rt-up1 rt-up2 rt-up3 rt-na'.split(' ');
+
+  function band(r){
+    for (var i = 0; i < BANDS.length; i++) if (r <= BANDS[i].max) return BANDS[i].cls;
+    return 'rt-flat';
+  }
+  function mode(){ try { return localStorage.getItem(KEY) === 'return' ? 'return' : 'weight'; } catch(e){ return 'weight'; } }
+
+  // Repaint every tile from the live price map. Called on first paint, on each
+  // 30s repoll and after any re-render of the map.
+  function paint(){
+    var card = document.getElementById('pmap-card'), grid = document.getElementById('pmap-grid');
+    if (!card || !grid) return;
+    var px = window._livePx || {};
+    var tiles = grid.querySelectorAll('.pmap-tile');
+    if (!tiles.length) return;
+
+    var priced = 0;
+    for (var i = 0; i < tiles.length; i++){
+      var t = tiles[i];
+      var rec = Number(t.getAttribute('data-rec')) || 0;
+      var p = px[t.getAttribute('data-y')];
+      var ret = t.querySelector('.pmap-ret');
+      if (!ret){ ret = document.createElement('span'); ret.className = 'pmap-ret'; t.appendChild(ret); }
+      for (var k = 0; k < ALL.length; k++) t.classList.remove(ALL[k]);
+      if (!rec || !p || typeof p.price !== 'number'){ t.classList.add('rt-na'); ret.textContent = '—'; continue; }
+      // Same basis as the table cells and the profit headline — never a second
+      // definition of "return" that could drift from them.
+      var r = (p.price - rec) / rec * 100;
+      priced++;
+      t.classList.add(band(r));
+      ret.textContent = (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1) + '%';
+      var base = t.getAttribute('data-title-base');
+      if (!base){ base = t.getAttribute('title') || ''; t.setAttribute('data-title-base', base); }
+      t.setAttribute('title', base + ' · ' + (r >= 0 ? '+' : '−') + Math.abs(r).toFixed(1) + '% since rebalance');
+    }
+    if (!priced) hideToggle();
+    else ensureToggle();
+  }
+
+  function hideToggle(){
+    var tog = document.getElementById('pmap-tog'); if (tog) tog.remove();
+    apply('weight');
+  }
+
+  function apply(m){
+    var card = document.getElementById('pmap-card'), grid = document.getElementById('pmap-grid');
+    var sub  = document.getElementById('pmap-sub');
+    if (!card || !grid) return;
+    var on = m === 'return';
+    grid.classList.toggle('mf255-ret', on);
+    card.classList.toggle('mf255-on', on);
+    var tog = document.getElementById('pmap-tog');
+    if (tog){
+      var bs = tog.querySelectorAll('button');
+      for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', String(bs[i].dataset.m === m));
+    }
+    if (sub){
+      if (!sub.dataset.base) sub.dataset.base = sub.textContent;
+      // the holdings/sector count is still true in both views; only the last
+      // clause — what a tile's COLOUR means — changes.
+      sub.textContent = on
+        ? sub.dataset.base.replace(/tile size = model weight/, 'size = weight · colour = return')
+        : sub.dataset.base;
+    }
+    try { localStorage.setItem(KEY, m); } catch(e){}
+  }
+
+  function ensureToggle(){
+    var head = document.querySelector('#pmap-card .pmap-head');
+    if (!head || document.getElementById('pmap-tog')) { apply(mode()); return; }
+    var tog = document.createElement('div');
+    tog.id = 'pmap-tog'; tog.className = 'pmap-tog';
+    tog.setAttribute('role', 'group');
+    tog.setAttribute('aria-label', 'Colour the portfolio map by');
+    tog.innerHTML =
+      '<button type="button" data-m="weight" aria-pressed="true">Weight</button>' +
+      '<button type="button" data-m="return" aria-pressed="false">Return</button>';
+    head.appendChild(tog);
+    tog.addEventListener('click', function(e){
+      var b = e.target && e.target.closest ? e.target.closest('button[data-m]') : null;
+      if (b) apply(b.dataset.m);
+    });
+
+    var card = document.getElementById('pmap-card');
+    if (card && !document.getElementById('pmap-key')){
+      var key = document.createElement('div');
+      key.id = 'pmap-key'; key.className = 'pmap-key';
+      // the band classes only declare --rt-bg/--rt-bd custom properties, so the
+      // swatches can reuse them WITHOUT inheriting .pmap-tile's sizing, hover
+      // transform and cascade animation
+      key.innerHTML = '<span>−10% or worse</span>' +
+        '<span class="pmap-key-bar" aria-hidden="true">' +
+          ['rt-dn3','rt-dn2','rt-dn1','rt-flat','rt-up1','rt-up2','rt-up3']
+            .map(function(c){ return '<i class="' + c + '"></i>'; }).join('') +
+        '</span><span>+10% or better · since the rebalance</span>';
+      card.appendChild(key);
+    }
+    apply(mode());
+  }
+
+  // Hook the existing price painter rather than adding a second poll: whenever
+  // the table's live cells repaint, so does the map.
+  function hook(){
+    if (typeof window.paintLivePrices !== 'function') return false;
+    if (window.paintLivePrices.__mf255) return true;
+    var orig = window.paintLivePrices;
+    var wrapped = function(){
+      var out = orig.apply(this, arguments);
+      try { paint(); } catch(e){}
+      return out;
+    };
+    wrapped.__mf255 = true;
+    window.paintLivePrices = wrapped;
+    return true;
+  }
+
+  function boot(){
+    // The map and the prices land independently; poll briefly for whichever is
+    // last, then stop. No timer survives past the initial render.
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      hook();
+      var grid = document.getElementById('pmap-grid');
+      if (grid && grid.querySelector('.pmap-tile') && window._livePx){ try { paint(); } catch(e){} clearInterval(iv); }
+      else if (tries > 60) clearInterval(iv);      // ~60s, then give up quietly
+    }, 1000);
+  }
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
 <script defer src="assets/mfc-chrome.js?v=4"></script>
