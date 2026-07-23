@@ -63,11 +63,11 @@
  * would keep requesting ?v=1780 and keep the broken nav indefinitely — the
  * cache name is the only version these two documents have.
  */
-// V25.7: bumped because index.html — precached below as the offline navigation
-// fallback — changed its title and description. Online visitors get fresh HTML
-// (navigations are network-first), but the offline copy would otherwise keep
-// serving the pre-V25.7 homepage until some later release happened to bump this.
-const CACHE = 'mfc-v18';
+// V25.8: bumped because index.html — precached below as the offline navigation
+// fallback — changed its FAQ answers (SEBI registration attribution). Online
+// visitors get fresh HTML (navigations are network-first), but the offline copy
+// would otherwise keep serving the pre-V25.8 text.
+const CACHE = 'mfc-v19';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
