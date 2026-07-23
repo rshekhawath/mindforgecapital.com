@@ -128,7 +128,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
    640px the header stacks with the price left-aligned like everything else. */
 .company-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:20px}
 .company-header > :first-child{min-width:0;overflow-wrap:anywhere}
-.company-title{font-size:24px;font-weight:800;color:var(--white);letter-spacing:-.025em}
+/* margin:0 / line-height are the h1 reset — V25.6 promoted this from a div to an
+   <h1>, and the UA default (margin:.67em 0) would otherwise push the name row
+   apart on every company page. Type scale is unchanged. */
+.company-title{font-size:24px;font-weight:800;color:var(--white);letter-spacing:-.025em;margin:0;line-height:1.2}
 .sym-tag{background:rgba(26,80,216,0.08);border:0.5px solid rgba(26,80,216,0.2);border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--accent2)}
 .company-name-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .company-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text3);margin-top:4px}
@@ -361,8 +364,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <div class="hero-card">
     <div class="company-header">
       <div>
+        <!-- V25.6: this was a <div>, so ~2,100 company URLs shipped with NO <h1>
+             at all. The company name is the single strongest on-page signal for
+             the queries these pages should win. .company-title already carries
+             the full type scale; the reset below stops the UA h1 defaults
+             (2em / bold / block margins) changing it. -->
         <div class="company-name-row">
-          <div class="company-title" id="companyName">—</div>
+          <h1 class="company-title" id="companyName">—</h1>
           <span class="sym-tag" id="companySymbol">—</span>
         </div>
         <div class="company-meta" id="companyMeta"></div>
@@ -794,7 +802,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <script>
 const SYMBOL=(new URLSearchParams(location.search).get("symbol")||"RELIANCE").toUpperCase();
 let D=null;
-document.title=`${SYMBOL} Scorecard — MindForge Capital`;
+// V25.6 — this used to OVERWRITE the keyword-bearing head the bootstrap had just
+// written, downgrading "<SYM> Share Price, Integrity Score & Fundamentals" to a
+// bare "<SYM> Scorecard" before the data arrived. The bootstrap title is already
+// right for the symbol; mfcTitle() upgrades it once the real name lands.
+// The legal suffix is dropped so the intent words survive Google's ~60-char cut.
+function mfcShortName(n){return String(n||"").replace(/\s+(Limited|Ltd\.?|Corporation|Corp\.?)$/i,"").trim();}
+function mfcTitle(name,sym){const s=mfcShortName(name);
+  return (s&&s.toUpperCase()!==sym?`${s} (${sym})`:sym)+" Integrity Score & Fundamentals — MindForge Capital";}
 
 const fmtI=(v,p="")=>v==null?"—":`${p}${Number(v).toLocaleString("en-IN",{maximumFractionDigits:2})}`;
 const fmtN=(v,d=2)=>v==null?"—":Number(v).toFixed(d);
@@ -842,15 +857,33 @@ function mfcSEO(D, sym){
     const desc=`${name} (${sym})${sector?" · "+sector:""} — NSE stock${px?" at ₹"+Number(px).toLocaleString("en-IN"):""}. Integrity Score, valuation, profitability, growth and a full factor scorecard on MindForge Capital.`;
     const setMeta=(q,a,k,v)=>{let e=document.head.querySelector(q);if(!e){e=document.createElement("meta");e.setAttribute(a,k);document.head.appendChild(e);}e.setAttribute("content",v);};
     setMeta('meta[name="description"]',"name","description",desc);
-    setMeta('meta[property="og:title"]',"property","og:title",`${name} (${sym}) Scorecard — MindForge Capital`);
+    setMeta('meta[property="og:title"]',"property","og:title",mfcTitle(name,sym));
     setMeta('meta[property="og:description"]',"property","og:description",desc);
     setMeta('meta[property="og:type"]',"property","og:type","website");
     setMeta('meta[property="og:url"]',"property","og:url",canon);
     setMeta('meta[property="og:image"]',"property","og:image","https://mindforgecapital.com/assets/apple-touch-icon.png");
     setMeta('meta[name="twitter:card"]',"name","twitter:card","summary");
     let can=document.head.querySelector('link[rel="canonical"]');if(!can){can=document.createElement("link");can.rel="canonical";document.head.appendChild(can);}can.href=canon;
-    const ld={"@context":"https://schema.org","@type":"Corporation","name":name,"tickerSymbol":sym,"description":String(D.description||desc).slice(0,600)};
-    if(D.website)ld.url=D.website; if(D.industry)ld.industry=D.industry;
+    // V25.6 — was a bare Corporation node. Now a @graph that also declares the
+    // BreadcrumbList the page already renders visually and a WebPage tied to the
+    // site. Deliberately NO AggregateRating/Review: a star rating on a listed
+    // security would be structured-data spam and a recommendation this page does
+    // not make — the Integrity Score is a factor read-out, not a rating.
+    const corp={"@type":"Corporation","@id":canon+"#corp","name":name,"tickerSymbol":sym,
+      "description":String(D.description||desc).slice(0,600)};
+    if(D.website)corp.url=D.website;
+    if(D.industry)corp.industry=D.industry;
+    if(D.exchange)corp.identifier={"@type":"PropertyValue","propertyID":"NSE ticker","value":sym};
+    const ld={"@context":"https://schema.org","@graph":[
+      corp,
+      {"@type":"BreadcrumbList","itemListElement":[
+        {"@type":"ListItem","position":1,"name":"Integrity Score","item":"https://mindforgecapital.com/scores/"},
+        {"@type":"ListItem","position":2,"name":name}
+      ]},
+      {"@type":"WebPage","@id":canon,"url":canon,"name":mfcTitle(name,sym),"description":desc,
+       "primaryTopic":{"@id":canon+"#corp"},
+       "isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"}}
+    ]};
     let s=document.getElementById("mfc-jsonld");if(!s){s=document.createElement("script");s.type="application/ld+json";s.id="mfc-jsonld";document.head.appendChild(s);}s.textContent=JSON.stringify(ld);
   }catch(e){}
 }
@@ -859,7 +892,7 @@ MFCScores.load().then(()=>{
   document.getElementById("loadingState").style.display="none";
   if(!D){document.getElementById("nfSym").textContent=SYMBOL;document.getElementById("notFound").style.display="block";document.getElementById("bcSymbol").textContent="Not found";return;}
   document.getElementById("content").style.display="block";
-  document.title=`${D.name||SYMBOL} Scorecard — MindForge Capital`;
+  document.title=mfcTitle(D.name,SYMBOL);
   mfcSEO(D, SYMBOL);
   document.getElementById("bcSymbol").textContent=D.name||SYMBOL;
   renderHero();renderScorecard();renderKPIs();renderOverview();renderRatios();renderShareholding();renderAbout();

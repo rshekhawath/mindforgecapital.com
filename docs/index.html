@@ -840,6 +840,58 @@ html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--b
 .nl-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; }
 
 /* ── TEAM ── */
+/* ── V25.6: COMMON QUESTIONS ────────────────────────────────────────────────
+   Native <details>/<summary> rather than a JS accordion: the answer text sits
+   in the DOM whether or not the item is open, so it is crawlable and readable
+   with JS disabled, and keyboard/screen-reader behaviour comes for free. Rides
+   the same vars as every other section, so dark mode needs no override. */
+.faq { padding: 64px 0; border-top: 0.5px solid var(--border); position: relative; }
+.faq h2 { font-size: 42px; color: var(--white); margin-bottom: 34px; }
+.faq-list { display: flex; flex-direction: column; gap: 12px; max-width: 860px; }
+.faq-item {
+  background: var(--ink2); border: 0.5px solid var(--border);
+  border-radius: 16px; overflow: hidden; transition: border-color .2s ease, box-shadow .25s ease;
+}
+.faq-item:hover { border-color: var(--border2); }
+.faq-item[open] { border-color: var(--border2); box-shadow: 0 10px 30px -22px rgba(26,80,216,.45); }
+.faq-item > summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 20px 24px; cursor: pointer; list-style: none;
+  font-size: 17px; font-weight: 600; color: var(--white); letter-spacing: -.01em;
+}
+.faq-item > summary::-webkit-details-marker { display: none; }
+.faq-item > summary:hover { color: var(--accent2); }
+.faq-item > summary:focus-visible { outline: 2px solid var(--accent3); outline-offset: -3px; border-radius: 16px; }
+/* the +/− affordance is drawn, not a glyph, so it never depends on a font */
+.faq-item > summary i {
+  position: relative; flex: 0 0 auto; width: 15px; height: 15px;
+  transition: transform .28s cubic-bezier(.22,.8,.2,1);
+}
+.faq-item > summary i::before,
+.faq-item > summary i::after {
+  content: ''; position: absolute; left: 50%; top: 50%; background: var(--accent2);
+  border-radius: 2px; transform: translate(-50%,-50%);
+}
+.faq-item > summary i::before { width: 15px; height: 1.8px; }
+.faq-item > summary i::after  { width: 1.8px; height: 15px; transition: opacity .2s ease; }
+.faq-item[open] > summary i { transform: rotate(180deg); }
+.faq-item[open] > summary i::after { opacity: 0; }
+.faq-a { padding: 0 24px 22px; }
+.faq-a p { font-size: 15.5px; line-height: 1.75; color: var(--text2); font-weight: 300; margin: 0; }
+.faq-a a { color: var(--accent2); font-weight: 500; text-decoration: none; border-bottom: 1px solid rgba(37,99,235,.3); }
+.faq-a a:hover { border-bottom-color: var(--accent2); }
+.faq-a strong { color: var(--text); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) {
+  .faq-item, .faq-item > summary i, .faq-item > summary i::after { transition: none; }
+}
+@media (max-width: 768px) {
+  .faq { padding: 48px 0; }
+  .faq h2 { font-size: 30px; margin-bottom: 26px; }
+  .faq-item > summary { padding: 17px 18px; font-size: 15.5px; gap: 14px; }
+  .faq-a { padding: 0 18px 19px; }
+  .faq-a p { font-size: 14.5px; line-height: 1.72; }
+}
+
 .team { padding: 64px 0; border-top: 0.5px solid var(--border); }
 .team h2 { font-size: 42px; color: var(--white); margin-bottom: 16px; }
 .team-desc { font-size: 17px; color: var(--text2); font-weight: 300; margin-bottom: 40px; }
@@ -4423,6 +4475,159 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
   </div>
 </section>
 
+<!-- ============================================================================
+     V25.6 — COMMON QUESTIONS
+     ----------------------------------------------------------------------------
+     The homepage carried ~1,280 words, almost all of it headline-weight copy, and
+     answered none of the questions people actually type: what this costs, whether
+     it is SEBI registered, how often it rebalances, who places the trades. This
+     section is real, visible, crawlable prose that answers them — the same text
+     the FAQPage markup below declares (markup that describes hidden content is a
+     structured-data violation, so the two are generated from one source of truth).
+
+     Every answer is grounded in what the site already states elsewhere:
+       • prices from the strategy cards (₹1,499 / ₹2,499 / free)
+       • cadence from the same cards ("Monthly rebalance", "Weekly signals")
+       • the free-first-month launch offer from mfc-offer.js
+     Deliberately NO hard-coded return figures. The CAGR numbers are re-injected
+     monthly through the MFSTAT markers, so pasting them here would silently drift
+     out of sync with the cards above them — and a stale performance number on a
+     SEBI-registered site is a compliance problem, not just a stale number. The
+     answer points at where the live figure lives instead. Simulated figures are
+     called backtests here exactly as they are everywhere else on the site.
+     ========================================================================== -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-label">Common questions</div>
+    <h2 class="fade-up">Everything people ask before subscribing.</h2>
+    <!-- deliberately NOT .fade-up: that class starts at opacity:0 and is only
+         revealed by JS. Every other section can afford that, but this one exists
+         to be READ — by a visitor with JS blocked, and by a crawler weighing
+         FAQPage markup against what the page actually shows. The heading above
+         keeps its reveal; the answers themselves are painted from the start. -->
+    <div class="faq-list">
+
+      <details class="faq-item">
+        <summary><span>What is MindForge Capital?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>MindForge Capital is a SEBI-Registered Research Analyst publishing systematic, factor-based model portfolios for Indian markets. Three strategies are maintained — MindForge MultiAsset (an 8-asset ETF rotation), MindForge LargeMidcap 250 and MindForge SmallMicro 500 (25 stocks each). Every portfolio is rebuilt by a quantitative model on a fixed schedule and delivered to members as a plain list of holdings and weights. There is no discretionary stock-picking and no tips.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>How much does a subscription cost?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹1,499 per month and MindForge SmallMicro 500 is ₹2,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free. You can subscribe to one strategy or to all three. The <a href="calculator.html">Fee Calculator</a> compares a flat subscription against a percentage-of-AUM fee at your own portfolio size.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>Is MindForge Capital SEBI registered?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>Yes — MindForge Capital publishes research as a SEBI-Registered Research Analyst. We are not a portfolio manager, investment adviser, broker or fiduciary: we publish research, and you make and place every investment decision yourself. The registration details, the Investor Charter, the grievance-redressal escalation matrix and our complaints data are published in full on the <a href="disclosures.html">Disclosures</a> page.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>How often are the portfolios rebalanced?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard, with the stocks to add, hold and exit. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>Do I need a demat account, and who places the trades?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>You need your own demat and trading account with any Indian broker. MindForge Capital delivers the month's holdings and weights to your member dashboard, sized to whatever capital you enter; you place those orders yourself. We never take custody of your funds, never have access to your broker account, and never execute or place an order for you.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>What returns do the strategies show?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>Each strategy page publishes its 5-year <strong>backtest</strong> CAGR beside the same-period CAGR of its own benchmark index, plus the real live return for the current cycle where one exists. Backtested figures are simulated on historical data — they are not real trading results, they carry survivorship and other methodology limitations that are documented in full on the <a href="disclosures.html">Disclosures</a> page, and past performance does not indicate future results. Investing in equities, and particularly in small and microcap stocks, can result in permanent loss of capital.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>Are the Stock Scanner and Integrity Score free?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>Both are free and need no account. The <a href="screener/">Stock Scanner</a> filters 2,000+ NSE companies on 40+ fundamentals — valuation, profitability, growth and leverage — with a full equity report for every stock. The <a href="scores/">Integrity Score</a> grades every listed NSE company 0–100 on Quality (profitability and balance-sheet health) and Value (how cheaply it is priced). The <a href="fii-dii/">FII/DII activity</a> tracker and the monthly <a href="factor-report/">Factor Report</a> are free as well.</p></div>
+      </details>
+
+      <details class="faq-item">
+        <summary><span>How much capital do I need to start?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>There is no minimum — the dashboard sizes every position to the capital you enter, so the model works at any amount. Each strategy card does show a recommended investment (₹5,00,000 for MultiAsset, ₹15,00,000 for LargeMidcap 250 and ₹25,00,000 for SmallMicro 500), which is the level at which a 25-stock portfolio can be held in whole shares without the rounding materially distorting the model's intended weights. Below that the strategy still runs; the tracking error against the model simply widens.</p></div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- V25.6 — FAQPage markup. The text below is a VERBATIM plain-text copy of the
+     visible "Common questions" section near the end of <body>; markup that
+     describes content a visitor cannot see is a structured-data violation, so
+     the two must be edited together. A validation step re-extracts the section
+     text and diffs it against this block on every release. -->
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is MindForge Capital?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MindForge Capital is a SEBI-Registered Research Analyst publishing systematic, factor-based model portfolios for Indian markets. Three strategies are maintained — MindForge MultiAsset (an 8-asset ETF rotation), MindForge LargeMidcap 250 and MindForge SmallMicro 500 (25 stocks each). Every portfolio is rebuilt by a quantitative model on a fixed schedule and delivered to members as a plain list of holdings and weights. There is no discretionary stock-picking and no tips."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How much does a subscription cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹1,499 per month and MindForge SmallMicro 500 is ₹2,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free. You can subscribe to one strategy or to all three. The Fee Calculator compares a flat subscription against a percentage-of-AUM fee at your own portfolio size."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is MindForge Capital SEBI registered?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes — MindForge Capital publishes research as a SEBI-Registered Research Analyst. We are not a portfolio manager, investment adviser, broker or fiduciary: we publish research, and you make and place every investment decision yourself. The registration details, the Investor Charter, the grievance-redressal escalation matrix and our complaints data are published in full on the Disclosures page."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How often are the portfolios rebalanced?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard, with the stocks to add, hold and exit. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need a demat account, and who places the trades?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You need your own demat and trading account with any Indian broker. MindForge Capital delivers the month's holdings and weights to your member dashboard, sized to whatever capital you enter; you place those orders yourself. We never take custody of your funds, never have access to your broker account, and never execute or place an order for you."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What returns do the strategies show?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Each strategy page publishes its 5-year backtest CAGR beside the same-period CAGR of its own benchmark index, plus the real live return for the current cycle where one exists. Backtested figures are simulated on historical data — they are not real trading results, they carry survivorship and other methodology limitations that are documented in full on the Disclosures page, and past performance does not indicate future results. Investing in equities, and particularly in small and microcap stocks, can result in permanent loss of capital."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are the Stock Scanner and Integrity Score free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Both are free and need no account. The Stock Scanner filters 2,000+ NSE companies on 40+ fundamentals — valuation, profitability, growth and leverage — with a full equity report for every stock. The Integrity Score grades every listed NSE company 0–100 on Quality (profitability and balance-sheet health) and Value (how cheaply it is priced). The FII/DII activity tracker and the monthly Factor Report are free as well."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How much capital do I need to start?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "There is no minimum — the dashboard sizes every position to the capital you enter, so the model works at any amount. Each strategy card does show a recommended investment (₹5,00,000 for MultiAsset, ₹15,00,000 for LargeMidcap 250 and ₹25,00,000 for SmallMicro 500), which is the level at which a 25-stock portfolio can be held in whole shares without the rounding materially distorting the model's intended weights. Below that the strategy still runs; the tracking error against the model simply widens."
+        }
+      }
+    ]
+  }
+</script>
 <!-- FOOTER -->
 <footer>
   <div class="container">
