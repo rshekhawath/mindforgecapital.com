@@ -1855,67 +1855,20 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </div>
   </section>
 
-  <!-- ── V19.5 #1a+1b: PER-STRATEGY PERFORMANCE, LAST MONTH'S PICKS & FUND COMPARISON ──
-       Replaces the old single-strategy (LargeMidcap only) sample-preview. One
-       tabbed module now covers all three strategies:
-         • last completed month's BACKTESTED return vs its benchmark (labelled)
-         • a sample of last month's model picks (gated for the paid books)
-         • how the category's popular mutual funds compare (real returns + fees)
-       MONTHLY MAINTENANCE: picks live inside MFTOP:xx:N:field comment markers
-       (xx = ma|lm|sm|mc|sp) and the last-month figures inside MFSTAT:xx:lm_*
-       comment markers — update the value between each marker pair when the new
-       rebalance publishes. Nothing else needs to change. -->
+  <!-- ── V19.5 #1a+1b (V26.2): PER-STRATEGY PERFORMANCE (LIVE + BACKTEST CAGR),
+       MODEL PICKS & FUND COMPARISON ── One tabbed module covers all three
+       strategies: the LIVE since-rebalance move (the focus), the 5-year backtest
+       CAGR vs its benchmark, a sample of the model picks (gated for the paid
+       books), and how the category's popular funds compare (real returns + fees).
+       MONTHLY MAINTENANCE: picks live inside MFTOP:xx:N:field markers (xx =
+       ma|lm|sm); the CAGR/benchmark figures inside MFSTAT:xx:cagr / bench_cagr.
+       (The last-month MFSTAT:xx:lm_* markers were retired in V26.2.) -->
   <section class="ps-section" id="performance">
     <div class="container">
       <div class="ps-head">
-        <span class="sample-preview-eyebrow">PERFORMANCE &amp; LAST MONTH'S PICKS</span>
-        <h2>See last month's numbers — and its picks — for every strategy</h2>
-        <p class="sample-preview-sub">Each strategy's last completed month vs its benchmark (backtested), a sample of that month's model holdings, and how the category's popular mutual funds compare on returns and fees. <strong>Subscribers get the current month's full picks live</strong> — with prices, an allocation calculator and one-tap broker deeplinks.</p>
-      </div>
-
-      <!-- ═══ V26.0: LAST-MONTH-VS-BENCHMARK SCOREBOARD (consolidated, at-a-glance) ═══
-           A summary above the per-strategy tabs. LargeMidcap / SmallMicro show the last
-           completed BACKTEST month (MFSTAT markers — mirror the panels below + the compare
-           table, same monthly-maintenance pattern as ma:cagr). MultiAsset has no monthly
-           backtest series (free ETF-rotation book) so its card shows the LIVE since-rebalance
-           figure from live-perf.json via data-live — fail-soft: the whole card stays hidden
-           until .live-ready, and it is explicitly tagged LIVE so the two clocks never blur.
-           Every delta chip, bar width and win/lag tint is computed in #mf-lmv-js from these
-           values, so no derived number is hardcoded twice. -->
-      <div class="lmv-board" id="lmv-board">
-        <div class="lmv-cap">
-          <span class="lmv-cap-eyebrow">Last month vs benchmark</span>
-          <span class="lmv-cap-sub">Most recent period, each strategy against its own benchmark</span>
-        </div>
-        <div class="lmv-grid">
-          <!-- MultiAsset — live since-rebalance (hidden until live-perf.json lands) -->
-          <div class="lmv-card" data-lmv="ma" data-live-wrap>
-            <div class="lmv-top"><span class="lmv-nm"><span class="lmv-dot" style="background:var(--green)"></span>MultiAsset</span><span class="lmv-basis lmv-basis-live"><span class="ls-dot"></span>LIVE</span></div>
-            <div class="lmv-ret mf-live-num" data-lmv-ret data-live="ma:live">—</div>
-            <div class="lmv-delta" data-lmv-delta>&nbsp;</div>
-            <div class="lmv-track"><span class="lmv-zero"></span><span class="lmv-fill" data-lmv-fill style="width:0"></span><span class="lmv-tick" data-lmv-tick></span></div>
-            <div class="lmv-bench">vs <b data-live="ma:benchname">Nifty 50</b> · <span data-lmv-bench data-live="ma:bench">—</span></div>
-            <div class="lmv-since">since <b data-live="rebal">—</b> rebalance</div>
-          </div>
-          <!-- LargeMidcap 250 — last completed backtest month -->
-          <div class="lmv-card" data-lmv="lm">
-            <div class="lmv-top"><span class="lmv-nm"><span class="lmv-dot" style="background:var(--accent2)"></span>LargeMidcap 250</span><span class="lmv-basis">BACKTEST</span></div>
-            <div class="lmv-ret" data-lmv-ret><!--MFSTAT:lm:lm_ret-->−0.2%<!--/MFSTAT--></div>
-            <div class="lmv-delta" data-lmv-delta>&nbsp;</div>
-            <div class="lmv-track"><span class="lmv-zero"></span><span class="lmv-fill" data-lmv-fill style="width:0"></span><span class="lmv-tick" data-lmv-tick></span></div>
-            <div class="lmv-bench">vs Nifty LargeMidcap 250 · <span data-lmv-bench><!--MFSTAT:lm:lm_bench-->+1.1%<!--/MFSTAT--></span></div>
-            <div class="lmv-since"><!--MFSTAT:lm:lm_month-->June 2026<!--/MFSTAT--></div>
-          </div>
-          <!-- SmallMicro 500 — last completed backtest month -->
-          <div class="lmv-card" data-lmv="sm">
-            <div class="lmv-top"><span class="lmv-nm"><span class="lmv-dot" style="background:#7c3aed"></span>SmallMicro 500</span><span class="lmv-basis">BACKTEST</span></div>
-            <div class="lmv-ret" data-lmv-ret><!--MFSTAT:sm:lm_ret-->+12.0%<!--/MFSTAT--></div>
-            <div class="lmv-delta" data-lmv-delta>&nbsp;</div>
-            <div class="lmv-track"><span class="lmv-zero"></span><span class="lmv-fill" data-lmv-fill style="width:0"></span><span class="lmv-tick" data-lmv-tick></span></div>
-            <div class="lmv-bench">vs Nifty Smallcap 250 · <span data-lmv-bench><!--MFSTAT:sm:lm_bench-->+4.3%<!--/MFSTAT--></span></div>
-            <div class="lmv-since"><!--MFSTAT:sm:lm_month-->June 2026<!--/MFSTAT--></div>
-          </div>
-        </div>
+        <span class="sample-preview-eyebrow">PERFORMANCE &amp; MODEL PICKS</span>
+        <h2>See the live returns, the backtest, and the picks — for every strategy</h2>
+        <p class="sample-preview-sub">Each strategy's <strong>live model-portfolio return since the last rebalance</strong>, its 5-year backtested CAGR vs its benchmark, a sample of the model picks, and how the category's popular mutual funds compare on returns and fees. <strong>Subscribers get the current month's full picks live</strong> — with prices, an allocation calculator and one-tap broker deeplinks.</p>
       </div>
 
       <div class="ps-tabs" role="tablist" aria-label="Choose a strategy">
@@ -1938,7 +1891,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <div class="live-chip" data-live-wrap><span class="ls-dot"></span>Live this cycle <b data-live="ma:live">—</b> vs <b data-live="ma:bench">—</b></div>
               <div class="ps-perf-foot">This month's ETF mix updates live on the dashboard — free to everyone.</div>
             </div>
-            <h3 class="ps-picks-h">Last month's model holdings <span class="ps-picks-note">· 8 ETFs across equity, gold, silver &amp; debt</span></h3>
+            <h3 class="ps-picks-h">Model holdings <span class="ps-picks-note">· 8 ETFs across equity, gold, silver &amp; debt</span></h3>
             <div class="sample-preview-table-wrap">
               <table class="sample-preview-table">
                 <thead><tr><th>#</th><th>Holding</th><th>Ticker</th><th>Sleeve</th><th class="right">Weight</th></tr></thead>
@@ -1981,17 +1934,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="ps-grid">
           <div class="ps-card ps-picks-card">
             <div class="ps-perf">
-              <div class="ps-perf-tag">Last completed month · <b><!--MFSTAT:lm:lm_month-->June 2026<!--/MFSTAT--></b> · backtested</div>
+              <div class="ps-perf-tag">Backtested track record</div>
               <div class="ps-perf-row">
-                <div class="ps-perf-cell loss"><span class="ps-perf-lbl">LargeMidcap 250</span><span class="ps-perf-val"><!--MFSTAT:lm:lm_ret-->−0.2%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-cell win"><span class="ps-perf-lbl">LargeMidcap 250 · backtested CAGR</span><span class="ps-perf-val"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span></div>
                 <div class="ps-perf-vs">vs</div>
-                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty LargeMidcap 250</span><span class="ps-perf-val"><!--MFSTAT:lm:lm_bench-->+1.1%<!--/MFSTAT--></span></div>
-                <div class="ps-perf-cagr">5-yr backtest CAGR <b><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></b> vs <!--MFSTAT:lm:bench_cagr-->13.82%<!--/MFSTAT--></div>
-                <div class="live-chip" data-live-wrap><span class="ls-dot"></span>Live this cycle <b data-live="lm:live">—</b> vs <b data-live="lm:bench">—</b></div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty LargeMidcap 250</span><span class="ps-perf-val"><!--MFSTAT:lm:bench_cagr-->13.82%<!--/MFSTAT--></span></div>
               </div>
-              <div class="ps-perf-foot">One quiet month — the edge is the 5-year compounding, not any single rebalance.</div>
+              <div class="live-chip" data-live-wrap><span class="ls-dot"></span>Live this cycle <b data-live="lm:live">—</b> vs <b data-live="lm:bench">—</b></div>
+              <div class="ps-perf-foot">A factor-ranked large &amp; midcap book — the edge is the 5-year compounding. Track it live on the dashboard.</div>
             </div>
-            <h3 class="ps-picks-h">Last month's picks <span class="ps-picks-note">· a sample of the 25-stock book</span></h3>
+            <h3 class="ps-picks-h">Model picks <span class="ps-picks-note">· a sample of the 25-stock book</span></h3>
             <div class="sample-preview-table-wrap">
               <table class="sample-preview-table">
                 <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
@@ -2038,17 +1990,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="ps-grid">
           <div class="ps-card ps-picks-card">
             <div class="ps-perf">
-              <div class="ps-perf-tag">Last completed month · <b><!--MFSTAT:sm:lm_month-->June 2026<!--/MFSTAT--></b> · backtested</div>
+              <div class="ps-perf-tag">Backtested track record</div>
               <div class="ps-perf-row">
-                <div class="ps-perf-cell win"><span class="ps-perf-lbl">SmallMicro 500</span><span class="ps-perf-val"><!--MFSTAT:sm:lm_ret-->+12.0%<!--/MFSTAT--></span></div>
+                <div class="ps-perf-cell win"><span class="ps-perf-lbl">SmallMicro 500 · backtested CAGR</span><span class="ps-perf-val"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span></div>
                 <div class="ps-perf-vs">vs</div>
-                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty Smallcap 250</span><span class="ps-perf-val"><!--MFSTAT:sm:lm_bench-->+4.3%<!--/MFSTAT--></span></div>
-                <div class="ps-perf-cagr">5-yr backtest CAGR <b><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></b> vs <!--MFSTAT:sm:bench_cagr-->16.92%<!--/MFSTAT--></div>
-                <div class="live-chip" data-live-wrap><span class="ls-dot"></span>Live this cycle <b data-live="sm:live">—</b> vs <b data-live="sm:bench">—</b></div>
+                <div class="ps-perf-cell"><span class="ps-perf-lbl">Nifty Smallcap 250</span><span class="ps-perf-val"><!--MFSTAT:sm:bench_cagr-->16.92%<!--/MFSTAT--></span></div>
               </div>
-              <div class="ps-perf-foot">A strong month for high-conviction small &amp; microcaps — also the strategy's highest-volatility book.</div>
+              <div class="live-chip" data-live-wrap><span class="ls-dot"></span>Live this cycle <b data-live="sm:live">—</b> vs <b data-live="sm:bench">—</b></div>
+              <div class="ps-perf-foot">The highest-conviction small &amp; microcap book — also the highest-volatility. Track it live on the dashboard.</div>
             </div>
-            <h3 class="ps-picks-h">Last month's picks <span class="ps-picks-note">· a sample of the 25-stock book</span></h3>
+            <h3 class="ps-picks-h">Model picks <span class="ps-picks-note">· a sample of the 25-stock book</span></h3>
             <div class="sample-preview-table-wrap">
               <table class="sample-preview-table">
                 <thead><tr><th>#</th><th>Company</th><th>Ticker</th><th>Industry</th><th class="right">Weight</th></tr></thead>
@@ -2091,7 +2042,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
 
 
-      <p class="ps-disc">Strategy returns and CAGR are <b>backtested / simulated</b>, not realised, and the benchmark's last-month figure is the backtest's benchmark model. Mutual-fund returns are <b>actual</b> trailing returns for the Direct Plan (sourced from public fund pages, ~Jul 2026) and will change over time. Shown for comparison only — not investment advice or a recommendation of any fund. Past performance does not guarantee future results.</p>
+      <p class="ps-disc">Strategy CAGR figures are <b>backtested / simulated</b>, not realised; the live figures are model-portfolio moves since the last rebalance (not audited client returns). Mutual-fund returns are <b>actual</b> trailing returns for the Direct Plan (sourced from public fund pages, ~Jul 2026) and will change over time. Shown for comparison only — not investment advice or a recommendation of any fund. Past performance does not guarantee future results.</p>
     </div>
   </section>
 
@@ -2175,17 +2126,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <tbody>
         <tr class="cmp-grp"><td colspan="4"><span class="cmp-grp-inner">Performance</span></td></tr>
         <tr><td class="row-label">Backtested CAGR</td><td class="low"><span class="v"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="best"><span class="v"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td></tr>
-        <!-- V26.0: last completed month vs each strategy's own benchmark. LargeMidcap /
-             SmallMicro are backtest (MFSTAT — mirror the #performance panels + the scoreboard
-             above); MultiAsset has no monthly backtest series so it shows the LIVE
-             since-rebalance figure (data-live), tagged "live" — the two clocks stay distinct.
-             Return tints are set by #mf-lmv-js (LM/SM) and mfc-live.js (MA); nothing drifts. -->
-        <tr class="cmp-lm-row">
-          <td class="row-label">Last month <span class="lv-sub">(vs benchmark)</span></td>
-          <td><span class="cmp-lm" data-lm="ma"><span class="lm-ret mf-live-num" data-live="ma:live">—</span><span class="lm-vs">vs <span data-live="ma:bench">—</span></span><span class="lm-tag lm-tag-live">live</span></span></td>
-          <td class="col-feat"><span class="cmp-lm" data-lm="lm"><span class="lm-ret" data-lm-ret><!--MFSTAT:lm:lm_ret-->−0.2%<!--/MFSTAT--></span><span class="lm-vs">vs <!--MFSTAT:lm:lm_bench-->+1.1%<!--/MFSTAT--></span><span class="lm-tag">backtest · Jun</span></span></td>
-          <td><span class="cmp-lm" data-lm="sm"><span class="lm-ret" data-lm-ret><!--MFSTAT:sm:lm_ret-->+12.0%<!--/MFSTAT--></span><span class="lm-vs">vs <!--MFSTAT:sm:lm_bench-->+4.3%<!--/MFSTAT--></span><span class="lm-tag">backtest · Jun</span></span></td>
-        </tr>
         <!-- V25.3: the real figure, directly under the simulated one. Its own row
              (not a second number in the CAGR row) because the period differs —
              the label carries "since last rebalance" so the two are never read
@@ -2904,160 +2844,6 @@ function openRegModal(strategyName, price, strategyId){
 [data-theme="dark"] .ps-perf-cell.loss .ps-perf-val{ color:#f87171; }
 [data-theme="dark"] .ps-flat{ color:#34d399 !important; }
 </style>
-<style id="mf-lmv">
-/* ═══ V26.0 — Last-month-vs-benchmark scoreboard + compare-table row ═══
-   Scoreboard: 3 compact cards above the #performance tabs. Each card shows the
-   strategy's return (big, sign-tinted), a delta chip vs its own benchmark, a
-   centre-zero bar (green right / red left, shared scale) with a benchmark tick,
-   and the raw benchmark figure. MultiAsset card is a [data-live-wrap] → hidden
-   until live-perf.json lands. All figures/tints computed in #mf-lmv-js. */
-.lmv-board{ max-width:1040px; margin:0 auto 22px; }
-.lmv-cap{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:0 0 12px; }
-.lmv-cap-eyebrow{ font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
-.lmv-cap-sub{ font-size:12.5px; color:var(--text3); }
-/* 3-across on desktop, 1-per-row ≤860px — deliberately never a 2+1 band, which
-   would strand a lone card stretched to full width (count-coupled trap). */
-.lmv-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-@media (max-width:860px){ .lmv-grid{ grid-template-columns:1fr; } }
-.lmv-card{
-  min-width:0;
-  background:#fff; border:1px solid rgba(37,99,235,.16); border-radius:16px;
-  padding:15px 18px 14px; position:relative; overflow:hidden;
-  box-shadow:0 1px 2px rgba(12,24,49,.04), 0 16px 40px -26px rgba(26,80,216,.22);
-}
-.lmv-card::before{ content:''; position:absolute; left:0; top:0; right:0; height:3px;
-  background:linear-gradient(90deg,var(--accent),var(--accent3)); opacity:0; transition:opacity .3s; }
-.lmv-card:hover::before{ opacity:.75; }
-.lmv-card[data-live-wrap]{ display:none; }
-.lmv-card[data-live-wrap].live-ready{ display:block; animation:mfc-live-in .5s cubic-bezier(.22,1,.36,1); }
-.lmv-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px; }
-.lmv-nm{ display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:var(--white); }
-.lmv-dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; box-shadow:0 0 0 3px rgba(255,255,255,.25) inset; }
-.lmv-basis{ font-size:8.5px; font-weight:800; letter-spacing:.1em; color:var(--text3);
-  border:1px solid var(--border2,rgba(37,99,235,.2)); border-radius:999px; padding:2.5px 7px; white-space:nowrap; }
-.lmv-basis-live{ display:inline-flex; align-items:center; gap:4px; color:var(--green); border-color:rgba(5,150,105,.35); }
-.lmv-basis-live .ls-dot{ width:5px; height:5px; }
-.lmv-ret{ font-size:30px; font-weight:800; line-height:1; letter-spacing:-.02em; color:var(--white); font-variant-numeric:tabular-nums; }
-.lmv-card .lmv-ret.up{ color:#047857; }
-.lmv-card .lmv-ret.down{ color:#b91c1c; }
-.lmv-delta{ font-size:12px; font-weight:700; margin:6px 0 9px; min-height:1em; color:var(--text3); font-variant-numeric:tabular-nums; }
-.lmv-card.beat .lmv-delta{ color:#047857; }
-.lmv-card.lag .lmv-delta{ color:#b91c1c; }
-.lmv-track{ position:relative; height:8px; border-radius:5px; background:rgba(37,99,235,.08); overflow:hidden; margin-bottom:10px; }
-.lmv-zero{ position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(15,23,42,.18); transform:translateX(-.5px); z-index:2; }
-.lmv-fill{ position:absolute; top:0; bottom:0; width:0; z-index:1; transition:width .8s cubic-bezier(.22,1,.36,1); }
-.lmv-fill.pos{ left:50%; border-radius:0 4px 4px 0; background:linear-gradient(90deg,rgba(5,150,105,.5),#059669); }
-.lmv-fill.neg{ right:50%; border-radius:4px 0 0 4px; background:linear-gradient(270deg,rgba(220,38,38,.5),#dc2626); }
-.lmv-tick{ position:absolute; top:-2px; bottom:-2px; width:2px; left:50%; background:var(--text2); opacity:.7; border-radius:2px; z-index:3; transition:left .8s cubic-bezier(.22,1,.36,1); }
-.lmv-bench{ font-size:11.5px; color:var(--text2); line-height:1.45; }
-.lmv-bench b{ font-weight:700; }
-.lmv-since{ font-size:10.5px; color:var(--text3); margin-top:3px; }
-@media (prefers-reduced-motion:reduce){ .lmv-fill,.lmv-tick{ transition:none; } .lmv-card[data-live-wrap].live-ready{ animation:none; } }
-@media (max-width:600px){ .lmv-ret{ font-size:26px; } }
-
-/* compare-table "Last month" row cells */
-.cmp-lm{ display:inline-flex; flex-direction:column; align-items:center; gap:1px; line-height:1.25; }
-.cmp-lm .lm-ret{ font-size:14.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--text2); }
-.cmp-lm .lm-ret.up{ color:var(--green); }
-.cmp-lm .lm-ret.down{ color:#dc2626; }
-.cmp-lm .lm-vs{ font-size:11px; font-weight:600; color:var(--text3); }
-.cmp-lm .lm-tag{ font-size:8.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); }
-.cmp-lm .lm-tag-live{ color:var(--green); }
-
-/* dark mode */
-[data-theme="dark"] .lmv-card{ background:var(--ink2); border-color:var(--border2);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 20px 50px -30px rgba(0,0,0,.6); }
-[data-theme="dark"] .lmv-card .lmv-ret.up{ color:#34d399; }
-[data-theme="dark"] .lmv-card .lmv-ret.down{ color:#f87171; }
-[data-theme="dark"] .lmv-card.beat .lmv-delta{ color:#34d399; }
-[data-theme="dark"] .lmv-card.lag .lmv-delta{ color:#f87171; }
-[data-theme="dark"] .lmv-track{ background:rgba(120,160,240,.12); }
-[data-theme="dark"] .lmv-zero{ background:rgba(230,237,251,.22); }
-[data-theme="dark"] .cmp-lm .lm-ret.down{ color:#f87171; }
-</style>
-<script id="mf-lmv-js">
-/* V26.0 — computes the scoreboard deltas/bars/tints (and the compare-row tints)
-   from the canonical MFSTAT values + live-perf.json. Nothing here hardcodes a
-   figure: single source, so a monthly MFSTAT update propagates automatically. */
-(function(){
-  var board = document.getElementById('lmv-board');
-  var REDUCED = false;
-  try { REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches; } catch(e){}
-  function parsePct(t){
-    if(t==null) return NaN;
-    t = ('' + t).replace(/[−–—]/g,'-').replace(/[^0-9.\-]/g,'');
-    var n = parseFloat(t); return isFinite(n) ? n : NaN;
-  }
-  function ppTxt(d){ return (d>=0?'+':'−') + Math.abs(d).toFixed(1) + ' pp'; }
-
-  /* shared bar scale, from the static (backtest) cards so it never waits on live */
-  var SCALE = 1;
-  if(board){
-    [].forEach.call(board.querySelectorAll('.lmv-card'), function(c){
-      if(c.getAttribute('data-lmv') === 'ma') return;
-      var r = parsePct((c.querySelector('[data-lmv-ret]')||{}).textContent);
-      var b = parsePct((c.querySelector('[data-lmv-bench]')||{}).textContent);
-      if(isFinite(r)) SCALE = Math.max(SCALE, Math.abs(r));
-      if(isFinite(b)) SCALE = Math.max(SCALE, Math.abs(b));
-    });
-    SCALE *= 1.12;
-  }
-  function setBar(fill, tick, ret, bench){
-    if(fill){
-      var w = Math.max(0, Math.min(50, Math.abs(ret)/SCALE*50));
-      fill.classList.remove('pos','neg'); fill.classList.add(ret < 0 ? 'neg' : 'pos');
-      var apply = function(){ fill.style.width = w + '%'; };
-      if(REDUCED || typeof requestAnimationFrame !== 'function'){ apply(); }
-      else { requestAnimationFrame(function(){ requestAnimationFrame(apply); }); setTimeout(apply, 600); }
-    }
-    if(tick){
-      var pos = 50 + (bench/SCALE*50);
-      tick.style.left = Math.max(2, Math.min(98, pos)) + '%';
-    }
-  }
-  function renderCard(card, ret, bench){
-    if(!card || !isFinite(ret) || !isFinite(bench)) return;
-    var d = ret - bench;
-    card.classList.toggle('beat', d >= 0.05);
-    card.classList.toggle('lag',  d <  -0.05);
-    var retEl = card.querySelector('[data-lmv-ret]');
-    if(retEl && !/mf-live-num/.test(retEl.className)){   // MA is tinted by mfc-live.js
-      retEl.classList.remove('up','down','flat');
-      retEl.classList.add(ret > 0.05 ? 'up' : ret < -0.05 ? 'down' : 'flat');
-    }
-    var dEl = card.querySelector('[data-lmv-delta]');
-    if(dEl){ dEl.textContent = (d >= 0.05 ? '▲ ' : d < -0.05 ? '▼ ' : '▪ ') + ppTxt(d) + ' vs benchmark'; }
-    setBar(card.querySelector('[data-lmv-fill]'), card.querySelector('[data-lmv-tick]'), ret, bench);
-  }
-
-  /* static (backtest) scoreboard cards render now */
-  if(board){
-    [].forEach.call(board.querySelectorAll('.lmv-card'), function(c){
-      if(c.getAttribute('data-lmv') === 'ma') return;
-      renderCard(c, parsePct((c.querySelector('[data-lmv-ret]')||{}).textContent),
-                    parsePct((c.querySelector('[data-lmv-bench]')||{}).textContent));
-    });
-  }
-  /* MultiAsset (live) renders when live-perf.json arrives */
-  function renderMA(data){
-    if(!board) return;
-    var s = data && data.strategies && data.strategies.ma;
-    if(!s) return;
-    renderCard(board.querySelector('.lmv-card[data-lmv="ma"]'), s.live_pct, s.bench_pct);
-  }
-  if(window.MFCLive) renderMA(window.MFCLive);
-  document.addEventListener('mfc-live-ready', function(e){ renderMA((e && e.detail) || window.MFCLive); });
-
-  /* compare-table "Last month" row — tint LM/SM returns by sign (MA via mfc-live.js) */
-  [].forEach.call(document.querySelectorAll('.cmp-lm-row .cmp-lm[data-lm]'), function(cell){
-    if(cell.getAttribute('data-lm') === 'ma') return;
-    var r = cell.querySelector('.lm-ret'); if(!r) return;
-    var v = parsePct(r.textContent);
-    r.classList.remove('up','down','flat');
-    r.classList.add(v > 0.05 ? 'up' : v < -0.05 ? 'down' : 'flat');
-  });
-})();
-</script>
 <script id="mf-v195-perf-js">
 (function(){
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.ps-tab'));
@@ -3398,9 +3184,11 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 
 /* (A2) per-strategy ps-perf card — V26.1: "Live this cycle" is the focus.
    The live-chip becomes a prominent accent block with a big number; the backtest
-   CAGR / last-month figures demote. Higher specificity than mfc-live.js's injected
-   demotion so it wins. Fail-soft: no live → the chip stays hidden and the backtest
-   figure is the primary, exactly as before. */
+   CAGR figure demotes. Higher specificity than mfc-live.js's injected demotion so
+   it wins. Fail-soft: no live → the chip stays hidden and the backtest CAGR is the
+   primary, exactly as before. (V26.2 retired the last-month row/scoreboard, so the
+   .ps-perf-cagr demotion below is now a harmless no-op — all panels use the CAGR
+   row like MultiAsset.) */
 .ps-perf .live-chip.live-ready{
   width:100%; margin:12px 0 2px; padding:11px 13px; border-radius:11px;
   border:0.5px solid rgba(5,150,105,.28);
