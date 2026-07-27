@@ -1811,32 +1811,37 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <h1>One for every <span class="accent-text">risk appetite.</span></h1>
         <p class="sub">From capital-efficient multi-asset rotation to concentrated small-cap alpha. Select a strategy below to explore its approach, backtest results, and how to get started.</p>
       </div>
+      <!-- V26.1: LIVE leads this card (owner request). Each tile shows the strategy's
+           LIVE since-rebalance move as the hero figure via data-live; the 5Y backtest
+           CAGR demotes to a labelled secondary line. Fail-soft: until live-perf.json
+           lands, .ph-kpi-cycle is hidden and the backtest CAGR is the primary figure
+           (DOM order eyebrow→live→backtest→spark needs no reordering). The head pill
+           flips Backtest→Live via :has(). -->
       <div class="ph-kpi-card">
         <div class="ph-kpi-head">
           <span class="ph-kpi-title">Combined performance</span>
-          <span class="ph-kpi-live">Backtest</span>
+          <span class="ph-kpi-live ph-kpi-live-bt">Backtest</span>
+          <span class="ph-kpi-live ph-kpi-live-lv">Live · model</span>
         </div>
         <div class="ph-kpi-grid">
           <div class="ph-kpi-tile">
-            <div class="ph-kpi-val ph-green"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></div>
-            <div class="ph-kpi-lbl">MultiAsset · backtest CAGR</div>
-            <div class="ph-kpi-cycle" data-live-wrap><span class="ls-dot"></span><span class="lv-tag">LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span>since last rebalance</span></div>
+            <div class="ph-kpi-strat">MultiAsset</div>
+            <div class="ph-kpi-cycle" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span class="lv-since">since last rebalance</span></div>
+            <div class="ph-kpi-bt"><span class="ph-kpi-val ph-green"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></span><span class="ph-kpi-lbl">5Y backtest CAGR</span></div>
             <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 20 C 12 18, 24 15, 36 12 S 60 8, 80 4" fill="none" stroke="#0891b2" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div class="ph-kpi-tile">
-            <div class="ph-kpi-val ph-blue"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></div>
-            <div class="ph-kpi-lbl">LargeMidcap · backtest CAGR</div>
-            <div class="ph-kpi-cycle" data-live-wrap><span class="ls-dot"></span><span class="lv-tag">LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span>since last rebalance</span></div>
+            <div class="ph-kpi-strat">LargeMidcap 250</div>
+            <div class="ph-kpi-cycle" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span class="lv-since">since last rebalance</span></div>
+            <div class="ph-kpi-bt"><span class="ph-kpi-val ph-blue"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span><span class="ph-kpi-lbl">5Y backtest CAGR</span></div>
             <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 19, 24 14, 36 10 S 60 4, 80 2" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
           <div class="ph-kpi-tile" style="grid-column:1 / -1;">
-            <div class="ph-kpi-val ph-gold"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></div>
-            <div class="ph-kpi-lbl">SmallMicro 500 · backtest CAGR</div>
-            <div class="ph-kpi-cycle" data-live-wrap><span class="ls-dot"></span><span class="lv-tag">LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span>since last rebalance</span></div>
-            <!-- V18.7: this tile is full-width (grid-column 1/-1), so an 80-wide
-                 viewBox stretched ~2.25x flattened the curve vs the half tiles.
-                 Widen the viewBox to 180 and rescale x so it renders at the same
-                 curve density as the other sparklines. -->
+            <div class="ph-kpi-strat">SmallMicro 500</div>
+            <div class="ph-kpi-cycle" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span class="lv-since">since last rebalance</span></div>
+            <div class="ph-kpi-bt"><span class="ph-kpi-val ph-gold"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span><span class="ph-kpi-lbl">5Y backtest CAGR</span></div>
+            <!-- V18.7: full-width tile (grid-column 1/-1) → 180-wide viewBox so the
+                 curve renders at the same density as the half-width tiles. -->
             <svg class="ph-spark" viewBox="0 0 180 24" preserveAspectRatio="none"><path d="M0 22 C 27 16, 54 9, 81 5 S 135 2, 180 1" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
           </div>
         </div>
@@ -2215,11 +2220,8 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0891b2;margin-bottom:10px;">For first-time investors · Low risk · <span style="color:#059669;">Free</span></div>
         <h3 style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:6px;font-weight:700;letter-spacing:-.02em;">MindForge MultiAsset</h3>
         <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px;">8 NSE-listed ETFs rotated monthly across Nifty 50, Next 50, Midcap, Smallcap, Gold, Silver, Bharat Bond and NASDAQ — defensive by design.</p>
-        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
-          <span style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:28px;font-weight:800;color:#0891b2;letter-spacing:-.02em;"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></span>
-          <span style="font-size:12px;color:var(--text3);">CAGR · 5Y backtest</span>
-        </div>
-        <div class="hub-live" data-live-wrap><span class="ls-dot"></span><span style="font-weight:800;letter-spacing:.1em;font-size:9.5px;color:var(--green);">LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span>since last rebalance</span></div>
+        <div class="hub-live" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span class="lv-since">since last rebalance</span></div>
+        <div class="hub-bt"><span class="hub-bt-val" style="color:#0891b2;"><!--MFSTAT:ma:cagr-->22.9%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore MultiAsset →</span>
       </a>
       <a href="largemidcap.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
@@ -2227,11 +2229,8 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1a50d8;margin-bottom:10px;">Indian equity · Medium risk</div>
         <h3 style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:6px;font-weight:700;letter-spacing:-.02em;">MindForge LargeMidcap 250</h3>
         <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px;">Top 25 stocks from the Nifty LargeMidcap 250 universe, factor-ranked monthly, capped at 3 per industry.</p>
-        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
-          <span style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:28px;font-weight:800;color:#1a50d8;letter-spacing:-.02em;"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span>
-          <span style="font-size:12px;color:var(--text3);">CAGR · 5Y backtest</span>
-        </div>
-        <div class="hub-live" data-live-wrap><span class="ls-dot"></span><span style="font-weight:800;letter-spacing:.1em;font-size:9.5px;color:var(--green);">LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span>since last rebalance</span></div>
+        <div class="hub-live" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span class="lv-since">since last rebalance</span></div>
+        <div class="hub-bt"><span class="hub-bt-val" style="color:#1a50d8;"><!--MFSTAT:lm:cagr-->36.6%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore LargeMidcap 250 →</span>
       </a>
       <a href="smallmicro.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
@@ -2239,11 +2238,8 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#d97706;margin-bottom:10px;">Highest conviction · High risk</div>
         <h3 style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:6px;font-weight:700;letter-spacing:-.02em;">MindForge SmallMicro 500</h3>
         <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px;">Top 25 stocks from a 500-name Smallcap + Microcap universe — factor model tuned for thin-liquidity dynamics.</p>
-        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:14px;">
-          <span style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:28px;font-weight:800;color:#d97706;letter-spacing:-.02em;"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span>
-          <span style="font-size:12px;color:var(--text3);">CAGR · 5Y backtest</span>
-        </div>
-        <div class="hub-live" data-live-wrap><span class="ls-dot"></span><span style="font-weight:800;letter-spacing:.1em;font-size:9.5px;color:var(--green);">LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span>since last rebalance</span></div>
+        <div class="hub-live" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span class="lv-since">since last rebalance</span></div>
+        <div class="hub-bt"><span class="hub-bt-val" style="color:#d97706;"><!--MFSTAT:sm:cagr-->48.9%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore SmallMicro 500 →</span>
       </a>
     </div>
@@ -3366,20 +3362,58 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 .mf-live-num.down{ color:#dc2626; }
 .mf-live-num.flat{ color:var(--text2); }
 
-/* (A) hero "Combined performance" tiles.
-   NB: the class is .ph-kpi-cycle, NOT .ph-kpi-live — the head pill that reads
-   "Backtest" already owns .ph-kpi-live, and a `display:none` default on that
-   name hid the very label that marks the big CAGRs as simulated. Caught in
-   validation; the name stays distinct deliberately. */
+/* (A) hero "Combined performance" tiles — V26.1: LIVE is the hero figure.
+   Each tile is a flex column (strategy eyebrow → live block → backtest block →
+   spark). When live-perf.json lands (.ph-kpi-cycle.live-ready) the live % is the
+   big number and the backtest CAGR demotes to a labelled secondary line; until
+   then the live block is hidden and the backtest CAGR is the primary figure
+   (fail-soft — DOM order needs no reordering). Head pill flips Backtest→Live. */
+.ph-kpi-tile{ display:flex; flex-direction:column; }
+.ph-kpi-strat{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); margin-bottom:9px; }
+.ph-kpi-bt{ display:flex; flex-direction:column; }
 .ph-kpi-cycle{ display:none; }
-.ph-kpi-cycle.live-ready{
-  display:flex; align-items:center; gap:5px; flex-wrap:wrap;
-  margin-top:7px; padding-top:7px; border-top:0.5px solid var(--border);
-  font-size:11px; color:var(--text3); letter-spacing:.01em; line-height:1.35;
+.ph-kpi-tile .ph-kpi-cycle.live-ready{
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; margin:0 0 4px; line-height:1.05;
 }
-.ph-kpi-cycle .lv-tag{ font-size:9px; font-weight:800; letter-spacing:.12em; color:var(--green); }
+.ph-kpi-tile .ph-kpi-cycle.live-ready .lv-tag{
+  flex-basis:100%; display:inline-flex; align-items:center; gap:5px; margin-bottom:4px;
+  font-size:9px; font-weight:800; letter-spacing:.12em; color:var(--green);
+}
+.ph-kpi-tile .ph-kpi-cycle.live-ready .lv-tag .ls-dot{ width:6px; height:6px; }
+.ph-kpi-tile .ph-kpi-cycle.live-ready .mf-live-num{ font-size:27px; font-weight:800; letter-spacing:-.02em; line-height:1.02; }
+.ph-kpi-tile .ph-kpi-cycle.live-ready .lv-since{ font-size:10.5px; color:var(--text3); }
+/* demote the backtest block once live is showing */
+.ph-kpi-tile:has(.ph-kpi-cycle.live-ready) .ph-kpi-bt{
+  flex-direction:row; align-items:baseline; gap:7px; margin-top:8px; padding-top:9px; border-top:0.5px solid var(--border);
+}
+.ph-kpi-tile:has(.ph-kpi-cycle.live-ready) .ph-kpi-val{ font-size:15px; }
+.ph-kpi-tile:has(.ph-kpi-cycle.live-ready) .ph-kpi-lbl{ margin-top:0; text-transform:none; letter-spacing:.02em; font-size:10.5px; }
+/* head pill flips Backtest → Live when the card has live data */
+.ph-kpi-live-lv{ display:none; color:var(--green); background:rgba(5,150,105,.10); }
+.ph-kpi-live-lv::before{ background:var(--green); }
+.ph-kpi-card:has(.ph-kpi-cycle.live-ready) .ph-kpi-live-bt{ display:none; }
+.ph-kpi-card:has(.ph-kpi-cycle.live-ready) .ph-kpi-live-lv{ display:inline-flex; }
 .ph-kpi-foot .ph-kpi-cycle-foot{ display:none; }
 .ph-kpi-foot .ph-kpi-cycle-foot.live-ready{ display:inline; }
+
+/* (A2) per-strategy ps-perf card — V26.1: "Live this cycle" is the focus.
+   The live-chip becomes a prominent accent block with a big number; the backtest
+   CAGR / last-month figures demote. Higher specificity than mfc-live.js's injected
+   demotion so it wins. Fail-soft: no live → the chip stays hidden and the backtest
+   figure is the primary, exactly as before. */
+.ps-perf .live-chip.live-ready{
+  width:100%; margin:12px 0 2px; padding:11px 13px; border-radius:11px;
+  border:0.5px solid rgba(5,150,105,.28);
+  background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(45,212,191,.05));
+  font-size:12px; font-weight:600; color:var(--text2);
+  align-items:baseline; flex-wrap:wrap; gap:3px 8px;
+}
+.ps-perf .live-chip.live-ready b{ font-size:22px; font-weight:800; letter-spacing:-.01em; }
+.ps-section .ps-perf:has(.live-chip.live-ready) .ps-perf-val{ font-size:17px; }
+.ps-section .ps-perf:has(.live-chip.live-ready) .ps-perf-cagr{ font-size:11.5px; color:var(--text3); }
+[data-theme="dark"] .ps-perf .live-chip.live-ready{
+  border-color:rgba(52,211,153,.24); background:linear-gradient(135deg,rgba(5,150,105,.12),rgba(45,212,191,.06));
+}
 
 /* (B) fund-comparison tables — a caption line, NOT a cell in the 5-yr CAGR
    column: a since-rebalance move and a 5-year CAGR are different units and
@@ -3400,12 +3434,23 @@ tr.cmp-live-row.live-ready{ display:table-row; }
 tr.cmp-live-row .row-label .lv-sub{ font-weight:500; color:var(--text3); }
 tr.cmp-live-row td{ font-variant-numeric:tabular-nums; }
 
-/* (D) "Explore each strategy in depth" hub cards */
+/* (D) "Explore each strategy in depth" hub cards — V26.1: LIVE leads.
+   hub-live is the hero when live-perf.json lands; the backtest CAGR (.hub-bt)
+   demotes to a secondary line. Fail-soft: no live → hub-live hidden and .hub-bt
+   is the big primary figure. */
+.hub-bt{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px; }
+.hub-bt-val{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size:28px; font-weight:800; letter-spacing:-.02em; line-height:1; }
+.hub-bt-lbl{ font-size:12px; color:var(--text3); }
 .hub-live{ display:none; }
 .hub-live.live-ready{
-  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-  margin:-6px 0 14px; font-size:11.5px; color:var(--text3);
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; margin:0 0 10px; line-height:1.05;
 }
+.hub-live.live-ready .lv-tag{ flex-basis:100%; display:inline-flex; align-items:center; gap:5px; margin-bottom:4px; font-size:9.5px; font-weight:800; letter-spacing:.1em; color:var(--green); }
+.hub-live.live-ready .mf-live-num{ font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.02; }
+.hub-live.live-ready .lv-since{ font-size:11px; color:var(--text3); }
+.strat-hub-card:has(.hub-live.live-ready) .hub-bt{ margin-bottom:14px; }
+.strat-hub-card:has(.hub-live.live-ready) .hub-bt-val{ font-size:16px; }
+.strat-hub-card:has(.hub-live.live-ready) .hub-bt-lbl{ font-size:11px; }
 
 [data-theme="dark"] .ps-funds-live.live-ready{
   border-color:rgba(52,211,153,.24);
