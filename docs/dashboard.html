@@ -1694,7 +1694,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .pc-chip .pc-chip-lbl{color:#64748b;font-weight:700;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
     .pc-chip .pc-chip-ret{font-weight:800;font-variant-numeric:tabular-nums}
     .pc-chip .pc-chip-ret.up{color:#059669}.pc-chip .pc-chip-ret.down{color:#dc2626}
-    @media(max-width:640px){.pc-pct{font-size:32px}.profit-card{padding:18px}.pc-right{flex-direction:row;flex-wrap:wrap;gap:14px}}
+    /* V26.3: the live-profit headline loading state now reuses the skeleton-shimmer
+       idiom (same .skel-bar as the picks-table skel rows loading beside it) instead
+       of plain "Calculating…" text — a consistent, polished loading moment. */
+    .pc-skel-num{height:36px;width:132px;border-radius:9px;}
+    @media(max-width:640px){.pc-skel-num{height:30px;width:112px}.pc-pct{font-size:32px}.profit-card{padding:18px}.pc-right{flex-direction:row;flex-wrap:wrap;gap:14px}}
     /* per-row live price + return (inside the Rec. Price cell / mobile card) */
     td.price .px-rec{display:block;font-weight:600}
     td.price .px-live{display:block;font-size:12px;font-weight:600;color:#64748b;margin-top:3px;white-space:nowrap}
@@ -3677,7 +3681,7 @@ async function loadLiveProfit(force){
 function setProfitLoading(rebal){
   var d = document.getElementById('pc-rebal-date');
   if (d) d.textContent = rebal ? ('· ' + rebal.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})) : '';
-  var pct = document.getElementById('pc-pct'); if (pct){ pct.textContent = 'Calculating…'; pct.className = 'pc-pct pc-flat'; }
+  var pct = document.getElementById('pc-pct'); if (pct){ pct.innerHTML = '<span class="skel-bar pc-skel-num" role="status" aria-label="Calculating your live profit since the rebalance"></span>'; pct.className = 'pc-pct pc-flat'; }
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Fetching live prices for your holdings…';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
   var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
