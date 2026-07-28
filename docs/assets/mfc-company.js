@@ -443,6 +443,71 @@
       .mfx-sec-h{margin:24px 0 12px}
     }
     @media (prefers-reduced-motion:reduce){.mfx-nav-a{transition:none}}
+    /* ══ V26.6: MULTI-YEAR FINANCIALS (Qualtrim-style trend) ══════════════════ */
+    .mfx-fin{display:flex;flex-direction:column;gap:20px}
+    .mfx-cagr{display:flex;flex-wrap:wrap;gap:10px}
+    .mfx-cagr-i{flex:1 1 128px;min-width:118px;background:var(--ink);border:0.5px solid var(--border2);border-radius:12px;padding:11px 14px}
+    .mfx-cagr-l{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+    .mfx-cagr-v{font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--white);line-height:1.05;font-variant-numeric:tabular-nums}
+    .mfx-cagr-s{font-size:11px;color:var(--text3);margin-top:3px}
+    .mfx-fin-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:2px 0 -2px}
+    .mfx-fin-ht{font-size:12.5px;font-weight:700;color:var(--white)}
+    .mfx-fin-hk{font-size:11px;color:var(--text3);display:flex;gap:13px;flex-wrap:wrap}
+    .mfx-fin-hk span{display:inline-flex;align-items:center;gap:5px}
+    .mfx-fin-hk i{width:10px;height:10px;border-radius:3px;display:inline-block;font-style:normal}
+    .mfx-yr{display:grid;grid-template-columns:40px 1fr 132px;align-items:center;gap:11px}
+    .mfx-yr-y{font-size:12px;font-weight:800;color:var(--text2);font-variant-numeric:tabular-nums}
+    .mfx-yr-track{position:relative;height:26px;background:var(--ink);border:0.5px solid var(--border);border-radius:7px;overflow:hidden}
+    .mfx-yr-rev{position:absolute;left:0;top:0;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,rgba(96,165,250,.32),rgba(37,99,235,.42));transition:width .85s cubic-bezier(.22,1,.36,1)}
+    .mfx-yr-net{position:absolute;left:0;top:0;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .85s cubic-bezier(.22,1,.36,1);box-shadow:0 0 0 0.5px rgba(255,255,255,.10) inset}
+    .mfx-yr-net.neg{background:linear-gradient(90deg,#dc2626,#ef4444)}
+    .mfx-yr-v{text-align:right;line-height:1.25}
+    .mfx-yr-rv{font-size:12.5px;font-weight:800;color:var(--white);font-variant-numeric:tabular-nums}
+    .mfx-yr-nv{font-size:10.5px;color:var(--text3);font-variant-numeric:tabular-nums}
+    .mfx-yr-g{font-size:10px;font-weight:800;padding:0 5px;border-radius:5px;margin-left:5px;vertical-align:middle}
+    .mfx-yr-g.up{color:var(--green);background:rgba(5,150,105,.13)}
+    .mfx-yr-g.dn{color:var(--red);background:rgba(220,38,38,.12)}
+    [data-theme="dark"] .mfx-yr-g.up{color:#34d399} [data-theme="dark"] .mfx-yr-g.dn{color:#f87171}
+    .mfx-fcf-row{display:grid;grid-template-columns:40px 1fr 86px;align-items:center;gap:11px;font-size:12px}
+    .mfx-fcf-y{font-size:12px;font-weight:800;color:var(--text2);font-variant-numeric:tabular-nums}
+    .mfx-fcf-t{position:relative;height:16px;background:var(--ink);border:0.5px solid var(--border);border-radius:5px;overflow:hidden}
+    .mfx-fcf-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2)}
+    .mfx-fcf-b{position:absolute;top:0;height:100%;width:0;border-radius:4px;transition:width .8s cubic-bezier(.22,1,.36,1),left .8s cubic-bezier(.22,1,.36,1)}
+    .mfx-fcf-v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--white)}
+    .mfx-fin-tbl{width:100%;border-collapse:collapse;font-size:12px;min-width:420px}
+    .mfx-fin-tbl th{text-align:right;font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;padding:0 10px 8px;border-bottom:0.5px solid var(--border2);white-space:nowrap;font-variant-numeric:tabular-nums}
+    .mfx-fin-tbl th:first-child,.mfx-fin-tbl td:first-child{text-align:left;color:var(--text2)}
+    .mfx-fin-tbl td{padding:8px 10px;border-bottom:0.5px solid var(--border);white-space:nowrap;color:var(--text2);font-variant-numeric:tabular-nums;text-align:right}
+    .mfx-fin-tbl td:first-child{font-weight:600}
+    .mfx-fin-tbl tbody tr:last-child td{border-bottom:none}
+    .mfx-fin-tbl tbody tr:hover{background:rgba(37,99,235,.05)}
+    /* ── analyst / street targets ── */
+    .mfx-an{display:flex;flex-direction:column;gap:16px}
+    .mfx-an-top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+    .mfx-an-up{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+    .mfx-an-up.up{color:var(--green)} .mfx-an-up.dn{color:var(--red)}
+    [data-theme="dark"] .mfx-an-up.up{color:#34d399} [data-theme="dark"] .mfx-an-up.dn{color:#f87171}
+    .mfx-an-upl{font-size:11.5px;color:var(--text3);line-height:1.4}
+    .mfx-an-upl b{color:var(--white);font-weight:700}
+    .mfx-an-rate{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--text2);background:var(--ink);border:0.5px solid var(--border2);border-radius:999px;padding:5px 12px}
+    .mfx-an-rate i{width:8px;height:8px;border-radius:50%;display:inline-block;font-style:normal}
+    .mfx-an-scale{position:relative;height:40px;margin:6px 2px 2px}
+    .mfx-an-track{position:absolute;left:0;right:0;top:17px;height:6px;border-radius:3px;background:var(--ink);border:0.5px solid var(--border)}
+    .mfx-an-fill{position:absolute;top:17px;height:6px;left:0;width:0;border-radius:3px;background:linear-gradient(90deg,rgba(96,165,250,.5),var(--accent2));transition:width .85s cubic-bezier(.22,1,.36,1)}
+    .mfx-an-mean{position:absolute;top:9px;width:2px;height:22px;background:var(--accent2);border-radius:2px;transform:translateX(-1px)}
+    .mfx-an-cur{position:absolute;top:6px;width:12px;height:12px;border-radius:50%;background:var(--white);border:2.5px solid var(--gold);transform:translate(-6px,11px);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+    .mfx-an-lab{position:absolute;top:30px;font-size:10.5px;font-weight:700;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums}
+    .mfx-an-lab.hi{right:0} .mfx-an-lab.mn{transform:translateX(-50%);color:var(--accent2)}
+    .mfx-an-cur-lab{position:absolute;top:-2px;font-size:10px;font-weight:800;color:var(--gold);white-space:nowrap;transform:translateX(-50%)}
+    [data-theme="dark"] .mfx-an-cur-lab{color:#f0a836}
+    .mfx-an-grid{display:flex;flex-wrap:wrap;gap:9px}
+    .mfx-an-cell{flex:1 1 96px;min-width:88px;background:var(--ink);border:0.5px solid var(--border2);border-radius:10px;padding:9px 12px}
+    .mfx-an-cell .l{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+    .mfx-an-cell .v{font-size:15px;font-weight:800;color:var(--white);font-variant-numeric:tabular-nums}
+    @media (max-width:600px){
+      .mfx-yr{grid-template-columns:34px 1fr 108px;gap:8px}
+      .mfx-yr-v{line-height:1.2}
+    }
     `;
     var s = document.createElement("style");
     s.id = "mfx-style";
@@ -564,6 +629,10 @@
         "</div>" +
       "</div>") +
       sec("Financials", 2, "The financials", "where the money goes and what is left",
+      '<div class="card" id="mfxFinCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">Financials — the multi-year trend</span><span class="mfx-src" id="mfxFinSrc">annual · Yahoo Finance</span></div>' +
+        '<div class="card-body"><div class="mfx-fin" id="mfxFinBody"></div></div>' +
+      "</div>" +
       '<div class="two-col">' +
         '<div class="card" id="mfxFlowCard" style="display:none">' +
           '<div class="card-header"><span class="card-title">How the money flows</span><span class="mfx-src">% of revenue</span></div>' +
@@ -613,6 +682,11 @@
         '<div class="card-body"><p class="mfx-ql-lead" id="mfxReRateLead"></p>' +
           '<div class="mfx-tablewrap"><table class="mfx-ladder" id="mfxReRateTable"></table></div>' +
           '<p class="mfx-foot" id="mfxReRateFoot"></p></div>' +
+      "</div>" +
+      '<div class="card" id="mfxAnalystCard" style="display:none">' +
+        '<div class="card-header"><span class="card-title">The street\'s price targets</span><span class="mfx-src">third-party consensus · via Yahoo Finance</span></div>' +
+        '<div class="card-body"><div class="mfx-an" id="mfxAnalystBody"></div>' +
+          '<p class="mfx-foot">Aggregated <b>third-party</b> sell-side estimates published by Yahoo Finance — <b>not</b> MindForge Capital research, a price target, or investment advice. Coverage of Indian names is often thin; treat as one external data point.</p></div>' +
       "</div>") +
       // title is passed RAW — sec() escapes it for both the heading and the
       // data-sec-title the contents bar reads back, so pre-escaping it here
@@ -1476,6 +1550,174 @@
     }
   }
 
+  // ══ V26.6: multi-year financials + street targets ══════════════════════════
+  //    Powered by the additive /screener/fin/<SYMBOL>.json layer (screener/
+  //    fetch_financials.py). Both modules are fail-soft: if the file is absent
+  //    (a stock not yet covered) their cards stay hidden and nothing else
+  //    changes. Bars carry data-grow-* and are wired via growOnReveal, so they
+  //    animate in the same idiom as every other panel.
+  function _safeFin(sym) { return String(sym == null ? "" : sym).replace(/[^A-Za-z0-9\-_]/g, "_").toUpperCase(); }
+  function fetchFin(sym) {
+    var s = _safeFin(sym);
+    if (!s) return Promise.resolve(null);
+    return fetch("/screener/fin/" + encodeURIComponent(s) + ".json", { credentials: "omit" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+  function crAbbr(raw) { var v = num(raw); return v == null ? "—" : crStr(v / 1e7); }
+  function cagrPct(first, last, years) {
+    first = num(first); last = num(last);
+    if (first == null || last == null || first <= 0 || last <= 0 || years <= 0) return null;
+    return (Math.pow(last / first, 1 / years) - 1) * 100;
+  }
+  function fyLbl(y) { return "FY" + String(y).slice(-2); }
+
+  function renderFinancials(D, fin) {
+    var card = el("mfxFinCard"), body = el("mfxFinBody");
+    if (!card || !body) return;
+    var A = (fin && fin.annual) || [];
+    A = A.filter(function (a) { return num(a.revenue) != null; });
+    if (A.length < 2) return; // fail-soft: leave the card hidden
+
+    var maxRev = 0, maxAbsFcf = 0, hasFcf = false, hasEps = false, hasGp = false, hasOcf = false, hasOpInc = false;
+    A.forEach(function (a) {
+      var r = num(a.revenue); if (r != null) maxRev = Math.max(maxRev, r);
+      var f = num(a.fcf); if (f != null) { hasFcf = true; maxAbsFcf = Math.max(maxAbsFcf, Math.abs(f)); }
+      if (num(a.eps) != null) hasEps = true;
+      if (num(a.gross_profit) != null) hasGp = true;
+      if (num(a.op_cashflow) != null) hasOcf = true;
+      if (num(a.operating_income) != null) hasOpInc = true;
+    });
+    if (!(maxRev > 0)) return;
+
+    var first = A[0], last = A[A.length - 1], yrs = A.length - 1, out = [];
+
+    // headline chips
+    var chips = [];
+    var rc = cagrPct(first.revenue, last.revenue, yrs);
+    if (rc != null) chips.push(["Revenue CAGR", (rc >= 0 ? "+" : "") + rc.toFixed(1) + "%", yrs + "-yr"]);
+    var nc = cagrPct(first.net_income, last.net_income, yrs);
+    if (nc != null) chips.push(["Net-profit CAGR", (nc >= 0 ? "+" : "") + nc.toFixed(1) + "%", yrs + "-yr"]);
+    var lni = num(last.net_income), lrv = num(last.revenue);
+    if (lni != null && lrv > 0) chips.push(["Net margin", (lni / lrv * 100).toFixed(1) + "%", fyLbl(last.year)]);
+    if (num(last.fcf) != null) chips.push(["Free cash flow", crAbbr(last.fcf), fyLbl(last.year)]);
+    if (chips.length) out.push('<div class="mfx-cagr">' + chips.map(function (c) {
+      return '<div class="mfx-cagr-i"><div class="mfx-cagr-l">' + esc(c[0]) + '</div><div class="mfx-cagr-v">' + esc(c[1]) + '</div><div class="mfx-cagr-s">' + esc(c[2]) + '</div></div>';
+    }).join("") + "</div>");
+
+    // revenue + net-profit per-year bars
+    out.push('<div><div class="mfx-fin-h"><span class="mfx-fin-ht">Revenue &amp; net profit</span>' +
+      '<span class="mfx-fin-hk"><span><i style="background:linear-gradient(90deg,rgba(96,165,250,.4),rgba(37,99,235,.5))"></i>Revenue</span>' +
+      '<span><i style="background:linear-gradient(90deg,var(--accent),var(--accent2))"></i>Net profit</span></span></div>');
+    A.forEach(function (a, i) {
+      var r = num(a.revenue), n = num(a.net_income);
+      var revW = r != null ? Math.max(1.5, r / maxRev * 100) : 0;
+      var netW = n != null ? Math.max(0, Math.abs(n) / maxRev * 100) : 0;
+      var nm = (n != null && r > 0) ? (n / r * 100) : null, g = null;
+      if (i > 0) { var pr = num(A[i - 1].revenue); if (pr && r != null && pr > 0) g = (r - pr) / pr * 100; }
+      out.push('<div class="mfx-yr"><div class="mfx-yr-y">' + esc(fyLbl(a.year)) + '</div>' +
+        '<div class="mfx-yr-track"><div class="mfx-yr-rev" data-grow-w="' + revW.toFixed(2) + '%"></div>' +
+        '<div class="mfx-yr-net' + (n != null && n < 0 ? " neg" : "") + '" data-grow-w="' + netW.toFixed(2) + '%"></div></div>' +
+        '<div class="mfx-yr-v"><div class="mfx-yr-rv">' + crAbbr(r) +
+        (g != null ? '<span class="mfx-yr-g ' + (g >= 0 ? "up" : "dn") + '">' + (g >= 0 ? "▲" : "▼") + Math.abs(g).toFixed(0) + "%</span>" : "") +
+        '</div><div class="mfx-yr-nv">net ' + crAbbr(n) + (nm != null ? " · " + nm.toFixed(1) + "%" : "") + "</div></div></div>");
+    });
+    out.push("</div>");
+
+    // free cash flow diverging bars
+    if (hasFcf && maxAbsFcf > 0) {
+      out.push('<div><div class="mfx-fin-h"><span class="mfx-fin-ht">Free cash flow</span><span class="mfx-fin-hk">operating cash flow − capex</span></div>');
+      A.forEach(function (a) {
+        var f = num(a.fcf); if (f == null) return;
+        var pos = f >= 0, w = Math.min(50, Math.abs(f) / maxAbsFcf * 50), left = pos ? 50 : 50 - w;
+        var color = pos ? "linear-gradient(90deg,var(--green),#34d399)" : "linear-gradient(90deg,#ef4444,#dc2626)";
+        out.push('<div class="mfx-fcf-row"><div class="mfx-fcf-y">' + esc(fyLbl(a.year)) + '</div>' +
+          '<div class="mfx-fcf-t"><div class="mfx-fcf-mid"></div>' +
+          '<div class="mfx-fcf-b" style="background:' + color + '" data-grow-w="' + w.toFixed(2) + '%" data-grow-left="' + left.toFixed(2) + '%"></div></div>' +
+          '<div class="mfx-fcf-v" style="color:' + (pos ? "var(--green)" : "var(--red)") + '">' + crAbbr(f) + "</div></div>");
+      });
+      out.push("</div>");
+    }
+
+    // compact statement table
+    var rowsDef = [["Revenue", "revenue", 1], ["Gross profit", "gross_profit", hasGp],
+      ["Operating income", "operating_income", hasOpInc], ["Net profit", "net_income", 1],
+      ["Net margin", "_nm", 1], ["Operating cash flow", "op_cashflow", hasOcf],
+      ["Free cash flow", "fcf", hasFcf], ["EPS (₹)", "eps", hasEps]];
+    var thh = "<th>Figure</th>" + A.map(function (a) { return "<th>" + esc(fyLbl(a.year)) + "</th>"; }).join("");
+    var trs = rowsDef.filter(function (r) { return r[2]; }).map(function (rd) {
+      var tds = A.map(function (a) {
+        var v;
+        if (rd[1] === "_nm") { var ni = num(a.net_income), rv = num(a.revenue); v = (ni != null && rv > 0) ? (ni / rv * 100).toFixed(1) + "%" : "—"; }
+        else if (rd[1] === "eps") { var e = num(a.eps); v = e != null ? fx(e, 1) : "—"; }
+        else v = crAbbr(a[rd[1]]);
+        return "<td>" + v + "</td>";
+      }).join("");
+      return "<tr><td>" + rd[0] + "</td>" + tds + "</tr>";
+    }).join("");
+    out.push('<div class="mfx-tablewrap"><table class="mfx-fin-tbl"><thead><tr>' + thh + "</tr></thead><tbody>" + trs + "</tbody></table></div>");
+
+    body.innerHTML = out.join("");
+    var src = el("mfxFinSrc"); if (src) src.textContent = "annual · " + fyLbl(first.year) + "–" + fyLbl(last.year) + " · Yahoo Finance";
+    card.style.display = "";
+    growOnReveal(card);
+  }
+
+  function renderAnalyst(D, fin) {
+    var card = el("mfxAnalystCard"), body = el("mfxAnalystBody");
+    if (!card || !body) return;
+    var an = fin && fin.analyst; if (!an) return;
+    var cur = num(an.current) != null ? num(an.current) : num(D.current_price);
+    var mean = num(an.target_mean), hi = num(an.target_high), lo = num(an.target_low), nA = num(an.n_analysts);
+    if (mean == null || cur == null || cur <= 0) return; // need a mean target + a price to say anything
+
+    var up = (mean - cur) / cur * 100;
+    // Scale spans every value that is present (incl. the current price, which can
+    // sit below the low target or above the high one) so no marker falls off the
+    // bar, with a little breathing room at each end.
+    var vals = [cur, mean]; if (lo != null) vals.push(lo); if (hi != null) vals.push(hi);
+    var rLo = Math.min.apply(null, vals), rHi = Math.max.apply(null, vals);
+    var pad = (rHi - rLo) * 0.06 || Math.max(1, mean * 0.03);
+    rLo -= pad; rHi += pad;
+    var span = (rHi - rLo) || 1;
+    function pos(v) { return Math.max(0, Math.min(100, (v - rLo) / span * 100)); }
+    // anchor a label so it never overflows the ends of the track
+    function labStyle(p) { return "left:" + p.toFixed(1) + "%" + (p < 12 ? "" : p > 88 ? ";transform:translateX(-100%)" : ";transform:translateX(-50%)"); }
+    var curP = pos(cur), meanP = pos(mean);
+    var fillLeft = Math.min(curP, meanP), fillW = Math.abs(meanP - curP);
+
+    var rec = String(an.recommendation || "").toLowerCase();
+    var recMap = { strong_buy: ["Strong buy", "var(--green)"], buy: ["Buy", "var(--green)"], hold: ["Hold", "var(--gold)"], underperform: ["Underperform", "var(--red)"], sell: ["Sell", "var(--red)"] };
+    var ri = recMap[rec], out = [];
+
+    out.push('<div class="mfx-an-top"><div><div class="mfx-an-up ' + (up >= 0 ? "up" : "dn") + '">' +
+      (up >= 0 ? "+" : "") + up.toFixed(1) + '%</div><div class="mfx-an-upl">' + (up >= 0 ? "upside" : "downside") +
+      ' to the <b>₹' + fx(mean, 0) + "</b> mean target<br>from <b>₹" + fx(cur, 0) + "</b> today</div></div>" +
+      (ri ? '<span class="mfx-an-rate"><i style="background:' + ri[1] + '"></i>Consensus: ' + esc(ri[0]) + "</span>" : "") + "</div>");
+
+    out.push('<div class="mfx-an-scale"><div class="mfx-an-track"></div>' +
+      '<div class="mfx-an-fill" style="left:' + fillLeft.toFixed(1) + "%;background:" + (up >= 0 ? "linear-gradient(90deg,rgba(52,211,153,.5),var(--green))" : "linear-gradient(90deg,#ef4444,#dc2626)") + '" data-grow-w="' + fillW.toFixed(1) + '%"></div>' +
+      '<div class="mfx-an-mean" style="left:' + meanP.toFixed(1) + '%"></div>' +
+      '<div class="mfx-an-cur" style="left:' + curP.toFixed(1) + '%"></div>' +
+      '<div class="mfx-an-cur-lab" style="' + labStyle(curP) + '">now</div>' +
+      (lo != null ? '<div class="mfx-an-lab" style="' + labStyle(pos(lo)) + '">Low ₹' + fx(lo, 0) + "</div>" : "") +
+      '<div class="mfx-an-lab mn" style="' + labStyle(meanP) + '">Avg ₹' + fx(mean, 0) + "</div>" +
+      (hi != null ? '<div class="mfx-an-lab" style="' + labStyle(pos(hi)) + '">High ₹' + fx(hi, 0) + "</div>" : "") + "</div>");
+
+    var cells = [];
+    if (lo != null) cells.push(["Low target", "₹" + fx(lo, 0)]);
+    cells.push(["Avg target", "₹" + fx(mean, 0)]);
+    if (hi != null) cells.push(["High target", "₹" + fx(hi, 0)]);
+    if (nA != null) cells.push(["Analysts", String(nA)]);
+    out.push('<div class="mfx-an-grid">' + cells.map(function (c) {
+      return '<div class="mfx-an-cell"><div class="l">' + esc(c[0]) + '</div><div class="v">' + esc(c[1]) + "</div></div>";
+    }).join("") + "</div>");
+
+    body.innerHTML = out.join("");
+    card.style.display = "";
+    growOnReveal(card);
+  }
+
   function render(D) {
     if (!D) return;
     try { injectStyle(); } catch (e) {}
@@ -1497,7 +1739,15 @@
     var navBuilt = false;
     function navOnce() { if (navBuilt) return; navBuilt = true; try { buildReportNav(); } catch (e) {} }
     setTimeout(navOnce, 5000);
-    universe().then(function (all) {
+    // V26.6: the additive financials layer is fetched in parallel; the contents
+    // bar waits for BOTH it and the universe so the Financials/Valuation sections'
+    // visibility is settled before the nav is built. The fin files are tiny static
+    // JSON and the fetch is fail-soft (404 → null), so this adds no meaningful wait.
+    var finP = fetchFin(D.symbol).then(function (fin) {
+      try { renderFinancials(D, fin); } catch (e) {}
+      try { renderAnalyst(D, fin); } catch (e) {}
+    }).catch(function () {});
+    var uniP = universe().then(function (all) {
       all = all || [];
       try { fillCap(D, all); } catch (e) {}
       try { renderScale(D, all); } catch (e) {}
@@ -1506,7 +1756,8 @@
       try { renderImplied(D, all); } catch (e) {}
       try { renderMarketPct(D, all); } catch (e) {}
       try { renderReRate(D, all); } catch (e) {}
-    }).catch(function () {}).then(navOnce);
+    }).catch(function () {});
+    Promise.all([uniP, finP]).catch(function () {}).then(navOnce);
   }
 
   window.MFCCompany = { render: render };
