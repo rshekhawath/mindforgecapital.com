@@ -451,6 +451,13 @@ async function verifyOTP() {
   try {
     var res = await fetch(APPS_SCRIPT_URL + '?action=verify_otp&email=' + encodeURIComponent(_email) + '&otp=' + encodeURIComponent(otp));
     var data = await res.json();
+    // V26.5: drop retired strategies (Multicap / S&P 500 / All-Access, gone since
+    // V24.4) BEFORE the length check, so a user whose ONLY rows are retired still
+    // gets the clean "no active subscriptions" message rather than an empty list —
+    // and they're never seeded into the dashboard switcher registry below.
+    if (data.subscriptions && data.subscriptions.length) {
+      data.subscriptions = data.subscriptions.filter(function(s){ return !isRetiredStrategy(s && s.strategy); });
+    }
     if (data.error) {
       showError('otp-error', data.error);
     } else if (data.subscriptions && data.subscriptions.length > 0) {
@@ -464,9 +471,22 @@ async function verifyOTP() {
   setBtn('verify-btn', false, 'Verify & sign in →');
 }
 
+// V26.5: Multicap / S&P 500 / All-Access were retired in V24.4; legacy 'active'
+// rows for them can still come back from the backend. This matcher (entity-aware,
+// case-insensitive, &/&amp; tolerant) filters them out of the list AND the switcher
+// registry seed below. It cannot match the three live books (MultiAsset /
+// LargeMidcap 250 / SmallMicro 500). Mirror of the one in dashboard.html.
+function isRetiredStrategy(name){
+  var s = String(name == null ? '' : name).toLowerCase().replace(/&amp;/g, '&');
+  return /\bmulticap\b/.test(s)
+      || /s\s*&\s*p/.test(s)
+      || /\bsp\s*500\b/.test(s)
+      || /all[\s-]?access/.test(s);
+}
 function renderSubscriptions(subs) {
   var list = document.getElementById('subs-list');
   var now = new Date();
+  subs = (subs || []).filter(function(s){ return !isRetiredStrategy(s && s.strategy); }); // V26.5: defense-in-depth
   // V14.4: collapse to ONE row per strategy — newest ACTIVE if any, otherwise the
   // newest expired one (so the user still gets a renew prompt). Mirrors the
   // recovery email's newest-per-strategy logic. Without this, a renewed account

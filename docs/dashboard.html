@@ -2059,6 +2059,21 @@ function clearDashSession(opts){
 // cookie (survives new tabs / restarts, and keeps working when localStorage is
 // blocked — same resilience contract as the session token), mirrored to localStorage.
 const STRAT_REG_KEY = 'mfc_dash_strats';
+// V26.5: MindForge Multicap and S&P 500 (and the All-Access bundle) were retired
+// in V24.4, but legacy 'active' subscription rows for them can still live in the
+// backend and get seeded into this device's switcher registry (login.html) — so a
+// member kept seeing deleted strategies in the "Strategy:" switcher. Filter them
+// out everywhere the registry is read/written, and self-heal any stale stored map.
+// The matcher is entity-aware (case-insensitive, &/&amp; tolerant) and CANNOT match
+// the three live books — MultiAsset / LargeMidcap 250 / SmallMicro 500 (none of them
+// contains 'multicap', a literal 's&p', 'sp 500', or 'all-access').
+function isRetiredStrategy(name){
+  var s = String(name == null ? '' : name).toLowerCase().replace(/&amp;/g, '&');
+  return /\bmulticap\b/.test(s)
+      || /s\s*&\s*p/.test(s)
+      || /\bsp\s*500\b/.test(s)
+      || /all[\s-]?access/.test(s);
+}
 function _cookieSet(k, v){
   try {
     var sec = (location.protocol === 'https:') ? '; Secure' : '';
@@ -2069,11 +2084,24 @@ function readStratRegistry(){
   var raw = _cookieGet(STRAT_REG_KEY);
   if (!raw) { try { raw = localStorage.getItem(STRAT_REG_KEY) || ''; } catch(e){} }
   if (!raw) return {};
-  try { var o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; } catch(e){ return {}; }
+  var o; try { o = JSON.parse(raw); } catch(e){ return {}; }
+  if (!o || typeof o !== 'object') return {};
+  // V26.5: strip any retired-strategy keys; if any were present, re-persist the
+  // cleaned map so a member's stale cookie self-heals and never re-shows them.
+  var clean = {}, dropped = false;
+  Object.keys(o).forEach(function(k){ if (isRetiredStrategy(k)) dropped = true; else clean[k] = o[k]; });
+  if (dropped){
+    var json = JSON.stringify(clean);
+    _cookieSet(STRAT_REG_KEY, json);
+    try { localStorage.setItem(STRAT_REG_KEY, json); } catch(e){}
+  }
+  return clean;
 }
 function recordStrat(strategy, tok){
   strategy = String(strategy || '').trim();
   if (!strategy || !tok) return readStratRegistry();
+  if (isRetiredStrategy(strategy)) return readStratRegistry();  // V26.5: never register a retired strategy
+
   var reg = readStratRegistry();
   if (reg[strategy] === tok) return reg;                 // already current — no write
   reg[strategy] = tok;
