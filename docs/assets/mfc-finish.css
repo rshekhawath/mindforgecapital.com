@@ -201,9 +201,19 @@ html[data-theme="dark"] .mps-k,
 html[data-theme="dark"] .mp-k,
 html[data-theme="dark"] .mps-drivers{ color:var(--text2); }
 html[data-theme="dark"] .mps-drivers b{ color:var(--text); }
+/* V26.4 — the card's eyebrow + "see full report" link were hardcoded #1a50d8
+   (light-mode brand blue) and missed this V17.3 flip, so they sat at ~2.6:1 on
+   the dark card while every other eyebrow/link on the page had already been
+   lifted to the dark accent (#5b8def). Bring them onto the same token. */
+html[data-theme="dark"] .mp-eyebrow,
+html[data-theme="dark"] .mp-foot{ color:var(--accent2); }
 /* dashboard sentiment strip drivers + 1:1 benefit card */
 html[data-theme="dark"] .ds-sent-drv{ color:var(--text2); }
 html[data-theme="dark"] .ds-sent-drv b{ color:var(--text); }
+/* V26.4 — the sentiment strip's "Full FII/DII report" link was hardcoded
+   #1a50d8 and (like its homepage mp-foot twin) missed the flip → ~2:1 on the
+   dark card; lift to the dark accent so the dashboard link matches the rest. */
+html[data-theme="dark"] .ds-sent-more{ color:var(--accent2); }
 html[data-theme="dark"] .oo-sub{ color:var(--text2); }
 html[data-theme="dark"] .oo-title{ color:var(--text); }
 
@@ -375,4 +385,24 @@ html[data-theme="dark"] .meta-pill{
     from { transform: rotate(-150deg) scale(.6); opacity: .35; }
     to   { transform: none; opacity: 1; }
   }
+}
+
+/* ============================================================================
+   V26.4 — DARK-MODE LOGO LEGIBILITY (site-wide, shared)
+   ----------------------------------------------------------------------------
+   The brand mark (LogoNav.png) bakes the "MindForge" wordmark in dark navy ink.
+   That reads crisply on the light header/footer (~7:1) but drops to ~2.9:1 on
+   the dark theme's near-black chrome (#080d1a) — the wordmark all but vanishes
+   while only the blue emblem stays visible. LogoNav-dark.png is the same mark
+   with the wordmark re-inked cool-white and "CAPITAL" lifted to the dark accent
+   blue (#60a5fa); the emblem is untouched. Swapped in via `content:` (a replaced
+   <img>) so no per-page markup edit is needed — this rule reaches the nav logo,
+   the footer logo and the admin nav logo on every page at once. The path is
+   relative to THIS stylesheet (assets/), so it resolves the same from pages at
+   any depth. Scoped to [data-theme="dark"]; light mode is unchanged. Footer bg
+   is transparent (follows the body), so it flips with the theme too. */
+html[data-theme="dark"] .logo img,
+html[data-theme="dark"] img.footer-logo,
+html[data-theme="dark"] img.nav-logo {
+  content: url("LogoNav-dark.png");
 }
