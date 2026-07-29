@@ -1,11 +1,17 @@
 /* ============================================================================
    MFC Company Deep-Dive — shared enrichment (V23.5)
    ----------------------------------------------------------------------------
-   Both stock detail pages — /screener/company.html (Scanner) and
-   /scores/company.html (Integrity Score) — are thin: an Overview / Ratios /
+   The stock detail page — /scores/company.html — was thin: an Overview / Ratios /
    Shareholding / About set of tabs where "About" was one description paragraph
    plus a 7-row fact grid. This module turns the detail page into a proper
-   company profile without duplicating logic across the two big HTML files.
+   company profile without duplicating logic in the big HTML file.
+
+   V26.8: this used to be mounted on TWO detail pages, /screener/company.html and
+   /scores/company.html. Mounting this deep-dive on both is precisely what made
+   them converge — the Scanner page ended up rendering everything the Integrity
+   Score page did, minus the score pillars, so it was a strict subset. The site
+   now has ONE canonical per-stock page (/scores/company.html) and
+   /screener/company.html is a redirect stub, so this module has a single host.
 
    It renders, purely client-side from the SAME snapshot both pages already load
    (screener/stocks.json, ~98 fields/stock, full universe in memory):
@@ -803,7 +809,7 @@
       var isSelf = String(s.symbol || "").toUpperCase() === sym;
       var nameCell = isSelf
         ? '<span class="mfx-pname">' + esc(s.name || s.symbol) + '</span><span class="mfx-selftag">THIS</span><div class="mfx-psym">' + esc(s.symbol) + "</div>"
-        : '<a href="company.html?symbol=' + encodeURIComponent(s.symbol) + '">' + esc(s.name || s.symbol) + '</a><div class="mfx-psym">' + esc(s.symbol) + "</div>";
+        : '<a href="/scores/company.html?symbol=' + encodeURIComponent(s.symbol) + '">' + esc(s.name || s.symbol) + '</a><div class="mfx-psym">' + esc(s.symbol) + "</div>";
       var scoreCell = "";
       if (showScore) {
         var sc = num(s._overall);

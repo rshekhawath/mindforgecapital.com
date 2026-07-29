@@ -487,11 +487,23 @@ tbody tr.rowlink{cursor:pointer}
   font-size:11px;font-weight:500;color:var(--text3);margin-top:6px;
 }
 
-@media(max-width:900px){.app-layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:0.5px solid var(--border2)}}
+/* V26.8: 900 → 1100. iPad LANDSCAPE (1024) sat just above the old breakpoint, so
+   it kept the 268px fixed sidebar and left the results grid only ~699px — the
+   eight columns need ~920px, so 221px of the table was cut off with no way to
+   see it but an undiscoverable horizontal scroll. No padding tweak can close a
+   221px gap; the sidebar is the space. Stacking it (the same tablet layout that
+   already serves <=900, collapsible filter panel and all) gives the table the
+   full ~951px and it fits with room to spare. */
+@media(max-width:1100px){.app-layout{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:none;border-bottom:0.5px solid var(--border2)}}
 
 /* ── MOBILE SCREENER POLISH ── */
 .mobile-filters-toggle{display:none}
-@media(max-width:900px){
+/* V26.8: 900 → 1100, matching the .app-layout stacking above. These two blocks
+   are one layout: once the sidebar stacks it becomes a tall filter panel sitting
+   on top of the results, so it MUST come with its collapse toggle — extending the
+   grid change alone would have left iPad-landscape visitors scrolling past a
+   fully-expanded filter list before reaching a single stock. */
+@media(max-width:1100px){
   .main-content{padding:16px 14px}
   .sidebar{padding:16px 14px 20px}
   /* Collapse the long filter panel by default so results are reachable. */
@@ -1137,7 +1149,7 @@ const COL_TIPS={
   price_to_fcf:"Price ÷ free cash flow per share."
 };
 const COLUMNS=[
-  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><span class="exp-caret" aria-hidden="true">▸</span><a href="company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${scnEsc(d.name||d.symbol)}</a></div><div class="company-sym">${scnEsc(d.symbol)}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
+  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><span class="exp-caret" aria-hidden="true">▸</span><a href="/scores/company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${scnEsc(d.name||d.symbol)}</a></div><div class="company-sym">${scnEsc(d.symbol)}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>priceCell(d), visible:true},
   {key:"day_change",    label:"Day %",        render:d=>fmtChange(d.day_change), visible:true},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:true},
@@ -1338,9 +1350,15 @@ function buildScannerReport(d){
     +scnSection("Per-Share",d,[["EPS","eps","rs2"],["Fwd EPS","eps_forward","rs2"],["Book Value","book_value","rs2"],["Cash / Share","cash_per_share","rs2"],["Revenue / Share","revenue_per_share","rs2"]])
     +scnSection("Size",d,[["Market Cap","market_cap_cr","cr"],["Enterprise Value","enterprise_value_cr","cr"],["Revenue","revenue_cr","cr"],["Net Profit","net_profit_cr","cr"],["EBITDA","ebitda_cr","cr"]])
     +scnSection("Ownership & Trend",d,[["Promoter","promoter_holding","p1"],["Institutional","institutional_holding","p1"],["Public Float","float_pct","p1"],["Beta","beta","r2"],["From 52W High","52w_from_high_pct","p1n"]]);
-  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scnVerdict(d)}${range}<div class="scn-grid">${sections}</div>${scnChecklist(d)}${scnCTA(d)}</div>`;
+  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="/scores/company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scnVerdict(d)}${range}<div class="scn-grid">${sections}</div>${scnChecklist(d)}${scnCTA(d)}</div>`;
 }
-function scnCardWidth(){const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
+/* V26.8: measure the element the expanded report is actually inserted INTO.
+   This used to measure .table-card, but the detail row lives inside .tbl-scroll,
+   whose vertical scrollbar makes its content box ~15px narrower than the card —
+   so every open report was born wider than its container and became the widest
+   thing in the table, forcing the horizontal scroll that clipped the last
+   column. .table-card stays as the fallback for any layout without the scroller. */
+function scnCardWidth(){const s=document.querySelector(".tbl-scroll");if(s&&s.clientWidth)return s.clientWidth;const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
 function toggleScannerCard(tr){
   const sym=tr.getAttribute("data-sym");if(!sym)return;
   const next=tr.nextElementSibling;
@@ -1445,7 +1463,12 @@ async function runScreen(){
     showToast(`✓ ${d.results.length} stock${d.results.length===1?"":"s"} match your screen`,"success",2000);
     // On narrow/stacked layouts the results sit below the long filter sidebar —
     // bring them into view so the click visibly does something.
-    if(window.innerWidth<=900){
+    /* V26.8: 900 → 1100, kept in lockstep with the .app-layout stacking
+       breakpoint in the CSS. The stacked sidebar is a tall filter panel above the
+       results, so if this threshold lags the CSS one, iPad-landscape visitors get
+       the stacked layout WITHOUT the auto-collapse and have to scroll past every
+       filter to reach the first stock. */
+    if(window.innerWidth<=1100){
       const sb=document.querySelector(".sidebar"); if(sb) sb.classList.add("filters-collapsed");
       const tg=document.getElementById("mobFiltersToggle"); if(tg) tg.innerHTML="⚙&nbsp; Show Filters";
       const tc=document.querySelector(".table-card"); if(tc) tc.scrollIntoView({behavior:"smooth",block:"start"});
@@ -1544,7 +1567,7 @@ async function doSearch(q){
     const res=await(await fetch(`${API}/search?q=${encodeURIComponent(q.toUpperCase())}`)).json();
     const dd=document.getElementById("searchDropdown");
     if(!res.length){dd.classList.remove("show");return;}
-    dd.innerHTML=res.map(s=>`<div class="search-result-item" onclick="location='company.html?symbol=${s.symbol}'"><div><div class="search-result-sym">${s.symbol}</div><div class="search-result-name">${s.name}</div></div><div class="search-result-sector">${s.sector||""}</div></div>`).join("");
+    dd.innerHTML=res.map(s=>`<div class="search-result-item" onclick="location='/scores/company.html?symbol=${s.symbol}'"><div><div class="search-result-sym">${s.symbol}</div><div class="search-result-name">${s.name}</div></div><div class="search-result-sector">${s.sector||""}</div></div>`).join("");
     dd.classList.add("show");
   }catch{}
 }
@@ -1590,7 +1613,8 @@ document.getElementById("btnClearFilters")?.addEventListener("click",clearFilter
 (function(){
   var sb=document.querySelector(".sidebar"), tg=document.getElementById("mobFiltersToggle");
   if(!sb||!tg) return;
-  if(window.matchMedia("(max-width:900px)").matches) sb.classList.add("filters-collapsed");
+  /* V26.8: 900 → 1100, same lockstep with the CSS stacking breakpoint as above. */
+  if(window.matchMedia("(max-width:1100px)").matches) sb.classList.add("filters-collapsed");
   tg.addEventListener("click",function(){
     var collapsed=sb.classList.toggle("filters-collapsed");
     tg.innerHTML = collapsed ? "⚙&nbsp; Show Filters" : "✕&nbsp; Hide Filters";
@@ -1839,7 +1863,12 @@ checkHealth();
 
 /* Tighten horizontal cell padding a touch so the standard desktop widths fit
    without a scrollbar — the data-grid scroll only engages on genuinely narrow ones. */
-#resultsTable th,#resultsTable td{padding-left:12px;padding-right:12px;}
+/* V26.8: :not(.detail-row) added. This ID-specificity rule (1,0,2) was silently
+   beating `tbody tr.detail-row>td{padding:0}` (0,1,3), putting 24px of padding
+   back on the expanded report's cell — which is meant to sit flush — so every
+   open row was 24px wider than its container and became the widest thing in the
+   table, forcing the horizontal scroll that clipped the last column. */
+#resultsTable th,#resultsTable tbody tr:not(.detail-row)>td{padding-left:12px;padding-right:12px;}
 
 /* 2) 52-week range bar tucked under the price (no extra column) */
 .px-wrap{display:inline-flex;flex-direction:column;align-items:flex-end;gap:5px;}
@@ -1871,6 +1900,53 @@ checkHealth();
     z-index:3;background:linear-gradient(180deg,var(--ink3) 0%,var(--ink) 100%);
   }
 }
+
+/* ── V26.8 — SCANNER: LAST COLUMN CUT OFF + EXPANDED-ROW PROSE OVERFLOW ───────
+   Two defects, both visible on the default desktop view:
+
+   (1) THE LAST COLUMN WAS CLIPPED. On a 1280 desktop the grid needed 968px of
+       track inside a 929px viewport, so "Div Yield" — the last column — was
+       sliced mid-value (a 0.47% yield rendered as "0.4"), and the missing 39px
+       was reachable only by a horizontal scroll most visitors never discover,
+       since macOS overlay scrollbars stay invisible until you scroll. TWO
+       independent causes, both fixed:
+         (a) THE EXPANDED PANEL WAS SIZED TO THE WRONG BOX. scnCardWidth() (see
+             the JS below) measured .table-card — but the panel is inserted into
+             a row INSIDE .tbl-scroll, and that scroller's own vertical scrollbar
+             makes its content box 15px narrower than the card. So every open
+             report was 15px wider than the space it had, and it — not the
+             columns — set the table's scrollWidth. It now measures .tbl-scroll,
+             the element it actually sits in, and falls back to the card.
+         (b) THE COLUMNS THEMSELVES WERE ~24px OVER. The 14px cell padding was
+             the slack: at 11px the eight columns reclaim 48px and the grid fits
+             with room to spare. Scoped to >=901px so the phone card-layout
+             (which restyles each row as a flex column) is untouched; genuinely
+             narrow windows still scroll, the intended .tbl-scroll behaviour with
+             the frozen Company column. The sorted underline is re-inset to match.
+             Applied from 601px up — not just the >=901px desktop — because iPad
+             portrait (768) was 11px over for the same reason; below 601 the phone
+             card-layout takes over and cell padding is irrelevant.
+       NOTE the :not(.detail-row) guard on the padding rule. `tbody
+       tr.detail-row>td` sets padding:0 so the report can sit flush, but that is
+       a class selector (0,1,3) and an unguarded `#resultsTable tbody td` is an
+       ID selector (1,0,2) — the ID wins, which silently put 22px back on the
+       expanded cell and made the overflow WORSE. The guard keeps the flush
+       report flush.
+
+   (2) THE EXPANDED PANEL'S PROSE COULD NOT WRAP. `td{white-space:nowrap}` — the
+       right rule for one-line numeric cells — cascaded into the expanded report,
+       which renders inside a <td colspan>. Its closing CTA sentence therefore
+       laid out as a single 739px line inside a 698px box and overflowed straight
+       through the "Explore strategies →" link beside it, so the two collided on
+       screen. The panel is prose, not a data cell, so it opts back into normal
+       wrapping. .scn-cta-go keeps its own white-space:nowrap, so the link itself
+       still never breaks mid-phrase. */
+@media(min-width:601px){
+  #resultsTable thead th,
+  #resultsTable tbody tr:not(.detail-row)>td{padding-left:11px;padding-right:11px}
+  #resultsTable thead th.sorted::after{left:11px;right:11px}
+}
+.scn-wrap{white-space:normal}
 </style>
 </body>
 </html>
