@@ -113,6 +113,18 @@ var MFC_OG_ALT = "MindForge Capital — systematic, factor-based investing for I
   --r:16px;--r-sm:10px;--r-lg:22px;
   --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
 }
+/* V26.7 — dark-mode legibility: the shared dark palette (mfc-finish.css) flips
+   --green to a bright #16c78d but never flipped --red, so every var(--red)
+   negative on this page (price-down, below-MA, negative change, KPI v-bad) stayed
+   at the light-theme #dc2626 and sat at ~3.5:1 on the dark surface — dim, and
+   visibly asymmetric with the now-bright green gains. Flip --red to the dark
+   palette's t-bad (#f87171 → ~6:1) so red losses read as vividly as green wins.
+   Every var(--red) here is a text/border colour or a data-viz bar end — none is a
+   solid fill under light text — so lightening it is pure legibility. Dark only. */
+html[data-theme="dark"]{--red:#f87171;}
+/* the active chart-range tab coloured on --accent (#2f5fe0, ~3.1:1 in dark); lift
+   to --accent2, matching the V26.4 accent-legibility pass. */
+html[data-theme="dark"] .sc-tab.active{color:var(--accent2);}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--ink);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 600px at 70% -10%,rgba(37,99,235,0.07) 0%,transparent 60%),radial-gradient(ellipse 500px 400px at 5% 30%,rgba(59,130,246,0.04) 0%,transparent 60%),radial-gradient(ellipse 700px 500px at 95% 80%,rgba(45,212,191,0.03) 0%,transparent 60%)}
@@ -254,6 +266,31 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
 .kpi-pos{color:var(--green)}.kpi-neg{color:var(--red)}
 .kpi-value.v-strong{color:#047857}.kpi-value.v-good{color:#059669}.kpi-value.v-weak{color:#b45309}.kpi-value.v-bad{color:#dc2626}
+/* V26.7 — dark-mode legibility: the four semantic value-tones above are light-theme
+   inks (#047857 / #059669 / #b45309 / #dc2626) that were reused unchanged in dark
+   mode, where they drop to ~3.0–3.5:1 on the dark card (--ink2) — a "strong" green
+   metric read muddy. Lift each to the site's established dark palette
+   (t-good #34d399 / --green #16c78d / t-warn #fbbf24 / t-bad #f87171 → 6–9:1).
+   Scoped to dark only; the light theme is byte-for-byte unchanged. */
+[data-theme="dark"] .kpi-value.v-strong{color:#34d399}
+[data-theme="dark"] .kpi-value.v-good{color:#16c78d}
+[data-theme="dark"] .kpi-value.v-weak{color:#fbbf24}
+[data-theme="dark"] .kpi-value.v-bad{color:#f87171}
+/* V26.7 — KPI grid entrance: a gentle staggered fade-up brings the metric cards
+   in line with the site's reveal idiom (they previously appeared statically). The
+   `backwards` fill hides each card until its turn WITHOUT holding the transform
+   afterwards, so the hover lift (.kpi-card:hover) keeps working; fully inert under
+   reduced-motion. */
+@media (prefers-reduced-motion:no-preference){
+  @keyframes kpiIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .kpi-card{animation:kpiIn .5s cubic-bezier(.22,.8,.2,1) backwards}
+  .kpi-card:nth-child(2){animation-delay:.04s}.kpi-card:nth-child(3){animation-delay:.08s}
+  .kpi-card:nth-child(4){animation-delay:.12s}.kpi-card:nth-child(5){animation-delay:.16s}
+  .kpi-card:nth-child(6){animation-delay:.20s}.kpi-card:nth-child(7){animation-delay:.24s}
+  .kpi-card:nth-child(8){animation-delay:.28s}.kpi-card:nth-child(9){animation-delay:.32s}
+  .kpi-card:nth-child(10){animation-delay:.36s}.kpi-card:nth-child(11){animation-delay:.40s}
+  .kpi-card:nth-child(12){animation-delay:.44s}
+}
 
 /* TABS */
 .tabs{display:flex;border-bottom:0.5px solid var(--border2);margin-bottom:20px;gap:0;overflow-x:auto;background:rgba(255,255,255,.6);backdrop-filter:blur(8px);border-radius:var(--r) var(--r) 0 0;padding:0 4px}

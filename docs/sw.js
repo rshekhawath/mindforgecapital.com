@@ -67,7 +67,11 @@
 // fallback — changed its FAQ answers (SEBI registration attribution). Online
 // visitors get fresh HTML (navigations are network-first), but the offline copy
 // would otherwise keep serving the pre-V25.8 text.
-const CACHE = 'mfc-v19';
+// v20 (V26.7): index.html (precached shell) carries the dark-mode legibility pass —
+// the Market-Pulse sentiment verdict/score and the science-timeline year now lift
+// to the dark palette instead of sitting at ~3.5–3.9:1. A precached document has no
+// ?v to bust, so the cache name is bumped to re-install the current offline shell.
+const CACHE = 'mfc-v20';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
