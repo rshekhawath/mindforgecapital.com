@@ -1149,7 +1149,7 @@ const COL_TIPS={
   price_to_fcf:"Price ÷ free cash flow per share."
 };
 const COLUMNS=[
-  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><span class="exp-caret" aria-hidden="true">▸</span><a href="/scores/company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${scnEsc(d.name||d.symbol)}</a></div><div class="company-sym">${scnEsc(d.symbol)}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
+  {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="/scores/company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${scnEsc(d.name||d.symbol)}</a></div><div class="company-sym">${scnEsc(d.symbol)}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>priceCell(d), visible:true},
   {key:"day_change",    label:"Day %",        render:d=>fmtChange(d.day_change), visible:true},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:true},
@@ -1283,101 +1283,14 @@ function scnFmt(v,code){
   }
 }
 function scnEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-function scnRow(label,d,key,code,toneKind){
-  const v=d[key];
-  let r=scnFmt(v,code), cls=r[1];
-  if(toneKind&&scnIsNum(v)){const tc=toneClass(v,toneKind);if(tc)cls=tc;}
-  // non-colour cue for tone (WCAG 1.4.1) — title surfaces the good/bad judgement the hue encodes
-  const tip={"v-strong":"strong","v-good":"good","v-weak":"below average","v-bad":"poor"}[cls];
-  return`<div class="scn-r"><span class="k">${label}</span><span class="v ${cls}"${tip?` title="${tip}"`:""}>${r[0]}</span></div>`;
-}
-function scnSection(title,d,rows){
-  return`<div class="scn-sec"><h5>${title}</h5>${rows.map(r=>scnRow(r[0],d,r[1],r[2],r[3])).join("")}</div>`;
-}
-function scnVerdict(d){
-  const t=[],pe=d.pe_ratio,roe=d.roe,rg=d.revenue_growth,de=d.debt_to_equity,dy=d.dividend_yield;
-  if(scnIsNum(roe))t.push(roe>=20?["Highly profitable","good"]:roe>=12?["Profitable","mid"]:roe>=0?["Low returns","low"]:["Lossmaking","bad"]);
-  if(scnIsNum(pe)&&pe>0)t.push(pe<=18?["Attractively valued","good"]:pe<=35?["Fairly valued","mid"]:["Richly valued","bad"]);
-  else if(scnIsNum(d.earnings_yield)&&d.earnings_yield<0)t.push(["Lossmaking","bad"]);
-  if(scnIsNum(rg))t.push(rg>=15?["High growth","good"]:rg>=5?["Growing","mid"]:rg>=0?["Flat revenue","low"]:["Shrinking revenue","bad"]);
-  if(scnIsNum(de)&&!/financ|bank|insur/i.test(d.sector||""))t.push(de<50?["Low debt","good"]:de<150?["Moderate debt","mid"]:["High debt","bad"]);
-  if(scnIsNum(dy)&&dy>=3)t.push(["Strong dividend","good"]);
-  const seen={},out=[];t.forEach(x=>{if(!seen[x[0]]){seen[x[0]]=1;out.push(x);}});
-  return out.length?`<div class="scn-verdict">${out.map(x=>`<span class="vtag vt-${x[1]}">${x[0]}</span>`).join("")}</div>`:"";
-}
-function scnChecklist(d){
-  const isFin=/financ|bank|insur/i.test(d.sector||"");
-  const raw=[
-    ["ROE > 15%", scnIsNum(d.roe)?d.roe>15:null],
-    ["Net margin > 10%", scnIsNum(d.net_margin)?d.net_margin>10:null],
-    ["Revenue growth > 10%", scnIsNum(d.revenue_growth)?d.revenue_growth>10:null],
-    ["Earnings growth positive", scnIsNum(d.earnings_growth)?d.earnings_growth>0:null],
-    ["P/E under 25", scnIsNum(d.pe_ratio)?(d.pe_ratio>0&&d.pe_ratio<25):null],
-    ["PEG under 1.5", scnIsNum(d.peg_ratio)?(d.peg_ratio>0&&d.peg_ratio<1.5):null],
-    ["Positive free cash flow", scnIsNum(d.fcf_yield)?d.fcf_yield>0:null],
-    ["Pays a dividend", scnIsNum(d.dividend_yield)?d.dividend_yield>0:null],
-    isFin?null:["Low debt (D/E < 0.5)", scnIsNum(d.debt_to_equity)?d.debt_to_equity<50:null],
-    isFin?null:["Current ratio > 1.5", scnIsNum(d.current_ratio)?d.current_ratio>1.5:null],
-    isFin?null:["Interest cover > 3×", scnIsNum(d.interest_coverage)?d.interest_coverage>3:null],
-  ].filter(Boolean);
-  let pass=0,tot=0;
-  const items=raw.map(c=>{if(c[1]===null)return`<span class="chk-item chk-na">– ${c[0]}</span>`;tot++;if(c[1])pass++;return`<span class="chk-item ${c[1]?"chk-ok":"chk-no"}">${c[1]?"✓":"✗"} ${c[0]}</span>`;}).join("");
-  return`<div class="scn-checklist"><div class="chk-head">Quality checklist <span class="chk-score">${pass} / ${tot} passed</span></div><div class="chk-grid">${items}</div></div>`;
-}
-function scnCTA(d){
-  const strong=scnIsNum(d.roe)&&d.roe>=15&&scnIsNum(d.revenue_growth)&&d.revenue_growth>=10;
-  const msg=strong
-    ? "Profitable and growing. Our quant strategies assemble disciplined portfolios of names like this."
-    : "Want a ready-made, rules-based portfolio instead of screening one by one? Our SEBI-registered quant strategies do it for you.";
-  return `<a class="scn-cta" href="https://mindforgecapital.com/strategies.html"><span class="scn-cta-ico" aria-hidden="true">📈</span><span class="scn-cta-tx">${msg}</span><span class="scn-cta-go">Explore strategies →</span></a>`;
-}
-function buildScannerReport(d){
-  const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
-  let pos=null;
-  if(scnIsNum(lo)&&scnIsNum(hi)&&hi>lo&&scnIsNum(cur))pos=Math.max(0,Math.min(100,(cur-lo)/(hi-lo)*100));
-  const px=v=>Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
-  const range=pos!=null?`<div class="scn-rangewrap"><div class="rk">52-Week Range</div><div class="range-bar"><div class="mk" style="left:${pos.toFixed(1)}%"></div></div><div class="range-lab"><span>₹${px(lo)}</span><span class="cur">₹${px(cur)} · ${pos.toFixed(0)}%</span><span>₹${px(hi)}</span></div></div>`:"";
-  const meta=[];
-  if(d.sector)meta.push(`<span class="scn-chip">${scnEsc(d.sector)}</span>`);
-  if(d.industry)meta.push(`<span class="scn-chip">${scnEsc(d.industry)}</span>`);
-  if(scnIsNum(d.employees))meta.push(`<span class="scn-chip">${Number(d.employees).toLocaleString("en-IN")} employees</span>`);
-  const sections=
-    scnSection("Valuation",d,[["P/E","pe_ratio","r2","pe"],["Fwd P/E","pe_forward","r2"],["P/B","pb_ratio","r2"],["P/S","ps_ratio","r2"],["EV/EBITDA","ev_ebitda","x1"],["EV/Revenue","ev_revenue","x1"],["PEG","peg_ratio","r2"],["Earnings Yield","earnings_yield","p1"],["FCF Yield","fcf_yield","p1","fcf"],["Graham MoS","graham_mos","p0","gmos"],["Dividend Yield","dividend_yield","p2","div"]])
-    +scnSection("Profitability & Returns",d,[["ROE","roe","p1","q"],["ROCE","roce","p1","q"],["ROA","roa","p1","q"],["Net Margin","net_margin","p1","q"],["Operating Margin","operating_margin","p1","q"],["EBITDA Margin","ebitda_margin","p1"]])
-    +scnSection("Growth (YoY)",d,[["Revenue Growth","revenue_growth","p1g"],["Earnings Growth","earnings_growth","p1g"],["Quarterly Earnings","earnings_q_growth","p1g"]])
-    +scnSection("Financial Health",d,[["Debt / Equity","debt_to_equity","de"],["Current Ratio","current_ratio","x2"],["Quick Ratio","quick_ratio","x2"],["Interest Coverage","interest_coverage","x1"],["Net Debt / EBITDA","net_debt_ebitda","x1"]])
-    +scnSection("Efficiency",d,[["Asset Turnover","asset_turnover","x2"],["Inventory Turnover","inventory_turnover","x2"],["Receivable Days","receivable_days","d0"],["Cash Conv. Cycle","cash_conv_cycle","d0"],["Capex / Revenue","capex_to_revenue","p1"]])
-    +scnSection("Per-Share",d,[["EPS","eps","rs2"],["Fwd EPS","eps_forward","rs2"],["Book Value","book_value","rs2"],["Cash / Share","cash_per_share","rs2"],["Revenue / Share","revenue_per_share","rs2"]])
-    +scnSection("Size",d,[["Market Cap","market_cap_cr","cr"],["Enterprise Value","enterprise_value_cr","cr"],["Revenue","revenue_cr","cr"],["Net Profit","net_profit_cr","cr"],["EBITDA","ebitda_cr","cr"]])
-    +scnSection("Ownership & Trend",d,[["Promoter","promoter_holding","p1"],["Institutional","institutional_holding","p1"],["Public Float","float_pct","p1"],["Beta","beta","r2"],["From 52W High","52w_from_high_pct","p1n"]]);
-  return`<div class="scn-inner"><div class="scn-top"><div class="scn-meta">${meta.join("")}</div><a class="scn-report" href="/scores/company.html?symbol=${encodeURIComponent(d.symbol)}">Full equity report <span class="arr">→</span></a></div>${scnVerdict(d)}${range}<div class="scn-grid">${sections}</div>${scnChecklist(d)}${scnCTA(d)}</div>`;
-}
-/* V26.8: measure the element the expanded report is actually inserted INTO.
-   This used to measure .table-card, but the detail row lives inside .tbl-scroll,
-   whose vertical scrollbar makes its content box ~15px narrower than the card —
-   so every open report was born wider than its container and became the widest
-   thing in the table, forcing the horizontal scroll that clipped the last
-   column. .table-card stays as the fallback for any layout without the scroller. */
-function scnCardWidth(){const s=document.querySelector(".tbl-scroll");if(s&&s.clientWidth)return s.clientWidth;const c=document.querySelector(".table-card");return c?c.clientWidth:document.documentElement.clientWidth;}
-function toggleScannerCard(tr){
-  const sym=tr.getAttribute("data-sym");if(!sym)return;
-  const next=tr.nextElementSibling;
-  const isOpen=next&&next.classList.contains("detail-row");
-  document.querySelectorAll("#tableBody tr.detail-row").forEach(r=>r.remove());
-  document.querySelectorAll("#tableBody tr.expanded").forEach(r=>{r.classList.remove("expanded");r.setAttribute("aria-expanded","false");});
-  if(isOpen){tr.setAttribute("aria-expanded","false");return;}
-  const d=(allResults||[]).find(x=>x.symbol===sym);if(!d)return;
-  const cols=document.querySelectorAll("#tableHead th").length||1;
-  const detail=document.createElement("tr");
-  detail.className="detail-row";
-  detail.innerHTML=`<td colspan="${cols}"><div class="scn-wrap" style="width:${scnCardWidth()}px">${buildScannerReport(d)}</div></td>`;
-  tr.parentNode.insertBefore(detail,tr.nextSibling);
-  tr.classList.add("expanded");
-  tr.setAttribute("aria-expanded","true");
-}
-// keyboard access for the expandable Scanner rows (Enter/Space)
-document.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target&&e.target.classList&&e.target.classList.contains("rowlink")){e.preventDefault();toggleScannerCard(e.target);}});
-window.addEventListener("resize",()=>{const w=scnCardWidth();document.querySelectorAll("#tableBody .scn-wrap").forEach(el=>{el.style.width=w+"px";});},{passive:true});
+// V27.0 — Scanner rows open the FULL equity report directly.
+// The inline quick-look expand (buildScannerReport + toggleScannerCard and its
+// scn* section builders) was retired: clicking a row now navigates straight to
+// the canonical /scores/company.html report, so the Scanner and the Integrity
+// Score behave identically and both lead to the one robust per-stock page.
+function scnGo(sym){ if(sym) location.href = "/scores/company.html?symbol=" + encodeURIComponent(sym); }
+// keyboard access: Enter / Space on a focused row opens its report
+document.addEventListener("keydown",function(e){ if((e.key==="Enter"||e.key===" ")&&e.target&&e.target.classList&&e.target.classList.contains("rowlink")){ e.preventDefault(); scnGo(e.target.getAttribute("data-sym")); } });
 
 function showSkeleton(n){const vis=COLUMNS.filter(c=>c.visible);document.getElementById("tableBody").innerHTML=Array.from({length:n||8},()=>`<tr class="skel-row">${vis.map(()=>`<td><div class="skel"></div></td>`).join("")}</tr>`).join("");}
 function fmtChange(v){
@@ -1499,7 +1412,7 @@ function renderTable(){
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-weight:600;color:var(--text2)">No stocks match your filters</div></td></tr>`
-    :page.map(d=>`<tr class="rowlink" data-sym="${scnEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scnEsc(d.name||d.symbol)} — expand equity report" onclick="toggleScannerCard(this)" title="Click to expand the full equity report">${vis.map(c=>`<td data-label="${(c.label||"").replace(/"/g,"&quot;")}">${c.render(d)}</td>`).join("")}</tr>`).join("");
+    :page.map(d=>`<tr class="rowlink" data-sym="${scnEsc(d.symbol)}" role="link" tabindex="0" aria-label="${scnEsc(d.name||d.symbol)} — open full equity report" onclick="scnGo(this.getAttribute('data-sym'))" title="Open the full equity report">${vis.map(c=>`<td data-label="${(c.label||"").replace(/"/g,"&quot;")}">${c.render(d)}</td>`).join("")}</tr>`).join("");
   const pages=Math.ceil(allResults.length/PAGE_SIZE);
   const pg=document.getElementById("pagination");
   if(pages<=1){pg.style.display="none";return;}
@@ -1867,7 +1780,13 @@ checkHealth();
    beating `tbody tr.detail-row>td{padding:0}` (0,1,3), putting 24px of padding
    back on the expanded report's cell — which is meant to sit flush — so every
    open row was 24px wider than its container and became the widest thing in the
-   table, forcing the horizontal scroll that clipped the last column. */
+   table, forcing the horizontal scroll that clipped the last column.
+   V27.0 NOTE: the inline expand (.detail-row / the whole scn-* quick-look) was
+   RETIRED — Scanner rows now navigate straight to /scores/company.html. The
+   `:not(.detail-row)` guard is kept (harmless: no detail-row is ever inserted
+   now, so it simply matches every body cell) and the 11px/12px column padding
+   below is still load-bearing for the last-column fit; the .detail-row/.scn-*
+   CSS elsewhere in this file is now inert but left in place. */
 #resultsTable th,#resultsTable tbody tr:not(.detail-row)>td{padding-left:12px;padding-right:12px;}
 
 /* 2) 52-week range bar tucked under the price (no extra column) */
