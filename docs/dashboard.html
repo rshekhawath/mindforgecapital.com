@@ -166,6 +166,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 
 /* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:32px 0 28px;position:relative;z-index:1;}
+/* V26.9 — iPad tier. `auto-fit,minmax(220px,1fr)` is count-blind: with FOUR
+   cards it packs 4 across only once the container clears 4*220+3*14 = 922px
+   (viewport ≥ 986px), and drops to a 2-up grid only below the 768px rule. In
+   the 769–985px band — iPad portrait (768/820/834), Split View, small laptops —
+   it therefore lands on THREE columns and strands the 4th card alone on a row
+   with two-thirds of the width empty. Same arithmetic strands .howto-grid.
+   Pin both to a balanced 2x2 across that band. See [[project_count_coupled_css]]. */
+@media(min-width:769px) and (max-width:1000px){
+  .stats-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+  /* .howto-grid's own base rule is declared later in this file (search
+     ".howto-grid{display:grid") so an override HERE would lose on source order
+     at equal specificity — its iPad tier lives immediately after that rule. */
+}
 .stat-card{
   background:var(--ink2);
   border:0.5px solid var(--border2);
@@ -597,6 +610,10 @@ html[data-theme="dark"] .howto-card::before{background:linear-gradient(90deg,tra
 .howto-card h3 .ico{width:22px;height:22px;color:var(--accent2);display:inline-flex;align-items:center;justify-content:center;}
 .howto-card h3 .ico svg{width:100%;height:100%;}
 .howto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+/* V26.9 — iPad tier (see the .stats-row note above). Declared AFTER the base
+   rule so it wins on source order; auto-fit strands the 4th card 3+1 across
+   769–1000px otherwise. */
+@media(min-width:769px) and (max-width:1000px){ .howto-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .howto-step{
   background:linear-gradient(180deg,rgba(37,99,235,0.03) 0%,transparent 100%);
   border:0.5px solid var(--border);border-radius:12px;padding:16px 18px;
@@ -1475,7 +1492,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2640">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2696">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -5209,6 +5226,14 @@ html[data-theme="dark"] .stat-card.tone-red   .stat-val, html[data-theme="dark"]
 /* V21.9 — rebalance cycle micro-meter: lift the hardcoded-light track on dark */
 html[data-theme="dark"] .stat-meter{ background:rgba(120,150,255,0.14); }
 html[data-theme="dark"] .size-deploy-track{ background:rgba(120,150,255,0.14); }
+/* V26.9 — sector-filter count badges + portfolio-map weight labels. The
+   inactive count badge inherited a near-transparent light overlay (0.06 of a
+   light ink) so on the dark card the number sat at 3.19:1; the active badge's
+   white-on-white-overlay-over-blue landed at 3.38:1; the pmap weight read
+   --text3 at 4.39:1. Lift all three past 4.5. */
+html[data-theme="dark"] .sector-chips .chip-n{ background:rgba(6,12,26,0.42); color:var(--text); }
+html[data-theme="dark"] .sector-chips .chip.active .chip-n{ background:rgba(6,12,26,0.30); color:#fff; }
+html[data-theme="dark"] .pmap-wt{ color:var(--text2); }
 /* V18.1 — the 601–1265px horizontal-scroll hint fade on the picks table was a
    hardcoded white gradient (white smear on the dark surface at iPad widths);
    fade to the dark card surface (#121d33 = dark --ink2) instead */

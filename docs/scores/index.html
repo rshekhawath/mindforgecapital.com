@@ -106,7 +106,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hero h1 .grad{background:linear-gradient(120deg,#1a50d8,#0891b2 60%,#2dd4bf);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .hero-sub{font-size:16px;color:var(--text2);max-width:760px;line-height:1.6;margin-bottom:22px}
 .hero-sub b{color:var(--white);font-weight:700}
-.hero-sub .q{color:#059669;font-weight:700}.hero-sub .v{color:#1a50d8;font-weight:700}.hero-sub .g{color:#d97706;font-weight:700}.hero-sub .m{color:#7c3aed;font-weight:700}
+.hero-sub .q{color:var(--pil-q);font-weight:700}.hero-sub .v{color:var(--pil-v);font-weight:700}.hero-sub .g{color:var(--pil-g);font-weight:700}.hero-sub .m{color:var(--pil-m);font-weight:700}.hero-sub .e{color:var(--pil-e);font-weight:700}
 .hero-sub a{color:var(--accent2);font-weight:600;cursor:pointer;border-bottom:1px dashed rgba(37,99,235,.4)}
 .hero-sub a:hover{color:var(--accent)}
 
@@ -331,7 +331,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hero h1{font-size:26px}
 }
 </style>
-<script src="scores-engine.js?v=158"></script>
+<script src="scores-engine.js?v=2691"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -347,7 +347,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2640">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=2696">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--accent3);transition:transform .25s ease}
@@ -558,7 +558,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     <h1>Integrity <span class="grad">Score</span></h1>
     <p class="hero-sub">
       Every NSE company graded <b>0–100</b> on five factor lenses — <span class="q">Quality</span>,
-      <span class="v">Value</span>, <span class="g">Growth</span>, <span class="m">Momentum</span> and <span class="e" style="color:#0891b2;font-weight:700">Efficiency</span>.
+      <span class="v">Value</span>, <span class="g">Growth</span>, <span class="m">Momentum</span> and <span class="e">Efficiency</span>.
       One transparent, data-driven read on a business. <a id="introMethod">How it's calculated →</a>
     </p>
 
@@ -1060,12 +1060,15 @@ function renderHero(){
   // highlight cards: top Overall, top Quality, top Value
   const top=(key)=>[...ALL].filter(d=>d[key]!=null).sort((a,b)=>b[key]-a[key])[0];
   const cards=[
-    {kick:"Highest Integrity",key:"_overall",c:"#1a50d8",d:top("_overall")},
-    {kick:"Top Quality",key:"_q",c:"#059669",d:top("_q")},
-    {kick:"Best Value",key:"_v",c:"#1a50d8",d:top("_v")},
-    {kick:"Top Growth",key:"_g",c:"#d97706",d:top("_g")},
-    {kick:"Top Momentum",key:"_m",c:"#7c3aed",d:top("_m")},
-    {kick:"Top Efficiency",key:"_e",c:"#0891b2",d:top("_e")},
+    // V26.9: pillar identity comes from the shared --pil-* tokens rather than a
+    // baked hex, so the ring, the score and the kicker all re-ink with the theme
+    // (the light hexes measured 2.55-2.95:1 on the dark card).
+    {kick:"Highest Integrity",key:"_overall",c:"var(--pil-v)",d:top("_overall")},
+    {kick:"Top Quality",key:"_q",c:"var(--pil-q)",d:top("_q")},
+    {kick:"Best Value",key:"_v",c:"var(--pil-v)",d:top("_v")},
+    {kick:"Top Growth",key:"_g",c:"var(--pil-g)",d:top("_g")},
+    {kick:"Top Momentum",key:"_m",c:"var(--pil-m)",d:top("_m")},
+    {kick:"Top Efficiency",key:"_e",c:"var(--pil-e)",d:top("_e")},
   ];
   document.getElementById("highlights").innerHTML=cards.map(card=>{
     const d=card.d;if(!d)return"";
@@ -1220,6 +1223,16 @@ MFCScores.load().then(()=>{
   document.getElementById("tableBody").innerHTML=`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">Couldn't load scores — please refresh.</div></td></tr>`;
   showToast("Could not load data — please refresh.","error",8000);
 });
+
+/* V26.9 — re-ink on a mid-session theme flip.
+   Score numbers, factor bars and the quality-vs-value scatter dots take their
+   colour from MFCScores.color(), which is now theme-aware — but it is read at
+   RENDER time and written into inline styles / SVG fill attributes, so nothing
+   already on screen repaints when the nav toggle flips data-theme. Watch the
+   attribute and re-run the three renderers that own those colours. Cheap: the
+   scoring pass itself is not repeated, only the paint. */
+new MutationObserver(()=>{ try{ renderHero(); renderTable(); renderQuadrant(); }catch(e){} })
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
 
 document.getElementById("btnCSV").addEventListener("click",exportCSV);
 

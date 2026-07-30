@@ -71,7 +71,13 @@
 // the Market-Pulse sentiment verdict/score and the science-timeline year now lift
 // to the dark palette instead of sitting at ~3.5–3.9:1. A precached document has no
 // ?v to bust, so the cache name is bumped to re-install the current offline shell.
-const CACHE = 'mfc-v20';
+// v21 (V26.9): BOTH precached shell documents (index.html and login.html) now
+// reference mfc-finish.css?v=2696, which ships the site-wide dark-mode data-ink
+// scale (grading colours, factor pillars, semantic reds/greens that had collapsed
+// to 2.5–3.5:1 on the dark theme) plus the horizontal-scroll edge-fade affordance.
+// A precached document has no ?v to bust, so the cache is bumped to re-install the
+// current offline shell and pull the new stylesheet.
+const CACHE = 'mfc-v21';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

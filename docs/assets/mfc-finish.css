@@ -406,3 +406,204 @@ html[data-theme="dark"] img.footer-logo,
 html[data-theme="dark"] img.nav-logo {
   content: url("LogoNav-dark.png");
 }
+
+/* ============================================================================
+   V26.9 — DARK-MODE DATA-INK SCALE (site-wide, shared)
+   ----------------------------------------------------------------------------
+   THE BUG. Every data surface grades a number by colour — the Integrity Score
+   table, the Scanner's value heat-map, factor bars, grade pills, day-change
+   pills, the homepage's alpha/benchmark badges. All of them were inked with the
+   LIGHT palette's semantic hexes (#047857 green, #059669, #b45309 amber,
+   #dc2626 red, #1a50d8 mid-blue) written literally into per-page CSS. Those are
+   tuned to sit on white; the V17.3 palette flip never reached them, so on the
+   dark theme they land on a near-black card and collapse:
+
+       #1a50d8 on #121d33 → 2.55:1   (every "Fair" Integrity Score)
+       #047857 on #121d33 → 3.04:1   (every "Excellent")
+       #dc2626 on #121d33 → 3.48:1   (every "Poor", every down-day)
+       #b45309 on #121d33 → 3.32:1   (every "Weak")
+
+   A live audit counted 224 failing text nodes on /scores/, 62 on the Scanner,
+   29 on a company page — i.e. the grading colour, which IS the content on those
+   pages, was unreadable for anyone using the dark theme.
+
+   THE FIX is a named scale rather than another round of per-page hex patches:
+   one token per semantic step, defined once, re-inked under [data-theme="dark"].
+   Light values are byte-identical to what the pages already shipped, so the
+   default theme cannot regress — this block only has an effect once the theme
+   flips. The dark values are the ones [[project_dark_semantic_colors]] already
+   proved on this palette (#34d399 / #fbbf24 / #f87171), extended with a lifted
+   mid-blue (--accent3) and a brighter "good" green.
+
+   Deliberately NOT reusing --green/--red: --green is a brand token consumed by
+   fills and borders, and --red is load-bearing for the admin toast (white-on-
+   red). A separate --data-* family keeps grading ink independent of chrome. */
+:root{
+  --data-strong:#047857;
+  --data-good:#059669;
+  --data-mid:#1a50d8;
+  --data-weak:#b45309;
+  --data-bad:#dc2626;
+  --data-na:#94a3b8;
+}
+html[data-theme="dark"]{
+  --data-strong:#34d399;
+  --data-good:#16c78d;
+  --data-mid:#83aaff;
+  --data-weak:#fbbf24;
+  --data-bad:#f87171;
+  --data-na:#8698b7;
+}
+
+/* — the five FACTOR PILLARS carry their own identity colour (quality, value,
+     growth, momentum, efficiency). Same story as the grading scale: the hexes
+     were written literally into the Integrity Score champion cards and into the
+     company page's pillar rail, so on dark they measured 2.55–3.40:1. Tokenised
+     here so both surfaces flip for free — the company page consumes them
+     straight from inline `style="color:var(--pil-v)"`, which resolves against
+     the live theme where a baked hex could not. */
+:root{
+  --pil-q:#059669; --pil-v:#1a50d8; --pil-g:#d97706; --pil-m:#7c3aed; --pil-e:#0891b2;
+}
+html[data-theme="dark"]{
+  --pil-q:#34d399; --pil-v:#83aaff; --pil-g:#fbbf24; --pil-m:#a78bfa; --pil-e:#38bdf8;
+}
+
+/* — re-point the existing grading classes at the scale, dark only —
+   Scoped under [data-theme="dark"] so light mode keeps its own declarations
+   untouched. Every selector below was confirmed failing by the contrast audit. */
+html[data-theme="dark"] .num.v-strong,
+html[data-theme="dark"] .scn-r .v.v-strong,
+html[data-theme="dark"] .iv-mos.iv-strong,
+html[data-theme="dark"] .qv-corner.tr{ color:var(--data-strong); }
+
+html[data-theme="dark"] .num.v-good,
+html[data-theme="dark"] .scn-r .v.v-good,
+html[data-theme="dark"] .iv-mos.iv-good,
+html[data-theme="dark"] .change-pos{ color:var(--data-good); }
+
+html[data-theme="dark"] .num.v-weak,
+html[data-theme="dark"] .scn-r .v.v-weak,
+html[data-theme="dark"] .iv-mos.iv-weak{ color:var(--data-weak); }
+
+html[data-theme="dark"] .num.v-bad,
+html[data-theme="dark"] .scn-r .v.v-bad,
+html[data-theme="dark"] .iv-mos.iv-bad,
+html[data-theme="dark"] .change-neg{ color:var(--data-bad); }
+
+/* grade pills carry their own tinted background + border as well as ink */
+html[data-theme="dark"] .grade-pill.gp-strong{ color:var(--data-strong); background:rgba(52,211,153,.12); border-color:rgba(52,211,153,.28); }
+html[data-theme="dark"] .grade-pill.gp-good{   color:var(--data-good);   background:rgba(22,199,141,.12); border-color:rgba(22,199,141,.28); }
+html[data-theme="dark"] .grade-pill.gp-fair{   color:var(--data-mid);    background:rgba(131,170,255,.12); border-color:rgba(131,170,255,.28); }
+html[data-theme="dark"] .grade-pill.gp-weak{   color:var(--data-weak);   background:rgba(251,191,36,.12); border-color:rgba(251,191,36,.28); }
+html[data-theme="dark"] .grade-pill.gp-bad{    color:var(--data-bad);    background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.28); }
+
+/* risk pills (strategy pages) share the same three steps */
+html[data-theme="dark"] .risk-pill.risk-high{ color:var(--data-bad); }
+html[data-theme="dark"] .risk-pill.risk-med{  color:var(--data-weak); }
+html[data-theme="dark"] .risk-pill.risk-low{  color:var(--data-good); }
+
+/* homepage hero + market-pulse badges */
+html[data-theme="dark"] .hv-alpha{ color:var(--data-strong); }
+html[data-theme="dark"] .hv-live-bench.down,
+html[data-theme="dark"] .hv-live-v.down,
+html[data-theme="dark"] .mp-chg.down,
+html[data-theme="dark"] .mp-chg{ color:var(--data-bad); }
+html[data-theme="dark"] .hv-live-bench.up,
+html[data-theme="dark"] .hv-live-v.up,
+html[data-theme="dark"] .mp-chg.up{ color:var(--data-good); }
+html[data-theme="dark"] .updated-badge{ color:var(--data-strong); }
+
+/* strategy-page perf markers: the ▲/▼ cycle numbers ink straight red/green */
+html[data-theme="dark"] b.down,
+html[data-theme="dark"] .ls-num.down{ color:var(--data-bad); }
+html[data-theme="dark"] b.up,
+html[data-theme="dark"] .ls-num.up{ color:var(--data-good); }
+
+/* accent-inked labels: dark --accent (#2f5fe0) is a FILL colour — as text on
+   the dark card it measures 2.9–3.3:1. Lift these to --accent3. */
+html[data-theme="dark"] th.sorted,
+html[data-theme="dark"] .sp-chip,
+html[data-theme="dark"] .mfcalc-eyebrow,
+html[data-theme="dark"] .sample-preview-eyebrow,
+html[data-theme="dark"] .ds-sent-k,
+html[data-theme="dark"] .broker-link,
+html[data-theme="dark"] .ps-perf-tag b,
+html[data-theme="dark"] .ps-funds-h b,
+html[data-theme="dark"] .ps-flat-note a,
+html[data-theme="dark"] .ls-cta,
+html[data-theme="dark"] .fr-arch-badge,
+html[data-theme="dark"] .hint a{ color:var(--accent3); }
+
+/* .bt-chart-full is a DELIBERATELY-light card even on the dark theme (it frames
+   a white chart PNG, so its #fafbfd background is kept and only the border/glow
+   flip). Its accent-inked label and info icon therefore live on a LIGHT surface
+   in dark mode — and --accent2 flips to a light-bg blue (#5b8def), which then
+   read 2.5:1 on that white card. Pin them to the light-theme accent so they
+   stay dark-on-light regardless of theme. This is the opposite of the lift
+   above precisely because the surface here does not flip. */
+html[data-theme="dark"] .bt-chart-full .bt-chart-label{ color:#2563eb; }
+html[data-theme="dark"] .bt-chart-full .tip-icon{ color:#1a50d8; background:rgba(37,99,235,0.18); }
+
+/* strategy-page "click to zoom" chart hint: a hardcoded rgba(255,255,255,.88)
+   pill sitting on the SAME light chart card, so it must stay dark-on-light too.
+   Its text3 ink read 2.9:1 — darken it rather than the (correctly light) pill. */
+html[data-theme="dark"] .mf98-zoom-hint{ color:#475569; }
+
+/* Scanner sector pills are inked from an inline --sp RGB triple written by JS,
+   so there is no class to re-point: mix the pill's own hue toward white instead.
+   Keeps every sector visually distinct while clearing 4.5:1 on the dark card. */
+html[data-theme="dark"] .sector-pill.sp-tinted{
+  color:color-mix(in srgb, rgb(var(--sp)) 52%, #ffffff);
+  border-color:rgb(var(--sp) / .34);
+}
+html[data-theme="dark"] .sector-pill.sp-tinted::before{
+  background:color-mix(in srgb, rgb(var(--sp)) 62%, #ffffff);
+}
+
+/* the quality-vs-value scatter inks its dots straight into the SVG fill
+   presentation attribute (no var() there) — lift the whole plot in dark */
+html[data-theme="dark"] .qv-panel svg circle{ filter:brightness(1.45) saturate(.92); }
+
+/* ============================================================================
+   V26.9 — HORIZONTAL-SCROLL AFFORDANCE (site-wide, shared)
+   ----------------------------------------------------------------------------
+   The Scanner and Integrity Score tables scroll sideways on phone and iPad, and
+   the mobile sort-chip strip does too — with `scrollbar-width:none` and hidden
+   webkit scrollbars, so there was NOTHING on screen saying more content exists
+   to the right. On a 390px phone the Scanner shows 3 of 11 columns and looks
+   like a complete table.
+
+   Fix: a soft edge fade pinned to each scroller, driven entirely by CSS
+   scroll-state — no JS, no scroll listeners. `background-attachment:local` on
+   the two inner gradients makes them scroll away with the content, while the
+   two `fixed` shadow gradients stay pinned to the box edge; where the content
+   has run out, the local gradient sits on top of the shadow and cancels it. The
+   result: a fade on the right until you reach the end, a fade on the left once
+   you have scrolled, both sides mid-scroll. It is the classic Roman Komarov
+   shadow, so it degrades to plain scrolling on anything that misses it.
+
+   --sfade is the page surface the fade dissolves into; it follows the theme. */
+.tbl-scroll,
+.mob-sort{
+  --sfade:var(--ink2,#fff);
+  background:
+    linear-gradient(90deg, var(--sfade) 30%, rgba(255,255,255,0)) left center / 34px 100% no-repeat local,
+    linear-gradient(90deg, rgba(255,255,255,0), var(--sfade) 70%) right center / 34px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(15,23,42,.13), rgba(15,23,42,0)) left center / 16px 100% no-repeat,
+    radial-gradient(farthest-side at 100% 50%, rgba(15,23,42,.13), rgba(15,23,42,0)) right center / 16px 100% no-repeat;
+}
+html[data-theme="dark"] .tbl-scroll,
+html[data-theme="dark"] .mob-sort{
+  --sfade:var(--ink2,#111c30);
+  background:
+    linear-gradient(90deg, var(--sfade) 30%, rgba(17,28,48,0)) left center / 34px 100% no-repeat local,
+    linear-gradient(90deg, rgba(17,28,48,0), var(--sfade) 70%) right center / 34px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.45), rgba(0,0,0,0)) left center / 16px 100% no-repeat,
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.45), rgba(0,0,0,0)) right center / 16px 100% no-repeat;
+}
+/* the fade is a scroll cue, not decoration — under reduced-motion it stays,
+   but never animates, and it must never sit over a non-scrolling table */
+@media (min-width:1101px){
+  .tbl-scroll{ background:none; }
+}

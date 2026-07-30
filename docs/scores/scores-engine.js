@@ -177,13 +177,30 @@
     if (s >= 35) return { label: "Weak",      cls: "v-weak" };
     return { label: "Poor", cls: "v-bad" };
   }
+  /* V26.9 — colour() is now THEME-AWARE.
+     Callers write this straight into inline styles and into SVG `fill`
+     presentation attributes (the quality-vs-value scatter), and neither of
+     those resolves var(), so the dark palette cannot reach them from CSS the
+     way the .v-* classes can. Returning the literal hex for the active theme
+     is the only fix that covers all three call shapes at once.
+     The light column is byte-identical to what shipped before; the dark column
+     is the shared --data-* scale from mfc-finish.css. Read live on every call
+     (not cached) so a mid-session theme flip re-inks on the next render. */
+  var DARK = { na: "#8698b7", strong: "#34d399", good: "#16c78d", mid: "#83aaff", weak: "#fbbf24", bad: "#f87171" };
+  var LIGHT = { na: "#94a3b8", strong: "#047857", good: "#059669", mid: "#1a50d8", weak: "#b45309", bad: "#dc2626" };
+  function palette() {
+    try {
+      return document.documentElement.getAttribute("data-theme") === "dark" ? DARK : LIGHT;
+    } catch (e) { return LIGHT; }
+  }
   function color(s) {
-    if (s == null) return "#94a3b8";
-    if (s >= 80) return "#047857";
-    if (s >= 65) return "#059669";
-    if (s >= 50) return "#1a50d8";
-    if (s >= 35) return "#b45309";
-    return "#dc2626";
+    var p = palette();
+    if (s == null) return p.na;
+    if (s >= 80) return p.strong;
+    if (s >= 65) return p.good;
+    if (s >= 50) return p.mid;
+    if (s >= 35) return p.weak;
+    return p.bad;
   }
 
   // ── Scoring pass over the whole universe ──────────────────────────────────
