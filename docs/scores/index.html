@@ -128,11 +128,85 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hp-leg .sw{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .hp-leg b{color:var(--white);font-weight:700;font-variant-numeric:tabular-nums}
 
+/* ─────────────────────────────────────────────────────────────────────────
+   V27.1 — the score distribution becomes the list's primary filter.
+   It was a painted strip plus a read-only legend: the page's biggest visual
+   and its only inert one. Segments and legend chips are now real buttons —
+   hover/focus for the band's count, share and score range, click to narrow
+   the table below to that band, click again to clear. Colours now come from
+   MFCScores.color() (theme-aware) instead of baked light hexes.
+   ───────────────────────────────────────────────────────────────────────── */
+.hp-dist-bar{position:relative}
+.hp-seg{appearance:none;-webkit-appearance:none;border:0;padding:0;font:inherit;cursor:pointer;
+  position:relative;transition:width .8s cubic-bezier(.22,1,.36,1),filter .18s ease,opacity .18s ease}
+.hp-seg:hover{filter:saturate(1.22) brightness(1.10)}
+.hp-seg:focus-visible{outline:2px solid var(--accent3);outline-offset:2px;z-index:3;border-radius:3px}
+/* while a band is picked, the others recede so the selection reads instantly */
+.hp-dist-bar.has-pick .hp-seg{opacity:.32;filter:saturate(.55)}
+.hp-dist-bar.has-pick .hp-seg[aria-pressed="true"]{opacity:1;filter:saturate(1.15) brightness(1.06)}
+.hp-seg[aria-pressed="true"]::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 2px var(--ink2)}
+
+.hp-leg{appearance:none;-webkit-appearance:none;background:none;border:0;font:inherit;
+  padding:3px 8px;margin:-3px -2px;border-radius:8px;cursor:pointer;
+  transition:background .16s ease,color .16s ease,transform .16s ease}
+.hp-leg:hover{background:var(--ink3);transform:translateY(-1px)}
+.hp-leg:focus-visible{outline:2px solid var(--accent3);outline-offset:1px}
+.hp-leg[aria-pressed="true"]{background:var(--ink3);box-shadow:inset 0 0 0 1px var(--border2)}
+.hp-leg[aria-pressed="true"] .lbl{color:var(--white);font-weight:700}
+.hp-legend.has-pick .hp-leg:not([aria-pressed="true"]){opacity:.55}
+.hp-leg .pct{color:var(--text3);font-variant-numeric:tabular-nums}
+
+/* hover/focus readout — one shared node, positioned per segment */
+.hp-tip{position:absolute;left:0;bottom:calc(100% + 9px);z-index:6;pointer-events:none;
+  background:var(--white);color:var(--ink2);padding:7px 11px;border-radius:9px;
+  font-size:11.5px;font-weight:600;line-height:1.45;white-space:nowrap;
+  box-shadow:0 12px 30px -12px rgba(15,23,42,.45);
+  opacity:0;transform:translate(-50%,4px);transition:opacity .16s ease,transform .16s ease}
+.hp-tip.show{opacity:1;transform:translate(-50%,0)}
+.hp-tip b{font-weight:800}
+.hp-tip i{font-style:normal;opacity:.72;font-weight:600}
+.hp-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:var(--white)}
+
+/* the "showing only <band>" chip that appears beside the section title */
+.hp-clear{appearance:none;-webkit-appearance:none;display:none;align-items:center;gap:7px;
+  background:var(--ink3);border:1px solid var(--border2);border-radius:999px;
+  padding:4px 10px 4px 11px;font:inherit;font-size:11px;font-weight:700;color:var(--text2);
+  letter-spacing:.02em;cursor:pointer;transition:border-color .16s ease,color .16s ease}
+.hp-clear.show{display:inline-flex}
+.hp-clear:hover{border-color:var(--accent3);color:var(--white)}
+.hp-clear span{width:7px;height:7px;border-radius:2px;flex:0 0 auto}
+.hp-clear em{font-style:normal;font-size:13px;line-height:1;opacity:.7;margin-left:1px}
+@media (prefers-reduced-motion:reduce){
+  .hp-seg,.hp-leg,.hp-tip{transition:none}
+  .hp-leg:hover{transform:none}
+}
+@media(max-width:520px){
+  .hp-tip{font-size:11px;padding:6px 9px}
+  /* On a 390px phone the whole bar is ~320px, so the 0.7% "Excellent" band is a
+     2px-wide sliver — not a tap target. The visual stays honest (no min-width
+     that would inflate a small band's share); instead the legend chips are the
+     touch route, so give them a comfortable target height. */
+  .hp-dist-bar{height:16px}
+  .hp-leg{padding:8px 10px;margin:0;font-size:12px}
+  .hp-legend{gap:8px 10px}
+}
+
 /* highlight cards */
 .highlights{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
+/* V27.1 — the champion-card ladder. These three steps used to read 1080→3,
+   720→2, 440→1, but the later `@media(max-width:900px)` block in the
+   RESPONSIVE section below ALSO set `.highlights{grid-template-columns:1fr}`.
+   Same specificity, later in the sheet — so it won every width it covered and
+   the 2-column step was unreachable dead CSS. Result: iPad portrait and every
+   large phone rendered six near-empty full-bleed cards (an 86px ring plus a
+   name in an ~800px box) instead of a 2-up grid. The 1fr override is gone from
+   that block and the middle step now breaks at 900 (a card needs ~300px, so
+   three columns are already too tight there). Keep these three in ascending
+   narrowness AND keep `.highlights` out of the responsive block below. */
 @media(max-width:1080px){.highlights{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:720px){.highlights{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:440px){.highlights{grid-template-columns:1fr}}
+@media(max-width:900px){.highlights{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.highlights{grid-template-columns:1fr}}
 .hl-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:16px 18px;cursor:pointer;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 18px -10px rgba(37,99,235,.14);display:flex;align-items:center;gap:14px;animation:hl-in .45s cubic-bezier(.22,1,.36,1) both}
 /* V17.7: champions cascade in after data load (matches the screener's row stagger) */
 @keyframes hl-in{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
@@ -322,7 +396,9 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hp-divider{display:none}
   .hp-stats{justify-content:space-between;gap:12px}
   .hp-stat-num{font-size:23px}
-  .highlights{grid-template-columns:1fr}
+  /* V27.1: `.highlights` deliberately NOT set here — its column ladder lives
+     with the component above (1080→3, 900→2, 520→1). A rule here would be
+     later in the sheet and would silently kill those steps again. */
   .search-hero{max-width:none}
 }
 @media(max-width:520px){
@@ -566,13 +642,20 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     <div class="hero-panel">
       <div class="hp-stats" id="hpStats">
         <div class="hp-stat"><div class="hp-stat-num" id="stScored">—</div><div class="hp-stat-lbl">Stocks scored</div></div>
-        <div class="hp-stat"><div class="hp-stat-num" id="stExcellent" style="color:#047857">—</div><div class="hp-stat-lbl">Excellent (80+)</div></div>
+        <!-- V27.1: the ink used to be a baked style="color:#047857", which measured
+             2.85:1 on the dark panel next to two crisp white stats. renderHero()
+             now paints it from the Excellent band's theme-aware colour. -->
+        <div class="hp-stat"><div class="hp-stat-num" id="stExcellent">—</div><div class="hp-stat-lbl">Excellent (80+)</div></div>
         <div class="hp-stat"><div class="hp-stat-num" id="stMedian">—</div><div class="hp-stat-lbl">Median score</div></div>
       </div>
       <div class="hp-divider"></div>
       <div class="hp-dist">
-        <div class="hp-dist-head"><span class="hp-dist-title">Score distribution</span></div>
-        <div class="hp-dist-bar" id="distBar"></div>
+        <div class="hp-dist-head">
+          <span class="hp-dist-title">Score distribution</span>
+          <!-- V27.1: filter state lives here, next to the thing that sets it -->
+          <button class="hp-clear" id="distClear" type="button" hidden><span id="distClearSw"></span><b id="distClearLbl"></b><em>✕</em></button>
+        </div>
+        <div class="hp-dist-bar" id="distBar" role="group" aria-label="Score distribution — pick a band to filter the list"></div>
         <div class="hp-legend" id="distLegend"></div>
       </div>
     </div>
@@ -789,6 +872,10 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 
 <script>
 let ALL=[], allResults=[], currentPage=1;
+// V27.1 — which distribution band the list is narrowed to (null = all stocks).
+// Owned by the hero's distribution bar; read back by renderHero() so a re-render
+// (e.g. the data-theme flip observer) keeps the pressed state and the chip.
+let bandFilter=null, BANDS=[], BAND_COUNTS=[];
 const PAGE_SIZE=30;
 let sortKey="market_cap_cr", sortDir=-1;   // default: largest market cap first
 
@@ -1024,13 +1111,102 @@ function renderTable(){
   pg.innerHTML=h;
 }
 function goPage(p){currentPage=Math.max(1,Math.min(p,Math.ceil(allResults.length/PAGE_SIZE)));renderTable();document.querySelector(".list-head").scrollIntoView({behavior:"smooth",block:"start"});}
+let sortLabel="market cap";
 function sortBy(k){
   if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}
   sortResults(allResults);currentPage=1;renderTable();
   // reflect what the list is ranked by
-  const lbl={market_cap_cr:"market cap",_overall:"Integrity Score",_q:"Quality",_v:"Value",_g:"Growth",_m:"Momentum",current_price:"price",_iv:"intrinsic-value upside",roe:"ROE",pe_ratio:"P/E"}[k]||"score";
-  document.getElementById("listMeta").textContent=`Ranked by ${lbl} — ${sortDir<0?"highest":"lowest"} first`;
+  sortLabel={market_cap_cr:"market cap",_overall:"Integrity Score",_q:"Quality",_v:"Value",_g:"Growth",_m:"Momentum",current_price:"price",_iv:"intrinsic-value upside",roe:"ROE",pe_ratio:"P/E"}[k]||"score";
+  updateListMeta();
 }
+
+/* ── V27.1: distribution band → list filter ─────────────────────────────────
+   The sub-line under "All scored stocks" has to carry BOTH the sort and the
+   band, so both writers go through one composer — sortBy used to own the node
+   outright and would have wiped the band note on the next header click. */
+function updateListMeta(){
+  const el=document.getElementById("listMeta"); if(!el)return;
+  const rank=`Ranked by ${sortLabel} — ${sortDir<0?"highest":"lowest"} first`;
+  const b=(bandFilter!=null)?BANDS[bandFilter]:null;
+  el.textContent=b
+    ? `${b.lbl} only (${b.min}–${b.max}) · ${allResults.length} stocks · ${rank.charAt(0).toLowerCase()+rank.slice(1)}`
+    : rank;
+}
+// Keep the bar, the legend and the clear chip agreeing with bandFilter.
+function syncBandUI(){
+  const bar=document.getElementById("distBar"), leg=document.getElementById("distLegend");
+  const on=bandFilter!=null;
+  if(bar){
+    bar.classList.toggle("has-pick",on);
+    bar.querySelectorAll(".hp-seg").forEach(s=>
+      s.setAttribute("aria-pressed",String(+s.dataset.band===bandFilter)));
+  }
+  if(leg){
+    leg.classList.toggle("has-pick",on);
+    leg.querySelectorAll(".hp-leg").forEach(s=>
+      s.setAttribute("aria-pressed",String(+s.dataset.band===bandFilter)));
+  }
+  const chip=document.getElementById("distClear");
+  if(chip){
+    chip.classList.toggle("show",on);
+    if(on){
+      chip.hidden=false;
+      const b=BANDS[bandFilter];
+      document.getElementById("distClearSw").style.background=b.c;
+      document.getElementById("distClearLbl").textContent=`${b.lbl} only`;
+      chip.setAttribute("aria-label",`Showing ${b.lbl} only — clear this filter`);
+    } else { chip.hidden=true; }
+  }
+}
+function setBandFilter(i,opts){
+  const next=(bandFilter===i)?null:i;          // clicking the live band clears it
+  bandFilter=next;
+  allResults=(next==null)
+    ? [...ALL]
+    : ALL.filter(d=>d._overall>=BANDS[next].min&&d._overall<BANDS[next].hi);
+  sortResults(allResults);
+  currentPage=1;
+  renderTable();
+  syncBandUI();
+  updateListMeta();
+  if(next!=null&&!(opts&&opts.noScroll)){
+    const h=document.querySelector(".list-head");
+    if(h)h.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  if(next!=null)showToast(`${BANDS[next].lbl} band — ${allResults.length} stocks`,"info",2200);
+}
+// Delegated so the JS-rendered segments/chips need no per-node listeners, and
+// one shared tooltip node follows whichever segment is hovered or focused.
+(function(){
+  const bar=document.getElementById("distBar"), leg=document.getElementById("distLegend");
+  const pick=e=>{const t=e.target.closest("[data-band]");if(!t)return;setBandFilter(+t.dataset.band);};
+  if(bar)bar.addEventListener("click",pick);
+  if(leg)leg.addEventListener("click",pick);
+  const chip=document.getElementById("distClear");
+  if(chip)chip.addEventListener("click",()=>{if(bandFilter!=null)setBandFilter(bandFilter,{noScroll:true});});
+  function showTip(seg){
+    const tip=document.getElementById("distTip"); if(!tip||!bar)return;
+    const i=+seg.dataset.band, b=BANDS[i], c=BAND_COUNTS[i]||0;
+    const total=BAND_COUNTS.reduce((a,x)=>a+x,0)||1;
+    // one line on purpose: the tip sits above the bar, where a 2-line box
+    // reached far enough up to cover the "Score distribution" title and the
+    // active-filter chip on the same row.
+    tip.innerHTML=`<b>${b.lbl}</b> <i>${b.min}–${b.max}</i> · `
+      +`${c.toLocaleString("en-IN")} stocks <i>(${(c/total*100).toFixed(c/total*100<1?1:0)}%)</i>`;
+    const br=bar.getBoundingClientRect(), sr=seg.getBoundingClientRect();
+    // clamp to the bar so a 0.7%-wide band's tip does not hang off the panel
+    const x=Math.min(Math.max(sr.left-br.left+sr.width/2,42),br.width-42);
+    tip.style.left=x+"px";
+    tip.classList.add("show");
+  }
+  const hideTip=()=>{const t=document.getElementById("distTip");if(t)t.classList.remove("show");};
+  if(bar){
+    bar.addEventListener("mouseover",e=>{const s=e.target.closest(".hp-seg");if(s)showTip(s);});
+    bar.addEventListener("mouseleave",hideTip);
+    bar.addEventListener("focusin",e=>{const s=e.target.closest(".hp-seg");if(s)showTip(s);});
+    bar.addEventListener("focusout",hideTip);
+  }
+})();
 
 // ── hero summary + distribution ──
 function renderHero(){
@@ -1038,25 +1214,61 @@ function renderHero(){
   const n=scored.length;
   const sorted=[...scored].sort((a,b)=>a-b);
   const median=n?sorted[Math.floor(n/2)]:0;
+  /* V27.1 — band colours come from the engine, not from baked hexes.
+     MFCScores.color() became theme-aware in V26.9 exactly because callers write
+     it into inline styles, which cannot resolve var(). This renderer was still
+     hard-coding the LIGHT column, so in dark mode the bar and its legend
+     swatches painted #047857 / #1a50d8 on the #121d33 panel — 2.85:1 and 1.8:1,
+     i.e. the Excellent and Fair bands were all but invisible. Reading color()
+     at the band's floor score returns the right ink for the active theme, and
+     the data-theme MutationObserver at the bottom of this file already re-runs
+     renderHero() on a flip. The literals stay as a fallback for the (impossible)
+     case of the engine not being loaded yet. */
+  const bandInk=(score,fallback)=>{
+    try{ return (window.MFCScores&&MFCScores.color) ? MFCScores.color(score) : fallback; }
+    catch(e){ return fallback; }
+  };
+  /* `min` is the inclusive floor and `hi` the EXCLUSIVE ceiling — they must
+     mirror the counting loop below, which takes the first band whose floor the
+     score clears. Scores are floats (80.1, 79.6…), so a filter written as
+     `>=65 && <=79` would silently drop everything in 79–80 and the filtered
+     count would no longer match the legend count. `max` is display only. */
   const bands=[
-    {lbl:"Excellent",min:80,c:"#047857"},
-    {lbl:"Good",min:65,c:"#059669"},
-    {lbl:"Fair",min:50,c:"#1a50d8"},
-    {lbl:"Weak",min:35,c:"#b45309"},
-    {lbl:"Poor",min:0,c:"#dc2626"},
+    {lbl:"Excellent",min:80,hi:Infinity,max:100,c:bandInk(80,"#047857")},
+    {lbl:"Good",     min:65,hi:80,      max:79, c:bandInk(65,"#059669")},
+    {lbl:"Fair",     min:50,hi:65,      max:64, c:bandInk(50,"#1a50d8")},
+    {lbl:"Weak",     min:35,hi:50,      max:49, c:bandInk(35,"#b45309")},
+    {lbl:"Poor",     min:0, hi:35,      max:34, c:bandInk(0, "#dc2626")},
   ];
   const counts=bands.map(b=>0);
   scored.forEach(s=>{for(let i=0;i<bands.length;i++){if(s>=bands[i].min){counts[i]++;break;}}});
+  BANDS=bands; BAND_COUNTS=counts;
   // count-up stats
   rollNum("stScored",n);
   rollNum("stExcellent",counts[0]);
   rollNum("stMedian",median,1);
-  // distribution bar
-  document.getElementById("distBar").innerHTML=bands.map((b,i)=>`<div class="hp-seg" data-w="${counts[i]/n*100}" style="background:${b.c};width:0"></div>`).join("");
-  document.getElementById("distLegend").innerHTML=bands.map((b,i)=>`<span class="hp-leg"><span class="sw" style="background:${b.c}"></span>${b.lbl} <b>${counts[i]}</b></span>`).join("");
+  // keep the Excellent stat on the same theme-aware ink as its band
+  const stEx=document.getElementById("stExcellent");
+  if(stEx)stEx.style.color=bands[0].c;
+  // distribution bar — real buttons: hover/focus reads out, click filters the list
+  const pct=i=>n?(counts[i]/n*100):0;
+  const bar=document.getElementById("distBar");
+  bar.innerHTML=bands.map((b,i)=>
+    `<button class="hp-seg" type="button" data-band="${i}" data-w="${pct(i)}"`
+    +` aria-pressed="${bandFilter===i?"true":"false"}"`
+    +` aria-label="${b.lbl}: ${counts[i]} stocks scoring ${b.min}–${b.max}. Filter the list to this band."`
+    +` style="background:${b.c};width:0"></button>`).join("")
+    +`<span class="hp-tip" id="distTip" aria-hidden="true"></span>`;
+  document.getElementById("distLegend").innerHTML=bands.map((b,i)=>
+    `<button class="hp-leg" type="button" data-band="${i}" aria-pressed="${bandFilter===i?"true":"false"}"`
+    +` aria-label="${b.lbl}: ${counts[i]} stocks. Filter the list to this band.">`
+    +`<span class="sw" style="background:${b.c}"></span>`
+    +`<span class="lbl">${b.lbl}</span> <b>${counts[i]}</b>`
+    +`<span class="pct">${pct(i).toFixed(pct(i)<1?1:0)}%</span></button>`).join("");
   const fillSegs=()=>document.querySelectorAll("#distBar .hp-seg").forEach(el=>el.style.width=el.dataset.w+"%");
   requestAnimationFrame(fillSegs);
   setTimeout(fillSegs,140); // frame-starved fallback so the bar always fills
+  syncBandUI();
   // highlight cards: top Overall, top Quality, top Value
   const top=(key)=>[...ALL].filter(d=>d[key]!=null).sort((a,b)=>b[key]-a[key])[0];
   const cards=[
@@ -1291,7 +1503,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
 .fab-wa-bubble-msg{display:inline-flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit;cursor:pointer;}
 .fab-wa-bubble-eyebrow{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#25d366;line-height:1;}
 .fab-wa-bubble-text{font-size:13.5px;font-weight:500;color:#0c1831;line-height:1.4;}
-.fab-wa-bubble-close{position:absolute;top:6px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;font-size:16px;line-height:1;color:#94a3b8;cursor:pointer;border-radius:6px;transition:color 0.15s,background 0.15s;}
+.fab-wa-bubble-close{position:absolute;top:6px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;font-size:16px;line-height:1;color:var(--text3);cursor:pointer;border-radius:6px;transition:color 0.15s,background 0.15s;}
 .fab-wa-bubble-close:hover{color:#0c1831;background:rgba(15,23,42,0.06);}
 @media (max-width:768px){.fab-wa-bubble{bottom:92px;right:16px;left:auto;max-width:calc(100vw - 100px);}.fab-wa-bubble::after{top:auto;bottom:-6px;right:24px;left:auto;border-right:1px solid rgba(15,23,42,0.08);border-bottom:1px solid rgba(15,23,42,0.08);border-top:none;transform:rotate(45deg);}}
 @media (prefers-reduced-motion:reduce){.fab-wa-bubble{transition:opacity 0.25s ease;transform:none;}.fab-wa-bubble.fwb-visible{transform:none;}}

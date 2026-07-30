@@ -514,6 +514,26 @@ tbody tr.rowlink{cursor:pointer}
   #resultsTable{min-width:720px}
   .content-title{font-size:20px}
 }
+
+/* V27.1 — TABLET ACTION ROW.
+   Once the sidebar stacks (≤1100px) its first section sits between the nav and
+   the results, and on a phone three full-bleed buttons are right. On an iPad
+   there is 600–1100px of width going spare, so the same three stacked to ~130px
+   of chrome the visitor had to scroll past before seeing a single stock — and
+   they had three different heights (34 / 36 / 28px) because the toggle is a
+   .btn-sm. Lay them out as one equal-height row from 601px up. Deliberately NOT
+   scoped to .filters-collapsed so the row does not re-flow when filters open. */
+@media(min-width:601px) and (max-width:1100px){
+  .sidebar .sidebar-section:first-child{
+    display:flex; align-items:stretch; gap:10px; margin-bottom:16px;
+  }
+  /* the 7px spacer div between Run and Clear is column-layout furniture */
+  .sidebar .sidebar-section:first-child > div[style]{display:none}
+  .sidebar .sidebar-section:first-child .btn-full{width:auto; flex:1 1 0}
+  .sidebar .sidebar-section:first-child .mobile-filters-toggle{
+    width:auto; margin-top:0; flex:0 0 auto; font-size:13px; padding:6px 16px;
+  }
+}
 </style>
 <script src="screener-data.js?v=152"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
@@ -1636,7 +1656,7 @@ checkHealth();
 .fab-wa-bubble-msg{display:inline-flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit;cursor:pointer;}
 .fab-wa-bubble-eyebrow{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#25d366;line-height:1;}
 .fab-wa-bubble-text{font-size:13.5px;font-weight:500;color:#0c1831;line-height:1.4;}
-.fab-wa-bubble-close{position:absolute;top:6px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;font-size:16px;line-height:1;color:#94a3b8;cursor:pointer;border-radius:6px;transition:color 0.15s,background 0.15s;}
+.fab-wa-bubble-close{position:absolute;top:6px;right:8px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:none;font-size:16px;line-height:1;color:var(--text3);cursor:pointer;border-radius:6px;transition:color 0.15s,background 0.15s;}
 .fab-wa-bubble-close:hover{color:#0c1831;background:rgba(15,23,42,0.06);}
 .fab-wa-bubble-close:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 @media (max-width:768px){

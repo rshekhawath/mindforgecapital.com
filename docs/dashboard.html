@@ -293,7 +293,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .pmap-sub{ font-size:12px; color:var(--text3); }
 .pmap-grid{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
 .pmap-tile{
-  flex:1 1 auto; min-width:86px; min-height:58px;
+  /* V27.1 — flex-basis MUST be 0, not auto. The card's own subtitle promises
+     "tile size = model weight" and renderPortfolioMap sets an inline
+     flex-grow proportional to weight, but with `flex-basis:auto` each tile
+     also carried its CONTENT width as a floor — so width came out as
+     (ticker length) + (share of the leftover). On an equal-weight book every
+     tile is 4.0% yet they rendered 81px (M&M) to 137px (TATAMOTORS), i.e. the
+     map was drawing name length, not weight. With basis 0 the whole row is
+     free space, so width = grow/Σgrow × row — exactly proportional. Line
+     breaking still respects min-width (flexbox clamps the hypothetical main
+     size), and .pmap-grid::after soaks up the ragged last row. */
+  flex:1 1 0%; min-width:var(--pmap-min,86px); min-height:58px;
   border-radius:10px; padding:11px 12px; border:1px solid;
   display:flex; flex-direction:column; justify-content:space-between; gap:8px; overflow:hidden;
   transition:transform .18s ease, box-shadow .2s ease, filter .2s ease;
@@ -309,7 +319,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .pmap-wt{ display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text3); font-variant-numeric:tabular-nums; }
 .pmap-swatch{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
 @media (prefers-reduced-motion: reduce){ .pmap-tile:hover{ transform:none; } }
-@media (max-width:600px){ .pmap-card{ padding:20px 18px; } .pmap-tile{ min-width:72px; min-height:52px; padding:9px 10px; } }
+@media (max-width:600px){ .pmap-card{ padding:20px 18px; } .pmap-tile{ min-width:var(--pmap-min,72px); min-height:52px; padding:9px 10px; } }
 
 /* ── POSITION SIZING (CAPITAL CALCULATOR) ── */
 .size-card{
@@ -879,7 +889,17 @@ footer a:hover{color:var(--accent);}
   .stat-card{padding:18px 18px;}
   .stat-card .stat-val{font-size:26px;}
   .stat-card .ico-wrap{top:14px;right:14px;width:30px;height:30px;}
-  .meta-row{gap:8px;}
+  /* V27.1 — the four hero pills are shrink-to-fit, so once they wrap onto a
+     line each they left-align at four different widths: a ragged staircase
+     under the headline (the "Subscription active until 17 Aug 2026" pill even
+     wrapped to two lines while "Data refreshed 10h ago" was half the width).
+     One column of equal-width pills matches the card rhythm below it. */
+  .meta-row{gap:8px;flex-direction:column;align-items:stretch;}
+  /* wrap INSIDE the pill too: .meta-pill is flex-wrap:nowrap, so on the status
+     pill (dot + label + date + subscription meter) the label was squeezed by
+     ~6px and broke "Subscription active / until" and "17 Aug / 2026" across two
+     lines each. Letting it wrap drops the meter to its own line instead. */
+  .meta-row .meta-pill{width:100%;justify-content:flex-start;flex-wrap:wrap;}
   .alloc-name{flex-basis:100px;font-size:12px;}
   .alloc-pct{flex-basis:46px;font-size:11px;}
   .table-actions{width:100%;justify-content:flex-end;}
@@ -1614,9 +1634,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .ds-sent:hover{transform:translateY(-2px);box-shadow:0 16px 38px -18px rgba(26,80,216,.28)}
     .ds-sent-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;flex-wrap:wrap}
     .ds-sent-k{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
-    .ds-sent-date{font-weight:600;letter-spacing:0;text-transform:none;color:#94a3b8}
+    .ds-sent-date{font-weight:600;letter-spacing:0;text-transform:none;color:var(--text3)}
     .ds-sent-v{font-size:15px;font-weight:800;letter-spacing:-.01em}
-    .ds-sent-v i{font-style:normal;font-size:.7em;color:#94a3b8;font-weight:700;margin-left:1px}
+    .ds-sent-v i{font-style:normal;font-size:.7em;color:var(--text3);font-weight:700;margin-left:1px}
     .ds-sent-v.bear{color:#dc2626}.ds-sent-v.bull{color:#059669}.ds-sent-v.neutral{color:#b45309}
     /* V26.7 — dark-mode legibility: the sentiment verdict reused the light semantic
        inks (~3.9:1 on the dark card). Lift to the dark palette; light unchanged. */
@@ -1707,7 +1727,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .pc-stat b{font-variant-numeric:tabular-nums;min-width:20px;text-align:right}
     .pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
     .pc-up-dot{background:#059669}.pc-down-dot{background:#dc2626}
-    .pc-asof{font-size:11px;color:#94a3b8;margin-top:2px}
+    .pc-asof{font-size:11px;color:var(--text3);margin-top:2px}
     /* V14.4: top / lagging performer chips */
     .pc-leaders{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
     .pc-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#0c1831;background:rgba(255,255,255,.6);border:0.5px solid rgba(37,99,235,0.14);border-radius:999px;padding:5px 11px}
@@ -2697,6 +2717,28 @@ function renderPortfolioMap(stocks) {
       + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>' + w.toFixed(1) + '%</span>'
       + '</div>';
   }).join('');
+  // V27.1 — set the tile floor from the WIDEST ticker in this book.
+  // Tiles are flex-basis:0 now (so width tracks weight, not name length), which
+  // means a long symbol would otherwise ellipsis away — BHARTIARTL truncated to
+  // "BHART…" at 820px. Measure the real rendered text once and publish it as
+  // --pmap-min, so min-width is exactly wide enough for the longest holding and
+  // no wider. Falls back to the hard-coded floors in CSS if anything throws.
+  try {
+    const probe = grid.querySelector('.pmap-ticker');
+    if (probe) {
+      const cs = getComputedStyle(probe);
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      const ls = parseFloat(cs.letterSpacing) || 0;   // measureText ignores tracking
+      let widest = 0;
+      sorted.forEach(s => {
+        const t = String(s.ticker || s.company_name || '—');
+        widest = Math.max(widest, ctx.measureText(t).width + t.length * ls);
+      });
+      // .pmap-tile padding (11 + 12) + the 1px borders, rounded up
+      grid.style.setProperty('--pmap-min', Math.max(86, Math.ceil(widest + 25)) + 'px');
+    }
+  } catch (e) {}
   const secCount = Object.keys(colorMap).length;
   if (sub) sub.textContent = sorted.length + ' holdings · ' + secCount + ' sectors · tile size = model weight';
   card.style.display = '';

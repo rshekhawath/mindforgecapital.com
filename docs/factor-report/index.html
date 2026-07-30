@@ -119,6 +119,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-row{display:grid;grid-template-columns:26px 1.15fr 1.5fr 82px;align-items:center;gap:14px;padding:14px 6px;border-bottom:1px solid var(--border)}
 .fr-row:last-child{border-bottom:none}
 .fr-rank{font-size:13px;font-weight:800;color:var(--text3);text-align:center;font-variant-numeric:tabular-nums}
+/* V27.1: the un-ranked baseline row — clearly "no rank", not a stray glyph */
+.fr-rank-base{font-weight:600;opacity:.6;letter-spacing:-.02em}
 .fr-name{display:flex;flex-direction:column;gap:2px}
 .fr-name b{font-size:15px;color:var(--white);font-weight:700}
 .fr-name span{font-size:11.5px;color:var(--text3)}
@@ -417,7 +419,11 @@ nav.appendChild(b);};
         <div class="fr-val down">−2.4%</div>
       </div><!--/FR:factor-->
       <!--FR:baseline--><div class="fr-row">
-        <div class="fr-rank">·</div>
+        <!-- V27.1: the rank cell used to hold a bare "·", which read as a stray
+             typo sitting in the 1·2·3·4 rank column. It is now an em-dash with
+             an explicit label; .fr-rank-base is the marker the alpha-chip pass
+             below matches on (the "·" test is kept as a fallback). -->
+        <div class="fr-rank fr-rank-base" title="Not ranked — shown as the broad-market baseline" aria-label="not ranked">—</div>
         <div class="fr-name"><b>Broad market <span style="font-weight:500;color:var(--text3)">(baseline)</span></b><span>Nifty 50</span></div>
         <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:12.4%"></span></div>
         <div class="fr-val down">−3.5%</div>
@@ -561,7 +567,7 @@ if(window.__mfcThemeBoot)window.__mfcThemeBoot();
       var v=num(r);if(v==null)return;
       var rank=(r.querySelector('.fr-rank')||{textContent:''}).textContent.trim();
       var nameTxt=(r.querySelector('.fr-name')||{textContent:''}).textContent;
-      if(rank==='·'||/baseline/i.test(nameTxt)){base={row:r,v:v};}
+      if(r.querySelector('.fr-rank-base')||rank==='·'||/baseline/i.test(nameTxt)){base={row:r,v:v};}
       else factors.push({row:r,v:v,name:fname(r)});
     });
     if(!base||factors.length<2)return;

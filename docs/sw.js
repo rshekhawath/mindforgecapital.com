@@ -77,7 +77,15 @@
 // to 2.5–3.5:1 on the dark theme) plus the horizontal-scroll edge-fade affordance.
 // A precached document has no ?v to bust, so the cache is bumped to re-install the
 // current offline shell and pull the new stylesheet.
-const CACHE = 'mfc-v21';
+// v22 (V27.1): index.html (precached below as the offline navigation fallback)
+// carries the micro-label contrast pass — the Market-Pulse sentiment scale
+// (BEARISH/NEUTRAL/BULLISH at 9.5px), the "/100" score suffix and the WhatsApp
+// bubble's close control were all hard-coded #94a3b8, which measures 2.35:1 on
+// white and 2.5:1 as a UI control. They now take var(--text3), so they land at
+// 7.4:1 in light and ~5.2:1 in dark. No shared asset changed this release, so
+// there is no ?v to bust — the cache name is the only version a precached
+// document has, exactly as for v20.
+const CACHE = 'mfc-v22';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
