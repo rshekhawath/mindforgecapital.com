@@ -77,15 +77,16 @@
 // to 2.5–3.5:1 on the dark theme) plus the horizontal-scroll edge-fade affordance.
 // A precached document has no ?v to bust, so the cache is bumped to re-install the
 // current offline shell and pull the new stylesheet.
-// v22 (V27.1): index.html (precached below as the offline navigation fallback)
-// carries the micro-label contrast pass — the Market-Pulse sentiment scale
-// (BEARISH/NEUTRAL/BULLISH at 9.5px), the "/100" score suffix and the WhatsApp
-// bubble's close control were all hard-coded #94a3b8, which measures 2.35:1 on
-// white and 2.5:1 as a UI control. They now take var(--text3), so they land at
-// 7.4:1 in light and ~5.2:1 in dark. No shared asset changed this release, so
-// there is no ?v to bust — the cache name is the only version a precached
-// document has, exactly as for v20.
-const CACHE = 'mfc-v22';
+// v23 (V27.3): the July rebalance republished every backtest figure, and
+// index.html — precached below as the offline navigation fallback — carries
+// three of them (the LargeMidcap / SmallMicro / MultiAsset CAGR + benchmark
+// tiles, now 35.6/14.01, 46.9/16.88, 21.7/10.56). The 30 chart files under
+// /assets/charts/ do NOT need the cache name: inject_site_stats.py re-stamps
+// each one's ?v= from the new PNG's content hash, and a new ?v is a new cache
+// key under the cache-first asset rule below. A precached document has no ?v,
+// so the cache name is its only version — bumped here so an offline visitor
+// cannot be served last month's figures. Same reasoning as v20 and v22.
+const CACHE = 'mfc-v23';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
