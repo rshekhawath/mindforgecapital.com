@@ -218,6 +218,21 @@ table.data tbody td.pos{color:var(--green);font-weight:600}
 table.data tbody td.neg{color:var(--red);font-weight:600}
 .who-chip{display:inline-flex;align-items:center;gap:7px}
 .who-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* V27.2 — participant identity inks as TOKENS, not literals.
+   renderParticipants() used to paint these four dots from a JS map of light
+   hexes written straight into `style="background:…"`, which no CSS override can
+   reach — so on the dark panel the FII dot sat at 2.55:1 and the DII dot at
+   2.95:1 (both under the 3:1 a graphical object needs), while the page's other
+   identity colours had long since lifted. Declaring them as custom properties
+   fixes that AND is better than a theme-aware JS map: `var()` inside an inline
+   style re-resolves on its own when data-theme flips, so no re-render or
+   MutationObserver is involved. Light values are byte-identical to the old map. */
+:root{
+  --who-fii:#1a50d8; --who-dii:#7c3aed; --who-pro:#0891b2; --who-cli:#64748b;
+}
+html[data-theme="dark"]{
+  --who-fii:#83aaff; --who-dii:#a78bfa; --who-pro:#38bdf8; --who-cli:#8698b7;
+}
 /* V16.6 — denser FII/DII data tables on small phones (keeps the .tbl-scroll fallback) */
 @media(max-width:600px){
   table.data{font-size:12px}
@@ -329,6 +344,36 @@ table.data td .netnum{display:block}
 .dbar .dfill{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%}
 .dbar .dfill.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
 .dbar .dfill.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
+/* V27.2 — the fill gradients end on the LIGHT semantic pair (#059669 / #dc2626),
+   which is the muddy end of the dark palette. Lift both on dark so a bar reads
+   at the same strength as the number above it. */
+html[data-theme="dark"] .dbar .dfill.r{background:linear-gradient(90deg,#16c78d,#34d399)}
+html[data-theme="dark"] .dbar .dfill.l{background:linear-gradient(90deg,#fb7185,#f87171)}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   V27.2 — LONG-SHARE COLUMN + bars on the option columns.
+   The table showed four directional net figures but only gave the two FUTURES
+   columns a mini-bar, so half the directional data read as bare numbers in the
+   same table that had just taught you to read bars. Both option columns now
+   carry the same .dbar. And the two totals (Total Long / Total Short) were raw
+   contract counts with nothing tying them together, even though the one thing a
+   reader wants from them — is this participant actually net long? — is a
+   one-line derivation. A "Long share" column now states it outright.
+   ───────────────────────────────────────────────────────────────────────── */
+.lsw{display:block;font-weight:700;font-variant-numeric:tabular-nums}
+.lsw.up{color:var(--green)}
+.lsw.dn{color:var(--red)}
+.lsw.flat{color:var(--text3)}
+.lsbar{display:block;position:relative;width:74px;height:4px;margin:5px 0 0 auto;
+  background:var(--ink3);border-radius:3px;overflow:hidden}
+/* the 50/50 reference — a book with equal longs and shorts sits exactly here */
+.lsbar::before{content:'';position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--border2);z-index:2}
+.lsbar i{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%}
+.lsbar i.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
+.lsbar i.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
+html[data-theme="dark"] .lsbar i.r{background:linear-gradient(90deg,#16c78d,#34d399)}
+html[data-theme="dark"] .lsbar i.l{background:linear-gradient(90deg,#fb7185,#f87171)}
+@media(max-width:600px){.dbar,.lsbar{width:58px}}
 /* V15.1 — FII-vs-DII cash net "tug-of-war" (shared-scale diverging bars) */
 .combined.cmb-rich{flex-direction:column;align-items:stretch;gap:0}
 .cmb-row{display:flex;align-items:center;gap:13px}
@@ -535,12 +580,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <th>Index Fut</th><th>Stock Fut</th>
             <th>Index Opt*</th><th>Stock Opt*</th>
             <th>Total Long</th><th>Total Short</th>
+            <!-- V27.2: the derived read the two raw totals never gave you -->
+            <th>Long share†</th>
           </tr></thead>
           <tbody id="partTblBody"></tbody>
         </table>
       </div>
       <div class="note">* <b>Index/Stock Opt</b> shows net directional option bias = (call longs + put shorts) − (call shorts + put longs).
-         A positive figure leans bullish, negative leans bearish. Futures columns are net contracts (long − short).</div>
+         A positive figure leans bullish, negative leans bearish. Futures columns are net contracts (long − short).
+         <br>† <b>Long share</b> = total long ÷ (total long + total short) across all F&amp;O contracts. Above 50% the book leans long, below 50% it leans short;
+         the bar measures the distance from an even 50/50 book. Each mini-bar in the four net columns is scaled to the largest absolute value in ITS OWN column,
+         so bars compare participants within a column, never across columns.</div>
     </div>
   </section>
 
@@ -834,7 +884,9 @@ function renderDerivatives(d){
   if(!deriv||!deriv.oi||!deriv.oi.FII){
     document.getElementById("gaugeCard").innerHTML=`<div class="err-box"><b>Derivatives data unavailable</b>The participant-wise F&amp;O report could not be loaded for the latest day.</div>`;
     document.getElementById("instList").innerHTML="";
-    document.getElementById("partTblBody").innerHTML=`<tr><td colspan="7" style="text-align:center;color:var(--text3)">No data</td></tr>`;
+    // V27.2: 7 → 8, matching the new "Long share" column. A stale colspan here
+    // would leave the empty-state cell short of the header row.
+    document.getElementById("partTblBody").innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--text3)">No data</td></tr>`;
     return;
   }
   const oi=deriv.oi,fii=oi.FII;
@@ -900,7 +952,9 @@ function renderDerivatives(d){
 
   // ── participant table ──
   const order=["FII","DII","Pro","Client"];
-  const dot={FII:"#1a50d8",DII:"#7c3aed",Pro:"#0891b2",Client:"#64748b"};
+  // V27.2: tokens, not literals — see the --who-* block in the stylesheet. var()
+  // inside an inline style re-resolves on a data-theme flip all by itself.
+  const dot={FII:"var(--who-fii)",DII:"var(--who-dii)",Pro:"var(--who-pro)",Client:"var(--who-cli)"};
   const body=document.getElementById("partTblBody");
   const parts=order.filter(k=>oi[k]).map(k=>{const p=oi[k];return{k,p,
     idxF:netOf(p,"fut_idx_long","fut_idx_short"),stkF:netOf(p,"fut_stk_long","fut_stk_short"),
@@ -908,15 +962,35 @@ function renderDerivatives(d){
   // diverging mini-bar (net long → green right, net short → red left), scaled to the column's max |net|
   const maxIdxF=Math.max(1,...parts.map(x=>Math.abs(x.idxF)));
   const maxStkF=Math.max(1,...parts.map(x=>Math.abs(x.stkF)));
+  // V27.2: the option columns get the same treatment — they are directional net
+  // figures too, and leaving them bare made half the table's numbers unreadable
+  // as a comparison. Scaled per column, exactly like the futures pair.
+  const maxIdxO=Math.max(1,...parts.map(x=>Math.abs(x.idxO)));
+  const maxStkO=Math.max(1,...parts.map(x=>Math.abs(x.stkO)));
   const dbar=(v,mx)=>`<span class="dbar"><span class="dfill ${v>=0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span></span>`;
+  // V27.2: long share = long ÷ (long + short). 50% is an even book; the bar
+  // measures the distance from 50 so a lean in either direction is visible at a
+  // glance. Guarded: a participant with no open contracts renders "—", not NaN.
+  const lshare=(p)=>{
+    const L=Number(p.total_long)||0, S=Number(p.total_short)||0, T=L+S;
+    if(!T) return `<span class="lsw flat">—</span>`;
+    const pctv=L/T*100;
+    const tone=pctv>50.5?"up":(pctv<49.5?"dn":"flat");
+    const side=pctv>=50?"r":"l";
+    const w=Math.min(50,Math.abs(pctv-50)).toFixed(1);
+    return `<span class="lsw ${tone}">${pctv.toFixed(1)}%</span>`
+      + `<span class="lsbar" role="img" aria-label="${pctv.toFixed(1)} percent of this participant's open contracts are long">`
+      + `<i class="${side}" style="width:${w}%"></i></span>`;
+  };
   body.innerHTML=parts.map(({k,p,idxF,stkF,idxO,stkO})=>`<tr>
       <td><span class="who-chip"><span class="who-dot" style="background:${dot[k]}"></span>${escapeHtml(k)}</span></td>
       <td class="${sign(idxF)}"><span class="netnum">${cr(idxF)}</span>${dbar(idxF,maxIdxF)}</td>
       <td class="${sign(stkF)}"><span class="netnum">${cr(stkF)}</span>${dbar(stkF,maxStkF)}</td>
-      <td class="${sign(idxO)}">${cr(idxO)}</td>
-      <td class="${sign(stkO)}">${cr(stkO)}</td>
+      <td class="${sign(idxO)}"><span class="netnum">${cr(idxO)}</span>${dbar(idxO,maxIdxO)}</td>
+      <td class="${sign(stkO)}"><span class="netnum">${cr(stkO)}</span>${dbar(stkO,maxStkO)}</td>
       <td>${grp(p.total_long)}</td>
       <td>${grp(p.total_short)}</td>
+      <td>${lshare(p)}</td>
     </tr>`).join("");
 }
 

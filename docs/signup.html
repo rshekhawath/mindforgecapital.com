@@ -418,17 +418,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
 
       <!-- ── REQUIRED RISK + T&C ACKNOWLEDGEMENT ── -->
-      <div style="margin:24px 0 16px;padding:18px 18px 16px;border:2px solid #dc2626;border-radius:12px;background:rgba(239,68,68,0.05);">
-        <div style="font-size:13px;font-weight:800;color:#dc2626;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;">⚠ Important — Read before subscribing</div>
+      <div style="margin:24px 0 16px;padding:18px 18px 16px;border:2px solid var(--data-bad);border-radius:12px;background:rgba(239,68,68,0.05);">
+        <div style="font-size:13px;font-weight:800;color:var(--data-bad);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;">⚠ Important — Read before subscribing</div>
         <p style="font-size:13px;color:var(--text2);line-height:1.55;margin:0 0 10px;">
           Backtested returns are <strong>simulated</strong>, not real, and may differ materially from live results. Investing in equities — especially <strong>small &amp; microcap stocks — can result in total loss of capital</strong>. MindForge through Sagar Shekhawath registered with SEBI as a RA provides <strong>research only</strong>; we are not your investment adviser, portfolio manager, or fiduciary. All investment decisions are yours alone.
         </p>
-        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;background:var(--ink2);border:1.5px solid #fecaca;border-radius:10px;transition:border .2s;" id="reg-tnc-label"
-          onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor=document.getElementById('reg-tnc').checked?'#059669':'#fecaca'">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;background:var(--ink2);" id="reg-tnc-label">
           <input type="checkbox" id="reg-tnc" name="terms_accepted" required style="width:20px;height:20px;flex-shrink:0;margin-top:2px;accent-color:#dc2626;cursor:pointer;"
             onchange="handleTncChange()">
           <span style="font-size:13px;font-weight:700;color:var(--text);line-height:1.5;">
-            I have read and agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer" style="color:#1a50d8;text-decoration:underline;">Terms of Service</a> and acknowledge that I accept all investment risks, including the possible <span style="color:#dc2626;">total loss of my capital</span>.
+            I have read and agree to the <a href="terms.html" target="_blank" rel="noopener noreferrer" style="color:var(--accent2);text-decoration:underline;">Terms of Service</a> and acknowledge that I accept all investment risks, including the possible <span style="color:var(--data-bad);">total loss of my capital</span>.
           </span>
         </label>
       </div>
@@ -659,12 +658,12 @@ function handleTncChange() {
     btn.disabled       = false;
     btn.style.cursor   = 'pointer';
     btn.style.opacity  = '1';
-    if (lbl) lbl.style.borderColor = '#059669';
+    if (lbl) lbl.classList.add('tnc-ok');
   } else {
     btn.disabled       = true;
     btn.style.cursor   = 'not-allowed';
     btn.style.opacity  = '0.6';
-    if (lbl) lbl.style.borderColor = '#fecaca';
+    if (lbl) lbl.classList.remove('tnc-ok');
   }
 }
 
@@ -674,10 +673,9 @@ async function handleSubmit() {
   if (!tnc || !tnc.checked) {
     var lbl = document.getElementById('reg-tnc-label');
     if (lbl) {
-      lbl.style.borderColor = '#dc2626';
-      lbl.style.boxShadow   = '0 0 0 4px rgba(220,38,38,0.18)';
+      lbl.classList.add('tnc-err');
       lbl.scrollIntoView({behavior:'smooth', block:'center'});
-      setTimeout(function() { lbl.style.boxShadow = ''; }, 1600);
+      setTimeout(function() { lbl.classList.remove('tnc-err'); }, 1600);
     }
     return;
   }
@@ -832,6 +830,38 @@ function resetForm() {
 <!-- MF VISUAL v14 — signup refinement (additive, RM-safe) -->
 <style id="mf-v14-signup">
 :root{ --v14-ease: cubic-bezier(.22,.8,.2,1); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   V27.2 — the REQUIRED risk / T&C consent box is theme-aware now.
+   It is the block a subscriber has to read to give informed consent, and every
+   colour in it was a light literal baked into an inline style, so on the dark
+   theme it was the least readable thing on the page: the "Terms of Service"
+   link measured 2.55:1 (#1a50d8), and the "⚠ Important" heading and the "total
+   loss of my capital" emphasis both 3.48:1 (#dc2626) — all against a 4.5:1
+   requirement at 13px. They now use --accent2 / --data-bad / --data-strong from
+   mfc-finish.css, which flip with the theme (5.2:1 and 4.8-6.1:1 in both).
+   --tnc-idle is the checkbox row's resting border; the JS hover / checked /
+   validation-error states write these same var() names, so the whole control
+   stays in one palette instead of three hard-coded hexes.
+   ───────────────────────────────────────────────────────────────────────── */
+:root{ --tnc-idle:#fecaca; }
+html[data-theme="dark"]{ --tnc-idle:rgba(248,113,113,.42); }
+
+/* The checkbox row's border lives HERE, not in an inline style, and its states
+   are classes rather than JS-written colours. That is not tidiness — it is a
+   correctness fix. The first cut kept `border:1.5px solid var(--tnc-idle)`
+   inline and had handleTncChange() assign style.borderColor afterwards; because
+   the shorthand contained a var(), Chrome could not split it on that write and
+   re-serialised the inline style with `border-top-style: ;` — i.e. the border
+   silently vanished instead of changing colour. Never write a longhand over a
+   var()-bearing shorthand on the same element. */
+#reg-tnc-label{ border:1.5px solid var(--tnc-idle); border-radius:10px;
+  transition:border-color .2s ease, box-shadow .2s ease; }
+#reg-tnc-label:hover{ border-color:var(--data-bad); }
+#reg-tnc-label.tnc-ok{ border-color:var(--data-strong); }
+#reg-tnc-label.tnc-err{ border-color:var(--data-bad); box-shadow:0 0 0 4px rgba(220,38,38,0.18); }
+html[data-theme="dark"] #reg-tnc-label.tnc-err{ box-shadow:0 0 0 4px rgba(248,113,113,0.22); }
+@media (prefers-reduced-motion:reduce){ #reg-tnc-label{ transition:none; } }
 
 /* Subtle entrance for the card */
 .card{ opacity:0; transform: translateY(8px); animation: v14-card-in .55s var(--v14-ease) .05s forwards; }
