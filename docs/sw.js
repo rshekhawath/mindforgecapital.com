@@ -86,7 +86,15 @@
 // key under the cache-first asset rule below. A precached document has no ?v,
 // so the cache name is its only version — bumped here so an offline visitor
 // cannot be served last month's figures. Same reasoning as v20 and v22.
-const CACHE = 'mfc-v23';
+// v24 (V27.4): the light-mode small-text contrast pass changed index.html again —
+// the strategy-card metrics moved off the hard-coded #00b894 (2.54:1 on white,
+// below even the 3:1 large-text bar), and the team-role / save-badge / hero
+// live-badge / WhatsApp-eyebrow inks moved onto the --data-* token family so they
+// flip with the theme instead of being baked light. index.html is precached below
+// as the offline navigation fallback, so the cache name is the only version it
+// has. No shared docs/assets/ file changed this release — every edit is page-local
+// CSS — so nothing needed a ?v= bump.
+const CACHE = 'mfc-v24';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

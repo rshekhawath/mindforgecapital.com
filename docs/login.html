@@ -547,9 +547,14 @@ function renderSubscriptions(subs) {
       return '<a class="sub-row" href="' + waUrl + '" target="_blank" rel="noopener noreferrer" style="opacity:0.7;text-decoration:none;">' +
         '<div>' +
           '<div class="sub-name">' + safeStrat + '</div>' +
-          '<div class="sub-meta" style="color:#dc2626;">Expired on ' + dateStr + ' · Renew on WhatsApp</div>' +
+          // V27.4: these two were baked light hexes written straight into an inline
+          // style, so no stylesheet could reach them — #25d366 measured 1.98:1 on the
+          // light card and #dc2626 fell to ~3.4:1 on the dark one. A var() inside an
+          // inline style re-resolves on a data-theme flip by itself, so the tokens fix
+          // both themes with no re-render and no observer.
+          '<div class="sub-meta" style="color:var(--data-bad);">Expired on ' + dateStr + ' · Renew on WhatsApp</div>' +
         '</div>' +
-        '<div class="sub-go" style="color:#25d366;">Renew →</div>' +
+        '<div class="sub-go" style="color:var(--data-strong);">Renew →</div>' +
       '</a>';
     }
     return '<a class="sub-row" href="dashboard.html?token=' + encodeURIComponent(sub.token) + '" style="text-decoration:none;">' +
