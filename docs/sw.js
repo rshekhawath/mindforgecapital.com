@@ -103,7 +103,12 @@
 // installed app's start_url). Everything in it is scoped to max-width:600px, so
 // tablets and desktop are unaffected, but a precached document has no ?v to
 // bust and an installed app would otherwise keep the old loose mobile layout.
-const CACHE = 'mfc-v26';
+// v27 (V27.7): index.html (precached offline fallback) gains the phone-only
+// section accordions, and both shell documents carry the second phone polish
+// pass. All of it is scoped to max-width:600px — the accordion script returns
+// before touching the DOM above that width — so tablets and desktop are
+// unaffected, but a precached document has no ?v to bust.
+const CACHE = 'mfc-v27';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
