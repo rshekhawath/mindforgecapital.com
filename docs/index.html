@@ -6339,6 +6339,94 @@ section[id]{ scroll-margin-top: 80px; }
 })();
 </script>
 
+<!-- ═══ V27.6 · MOBILE DENSITY PASS — PHONES ONLY ══════════════════════════════
+     The homepage measured 14,328px at 390px wide: 17.6 screenfuls, of which
+     ~1,100px was section padding alone. This block buys that back.
+
+     SCOPED TO max-width:600px ON PURPOSE. iPad portrait is 768–820 CSS px and
+     iPad landscape 1024–1180, so nothing in here can reach a tablet or a
+     desktop — both were explicitly to be left alone. 600 is already a house
+     breakpoint, and no existing rule in the ≤640 range touches these
+     properties, so this block cannot clobber narrower tuning either.
+
+     Order of attack is deliberate: whitespace first (padding, gaps), then
+     heading scale, then line-height. Body copy KEEPS a comfortable 1.58 and no
+     text shrinks below 10px — density should cost scrolling, not legibility.
+     Placed last in the document so it wins over the page's own rules without
+     needing !important. ═══════════════════════════════════════════════════ -->
+<style id="mf-v276-mobile-density">
+@media (max-width: 600px){
+
+  /* ── 1. Section rhythm — the single biggest win (~1,100px → ~430px) ─────── */
+  .hero{ padding-top:30px; padding-bottom:26px; }
+  .how, .build-flow, .strategies, .why-mf, .team, .faq{
+    padding-top:32px; padding-bottom:32px;
+  }
+  .mp-section{ padding-top:4px; }
+  .social-proof{ padding-top:14px; padding-bottom:14px; }
+
+  /* ── 2. Card interiors — 12 cards on this page, so each px counts ×12 ───── */
+  .strat-card{ padding-top:20px; padding-bottom:20px; }
+  .why-card{ padding-top:15px; padding-bottom:15px; }
+  .team-card{ padding-top:14px; padding-bottom:14px; }
+
+  /* ── 3. Grid gaps ──────────────────────────────────────────────────────── */
+  .hero-grid{ gap:26px; }
+  .strat-grid{ gap:10px; }
+  .why-grid{ gap:12px; }
+  .team-grid{ gap:14px; }
+  .timeline{ margin-bottom:20px; }
+
+  /* ── 4. Heading scale. 42px on a 390px screen was the outlier — it cost two
+        wrapped lines on its own. Line-heights tighten with the size. ─────── */
+  .hero h1{ font-size:27px; line-height:1.14; }
+  h2{ font-size:24px; line-height:1.18; }
+  .strategies h2{ font-size:26px; line-height:1.16; }
+  .section-label{ margin-bottom:9px; }
+
+  /* ── 5. Body copy — 1.7 → 1.58. Still comfortable, and it compounds over
+        every paragraph on a 14k-pixel page. No font-size change here. ────── */
+  .hero p, .how p, .build-flow p, .why-mf p, .team p, .faq p,
+  .strat-desc, .lead{ line-height:1.58; }
+
+  /* ── 6. Inter-element margins. Measured 1,422px of vertical margin on this
+        page — 1.75 screenfuls of gap between blocks, which turned out to be a
+        bigger lever than either padding or type. Halved, not removed: the
+        rhythm survives, the dead space does not. ─────────────────────────── */
+  .strat-badge{ margin-bottom:12px; }
+  .strat-universe{ margin-bottom:12px; }
+  .strat-metrics{ margin-bottom:14px; }
+  .cagr-cmp{ margin-bottom:10px; }
+  .spark-wrap{ margin:6px 0 12px; padding:8px 8px 4px; }
+  .spark-wrap svg{ height:46px; }          /* 60 → 46; the shape still reads */
+  .strat-desc{ margin-bottom:16px; }
+  .strat-factors{ margin-bottom:16px; }
+  .strat-footer{ padding-top:14px; }
+  .hero-desc, .how-desc, .team-desc{ margin-bottom:22px; }
+  .strategies-header{ margin-bottom:22px; }
+  .billing-wrap{ margin-bottom:22px; }
+  .bf-pipeline, .bf-summary{ margin-top:18px; margin-bottom:18px; }
+  .footer-inner{ margin-top:26px; }
+
+  /* ── 7. Pair the two backtest metrics. They measure 122px and 161px inside a
+        293px card, so they fit on one line comfortably — they were stacking
+        only because each claimed a full-width flex basis. The live chip keeps
+        its own full-width row. ~41px back per card, ×3. ─────────────────── */
+  .strat-metrics{ flex-wrap:wrap; align-items:stretch; }
+  .strat-metric{ flex:1 1 44%; min-width:0; }
+  .strat-metric-live{ flex:1 1 100%; }
+
+  /* ── 8. Type. One step down on body copy only — headings were already
+        rescaled in (4), and nothing here goes below 12px, so the 10px floor
+        the contrast scanner enforces is never approached. ────────────────── */
+  body{ font-size:15px; }
+  .hero-desc, .how-desc, .team-desc{ font-size:15px; }
+  .strat-desc{ font-size:12.5px; }
+  .why-card p{ font-size:13px; }
+  .faq-a{ font-size:13.5px; line-height:1.55; }
+}
+</style>
+
 <!-- ═══ V27.5 · strategy-card backtest-vs-benchmark bars ═══════════════════════
      Reads both figures out of the card's OWN MFSTAT-injected text rather than a
      parallel table, so a republished CAGR moves the bars automatically and the

@@ -98,7 +98,12 @@
 // gains the strategy-card backtest-vs-benchmark comparison bars. No shared
 // docs/assets/ file changed — the CSS and JS are page-local, and dashboard.html
 // is not precached — so the cache name is again the only version that moves.
-const CACHE = 'mfc-v25';
+// v26 (V27.6): the phone-only density pass touches BOTH precached shell
+// documents — index.html (offline navigation fallback) and login.html (the
+// installed app's start_url). Everything in it is scoped to max-width:600px, so
+// tablets and desktop are unaffected, but a precached document has no ?v to
+// bust and an installed app would otherwise keep the old loose mobile layout.
+const CACHE = 'mfc-v26';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
