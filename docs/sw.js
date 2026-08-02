@@ -94,7 +94,11 @@
 // as the offline navigation fallback, so the cache name is the only version it
 // has. No shared docs/assets/ file changed this release — every edit is page-local
 // CSS — so nothing needed a ?v= bump.
-const CACHE = 'mfc-v24';
+// v25 (V27.5): index.html (precached below as the offline navigation fallback)
+// gains the strategy-card backtest-vs-benchmark comparison bars. No shared
+// docs/assets/ file changed — the CSS and JS are page-local, and dashboard.html
+// is not precached — so the cache name is again the only version that moves.
+const CACHE = 'mfc-v25';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

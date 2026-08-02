@@ -264,6 +264,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
    pill's .sub-prog-bar; fill animates via the shared [data-bar] width applier. */
 .stat-meter{height:4px;border-radius:3px;background:rgba(37,99,235,0.10);overflow:hidden;margin-top:10px;}
 .stat-meter i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--accent2),#2dd4bf);transition:width 1s cubic-bezier(.22,1,.36,1);}
+/* V27.5: the subscription meter carries the SAME urgency tint the card already
+   switches on (tone-gold / tone-red), reusing the .sub-prog-fill ramp so the KPI
+   meter and the status pill read as one system rather than two green bars. */
+.stat-meter i.warn{background:linear-gradient(90deg,var(--gold),#fbbf24);}
+.stat-meter i.danger{background:linear-gradient(90deg,var(--red),#f87171);}
 
 /* ── SECTOR ALLOCATION CARD ── */
 .alloc-card{
@@ -1610,6 +1615,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="stat-label">Subscription</div>
         <div class="stat-val" id="stat-days">—<span class="unit">days left</span></div>
         <div class="stat-sub" id="stat-days-sub">renew anytime on WhatsApp</div>
+        <!-- V27.5: the twin of #reb-meter below. Both KPIs on this row are countdowns,
+             but only "Next rebalance" showed its position in the cycle — the reader had
+             to hold "18 days left" against an unstated cycle length to know whether that
+             was comfortable or urgent. Same .stat-meter idiom, and the percentage is the
+             SAME progPct the status pill already computes, so the two can never disagree. -->
+        <div class="stat-meter" id="sub-meter" style="display:none"><i id="sub-meter-fill" data-bar="0%"></i></div>
       </div>
       <div class="stat-card">
         <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
@@ -2566,6 +2577,17 @@ function renderDashboard(sub, stocks) {
       '<span class="sub-prog-bar"><span class="sub-prog-fill ' + progClass + '" data-bar="' + progPct.toFixed(0) + '%"></span></span>' +
     '</span>' +
     (daysLeft <= 14 ? renewBtn : '');
+
+  // V27.5: subscription cycle meter — the KPI twin of #reb-meter. Same progPct as
+  // the status pill above, same [data-bar] applier, and it inherits progClass so an
+  // expiring subscription tints gold/red here exactly as it does in the pill.
+  const subMeter = document.getElementById('sub-meter'), subFill = document.getElementById('sub-meter-fill');
+  if (subMeter && subFill) {
+    subFill.className = progClass;
+    subFill.setAttribute('data-bar', progPct.toFixed(0) + '%');
+    subMeter.title = daysLeft + ' of ' + cycleDays + ' days remaining in this billing cycle';
+    subMeter.style.display = '';
+  }
 
   // Next rebalance
   const nextReb = nextRebalanceDate(now);

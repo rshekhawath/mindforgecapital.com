@@ -1543,6 +1543,35 @@ footer {
 .strat-card > * { position: relative; z-index: 1; }
 
 /* Strategy card mini sparkline */
+/* ── V27.5 · BACKTEST-vs-BENCHMARK COMPARISON BAR (strategy cards) ───────────
+   The card already prints both figures, but as two separate numbers the reader
+   has to subtract in their head to see the thing the whole page is arguing —
+   that the model beat its index. Two bars on ONE shared scale (the largest CAGR
+   across all three cards) make the gap legible at a glance AND make the three
+   cards comparable to each other, which stacked per-card scales would not.
+   Widths are derived at runtime from the MFSTAT text inside each card, never
+   hard-coded, so a republished figure can never leave the bars stale.
+   Bars start at width:0 and are set after reveal — the site's grow-on-reveal
+   idiom; a bar painted at its final width has a dead transition. */
+.cagr-cmp{ margin:2px 0 14px; }
+.cagr-cmp-row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
+.cagr-cmp-key{ flex:0 0 62px; font-size:10px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--text3); }
+.cagr-cmp-track{ flex:1 1 auto; height:6px; border-radius:4px;
+  background:rgba(37,99,235,0.09); overflow:hidden; }
+.cagr-cmp-fill{ display:block; height:100%; width:0; border-radius:4px;
+  transition:width .9s cubic-bezier(.22,1,.36,1); }
+.cagr-cmp-fill.is-strat{ background:linear-gradient(90deg,var(--green),#2dd4bf); }
+.cagr-cmp-fill.is-bench{ background:linear-gradient(90deg,#9aabc9,#c3cee0); }
+.cagr-cmp-num{ flex:0 0 52px; text-align:right; font-size:11.5px; font-weight:700;
+  color:var(--text2); font-variant-numeric:tabular-nums; }
+.cagr-cmp-row.is-strat .cagr-cmp-num{ color:var(--data-strong); }
+.cagr-cmp-foot{ margin-top:7px; font-size:10.5px; color:var(--text3); }
+.cagr-cmp-foot b{ color:var(--data-strong); font-weight:700; }
+html[data-theme="dark"] .cagr-cmp-track{ background:rgba(120,150,255,0.16); }
+html[data-theme="dark"] .cagr-cmp-fill.is-bench{ background:linear-gradient(90deg,#5b6b88,#8698b7); }
+@media (prefers-reduced-motion: reduce){ .cagr-cmp-fill{ transition:none; } }
+
 .spark-wrap {
   margin: 8px 0 22px;
   background: linear-gradient(180deg, rgba(240,245,255,0.5), transparent);
@@ -3938,6 +3967,11 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
             <div class="lbl"><span class="ls-dot"></span>Live · this cycle</div>
           </div>
           </div>
+        <div class="cagr-cmp" data-cmp="ma">
+          <div class="cagr-cmp-row is-strat" aria-hidden="true"><span class="cagr-cmp-key">Model</span><span class="cagr-cmp-track"><i class="cagr-cmp-fill is-strat"></i></span><span class="cagr-cmp-num" data-cmp-strat>&mdash;</span></div>
+          <div class="cagr-cmp-row" aria-hidden="true"><span class="cagr-cmp-key">Index</span><span class="cagr-cmp-track"><i class="cagr-cmp-fill is-bench"></i></span><span class="cagr-cmp-num" data-cmp-bench>&mdash;</span></div>
+          <div class="cagr-cmp-foot">5-year <b>backtest</b> CAGR vs its benchmark &middot; gap <b data-cmp-alpha>&mdash;</b> a year</div>
+        </div>
         <div class="spark-wrap" data-spark="ma">
           <svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
             <defs>
@@ -4000,6 +4034,11 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
             <div class="lbl"><span class="ls-dot"></span>Live · this cycle</div>
           </div>
           </div>
+        <div class="cagr-cmp" data-cmp="lm">
+          <div class="cagr-cmp-row is-strat" aria-hidden="true"><span class="cagr-cmp-key">Model</span><span class="cagr-cmp-track"><i class="cagr-cmp-fill is-strat"></i></span><span class="cagr-cmp-num" data-cmp-strat>&mdash;</span></div>
+          <div class="cagr-cmp-row" aria-hidden="true"><span class="cagr-cmp-key">Index</span><span class="cagr-cmp-track"><i class="cagr-cmp-fill is-bench"></i></span><span class="cagr-cmp-num" data-cmp-bench>&mdash;</span></div>
+          <div class="cagr-cmp-foot">5-year <b>backtest</b> CAGR vs its benchmark &middot; gap <b data-cmp-alpha>&mdash;</b> a year</div>
+        </div>
         <div class="spark-wrap" data-spark="lm">
           <svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
             <defs>
@@ -4062,6 +4101,11 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
             <div class="lbl"><span class="ls-dot"></span>Live · this cycle</div>
           </div>
           </div>
+        <div class="cagr-cmp" data-cmp="sm">
+          <div class="cagr-cmp-row is-strat" aria-hidden="true"><span class="cagr-cmp-key">Model</span><span class="cagr-cmp-track"><i class="cagr-cmp-fill is-strat"></i></span><span class="cagr-cmp-num" data-cmp-strat>&mdash;</span></div>
+          <div class="cagr-cmp-row" aria-hidden="true"><span class="cagr-cmp-key">Index</span><span class="cagr-cmp-track"><i class="cagr-cmp-fill is-bench"></i></span><span class="cagr-cmp-num" data-cmp-bench>&mdash;</span></div>
+          <div class="cagr-cmp-foot">5-year <b>backtest</b> CAGR vs its benchmark &middot; gap <b data-cmp-alpha>&mdash;</b> a year</div>
+        </div>
         <div class="spark-wrap" data-spark="sm">
           <svg viewBox="0 0 200 60" preserveAspectRatio="none" aria-hidden="true">
             <defs>
@@ -6292,6 +6336,89 @@ section[id]{ scroll-margin-top: 80px; }
       legB.addEventListener('mouseleave', clear);
     }catch(e){}
   });
+})();
+</script>
+
+<!-- ═══ V27.5 · strategy-card backtest-vs-benchmark bars ═══════════════════════
+     Reads both figures out of the card's OWN MFSTAT-injected text rather than a
+     parallel table, so a republished CAGR moves the bars automatically and the
+     two can never disagree (the failure mode that bit the data-count attributes
+     in V24.0). All three cards share ONE scale — the largest CAGR on the page —
+     so the bars compare cards, not just the pair inside a card.
+     Progressive: no JS / no IntersectionObserver leaves the numbers untouched
+     and the bars simply stay at zero width, hidden behind aria-hidden rows. ═══ -->
+<script id="mf-v275-cagr-cmp">
+(function(){
+  try{
+    var blocks = [].slice.call(document.querySelectorAll('.cagr-cmp[data-cmp]'));
+    if (!blocks.length) return;
+
+    // Read data-count, NOT the MFSTAT comment. mfc-countup.js writes textContent on
+    // these same .proof-num elements, which destroys any comment node inside them —
+    // so parsing the marker is a race the count-up usually wins, leaving the bars
+    // blank. data-count is the count-up's own TARGET value and inject_site_stats.py
+    // keeps it equal to the MFSTAT figure, so it is both stable and authoritative.
+    function figure(el){
+      if (!el) return NaN;
+      var v = parseFloat(el.getAttribute('data-count'));
+      if (isFinite(v)) return v;
+      return parseFloat(String(el.textContent || '').replace(/[^0-9.\-]/g, ''));
+    }
+
+    var rows = [];
+    blocks.forEach(function(b){
+      var card = b.closest('.strat-card'); if (!card) return;
+      // First two .strat-metric cells are strategy CAGR then benchmark CAGR; the
+      // third is the live chip, which must never feed a backtest comparison.
+      var vals = card.querySelectorAll('.strat-metric:not(.strat-metric-live) .val');
+      var s = figure(vals[0]), n = figure(vals[1]);
+      if (!isFinite(s) || !isFinite(n) || s <= 0 || n <= 0) return;   // fail-soft
+      rows.push({ el: b, strat: s, bench: n });
+    });
+    if (!rows.length) return;
+
+    var max = 0;
+    rows.forEach(function(r){ max = Math.max(max, r.strat, r.bench); });
+    if (!(max > 0)) return;
+
+    rows.forEach(function(r){
+      var sTxt = r.el.querySelector('[data-cmp-strat]'),
+          bTxt = r.el.querySelector('[data-cmp-bench]'),
+          aTxt = r.el.querySelector('[data-cmp-alpha]');
+      if (sTxt) sTxt.textContent = r.strat.toFixed(1) + '%';
+      if (bTxt) bTxt.textContent = r.bench.toFixed(1) + '%';
+      if (aTxt){
+        var gap = r.strat - r.bench;
+        aTxt.textContent = (gap >= 0 ? '+' : '−') + Math.abs(gap).toFixed(1) + ' pts';
+      }
+      r.pctS = (r.strat / max) * 100;
+      r.pctB = (r.bench / max) * 100;
+    });
+
+    // Grow on reveal — the site's bar idiom. Painting the final width immediately
+    // would leave a dead transition, so the widths are applied a frame later.
+    function fill(r){
+      var s = r.el.querySelector('.cagr-cmp-fill.is-strat'),
+          b = r.el.querySelector('.cagr-cmp-fill.is-bench');
+      setTimeout(function(){
+        if (s) s.style.width = r.pctS.toFixed(1) + '%';
+        if (b) b.style.width = r.pctB.toFixed(1) + '%';
+      }, 60);
+    }
+
+    if (!('IntersectionObserver' in window)){ rows.forEach(fill); return; }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (!e.isIntersecting) return;
+        var r = rows.filter(function(x){ return x.el === e.target; })[0];
+        if (r) fill(r);
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.25 });
+    rows.forEach(function(r){ io.observe(r.el); });
+    // Safety net: never leave the bars collapsed if the observer never fires.
+    setTimeout(function(){ rows.forEach(fill); }, 2200);
+  }catch(e){}
 })();
 </script>
 </body>
