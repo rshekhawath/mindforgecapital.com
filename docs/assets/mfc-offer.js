@@ -61,6 +61,17 @@
       "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.85);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;}" +
       "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
+      // V27.9: 26×26 clears the 24px WCAG floor but is still a small thing to hit
+      // with a thumb, and this is the one control on the bar a phone user aims at.
+      // The bar is only ~44px tall, so the VISIBLE button cannot grow without
+      // crowding the copy — extend the HIT AREA instead, with the same invisible
+      // 44×44 ::before overlay the dashboard's "Order placed" checkbox already
+      // uses. The button stays 26px; the thumb gets a full 44px target.
+      // Kept to 34px WIDE deliberately: the "Get started" CTA sits immediately to
+      // its left and a full 44px overlay would reach back over the CTA's right
+      // edge and swallow taps meant for the conversion button. 26px is already
+      // past the 24px horizontal floor; it is the VERTICAL axis that was tight.
+      "#mfc-offer-bar .mfc-offer-x::before{content:'';position:absolute;left:50%;top:50%;width:34px;height:44px;transform:translate(-50%,-50%);}" +
       "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
       "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}#mfc-offer-bar::after{animation:none;}}";
 

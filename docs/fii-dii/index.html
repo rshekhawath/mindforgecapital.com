@@ -53,6 +53,12 @@
   --r:16px;--r-sm:10px;--r-lg:22px;
   --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
   --green-bg:rgba(5,150,105,0.08);--red-bg:rgba(220,38,38,0.07);
+  /* V27.9 — the INK tier, split from the GRAPHIC hue above. --green/--red
+     stay exactly as designed for the bar fills; text moves one step deeper
+     because #059669 measured 3.77:1 on this page's white cards and 3.42:1
+     on its own green pill — the whole point of this page is reading those
+     numbers. Verified >=4.6:1 on white and on every tint used here. */
+  --green-ink:#047653;--red-ink:#c92020;--teal-ink:#067089;
 }
 /* V26.9 — dark-theme semantic palette. This page defines its own --red/--green
    in :root, and the shared palette flip only re-inks --green, never --red — so
@@ -64,6 +70,7 @@
 html[data-theme="dark"]{
   --green:#34d399; --red:#f87171;
   --green-bg:rgba(52,211,153,0.12); --red-bg:rgba(248,113,113,0.12);
+  --green-ink:#34d399; --red-ink:#f87171; --teal-ink:#38bdf8;
 }
 html[data-theme="dark"] .sentiment.bear{ color:#f87171; border-color:rgba(248,113,113,.30); }
 html[data-theme="dark"] .sentiment.bull{ color:#34d399; border-color:rgba(52,211,153,.30); }
@@ -141,7 +148,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .idx-card{--mx:50%;--my:50%}
 .idx-card::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(220px circle at var(--mx) var(--my),rgba(45,212,191,.10) 0%,rgba(37,99,235,.06) 34%,transparent 62%);opacity:0;transition:opacity .3s ease}
 .idx-card:hover::before{opacity:1}
-.up{color:var(--green)} .down{color:var(--red)}
+.up{color:var(--green-ink)} .down{color:var(--red-ink)}
 @media(max-width:600px){.idx-strip{grid-template-columns:1fr;gap:10px}}
 
 /* ── SECTIONS ── */
@@ -149,7 +156,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
 .sec-head h2{font-size:clamp(21px,3vw,28px);color:var(--white)}
 .sec-head .sub{font-size:14px;color:var(--text3);margin-top:4px;max-width:560px;line-height:1.5}
-.sec-tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);background:rgba(8,145,178,.08);border:0.5px solid rgba(8,145,178,.2);padding:5px 11px;border-radius:999px;white-space:nowrap}
+.sec-tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-ink);background:rgba(8,145,178,.08);border:0.5px solid rgba(8,145,178,.2);padding:5px 11px;border-radius:999px;white-space:nowrap}
 
 /* ── CASH CARDS ── */
 .cash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -167,8 +174,8 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .flow-who .nm{font-size:16px;font-weight:700;color:var(--white)}
 .flow-who .full{font-size:11.5px;color:var(--text3);font-weight:500}
 .flow-pill{font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-.flow-pill.pos{color:var(--green);background:var(--green-bg)}
-.flow-pill.neg{color:var(--red);background:var(--red-bg)}
+.flow-pill.pos{color:var(--green-ink);background:var(--green-bg)}
+.flow-pill.neg{color:var(--red-ink);background:var(--red-bg)}
 .flow-net{font-size:clamp(34px,6vw,46px);font-weight:800;letter-spacing:-.025em;font-variant-numeric:tabular-nums;line-height:1.05;margin:6px 0 2px;position:relative}
 .flow-net .cr{font-size:.42em;font-weight:700;color:var(--text3);margin-left:7px;letter-spacing:0}
 .flow-sub{font-size:13px;color:var(--text3);margin-bottom:16px;position:relative}
@@ -210,12 +217,12 @@ table.data tbody td:first-child{text-align:left;font-weight:600;color:var(--whit
 table.data tbody tr:last-child td{border-bottom:none}
 table.data tbody tr:hover td{background:rgba(37,99,235,.03)}
 table.data tbody tr.tot td{font-weight:700;background:rgba(37,99,235,.04);border-top:0.5px solid var(--border2)}
-td.pos,th.pos{color:var(--green)} td.neg{color:var(--red)}
+td.pos,th.pos{color:var(--green-ink)} td.neg{color:var(--red-ink)}
 /* V18.0 fix — the tbody colour rule above (table.data tbody td) out-specifies
    td.pos/td.neg, so the signed net columns were rendering plain body colour.
    Re-declare at winning specificity + semibold so the signal reads at a glance. */
-table.data tbody td.pos{color:var(--green);font-weight:600}
-table.data tbody td.neg{color:var(--red);font-weight:600}
+table.data tbody td.pos{color:var(--green-ink);font-weight:600}
+table.data tbody td.neg{color:var(--red-ink);font-weight:600}
 .who-chip{display:inline-flex;align-items:center;gap:7px}
 .who-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 /* V27.2 — participant identity inks as TOKENS, not literals.
@@ -320,8 +327,8 @@ html[data-theme="dark"]{
 .ls-gauge{margin:16px 0 6px;display:flex;flex-direction:column;align-items:center}
 .ls-gauge svg{width:100%;max-width:300px;height:auto;display:block;overflow:visible}
 .ls-gauge-ends{display:flex;justify-content:space-between;width:100%;max-width:300px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:-4px}
-.ls-gauge-ends .e-sht{color:var(--red)}
-.ls-gauge-ends .e-lng{color:var(--green)}
+.ls-gauge-ends .e-sht{color:var(--red-ink)}
+.ls-gauge-ends .e-lng{color:var(--green-ink)}
 /* one-time specular sheen across the cash flow cards on reveal */
 .flow-card::after{content:'';position:absolute;top:0;left:-60%;width:42%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-18deg);opacity:0;pointer-events:none;z-index:2}
 .flow-card.in::after{animation:flow-sheen 1.05s ease-out .25s 1}
@@ -361,8 +368,8 @@ html[data-theme="dark"] .dbar .dfill.l{background:linear-gradient(90deg,#fb7185,
    one-line derivation. A "Long share" column now states it outright.
    ───────────────────────────────────────────────────────────────────────── */
 .lsw{display:block;font-weight:700;font-variant-numeric:tabular-nums}
-.lsw.up{color:var(--green)}
-.lsw.dn{color:var(--red)}
+.lsw.up{color:var(--green-ink)}
+.lsw.dn{color:var(--red-ink)}
 .lsw.flat{color:var(--text3)}
 .lsbar{display:block;position:relative;width:74px;height:4px;margin:5px 0 0 auto;
   background:var(--ink3);border-radius:3px;overflow:hidden}
@@ -379,7 +386,7 @@ html[data-theme="dark"] .lsbar i.l{background:linear-gradient(90deg,#fb7185,#f87
 .cmb-row{display:flex;align-items:center;gap:13px}
 .cmb-tug{margin-top:13px;padding-top:13px;border-top:0.5px solid var(--border)}
 .tug-cap{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:10px}
-.tug-cap .up{color:var(--green)}.tug-cap .down{color:var(--red)}
+.tug-cap .up{color:var(--green-ink)}.tug-cap .down{color:var(--red-ink)}
 .tug-row{display:grid;grid-template-columns:38px 1fr 92px;gap:11px;align-items:center;margin-bottom:9px}
 .tug-row:last-child{margin-bottom:0}
 .tug-nm{font-size:12px;font-weight:800;color:var(--white)}
@@ -389,7 +396,7 @@ html[data-theme="dark"] .lsbar i.l{background:linear-gradient(90deg,#fb7185,#f87
 .tug-fill.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
 .tug-fill.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
 .tug-v{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
-.tug-v.up{color:var(--green)}.tug-v.down{color:var(--red)}
+.tug-v.up{color:var(--green-ink)}.tug-v.down{color:var(--red-ink)}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}.reveal{opacity:1!important;transform:none!important}}
 </style>
@@ -409,7 +416,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2782">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=2790">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -1002,7 +1009,7 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
   renderTrend(d);
   renderDerivatives(d);
 }).catch(e=>{
-  document.getElementById("updated").innerHTML=`<span style="color:var(--red)">Could not load data — please refresh.</span>`;
+  document.getElementById("updated").innerHTML=`<span style="color:var(--red-ink)">Could not load data — please refresh.</span>`;
   document.getElementById("cashGrid").innerHTML=`<div class="err-box" style="grid-column:1/-1"><b>Couldn't load FII/DII data</b>Please check your connection and refresh the page.</div>`;
   document.getElementById("idxStrip").style.display="none";
   showToast("Could not load data — please refresh.","error",7000);
@@ -1050,7 +1057,7 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 })();
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
-<script src="../assets/mfc-offer.js?v=2440" defer></script>
+<script src="../assets/mfc-offer.js?v=2790" defer></script>
 <script defer src="../assets/mfc-chrome.js?v=5"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════

@@ -1007,7 +1007,16 @@ footer {
 .proof-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; white-space: nowrap; }
 .proof-divider { width: 1px; height: 40px; background: var(--border2); flex-shrink: 0; }
 /* V17.0 — Verified P&L trust link (real, broker-verified track record on Zerodha) */
-.proof-pnl { display:inline-flex; align-items:center; gap:6px; color:#059669 !important; text-decoration:none; transition:color .2s, transform .15s; }
+/* V27.9: the only real link in the proof bar measured 23.5px tall — half a pixel
+   under the 24px WCAG 2.2 SC 2.5.8 floor, and it is the one control here a
+   sceptical reader actually taps (it opens the Zerodha-verified P&L). Padding
+   plus an equal negative margin buys a 33.5px hit area with zero layout shift.
+   Grown DOWNWARD only: this is an inline-flex box in a block flow, so a
+   symmetric padding/-margin pair does not cancel — the negative margin-top
+   repositions the box while the padding-top grows it from there, which lifted
+   the link 5px above the proof figure sitting beside it. Padding-bottom against
+   margin-bottom leaves the top edge, and therefore the shared baseline, alone. */
+.proof-pnl { display:inline-flex; align-items:center; gap:6px; color:#059669 !important; text-decoration:none; transition:color .2s, transform .15s; padding:0 0 10px; margin:0 0 -10px; }
 .proof-pnl svg { flex-shrink:0; }
 .proof-pnl .proof-arr { font-size:.66em; color:#059669; transition:transform .2s; }
 .proof-pnl:hover { color:#047857 !important; }
@@ -3371,7 +3380,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
 </head>
 <body>
 
@@ -3983,6 +3992,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <div class="strat-metric strat-metric-live" data-live-wrap>
             <div class="live-val flat" data-live="ma:live">—</div>
             <div class="lbl"><span class="ls-dot"></span>Live · this cycle</div>
+            <div class="live-vs">vs <span data-live="ma:benchname">benchmark</span> <b class="live-vs-b flat" data-live="ma:bench">—</b> <span class="live-vs-sep" aria-hidden="true">·</span> <b class="live-vs-a flat" data-live="ma:alpha">—</b></div>
           </div>
           </div>
         <div class="cagr-cmp" data-cmp="ma">
@@ -4050,6 +4060,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <div class="strat-metric strat-metric-live" data-live-wrap>
             <div class="live-val flat" data-live="lm:live">—</div>
             <div class="lbl"><span class="ls-dot"></span>Live · this cycle</div>
+            <div class="live-vs">vs <span data-live="lm:benchname">benchmark</span> <b class="live-vs-b flat" data-live="lm:bench">—</b> <span class="live-vs-sep" aria-hidden="true">·</span> <b class="live-vs-a flat" data-live="lm:alpha">—</b></div>
           </div>
           </div>
         <div class="cagr-cmp" data-cmp="lm">
@@ -4117,6 +4128,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <div class="strat-metric strat-metric-live" data-live-wrap>
             <div class="live-val flat" data-live="sm:live">—</div>
             <div class="lbl"><span class="ls-dot"></span>Live · this cycle</div>
+            <div class="live-vs">vs <span data-live="sm:benchname">benchmark</span> <b class="live-vs-b flat" data-live="sm:bench">—</b> <span class="live-vs-sep" aria-hidden="true">·</span> <b class="live-vs-a flat" data-live="sm:alpha">—</b></div>
           </div>
           </div>
         <div class="cagr-cmp" data-cmp="sm">
@@ -5851,9 +5863,9 @@ section[id]{ scroll-margin-top: 80px; }
   .mobile-cta-bar{ animation:none; }
 }
 </style>
-<script src="assets/mfc-offer.js?v=2440" defer></script>
+<script src="assets/mfc-offer.js?v=2790" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=2781" defer></script>
+<script src="assets/mfc-live.js?v=2790" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -6113,6 +6125,27 @@ section[id]{ scroll-margin-top: 80px; }
     .btn-primary:hover .v140-arr,
     .strat-cta:hover .v140-arr,
     .mcta-primary:hover .v140-arr{ transform: translateX(4px); }
+  }
+
+  /* V27.9 — every footer link measured 22.4px tall. They are inline, so nothing
+     but the text box was tappable, and 22.4 is under the 24px WCAG 2.2 SC 2.5.8
+     floor at EVERY width (the "inline" exemption covers links inside a sentence,
+     not a list of navigation links). Two tiers, because the right answer differs
+     by layout: a 3px pad clears the floor everywhere at a cost of ~6px per
+     column, while on a phone — where the footer collapses to one stacked column
+     of ~11 links and the pointer is a thumb — 9px takes them to 40.4px. Both
+     slide the gradient hover underline up by their own padding so it still sits
+     on the text baseline instead of floating below it. */
+  footer .footer-col ul a{
+    display:inline-block;
+    padding-top:3px; padding-bottom:3px;
+    background-position: 0 calc(100% - 3px);
+  }
+  @media (max-width:600px){
+    footer .footer-col ul a{
+      padding-top:9px; padding-bottom:9px;
+      background-position: 0 calc(100% - 9px);
+    }
   }
 
   @media (prefers-reduced-motion: reduce){

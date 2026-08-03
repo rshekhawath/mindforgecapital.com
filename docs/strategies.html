@@ -224,7 +224,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .compare-table .risk-pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;}
   .compare-table .risk-low{background:rgba(5,150,105,0.12);color:var(--data-strong);}
   .compare-table .risk-med{background:rgba(37,99,235,0.12);color:var(--accent2);}
-  .compare-table .risk-high{background:rgba(220,38,38,0.10);color:#dc2626;}
+  .compare-table .risk-high{background:rgba(220,38,38,0.10);color:var(--ink-neg);}  /* V27.9: 4.09 on the blue compare card */
   @media(max-width:700px){.compare-table{font-size:11px;}.compare-table th,.compare-table td{padding:8px 8px;}}
 
   /* ═══════════════ V18.9 — redesigned strategy comparison table ═══════════════ */
@@ -1764,7 +1764,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
 </head>
 <body data-route="strategies">
 <script>
@@ -3123,8 +3123,8 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
   });
 })();
 </script>
-<script src="assets/mfc-offer.js?v=2440" defer></script>
-<script src="assets/mfc-live.js?v=2781" defer></script>
+<script src="assets/mfc-offer.js?v=2790" defer></script>
+<script src="assets/mfc-live.js?v=2790" defer></script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      V25.3 — REAL LIVE RETURN ON THE FOUR BACKTEST-ONLY SURFACES
@@ -3193,7 +3193,7 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 
 /* (A2) per-strategy ps-perf card — V26.1: "Live this cycle" is the focus.
    The live-chip becomes a prominent accent block with a big number; the backtest
-   CAGR figure demotes. Higher specificity than mfc-live.js's injected demotion so
+   CAGR figure demotes. Higher specificity than mfc-live.js?v=2790's injected demotion so
    it wins. Fail-soft: no live → the chip stays hidden and the backtest CAGR is the
    primary, exactly as before. (V26.2 retired the last-month row/scoreboard, so the
    .ps-perf-cagr demotion below is now a harmless no-op — all panels use the CAGR
@@ -3274,7 +3274,15 @@ html[data-theme="dark"] a.strat-hub-card[href="largemidcap.html"] > div:first-of
    inks are now the darker #0e7490 / #b45309, which keep each card's hue and pass.
    Those darker values are then too heavy on the dark card, so restore the bright
    hue there, exactly as the LargeMidcap rule above does. !important beats inline. */
-html[data-theme="dark"] a.strat-hub-card[href="multiasset.html"] .hub-bt-val{ color:#28bcd8 !important; }
+/* V27.9 — the rule above shipped with ONE of its two selectors. The LargeMidcap
+   and SmallMicro rules each lift both the CAGR figure (.hub-bt-val) AND the risk
+   eyebrow (> div:first-of-type); the MultiAsset rule lifted only the figure, so
+   its eyebrow — "For first-time investors · Low risk · Free" — kept the darkened
+   #0e7490 that V27.8 had chosen FOR THE WHITE CARD and measured 3.14:1 on the
+   dark one. Exactly the failure mode that release's own log warned about: fix a
+   colour for one theme and the other theme is now the untested one. */
+html[data-theme="dark"] a.strat-hub-card[href="multiasset.html"] .hub-bt-val,
+html[data-theme="dark"] a.strat-hub-card[href="multiasset.html"] > div:first-of-type{ color:#28bcd8 !important; }
 html[data-theme="dark"] a.strat-hub-card[href="smallmicro.html"] .hub-bt-val,
 html[data-theme="dark"] a.strat-hub-card[href="smallmicro.html"] > div:first-of-type{ color:#fbbf24 !important; }
 

@@ -438,12 +438,25 @@ html[data-theme="dark"] img.nav-logo {
    Deliberately NOT reusing --green/--red: --green is a brand token consumed by
    fills and borders, and --red is load-bearing for the admin toast (white-on-
    red). A separate --data-* family keeps grading ink independent of chrome. */
+/* V27.9 — the LIGHT column of this scale was measured on a WHITE card, where
+   four of the five passed. But 85 of the 88 places that consume these tokens
+   are pills and badges that paint the ink on a ~10% wash of its own hue, and
+   that wash costs ~0.5 of ratio: --data-strong measured 4.48:1 on the deepest
+   tint in use (#dee9fa), --data-weak 4.10, --data-bad 3.94. --data-good was
+   worse still — 3.77:1 on plain white, i.e. below AA in the easy case (it is
+   consumed only under [data-theme="dark"] today, so nothing rendered it, but a
+   token that fails the moment anyone uses it is a trap, not a value).
+   Each moves one step deeper in the SAME hue, re-verified >=4.6:1 against BOTH
+   #ffffff and #dee9fa. The shift is invisible side by side — the grading scale
+   still reads as the same five steps — and the 3 border-color consumers gain a
+   marginally firmer edge. --data-mid (6.60/5.39) and --data-na already passed
+   and are untouched. */
 :root{
-  --data-strong:#047857;
-  --data-good:#059669;
+  --data-strong:#047454;
+  --data-good:#047653;
   --data-mid:#1a50d8;
-  --data-weak:#b45309;
-  --data-bad:#dc2626;
+  --data-weak:#a64d08;
+  --data-bad:#c92020;
   --data-na:#94a3b8;
 }
 html[data-theme="dark"]{
@@ -678,3 +691,107 @@ html[data-theme="dark"] .mob-sort{
      pages that actually have a FAB to clear. */
   html .back-to-top{ bottom:162px; }
 }
+
+/* ============================================================================
+   V27.9 — THE ON-TINT INK TIER
+   ----------------------------------------------------------------------------
+   V26.7 fixed the dark column. V27.4 fixed the light column — but only where
+   the ink sits on a WHITE card. It never measured the other light-mode case,
+   which is far more common on this site: a pill / chip / badge that paints its
+   ink on a ~7% tint OF ITS OWN HUE. That tint lifts the background luminance
+   and costs ~0.75 of contrast ratio, which is exactly enough to drop a value
+   that reads 5.0:1 on white to 4.2:1 where it is actually used.
+
+   A live audit of the twelve public surfaces in LIGHT mode found the same five
+   hues failing on nine of them — the FII/DII page (never swept before) alone
+   had ten failing nodes, including `#059669` on plain white at 3.77:1, i.e. a
+   value that was below AA even in the easy case.
+
+   THE FIX is one tier deeper in the SAME hue, not a collapse onto a shared ink.
+   These pills carry identity (net buying vs net selling, sector, grade) and
+   flattening them onto one token would destroy the thing they exist to signal —
+   the same trap V27.8 caught before it shipped. Each value below is verified
+   >= 4.6:1 against BOTH #ffffff and #dee9fa (the deepest tint in use anywhere
+   on the site), so a single value serves a chip that sits on a tint on one page
+   and on a white card on another.
+
+              light     on #fff   on #dee9fa      dark
+   --ink-pos  #047653     5.64       4.61        #34d399
+   --ink-neg  #c92020     5.66       4.62        #f87171
+   --ink-warn #a64d08     5.70       4.65        #fbbf24
+   --ink-info #067089     5.70       4.65        #38bdf8
+   --ink-link #0a5de3     5.69       4.65        #83aaff
+
+   The dark column reuses the values [[project_dark_semantic_colors]] already
+   proved on this palette, so flipping the theme costs nothing.
+
+   NOTE on ordering: mfc-finish.css is linked BEFORE several per-page <style>
+   blocks, so an equal-specificity rule here would lose. Every rule below is
+   scoped under html:not([data-theme="dark"]) — which both wins on specificity
+   and keeps the dark theme, already correct, completely untouched. */
+:root{
+  --ink-pos:#047653;
+  --ink-neg:#c92020;
+  --ink-warn:#a64d08;
+  --ink-info:#067089;
+  --ink-link:#0a5de3;
+}
+html[data-theme="dark"]{
+  --ink-pos:#34d399;
+  --ink-neg:#f87171;
+  --ink-warn:#fbbf24;
+  --ink-info:#38bdf8;
+  --ink-link:#83aaff;
+}
+
+/* NOTE — FII/DII, the worst-hit surface (ten failing nodes), is NOT fixed here
+   either. That page declares its own --green/--red/--teal in :root and routes
+   every semantic node through them, so the fix belongs at the source: it now
+   carries a --green-ink/--red-ink/--teal-ink tier, split from the graphic hue
+   so the bar fills keep the exact colour they were designed with while the
+   text moves one step deeper. See the comment beside its :root block. */
+
+/* — the "free / refreshed daily" chips on the two free tools: cyan #0891b2 on
+     its own cyan tint measured 3.08:1 and 3.35:1, the worst two on the site. */
+html:not([data-theme="dark"]) .hero-badge,
+html:not([data-theme="dark"]) .ss-chip{ color:var(--ink-info); }
+
+/* — Integrity Score grade pills: the two weakest grades sat on their own tint. */
+html:not([data-theme="dark"]) .grade-pill.gp-weak{ color:var(--ink-warn); }
+html:not([data-theme="dark"]) .grade-pill.gp-bad{ color:var(--ink-neg); }
+
+/* NOTE — the Scanner's sector pills are NOT fixed here. They have no per-sector
+   class: the hue arrives as an inline `--sp:"R G B"` triplet that drives the
+   text, the 6px dot AND the border together, so there is nothing for a
+   stylesheet to hook. Five of the eleven sectors failed and were deepened at
+   source, in the SECTOR_RGB map in screener/index.html; the other six already
+   cleared 4.5:1 and are deliberately untouched so the palette stays as wide as
+   it was. This is a legibility fix, not a re-colour. */
+
+/* — strategies hub: the CAGR figure and the FREE flag sit on the blue compare
+     card (#dee9fa), the deepest tint on the site; the risk flag on #e7ecfa. */
+html:not([data-theme="dark"]) .cmp-row .v,
+html:not([data-theme="dark"]) .cmp-free{ color:var(--ink-pos); }
+html:not([data-theme="dark"]) .risk-pill.risk-high{ color:var(--ink-neg); }
+
+/* — company page: the 200-DMA badge on its own red tint. */
+html:not([data-theme="dark"]) .tbadge.down{ color:var(--ink-neg); }
+
+/* — factor report: the monthly winner figure on a white card, 3.77:1. */
+html:not([data-theme="dark"]) .fr-val.up{ color:var(--ink-pos); }
+html:not([data-theme="dark"]) .fr-val.down{ color:var(--ink-neg); }
+
+/* — auth pages: the Privacy / Terms line under the sign-in card is 12px on the
+     page wash, and #3b82f6 there is 3.36:1. */
+html:not([data-theme="dark"]) .auth-legal a,
+html:not([data-theme="dark"]) .auth-foot a{ color:var(--ink-link); }
+
+/* — dashboard. The per-row broker chip is NOT fixed here: its ink is a BRAND
+     colour painted inline from JS, so a generic blue would erase the very thing
+     the chip exists to signal. It gained a per-broker `ink` field instead (see
+     the BROKERS map in dashboard.html) — same brand hue, one step deeper. */
+html:not([data-theme="dark"]) .sc-num{ color:var(--ink-link); }
+html:not([data-theme="dark"]) .pc-chip-ret.up,
+html:not([data-theme="dark"]) .ret.up{ color:var(--ink-pos); }
+html:not([data-theme="dark"]) .pc-chip-ret.down,
+html:not([data-theme="dark"]) .ret.down{ color:var(--ink-neg); }

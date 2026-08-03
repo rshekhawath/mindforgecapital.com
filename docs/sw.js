@@ -114,7 +114,13 @@
 // app's start_url) carry those references. A precached document has no ?v of
 // its own to bust, so an installed app would keep serving the old markup with
 // the old asset URLs and never see the fixes.
-const CACHE = 'mfc-v28';
+// v29 (V27.9): the on-tint ink tier lands in mfc-finish.css, the live-vs-
+// benchmark line in mfc-live.js and the dismiss-button hit area in
+// mfc-offer.js — all three shared assets get a new ?v, and BOTH precached
+// shell documents reference all three. index.html additionally carries the
+// footer tap-target and proof-link changes in its own markup, which a
+// precached copy has no ?v of its own to bust.
+const CACHE = 'mfc-v29';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

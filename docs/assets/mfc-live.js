@@ -10,6 +10,7 @@
      data-live="mc:live"        → the strategy's cycle % (signed, 2dp)
      data-live="mc:bench"       → its benchmark's cycle % (signed, 2dp)
      data-live="mc:benchname"   → benchmark display name
+     data-live="mc:alpha"       → live − bench, in POINTS (signed, 2dp, "pts")
      data-live="rebal"          → rebalance date, "19 Jul 2026"
      data-live="asof"           → data-through date, "17 Jul 2026"
    Containers with data-live-wrap stay hidden (CSS) until data lands, so a
@@ -28,6 +29,15 @@
     return sign + Math.abs(v).toFixed(2) + "%";
   }
   function cls(v) { return v > 0.05 ? "up" : v < -0.05 ? "down" : "flat"; }
+  /* V27.9: the gap between the strategy and its benchmark is a difference of two
+     percentages, so its unit is POINTS, not per cent — writing "+0.71%" there
+     would claim a relative outperformance the number does not describe. The
+     backtest comparison right below it already says "pts"; this matches it. */
+  function fmtPts(v) {
+    if (v == null || !isFinite(v)) return null;
+    var sign = v > 0 ? "+" : v < 0 ? "−" : "±";
+    return sign + Math.abs(v).toFixed(2) + " pts";
+  }
 
   /* V24.8: the live figures used to HARD-SET while the backtest figures beside
      them counted up — on a strategy page's KPI row the backtest and benchmark
@@ -86,16 +96,21 @@
         if (spec[1] === "live")  { num = s.live_pct;  val = fmtPct(s.live_pct);  isPct = true; }
         if (spec[1] === "bench") { num = s.bench_pct; val = fmtPct(s.bench_pct); isPct = true; }
         if (spec[1] === "benchname") val = s.bench_name;
+        // NOT isPct: countTo's tween renders its intermediate frames as "x.xx%",
+        // so animating this slot would flash a per-cent unit for 750ms before
+        // landing on "pts". It still gets the up/down tint below.
+        if (spec[1] === "alpha" && s.live_pct != null && s.bench_pct != null) {
+          num = s.live_pct - s.bench_pct; val = fmtPts(num);
+        }
       }
       if (val == null) return;
-      if (isPct) {
-        // tint first so the number counts up already wearing its final colour
+      // tint first so the number counts up already wearing its final colour
+      if (num != null) {
         el.classList.remove("up", "down", "flat");
         el.classList.add(cls(num));
-        countTo(el, num, val);
-      } else {
-        el.textContent = val;
       }
+      if (isPct) countTo(el, num, val);
+      else el.textContent = val;
       any = true;
     });
     if (!any) return;
@@ -167,6 +182,30 @@
       ".strat-metric-live .live-val.up{color:var(--green,#059669);}" +
       ".strat-metric-live .live-val.down{color:#dc2626;}" +
       ".strat-metric-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
+      /* ── V27.9: the live figure finally gets the comparison the BACKTEST
+         figure has had since V27.5. Directly beneath these three cards sits a
+         two-bar Model-vs-Index compare with an explicit "gap +21.6 pts a year"
+         — for the SIMULATED number. The live number, which is the one the V24.2
+         pivot made the site's lead claim precisely because it is real, was
+         published bare: "+1.26%", with nothing to say whether that is good.
+         The benchmark's own cycle move and the gap are already in
+         live-perf.json and already flow through the slot filler, so this is a
+         markup + one-slot addition, not new data. Same fail-soft contract as
+         everything else here: it lives inside the [data-live-wrap] that stays
+         display:none until the fetch lands. */
+      ".strat-metric-live .live-vs{font-size:11.5px;line-height:1.45;color:var(--text3,#475569);letter-spacing:-.005em;}" +
+      ".strat-metric-live .live-vs b{font-weight:800;font-variant-numeric:tabular-nums;}" +
+      ".strat-metric-live .live-vs .up{color:var(--ink-pos,#047653);}" +
+      ".strat-metric-live .live-vs .down{color:var(--ink-neg,#c92020);}" +
+      ".strat-metric-live .live-vs .flat{color:var(--text2,#1e3a5f);}" +
+      /* the alpha is the payoff of the line — give it the weight of a verdict */
+      ".strat-metric-live .live-vs .live-vs-a{padding:1px 7px;border-radius:999px;background:rgba(37,99,235,.07);}" +
+      ".strat-metric-live .live-vs .live-vs-a.up{background:rgba(5,150,105,.10);}" +
+      ".strat-metric-live .live-vs .live-vs-a.down{background:rgba(220,38,38,.08);}" +
+      ".strat-metric-live .live-vs .live-vs-sep{color:var(--border2,rgba(37,99,235,.2));margin:0 1px;}" +
+      "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a{background:rgba(131,170,255,.12);}" +
+      "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a.up{background:rgba(52,211,153,.14);}" +
+      "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a.down{background:rgba(248,113,113,.14);}" +
       ".strat-metric-live .lbl{display:flex;align-items:center;gap:5px;white-space:nowrap;}" +
       /* with live present, the card's backtest metrics step back */
       ".strat-card.has-live .strat-metric .val{font-size:19px;}" +

@@ -1530,7 +1530,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -1758,6 +1758,23 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .pc-chip .pc-chip-lbl{color:#64748b;font-weight:700;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
     .pc-chip .pc-chip-ret{font-weight:800;font-variant-numeric:tabular-nums}
     .pc-chip .pc-chip-ret.up{color:#059669}.pc-chip .pc-chip-ret.down{color:#dc2626}
+    /* V27.9 — "is my +0.87% any good?" is the first thing a member thinks when
+       this number lands, and until now the card gave them nothing to answer it
+       with. The benchmark's own move over the SAME window is already published
+       in live-perf.json for all three strategies. */
+    .pc-bench{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:11px;font-size:12.5px;color:var(--text2,#1e3a5f);}
+    .pc-bench .pcb-lbl{color:var(--text3,#475569);}
+    .pc-bench b{font-weight:800;font-variant-numeric:tabular-nums;}
+    .pc-bench .pcb-bench.up{color:var(--ink-pos,#047653);}
+    .pc-bench .pcb-bench.down{color:var(--ink-neg,#c92020);}
+    .pc-bench .pcb-gap{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+    .pc-bench .pcb-gap.ahead{color:var(--ink-pos,#047653);background:rgba(5,150,105,.10);}
+    .pc-bench .pcb-gap.behind{color:var(--ink-neg,#c92020);background:rgba(220,38,38,.08);}
+    .pc-bench .pcb-gap.level{color:var(--text2,#1e3a5f);background:rgba(37,99,235,.07);}
+    html[data-theme="dark"] .pc-bench .pcb-gap.ahead{background:rgba(52,211,153,.14);}
+    html[data-theme="dark"] .pc-bench .pcb-gap.behind{background:rgba(248,113,113,.14);}
+    html[data-theme="dark"] .pc-bench .pcb-gap.level{background:rgba(131,170,255,.12);}
+    @media(max-width:640px){.pc-bench{font-size:12px;gap:7px}}
     /* V26.3: the live-profit headline loading state now reuses the skeleton-shimmer
        idiom (same .skel-bar as the picks-table skel rows loading beside it) instead
        of plain "Calculating…" text — a consistent, polished loading moment. */
@@ -1775,6 +1792,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span>Live profit since rebalance <span id="pc-rebal-date"></span></div>
         <div class="pc-main"><span class="pc-pct" id="pc-pct">—</span></div>
         <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
+        <div class="pc-bench" id="pc-bench" style="display:none;"></div>
         <div class="pc-leaders" id="pc-leaders"></div>
       </div>
       <div class="pc-right" id="pc-breakdown"></div>
@@ -3080,7 +3098,7 @@ function renderTable(stocks) {
     return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company">${companyCell(s)}</td>
+      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}</td>
       <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>
           ${brokerLink(s)}
       </td>
@@ -3153,7 +3171,7 @@ function renderTable(stocks) {
    translate), so on the normal path this is a no-op — and on a frozen clock
    it is the difference between a blank list and a readable one. Same
    safety-net device as the factor board's setTimeout(reveal,1600) and
-   mfc-live.js's snap timer: never let a decoration own visibility. */
+   mfc-live.js?v=2790's snap timer: never let a decoration own visibility. */
 function revealHoldingsBackstop() {
   var DONE = 'mf-anim-done';                 // → animation:none (CSS)
   var LAST = 360 + 420 + 260;                // max delay + duration + slack
@@ -3202,19 +3220,32 @@ function toggleBought(cb) {
 // V5.2 #2: broker deeplinks per stock row. User can pick their preferred
 // broker once and every row gets a one-click "Open in <broker>" link.
 // Saved in localStorage so the choice persists. Default: Zerodha Kite.
+// V27.9 — each chip paints its label in the broker's BRAND colour at 11px on an
+// 8% wash of that same colour. Brand identity belongs on the wash and the
+// border; as TEXT the brand hex failed in one theme or the other for all three:
+//   light card   Kite #387ed1 3.77:1   Groww #00b386 2.45:1   Upstox 12.7 ok
+//   dark card    Kite         3.70:1   Groww         5.69 ok  Upstox #371777 1.13:1
+// Groww and Upstox were invisible to the audit because Kite is the default.
+// A single deeper ink CANNOT fix this — deepening for the light card is exactly
+// the wrong direction on the dark one, and a first pass that shipped only `ink`
+// pushed Kite to 3.01 and Groww to 2.99 in dark. So each broker carries BOTH:
+// `ink` for light, `inkDark` for dark, each the same brand hue moved toward the
+// card it sits on, each >=4.6:1. They are emitted as custom properties and the
+// theme picks one in CSS, so a runtime theme toggle re-inks without a re-render.
+// `color` still drives the wash and the border, so the chips look unchanged.
 var BROKERS = {
-  kite:   { name: 'Kite',   color: '#387ed1',
+  kite:   { name: 'Kite',   color: '#387ed1', ink: '#2c6fbe', inkDark: '#5490d8',
             link: function(s){
               // Kite supports a query-pre-fill URL on the order page
               var t = (s.ticker || '').toUpperCase();
               return 'https://kite.zerodha.com/chart/web/NSE/' + encodeURIComponent(t);
             } },
-  groww:  { name: 'Groww',  color: '#00b386',
+  groww:  { name: 'Groww',  color: '#00b386', ink: '#007d5e', inkDark: '#00b386',
             link: function(s){
               var t = (s.ticker || '').toUpperCase();
               return 'https://groww.in/stocks/' + encodeURIComponent(t.toLowerCase());
             } },
-  upstox: { name: 'Upstox', color: '#371777',
+  upstox: { name: 'Upstox', color: '#371777', ink: '#371777', inkDark: '#9e7be5',
             link: function(s){
               var t = (s.ticker || '').toUpperCase();
               // Upstox search-page deeplink
@@ -3242,7 +3273,8 @@ function brokerLink(s){
   var safeUrl = url.replace(/"/g,'&quot;');
   return '<a class="broker-link" target="_blank" rel="noopener noreferrer" href="' + safeUrl +
          '" title="Open ' + escapeHtml(s.ticker) + ' on ' + escapeHtml(b.name) + '" ' +
-         'style="background:' + b.color + '14;color:' + b.color + ';border-color:' + b.color + '33;">' +
+         'style="background:' + b.color + '14;border-color:' + b.color + '33;' +
+         '--bk-ink:' + (b.ink || b.color) + ';--bk-ink-d:' + (b.inkDark || b.ink || b.color) + ';">' +
          escapeHtml(b.name) + ' →</a>';
 }
 
@@ -3907,6 +3939,83 @@ function renderProfitHeadline(){
     }
     ld.innerHTML = (n >= 2 && best && worst && best.t !== worst.t) ? (chip('Top', best) + chip('Lagging', worst)) : '';
   }
+  // V27.9: benchmark row. Non-blocking — the headline never waits on it.
+  loadBenchPerf().then(function(){ try { renderBenchCompare(port); } catch (e) {} });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V27.9 — BENCHMARK COMPARISON ON THE LIVE-PROFIT HEADLINE
+   --------------------------------------------------------------------------
+   The card has always answered "what did I make?" and never "was that good?".
+   The answer is already published: live-perf.json carries each strategy's
+   benchmark and that benchmark's own move over the same cycle, and the public
+   site has led with it since the V24.2 pivot. The member surface was the one
+   place it never reached.
+
+   TWO GUARDS, both about not publishing a misleading comparison:
+   (1) the member's % is measured from THEIR rec_prices, i.e. from the cycle
+       they are actually holding. live-perf.json's benchmark move is measured
+       from the LATEST published rebalance. Those are the same window for
+       anyone on the current cycle and different windows for anyone who is not,
+       so the row renders only when the two rebalance dates match — a member
+       still holding last month's picks gets no row rather than a wrong one.
+   (2) the strategy must map to a known key; an unrecognised name renders
+       nothing instead of guessing a benchmark.
+   Fail-soft throughout: no fetch, no data, no match → the card is exactly what
+   it was before. ══════════════════════════════════════════════════════════ */
+var _benchPerf = null, _benchPerfTried = false;
+function loadBenchPerf(){
+  if (_benchPerfTried) return Promise.resolve(_benchPerf);
+  _benchPerfTried = true;
+  try {
+    return fetch('live-perf.json', { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ _benchPerf = d; return d; })
+      .catch(function(){ return null; });
+  } catch (e) { return Promise.resolve(null); }
+}
+function _strategyPerfKey(name){
+  if (/multiasset/i.test(name))  return 'ma';
+  if (/largemidcap/i.test(name)) return 'lm';
+  if (/smallmicro/i.test(name))  return 'sm';
+  return null;
+}
+function _isoDay(d){
+  if (!d || isNaN(d)) return null;
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+         '-' + String(d.getDate()).padStart(2, '0');
+}
+function renderBenchCompare(port){
+  var el = document.getElementById('pc-bench');
+  if (!el) return;
+  el.style.display = 'none'; el.innerHTML = '';
+  var d = _benchPerf; if (!d || !d.strategies) return;
+  var key = _strategyPerfKey(currentStrategy || ''); if (!key) return;
+  var s = d.strategies[key];
+  if (!s || s.bench_pct == null || !isFinite(s.bench_pct)) return;
+  // guard (1): same window on both sides, or nothing
+  if (!d.rebalance_date || _isoDay(window._rebalDate) !== d.rebalance_date) return;
+
+  var bench = s.bench_pct;
+  var gap = port - bench;
+  var state = gap > 0.05 ? 'ahead' : (gap < -0.05 ? 'behind' : 'level');
+  // the PILL is a label ("+0.35 pts ahead"); the aria sentence below needs the
+  // preposition ("ahead OF Nifty…"). Reusing one string for both left a
+  // dangling "of" on screen.
+  var pillWord  = state === 'level' ? 'level' : state;
+  var ariaWord  = state === 'ahead' ? 'ahead of' : (state === 'behind' ? 'behind' : 'level with');
+  // a difference of two percentages is measured in POINTS, not per cent
+  var gapTxt = (gap > 0 ? '+' : gap < 0 ? '\u2212' : '\u00b1') + Math.abs(gap).toFixed(2) + ' pts';
+  var benchTxt = (bench > 0 ? '+' : bench < 0 ? '\u2212' : '+') + Math.abs(bench).toFixed(2) + '%';
+  var benchCls = bench > 0.05 ? 'up' : (bench < -0.05 ? 'down' : '');
+
+  el.innerHTML =
+    '<span class="pcb-lbl">' + escapeHtml(s.bench_name || 'Benchmark') +
+      ' over the same cycle</span> <b class="pcb-bench ' + benchCls + '">' + benchTxt + '</b>' +
+    '<span class="pcb-gap ' + state + '">' + gapTxt + ' ' + pillWord + '</span>';
+  el.style.display = 'flex';
+  el.setAttribute('aria-label', 'Your portfolio is ' + gapTxt + ' ' + ariaWord + ' ' +
+    (s.bench_name || 'its benchmark') + ', which moved ' + benchTxt + ' over the same cycle.');
 }
 
 // V15.3: data-freshness chip — reads the auto-refresh timestamp from fii-dii.json
@@ -4178,6 +4287,20 @@ init();
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .company[title]{ cursor: help; }
+/* V27.9 — 240px was truncating real picks ("Oil & Natural Gas Corporation" at
+   249px, "Sun Pharmaceutical Industries" at 256px) and taking the trailing
+   external-link glyph with them. Worse, the only title on the cell was the
+   LINK's ("View ONGC company page"), so a clipped name was unrecoverable — and
+   iPad is exactly the width where the clipping starts AND where there is no
+   hover to recover it. The cell now carries the full name as its own title.
+
+   WRAP rather than widen. Raising the cap to 288px did clear both names, but
+   this table is a fixed 1255px: every pixel the company column takes comes out
+   of the ticker column, and that pushed the "Kite →" chip onto a second line in
+   8 more rows — trading a truncation nobody could recover for a layout wobble
+   in a third of the table. Letting the name wrap costs the two long rows one
+   extra line each, takes nothing from any other column, and loses no text. */
+.company{ white-space: normal; overflow: visible; text-overflow: clip; }
 
 /* Bought checkbox tap-target — wrap a larger invisible hit area around the
    20×20 box so phones (44px guideline) don't fat-finger neighbouring rows. */
@@ -4270,6 +4393,10 @@ th.bought-col .bought-all:indeterminate{ opacity: .65; }
   transition: transform .12s ease, filter .15s ease;
   white-space: nowrap;
 }
+/* V27.9: the ink is chosen HERE, not inline, so flipping the theme re-inks the
+   chips instantly instead of waiting for the next table render. */
+.broker-link{ color: var(--bk-ink); }
+html[data-theme="dark"] .broker-link{ color: var(--bk-ink-d); }
 .broker-link:hover{ transform:translateY(-1px); filter:brightness(1.05); }
 .broker-picker{
   appearance: none;
@@ -4292,6 +4419,15 @@ th.bought-col .bought-all:indeterminate{ opacity: .65; }
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 6px;
+}
+/* V27.9 — each of these rows is a real control (role=button, onclick filters
+   the picks table to that sector), but on a phone it measured 27.8px tall: past
+   the 24px WCAG floor, yet the eight rows stack directly on top of one another,
+   so a thumb aiming at "Pharma" lands on "FMCG". Widen the row on phones only —
+   the tiles are already 304px wide, so this costs one axis of padding and the
+   card grows by ~8 × 12px. Desktop is a pointer surface and is left alone. */
+@media (max-width:640px){
+  .alloc-row[role="button"]{ padding-top:11px; padding-bottom:11px; }
 }
 
 .nav-links a[aria-current="page"]{ color: var(--white) !important; position: relative; }
