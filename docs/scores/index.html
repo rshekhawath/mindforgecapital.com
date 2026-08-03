@@ -332,13 +332,13 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 .company-sym{font-size:11px;color:var(--accent2);margin-top:1px;font-weight:600}
 .sector-pill{display:inline-block;font-size:10px;font-weight:600;color:var(--text3);background:rgba(37,99,235,.06);border:0.5px solid var(--border);border-radius:20px;padding:1px 8px;margin-top:4px}
 .num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:var(--text)}
-.num.v-strong{color:#047857;font-weight:700}.num.v-good{color:#059669}.num.v-weak{color:#b45309}.num.v-bad{color:#dc2626}
+.num.v-strong{color:#065f46;font-weight:700}.num.v-good{color:#047857}.num.v-weak{color:#b45309}.num.v-bad{color:#dc2626}
 .na{color:var(--text3)}
 /* Intrinsic Value (Graham) cell — ₹ fair value + colour-coded upside vs price */
 .iv-cell{display:flex;flex-direction:column;gap:2px;min-width:92px}
 .iv-num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;color:var(--text)}
 .iv-mos{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.iv-mos.iv-strong{color:#047857}.iv-mos.iv-good{color:#059669}.iv-mos.iv-weak{color:#b45309}.iv-mos.iv-bad{color:#dc2626}
+.iv-mos.iv-strong{color:#065f46}.iv-mos.iv-good{color:#047857}.iv-mos.iv-weak{color:#b45309}.iv-mos.iv-bad{color:#dc2626}
 .score-cell{display:flex;flex-direction:column;gap:4px;min-width:74px}
 .score-num{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .score-track{height:5px;background:var(--ink3);border-radius:3px;overflow:hidden}
@@ -347,7 +347,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 .overall-num{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
 .grade-pill{font-size:10px;font-weight:700;letter-spacing:.02em;padding:3px 9px;border-radius:20px;white-space:nowrap}
 .gp-strong{background:rgba(4,120,87,.10);color:#047857;border:0.5px solid rgba(4,120,87,.22)}
-.gp-good{background:rgba(5,150,105,.08);color:#059669;border:0.5px solid rgba(5,150,105,.2)}
+.gp-good{background:rgba(5,150,105,.08);color:#047857;border:0.5px solid rgba(5,150,105,.2)}
 .gp-fair{background:rgba(26,80,216,.07);color:var(--accent2);border:0.5px solid var(--border2)}
 .gp-weak{background:rgba(180,83,9,.08);color:#b45309;border:0.5px solid rgba(180,83,9,.2)}
 .gp-bad{background:rgba(220,38,38,.07);color:#dc2626;border:0.5px solid rgba(220,38,38,.18)}
@@ -402,12 +402,28 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .search-hero{max-width:none}
 }
 @media(max-width:520px){
-  .hp-stats{flex-wrap:wrap;row-gap:14px}
-  .hp-stat{flex:1 0 40%}
+  /* V27.8 — both blocks in the hero panel had an ORPHANED last cell on a phone.
+     `.hp-stats` is three stats in a 2-up wrap, so "Median score" sat alone on a
+     third row under a 14px gutter; `.hp-legend` is five chips in a ragged flex
+     wrap, so "Poor" sat alone on a third row while the four above it had
+     mismatched widths because flex sizes each chip to its own text.
+     Both become explicit grids: the stats fit one row of three (they are short
+     numbers, and this recovers ~50px of scroll), and the legend gets two even
+     columns with the fifth chip spanning the full width — deliberate, not left
+     over. The chips also stop wrapping their own "%" onto a second line, which
+     was what made the legend block twice as tall as it needed to be. */
+  .hp-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .hp-stat{flex:none;min-width:0}
+  .hp-stat-num{font-size:20px}
+  .hp-stat-lbl{font-size:9.5px;letter-spacing:.03em;line-height:1.25;margin-top:4px}
+  .hp-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .hp-leg{flex-wrap:nowrap;justify-content:flex-start;min-width:0;font-size:11.5px;padding:8px}
+  .hp-leg .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hp-leg:last-child{grid-column:1/-1}
   .hero h1{font-size:26px}
 }
 </style>
-<script src="scores-engine.js?v=2691"></script>
+<script src="scores-engine.js?v=2780"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -423,7 +439,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2696">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=2782">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1551,7 +1567,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="../assets/mfc-chrome.js?v=4"></script>
+<script defer src="../assets/mfc-chrome.js?v=5"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

@@ -225,8 +225,96 @@
       ".sidebar-live.live-ready{animation:mfc-live-in .5s cubic-bezier(.22,1,.36,1);}" +
       "@media (prefers-reduced-motion:reduce){.live-strip.live-ready,.live-chip.live-ready," +
       ".hv-live.live-ready,.stat-card.stat-live.live-ready,.strat-metric-live.live-ready," +
-      ".sidebar-live.live-ready{animation:none;}}";
+      ".sidebar-live.live-ready{animation:none;}}" +
+      /* ── V27.8: the CYCLE METER ───────────────────────────────────────────
+         The live pivot publishes bench_pct alongside live_pct, but until now the
+         two only ever appeared as adjacent numbers ("+1.26%  vs Nifty 50
+         +0.55%") — the reader had to do the subtraction. This renders the pair
+         as the site's existing MODEL/INDEX bar idiom (V27.5, homepage strategy
+         cards) so the gap is the thing you see, and states the gap in words
+         underneath.
+         Same fail-soft contract as every other live surface: display:none until
+         .live-ready, so a failed fetch leaves the page exactly as it was. */
+      ".lv-meter{display:none;}" +
+      ".lv-meter.live-ready{display:block;margin-top:12px;}" +
+      ".lvm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;margin-top:6px;}" +
+      ".lvm-key{font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text3,#475569);min-width:38px;}" +
+      ".lvm-track{position:relative;height:6px;border-radius:999px;background:var(--ink3,#e4eeff);overflow:hidden;min-width:0;}" +
+      /* display:block is load-bearing — an inline fill silently discards width */
+      ".lvm-fill{display:block;height:100%;width:0;border-radius:999px;transition:width .85s cubic-bezier(.22,.8,.2,1);}" +
+      ".lvm-model{background:linear-gradient(90deg,var(--accent,#1a50d8),var(--teal,#0891b2));}" +
+      ".lvm-bench{background:var(--text3,#475569);opacity:.45;}" +
+      ".lvm-down .lvm-model{background:linear-gradient(90deg,#dc2626,#f87171);}" +
+      ".lvm-val{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text2,#1e3a5f);min-width:52px;text-align:right;}" +
+      /* --data-* not --green: these are 10.5–11.5px, i.e. NORMAL text by WCAG,
+         and --green (#059669) is only 3.8:1 on the card. The --data-* scale is
+         the AA-safe grading ink and is re-inked for dark, so no theme override
+         is needed here. --red is deliberately avoided too (it is load-bearing
+         for white-on-red chrome elsewhere). */
+      ".lvm-val.up{color:var(--data-strong,#047857);}" +
+      ".lvm-val.down{color:var(--data-bad,#dc2626);}" +
+      ".lvm-gap{margin-top:8px;font-size:10.5px;line-height:1.45;color:var(--text3,#475569);}" +
+      ".lvm-gap b{font-weight:800;color:var(--data-strong,#047857);}" +
+      ".lvm-gap.behind b{color:var(--data-bad,#dc2626);}" +
+      /* only the two greys need a dark override — the inks ride the tokens */
+      "html[data-theme=\"dark\"] .lvm-track{background:rgba(255,255,255,.09);}" +
+      "html[data-theme=\"dark\"] .lvm-bench{background:#94a3b8;opacity:.55;}" +
+      "@media (prefers-reduced-motion:reduce){.lvm-fill{transition:none;}}";
     document.head.appendChild(st);
+  }
+
+  /* Render every [data-live-meter="<key>"] as a two-bar model-vs-index compare.
+     Bars are scaled to the LARGER of the two magnitudes so the shorter bar is
+     always a true fraction of the longer one — the gap is read by eye, and the
+     caption states it in points so it is never read wrong. Painted at width:0
+     and grown on the next frame; a bar written straight to its final width has
+     a dead transition. */
+  function fillMeters(data) {
+    var nodes = document.querySelectorAll("[data-live-meter]");
+    if (!nodes.length) return;
+    var pending = [];
+    nodes.forEach(function (el) {
+      var s = (data.strategies || {})[el.getAttribute("data-live-meter")];
+      if (!s || s.live_pct == null || s.bench_pct == null) return;   // coverage guard published null
+      var live = s.live_pct, bench = s.bench_pct;
+      var scale = Math.max(Math.abs(live), Math.abs(bench), 0.01);
+      var gap = live - bench, ahead = gap >= 0;
+      var bn = s.bench_name || "the benchmark";
+      el.classList.toggle("lvm-down", live < 0);
+      el.innerHTML =
+        '<div class="lvm-row"><span class="lvm-key">Model</span>' +
+          '<span class="lvm-track"><i class="lvm-fill lvm-model"></i></span>' +
+          '<span class="lvm-val ' + cls(live) + '">' + fmtPct(live) + "</span></div>" +
+        '<div class="lvm-row"><span class="lvm-key">Index</span>' +
+          '<span class="lvm-track"><i class="lvm-fill lvm-bench"></i></span>' +
+          '<span class="lvm-val">' + fmtPct(bench) + "</span></div>" +
+        '<div class="lvm-gap' + (ahead ? "" : " behind") + '"><b>' +
+          (ahead ? "+" : "−") + Math.abs(gap).toFixed(2) + " pts</b> " +
+          (ahead ? "ahead of " : "behind ") + bn + " this cycle</div>";
+      pending.push([el.querySelector(".lvm-model"), Math.abs(live) / scale * 100]);
+      pending.push([el.querySelector(".lvm-bench"), Math.abs(bench) / scale * 100]);
+      el.classList.add("live-ready");
+    });
+    var grow = function () {
+      pending.forEach(function (p) { p[0].style.width = p[1].toFixed(1) + "%"; });
+    };
+    // rAF for the paint-at-zero frame, timeout as the frame-starved fallback
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(grow);
+    setTimeout(grow, 160);
+    /* Same backstop contract as countTo(): an empty bar on a performance card
+       does not read as "not animated yet", it reads as ZERO — a wrong number. If
+       the transition clock is starved (throttled tab, frame-starved renderer)
+       the width stays at its from-value indefinitely, so once the tween should
+       long since have finished, force any still-empty bar to its final width
+       with the transition off. */
+    setTimeout(function () {
+      pending.forEach(function (p) {
+        if (p[1] > 0.5 && p[0].getBoundingClientRect().width < 1) {
+          p[0].style.transition = "none";
+          p[0].style.width = p[1].toFixed(1) + "%";
+        }
+      });
+    }, 1400);
   }
 
   function boot() {
@@ -240,6 +328,7 @@
         if (!d || !d.strategies) return;
         window.MFCLive = d;
         fill(d);
+        fillMeters(d);
       })
       .catch(function () { /* fail-soft: page stays in its pre-pivot state */ });
   }

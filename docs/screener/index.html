@@ -419,8 +419,8 @@ td{padding:12px 14px;white-space:nowrap}
 .company-sector{font-size:11px;color:var(--text3)}
 .num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;color:var(--text)}
 /* value heatmap — quick-scan strength/valuation cues */
-.num.v-strong{color:#047857;font-weight:700}
-.num.v-good{color:#059669}
+.num.v-strong{color:#065f46;font-weight:700}
+.num.v-good{color:#047857}
 .num.v-weak{color:#b45309}
 .num.v-bad{color:#dc2626}
 .sector-pill{display:inline-block;font-size:10px;font-weight:600;color:var(--text3);background:rgba(37,99,235,.06);border:0.5px solid var(--border);border-radius:20px;padding:1px 8px;margin-top:4px}
@@ -428,8 +428,8 @@ tbody tr.rowlink{cursor:pointer}
 /* skeleton loading shimmer */
 .skel{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(37,99,235,.07) 25%,rgba(37,99,235,.16) 37%,rgba(37,99,235,.07) 63%);background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
 @keyframes skel-sweep{0%{background-position:100% 0}100%{background-position:0 0}}
-.change-pos{color:var(--green);font-weight:600}
-.change-neg{color:var(--red);font-weight:600}
+.change-pos{color:var(--data-strong);font-weight:600}
+.change-neg{color:var(--data-bad);font-weight:600}
 .na{color:var(--text3)}
 
 
@@ -509,6 +509,14 @@ tbody tr.rowlink{cursor:pointer}
   /* Collapse the long filter panel by default so results are reachable. */
   .mobile-filters-toggle{display:inline-flex;width:100%;margin-top:8px}
   .sidebar.filters-collapsed .sidebar-section ~ .sidebar-section{display:none}
+  /* V27.8 — with the filters collapsed only ONE section survives, but it kept
+     the 26px bottom padding + 22px bottom margin that exist to separate it from
+     the sections below, and the rail kept its own 20px. That is 68px of blank
+     white between the last button and the page title on a phone, which reads as
+     a rendering fault rather than spacing. Reclaim it only while collapsed —
+     opening the filters restores the full rhythm. */
+  .sidebar.filters-collapsed .sidebar-section{padding-bottom:0;margin-bottom:0;border-bottom:none}
+  .sidebar.filters-collapsed{padding-bottom:14px}
   /* Results table: let it scroll horizontally instead of clipping columns. */
   .table-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
   #resultsTable{min-width:720px}
@@ -551,7 +559,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2696">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=2782">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1237,18 +1245,25 @@ function fmtTone(v,d,kind){return v==null?`<span class="na">—</span>`:`<span c
 // so the table is sector-scannable at a glance. RGB triplets feed rgb(R G B / a)
 // in the CSS; any unmapped sector keeps the neutral pill. Matched by substring so
 // taxonomy variants (e.g. "Financial Services" / "Banks") map to one colour.
+// V27.8: the pill paints its hue as 10px TEXT as well as a dot and a tint, so
+// each hue has to clear 4.5:1 on the white row. Five of the eleven did not
+// (technology 3.7, energy 3.2, health 3.8, consumer-defensive 3.3, materials
+// 3.6). Each moves one step deeper in its own family; utilities and real estate
+// move too, purely to keep them separable from the newly-darkened technology
+// and energy. The dot and the 8%-alpha tint are unaffected at these deltas, so
+// the table still reads sector-by-sector exactly as before.
 const SECTOR_RGB={
   "financ":"37 99 235","bank":"37 99 235",
-  "technolog":"8 145 178","info tech":"8 145 178","software":"8 145 178",
-  "energy":"217 119 6","oil":"217 119 6",
-  "health":"5 150 105","pharma":"5 150 105",
+  "technolog":"14 116 144","info tech":"14 116 144","software":"14 116 144",
+  "energy":"161 98 7","oil":"161 98 7",
+  "health":"4 120 87","pharma":"4 120 87",
   "consumer cyclical":"124 58 237","discretionary":"124 58 237","durable":"124 58 237","auto":"124 58 237",
-  "consumer defensive":"22 163 74","staple":"22 163 74","fmcg":"22 163 74",
+  "consumer defensive":"21 128 61","staple":"21 128 61","fmcg":"21 128 61",
   "industrial":"79 70 229","capital good":"79 70 229",
-  "material":"234 88 12","metal":"234 88 12","chemical":"234 88 12",
+  "material":"194 65 12","metal":"194 65 12","chemical":"194 65 12",
   "communicat":"225 29 72","telecom":"225 29 72","media":"225 29 72",
-  "utilit":"14 116 144","power":"14 116 144",
-  "real estate":"180 83 9","realty":"180 83 9"
+  "utilit":"15 118 110","power":"15 118 110",
+  "real estate":"154 52 18","realty":"154 52 18"
 };
 function sectorRGB(s){
   if(!s)return null;

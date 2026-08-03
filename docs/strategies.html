@@ -222,7 +222,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .compare-table .mid{color:var(--accent2);font-weight:600;}
   .compare-table .low{color:var(--text2);}
   .compare-table .risk-pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;}
-  .compare-table .risk-low{background:rgba(5,150,105,0.12);color:var(--green);}
+  .compare-table .risk-low{background:rgba(5,150,105,0.12);color:var(--data-strong);}
   .compare-table .risk-med{background:rgba(37,99,235,0.12);color:var(--accent2);}
   .compare-table .risk-high{background:rgba(220,38,38,0.10);color:#dc2626;}
   @media(max-width:700px){.compare-table{font-size:11px;}.compare-table th,.compare-table td{padding:8px 8px;}}
@@ -255,7 +255,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .cmp-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 9px;border-radius:999px;line-height:1.55;white-space:nowrap;}
   .cmp-badge.pop{color:#fff;background:linear-gradient(120deg,var(--accent),var(--accent3));box-shadow:0 4px 10px -5px rgba(26,80,216,.6);}
   .cmp-badge.cagr{color:var(--gold);background:rgba(217,119,6,.12);border:0.5px solid rgba(217,119,6,.30);}
-  .cmp-badge.free{color:var(--green);background:rgba(5,150,105,.12);border:0.5px solid rgba(5,150,105,.28);}
+  /* V27.8: --data-strong, not --green — 9px/10.5px on a pale green chip is
+     normal text at 3.8:1. The token is AA in light and re-inked for dark. */
+  .cmp-badge.free{color:var(--data-strong);background:rgba(5,150,105,.12);border:0.5px solid rgba(5,150,105,.28);}
   /* — body cells — */
   .cmp-card .compare-table td{padding:14px 16px;text-align:center;border-bottom:0.5px solid var(--border);vertical-align:middle;color:var(--text);font-variant-numeric:tabular-nums;font-weight:600;background:transparent;}
   .cmp-card .compare-table td.row-label{text-align:left;color:var(--text2);font-weight:600;font-size:12.5px;}
@@ -274,7 +276,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .cmp-grp.g-risk .cmp-grp-inner::before{background:linear-gradient(90deg,var(--gold),#f59e0b);}
   .cmp-grp.g-price .cmp-grp-inner::before{background:linear-gradient(90deg,var(--green),#10b981);}
   /* — value tiers — */
-  .cmp-card .compare-table td.best{color:var(--green);font-weight:800;}
+  /* V27.8: the winning cell is 12px on a 13%-green chip — 3.8:1 on --green. */
+  .cmp-card .compare-table td.best{color:var(--data-strong);font-weight:800;}
   .cmp-card .compare-table td.best .v{background:rgba(5,150,105,0.13);}
   .cmp-card .compare-table td.best .v::after{content:'✓';margin-left:6px;font-size:10px;font-weight:800;opacity:.9;}
   .cmp-card .compare-table td.mid{color:var(--accent2);font-weight:700;}
@@ -1761,7 +1764,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2696">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
 </head>
 <body data-route="strategies">
 <script>
@@ -1828,21 +1831,24 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <div class="ph-kpi-strat">MultiAsset</div>
             <div class="ph-kpi-cycle" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span class="lv-since">since last rebalance</span></div>
             <div class="ph-kpi-bt"><span class="ph-kpi-val ph-green"><!--MFSTAT:ma:cagr-->21.7%<!--/MFSTAT--></span><span class="ph-kpi-lbl">5Y backtest CAGR</span></div>
-            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 20 C 12 18, 24 15, 36 12 S 60 8, 80 4" fill="none" stroke="#0891b2" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <!-- V27.8: was a hand-drawn bezier that represented nothing — the same
+                 ornamental "line goes up" on all three tiles. Replaced with the
+                 real model-vs-index comparison for the current cycle (mfc-live.js
+                 renders it from live-perf.json's live_pct/bench_pct, which this
+                 card already fetched but only ever showed as a bare number). -->
+            <div class="lv-meter" data-live-meter="ma"></div>
           </div>
           <div class="ph-kpi-tile">
             <div class="ph-kpi-strat">LargeMidcap 250</div>
             <div class="ph-kpi-cycle" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="lm:live">—</b><span class="lv-since">since last rebalance</span></div>
             <div class="ph-kpi-bt"><span class="ph-kpi-val ph-blue"><!--MFSTAT:lm:cagr-->35.6%<!--/MFSTAT--></span><span class="ph-kpi-lbl">5Y backtest CAGR</span></div>
-            <svg class="ph-spark" viewBox="0 0 80 24" preserveAspectRatio="none"><path d="M0 22 C 12 19, 24 14, 36 10 S 60 4, 80 2" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="lv-meter" data-live-meter="lm"></div>
           </div>
           <div class="ph-kpi-tile" style="grid-column:1 / -1;">
             <div class="ph-kpi-strat">SmallMicro 500</div>
             <div class="ph-kpi-cycle" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span class="lv-since">since last rebalance</span></div>
             <div class="ph-kpi-bt"><span class="ph-kpi-val ph-gold"><!--MFSTAT:sm:cagr-->46.9%<!--/MFSTAT--></span><span class="ph-kpi-lbl">5Y backtest CAGR</span></div>
-            <!-- V18.7: full-width tile (grid-column 1/-1) → 180-wide viewBox so the
-                 curve renders at the same density as the half-width tiles. -->
-            <svg class="ph-spark" viewBox="0 0 180 24" preserveAspectRatio="none"><path d="M0 22 C 27 16, 54 9, 81 5 S 135 2, 180 1" fill="none" stroke="#1a50d8" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <div class="lv-meter" data-live-meter="sm"></div>
           </div>
         </div>
         <div class="ph-kpi-foot">
@@ -2157,11 +2163,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <div class="strat-hub-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
       <a href="multiasset.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
         <span style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0891b2,#1a50d8);"></span>
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0891b2;margin-bottom:10px;">For first-time investors · Low risk · <span style="color:#059669;">Free</span></div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0e7490;margin-bottom:10px;">For first-time investors · Low risk · <span style="color:var(--data-strong);">Free</span></div>
         <h3 style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:6px;font-weight:700;letter-spacing:-.02em;">MindForge MultiAsset</h3>
         <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px;">8 NSE-listed ETFs rotated monthly across Nifty 50, Next 50, Midcap, Smallcap, Gold, Silver, Bharat Bond and NASDAQ — defensive by design.</p>
         <div class="hub-live" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="ma:live">—</b><span class="lv-since">since last rebalance</span></div>
-        <div class="hub-bt"><span class="hub-bt-val" style="color:#0891b2;"><!--MFSTAT:ma:cagr-->21.7%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
+        <div class="hub-bt"><span class="hub-bt-val" style="color:#0e7490;"><!--MFSTAT:ma:cagr-->21.7%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore MultiAsset →</span>
       </a>
       <a href="largemidcap.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
@@ -2175,11 +2181,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </a>
       <a href="smallmicro.html" class="strat-hub-card" style="display:block;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:28px;text-decoration:none;color:inherit;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;position:relative;overflow:hidden;">
         <span style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#d97706,#f59e0b);"></span>
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#d97706;margin-bottom:10px;">Highest conviction · High risk</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#b45309;margin-bottom:10px;">Highest conviction · High risk</div>
         <h3 style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:6px;font-weight:700;letter-spacing:-.02em;">MindForge SmallMicro 500</h3>
         <p style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:16px;">Top 25 stocks from a 500-name Smallcap + Microcap universe — factor model tuned for thin-liquidity dynamics.</p>
         <div class="hub-live" data-live-wrap><span class="lv-tag"><span class="ls-dot"></span>LIVE</span><b class="mf-live-num" data-live="sm:live">—</b><span class="lv-since">since last rebalance</span></div>
-        <div class="hub-bt"><span class="hub-bt-val" style="color:#d97706;"><!--MFSTAT:sm:cagr-->46.9%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
+        <div class="hub-bt"><span class="hub-bt-val" style="color:#b45309;"><!--MFSTAT:sm:cagr-->46.9%<!--/MFSTAT--></span><span class="hub-bt-lbl">CAGR · 5Y backtest</span></div>
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent2);">Explore SmallMicro 500 →</span>
       </a>
     </div>
@@ -3118,7 +3124,7 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 })();
 </script>
 <script src="assets/mfc-offer.js?v=2440" defer></script>
-<script src="assets/mfc-live.js?v=2481" defer></script>
+<script src="assets/mfc-live.js?v=2781" defer></script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      V25.3 — REAL LIVE RETURN ON THE FOUR BACKTEST-ONLY SURFACES
@@ -3262,6 +3268,15 @@ tr.cmp-live-row .row-label::before{ content:''; display:inline-block; width:6px;
    !important is required to beat the inline colour. Keeps the card's blue identity. */
 html[data-theme="dark"] a.strat-hub-card[href="largemidcap.html"] .hub-bt-val,
 html[data-theme="dark"] a.strat-hub-card[href="largemidcap.html"] > div:first-of-type{ color:#5b8def !important; }
+/* V27.8 — the same trade-off on the other two cards, in the opposite direction.
+   The MultiAsset teal (#0891b2) and SmallMicro gold (#d97706) measured 3.7:1 and
+   3.2:1 at 16px on the WHITE card — under AA for normal text — so the inline
+   inks are now the darker #0e7490 / #b45309, which keep each card's hue and pass.
+   Those darker values are then too heavy on the dark card, so restore the bright
+   hue there, exactly as the LargeMidcap rule above does. !important beats inline. */
+html[data-theme="dark"] a.strat-hub-card[href="multiasset.html"] .hub-bt-val{ color:#28bcd8 !important; }
+html[data-theme="dark"] a.strat-hub-card[href="smallmicro.html"] .hub-bt-val,
+html[data-theme="dark"] a.strat-hub-card[href="smallmicro.html"] > div:first-of-type{ color:#fbbf24 !important; }
 
 [data-theme="dark"] .ps-funds-live.live-ready{
   border-color:rgba(52,211,153,.24);

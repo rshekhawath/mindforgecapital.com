@@ -462,8 +462,15 @@ html[data-theme="dark"]{
      here so both surfaces flip for free — the company page consumes them
      straight from inline `style="color:var(--pil-v)"`, which resolves against
      the live theme where a baked hex could not. */
+/* V27.8 — the DARK column was fixed in V26.7; nobody then re-measured LIGHT.
+   Three of the five identity hexes are below AA on the white card at the sizes
+   they are actually used (10px kickers, 15px hero lenses): quality #059669 was
+   3.9:1, growth #d97706 3.2:1, efficiency #0891b2 3.7:1. Each moves one step
+   deeper in the SAME hue family — the pillars stay instantly distinguishable
+   from one another and from value/momentum, which already passed and are
+   unchanged. */
 :root{
-  --pil-q:#059669; --pil-v:#1a50d8; --pil-g:#d97706; --pil-m:#7c3aed; --pil-e:#0891b2;
+  --pil-q:#047857; --pil-v:#1a50d8; --pil-g:#b45309; --pil-m:#7c3aed; --pil-e:#0e7490;
 }
 html[data-theme="dark"]{
   --pil-q:#34d399; --pil-v:#83aaff; --pil-g:#fbbf24; --pil-m:#a78bfa; --pil-e:#38bdf8;
@@ -606,4 +613,68 @@ html[data-theme="dark"] .mob-sort{
    but never animates, and it must never sit over a non-scrolling table */
 @media (min-width:1101px){
   .tbl-scroll{ background:none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   V27.8 — CROSS-VIEWPORT CHROME CORRECTIONS
+   ---------------------------------------------------------------------------
+   Three defects that only show up away from a desktop window, all in shared
+   chrome, so all three are fixed once here rather than page by page. Every
+   selector is prefixed with `html` purely for specificity: the .mfc-btt rules
+   are injected by mfc-chrome.js into a <style> appended at runtime (i.e. after
+   this file), and several pages declare .fab-wa / .back-to-top in their own
+   <style> blocks, so a bare class would tie and lose on source order.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* (1) The theme toggle was stranded beside the LOGO on every tablet.
+   `.nav-hamburger` carries margin-left:auto in each page's own stylesheet and
+   the toggle carries one too; with `.nav-links` hidden, flexbox splits the free
+   space between the two auto margins and the toggle floats mid-nav. V25.3
+   collapsed the hamburger's margin to fix that — but scoped it to 768px, while
+   the hamburger actually appears from 1024px down (the V10.x nav rule). So
+   across the whole 769–1024 iPad band the old behaviour survived, except that
+   here the toggle kept its fixed 10px margin and the hamburger kept the only
+   auto one: measured at 820px, the toggle sat at x=82 hard against the
+   wordmark with the hamburger 634px away at the far edge.
+   Same one-auto-margin rule, applied at the breakpoint that actually matters. */
+@media (max-width:1024px){
+  html .mfc-theme-toggle{ margin-left:auto; margin-right:8px; }
+  html .mfc-theme-toggle ~ .nav-hamburger{ margin-left:0; }
+}
+
+/* (2) A round button must stay round. V27.7 gave every `button` a
+   min-height:44px on phones (a genuine tap-target win), but the return-to-top
+   FAB is sized 40×40 there and drawn with border-radius:50% — min-height wins
+   on the height axis only, so the circle rendered as a 40×44 ELLIPSE on every
+   page of the site. Keep the 44px target and square it off, which satisfies
+   both the tap target and the geometry. */
+@media (max-width:768px){
+  html .back-to-top,
+  html .mfc-btt{ width:44px; height:44px; }
+}
+/* Same cause, second casualty: the nav toggle is declared 34×34 on phones, so
+   the 44px min-height stretched it into a 34×44 upright rectangle sitting next
+   to a square hamburger. It is a rounded square by design, not a circle, so the
+   distortion is subtler than the FAB's — but it is visible on every page.
+   Square it at the tap-target size. */
+@media (max-width:600px){
+  html .mfc-theme-toggle{ width:44px; height:44px; }
+}
+
+/* (3) The two phone FABs were staggered and their halos collided. WhatsApp sits
+   at right:24px as a 56px circle (centre 52px in from the edge); the
+   return-to-top sat at right:16px as a 44px circle (centre 38px in) — a 14px
+   stagger — and the vertical gap between them measured 6px against a pulse ring
+   that expands 14px past the button, so the ring washed over the button above.
+   Align the two centres on one axis and open the gap to a clean 18px. */
+@media (max-width:768px){
+  html .fab-wa{ right:16px; }                 /* = the page gutter */
+  html .back-to-top,
+  html .mfc-btt{ right:22px; }                /* 22+22 = 16+28: centres match */
+  /* index + strategies hard-code bottom:150px, which is 6px above a FAB whose
+     top edge is 144px up. Only those two pages carry a native .back-to-top and
+     both carry a .fab-wa, so this is unconditionally correct for them; the
+     injected .mfc-btt gets the same 162px from mfc-chrome.js, but only on the
+     pages that actually have a FAB to clear. */
+  html .back-to-top{ bottom:162px; }
 }

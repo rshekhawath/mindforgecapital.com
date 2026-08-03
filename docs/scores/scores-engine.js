@@ -187,7 +187,10 @@
      is the shared --data-* scale from mfc-finish.css. Read live on every call
      (not cached) so a mid-session theme flip re-inks on the next render. */
   var DARK = { na: "#8698b7", strong: "#34d399", good: "#16c78d", mid: "#83aaff", weak: "#fbbf24", bad: "#f87171" };
-  var LIGHT = { na: "#94a3b8", strong: "#047857", good: "#059669", mid: "#1a50d8", weak: "#b45309", bad: "#dc2626" };
+  // V27.8: light `good` (#059669) measured 3.8:1 at the 11-14px this is used
+  // at — under AA. Both greens step one deeper so the strong/good distinction
+  // survives and each clears 4.5:1 on the white card. Dark column untouched.
+  var LIGHT = { na: "#64748b", strong: "#065f46", good: "#047857", mid: "#1a50d8", weak: "#b45309", bad: "#dc2626" };
   function palette() {
     try {
       return document.documentElement.getAttribute("data-theme") === "dark" ? DARK : LIGHT;

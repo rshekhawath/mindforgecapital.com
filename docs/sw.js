@@ -108,7 +108,13 @@
 // pass. All of it is scoped to max-width:600px — the accordion script returns
 // before touching the DOM above that width — so tablets and desktop are
 // unaffected, but a precached document has no ?v to bust.
-const CACHE = 'mfc-v27';
+// v28 (V27.8): the cross-viewport chrome corrections ship as new ?v on
+// mfc-finish.css and mfc-chrome.js, and BOTH precached shell documents
+// (index.html — the offline navigation fallback, login.html — the installed
+// app's start_url) carry those references. A precached document has no ?v of
+// its own to bust, so an installed app would keep serving the old markup with
+// the old asset URLs and never see the fixes.
+const CACHE = 'mfc-v28';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

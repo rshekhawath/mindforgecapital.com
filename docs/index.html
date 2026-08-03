@@ -171,9 +171,16 @@ nav {
 .hv-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: hv-live-pulse 1.8s ease-in-out infinite; }
 @keyframes hv-live-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
 .hv-live-val { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 34px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.hv-live-val.up, .hv-live-bench.up { color: var(--green); }
-.hv-live-val.down, .hv-live-bench.down { color: #dc2626; }
+.hv-live-val.up { color: var(--green); }
+.hv-live-val.down { color: #dc2626; }
 .hv-live-val.flat, .hv-live-bench.flat { color: var(--text2); }
+/* V27.8 — the benchmark figure is 12px/700 on a near-white card, i.e. NORMAL
+   text by WCAG, and --green (#059669) measures 3.5:1 there — under the 4.5
+   floor. The 34px headline above it is large text and stays on --green.
+   Split onto the --data-* grading scale, which is AA in light AND re-inked for
+   dark, instead of a one-off hex that would then miss the dark theme. */
+.hv-live-bench.up { color: var(--data-strong); }
+.hv-live-bench.down { color: var(--data-bad); }
 .hv-live-cyc { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; }
 .hv-live-sub { margin-top: 7px; font-size: 12px; color: var(--text3); }
 .hv-live-sub strong { color: var(--text2); font-weight: 600; }
@@ -3364,7 +3371,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2696">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
 </head>
 <body>
 
@@ -3533,8 +3540,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .mp-k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#475569}
 .mp-v{font-size:19px;font-weight:800;color:#0c1831;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.1}
 .mp-chg{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.mp-up .mp-chg,.mp-up .mp-v.mp-tint{color:#059669}
-.mp-down .mp-chg,.mp-down .mp-v.mp-tint{color:#dc2626}
+/* V27.8 — these were hardcoded light-mode inks with no dark override, so the
+   market-pulse figures kept #059669/#dc2626 against the dark card (~3.3:1) and
+   #059669 was already under AA on the light one at 12px. The --data-* scale is
+   AA in both themes and flips automatically. */
+.mp-up .mp-chg,.mp-up .mp-v.mp-tint{color:var(--data-strong)}
+.mp-down .mp-chg,.mp-down .mp-v.mp-tint{color:var(--data-bad)}
 .mp-foot{font-size:13px;font-weight:600;color:#1a50d8;display:flex;align-items:center;gap:6px}
 .mp-arrow{transition:transform 0.25s}
 .mp-card:hover .mp-arrow{transform:translateX(4px)}
@@ -3793,7 +3804,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 @supports (color: color-mix(in srgb, red 50%, transparent)){
   .bf-stage:hover{ border-color: color-mix(in srgb, var(--sc,#1a50d8) 45%, transparent); }
 }
-.bf-num{ font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--sc,var(--accent3)); opacity: .8; margin-bottom: 15px; }
+/* V27.8: the stage ramp is tuned for the RAIL and the arrows, where a mid
+   teal is right. As 11px text at .8 opacity, stages 03-05 measured
+   4.11 / 3.68 / 3.74 on the white card. The numeral now takes --scd — the
+   same hue one step deeper — and full opacity; --sc keeps driving every
+   graphic, so the pipeline gradient is unchanged. */
+.bf-num{ font-size: 11px; font-weight: 700; letter-spacing: .16em; color: var(--scd,var(--sc,var(--accent3))); opacity: 1; margin-bottom: 15px; }
 .bf-icon{
   width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, rgba(26,108,244,0.14), rgba(45,212,191,0.16)); color: var(--sc,var(--accent2));
@@ -3808,7 +3824,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .bf-icon svg{ width: 22px; height: 22px; display: block; }
 .bf-title{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif; font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 7px; }
 .bf-desc{ font-size: 12.5px; color: var(--text3); line-height: 1.6; margin-bottom: 14px; }
-.bf-chip{ display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; color: var(--sc,var(--accent2));
+/* V27.8: 10.5px text, so it takes --scd for the same reason .bf-num does —
+   the chip TINT below still comes from --sc, keeping the ramp intact. */
+.bf-chip{ display: inline-block; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; color: var(--scd,var(--sc,var(--accent2)));
   background: rgba(37,99,235,0.08); border: 0.5px solid var(--border2); border-radius: 999px; padding: 4px 10px; }
 @supports (color: color-mix(in srgb, red 50%, transparent)){
   .bf-chip{ background: color-mix(in srgb, var(--sc,#2563eb) 9%, transparent);
@@ -3877,7 +3895,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
     <h2 class="fade-up">From a whole universe to your 25.</h2>
     <p class="bf-lead fade-up">Every strategy runs the same disciplined pipeline each month — no overrides, no gut calls. Here's the path from index to portfolio.</p>
     <div class="bf-pipeline">
-      <div class="bf-stage fade-up reveal-stagger" data-step="01" style="--reveal-delay:0ms;--sc:#1a50d8;--sc2:#2563eb;">
+      <div class="bf-stage fade-up reveal-stagger" data-step="01" style="--reveal-delay:0ms;--sc:#1a50d8;--sc2:#2563eb;--scd:#1a50d8">
         <div class="bf-num">01</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></div>
         <div class="bf-title">The universe</div>
@@ -3885,7 +3903,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <span class="bf-chip">Up to 750 stocks</span>
       </div>
       <div class="bf-sep" style="--sc:#2563eb;animation-delay:0.0s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="02" style="--reveal-delay:80ms;--sc:#2563eb;--sc2:#0d84c3;">
+      <div class="bf-stage fade-up reveal-stagger" data-step="02" style="--reveal-delay:80ms;--sc:#2563eb;--sc2:#0d84c3;--scd:#2563eb">
         <div class="bf-num">02</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12l4-3"/><path d="M3 12h2M12 3v2M19 6l-1.5 1.5"/></svg></div>
         <div class="bf-title">Multi-factor score</div>
@@ -3893,7 +3911,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <span class="bf-chip">Academically Validated</span>
       </div>
       <div class="bf-sep" style="--sc:#0d84c3;animation-delay:0.3s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="03" style="--reveal-delay:160ms;--sc:#0d84c3;--sc2:#0891b2;">
+      <div class="bf-stage fade-up reveal-stagger" data-step="03" style="--reveal-delay:160ms;--sc:#0d84c3;--sc2:#0891b2;--scd:#0e6ea3">
         <div class="bf-num">03</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></div>
         <div class="bf-title">Ranked by conviction</div>
@@ -3901,7 +3919,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <span class="bf-chip">Strongest First</span>
       </div>
       <div class="bf-sep" style="--sc:#0891b2;animation-delay:0.6s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="04" style="--reveal-delay:240ms;--sc:#0891b2;--sc2:#0d9488;">
+      <div class="bf-stage fade-up reveal-stagger" data-step="04" style="--reveal-delay:240ms;--sc:#0891b2;--sc2:#0d9488;--scd:#0e7490">
         <div class="bf-num">04</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
         <div class="bf-title">Sector-capped</div>
@@ -3909,7 +3927,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <span class="bf-chip">≤ 3 Per Industry</span>
       </div>
       <div class="bf-sep" style="--sc:#0d9488;animation-delay:0.8999999999999999s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="05" style="--reveal-delay:320ms;--sc:#0d9488;--sc2:#2dd4bf;">
+      <div class="bf-stage fade-up reveal-stagger" data-step="05" style="--reveal-delay:320ms;--sc:#0d9488;--sc2:#2dd4bf;--scd:#0f766e">
         <div class="bf-num">05</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9l6.5 3.75"/><circle cx="12" cy="12" r="9"/></svg></div>
         <div class="bf-title">Your portfolio</div>
@@ -5835,7 +5853,7 @@ section[id]{ scroll-margin-top: 80px; }
 </style>
 <script src="assets/mfc-offer.js?v=2440" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=2481" defer></script>
+<script src="assets/mfc-live.js?v=2781" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.

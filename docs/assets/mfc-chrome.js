@@ -97,7 +97,11 @@
                       mcta.getBoundingClientRect().height > 4);
       var root = D.documentElement.style;
       root.setProperty('--mfc-btt-b',  fab ? '90px' : '24px');            // desktop
-      root.setProperty('--mfc-btt-bm', (fab || mctaOn) ? '150px' : '24px'); // mobile
+      // V27.8: 150px left only a 6px gap above a 56px FAB sitting at bottom:88px,
+      // and that FAB's pulse ring expands 14px past its edge — so the ring washed
+      // over this button. 162px gives a clean 18px gap. Pages with only the
+      // sticky CTA bar (no FAB) keep the original clearance.
+      root.setProperty('--mfc-btt-bm', fab ? '162px' : (mctaOn ? '150px' : '24px')); // mobile
     };
     place();
     W.addEventListener('resize', place, { passive: true });

@@ -48,6 +48,12 @@ a:hover{color:var(--white);}
 nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.07);padding:0 32px;}
 .nav-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;height:64px;gap:40px;}
 .logo{display:flex;align-items:center;}
+/* V27.8 — the <img> is the shared 80×80 asset and this page was the only one
+   with no size rule for it, so the wordmark rendered at 80px here against 44px
+   (36px on phones) everywhere else, and dragged the nav bar taller with it.
+   Same two lines the other pages carry. */
+.logo img{height:44px;width:auto;display:block;}
+@media (max-width:768px){ .logo img{height:36px;} }
 .nav-links{display:flex;gap:32px;margin-left:auto;align-items:center;}
 .nav-links a{font-size:14px;color:var(--text2);transition:color .2s;display:inline-flex;align-items:center;height:40px;line-height:1;position:relative;}
 .nav-links a:hover{color:var(--white);}
@@ -82,7 +88,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 
 /* Footer */
 footer{border-top:0.5px solid var(--border);padding:28px 0;text-align:center;position:relative;z-index:1;}
-footer .footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:12px;}
+/* V27.8 — the row is full-bleed with no gutter, so on a 375px phone the five
+   links wrapped edge to edge and the outer two touched the viewport border.
+   Match the 16px gutter the rest of the site uses. */
+footer .footer-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:12px;padding:0 16px;}
 footer .footer-links a{font-size:13px;color:var(--text3);background-image:linear-gradient(90deg,var(--accent),var(--teal));background-repeat:no-repeat;background-position:0 100%;background-size:0% 1.5px;padding-bottom:2px;transition:color .2s ease,background-size .25s ease;}
 footer .footer-links a:hover{color:var(--white);background-size:100% 1.5px;}
 .footer-meta{font-size:12px;color:var(--text3);}
@@ -121,7 +130,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2696">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -208,7 +217,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=4"></script>
+<script defer src="assets/mfc-chrome.js?v=5"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

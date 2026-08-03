@@ -250,6 +250,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .stat-card.tone-gold  .ico-wrap{background:rgba(217,119,6,0.10);color:var(--gold);}
 .stat-card.tone-red   .ico-wrap{background:rgba(220,38,38,0.10);color:var(--red);}
 .stat-card .stat-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;padding-right:44px;}/* V6.8 M4: reserve space for the abs-positioned ico-wrap so long labels like "Next rebalance" don't run under it on mobile */
+/* V27.8 — the numbers in a row stopped sharing a baseline. Once the padding
+   above pushes a longer label ("Next rebalance") onto a second line while its
+   neighbour ("Subscription") stays on one, the two big figures beside each
+   other sit 18px apart and the row reads crooked. Reserving two lines of label
+   height in every tile puts every figure on the same line again, and costs
+   nothing on the tiles whose label already fits. Scoped to the widths where a
+   label can actually wrap — the desktop row is wide enough that none do. */
+@media (max-width:900px){
+  /* pin the line box so "two lines" is an exact, not inherited, height */
+  .stat-card .stat-label{line-height:1.45;min-height:2.9em;display:flex;align-items:flex-start;}
+}
 .stat-card .stat-val{
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size:34px;font-weight:800;color:var(--white);letter-spacing:-.02em;line-height:1;
@@ -456,7 +467,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   padding:8px 14px;display:inline-flex;align-items:center;gap:8px;
   font-size:13px;color:var(--text2);box-shadow:var(--shadow-sm);
 }
-.market-open{color:var(--green);font-weight:700;}
+/* V27.8: --green is 3.8:1 at 13px on the white card. --data-strong is the
+   AA-safe grading green and flips for dark, unlike a baked hex. */
+.market-open{color:var(--data-strong);font-weight:700;}
 .market-closed{color:var(--text3);font-weight:600;}
 
 .table-wrap{
@@ -1517,7 +1530,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2696">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2782">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -5967,7 +5980,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=4"></script>
+<script defer src="assets/mfc-chrome.js?v=5"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
