@@ -135,9 +135,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
     inset 0 1px 0 rgba(255,255,255,0.6);
   opacity:0; transform:translateY(-6px) scale(.98); transform-origin:top left;
   pointer-events:none; visibility:hidden;
-  transition:opacity .2s ease, transform .22s cubic-bezier(.22,.8,.2,1), visibility .2s;
+  /* V28.1 — `visibility .2s` made the flip DISCRETE at the end of the transition,
+     so for ~200ms after .open lands the menu is still computed visibility:hidden
+     — and focus() on a hidden element silently does nothing. That is why the
+     first ArrowDown never reached the listbox. Delaying visibility only on the
+     way OUT keeps the fade-out intact and makes the menu focusable the instant
+     it opens. */
+  transition:opacity .2s ease, transform .22s cubic-bezier(.22,.8,.2,1), visibility 0s linear .2s;
 }
-.strat-menu.open{ opacity:1; transform:none; pointer-events:auto; visibility:visible; }
+.strat-menu.open{ opacity:1; transform:none; pointer-events:auto; visibility:visible; transition:opacity .2s ease, transform .22s cubic-bezier(.22,.8,.2,1), visibility 0s linear 0s; }
 .strat-menu-head{
   font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
   color:var(--text3); padding:6px 10px 7px; }
@@ -609,7 +615,19 @@ td.bought-col{width:42px;text-align:center;}
   content:'';position:absolute;left:5px;top:1px;width:6px;height:11px;
   border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
 }
-tr.row-bought td:not(.bought-col){opacity:.55;}
+/* V28.1 — a bought row already announces itself three ways: a green background
+   wash, a line-through on the company name, and its own ticked checkbox. The
+   blanket text opacity was a redundant FOURTH signal, and it was the one that
+   cost legibility: at .55 the allocation figure (--accent2, 14px/700)
+   composited to 2.33:1 light / 2.51:1 dark and the share count to 3.14 / 3.76 —
+   exactly the two numbers a member re-reads while typing the order into their
+   broker. Opacity cannot be tuned out of this: at .90 the allocation cell is
+   still 4.34:1, and at .72 the row/ticker/broker chips sat at 4.41 — a near miss
+   every time. Dimming TEXT to signal state was the wrong instrument here, so it
+   is dropped; the row keeps the three signals that cost nothing to read, and the
+   dim moves to the one genuinely decorative element in the row. */
+tr.row-bought td:not(.bought-col){opacity:1;}
+tr.row-bought .weight-bar-wrap{opacity:.5;}
 tr.row-bought td.company{text-decoration:line-through;}
 
 /* ── Buy-progress card ── */
@@ -649,7 +667,11 @@ tr.row-bought td.company{text-decoration:line-through;}
    clicking it toggles the box (verified) — so giving the label a 24px
    min-height fixes it without resizing the checkbox or reflowing the card. */
 .sc-bought-row label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;min-height:24px;}
-.stock-card.row-bought{opacity:.7;}
+/* V28.1 — same reasoning on the phone card: the wash, the strikethrough and the
+   "Order placed" checkbox carry the state, so nothing that holds a figure is
+   dimmed. Only the weight bar is. */
+.stock-card.row-bought{opacity:1;}
+.stock-card.row-bought .sc-bar-wrap{opacity:.5;}
 .stock-card.row-bought .sc-company{text-decoration:line-through;}
 
 /* ── HOW-TO section ── */
@@ -1200,6 +1222,23 @@ tbody tr:hover {
 /* —— Stock table rows: green tint when bought; keep existing strike-through-on-company —— */
 tr.row-bought { background: rgba(5,150,105,0.045); }
 tr.row-bought:hover { background: rgba(5,150,105,0.08) !important; }
+/* V28.1 — the wash itself is kept (the left-edge idiom is already spoken for by
+   the row-hover marker at #stocks-tbody tr:hover td:first-child, so reusing it
+   for "bought" would be ambiguous). But three chips in the row — the number, the
+   ticker and the broker link — paint their ink on a tint OF THEIR OWN, and
+   stacking the green wash under those tints lifts the composite background
+   enough to drop all three to 4.41:1 in light mode. A failure a row only has
+   once it is marked done, which is why no load-time sweep ever saw it. Inside a
+   bought row they step to the V27.9 on-tint tier; on the other 24 rows they are
+   untouched, so the broker chip keeps the brand ink V27.9 deliberately gave it. */
+html:not([data-theme="dark"]) tr.row-bought .row-chip,
+html:not([data-theme="dark"]) tr.row-bought .ticker-chip,
+html:not([data-theme="dark"]) tr.row-bought .broker-link{ color: var(--ink-link, #0a5de3) !important; }
+/* dark needed the same treatment and was measured, not assumed: the brand ink on
+   the wash left the broker chip at 4.43:1 there while the other two passed. */
+html[data-theme="dark"] tr.row-bought .row-chip,
+html[data-theme="dark"] tr.row-bought .ticker-chip,
+html[data-theme="dark"] tr.row-bought .broker-link{ color: var(--ink-link, #83aaff) !important; }
 
 /* —— Mobile stock card: subtle entrance —— */
 .stock-card {
@@ -2581,12 +2620,58 @@ function setupStrategySwitcher(activeStrategy){
       chooseStrategy(opt.getAttribute('data-kind'), decodeURIComponent(opt.getAttribute('data-value')));
     });
 
+    /* V28.1 — the menu is a role="listbox" of role="option" buttons, but the only
+       keys it understood were Enter/Space/Escape ON THE PILL. ArrowDown did
+       nothing (focus never entered the listbox), and Tab moved focus to the next
+       control on the page while leaving the menu OPEN and floating over it — the
+       menu is a body-level fixed portal, so it stayed put with focus elsewhere.
+       Arrow keys, Home/End and Tab/focus-out now behave the way a listbox is
+       expected to. Mouse behaviour is untouched. */
+    function opts(){ return Array.prototype.slice.call(menu.querySelectorAll('.strat-opt')); }
+    function focusOpt(i){
+      const list = opts(); if (!list.length) return;
+      const n = ((i % list.length) + list.length) % list.length;
+      // .strat-menu is visibility:hidden until .open, and focus() on a
+      // visibility:hidden element silently does nothing — so when the menu has
+      // only just been opened, wait a frame for the style to land.
+      list[n].focus();
+    }
     pill.addEventListener('keydown', function(ev){
       if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar'){
         if (ev.target === pill){ ev.preventDefault(); toggleMenu(); }
       } else if (ev.key === 'Escape'){
         closeMenu(); pill.focus();
+      } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp'){
+        ev.preventDefault();
+        if (!pill.classList.contains('open')) openMenu();
+        focusOpt(ev.key === 'ArrowDown' ? 0 : -1);
       }
+    });
+    menu.addEventListener('keydown', function(ev){
+      const list = opts(); if (!list.length) return;
+      const i = list.indexOf(document.activeElement);
+      if (ev.key === 'ArrowDown'){ ev.preventDefault(); focusOpt(i + 1); }
+      else if (ev.key === 'ArrowUp'){ ev.preventDefault(); focusOpt(i - 1); }
+      else if (ev.key === 'Home'){ ev.preventDefault(); focusOpt(0); }
+      else if (ev.key === 'End'){ ev.preventDefault(); focusOpt(-1); }
+      else if (ev.key === 'Escape'){ ev.preventDefault(); closeMenu(); pill.focus(); }
+      else if (ev.key === 'Tab'){ closeMenu(); }
+    });
+    // Focus leaving the pill+menu pair closes it — covers Tab out of the last
+    // option and any programmatic focus move. focusout carries relatedTarget (the
+    // element about to receive focus), so this fires on the way OUT rather than
+    // relying on whatever gains focus next to bubble a focusin.
+    function closeIfFocusLeft(next){
+      if (!pill.classList.contains('open')) return;
+      if (next && (pill.contains(next) || menu.contains(next))) return;
+      closeMenu();
+    }
+    menu.addEventListener('focusout', function(ev){ closeIfFocusLeft(ev.relatedTarget); });
+    pill.addEventListener('focusout', function(ev){ closeIfFocusLeft(ev.relatedTarget); });
+    document.addEventListener('focusin', function(ev){
+      if (!pill.classList.contains('open')) return;
+      if (pill.contains(ev.target) || menu.contains(ev.target)) return;
+      closeMenu();
     });
 
     // Click outside (neither pill nor menu) closes; Escape closes; scroll dismisses;
@@ -3109,17 +3194,29 @@ function setCapital(v, btn, fromInput) {
 function refreshSizeSummary() {
   const n = stocksData.length || 1;
   let totalAlloc = 0;
+  // V28.1: each Allocation cell prints fmtINR(amt), i.e. Math.round of its own
+  // amount, while this summed the raw floats and rounded once at the end — so
+  // "Total allocated" disagreed with the column above it by a few rupees
+  // (₹14,69,552 in the column vs ₹14,69,549 in the card at the default capital)
+  // and "total + residue" did not equal the capital entered. Summing the SAME
+  // rounded values the table prints makes the two agree by construction.
   stocksData.forEach(s => {
     const price = Number(s.recommended_price) || 0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
-    totalAlloc += shares * price;
+    totalAlloc += Math.round(shares * price);
   });
   const residue = currentCapital - totalAlloc;
   // For a weighted book (MultiAsset) there is no single "per stock" figure — say so;
   // otherwise show the equal-split amount as before.
-  document.getElementById('size-per-stock').textContent   = isWeightedBook(stocksData)
-    ? 'by model weight'
-    : fmtMoney(currentCapital / n);
+  // V28.1: below the price of a single share, whole-share sizing places nothing —
+  // every row reads 0 shares and ₹0 — yet this still advertised an equal-split
+  // per-stock amount beside a ₹0 total and a residue equal to the whole capital
+  // ("Per stock: ₹4 · Total allocated: ₹0 · Cash residue: ₹100"). Three figures
+  // that cannot all be true. Say what is actually the case instead.
+  const cannotPlace = currentCapital > 0 && totalAlloc === 0;
+  document.getElementById('size-per-stock').textContent   = cannotPlace
+    ? 'below one share'
+    : (isWeightedBook(stocksData) ? 'by model weight' : fmtMoney(currentCapital / n));
   document.getElementById('size-total-alloc').textContent = fmtMoney(totalAlloc);
   document.getElementById('size-residue').textContent     = fmtMoney(residue);
   // V22.0: capital-deployment micro-meter — % of the entered capital the whole-share
@@ -3178,6 +3275,7 @@ function filterStocks(q) {
   });
   // V5.2 #20/#21: layer the active sector filter on top of search results
   if (_sectorFilter) applySectorFilter();
+  syncBoughtAllHeader();   // V28.1 — the visible set just changed
 }
 
 function renderTable(stocks) {
@@ -3430,6 +3528,7 @@ function filterBySector(sectorName){
   document.getElementById('tbl-search').value = '';
   filterStocks('');               // run base filter, then re-apply sector
   applySectorFilter();
+  syncBoughtAllHeader();          // V28.1 — after the sector layer, not before
   reflectChipState();
   // Scroll table into view if user clicked from the allocation card
   var sec = document.querySelector('.table-section');
@@ -3494,6 +3593,7 @@ var _sortKey = null, _sortDir = 1;
 function reapplyViewState(){
   if (_searchQ) filterStocks(_searchQ);
   applySectorFilter();
+  syncBoughtAllHeader();   // V28.1 — a re-render rebuilt every checkbox
 }
 function applySort(){
   if (!_sortKey || !stocksData || !stocksData.length) {
@@ -3602,6 +3702,14 @@ function toggleBoughtAll(headerCb) {
   });
   saveBought(currentStrategy, map);
   refreshBoughtProgress();
+  // V28.1: the header describes the VISIBLE rows, so it has to be recomputed
+  // whenever the visible set or the marks change. It was called from exactly one
+  // place — toggleBought — so: after a select-all it kept whatever state the
+  // click had put it in; after a search change it still described the OLD
+  // visible set (tick 3 of 3 filtered rows, clear the search, and it claimed all
+  // 25 were selected while the progress card correctly read "3 of 25"); and
+  // after a reload it read unchecked even with marks restored.
+  syncBoughtAllHeader();
   showToast(headerCb.checked ? 'Marked all visible picks bought' : 'Cleared all marks');
 }
 
@@ -4417,8 +4525,22 @@ init();
 @media print{
   /* V6.8 L5: dropped vestigial .nav-hamburger from this print rule —
      the dashboard nav has no hamburger element to hide. */
+  /* V28.1: #sector-chips is role="toolbar" — eleven interactive filter buttons —
+     and it was the one control this list missed, so a printed holdings sheet
+     carried a 1136x64 row of dead buttons above the table. If a sector filter is
+     ACTIVE the printed table is already narrowed to that sector, so the sheet
+     says which one instead: .sector-chips .chip.active still prints, as a plain
+     label, and the rest of the toolbar does not. */
   nav, footer, .mf-fab-top, .mf-scroll-prog, .tbl-btn, .renew-cta,
-  .market-bar, .buy-prog-card, .size-card, .notif-card, .howto-card{ display: none !important; }
+  .market-bar, .buy-prog-card, .size-card, .notif-card, .howto-card,
+  .sector-chips .chip:not(.active), .sector-chips .chip[data-sector=""]{ display: none !important; }
+  .sector-chips{ gap: 0 !important; margin-bottom: 10px !important; }
+  .sector-chips .chip.active{
+    background: none !important; border: 0 !important; color: #334155 !important;
+    padding: 0 !important; font-size: 11px !important; box-shadow: none !important;
+  }
+  .sector-chips .chip.active .chip-dot{ display: none !important; }
+  .sector-chips .chip.active::before{ content: 'Filtered to: '; }
   body{ background: #fff !important; }
   .stat-card{ break-inside: avoid; box-shadow: 0 0 0 1px #ccc !important; }
   table{ font-size: 11px; }
@@ -4712,21 +4834,51 @@ th.sortable:hover{ color: var(--accent); }
       tbody.querySelectorAll('tr[data-row]').forEach(function(tr){
         if (tr.style.display !== 'none') visible++;
       });
+      /* V28.1 — this message was only ever appended to the TABLE, whose wrapper is
+         display:none at <=767px. On a phone the card list is what renders, so a
+         no-match search produced 0 visible cards, a 0px-tall card host and a blank
+         gap between the toolbar and "How to invest" — the message existed but was
+         inside a hidden subtree. The same state now renders in both places; the
+         card version is built from the same escaped string. */
+      var esc = String(q).replace(/[<>&"]/g, function(c){
+        return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
+      });
+      var msg = '<strong>No matches for "' + esc + '"</strong>Try a different ticker, company name, or industry.';
+      var show = (visible === 0 && q && String(q).trim());
+
       var existing = tbody.querySelector('.tbl-empty-search-row');
-      if (visible === 0 && q && String(q).trim()) {
+      if (show) {
         if (!existing) {
           var tr = document.createElement('tr');
           tr.className = 'tbl-empty-search-row';
           var td = document.createElement('td');
           td.colSpan = 9; td.className = 'tbl-empty-search';
-          td.innerHTML = '<strong>No matches for "' + String(q).replace(/[<>&"]/g, function(c){
-            return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
-          }) + '"</strong>Try a different ticker, company name, or industry.';
+          td.innerHTML = msg;
           tr.appendChild(td);
           tbody.appendChild(tr);
         }
       } else if (existing) {
         existing.remove();
+      }
+
+      var cardHost = document.getElementById('stock-cards-mobile');
+      if (cardHost) {
+        var cardEmpty = cardHost.querySelector('.tbl-empty-search-card');
+        // count the cards, not the rows: the two lists are filtered independently
+        var visCards = 0;
+        cardHost.querySelectorAll('.stock-card[data-row]').forEach(function(c){
+          if (c.style.display !== 'none') visCards++;
+        });
+        if (visCards === 0 && q && String(q).trim()) {
+          if (!cardEmpty) {
+            var d = document.createElement('div');
+            d.className = 'tbl-empty-search tbl-empty-search-card';
+            d.innerHTML = msg;
+            cardHost.appendChild(d);
+          }
+        } else if (cardEmpty) {
+          cardEmpty.remove();
+        }
       }
     };
     window._v17FilterHooked = true;

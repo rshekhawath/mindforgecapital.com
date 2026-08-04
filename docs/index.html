@@ -4581,6 +4581,18 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       card.classList.add('has-live');
       fillLive(card._hvKey || 'sm');
     });
+    // V28.1 — see the note in select(): keeps the two polite regions quiet for the
+    // duration of the count-up so one switch produces one announcement.
+    var _quietT = null;
+    function quietWhileTweening(ms) {
+      var regions = [card.querySelector('.hv-live'), card.querySelector('.hv-nums')].filter(Boolean);
+      if (!regions.length) return;
+      regions.forEach(function (r) { r.setAttribute('aria-busy', 'true'); });
+      clearTimeout(_quietT);
+      _quietT = setTimeout(function () {
+        regions.forEach(function (r) { r.setAttribute('aria-busy', 'false'); });
+      }, Math.max(0, ms));
+    }
     function select(key, animate) {
       var d = DATA[key]; if (!d) return;
       var m = META[key] || { name: key, bench: 'Benchmark', period: '' };
@@ -4589,6 +4601,12 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       if (el.legS) el.legS.textContent = 'MindForge ' + (m.label || m.name); /* V28.0: published name, see META */
       if (el.legB) el.legB.textContent = m.bench;
       if (el.period && m.period) el.period.textContent = m.period;
+      // V28.1 — .hv-live and .hv-nums are both aria-live="polite", and a single tab
+      // click writes ~90 intermediate values into each of them as the figures count
+      // up. A screen reader read out the whole tween — "0.0%… 1.1%… 1.8%…" — instead
+      // of the answer. aria-busy suppresses announcements while the region is
+      // settling and lets it announce once when it clears; nothing visual changes.
+      quietWhileTweening(animate ? 780 : 0);
       fillLive(key, animate);   // V24.2: the live-cycle strip follows the selected strategy; V25.1: counts up on switch
       var p = build(d.cagr != null ? d.cagr : 0, d.bench != null ? d.bench : 0);
       if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); countAlpha(el.alpha, d.alphaTxt); redraw(p); }
@@ -5183,9 +5201,12 @@ function setDuration(durKey) {
   // hero (~0.6s) — while engaged visitors still get the nudge. A short settle
   // delay avoids firing on an accidental first event.
   var openTimer = null;
+  var autoHideTimer = null;
   function showBubble(){
     bubble.hidden = false;
     requestAnimationFrame(function(){ bubble.classList.add('fwb-visible'); });
+    clearTimeout(autoHideTimer);
+    autoHideTimer = setTimeout(function(){ dismiss(false); }, 23000);
   }
   var triggered = false;
   function onFirstInteract(){
@@ -5209,8 +5230,14 @@ function setDuration(durKey) {
     }
   }
 
-  // Auto-fade after ~20s so it doesn't loiter on screen forever.
-  var autoHideTimer = setTimeout(function(){ dismiss(false); }, 23000);
+  // Auto-fade after ~23s so it doesn't loiter on screen forever.
+  // V28.1: this used to be armed HERE, at page load — but showBubble() only runs
+  // 600ms after the visitor's FIRST interaction, so the 23s clock burned down
+  // while the bubble was still hidden. A visitor whose first scroll came after
+  // ~23s got a bubble that never auto-faded at all (observed still on screen 27s
+  // after appearing), and one whose scroll landed just inside the window got a
+  // ~0.5s flash. Armed from the moment it becomes visible instead, which is what
+  // "fade after 23 seconds" was always meant to measure.
 
   var closeBtn = bubble.querySelector('.fab-wa-bubble-close');
   if (closeBtn) {
@@ -5974,16 +6001,41 @@ section[id]{ scroll-margin-top: 80px; }
      ============================================================ -->
 <style id="mf-v102-home">
 .price-amt.mf102-pop{ animation: mf102-pop .45s cubic-bezier(.22,1,.36,1); }
+/* V28.1 — this animated `color`, but .strat-card .price-amt paints its glyphs
+   from a clipped background gradient with -webkit-text-fill-color:transparent,
+   so `color` has no visual effect there and the accent flash has never rendered
+   on the strategy cards (computed -webkit-text-fill-color stayed rgba(0,0,0,0)
+   through the whole 450ms). The scale half always worked. Rather than delete
+   half a keyframe, the flash now rides the property that actually paints these
+   glyphs — the gradient itself — and keeps `color` for any .price-amt that is
+   NOT gradient-filled. */
 @keyframes mf102-pop{
   0%  { transform:scale(1); color:var(--white); }
   35% { transform:scale(1.07); color:var(--accent2); }
   100%{ transform:scale(1); color:var(--white); }
 }
+.strat-card .price-amt.mf102-pop{ animation: mf102-pop-grad .45s cubic-bezier(.22,1,.36,1); }
+@keyframes mf102-pop-grad{
+  0%  { transform:scale(1);    background-image:linear-gradient(135deg,#0f172a 0%,#1a50d8 100%); }
+  35% { transform:scale(1.07); background-image:linear-gradient(135deg,var(--accent2) 0%,var(--teal) 100%); }
+  100%{ transform:scale(1);    background-image:linear-gradient(135deg,#0f172a 0%,#1a50d8 100%); }
+}
+html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-grad-dark .45s cubic-bezier(.22,1,.36,1); }
+@keyframes mf102-pop-grad-dark{
+  0%  { transform:scale(1);    background-image:linear-gradient(135deg,var(--white) 0%,var(--accent3) 100%); }
+  35% { transform:scale(1.07); background-image:linear-gradient(135deg,#ffffff 0%,var(--teal) 100%); }
+  100%{ transform:scale(1);    background-image:linear-gradient(135deg,var(--white) 0%,var(--accent3) 100%); }
+}
+/* the free tier is a flat ink, not a gradient — it keeps the plain colour pop */
+.strat-card #ma-price-amt.mf102-pop{ animation: mf102-pop .45s cubic-bezier(.22,1,.36,1); }
 .price-amt{ display:inline-block; } /* transforms need a box */
 .price-annual-note.mf102-pop{ animation: mf102-note .4s ease-out; }
 @keyframes mf102-note{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
 @media (prefers-reduced-motion: reduce){
-  .price-amt.mf102-pop, .price-annual-note.mf102-pop{ animation:none; }
+  .price-amt.mf102-pop, .price-annual-note.mf102-pop,
+  .strat-card .price-amt.mf102-pop,
+  html[data-theme="dark"] .strat-card .price-amt.mf102-pop,
+  .strat-card #ma-price-amt.mf102-pop{ animation:none; }
 }
 </style>
 <script id="mf-v102-home-js">

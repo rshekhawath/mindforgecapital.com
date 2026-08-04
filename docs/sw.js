@@ -134,7 +134,13 @@
 // mfc-finish.css query across the whole site: the 28 generated stock-directory
 // pages had been pinned at ?v=2782 while everything else moved to 2790, so they
 // were fetching and caching a second, separate copy of the same file.
-const CACHE = 'mfc-v30';
+// v31 (V28.1): index.html — precached below as the offline navigation fallback —
+// changes again (the hero's aria-busy quieting, the WhatsApp auto-hide timer now
+// armed when the bubble appears rather than at load, and the price-pop keyframe
+// rewritten to animate the gradient that actually paints those glyphs). No file
+// under docs/assets/ changed this release, so nothing needed a ?v= bump; the
+// cache name is the only version a precached document has.
+const CACHE = 'mfc-v31';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
