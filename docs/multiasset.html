@@ -169,7 +169,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   @keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
   /* ── SHARPE TOOLTIP ── */
-  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(37,99,235,0.15);color:var(--accent2);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;position:relative;font-style:italic;}
+  /* V28.0: --accent2 on this icon's own 15% blue wash is 4.06:1 at 10px/700 —
+     an on-tint AA failure of exactly the class V27.9 added --ink-link for.
+     The wash also drops 15% -> 10%: --ink-link is verified >=4.6:1 against the
+     deepest tint in use on the site (#dee9fa), but a 15% wash of its own hue is
+     deeper still and left it at 4.47 — under the floor by 0.03. 10% gives 4.94
+     and the icon still reads as a tinted chip. */
+  .tip-icon{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:rgba(37,99,235,0.10);color:var(--ink-link,#0a5de3);font-size:10px;font-weight:700;cursor:help;vertical-align:middle;margin-left:5px;position:relative;font-style:italic;}
   .tip-icon .tip-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);width:240px;background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;padding:10px 12px;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--text2);line-height:1.55;z-index:50;box-shadow:0 8px 24px rgba(37,99,235,0.12);font-style:normal;}
   .tip-icon:hover .tip-popup,.tip-icon:focus .tip-popup,.tip-icon.tip-open .tip-popup{display:block;}
   .tip-icon:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;}
@@ -1672,7 +1678,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2800">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://mindforgecapital.com/"},{"@type":"ListItem","position":2,"name":"Strategies","item":"https://mindforgecapital.com/strategies.html"},{"@type":"ListItem","position":3,"name":"MultiAsset","item":"https://mindforgecapital.com/multiasset.html"}]},{"@type":"WebPage","@id":"https://mindforgecapital.com/multiasset.html","url":"https://mindforgecapital.com/multiasset.html","name":"MultiAsset","description":"A free monthly multi-factor rotation across 8 NSE-listed ETFs.","inLanguage":"en-IN","isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"},"publisher":{"@type":"Organization","name":"MindForge Capital","url":"https://mindforgecapital.com/","logo":"https://mindforgecapital.com/assets/LogoNav.png"}}]}</script>
@@ -1700,7 +1706,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 </nav>  <section class="page-hero">
     <div class="container">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-        <a href="strategies.html" style="font-size:12px;color:var(--text3);text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+        <!-- V28.0: 19.8px tall, under the 24px WCAG 2.2 SC 2.5.8 floor. It is a
+             standalone nav link in its own row, not a link inside a sentence, so
+             the inline exemption does not cover it. 3px each way -> 25.8px. -->
+        <a href="strategies.html" style="font-size:12px;color:var(--text3);text-decoration:none;display:inline-flex;align-items:center;gap:6px;padding:3px 0;">
           ← All strategies
         </a>
       </div>
@@ -2080,6 +2089,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .fab-wa-bubble-msg { display: inline-flex; flex-direction: column; gap: 2px; text-decoration: none; color: inherit; cursor: pointer; }
 .fab-wa-bubble-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--data-strong); line-height: 1; }
 .fab-wa-bubble-text { font-size: 13.5px; font-weight: 500; color: #0c1831; line-height: 1.4; }
+/* V28.0: the dismiss sat at 22x22, under the 24px WCAG 2.2 SC 2.5.8 floor, on
+   all three strategy pages. A pseudo-element grows the HIT AREA to 28x28 without
+   moving or resizing the glyph. 28 and not 44: the button is inset 6px/8px from
+   the bubble's own corner, so a 44px overlay would hang 11px outside the bubble
+   and swallow taps meant for the page behind it. 28 clears the floor and stays
+   inside. */
+.fab-wa-bubble-close::after { content:''; position:absolute; top:-3px; right:-3px; bottom:-3px; left:-3px; }
 .fab-wa-bubble-close { position: absolute; top: 6px; right: 8px; width: 22px; height: 22px;
   display: inline-flex; align-items: center; justify-content: center;
   background: transparent; border: none; font-size: 16px; line-height: 1;
@@ -2530,7 +2546,7 @@ html[data-theme="dark"] .stat-card.highlight .sv.green{
 })();
 </script>
 <script src="assets/mfc-offer.js?v=2790" defer></script>
-<script src="assets/mfc-live.js?v=2790" defer></script>
+<script src="assets/mfc-live.js?v=2800" defer></script>
 <script src="assets/mfc-reveal.js?v=92" defer></script>
 <script src="assets/mfc-countup.js?v=2450" defer></script>
 <style id="mf-navfix-sis">
@@ -2548,7 +2564,7 @@ html[data-theme="dark"] .stat-card.highlight .sv.green{
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=5"></script>
+<script defer src="assets/mfc-chrome.js?v=6"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

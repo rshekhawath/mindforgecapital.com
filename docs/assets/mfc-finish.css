@@ -526,11 +526,23 @@ html[data-theme="dark"] .risk-pill.risk-low{  color:var(--data-good); }
 /* homepage hero + market-pulse badges */
 html[data-theme="dark"] .hv-alpha{ color:var(--data-strong); }
 html[data-theme="dark"] .hv-live-bench.down,
-html[data-theme="dark"] .hv-live-v.down,
-html[data-theme="dark"] .mp-chg.down,
-html[data-theme="dark"] .mp-chg{ color:var(--data-bad); }
+html[data-theme="dark"] .hv-live-v.down{ color:var(--data-bad); }
 html[data-theme="dark"] .hv-live-bench.up,
-html[data-theme="dark"] .hv-live-v.up,
+html[data-theme="dark"] .hv-live-v.up{ color:var(--data-good); }
+/* V28.0 — THIS RULE SAID THE OPPOSITE OF THE DATA IN DARK MODE.
+   The pair above was `.mp-chg.down, .mp-chg { --data-bad }` + `.mp-chg.up
+   { --data-good }`. But the tone class is emitted on the PARENT cell —
+   `<div class="mp-cell mp-up"><span class="mp-chg">` (index.html cellHTML) —
+   exactly as the light rules 40 lines away already assume (`.mp-up .mp-chg`).
+   So `.mp-chg.up` matched nothing, the unqualified `.mp-chg` won every cell,
+   and in dark mode the market-pulse card painted "▲ 87.00 (+0.36%)",
+   "FII Net buying" and "DII Net buying" in RED — while the value 4px above each
+   of them, which rides a theme-aware token, stayed correctly GREEN. A card whose
+   only job is reporting today's market inverted the sign of all three readings.
+   Mirrored on the parent, and the sibling forms kept in case the markup moves. */
+html[data-theme="dark"] .mp-down .mp-chg,
+html[data-theme="dark"] .mp-chg.down{ color:var(--data-bad); }
+html[data-theme="dark"] .mp-up .mp-chg,
 html[data-theme="dark"] .mp-chg.up{ color:var(--data-good); }
 html[data-theme="dark"] .updated-badge{ color:var(--data-strong); }
 
@@ -795,3 +807,82 @@ html:not([data-theme="dark"]) .pc-chip-ret.up,
 html:not([data-theme="dark"]) .ret.up{ color:var(--ink-pos); }
 html:not([data-theme="dark"]) .pc-chip-ret.down,
 html:not([data-theme="dark"]) .ret.down{ color:var(--ink-neg); }
+
+/* ============================================================================
+   V28.0 — THE FOOTER TOUCH-TARGET FIX, APPLIED TO THE OTHER SIX PAGES
+   ----------------------------------------------------------------------------
+   V27.9 measured footer nav links at 22.4px — under the 24px WCAG 2.2 SC 2.5.8
+   floor — and fixed them. It fixed them in `docs/index.html`'s own <style>
+   block, so the fix reached exactly one page. Every other page carries its own
+   footer markup, and six of them were still under the floor at BOTH 375 and
+   1440 (measured, light and dark):
+
+       calculator.html            .footer-col ul li a      16.0px   x8
+       factor-report/*.html       footer.site-foot .links a 21.6px   x8
+       terms.html                 footer .footer-links a    22.1px   x5
+       privacy.html               footer .footer-links a    22.1px   x5
+       disclosures.html           footer .footer-links a    22.1px   x5
+       404.html                   footer .footer-links a    23.4px   x6
+
+   That is 37 link instances. The inline exemption does not cover them: it is
+   for a link inside a sentence, and these are lists of navigation links. (The
+   "· SEBI-registered research analyst · <link> ·" runs inside the legal line
+   ARE inside a sentence and are correctly left alone.)
+
+   Same two tiers and the same values V27.9 chose, so index.html — which already
+   satisfies this rule — is byte-identical in its rendering: 3px of padding
+   everywhere (>=27.4px), 9px on phones where these footers collapse to one
+   stacked column and the pointer is a thumb (>=39px). The background-position
+   shift keeps the gradient hover underline on the text baseline instead of
+   letting it float below the new padding; on the footers that have no underline
+   it is a no-op.
+
+   Scoped under `footer` so it cannot reach a page's main content, and it does
+   not touch `.footer-social a` (already 40px) or `.footer-brand a.logo` (44px). */
+footer .footer-links a,
+footer .links a,
+footer .footer-col ul li a{
+  display:inline-block;
+  padding-top:3px; padding-bottom:3px;
+  background-position:0 calc(100% - 3px);
+}
+@media (max-width:600px){
+  footer .footer-links a,
+  footer .links a,
+  footer .footer-col ul li a{
+    padding-top:9px; padding-bottom:9px;
+    background-position:0 calc(100% - 9px);
+  }
+}
+
+/* ============================================================================
+   V28.0 — THE MOBILE NAV DRAWER COULD NOT BE SCROLLED
+   ----------------------------------------------------------------------------
+   The drawer is `position:fixed` with a `top` and NO height constraint:
+   max-height:none, overflow-y:visible. It renders 446–505px tall, which is
+   taller than a landscape phone's entire viewport (375px), and because it is
+   fixed, scrolling the page moves nothing. Measured at 667x375 on twelve
+   surfaces — index, dashboard, strategies, the strategy pages, Integrity Score,
+   Scanner, calculator, terms, login, 404, FII/DII and the factor report — every
+   one of them put between 2 and 4 items permanently off-screen, and on most of
+   them the unreachable ones were "Recover Access", "Sign In" and "Get Started".
+   The entire sign-in and conversion path was unreachable from the menu on any
+   phone held sideways.
+
+   Scoped to `.open`, which only ever exists while the drawer is an overlay — so
+   the desktop nav row, which has no such class, cannot be touched by this.
+   `html` prefix because mfc-finish.css is linked BEFORE each page's own <style>
+   block and an equal-specificity rule here would lose.
+
+   100px, not the panel's own top offset: that offset is 56px on some pages and
+   100px on others (the offer bar pushes the nav down), and CSS cannot read it.
+   Subtracting the larger value is correct everywhere — on a 56px page the
+   drawer simply starts scrolling 44px earlier than it strictly must. dvh is
+   listed second so it wins where supported and vh covers everything else. */
+html .nav-links.open{
+  max-height: calc(100vh - 100px);
+  max-height: calc(100dvh - 100px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}

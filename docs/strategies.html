@@ -1764,7 +1764,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2800">
 </head>
 <body data-route="strategies">
 <script>
@@ -2340,6 +2340,18 @@ function openRegModal(strategyName, price, strategyId){
   btn.addEventListener('click', function() { setHam(!btn.classList.contains('open')); });
   // Close when a link is clicked
   links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { setHam(false); }); });
+  /* V28.0 — Escape and an outside tap dismiss the drawer. The rest of the site
+     gets this from mfc-chrome.js; this page does not load it (it ships its own
+     back-to-top and scroll-progress), so the same two behaviours live here.
+     Capture phase, so no other keydown handler can swallow the Escape. */
+  document.addEventListener('keydown', function(e){
+    if ((e.key === 'Escape' || e.key === 'Esc') && btn.classList.contains('open')) { setHam(false); btn.focus(); }
+  }, true);
+  document.addEventListener('click', function(e){
+    if (!links.classList.contains('open')) return;
+    if (links.contains(e.target) || (e.target.closest && e.target.closest('.nav-hamburger'))) return;
+    setHam(false);
+  }, true);
 })();
 </script>
 
@@ -2422,6 +2434,11 @@ function openRegModal(strategyName, price, strategyId){
   font-size: 13.5px; font-weight: 500;
   color: #0c1831; line-height: 1.4;
 }
+/* V28.0: 22x22 is under the 24px WCAG 2.2 SC 2.5.8 floor. A pseudo-element grows
+   the HIT AREA to 28x28 without moving the glyph — 28 and not 44 because the button
+   is inset 6px/8px from the bubble corner, so a 44px overlay would hang outside the
+   bubble and swallow taps meant for the page behind it. */
+.fab-wa-bubble-close::after { content:''; position:absolute; top:-3px; right:-3px; bottom:-3px; left:-3px; }
 .fab-wa-bubble-close {
   position: absolute; top: 6px; right: 8px;
   width: 22px; height: 22px;
@@ -3124,7 +3141,7 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 })();
 </script>
 <script src="assets/mfc-offer.js?v=2790" defer></script>
-<script src="assets/mfc-live.js?v=2790" defer></script>
+<script src="assets/mfc-live.js?v=2800" defer></script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      V25.3 — REAL LIVE RETURN ON THE FOUR BACKTEST-ONLY SURFACES
@@ -3193,7 +3210,7 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 
 /* (A2) per-strategy ps-perf card — V26.1: "Live this cycle" is the focus.
    The live-chip becomes a prominent accent block with a big number; the backtest
-   CAGR figure demotes. Higher specificity than mfc-live.js?v=2790's injected demotion so
+   CAGR figure demotes. Higher specificity than mfc-live.js?v=2800's injected demotion so
    it wins. Fail-soft: no live → the chip stays hidden and the backtest CAGR is the
    primary, exactly as before. (V26.2 retired the last-month row/scoreboard, so the
    .ps-perf-cagr demotion below is now a harmless no-op — all panels use the CAGR

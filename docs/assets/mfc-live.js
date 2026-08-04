@@ -147,7 +147,12 @@
       ".live-strip .down{color:#dc2626;}" +
       ".live-strip .flat{color:var(--text2,#1e3a5f);}" +
       ".live-strip .ls-meta{font-size:11.5px;color:var(--text3,#475569);}" +
-      ".live-strip .ls-cta{margin-left:auto;font-size:12px;font-weight:700;color:var(--accent,#1a50d8);text-decoration:none;white-space:nowrap;}" +
+      /* V28.0: this measured 19.8px tall — a standalone CTA, not a link inside a
+         sentence, so the WCAG 2.2 SC 2.5.8 inline exemption does not apply.
+         inline-block + 3px each way takes it to 25.8px; the strip is a centred
+         flex row, so the extra height is absorbed by align-items and nothing
+         beside it moves. */
+      ".live-strip .ls-cta{margin-left:auto;display:inline-block;padding:3px 0;font-size:12px;font-weight:700;color:var(--accent,#1a50d8);text-decoration:none;white-space:nowrap;}" +
       ".live-strip .ls-cta:hover{text-decoration:underline;}" +
       "@media (max-width:640px){.live-strip .ls-cta{margin-left:0;}}" +
       ".live-chip{display:none;}" +
@@ -202,7 +207,12 @@
       ".strat-metric-live .live-vs .live-vs-a{padding:1px 7px;border-radius:999px;background:rgba(37,99,235,.07);}" +
       ".strat-metric-live .live-vs .live-vs-a.up{background:rgba(5,150,105,.10);}" +
       ".strat-metric-live .live-vs .live-vs-a.down{background:rgba(220,38,38,.08);}" +
-      ".strat-metric-live .live-vs .live-vs-sep{color:var(--border2,rgba(37,99,235,.2));margin:0 1px;}" +
+      /* V28.0: this was --border2 — a BORDER token, tuned for a 1px hairline, used
+         as ink for a glyph. It measured 1.33:1 light / 1.91:1 dark, i.e. the
+         separator that groups "benchmark move" against "gap" was simply not
+         visible and the row read as two numbers with a space between them.
+         Inheriting the row's own --text3 (7.58 / 5.75) is what it meant to be. */
+      ".strat-metric-live .live-vs .live-vs-sep{margin:0 1px;}" +
       "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a{background:rgba(131,170,255,.12);}" +
       "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a.up{background:rgba(52,211,153,.14);}" +
       "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a.down{background:rgba(248,113,113,.14);}" +

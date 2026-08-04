@@ -762,6 +762,50 @@ html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--b
 }
 .strat-name { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
 .strat-universe { font-size: 12px; color: var(--text3); margin-bottom: 20px; }
+/* V28.0 — the three cards exist to be COMPARED, and their comparison rows were
+   out of line. This one-line meta wraps to two lines on SmallMicro ("25 stocks ·
+   Smallcap 250 + Microcap 250 · Monthly rebalance") and on nothing else from
+   1100px up, which pushed that card's live figure, its 5Y CAGR pair, its
+   MODEL/INDEX compare bars and its sparkline 19px below its siblings' — the four
+   rows a reader scans horizontally across the row of cards. Measured at ten
+   widths from 901 to 1920: at 901–1024 all three wrap (aligned already), at
+   1100 two wrap, from 1200 up only SmallMicro does, and NONE ever reaches three
+   lines. So reserving exactly two lines aligns every case in that range at a
+   cost of ~19px on the cards that use one. Below 901 the grid is a single
+   column — there is nothing to align and the reservation would only add
+   scrolling — so the rule is gated to the 3-up layout. */
+@media (min-width: 901px) {
+  .strat-universe { min-height: 38px; min-height: calc(2 * 1lh); }
+}
+/* Between 901 and 1149 the cards are only ~204–270px wide and the compact
+   ruleset is in force, so the NAME wraps too: "MindForge LargeMidcap 250" and
+   "MindForge SmallMicro 500" take two lines while "MindForge MultiAsset" takes
+   one, putting card 1 a further 36px out of line with its siblings. Reserved
+   only inside that band — from 1150px up all three names are one line and a
+   reservation there would cost every card 41px for nothing.
+   Honest limit: inside this band the benchmark LABELS ("Nifty Smallcap 250 ·
+   Benchmark CAGR" vs "Nifty 50 · Benchmark CAGR") and the live "vs <bench>"
+   line also wrap to different depths. Equalising those too would mean reserving
+   two or three lines of label height in the one layout that is already short of
+   room, which costs more than the ~17px of drift it removes. */
+@media (min-width: 901px) and (max-width: 1149px) {
+  /* box-sizing is border-box site-wide and .strat-card .strat-name carries a
+     4px padding-bottom for its hover underline, so the reservation has to be
+     two line boxes PLUS that padding — 2lh alone lands 4px short and leaves the
+     one-line card that much high. */
+  .strat-name { min-height: 76px; min-height: calc(2 * 1lh + 4px); }
+  /* The other two wrap-driven offsets in this band, both driven by how long a
+     benchmark happens to be named rather than by anything about the strategy:
+     the live "vs <benchmark> +x% · +y pts" line takes one line for "Nifty 50"
+     and two for "Nifty LargeMidcap 250"/"Nifty Smallcap 250", and the backtest
+     metric's own label wraps at the narrow end of the band. Reserving two lines
+     for each aligns the compare bars and the sparkline — the two rows the three
+     cards exist to be read across — for every width from 901 up. Scoped to
+     .strat-card so the strategy pages, which use .live-vs in a wider strip, are
+     untouched. */
+  .strat-card .live-vs { min-height: 33px; min-height: calc(2 * 1lh); }
+  .strat-card .strat-metric .lbl { min-height: 33px; min-height: calc(2 * 1lh); }
+}
 .strat-metrics { display: flex; gap: 0; margin-bottom: 24px; align-items: flex-end; }
 .strat-metric { display: flex; flex-direction: column; justify-content: flex-end; }
 .strat-metric:first-child { padding-right: 20px; border-right: 0.5px solid var(--border2); margin-right: 20px; }
@@ -1750,7 +1794,21 @@ html[data-theme="dark"] .cagr-cmp-fill.is-bench{ background:linear-gradient(90de
   overflow: hidden;
   transition: border-color 0.25s, transform 0.25s, box-shadow 0.3s;
   --mx: 50%; --my: 50%;
+  /* V28.0 — the cards in a row are equal height (grid stretch) but their content
+     was top-flowed, so the .why-stat rule — a 0.5px divider with a figure under
+     it — landed wherever that card's paragraph happened to end. Measured at
+     1440: row two put "Honest pricing" at 294px and its two neighbours at 204px,
+     leaving each of them 156px of empty card below the divider (179px at 1024,
+     and the same split at 820). Three dividers at three different heights read
+     as a broken row, not as a designed one. Column flow + margin-top:auto on the
+     stat pins every divider to a common baseline and puts the slack in the
+     middle where it is invisible. */
+  display: flex;
+  flex-direction: column;
 }
+/* the icon is a fixed 44px square: keep it from being stretched or squeezed by
+   the new flex context */
+.why-card .why-icon { flex: 0 0 auto; align-self: flex-start; }
 .why-card::before {
   content: ''; position: absolute; inset: 0;
   border-radius: inherit;
@@ -1808,6 +1866,7 @@ html[data-theme="dark"] .cagr-cmp-fill.is-bench{ background:linear-gradient(90de
   display: flex; align-items: baseline; gap: 8px;
   padding-top: 14px;
   border-top: 0.5px solid var(--border);
+  margin-top: auto; /* V28.0 — pins the divider to a shared baseline across the row */
 }
 .why-stat-val {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
@@ -1821,9 +1880,12 @@ html[data-theme="dark"] .cagr-cmp-fill.is-bench{ background:linear-gradient(90de
   font-size: 11px; color: var(--text3);
   text-transform: uppercase; letter-spacing: 0.06em;
 }
+/* V28.0: 21.4px tall — a standalone card CTA, not a link inside a sentence, so
+   the WCAG 2.2 SC 2.5.8 inline exemption does not cover it. 3px each way -> 27.4px,
+   absorbed by the 16px top margin so nothing below it moves. */
 .why-calc-link {
   display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 16px; font-size: 13px; font-weight: 600;
+  padding: 3px 0; margin-top: 13px; font-size: 13px; font-weight: 600;
   color: var(--accent2); position: relative; z-index: 1;
   transition: gap 0.2s ease, color 0.2s ease;
 }
@@ -3164,6 +3226,34 @@ textarea:focus-visible, select:focus-visible {
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
 }
+/* V28.0 — both stops of that gradient are dark (#0f172a is near-black), it is
+   clipped to the glyphs, and -webkit-text-fill-color:transparent means the
+   gradient IS the ink. There was no dark override anywhere, so in dark mode the
+   three subscription prices — FREE / ₹1,499 / ₹2,499, the most commercially
+   important numbers on the page — painted near-black on the #121d33 card and
+   measured 1.01:1 at the left of the glyph, rising to only 2.18:1 at the right.
+   Same two stops, run light-to-accent instead so the figure reads against the
+   dark card. The hover gradient (--v138-grad, V13.8) needs the same treatment
+   or hovering a card would put the price back into the dark ink. */
+html[data-theme="dark"] .strat-card .price-amt,
+html[data-theme="dark"] .strat-card:hover .price-amt {
+  background: linear-gradient(135deg, var(--white) 0%, var(--accent3) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+/* The free tier's markup asks for green (`style="color:#059669"`), but a clipped
+   gradient plus a transparent text-fill discards `color` entirely, so that
+   intent has never rendered in EITHER theme — FREE has always painted the same
+   blue as the two paid prices. Given its own ink it reads as what it is. The
+   token, not the raw #059669: at 3.77:1 on white that hex is below AA, which is
+   why V27.9 introduced --ink-pos (5.64:1 light, and a dark value of its own). */
+.strat-card #ma-price-amt {
+  background: none; -webkit-text-fill-color: var(--ink-pos, #047653); color: var(--ink-pos, #047653);
+}
+html[data-theme="dark"] .strat-card #ma-price-amt,
+html[data-theme="dark"] .strat-card:hover #ma-price-amt {
+  background: none; -webkit-text-fill-color: var(--ink-pos); color: var(--ink-pos);
+}
 
 /* —— Why-card icon: refined arrival —— */
 .why-card .why-icon {
@@ -3380,7 +3470,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2800">
 </head>
 <body>
 
@@ -3527,6 +3617,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
       <div class="mp-sent" id="mpSent"></div>
       <div class="mp-grid" id="mpGrid"></div>
+      <div class="mp-flow" id="mpFlow"></div>
       <div class="mp-foot">See the full FII / DII activity report <span class="mp-arrow">→</span></div>
     </a>
   </div>
@@ -3555,6 +3646,51 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
    AA in both themes and flips automatically. */
 .mp-up .mp-chg,.mp-up .mp-v.mp-tint{color:var(--data-strong)}
 .mp-down .mp-chg,.mp-down .mp-v.mp-tint{color:var(--data-bad)}
+/* ── V28.0 — NET-FLOW SCALE ─────────────────────────────────────────────────
+   The two flow cells above render FII "+₹277 cr" and DII "+₹2,260 cr" in the
+   same 19px/800 type, in equal-width cells, under the same green rule, with the
+   same words underneath ("Net buying") — so the card asserts the two are peers
+   when one is 8× the other. That ratio is the fact that makes the "Neutral"
+   verdict above it correct, and it was left as arithmetic.
+
+   Two things the digits alone cannot show, which this rail does:
+   (1) SCALE — bars on one shared ₹-crore axis, so 8× is 8× at a glance;
+   (2) DIRECTION — a true zero rule down the middle, so on a divergent day
+       (foreign selling into domestic buying — the majority of sessions in the
+       page's own cash_history) the two bars fall on OPPOSITE sides of zero
+       instead of being two identically-styled cells you have to read.
+
+   This is a straight port of `.cmb-tug`, the component the site already ships
+   one click away at /fii-dii/ — same 38px/1fr/92px grid, same 9px track, same
+   left:50% zero tick, same max-width:50%, same |v|/mx*50 width formula. The one
+   change: the source's hardcoded #10b981/#dc2626 become --data-strong/--data-bad,
+   which are AA in both themes and flip on their own. No new hex.
+   It also prints the combined institutional net, which /fii-dii/ already
+   publishes ("Combined institutional net flow +2,538 cr") and this teaser did
+   not — so the two surfaces stop disagreeing. */
+.mp-flow{display:none;margin-top:13px;padding-top:13px;border-top:0.5px solid rgba(37,99,235,0.10)}
+.mp-flow.mpf-on{display:block}
+.mpf-row{display:grid;grid-template-columns:38px 1fr 92px;gap:11px;align-items:center;margin-bottom:9px}
+.mpf-row:last-of-type{margin-bottom:0}
+.mpf-k{font-size:12px;font-weight:800;color:var(--text3)}
+.mpf-bar{position:relative;height:9px;border-radius:5px;background:rgba(37,99,235,0.07);min-width:0}
+.mpf-bar::before{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(15,23,42,.20)}
+.mpf-fill{position:absolute;top:0;bottom:0;border-radius:5px;max-width:50%;min-width:3px}
+.mpf-fill.r{left:50%;background:var(--data-strong)}
+.mpf-fill.l{right:50%;background:var(--data-bad)}
+.mpf-v{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;text-align:right}
+.mpf-v.up{color:var(--data-strong)}
+.mpf-v.down{color:var(--data-bad)}
+.mpf-cap{margin-top:10px;font-size:11.5px;font-weight:600;color:var(--text3);line-height:1.5}
+.mpf-cap b{font-weight:800;color:var(--text2)}
+html[data-theme="dark"] .mpf-bar{background:rgba(255,255,255,.08)}
+html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
+@media(max-width:600px){
+  .mpf-row{grid-template-columns:30px 1fr 78px;gap:9px}
+  .mpf-k{font-size:11px}
+  .mpf-v{font-size:12px}
+  .mpf-cap{font-size:11px}
+}
 .mp-foot{font-size:13px;font-weight:600;color:#1a50d8;display:flex;align-items:center;gap:6px}
 .mp-arrow{transition:transform 0.25s}
 .mp-card:hover .mp-arrow{transform:translateX(4px)}
@@ -3565,7 +3701,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .mps-k{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#475569}
 .mps-verdict{font-size:14.5px;font-weight:800;letter-spacing:-.01em;display:inline-flex;align-items:baseline;gap:1px}
 .mps-verdict i{font-style:normal;font-size:.7em;font-weight:700;color:var(--text3);margin-left:1px}
-.mps-bear{color:#dc2626}.mps-bull{color:#059669}.mps-neutral{color:#b45309}
+/* V28.0 — the same 15px/800 case as the dashboard's .ds-sent-v: bold counts as
+   "large" only from 18.66px, so this needs 4.5:1 and the three raw semantic
+   hexes gave 3.72 (bull), 4.13 (bear) and 4.32 (neutral) on this card. Only one
+   tone renders at a time, so whichever the market happens to be showing is the
+   only one any audit ever measures — all three move to the V27.9 ink tier,
+   which is a step deeper in the SAME hue, so the verdict still reads as the
+   verdict. The dark overrides below already use that tier and do not change. */
+.mps-bear{color:var(--ink-neg,#c92020)}.mps-bull{color:var(--ink-pos,#047653)}.mps-neutral{color:var(--ink-warn,#a64d08)}
 /* V26.7 — dark-mode legibility: the sentiment verdict + score reused the light
    semantic inks (~3.9:1 on the dark card). Lift to the dark palette (t-bad/t-good/
    t-warn → 6–10:1); scoped to dark, light unchanged. */
@@ -3607,6 +3750,37 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   function fmtN(v,d){return Number(v).toLocaleString('en-IN',{minimumFractionDigits:d||0,maximumFractionDigits:d||0});}
   function fmtCr(v){if(v==null||isNaN(v))return '—';var s=v>=0?'+':'−';return s+'₹'+fmtN(Math.round(Math.abs(v)))+' cr';} /* round(abs), matching fii-dii/'s cr() — round-then-abs disagreed with it on exact .5 halves */
   function cellHTML(label,val,sub,tone){return '<div class="mp-cell mp-'+tone+'"><span class="mp-k">'+label+'</span><span class="mp-v mp-tint">'+val+'</span><span class="mp-chg">'+sub+'</span></div>';}
+  /* V28.0 — FII vs DII on one shared ₹-crore axis with a true zero rule.
+     Fail-soft: renders nothing at all unless BOTH nets are finite numbers, so a
+     partial or missing feed leaves the card exactly as it was. Reuses the same
+     fmtCr() the cells above use, so the strip can never drift from them. */
+  function renderFlow(fii,dii){
+    var host=document.getElementById('mpFlow');if(!host)return;
+    var fn=fii&&fii.net!=null?Number(fii.net):null, dn=dii&&dii.net!=null?Number(dii.net):null;
+    if(fn==null||dn==null||!isFinite(fn)||!isFinite(dn))return;
+    var mx=Math.max(1,Math.abs(fn),Math.abs(dn));
+    function row(nm,v){var pos=v>=0;
+      return '<div class="mpf-row"><span class="mpf-k">'+nm+'</span>'+
+             '<span class="mpf-bar"><span class="mpf-fill '+(pos?'r':'l')+'" style="width:'+(Math.abs(v)/mx*50).toFixed(1)+'%"></span></span>'+
+             '<span class="mpf-v '+(pos?'up':'down')+'">'+fmtCr(v)+'</span></div>';}
+    var tot=fn+dn, cap;
+    if((fn>=0)!==(dn>=0)){
+      /* opposing flows: the ratio is meaningless across a sign change, and the
+         direction is the story — say it in words instead. */
+      cap=(fn>=0?'Foreign':'Domestic')+' funds bought into '+(fn>=0?'domestic':'foreign')+
+          ' selling · combined institutional net <b>'+fmtCr(tot)+'</b>';
+    }else if(Math.min(Math.abs(fn),Math.abs(dn))<50){
+      /* one side ~flat: a ratio here prints absurdities like "8,143×". */
+      cap=(fn>=0?'Both sides net bought':'Both sides net sold')+
+          ' · combined institutional net <b>'+fmtCr(tot)+'</b>';
+    }else{
+      var big=Math.abs(fn)>=Math.abs(dn), r=(Math.max(Math.abs(fn),Math.abs(dn))/Math.min(Math.abs(fn),Math.abs(dn)));
+      cap=(big?'Foreign':'Domestic')+' funds '+(fn>=0?'bought':'sold')+' <b>'+r.toFixed(1)+'×</b> what '+
+          (big?'domestic':'foreign')+' funds did · combined institutional net <b>'+fmtCr(tot)+'</b>';
+    }
+    host.innerHTML=row('FII',fn)+row('DII',dn)+'<div class="mpf-cap">'+cap+'</div>';
+    host.className='mp-flow mpf-on';
+  }
   // Market-sentiment score (0–100): weighted blend of Nifty momentum + FII/DII cash
   // flows + FII index-futures positioning. Transparent (drivers shown); NOT advice.
   function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
@@ -3661,6 +3835,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     if(dii){var dp=(dii.net||0)>=0;html+=cellHTML('DII net',fmtCr(dii.net),dp?'Net buying':'Net selling',dp?'up':'down');}
     if(!html)return;
     grid.innerHTML=html;
+    renderFlow(fii,dii);
     card.style.display='block';
   }).catch(function(){});
 })();
@@ -4206,10 +4381,16 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
     // wrong for MultiAsset, whose data only starts Feb 2023 (one of its ETFs has
     // no history before then). Keep these in step with each strategy's real
     // backtest window, not with the headline "5Y" framing.
+    /* V28.0 — `label` is the PUBLISHED product name; `name` was the short form
+       and it was what the hero legend and the chart tooltip were written with.
+       The page ships static markup reading "MindForge SmallMicro 500", so the
+       first tab click quietly rewrote it to "MindForge SmallMicro" and it could
+       not be restored — the hero disagreed with the strategy card, the footer
+       links, the FAQ and the product itself, and only after you touched it. */
     var META = {
-      ma: { name: 'MultiAsset',  bench: 'Nifty 50',                period: '2023–2026 · Backtest' },
-      lm: { name: 'LargeMidcap', bench: 'Nifty LargeMidcap 250',   period: '2021–2026 · Backtest' },
-      sm: { name: 'SmallMicro',  bench: 'Nifty Smallcap 250',      period: '2021–2026 · Backtest' }
+      ma: { name: 'MultiAsset',  label: 'MultiAsset',      bench: 'Nifty 50',              period: '2023–2026 · Backtest' },
+      lm: { name: 'LargeMidcap', label: 'LargeMidcap 250', bench: 'Nifty LargeMidcap 250', period: '2021–2026 · Backtest' },
+      sm: { name: 'SmallMicro',  label: 'SmallMicro 500',  bench: 'Nifty Smallcap 250',    period: '2021–2026 · Backtest' }
     };
     var COLORS = {
       ma: ['#0891b2', '#06b6d4'], lm: ['#1a50d8', '#2dd4bf'], sm: ['#d97706', '#f59e0b']
@@ -4405,7 +4586,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
       var m = META[key] || { name: key, bench: 'Benchmark', period: '' };
       setColors(key);
       if (el.cagrLbl) el.cagrLbl.textContent = m.name + ' · backtest CAGR';
-      if (el.legS) el.legS.textContent = 'MindForge ' + m.name;
+      if (el.legS) el.legS.textContent = 'MindForge ' + (m.label || m.name); /* V28.0: published name, see META */
       if (el.legB) el.legB.textContent = m.bench;
       if (el.period && m.period) el.period.textContent = m.period;
       fillLive(key, animate);   // V24.2: the live-cycle strip follows the selected strategy; V25.1: counts up on switch
@@ -4470,8 +4651,21 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
           hLine.setAttribute('x1', vx); hLine.setAttribute('x2', vx);
           hDotS.setAttribute('cx', vx); hDotS.setAttribute('cy', sy); hDotS.setAttribute('fill', c[0]);
           hDotB.setAttribute('cx', vx); hDotB.setAttribute('cy', by);
-          q('.hv-tip-yr').textContent = 'YEAR ' + i + ' · ' + (2021 + i);
-          q('.hv-tip-nm-s').textContent = 'MindForge ' + m.name;
+          /* V28.0 — the calendar year was hardcoded `2021 + i` for every
+             strategy, but this curve is compound(CAGR, i) over a FIXED N years
+             for all three, and MultiAsset's real window is 2023–2026 (one of
+             its ETFs has no history before Feb 2023). So hovering the
+             MultiAsset chart read "YEAR 0 · 2021" directly above a footer
+             reading "2023–2026 · Backtest" — the chart dating itself two years
+             before the data exists. The year is now taken from the strategy's
+             OWN stated window, and printed only when that window is exactly as
+             long as the curve is; where it is not, the tooltip says "YEAR n"
+             and the footer keeps carrying the real dates. Nothing invented. */
+          var yw = String(m.period || '').match(/(\d{4})\D+(\d{4})/);
+          q('.hv-tip-yr').textContent = (yw && (Number(yw[2]) - Number(yw[1])) === N)
+            ? ('YEAR ' + i + ' · ' + (Number(yw[1]) + i))
+            : ('YEAR ' + i);
+          q('.hv-tip-nm-s').textContent = 'MindForge ' + (m.label || m.name);
           q('.hv-tip-nm-b').textContent = m.bench;
           q('.hv-tip-sw-s').style.background = 'linear-gradient(90deg,' + c[0] + ',' + c[1] + ')';
           q('.hv-tip-sw-b').style.background = 'var(--text3)';
@@ -4533,8 +4727,15 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         </div>
         <h3>Honest pricing</h3>
         <p>A flat monthly subscription — no AUM-based fees, no profit share, no exit loads. At our recommended investment sizes it works out to roughly <strong>1% a year</strong> in fee drag — versus the <strong>2–2.5% expense ratio</strong> a typical active mutual fund charges on your entire corpus, every year. You keep 100% of your gains.</p>
-        <div class="why-stat"><span class="why-stat-val">~1%</span> <span class="why-stat-lbl">fee drag vs 2–2.5% MF</span></div>
+        <!-- V28.0: the link moved ABOVE the stat rule. Every other card in this
+             grid ends with its .why-stat divider, and now that the stat is
+             bottom-pinned, a card that carried one more element after it held
+             its divider 37px higher than its neighbours' — the one line in the
+             row that is supposed to be shared. Above the rule it reads as what
+             it is (a continuation of the paragraph) and all six dividers land
+             on the same baseline. -->
         <a href="calculator.html" class="why-calc-link">Calculate your exact savings<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <div class="why-stat"><span class="why-stat-val">~1%</span> <span class="why-stat-lbl">fee drag vs 2–2.5% MF</span></div>
       </div>
 
       <div class="why-card fade-up tilt-host">
@@ -4919,6 +5120,22 @@ function setDuration(durKey) {
   btn.addEventListener('click', function() { setHam(!btn.classList.contains('open')); });
   // Close when a link is clicked
   links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { setHam(false); }); });
+  /* V28.0 — the drawer is a fixed overlay covering most of a phone screen and
+     the hamburger was the only way out: Escape did nothing and a tap on the
+     page behind did nothing. The rest of the site gets this from mfc-chrome.js;
+     this page does not load that file (it ships its own back-to-top and
+     scroll-progress), so the same two behaviours live here. Capture phase, so
+     no other keydown handler can swallow the Escape first. */
+  document.addEventListener('keydown', function(e) {
+    if ((e.key === 'Escape' || e.key === 'Esc') && btn.classList.contains('open')) {
+      setHam(false); btn.focus();
+    }
+  }, true);
+  document.addEventListener('click', function(e) {
+    if (!links.classList.contains('open')) return;
+    if (links.contains(e.target) || (e.target.closest && e.target.closest('.nav-hamburger'))) return;
+    setHam(false);
+  }, true);
 })();
 </script>
 
@@ -5865,7 +6082,7 @@ section[id]{ scroll-margin-top: 80px; }
 </style>
 <script src="assets/mfc-offer.js?v=2790" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=2790" defer></script>
+<script src="assets/mfc-live.js?v=2800" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.

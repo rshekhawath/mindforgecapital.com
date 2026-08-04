@@ -132,3 +132,53 @@
     });
   }
 })();
+
+/* — Mobile nav drawer dismissal (V28.0) — deliberately its OWN IIFE.
+   The block above returns early on any page that already ships both a
+   scroll-progress bar and a back-to-top (dashboard, screener, …), so anything
+   appended inside it silently never runs on exactly the busiest pages. This
+   was caught by testing Escape on all eight surfaces rather than on one. */
+(function () {
+  var D = document;
+  // — Mobile nav drawer: dismissal (V28.0) —
+  // Every page ships its own hamburger IIFE and all of them wire exactly one
+  // way to close the drawer: the hamburger itself (plus a click on a link).
+  // The drawer is a fixed overlay covering most of the screen, so a visitor who
+  // opens it and then wants the page back has to find the same small button
+  // again — Escape does nothing and a tap on the page behind does nothing.
+  // Added once here rather than in fifteen per-page copies. It drives the same
+  // `.open` class and the same aria-expanded the page scripts use, so the two
+  // stay in sync whichever one does the closing, and it no-ops on any page that
+  // has no drawer.
+  function mfcCloseNav() {
+    var links = D.querySelector('.nav-links.open');
+    if (!links) return false;
+    var btn = D.querySelector('.nav-hamburger');
+    links.classList.remove('open');
+    if (btn) {
+      btn.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-label', 'Open menu');
+    }
+    return true;
+  }
+  // capture phase for both: a page-level keydown handler that calls
+  // stopPropagation (the dashboard has one) would otherwise swallow Escape
+  // before it ever reached a bubble-phase listener here.
+  D.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' && e.key !== 'Esc') return;
+    // return focus to the control that opened it, so the keyboard user is not
+    // dropped back at the top of the document
+    if (mfcCloseNav()) {
+      var btn = D.querySelector('.nav-hamburger');
+      if (btn && typeof btn.focus === 'function') btn.focus();
+    }
+  }, true);
+  D.addEventListener('click', function (e) {
+    var links = D.querySelector('.nav-links.open');
+    if (!links) return;
+    if (links.contains(e.target)) return;                 // inside the drawer
+    if (e.target.closest && e.target.closest('.nav-hamburger')) return; // its own toggle
+    mfcCloseNav();
+  }, true);
+})();

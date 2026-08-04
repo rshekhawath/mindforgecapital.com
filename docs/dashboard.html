@@ -401,7 +401,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .alloc-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 28px;width:100%;}
 @media (max-width:920px){.alloc-grid{grid-template-columns:1fr;gap:8px;}}
 .alloc-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
-.alloc-name{flex:0 0 140px;font-size:13px;color:var(--text2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px;}
+/* V28.0: 140 -> 168px. The holdings-count pill added to this column consumes
+   27px (19px pill + 8px gap), which took "Consumer Durables" from fitting in
+   122px to being clipped at 96px. Widened by exactly that much, so every sector
+   name in the book still fits and the pill costs no legibility; the track loses
+   270 -> 242px at 1440, still ~80px per cap slot. */
+.alloc-name{flex:0 0 168px;font-size:13px;color:var(--text2);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px;}
 .alloc-swatch{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 2px rgba(255,255,255,.6);}
 .alloc-bar-wrap{flex:1;background:rgba(37,99,235,0.07);border-radius:6px;height:10px;overflow:hidden;position:relative;min-width:60px;}
 .alloc-bar{
@@ -410,6 +415,34 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   box-shadow:inset 0 1px 0 rgba(255,255,255,.25);
 }
 .alloc-pct{flex:0 0 56px;font-size:12px;color:var(--white);font-weight:700;text-align:right;font-variant-numeric:tabular-nums;}
+/* ── V28.0 — allocation legend: holdings count + the 3-slot cap ruler ──
+   The count pill is the SAME pill the sector filter chips 300px below already
+   use, so the legend and the chips finally state the same thing. The ruler
+   paints ON TOP of the fill (::after, above the static bar) so you can read
+   which of the three cap slots a sector has reached, not merely how long its
+   bar is. --alloc-rule is the only new value and it exists to be legible over
+   both the empty track and eleven different sector hues. */
+.alloc-nm-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.alloc-n{
+  flex:0 0 auto; display:inline-block; min-width:18px; padding:1px 6px;
+  background:rgba(15,23,42,0.06); border-radius:999px;
+  font-size:11px; font-weight:700; color:var(--text2); text-align:center;
+}
+.alloc-row-other{cursor:default;}
+.alloc-row-other .alloc-name{color:var(--text3);}
+:root{--alloc-rule:rgba(12,24,49,0.16);}
+.alloc-bar-wrap.alloc-ruled::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:
+    linear-gradient(90deg,transparent calc(33.3333% - 0.5px),var(--alloc-rule) calc(33.3333% - 0.5px),var(--alloc-rule) calc(33.3333% + 0.5px),transparent calc(33.3333% + 0.5px)),
+    linear-gradient(90deg,transparent calc(66.6667% - 0.5px),var(--alloc-rule) calc(66.6667% - 0.5px),var(--alloc-rule) calc(66.6667% + 0.5px),transparent calc(66.6667% + 0.5px));
+}
+.alloc-bar-wrap.alloc-over::before{
+  content:'';position:absolute;top:0;bottom:0;right:0;width:2px;z-index:3;
+  background:var(--ink-warn,#a64d08);border-radius:0 6px 6px 0;
+}
+html[data-theme="dark"]{--alloc-rule:rgba(255,255,255,0.24);}
+html[data-theme="dark"] .alloc-n{background:rgba(6,12,26,0.42);color:var(--text);}
 
 /* ── Subscription progress + renew CTA ── */
 .sub-prog{display:inline-flex;align-items:center;gap:6px;margin-left:8px;}
@@ -918,7 +951,19 @@ footer a:hover{color:var(--accent);}
      ~6px and broke "Subscription active / until" and "17 Aug / 2026" across two
      lines each. Letting it wrap drops the meter to its own line instead. */
   .meta-row .meta-pill{width:100%;justify-content:flex-start;flex-wrap:wrap;}
+  /* V28.0: on a phone the track is only ~125px wide and it is the thing this
+     card exists for, so the name column keeps its original 100px rather than
+     taking 27px from the bar for the count pill. The pill is hidden here: with
+     the cap ruler on, the bar already reads the count off its three slots, so
+     phone loses nothing the ruler does not already say. */
   .alloc-name{flex-basis:100px;font-size:12px;}
+  .alloc-n{display:none;}
+  /* from 481 to 768 the grid is already one column, so the track still measures
+     ~200px+ after the name takes 134px, and the longest sector name — clipped
+     here before this release too — stops being clipped. Below 481 the track is
+     the scarce thing and the name keeps its 100px; the row's title attribute
+     carries the full name, its holdings count and its weight. */
+  @media(min-width:481px){ .alloc-name{flex-basis:134px;} }
   .alloc-pct{flex-basis:46px;font-size:11px;}
   .table-actions{width:100%;justify-content:flex-end;}
 }
@@ -1530,7 +1575,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2790">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2800">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -1661,7 +1706,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .ds-sent-date{font-weight:600;letter-spacing:0;text-transform:none;color:var(--text3)}
     .ds-sent-v{font-size:15px;font-weight:800;letter-spacing:-.01em}
     .ds-sent-v i{font-style:normal;font-size:.7em;color:var(--text3);font-weight:700;margin-left:1px}
-    .ds-sent-v.bear{color:#dc2626}.ds-sent-v.bull{color:#059669}.ds-sent-v.neutral{color:#b45309}
+    /* V28.0: these are 15px/800 — NORMAL text by WCAG (bold only counts as large
+       from 18.66px), so they need 4.5:1, and on the white card #059669 measured
+       3.77:1, #dc2626 4.16:1 and #b45309 4.35:1. All three fail. The V27.9 ink
+       tier is the AA-safe step in the SAME hue, so the verdict keeps signalling
+       what it signals. The dark overrides on the next line already use that
+       tier's dark values and are untouched. */
+    .ds-sent-v.bear{color:var(--ink-neg,#c92020)}.ds-sent-v.bull{color:var(--ink-pos,#047653)}.ds-sent-v.neutral{color:var(--ink-warn,#a64d08)}
     /* V26.7 — dark-mode legibility: the sentiment verdict reused the light semantic
        inks (~3.9:1 on the dark card). Lift to the dark palette; light unchanged. */
     html[data-theme="dark"] .ds-sent-v.bear{color:#f87171}html[data-theme="dark"] .ds-sent-v.bull{color:#34d399}html[data-theme="dark"] .ds-sent-v.neutral{color:#fbbf24}
@@ -2806,11 +2857,62 @@ function renderAllocation(stocks) {
     map[k] = (map[k] || 0) + w;
   });
   const total = Object.values(map).reduce((a,b) => a+b, 0) || 1;
+  const counts = {};
+  stocks.forEach(s => {
+    const k = (s.industry || 'Unknown').trim() || 'Unknown';
+    counts[k] = (counts[k] || 0) + 1;
+  });
   const allRows = Object.entries(map)
-    .map(([name, w]) => ({ name, w, pct: (w/total)*100 }))
+    .map(([name, w]) => ({ name, w, pct: (w/total)*100, n: counts[name] || 0 }))
     .sort((a,b) => b.pct - a.pct);
-  const rows = allRows.slice(0, 8); // top 8 for legend
-  if (!rows.length) return;
+  if (!allRows.length) return;
+
+  /* ── V28.0 — THE CARD IS ABOUT CONCENTRATION AND COULD NOT SHOW IT ───────────
+     Every bar was drawn as a fraction of 100% of the portfolio, but no single
+     sector here can approach 100%: the model caps a sector at 3 holdings. So on
+     an equal-weighted 25-stock book the entire card lived in the leftmost eighth
+     of its own track — measured at 1440, a 3-stock sector (12.0%) was a 32px
+     fill in a 270px track and a 2-stock sector (8.0%) was 22px. Ten pixels stood
+     for a 50% difference in exposure, and at 375 the 8% rows rendered as dots.
+
+     Two changes, no new data:
+     1. FULL TRACK = THE CAP, not 100% of the book. For a capped equal-weight
+        strategy the ceiling is 3 x the per-stock weight, so 12/8/4% now read as
+        a clean 3:2:1 — and two hairlines at 1/3 and 2/3 turn every track into
+        the same 3-slot ruler, which makes the "capped at 3 per" claim printed
+        400px above this card something the reader can actually audit.
+        The axis is INFERRED (3 x modal weight), so it is used only when the
+        book really is equal-weighted: the modal weight must cover >=80% of
+        holdings and the strategy must not be MultiAsset (composite-score
+        weighted, no sector cap). Otherwise the scale falls back to the largest
+        sector — a real, present quantity — and the ruler is dropped, because a
+        3-slot ruler would assert a cap that strategy does not have.
+     2. STOP DROPPING SECTORS SILENTLY. It showed the top 8 and said "Showing 8
+        of 11" without ever naming the other three, while the donut carried a
+        ~20% grey "Other" wedge with no legend row at all. Now up to 12 rows,
+        and any genuine remainder gets its own labelled grey row that matches
+        the wedge. With today's 11 sectors nothing is hidden.
+     The % label on each row is unchanged and still reads share-of-portfolio, so
+     no figure on this card moved; only the geometry became legible. */
+  const perStockCounts = {};
+  stocks.forEach(s => {
+    const w = Math.round((Number(s.weight_pct) || 0) * 100) / 100;
+    if (w > 0) perStockCounts[w] = (perStockCounts[w] || 0) + 1;
+  });
+  let modalW = 0, modalN = 0;
+  Object.entries(perStockCounts).forEach(([w, n]) => { if (n > modalN) { modalN = n; modalW = Number(w); } });
+  const equalWeighted = modalW > 0 && modalN >= stocks.length * 0.8 && !/multiasset/i.test(currentStrategy);
+  const capW = equalWeighted ? (modalW / total) * 100 * 3 : 0;
+  const topPct = allRows[0].pct;
+  // never let the scale be smaller than the largest bar — a clamped bar would lie
+  const scale = (capW > 0 && capW >= topPct - 0.01) ? capW : topPct;
+  const scaleIsCap = scale === capW && capW > 0;
+
+  const MAXROWS = 12;
+  let rows = allRows.slice(0, MAXROWS);
+  const restRows = allRows.slice(MAXROWS);
+  const restPct = restRows.reduce((a,r) => a+r.pct, 0);
+  const restN = restRows.reduce((a,r) => a+r.n, 0);
 
   // Assign colors from the shared map so the legend/donut match the table swatches
   const secColorMap = buildSectorColorMap(stocks);
@@ -2820,27 +2922,48 @@ function renderAllocation(stocks) {
   const grid = document.getElementById('alloc-grid');
 
   // Legend rows — V5.2 #21: each row is clickable + filters the table.
-  grid.innerHTML = rows.map(r => `
+  let rowsHTML = rows.map(r => {
+    const fillPct = Math.min(100, (r.pct / scale) * 100);
+    const overCap = scaleIsCap && r.pct > scale + 0.01;
+    return `
     <div class="alloc-row" role="button" tabindex="0" data-sector="${escapeHtml(r.name)}"
-         title="Click to filter the table to ${escapeHtml(r.name)}"
+         title="Click to filter the table to ${escapeHtml(r.name)} · ${r.n} holding${r.n===1?'':'s'} · ${r.pct.toFixed(1)}% of portfolio"
          onclick="filterBySector(this.dataset.sector)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterBySector(this.dataset.sector);}">
       <div class="alloc-name" title="${escapeHtml(r.name)}"><!-- V6.8 L2: full sector name on hover; long GICS names like "Information Technology" get truncated by the 140px ellipsis -->
         <span class="alloc-swatch" style="background:${r.color}"></span>
-        ${escapeHtml(r.name)}
+        <span class="alloc-nm-t">${escapeHtml(r.name)}</span>
+        <span class="alloc-n">${r.n}</span>
       </div>
-      <div class="alloc-bar-wrap"><div class="alloc-bar" data-bar="${r.pct.toFixed(1)}%" style="background:linear-gradient(90deg,${r.color},${r.color}cc);"></div></div>
+      <div class="alloc-bar-wrap${scaleIsCap ? ' alloc-ruled' : ''}${overCap ? ' alloc-over' : ''}"><div class="alloc-bar" data-bar="${fillPct.toFixed(1)}%" style="background:linear-gradient(90deg,${r.color},${r.color}cc);"></div></div>
       <div class="alloc-pct">${r.pct.toFixed(1)}%</div>
     </div>
-  `).join('');
+  `;}).join('');
+  if (restRows.length && restPct > 0.01) {
+    // the donut already aggregates these into a grey "Other" wedge — give that
+    // wedge the legend row it never had, instead of a caption that won't name it
+    rowsHTML += `
+    <div class="alloc-row alloc-row-other" title="${restRows.length} smaller sector${restRows.length===1?'':'s'}: ${escapeHtml(restRows.map(r=>r.name).join(', '))}">
+      <div class="alloc-name">
+        <span class="alloc-swatch" style="background:#cbd5e1"></span>
+        <span class="alloc-nm-t">Other · ${restRows.length} sectors</span>
+        <span class="alloc-n">${restN}</span>
+      </div>
+      <div class="alloc-bar-wrap${scaleIsCap ? ' alloc-ruled' : ''}"><div class="alloc-bar" data-bar="${Math.min(100,(restPct/scale)*100).toFixed(1)}%" style="background:linear-gradient(90deg,#cbd5e1,#cbd5e1cc);"></div></div>
+      <div class="alloc-pct">${restPct.toFixed(1)}%</div>
+    </div>`;
+  }
+  grid.innerHTML = rowsHTML;
 
   document.getElementById('alloc-meta').textContent =
-    'Showing ' + rows.length + ' of ' + allRows.length + ' sectors · combined ' +
-    rows.reduce((a,r) => a+r.pct, 0).toFixed(1) + '%';
+    allRows.length + ' sector' + (allRows.length === 1 ? '' : 's') + ' · ' + stocks.length + ' holdings · ' +
+    (scaleIsCap ? 'full bar = the 3-per-industry cap (' + scale.toFixed(1) + '%)'
+                : 'full bar = largest sector (' + scale.toFixed(1) + '%)');
 
   // V6.8 L1: aggregate the remaining sectors into an "Other" slice so the
   // donut ring sums to 100% instead of leaving a grey gap that reads as
-  // unallocated cash. The legend still shows the top 8.
+  // unallocated cash. (V28.0: that wedge now has a matching legend row, so the
+  // ring and the list can no longer disagree about what "Other" is.)
   let donutRows = rows;
   if (allRows.length > rows.length) {
     const otherPct = allRows.slice(rows.length).reduce((a, r) => a + r.pct, 0);
@@ -3171,7 +3294,7 @@ function renderTable(stocks) {
    translate), so on the normal path this is a no-op — and on a frozen clock
    it is the difference between a blank list and a readable one. Same
    safety-net device as the factor board's setTimeout(reveal,1600) and
-   mfc-live.js?v=2790's snap timer: never let a decoration own visibility. */
+   mfc-live.js?v=2800's snap timer: never let a decoration own visibility. */
 function revealHoldingsBackstop() {
   var DONE = 'mf-anim-done';                 // → animation:none (CSS)
   var LAST = 360 + 420 + 260;                // max delay + duration + slack
@@ -3261,8 +3384,13 @@ function getBroker(){
 function setBroker(key){
   if (!BROKERS[key]) return;
   try { localStorage.setItem('mfc-broker', key); } catch(e){}
-  // Re-render table so all rows pick up the new deeplinks
-  renderTable(stocksData);
+  // Re-render table so all rows pick up the new deeplinks.
+  // V28.0: this used to render stocksData in its canonical order, so picking a
+  // broker silently undid the user's sort AND their filter while the sort arrow
+  // and the chip both stayed put. Swapping a deeplink column is not a reason to
+  // reset the view: applySort() re-renders in whatever order is current and
+  // re-applies the filters, so only the chips change.
+  applySort();
   showToast('Broker set to ' + BROKERS[key].name);
 }
 function brokerLink(s){
@@ -3353,10 +3481,25 @@ function reflectChipState(){
 // .sort-desc) were shipped in v17 — this is the JS that wires them up.
 // State persists per-strategy in localStorage so users return to the same view.
 var _sortKey = null, _sortDir = 1;
+/* V28.0 — renderTable() rebuilds <tbody> and the mobile card list from scratch,
+   which throws away the per-row display:none that filterStocks() and
+   applySectorFilter() had written. _searchQ, _sectorFilter, the search box and
+   the active sector chip all survive untouched, so after any re-render the
+   table showed ALL 25 picks while the chip still read "Banks 3" and still
+   carried .active — the UI stating a filter that was no longer applied.
+   Reproduced: click "Banks 3" (3 rows), click any column header -> 25 rows,
+   chip unchanged. The main render path has re-applied both filters since V10.6
+   (see the note above the strategy-switch re-render); the sort and broker paths
+   never did. One helper, used by every path that re-renders. */
+function reapplyViewState(){
+  if (_searchQ) filterStocks(_searchQ);
+  applySectorFilter();
+}
 function applySort(){
   if (!_sortKey || !stocksData || !stocksData.length) {
     // Re-render in original order
     renderTable(stocksData);
+    reapplyViewState();
     return;
   }
   var getters = {
@@ -3377,7 +3520,7 @@ function applySort(){
     weight:   function(s){ return Number(s.weight_pct) || 0; },
   };
   var get = getters[_sortKey];
-  if (!get) { renderTable(stocksData); return; }
+  if (!get) { renderTable(stocksData); reapplyViewState(); return; }
   // Stable copy
   var paired = stocksData.map(function(s,i){ return {s:s, k:get(s,i), i:i}; });
   paired.sort(function(a,b){
@@ -3387,6 +3530,7 @@ function applySort(){
   });
   var sorted = paired.map(function(p){ return p.s; });
   renderTable(sorted);
+  reapplyViewState();
   // Reapply sort affordance after re-render
   setTimeout(reflectSortAffordance, 0);
 }
@@ -3540,20 +3684,44 @@ function copyTicker(el) {
   });
 }
 
+/* V28.0 — the two export buttons read stocksData directly and never consulted
+   the visible set, so with "Banks 3" active and three rows on screen, Copy
+   tickers put all 25 on the clipboard and Export CSV wrote 25 rows. A member
+   who filters to one sector to place that sector's orders got the whole book.
+   Both now follow what is actually on screen; the row order follows too, so a
+   sorted table exports in the order the member sorted it. With no filter active
+   this returns exactly stocksData, so the unfiltered behaviour is unchanged. */
+function visibleStocks() {
+  var rows = document.querySelectorAll('#stocks-tbody tr[data-row]');
+  if (!rows.length) return stocksData.slice();
+  var out = [];
+  rows.forEach(function(tr){
+    if (tr.style.display === 'none') return;
+    var s = stocksData[Number(tr.dataset.row)];
+    if (s) out.push(s);
+  });
+  return out.length ? out : stocksData.slice();
+}
 function copyAllTickers() {
-  if (!stocksData.length) return;
-  const list = stocksData.map(s => s.ticker).join(', ');
-  copyText(list).then(() => showToast('Copied ' + stocksData.length + ' tickers'));
+  const rows = visibleStocks();
+  if (!rows.length) return;
+  const list = rows.map(s => s.ticker).join(', ');
+  copyText(list).then(() => showToast('Copied ' + rows.length + ' ticker' + (rows.length === 1 ? '' : 's')));
 }
 
 function exportCSV() {
   if (!stocksData.length) return;
+  // V28.0: export what is on screen (see visibleStocks). Allocation and shares
+  // are still sized against the WHOLE book — allocBudget(s, stocksData, …) —
+  // because a filter changes what you are looking at, not what you own.
+  const rowsOut = visibleStocks();
+  if (!rowsOut.length) return;
   const n = stocksData.length || 1;
   // V12.5: allocation is weight-proportional (see allocBudget()).
   // V24.5: every book is ₹, so the export is unconditionally INR-labelled.
   const header = ['#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
   const lines = [header.join(',')];
-  stocksData.forEach((s,i) => {
+  rowsOut.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
     const amt = shares * price;
@@ -6116,7 +6284,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=5"></script>
+<script defer src="assets/mfc-chrome.js?v=6"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

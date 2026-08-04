@@ -120,7 +120,21 @@
 // shell documents reference all three. index.html additionally carries the
 // footer tap-target and proof-link changes in its own markup, which a
 // precached copy has no ?v of its own to bust.
-const CACHE = 'mfc-v29';
+// v30 (V28.0): mfc-finish.css (the dark market-pulse sign inversion, the
+// site-wide footer tap-target rule and the scrollable mobile nav drawer),
+// mfc-live.js (the live-vs separator ink and the .ls-cta hit area) and
+// mfc-chrome.js (Escape / outside-click dismissal for that drawer) all change,
+// and BOTH precached shell documents reference all three.
+// (superseded note kept for the record) mfc-finish.css (the dark market-pulse sign inversion + the
+// site-wide footer tap-target rule) and mfc-live.js (the live-vs separator ink
+// and the .ls-cta hit area) both change, and BOTH precached shell documents
+// reference both. index.html additionally carries the net-flow rail and the
+// strategy-card / why-card layout corrections in its own markup, and a
+// precached document has no ?v of its own to bust. This bump also unifies the
+// mfc-finish.css query across the whole site: the 28 generated stock-directory
+// pages had been pinned at ?v=2782 while everything else moved to 2790, so they
+// were fetching and caching a second, separate copy of the same file.
+const CACHE = 'mfc-v30';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
