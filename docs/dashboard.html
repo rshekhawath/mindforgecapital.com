@@ -410,6 +410,37 @@ html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
 .size-deploy-track{flex:1;height:4px;border-radius:3px;background:rgba(37,99,235,0.10);overflow:hidden;}
 .size-deploy-track i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--accent2),#2dd4bf);transition:width 1s cubic-bezier(.22,1,.36,1);}
 .size-deploy-lbl{font-size:11.5px;font-weight:700;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
+/* ── V28.4: capital coverage — how many picks the entered capital actually buys.
+   .size-card is a two-column grid (1fr auto); this is a full-width third row. ── */
+.cvg{grid-column:1/-1;margin-top:4px;padding:15px 17px;border-radius:12px;
+  background:rgba(37,99,235,0.045);border:0.5px solid var(--border);}
+html[data-theme="dark"] .cvg{background:rgba(150,180,240,0.055);}
+.cvg.is-short{background:rgba(217,119,6,0.07);border-color:rgba(217,119,6,0.24);}
+html[data-theme="dark"] .cvg.is-short{background:rgba(240,168,54,0.09);border-color:rgba(240,168,54,0.26);}
+.cvg-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.cvg-lead{font-size:13.5px;color:var(--text2);line-height:1.45;}
+.cvg-lead b{color:var(--white);font-weight:800;font-variant-numeric:tabular-nums;}
+.cvg-chip{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;white-space:nowrap;
+  color:var(--data-strong);background:rgba(4,116,84,0.10);border:0.5px solid rgba(4,116,84,0.22);}
+.cvg.is-short .cvg-chip{color:#a35c05;background:rgba(217,119,6,0.12);border-color:rgba(217,119,6,0.28);}
+html[data-theme="dark"] .cvg-chip{color:var(--data-strong);background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.26);}
+html[data-theme="dark"] .cvg.is-short .cvg-chip{color:#fbbf24;background:rgba(251,191,36,0.13);border-color:rgba(251,191,36,0.3);}
+.cvg-track{margin-top:10px;height:5px;border-radius:3px;background:rgba(37,99,235,0.10);overflow:hidden;}
+html[data-theme="dark"] .cvg-track{background:rgba(120,150,255,0.14);}
+/* The fill's width is written by JS on every capital change, so it transitions
+   normally — unlike a bar whose final width is present in the served markup. */
+.cvg-fill{display:block;height:100%;width:0;border-radius:3px;
+  background:linear-gradient(90deg,var(--accent2),#2dd4bf);transition:width .8s cubic-bezier(.22,1,.36,1);}
+.cvg.is-short .cvg-fill{background:linear-gradient(90deg,#d97706,#f0a836);}
+.cvg-note{margin-top:9px;font-size:12px;color:var(--text3);line-height:1.55;}
+.cvg-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums;}
+.cvg-names{display:inline-flex;flex-wrap:wrap;gap:5px;vertical-align:middle;margin:0 2px;}
+.cvg-name{display:inline-block;font-size:11px;font-weight:700;color:var(--text2);
+  padding:1px 7px;border-radius:20px;background:rgba(15,23,42,0.05);border:0.5px solid var(--border);}
+html[data-theme="dark"] .cvg-name{background:rgba(255,255,255,0.06);}
+@media (max-width:560px){.cvg{padding:13px 14px;}.cvg-lead{font-size:12.5px;}.cvg-note{font-size:11.5px;}}
+@media (prefers-reduced-motion:reduce){.cvg-fill{transition:none;}}
 .alloc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
 .alloc-head h2,.alloc-head h3{font-size:16px;color:var(--white);font-weight:700;line-height:1.25;}
 .alloc-head .alloc-meta{font-size:12px;color:var(--text3);}
@@ -1634,7 +1665,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2830">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2840">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -2174,6 +2205,26 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
           <div class="size-presets" id="size-presets"></div>
         </div>
+      </div>
+
+      <!-- V28.4 — WHAT YOUR CAPITAL ACTUALLY BUYS.
+           Whole-share sizing quietly drops picks whose price exceeds their slice of
+           the capital: at ₹1,00,000 on a 25-name equal-weight book, ₹4,000 a name
+           cannot buy one Maruti share (₹11,890) or one Siemens share (₹6,892), so
+           the member holds 23 names, not 25. The card above reported the symptom
+           ("77.0% deployed") and never the cause, and the table showed "0" on two
+           rows 20 scroll-lines apart. This states the count, names the picks that
+           fall out, and gives the capital at which all of them come back.
+           Deliberately states NO rupee total — Total allocated / Cash residue are
+           already above it, and two independently-rounded totals is how they end up
+           disagreeing (see the V28.1 note in refreshSizeSummary). -->
+      <div class="cvg" id="cvg" style="display:none;">
+        <div class="cvg-head">
+          <div class="cvg-lead" id="cvg-lead">&mdash;</div>
+          <div class="cvg-chip" id="cvg-chip">&mdash;</div>
+        </div>
+        <div class="cvg-track" aria-hidden="true"><span class="cvg-fill" id="cvg-fill"></span></div>
+        <div class="cvg-note" id="cvg-note"></div>
       </div>
     </div>
 
@@ -3563,6 +3614,70 @@ function refreshSizeSummary() {
       } else { dep.style.display = 'none'; }
     }
   } catch(e){}
+
+  refreshCoverage();
+}
+
+// V28.4 — "what your capital actually buys".
+// Whole-share sizing silently drops any pick whose price exceeds its slice of the
+// capital. refreshSizeSummary above reports the aggregate effect (NN% deployed);
+// this reports the thing a member can act on: how many of the picks they end up
+// holding, which ones fall out, and the capital at which all of them come back.
+// allocBudget() is exactly linear in capital, so a pick's own break-even capital is
+// price ÷ (its share of the book) — no search needed. Fails silently: a throw here
+// must never take the sizing card down with it.
+function refreshCoverage() {
+  try {
+    const box = document.getElementById('cvg');
+    if (!box) return;
+    const list = stocksData || [];
+    const priced = list.filter(s => (Number(s.recommended_price) || 0) > 0);
+    if (!priced.length || !(currentCapital > 0)) { box.style.display = 'none'; return; }
+
+    let buyable = 0, minCap = 0;
+    const missing = [];
+    priced.forEach(s => {
+      const price  = Number(s.recommended_price) || 0;
+      const budget = allocBudget(s, list, currentCapital);
+      const share  = budget / currentCapital;             // this pick's fraction
+      if (share > 0) minCap = Math.max(minCap, price / share);
+      if (Math.floor(budget / price) >= 1) buyable++; else missing.push(s);
+    });
+
+    const n     = priced.length;
+    const short = missing.length > 0;
+    const need  = Math.ceil(minCap - 1e-6);
+
+    box.classList.toggle('is-short', short);
+    document.getElementById('cvg-fill').style.width = (buyable / n * 100).toFixed(1) + '%';
+    document.getElementById('cvg-lead').innerHTML =
+      '<b>' + buyable + '</b> of <b>' + n + '</b> pick' + (n === 1 ? '' : 's') +
+      ' buyable at <b>' + fmtMoney(currentCapital) + '</b>';
+    document.getElementById('cvg-chip').textContent =
+      short ? (missing.length + ' need' + (missing.length === 1 ? 's' : '') + ' more') : 'Full book';
+
+    let note;
+    if (!short) {
+      note = 'Every pick in this cycle is buyable at this capital. What stays in cash is '
+           + 'whole-share rounding only &mdash; no order can be part of a share.';
+    } else {
+      // When nothing is buyable, naming four of the twenty-five is noise — the only
+      // useful figure is the capital that makes the book placeable.
+      const shown = buyable === 0 ? '' : missing.slice(0, 4).map(s =>
+        '<span class="cvg-name">' + escapeHtml(s.company_name || s.ticker || '') + '</span>').join('');
+      const more  = (buyable !== 0 && missing.length > 4)
+        ? ' <span class="cvg-name">+' + (missing.length - 4) + ' more</span>' : '';
+      note = (buyable === 0
+              ? 'One share costs more than this capital gives any pick, so no order can be placed yet. '
+              : (missing.length === 1
+                 ? 'One share of this pick costs more than its slice of your capital, so it is left out and its weight stays in cash: '
+                 : 'One share of each of these picks costs more than its slice of your capital, so they are left out and their weight stays in cash: '))
+           + '<span class="cvg-names">' + shown + more + '</span> '
+           + 'All <b>' + n + '</b> become buyable from <b>' + fmtMoney(need) + '</b>.';
+    }
+    document.getElementById('cvg-note').innerHTML = note;
+    box.style.display = '';
+  } catch (e) { /* sizing card must survive a coverage failure */ }
 }
 
 function updateAllocationCells() {

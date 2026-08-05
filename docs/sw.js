@@ -156,7 +156,18 @@
 // the cache name is the version that moves. (dashboard.html is network-first —
 // its new "what moved your number" return-attribution card reaches members
 // without this bump.)
-const CACHE = 'mfc-v33';
+// v34 (V28.4): both precached shell documents (index.html, login.html) change —
+// not in body copy this time but in the asset query they point at. mfc-finish.css
+// moves 2830 -> 2840 (the pointer-target pads for the fee-calculator disclosure
+// toggle and the two SEBI grievance mailto links), and mfc-chrome.js is unified at
+// ?v=6 across the whole site — the 28 generated stock-directory pages had been
+// pinned at ?v=4 since V27.8 and were serving returning visitors a chrome script
+// two releases old from a second, duplicate cache entry. A precached document has
+// no ?v of its own, so the cache name is what makes the offline fallback point at
+// the same asset versions the live pages do. (The month-by-month calendar lands on
+// smallmicro/largemidcap and the capital-coverage card on dashboard.html; none of
+// those three are precached — HTML is network-first — so they need no bump.)
+const CACHE = 'mfc-v34';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

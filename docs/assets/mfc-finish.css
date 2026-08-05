@@ -945,3 +945,41 @@ html .cmp-crosslink a::after{
   content:''; position:absolute; left:0; right:0; top:50%;
   height:28px; transform:translateY(-50%);   /* 28 not 24: clears sub-pixel line-box rounding */
 }
+
+/* ----------------------------------------------------------------------------
+   V28.4 — the two the V28.3 sweep missed, both outside a sentence
+   ----------------------------------------------------------------------------
+   Re-running the hit-test after the instrument learned to credit an enclosing
+   role=link row (which had been drowning the real findings in ~250 phantom
+   ones) left these standing:
+
+       .fc-method > summary                 51x22   fee calculator — the
+                                                    "How this is calculated"
+                                                    disclosure toggle
+       .disc-table td a[href^=mailto:]      51x18   disclosures — the
+                                                    correspondence and investor
+                                                    grievance addresses, i.e.
+                                                    the two links SEBI requires
+                                                    a complainant to be able to
+                                                    use
+
+   Neither is the 2.5.8 inline exception: the summary is a standalone control on
+   its own line, and each mailto is the entire content of its cell. The two
+   grievance rows sit 45px apart with 17px links, so a 28px pad leaves 17px of
+   clear space between them — measured, not assumed.
+
+   The auth hints ("New to MindForge? Sign up here"), the footer disclosure
+   crosslink and the score-distribution segments come up in the same sweep and
+   stay UNTOUCHED for the reasons V28.3 recorded: the first two are inline in a
+   sentence, and every distribution band has a >=30px legend button firing the
+   identical filter (the 2.5.8 equivalent-control exception). The screener's
+   18px "Above 200-day SMA" checkbox is exempt the same way — its sibling
+   label[for] is a 26px control for the same action.
+   -------------------------------------------------------------------------- */
+html .fc-method > summary{ position:relative; }
+html .disc-table td a[href^="mailto:"]{ position:relative; display:inline-block; }
+html .fc-method > summary::after,
+html .disc-table td a[href^="mailto:"]::after{
+  content:''; position:absolute; left:0; right:0; top:50%;
+  height:28px; transform:translateY(-50%);
+}

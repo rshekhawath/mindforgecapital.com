@@ -604,10 +604,14 @@
     // V25.5 — each group of cards is wrapped in a titled section so the report
     // has a spine the sticky contents bar can navigate. A section whose cards
     // all hide themselves (missing fields) is hidden by buildReportNav().
+    // V28.4: these four are the report's TOP-LEVEL sections and the only headings on
+    // the page besides the company <h1> — as <h3> they made every one of the 2,126
+    // stock pages read h1 → h3, a heading skip with no h2 anywhere to justify it.
+    // Styled by class, so the level is the only thing that changes.
     function sec(id, n, title, subtitle, inner) {
       return '<section class="mfx-sec" id="mfxSec' + id + '" data-sec-title="' + esc(title) + '">' +
         '<div class="mfx-sec-h"><span class="mfx-sec-n">' + n + '</span>' +
-        '<h3 class="mfx-sec-t">' + esc(title) + "</h3>" +
+        '<h2 class="mfx-sec-t">' + esc(title) + "</h2>" +
         '<span class="mfx-sec-s">' + esc(subtitle) + "</span>" +
         '<span class="mfx-sec-r"></span></div>' + inner + "</section>";
     }
