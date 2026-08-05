@@ -1820,7 +1820,22 @@ checkHealth();
   #resultsTable thead th:first-child{
     background:linear-gradient(180deg,var(--ink3) 0%,var(--ink) 100%);
   }
-  #resultsTable tbody tr:nth-child(even) td:first-child{background:#f7faff;}
+  /* V28.2 — this was `background:#f7faff`, the LIGHT value of --ink2 baked in as a
+     literal. The frozen column has to be opaque (the scrolling columns pass under
+     it), and the odd rows correctly use var(--ink2) two rules above — but the even
+     rows painted near-white in BOTH themes, so in dark mode every alternate row's
+     company NAME rendered #eaf1ff on #f7faff: 1.08:1, i.e. invisible, on the one
+     cell that tells you which stock the row is. Only 601–900px, which is why no
+     phone or desktop pass ever saw it (and why V28.0 filed it as an instrument
+     artefact — a 6s settle plus a forced reflow shows a perfectly regular odd/even
+     alternation, which no stale-computed-style artefact would produce).
+     The zebra tint is now layered OVER the theme token: rgba(37,99,235,.037) on
+     white is exactly #f7faff, so light mode is unchanged, and on the dark --ink2
+     it lands rgb(19,32,58) — the same one-step lift the tint was always meant to
+     be, at 14.4:1. */
+  #resultsTable tbody tr:nth-child(even) td:first-child{
+    background:linear-gradient(rgba(37,99,235,.037),rgba(37,99,235,.037)), var(--ink2);
+  }
 }
 </style>
 

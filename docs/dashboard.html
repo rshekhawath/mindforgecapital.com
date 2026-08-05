@@ -311,9 +311,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 }
 .pmap-card:hover{ box-shadow:0 14px 34px -20px rgba(26,80,216,0.40), var(--shadow-sm); border-color:rgba(37,99,235,0.30); }
 .pmap-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-.pmap-head h3{ font-size:16px; font-weight:700; color:var(--text); margin:0; }
+.pmap-head h2, .pmap-head h3{ font-size:16px; font-weight:700; color:var(--text); margin:0; line-height:1.25; }
 .pmap-sub{ font-size:12px; color:var(--text3); }
 .pmap-grid{ display:flex; flex-wrap:wrap; gap:6px; margin-top:16px; }
+/* V28.2 — uniform tiles, weight drawn as a bar. See renderPortfolioMap for the
+   measurements: the flex/flex-grow/::after-spacer layout produced two tile sizes on
+   an equal-weight book and one tile size on a weighted book, i.e. never the thing
+   its caption claimed. auto-fill + minmax gives every tile the same column (which
+   also removes the ticker-truncation the min-width floor existed to prevent), and
+   the per-tile bar carries the weight on a shared axis. */
+.pmap-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(var(--pmap-min,86px),1fr)); }
+.pmap-grid::after{ display:none; }
+/* The % label must be a FIXED width or every tile's bar track is a different
+   length ("22.4%" is 4px wider than "6.2%"), which silently distorts the very
+   comparison the bar exists to make — measured 3.19× for a 3.61× weight ratio. */
+.pmap-wtn{ flex:0 0 36px; font-variant-numeric:tabular-nums; }
+.pmap-wtbar{ flex:1 1 auto; min-width:14px; height:3px; border-radius:2px;
+  background:rgba(37,99,235,.12); overflow:hidden; margin-left:1px; }
+.pmap-wtbar b{ display:block; height:100%; width:0; border-radius:2px;
+  background:var(--lens-c,var(--accent2)); transition:width .8s cubic-bezier(.22,1,.36,1); }
+html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
+@media (prefers-reduced-motion: reduce){ .pmap-wtbar b{ transition:none; } }
 .pmap-tile{
   /* V27.1 — flex-basis MUST be 0, not auto. The card's own subtitle promises
      "tile size = model weight" and renderPortfolioMap sets an inline
@@ -325,7 +343,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
      free space, so width = grow/Σgrow × row — exactly proportional. Line
      breaking still respects min-width (flexbox clamps the hypothetical main
      size), and .pmap-grid::after soaks up the ragged last row. */
-  flex:1 1 0%; min-width:var(--pmap-min,86px); min-height:58px;
+  /* V28.2: the grid column now carries the --pmap-min floor, so the tile's own
+     min-width must be 0 or a container narrower than one column overflows. */
+  flex:1 1 0%; min-width:0; min-height:58px;
   border-radius:10px; padding:11px 12px; border:1px solid;
   display:flex; flex-direction:column; justify-content:space-between; gap:8px; overflow:hidden;
   transition:transform .18s ease, box-shadow .2s ease, filter .2s ease;
@@ -341,7 +361,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .pmap-wt{ display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text3); font-variant-numeric:tabular-nums; }
 .pmap-swatch{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
 @media (prefers-reduced-motion: reduce){ .pmap-tile:hover{ transform:none; } }
-@media (max-width:600px){ .pmap-card{ padding:20px 18px; } .pmap-tile{ min-width:var(--pmap-min,72px); min-height:52px; padding:9px 10px; } }
+@media (max-width:600px){ .pmap-card{ padding:20px 18px; } .pmap-tile{ min-width:0; min-height:52px; padding:9px 10px; } }
 
 /* ── POSITION SIZING (CAPITAL CALCULATOR) ── */
 .size-card{
@@ -353,7 +373,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;
 }
 @media (max-width:760px){.size-card{grid-template-columns:1fr;gap:16px;}}
-.size-card .size-head h3{font-size:16px;color:var(--white);font-weight:700;margin-bottom:4px;}
+.size-card .size-head h2,.size-card .size-head h3{font-size:16px;color:var(--white);font-weight:700;margin-bottom:4px;line-height:1.25;}
 .size-card .size-meta{font-size:12.5px;color:var(--text3);}
 .size-input-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .size-input-shell{
@@ -391,7 +411,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .size-deploy-track i{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--accent2),#2dd4bf);transition:width 1s cubic-bezier(.22,1,.36,1);}
 .size-deploy-lbl{font-size:11.5px;font-weight:700;color:var(--text3);white-space:nowrap;font-variant-numeric:tabular-nums;}
 .alloc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
-.alloc-head h3{font-size:16px;color:var(--white);font-weight:700;}
+.alloc-head h2,.alloc-head h3{font-size:16px;color:var(--white);font-weight:700;line-height:1.25;}
 .alloc-head .alloc-meta{font-size:12px;color:var(--text3);}
 .alloc-layout{display:grid;grid-template-columns:auto 1fr;gap:32px;align-items:center;}
 @media (max-width:760px){.alloc-layout{grid-template-columns:1fr;gap:18px;justify-items:center;}}
@@ -1728,6 +1748,77 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
     </div>
 
+    <!-- ═══ V28.2 · THE CYCLE RAIL ══════════════════════════════════════════════
+         The two countdowns directly above are the ones a member actually has to
+         reconcile: "18 days left" (access) and "27 days" (the next set of picks).
+         They sit side by side in identical .stat-meter tracks, but those tracks do
+         not measure the same thing — one is the billing term, the other the
+         calendar month — so comparing their fill levels is meaningless, and the
+         single fact that matters (does my access reach the next rebalance?) was
+         left as arithmetic the reader had to do in their head.
+
+         This puts both on ONE axis: 0 = today, full track = the later of the two
+         events. Bar length is literally the wait, so which lands first is visible
+         rather than computed, and the verdict line states the consequence.
+         Fail-soft: renders nothing unless both day counts are finite. ═════════ -->
+    <div class="cyc-card fade-up" id="cyc-card" style="display:none">
+      <div class="cyc-head">
+        <span class="cyc-k">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.9"/></svg>
+          Your cycle
+        </span>
+        <span class="cyc-badge" id="cyc-badge"></span>
+      </div>
+      <div class="cyc-row">
+        <span class="cyc-key">Access ends</span>
+        <span class="cyc-bar"><i class="cyc-fill is-exp" id="cyc-fill-exp"></i></span>
+        <span class="cyc-val" id="cyc-val-exp">—</span>
+      </div>
+      <div class="cyc-row">
+        <span class="cyc-key">New picks</span>
+        <span class="cyc-bar"><i class="cyc-fill is-reb" id="cyc-fill-reb"></i></span>
+        <span class="cyc-val" id="cyc-val-reb">—</span>
+      </div>
+      <div class="cyc-foot" id="cyc-foot"></div>
+    </div>
+    <style>
+    .cyc-card{display:block;margin:0 0 22px;padding:16px 20px 15px;border-radius:16px;background:#fff;
+      border:0.5px solid rgba(37,99,235,0.16);box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -18px rgba(26,80,216,.18)}
+    .cyc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+    /* --text3, not the #64748b that the sentiment strip's eyebrow hard-codes:
+       that literal measures 3.53:1 on the dark card and the token flips. */
+    .cyc-k{display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:800;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--text3)}
+    .cyc-badge{font-size:11px;font-weight:800;letter-spacing:.02em;padding:3px 10px;border-radius:999px;white-space:nowrap}
+    .cyc-badge.ok{color:var(--ink-pos,#047653);background:rgba(5,150,105,.10)}
+    .cyc-badge.warn{color:var(--ink-warn,#a64d08);background:rgba(180,83,9,.10)}
+    .cyc-row{display:grid;grid-template-columns:86px 1fr 128px;gap:11px;align-items:center;margin-bottom:9px}
+    .cyc-key{font-size:12px;font-weight:700;color:var(--text3)}
+    .cyc-bar{position:relative;height:9px;border-radius:5px;background:rgba(37,99,235,0.07);min-width:0;overflow:hidden}
+    .cyc-fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:5px;
+      transition:width .85s cubic-bezier(.22,1,.36,1)}
+    .cyc-fill.is-exp{background:linear-gradient(90deg,#1a50d8,#2dd4bf)}
+    .cyc-fill.is-reb{background:linear-gradient(90deg,#8fa3c4,#c3cee0)}
+    .cyc-val{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;color:var(--text2)}
+    .cyc-val b{font-weight:800;color:var(--white)}
+    .cyc-foot{margin-top:11px;padding-top:11px;border-top:0.5px solid rgba(37,99,235,0.10);
+      font-size:11.5px;font-weight:600;color:var(--text3);line-height:1.5}
+    .cyc-foot b{font-weight:800;color:var(--text2)}
+    html[data-theme="dark"] .cyc-card{background:var(--ink2)}
+    html[data-theme="dark"] .cyc-bar{background:rgba(255,255,255,.08)}
+    html[data-theme="dark"] .cyc-fill.is-reb{background:linear-gradient(90deg,#5b6b88,#8698b7)}
+    html[data-theme="dark"] .cyc-badge.ok{background:rgba(52,211,153,.14)}
+    html[data-theme="dark"] .cyc-badge.warn{background:rgba(251,191,36,.14)}
+    @media(max-width:600px){
+      .cyc-card{padding:15px 16px 14px}
+      .cyc-row{grid-template-columns:74px 1fr 104px;gap:9px}
+      .cyc-key{font-size:11px}
+      .cyc-val{font-size:11.5px}
+      .cyc-foot{font-size:11px}
+    }
+    @media (prefers-reduced-motion: reduce){ .cyc-fill{transition:none} }
+    </style>
+
     <!-- V17.0 — MARKET SENTIMENT strip (member market context; self-contained, fails silently) -->
     <a class="ds-sent fade-up" id="dsSent" href="/fii-dii/" style="display:none">
       <div class="ds-sent-top">
@@ -1922,7 +2013,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <!-- SECTOR ALLOCATION -->
     <div class="alloc-card fade-up" id="alloc-card" style="display:none;">
       <div class="alloc-head">
-        <h3>Sector allocation</h3>
+        <h2>Sector allocation</h2>
         <div class="alloc-meta" id="alloc-meta">Top sectors by combined portfolio weight</div>
       </div>
       <div class="alloc-layout">
@@ -1940,7 +2031,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <!-- PORTFOLIO MAP (V17.3) — full holdings mosaic, coloured by sector -->
     <div class="pmap-card fade-up" id="pmap-card" style="display:none;">
       <div class="pmap-head">
-        <h3>Portfolio map</h3>
+        <h2>Portfolio map</h2>
         <div class="pmap-sub" id="pmap-sub">Your holdings at a glance</div>
       </div>
       <div class="pmap-grid" id="pmap-grid"></div>
@@ -1949,7 +2040,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <!-- POSITION SIZING -->
     <div class="size-card fade-up" id="size-card" style="display:none;">
       <div class="size-head">
-        <h3>Position sizing</h3>
+        <h2>Position sizing</h2>
         <div class="size-meta">Enter your capital — we'll size each pick by its model weight so you can place orders straight from the table.</div>
         <div class="size-summary">
           <span>Per stock: <strong id="size-per-stock">—</strong></span>
@@ -2369,6 +2460,11 @@ const CAPITAL_PRESETS = {
 function _demoData(mode) {
   const now = new Date();
   const exp = new Date(); exp.setDate(exp.getDate() + 18);
+  // V28.2: subscribed_at drives the real billing-term length (see
+  // subscriptionTermDays). Dating it "today" made the fixture a 18-day term, which
+  // no plan sells — back-date it 12 days so the demo shows a representative
+  // 30-day monthly cycle, 12 days consumed.
+  const sub0 = new Date(); sub0.setDate(sub0.getDate() - 12);
   const stocks = [
     {ticker:'INFY',       company_name:'Infosys',                          industry:'IT Services',                  recommended_price:1543.20, weight_pct:4.00},
     {ticker:'TCS',        company_name:'Tata Consultancy Services',        industry:'IT Services',                  recommended_price:3812.55, weight_pct:4.00},
@@ -2403,7 +2499,7 @@ function _demoData(mode) {
   return {
     subscription: {
       name: 'Riya', email: 'riya@example.com', strategy: 'MindForge LargeMidcap 250',
-      expires_at: exp.toISOString(), subscribed_at: now.toISOString(), status: 'active'
+      expires_at: exp.toISOString(), subscribed_at: sub0.toISOString(), status: 'active'
     },
     stocks: stocks
   };
@@ -2465,6 +2561,71 @@ function nextRebalanceDate(now){
   // Next month rebalance: 1st of next month, IST
   const y = now.getFullYear(), m = now.getMonth();
   return new Date(y, m + 1, 1);
+}
+
+// V28.2 — fill the cycle rail. Pure presentation: every figure it prints is one
+// the KPI row above already computed, so the two surfaces cannot disagree.
+function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
+  var card = document.getElementById('cyc-card');
+  if (!card) return;
+  if (!isFinite(daysLeft) || !isFinite(daysToReb)) { card.style.display = 'none'; return; }
+
+  var fmt = function(d){ return d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}); };
+  var dayWord = function(n){ return n + ' day' + (n === 1 ? '' : 's'); };
+  // Shared axis. Both bars are drawn against the SAME denominator, so a longer bar
+  // always means a later date. Guard the degenerate both-zero case (bars would be
+  // 0/0) by giving the axis a floor of 1 day.
+  var axis = Math.max(1, daysLeft, daysToReb);
+
+  var vExp = document.getElementById('cyc-val-exp');
+  var vReb = document.getElementById('cyc-val-reb');
+  if (vExp) vExp.innerHTML = fmt(expiry) + ' · <b>' + dayWord(daysLeft) + '</b>';
+  if (vReb) vReb.innerHTML = fmt(nextReb) + ' · <b>' + dayWord(daysToReb) + '</b>';
+
+  var covered = daysLeft >= daysToReb;          // access reaches the next rebalance
+  var gap = Math.abs(daysLeft - daysToReb);
+  var badge = document.getElementById('cyc-badge');
+  if (badge) {
+    badge.className = 'cyc-badge ' + (covered ? 'ok' : 'warn');
+    badge.textContent = covered ? 'Next rebalance covered' : 'Renewal due first';
+  }
+  var foot = document.getElementById('cyc-foot');
+  if (foot) {
+    foot.innerHTML = covered
+      ? 'Your access runs to <b>' + fmt(expiry) + '</b>, so the <b>' + fmt(nextReb) +
+        '</b> rebalance is included' + (gap ? ' with <b>' + dayWord(gap) + '</b> to spare' : '') + '.'
+      : daysLeft === 0
+        ? 'Your access has ended — renew to receive the <b>' + fmt(nextReb) + '</b> picks.'
+        : 'Your access ends <b>' + dayWord(gap) + '</b> before the <b>' + fmt(nextReb) +
+          '</b> rebalance — renew to receive that set of picks.';
+  }
+
+  card.style.display = '';
+  // Grow on reveal — the site's bar idiom. Painting the final width immediately
+  // leaves a dead transition, so apply the widths a frame later.
+  var fExp = document.getElementById('cyc-fill-exp');
+  var fReb = document.getElementById('cyc-fill-reb');
+  setTimeout(function(){
+    if (fExp) fExp.style.width = (daysLeft / axis * 100).toFixed(1) + '%';
+    if (fReb) fReb.style.width = (daysToReb / axis * 100).toFixed(1) + '%';
+  }, 60);
+}
+
+// V28.2 — how long is THIS member's billing term? MindForge sells monthly,
+// quarterly, half-yearly and annual plans, so "30" is only right for one of them.
+// subscribed_at → expires_at is the real span. Guard rails: the sheet stores free
+// text, so reject anything that fails to parse, runs backwards, or exceeds a sane
+// ceiling. Returns null when the term cannot be known — the caller then hides the
+// meter rather than printing a guess as if it were the plan the member bought.
+function subscriptionTermDays(sub, expiry){
+  try {
+    if (!sub || !sub.subscribed_at) return null;
+    var start = new Date(sub.subscribed_at);
+    if (isNaN(start.getTime()) || isNaN(expiry.getTime())) return null;
+    var span = daysBetween(start, expiry);
+    if (!isFinite(span) || span < 1 || span > 3660) return null;
+    return span;
+  } catch (e) { return null; }
 }
 
 // V3.7: number rollup for stat cards (v2: hidden-tab safe)
@@ -2710,10 +2871,21 @@ function renderDashboard(sub, stocks) {
 
   // Subscription urgency + progress bar
   const daysLeft = Math.max(0, daysBetween(now, expiry));
-  // 30-day cycle progress (consumed = 30 - daysLeft, clamped)
-  const cycleDays = 30;
-  const consumed = Math.min(cycleDays, Math.max(0, cycleDays - daysLeft));
-  const progPct = (consumed / cycleDays) * 100;
+  // V28.2 — the billing term is NOT always 30 days. The site sells quarterly,
+  // half-yearly and annual plans (5% / 10% / 20% off; see the homepage FAQ), so a
+  // hard-coded 30 made this meter state something false for every member who is
+  // not on the monthly plan: an annual subscriber with 300 days left produced
+  // consumed = max(0, 30 - 300) = 0, i.e. a permanently EMPTY bar, and a tooltip
+  // reading "300 of 30 days remaining" — a figure that cannot be true. The term
+  // is derivable: subscribed_at is already returned by the backend (apps_script
+  // sheet column G) and parseRebalanceDate() below already reads it.
+  // When it is NOT derivable (a legacy row with a blank start date) the honest
+  // answer is not a guessed term — it is no meter at all, the same choice the
+  // deployment meter in the sizing card already makes.
+  const cycleDays = subscriptionTermDays(sub, expiry);
+  const knowTerm = cycleDays !== null;
+  const consumed = knowTerm ? Math.min(cycleDays, Math.max(0, cycleDays - daysLeft)) : 0;
+  const progPct = knowTerm ? (consumed / cycleDays) * 100 : 0;
   const expiryStr = expiry.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
   const renewBtn =
     '<a class="renew-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=' +
@@ -2740,9 +2912,11 @@ function renderDashboard(sub, stocks) {
   // Status pill — base text + inline progress bar + (optional) renew CTA
   document.getElementById('pill-status').innerHTML =
     '<span class="' + dotClass + '"></span> Subscription active until <strong>' + expiryStr + '</strong>' +
-    '<span class="sub-prog" title="' + daysLeft + ' of ' + cycleDays + ' days remaining">' +
-      '<span class="sub-prog-bar"><span class="sub-prog-fill ' + progClass + '" data-bar="' + progPct.toFixed(0) + '%"></span></span>' +
-    '</span>' +
+    (knowTerm
+      ? '<span class="sub-prog" title="' + daysLeft + ' of ' + cycleDays + ' days remaining">' +
+          '<span class="sub-prog-bar"><span class="sub-prog-fill ' + progClass + '" data-bar="' + progPct.toFixed(0) + '%"></span></span>' +
+        '</span>'
+      : '') +
     (daysLeft <= 14 ? renewBtn : '');
 
   // V27.5: subscription cycle meter — the KPI twin of #reb-meter. Same progPct as
@@ -2750,10 +2924,14 @@ function renderDashboard(sub, stocks) {
   // expiring subscription tints gold/red here exactly as it does in the pill.
   const subMeter = document.getElementById('sub-meter'), subFill = document.getElementById('sub-meter-fill');
   if (subMeter && subFill) {
-    subFill.className = progClass;
-    subFill.setAttribute('data-bar', progPct.toFixed(0) + '%');
-    subMeter.title = daysLeft + ' of ' + cycleDays + ' days remaining in this billing cycle';
-    subMeter.style.display = '';
+    if (knowTerm) {
+      subFill.className = progClass;
+      subFill.setAttribute('data-bar', progPct.toFixed(0) + '%');
+      subMeter.title = daysLeft + ' of ' + cycleDays + ' days remaining in this billing cycle';
+      subMeter.style.display = '';
+    } else {
+      subMeter.style.display = 'none';       // V28.2: no start date → no position in the cycle
+    }
   }
 
   // Next rebalance
@@ -2775,6 +2953,11 @@ function renderDashboard(sub, stocks) {
     rebMeter.title = cycPct + '% through this cycle — new picks in ' + daysToReb + ' day' + (daysToReb === 1 ? '' : 's');
     rebMeter.style.display = '';
   }
+
+  // V28.2 — the cycle rail. Both countdowns on ONE axis (0 = today, full track =
+  // whichever event lands later), so "does my access reach the next set of picks?"
+  // is read off the bar lengths instead of subtracted in the reader's head.
+  renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb);
 
   // Total stocks
   _animateCount(document.getElementById('stat-stocks'), stocks.length);
@@ -2889,21 +3072,43 @@ function renderPortfolioMap(stocks) {
     if (order[ka] !== order[kb]) return (order[ka] ?? 99) - (order[kb] ?? 99);
     return (Number(b.weight_pct) || 0) - (Number(a.weight_pct) || 0);
   });
+  // ── V28.2 — WEIGHT IS NOW DRAWN, NOT SIZED ────────────────────────────────────
+  // The caption promised "tile size = model weight" and the tiles never delivered
+  // it, in either direction:
+  //   • equal-weight books (all three equity strategies) rendered TWO sizes —
+  //     128.2px on full rows and 115px on the last one at 1440, 142 vs 115 at 820 —
+  //     because .pmap-grid::after (flex-grow:99999) soaks the ragged last row and
+  //     collapses its tiles to --pmap-min;
+  //   • weighted books (MultiAsset, composite-score weighted) rendered ONE size:
+  //     with 8 holdings on a single row that same 99999 spacer out-grows every
+  //     tile's weight-proportional grow, so all eight sat at --pmap-min. Measured
+  //     118px each for weights spanning 22.4% → 6.2%, a 3.6× range shown as 1.00×.
+  // So the encoding was decorative at best and false at worst. Tiles are uniform
+  // now (which is also what stops long tickers truncating), and weight is encoded
+  // the way every other quantity on this site is — a bar on a shared axis, here the
+  // largest holding in the book. Equal-weight books get no bar and say so.
+  const wts = sorted.map(s => Number(s.weight_pct) || 0).filter(w => w > 0);
+  const equalWeighted = wts.length > 1 &&
+        (Math.max.apply(null, wts) - Math.min.apply(null, wts)) < 0.05;
+
   grid.innerHTML = sorted.map((s, i) => {
     const sector = (s.industry || 'Unknown').trim() || 'Unknown';
     const color = colorMap[sector] || SECTOR_COLORS[0];
     const w = Number(s.weight_pct) || 0;
-    const grow = Math.max(10, Math.round((w / maxW) * 100));
     const tk = escapeHtml(s.ticker || s.company_name || '—');
     const nm = escapeHtml(s.company_name || s.ticker || '');
+    const share = maxW > 0 ? Math.min(100, (w / maxW) * 100) : 0;   // no floor: a small weight is a small bar
     // V25.5: data-y / data-rec let the Return view match a tile to its live
     // price without re-deriving anything from the visible label.
     return '<div class="pmap-tile" data-sector="' + escapeHtml(sector) + '"'
       + ' data-y="' + escapeHtml(s.yahoo_ticker || '') + '" data-rec="' + (Number(s.recommended_price) || 0) + '"'
-      + ' style="--pmi:' + i + ';flex-grow:' + grow + ';background:' + color + '22;border-color:' + color + '55;--lens-c:' + color + ';"'
+      + ' style="--pmi:' + i + ';background:' + color + '22;border-color:' + color + '55;--lens-c:' + color + ';"'
       + ' title="' + nm + ' · ' + escapeHtml(sector) + ' · ' + w.toFixed(1) + '% weight">'
       + '<span class="pmap-ticker">' + tk + '</span>'
-      + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>' + w.toFixed(1) + '%</span>'
+      + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>'
+      + '<span class="pmap-wtn">' + w.toFixed(1) + '%</span>'
+      + (equalWeighted ? '' : '<i class="pmap-wtbar"><b data-bar="' + share.toFixed(1) + '%"></b></i>')
+      + '</span>'
       + '</div>';
   }).join('');
   // V27.1 — set the tile floor from the WIDEST ticker in this book.
@@ -2929,8 +3134,14 @@ function renderPortfolioMap(stocks) {
     }
   } catch (e) {}
   const secCount = Object.keys(colorMap).length;
-  if (sub) sub.textContent = sorted.length + ' holdings · ' + secCount + ' sectors · tile size = model weight';
+  if (sub) sub.textContent = sorted.length + ' holdings · ' + secCount + ' sectors · ' +
+    (equalWeighted ? 'equal-weighted' : 'bar = model weight');
   card.style.display = '';
+  // Grow on reveal — the site's bar idiom. Painting the final width immediately
+  // would leave a dead transition (the V23.5 bug), so apply a frame later.
+  setTimeout(function(){
+    grid.querySelectorAll('.pmap-wtbar b[data-bar]').forEach(function(b){ b.style.width = b.dataset.bar; });
+  }, 80);
 }
 
 function renderAllocation(stocks) {
@@ -6242,7 +6453,8 @@ html[data-theme="dark"] .oneonone-card::after{
 }
 .pmap-tog button:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
 
-/* Return view — the SIZE of a tile still encodes weight; only the colour
+/* Return view — the tile GEOMETRY is identical in both views (V28.2 made every
+   tile the same size and moved weight onto a bar inside it); only the colour
    changes meaning, so the two views stay the same mosaic. Seven buckets
    rather than a continuous ramp: a member reads "which band is this in",
    and discrete bands survive both themes without per-theme JS. */

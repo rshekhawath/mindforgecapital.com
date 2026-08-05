@@ -140,7 +140,14 @@
 // rewritten to animate the gradient that actually paints those glyphs). No file
 // under docs/assets/ changed this release, so nothing needed a ?v= bump; the
 // cache name is the only version a precached document has.
-const CACHE = 'mfc-v31';
+// v32 (V28.2): index.html — precached below as the offline navigation fallback —
+// changes again: the strategy cards gain the risk ladder (max drawdown on one
+// shared axis + Sharpe), and their backtest labels stop dating MultiAsset's
+// 2023–2026 window as "5Y". No file under docs/assets/ changed this release, so
+// nothing needed a ?v= bump; the cache name is the only version a precached
+// document has. (dashboard.html is not precached — it is network-first — so its
+// cycle rail and portfolio-map changes reach members without this bump.)
+const CACHE = 'mfc-v32';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
