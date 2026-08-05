@@ -3511,7 +3511,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2800">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2830">
 </head>
 <body>
 
@@ -4177,6 +4177,89 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         <h2 class="fade-up">One for every risk appetite.</h2>
       </div>
       <p class="fade-up" style="font-size:15px;color:var(--text2);font-weight:300;line-height:1.7;">From capital-efficient multi-asset rotation to concentrated small-cap alpha — subscribe to one or all three.</p>
+    </div>
+
+    <!-- ── V28.3 · THE TRADE-OFF STRIP ──────────────────────────────────────────
+         V28.2 put a max-drawdown bar on each card, which made the risk VISIBLE.
+         It did not make it COMPARABLE: the three figures live in three cards
+         1,120px apart at 1440 and stacked 1,900px apart on a phone, so "one for
+         every risk appetite" still resolved to holding three numbers in your head
+         and dividing. Both ladders — 21.7/35.6/46.9 against -11.6/-20.9/-24.4 —
+         now sit on one pair of shared axes above the cards, diverging from a
+         common centre, so the trade-off the heading promises is a single glance:
+         each extra rung of return is bought with a visible extra rung of fall.
+         Every figure is READ FROM THE CARDS below at parse time (the same
+         contract the hero switcher and the V28.2 risk bars use), so the strip
+         cannot drift from the MFSTAT numbers the monthly pipeline rewrites, and
+         each row carries its OWN backtest window — MultiAsset's is 2023-2026 and
+         putting a 3-year CAGR on the same axis as two 5-year ones without saying
+         so is exactly the kind of unstated mismatch this project keeps finding.
+         Fail-soft: any row that will not parse is dropped, and if fewer than two
+         parse the whole strip removes itself and the section is as it was. ── -->
+    <style id="mf-v283-tradeoff">
+    .trade-off{ margin:26px 0 30px; padding:22px 24px; border-radius:18px;
+      background:var(--ink2); border:0.5px solid var(--border);
+      box-shadow:0 1px 2px rgba(15,23,42,.04), 0 20px 46px -34px rgba(26,80,216,.26); }
+    .to-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:4px; }
+    .to-title{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+    .to-axes{ display:flex; gap:16px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+    .to-axes .to-ax-fall{ color:var(--data-bad); }
+    .to-axes .to-ax-ret{ color:var(--data-strong); }
+    .to-axes i{ display:inline-block; width:9px; height:9px; border-radius:3px; margin-right:6px; vertical-align:baseline; }
+    .to-axes .to-ax-fall i{ background:var(--data-bad); }
+    .to-axes .to-ax-ret i{ background:var(--data-strong); }
+    .to-rows{ display:grid; gap:9px; margin-top:14px; }
+    /* name | fall number | fall track | return track | return number */
+    .to-row{ display:grid; grid-template-columns:186px 56px 1fr 1fr 56px; align-items:center; gap:10px; }
+    .to-name{ min-width:0; }
+    .to-nm{ display:block; font-size:13px; font-weight:700; color:var(--text); line-height:1.25;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .to-win{ display:block; font-size:10px; font-weight:600; letter-spacing:.04em; color:var(--text3); margin-top:2px; }
+    .to-track{ height:10px; border-radius:5px; background:rgba(37,99,235,0.09); overflow:hidden; display:flex; }
+    html[data-theme="dark"] .to-track{ background:rgba(120,150,255,0.16); }
+    /* the fall track fills from the RIGHT so both ladders diverge from the centre */
+    .to-track.is-fall{ justify-content:flex-end; }
+    .to-fill{ display:block; height:100%; width:0; border-radius:5px;
+      transition:width .95s cubic-bezier(.22,1,.36,1); }
+    .to-fill.is-fall{ background:linear-gradient(270deg,var(--data-bad),color-mix(in srgb,var(--data-bad) 62%,transparent)); }
+    .to-fill.is-ret{ background:linear-gradient(90deg,var(--data-strong),color-mix(in srgb,var(--data-strong) 62%,transparent)); }
+    @supports not (color: color-mix(in srgb, red 50%, transparent)){
+      .to-fill.is-fall{ background:var(--data-bad); } .to-fill.is-ret{ background:var(--data-strong); }
+    }
+    .to-num{ font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .to-num.is-fall{ color:var(--data-bad); text-align:right; }
+    .to-num.is-ret{ color:var(--data-strong); text-align:left; }
+    .to-foot{ margin-top:14px; font-size:11px; color:var(--text3); line-height:1.65; }
+    .to-foot b{ color:var(--text2); font-weight:700; }
+    @media (prefers-reduced-motion: reduce){ .to-fill{ transition:none; } }
+    /* iPad and narrow desktop: the name column is the first thing to give */
+    @media (max-width:1080px){ .to-row{ grid-template-columns:150px 52px 1fr 1fr 52px; gap:8px; } }
+    @media (max-width:860px){
+      /* Phones: a five-column diverging row cannot hold. Restack each strategy as
+         its own two-line block — the two ladders keep their shared axes, they just
+         run left-to-right under the name instead of out from a centre. */
+      .trade-off{ padding:18px 16px; margin:20px 0 24px; }
+      .to-row{ grid-template-columns:1fr 52px; grid-template-areas:'nm nm' 'ft fn' 'rt rn'; row-gap:6px; column-gap:10px; }
+      .to-name{ grid-area:nm; }
+      .to-track.is-fall{ grid-area:ft; justify-content:flex-start; }
+      .to-num.is-fall{ grid-area:fn; text-align:right; }
+      .to-track.is-ret{ grid-area:rt; }
+      .to-num.is-ret{ grid-area:rn; text-align:right; }
+      .to-fill.is-fall{ background:linear-gradient(90deg,var(--data-bad),color-mix(in srgb,var(--data-bad) 62%,transparent)); }
+      .to-rows{ gap:16px; }
+      .to-axes{ gap:12px; }
+    }
+    </style>
+    <div class="trade-off fade-up" id="trade-off" hidden>
+      <div class="to-head">
+        <span class="to-title">What each rung of return costs</span>
+        <span class="to-axes">
+          <span class="to-ax-fall"><i aria-hidden="true"></i>Deepest fall</span>
+          <span class="to-ax-ret"><i aria-hidden="true"></i>Backtest CAGR</span>
+        </span>
+      </div>
+      <div class="to-rows" id="to-rows"></div>
+      <div class="to-foot" id="to-foot"></div>
     </div>
 
     <div class="billing-wrap fade-up">
@@ -7124,6 +7207,115 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
     rows.forEach(function(r){ io.observe(r.el); });
     setTimeout(function(){ rows.forEach(fill); }, 2200);
   }catch(e){}
+})();
+</script>
+
+<!-- ═══ V28.3 · THE TRADE-OFF STRIP ══════════════════════════════════════════════
+     Reads every figure out of the three strategy cards, which are the single
+     MFSTAT source of truth on this page, so inject_site_stats.py keeps the strip
+     current without knowing it exists.
+
+     Two reads, two different hazards:
+       * CAGR sits in a .proof-num that the count-up animator ZEROES before
+         rolling it back up, so textContent alone would capture "0.0%" depending
+         on when this runs. Same resolution the hero switcher uses: prefer a
+         non-zero rendered value, else data-count.
+       * max_dd sits in .risk-cmp-num, which nothing animates, so textContent is
+         authoritative there — and it is read as a MAGNITUDE, so a pipeline sign
+         change cannot collapse a bar to zero width.
+     Each ladder gets its OWN axis (deepest fall fills the fall side, highest CAGR
+     fills the return side), because they are different units and forcing them onto
+     one scale would make the shorter ladder look like the smaller trade-off.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script id="mf-v283-tradeoff-js">
+(function(){
+  var strip = document.getElementById('trade-off');
+  if (!strip) return;
+  function bail(){ try{ strip.remove(); }catch(e){ strip.hidden = true; } }
+  try{
+    var cards = [].slice.call(document.querySelectorAll('.strat-card'));
+    if (!cards.length) return bail();
+
+    function num(s){ var v = parseFloat(String(s == null ? '' : s).replace(/[^0-9.\-]/g,'')); return isFinite(v) ? v : null; }
+    function animatedVal(el){
+      // data-count FIRST. It is the count-up's target and inject_site_stats.py
+      // rewrites it in the same pass as the MFSTAT text it sits on ("COUPLED"), so
+      // it is both authoritative and immune to timing. Reading the rendered text
+      // first — which is what the hero switcher does, at parse time, before the
+      // animator touches anything — captures an intermediate frame if this ever
+      // runs mid-roll: measured 20.3 / 33.4 / 44.0 against a published
+      // 21.7 / 35.6 / 46.9, i.e. a strip that silently understates every CAGR.
+      var dc = parseFloat(el.getAttribute('data-count'));
+      if (isFinite(dc) && dc !== 0) return dc;
+      return num(el.textContent);
+    }
+
+    var rows = [];
+    cards.forEach(function(c){
+      var nameEl = c.querySelector('.strat-name');
+      var cagrEl = c.querySelector('.strat-metric .val');
+      var ddEl   = c.querySelector('.risk-cmp-num');
+      var lblEl  = c.querySelector('.strat-metric .lbl');
+      if (!nameEl || !cagrEl || !ddEl) return;
+      var cagr = animatedVal(cagrEl);
+      var dd   = Math.abs(num(ddEl.textContent));
+      if (!(cagr > 0) || !(dd > 0)) return;
+      // "MindForge SmallMicro 500" -> drop the brand word the column repeats
+      var nm = (nameEl.textContent || '').replace(/\s+/g,' ').trim().replace(/^MindForge\s+/i,'');
+      // the window is printed in the CAGR's own label, e.g. "2023–2026 Backtest CAGR"
+      var win = '';
+      var m = /(\d{4})\s*[–—-]\s*(\d{4})/.exec(lblEl ? lblEl.textContent : '');
+      if (m) win = m[1] + '–' + m[2];
+      rows.push({ nm: nm, cagr: cagr, dd: dd, win: win, href: (c.querySelector('.strat-cta') || {}).href || '' });
+    });
+    if (rows.length < 2) return bail();
+
+    // riskiest last, so the strip itself reads as a ladder
+    rows.sort(function(a,b){ return a.dd - b.dd; });
+    var maxDD = 0, maxCA = 0;
+    rows.forEach(function(r){ maxDD = Math.max(maxDD, r.dd); maxCA = Math.max(maxCA, r.cagr); });
+    if (!(maxDD > 0) || !(maxCA > 0)) return bail();
+
+    var host = document.getElementById('to-rows');
+    host.innerHTML = rows.map(function(r){
+      return '<div class="to-row">' +
+        '<span class="to-name"><span class="to-nm">' + r.nm + '</span>' +
+          (r.win ? '<span class="to-win">' + r.win + ' backtest</span>' : '') + '</span>' +
+        '<span class="to-num is-fall">-' + r.dd.toFixed(1) + '%</span>' +
+        '<span class="to-track is-fall" aria-hidden="true"><i class="to-fill is-fall" data-w="' +
+          ((r.dd / maxDD) * 100).toFixed(1) + '%"></i></span>' +
+        '<span class="to-track is-ret" aria-hidden="true"><i class="to-fill is-ret" data-w="' +
+          ((r.cagr / maxCA) * 100).toFixed(1) + '%"></i></span>' +
+        '<span class="to-num is-ret">' + r.cagr.toFixed(1) + '%</span>' +
+      '</div>';
+    }).join('');
+
+    var lo = rows[0], hi = rows[rows.length - 1];
+    var extraRet  = (hi.cagr - lo.cagr).toFixed(1);
+    var extraFall = (hi.dd  - lo.dd).toFixed(1);
+    var wins = rows.map(function(r){ return r.win; }).filter(Boolean);
+    var mixed = wins.length > 1 && wins.some(function(w){ return w !== wins[0]; });
+    document.getElementById('to-foot').innerHTML =
+      'Each side has its own axis: the deepest fall on the page (<b>-' + maxDD.toFixed(1) +
+      '%</b>) and the highest CAGR (<b>' + maxCA.toFixed(1) + '%</b>) fill their half. ' +
+      'Moving from ' + lo.nm + ' to ' + hi.nm + ' added <b>' + extraRet +
+      ' points</b> of backtested annual return and <b>' + extraFall +
+      ' points</b> of drawdown.' +
+      (mixed ? ' Windows differ per strategy — each row states its own.' : '') +
+      ' Simulated, not live; past performance is not indicative of future returns.';
+
+    strip.hidden = false;
+
+    // grow on reveal — same contract as the card bars (IO, with a timer backstop)
+    var fills = [].slice.call(strip.querySelectorAll('.to-fill'));
+    function grow(){ fills.forEach(function(f){ f.style.width = f.getAttribute('data-w'); }); }
+    if (!('IntersectionObserver' in window)){ setTimeout(grow, 60); return; }
+    var io = new IntersectionObserver(function(en){
+      en.forEach(function(e){ if (e.isIntersecting){ setTimeout(grow, 80); io.disconnect(); } });
+    }, { threshold: 0.2 });
+    io.observe(strip);
+    setTimeout(grow, 2400);
+  }catch(e){ bail(); }
 })();
 </script>
 </body>

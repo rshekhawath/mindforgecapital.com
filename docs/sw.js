@@ -147,7 +147,16 @@
 // nothing needed a ?v= bump; the cache name is the only version a precached
 // document has. (dashboard.html is not precached — it is network-first — so its
 // cycle rail and portfolio-map changes reach members without this bump.)
-const CACHE = 'mfc-v32';
+// v33 (V28.3): index.html — precached below as the offline navigation fallback —
+// gains the "what each rung of return costs" trade-off strip (return vs drawdown
+// on diverging axes, read from the strategy cards). Both precached shell
+// documents (index.html, login.html) also carry the new mfc-finish.css?v=2830,
+// which adds the site-wide 24px pointer-target pads for the small links WCAG
+// 2.5.8 had never covered. A precached document has no ?v of its own to bust, so
+// the cache name is the version that moves. (dashboard.html is network-first —
+// its new "what moved your number" return-attribution card reaches members
+// without this bump.)
+const CACHE = 'mfc-v33';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -1634,7 +1634,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2800">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2830">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -1977,6 +1977,120 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="pc-leaders" id="pc-leaders"></div>
       </div>
       <div class="pc-right" id="pc-breakdown"></div>
+    </div>
+
+    <!-- ============================================================
+         V28.3 — RETURN ATTRIBUTION: "WHAT MOVED YOUR NUMBER"
+         ------------------------------------------------------------
+         The card above answers "what did I make?" and (since V27.9) "was that
+         good?". It has never answered "WHERE DID IT COME FROM?" — and that is a
+         different fact with different consequences. A +1.2% book can be twenty
+         holdings drifting up together, or one holding up 18% carrying nineteen
+         that are flat. The member sees the same headline either way, and the
+         second case is the one where the number will not survive a single bad
+         print.
+
+         Everything needed is already in memory and already on screen as 25
+         separate row percentages: contribution_i = weight_i x return_i / SUM(w).
+         Those contributions sum to the headline EXACTLY — the same wRet/wSum
+         the headline is built from — so this card is a decomposition, not a
+         second estimate that can disagree with the first.
+
+         Three things it states, none of which were derivable by eye:
+           1. LIFT vs DRAG on one axis. Gross up-contribution and gross
+              down-contribution as two segments of the same track, so the
+              headline is visibly a NET of two forces rather than one number.
+           2. CONCENTRATION. What share of the gross lift the top three
+              holdings supply. This is the "one lucky stock" test.
+           3. THE RANKED LADDER. Every contribution on one shared axis (widest
+              = largest absolute contribution), in percentage POINTS of the
+              headline — not the row's own % return, which is what the table and
+              the Top/Lagging chips already show and is a different unit.
+         ============================================================ -->
+    <style id="mf-v283-attrib">
+    .attrib-card{
+      background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);
+      padding:24px 26px;margin-bottom:18px;position:relative;z-index:1;
+      box-shadow:var(--shadow-sm);
+      transition:box-shadow .25s ease, border-color .25s ease;
+    }
+    .attrib-card:hover{ box-shadow:0 14px 34px -20px rgba(26,80,216,0.40), var(--shadow-sm); border-color:rgba(37,99,235,0.30); }
+    .at-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .at-head h2{ font-size:16px; font-weight:700; color:var(--text); margin:0; line-height:1.25; }
+    .at-sub{ font-size:12px; color:var(--text3); }
+    /* ── the split: one track, two forces ───────────────────────────────── */
+    /* One measure for every band in the card, so the gross split above and the
+       per-holding ladder below share an edge instead of ending 440px apart. */
+    .at-split, .at-net, .at-rows, .at-foot{ max-width:var(--at-measure,820px); }
+    .at-split{ margin-top:18px; }
+    .at-split-track{
+      display:flex; height:22px; border-radius:7px; overflow:hidden;
+      background:rgba(15,23,42,.05); border:0.5px solid var(--border);
+    }
+    html[data-theme="dark"] .at-split-track{ background:rgba(255,255,255,.06); }
+    .at-split-seg{ position:relative; display:block; height:100%;
+      width:0; transition:width .85s cubic-bezier(.22,1,.36,1); }
+    .at-split-seg.is-lift{ background:linear-gradient(90deg,#059669,#10b981); }
+    .at-split-seg.is-drag{ background:linear-gradient(90deg,#f87171,#dc2626); }
+    html[data-theme="dark"] .at-split-seg.is-lift{ background:linear-gradient(90deg,#0f9d6b,#34d399); }
+    html[data-theme="dark"] .at-split-seg.is-drag{ background:linear-gradient(90deg,#f87171,#e14b4b); }
+    .at-split-keys{ display:flex; justify-content:space-between; gap:12px; margin-top:8px; font-size:12px; color:var(--text2); flex-wrap:wrap; }
+    .at-split-keys b{ font-variant-numeric:tabular-nums; font-weight:800; }
+    .at-key-lift b{ color:var(--ink-pos,#047653); }
+    .at-key-drag b{ color:var(--ink-neg,#c92020); }
+    html[data-theme="dark"] .at-key-lift b{ color:#34d399; }
+    html[data-theme="dark"] .at-key-drag b{ color:#f87171; }
+    .at-net{ margin-top:11px; font-size:12.5px; color:var(--text2); line-height:1.6; }
+    .at-net b{ color:var(--text); font-weight:700; font-variant-numeric:tabular-nums; }
+    /* ── the ranked ladder ──────────────────────────────────────────────── */
+    /* The sector-allocation card solves bar-stretch by going two-column above
+       920px; a RANKED ladder cannot — two columns would put rank 2 beside rank 1
+       and destroy the read. Cap the width instead, so a 9px track never becomes a
+       1,000px hairline at 1440. */
+    .at-rows{ margin-top:18px; display:grid; gap:7px; }
+    .at-row{ display:grid; grid-template-columns:100px minmax(0,1fr) 74px; align-items:center; gap:12px; }
+    .at-tick{ font-size:12px; font-weight:700; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .at-track{ position:relative; height:9px; border-radius:5px; background:rgba(15,23,42,.06); overflow:hidden; }
+    html[data-theme="dark"] .at-track{ background:rgba(255,255,255,.07); }
+    .at-fill{ display:block; height:100%; width:0; border-radius:5px;
+      transition:width .8s cubic-bezier(.22,1,.36,1); }
+    .at-fill.up{ background:linear-gradient(90deg,#10b981,#059669); }
+    .at-fill.down{ background:linear-gradient(90deg,#dc2626,#f87171); }
+    html[data-theme="dark"] .at-fill.up{ background:linear-gradient(90deg,#34d399,#0f9d6b); }
+    html[data-theme="dark"] .at-fill.down{ background:linear-gradient(90deg,#f87171,#e14b4b); }
+    .at-pp{ font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; text-align:right; }
+    .at-pp.up{ color:var(--ink-pos,#047653); }
+    .at-pp.down{ color:var(--ink-neg,#c92020); }
+    html[data-theme="dark"] .at-pp.up{ color:#34d399; }
+    html[data-theme="dark"] .at-pp.down{ color:#f87171; }
+    .at-gap{ display:flex; align-items:center; gap:9px; margin:3px 0; font-size:10.5px;
+      font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+    .at-gap::before, .at-gap::after{ content:''; height:1px; flex:1; background:var(--border); }
+    .at-foot{ margin-top:15px; font-size:11.5px; color:var(--text3); line-height:1.6; }
+    @media (max-width:600px){
+      .attrib-card{ padding:20px 18px; }
+      .at-row{ grid-template-columns:88px minmax(0,1fr) 58px; gap:9px; }
+      .at-split-keys{ font-size:11.5px; }
+    }
+    </style>
+    <div class="attrib-card fade-up" id="attrib-card" style="display:none;">
+      <div class="at-head">
+        <h2>What moved your number</h2>
+        <div class="at-sub" id="at-sub">Each holding's share of the headline</div>
+      </div>
+      <div class="at-split">
+        <div class="at-split-track" id="at-split-track" aria-hidden="true">
+          <span class="at-split-seg is-lift" id="at-seg-lift"></span>
+          <span class="at-split-seg is-drag" id="at-seg-drag"></span>
+        </div>
+        <div class="at-split-keys">
+          <span class="at-key-lift">Lifting it <b id="at-lift">—</b></span>
+          <span class="at-key-drag">Holding it back <b id="at-drag">—</b></span>
+        </div>
+      </div>
+      <div class="at-net" id="at-net"></div>
+      <div class="at-rows" id="at-rows"></div>
+      <div class="at-foot" id="at-foot">Contribution = the holding's model weight &times; its move since the rebalance, in percentage points of the headline above. All contributions sum to that headline exactly.</div>
     </div>
 
     <!-- MEMBER BENEFIT: 1:1 Zoom call (V8.2) -->
@@ -4336,6 +4450,9 @@ function setProfitUnavailable(){
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Live prices are temporarily unavailable — tap Refresh to try again.';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
   var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
+  // V28.3: the attribution card decomposes a headline that no longer exists —
+  // leave nothing behind that looks like live attribution.
+  var ac = document.getElementById('attrib-card'); if (ac) ac.style.display = 'none';
 }
 function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null; }
 // V14.6: count the headline % up from 0 on first paint (a tactile premium touch,
@@ -4377,6 +4494,7 @@ function paintLivePrices(){
 function renderProfitHeadline(){
   var px = window._livePx || {}; var stocks = stocksData || [];
   var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, n = 0, best = null, worst = null;
+  var contrib = [];   // V28.3 — {t, r, wr} per holding; wr/wSum is its pp of the headline
   stocks.forEach(function(s){
     var rec = Number(s.recommended_price) || 0; var p = px[s.yahoo_ticker];
     if (!rec || !p) return;
@@ -4386,6 +4504,7 @@ function renderProfitHeadline(){
     var r = _retPct(rec, p.price); if (r == null) return;
     var w = Number(s.weight_pct) || 0;
     wSum += w; wRet += w * r; n++;
+    contrib.push({ t: s.ticker, r: r, wr: w * r });
     if (r > 0.05) up++; else if (r < -0.05) down++;
     if (!best || r > best.r) best = { t: s.ticker, r: r };
     if (!worst || r < worst.r) worst = { t: s.ticker, r: r };
@@ -4426,8 +4545,114 @@ function renderProfitHeadline(){
     }
     ld.innerHTML = (n >= 2 && best && worst && best.t !== worst.t) ? (chip('Top', best) + chip('Lagging', worst)) : '';
   }
+  // V28.3: attribution card. Same wRet/wSum the headline came from, so it is a
+  // decomposition of that number and not a second opinion about it.
+  try { renderAttribution(contrib, wSum, port); } catch (e) { var ac = document.getElementById('attrib-card'); if (ac) ac.style.display = 'none'; }
   // V27.9: benchmark row. Non-blocking — the headline never waits on it.
   loadBenchPerf().then(function(){ try { renderBenchCompare(port); } catch (e) {} });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V28.3 — RETURN ATTRIBUTION
+   --------------------------------------------------------------------------
+   contribution_i (in percentage points of the headline) = w_i * r_i / SUM(w).
+   SUM(contribution_i) === wRet / wSum === the headline, by construction.
+
+   Guards, all of them about not drawing a conclusion the data cannot support:
+     * fewer than 3 priced holdings -> no card. With one or two names the split
+       IS the ladder and the concentration claim is vacuous.
+     * a headline that rounds to 0.00% still gets the card — that is exactly the
+       case where lift and drag cancelling is the interesting fact.
+     * the ladder is capped, and when it caps it SAYS what it dropped and the
+       range those dropped contributions span. A "top 5" list that looks like
+       the whole book is the failure mode this comment exists to prevent.
+   ══════════════════════════════════════════════════════════════════════════ */
+function renderAttribution(rows, wSum, port){
+  var card = document.getElementById('attrib-card');
+  if (!card) return;
+  if (!rows || rows.length < 3 || !(wSum > 0)) { card.style.display = 'none'; return; }
+
+  // pp of the headline, per holding
+  var pp = rows.map(function(x){ return { t: x.t, r: x.r, c: x.wr / wSum }; })
+               .sort(function(a, b){ return b.c - a.c; });
+  var lift = 0, drag = 0;
+  pp.forEach(function(x){ if (x.c > 0) lift += x.c; else drag += x.c; });
+  var gross = lift - drag;                       // drag is negative
+  if (!(gross > 0.0001)) { card.style.display = 'none'; return; }
+
+  var fmtPP = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2); };
+  document.getElementById('at-lift').textContent = fmtPP(lift) + ' pp';
+  document.getElementById('at-drag').textContent = drag < 0 ? fmtPP(drag) + ' pp' : '0.00 pp';
+
+  // ── the split. Both segments on ONE track, so the headline reads as a net.
+  var liftShare = (lift / gross) * 100;
+  // No text inside the segments: the keys directly below already carry the two pp
+  // figures, and a share-of-gross % printed here sat 30px from the "top 3 supply
+  // N% of the lift" sentence — two different percentages of two different things,
+  // side by side. The track is geometry; the numbers live in the keys.
+  var segL = document.getElementById('at-seg-lift'), segD = document.getElementById('at-seg-drag');
+  segL.setAttribute('data-bar', liftShare.toFixed(1) + '%');
+  segD.setAttribute('data-bar', (100 - liftShare).toFixed(1) + '%');
+  document.getElementById('at-split-track').setAttribute('title',
+    'Gross lift ' + fmtPP(lift) + ' pp against gross drag ' + fmtPP(drag) + ' pp — netting to ' + fmtPP(port) + '%');
+
+  // ── concentration: the "one lucky stock" test
+  var top3 = pp.slice(0, Math.min(3, pp.length)).reduce(function(a, x){ return a + Math.max(0, x.c); }, 0);
+  var conc = lift > 0.0001 ? Math.round((top3 / lift) * 100) : 0;
+  var nDown = pp.filter(function(x){ return x.c < 0; }).length;
+  var net = document.getElementById('at-net');
+  var concWord = conc >= 75 ? 'concentrated in' : conc >= 50 ? 'led by' : 'spread beyond';
+  net.innerHTML =
+    'The gain is <b>' + conc + '%</b> ' + concWord + ' the top ' + Math.min(3, pp.length) +
+    ' of ' + pp.length + ' holdings' +
+    (nDown ? ', and <b>' + nDown + '</b> holding' + (nDown === 1 ? '' : 's') +
+             ' cost you <b>' + Math.abs(drag).toFixed(2) + ' pp</b>.' : '.');
+
+  // ── the ladder. Widest bar = largest absolute contribution.
+  var LIFT_N = 5, DRAG_N = 3;
+  var ups = pp.filter(function(x){ return x.c > 0; });
+  var downs = pp.filter(function(x){ return x.c < 0; }).reverse();   // worst first
+  var shownUp = ups.slice(0, LIFT_N), shownDown = downs.slice(0, DRAG_N);
+  var maxAbs = Math.max.apply(null, pp.map(function(x){ return Math.abs(x.c); }).concat([0.0001]));
+
+  var rowHTML = function(x){
+    var cls = x.c >= 0 ? 'up' : 'down';
+    var w = (Math.abs(x.c) / maxAbs) * 100;
+    return '<div class="at-row" title="' + escapeHtml(x.t) + ' · ' + (x.r > 0 ? '+' : '') + x.r.toFixed(1) +
+           '% since the rebalance · ' + fmtPP(x.c) + ' pp of the headline">' +
+           '<span class="at-tick">' + escapeHtml(x.t) + '</span>' +
+           '<span class="at-track"><i class="at-fill ' + cls + '" data-bar="' + w.toFixed(1) + '%"></i></span>' +
+           '<span class="at-pp ' + cls + '">' + fmtPP(x.c) + '</span></div>';
+  };
+  var html = shownUp.map(rowHTML).join('');
+  if (shownDown.length){
+    html += '<div class="at-gap" aria-hidden="true">holding it back</div>' + shownDown.map(rowHTML).join('');
+  }
+  document.getElementById('at-rows').innerHTML = html;
+
+  // ── say what was dropped, and the range it spans. Never a silent cap.
+  var hidden = (ups.length - shownUp.length) + (downs.length - shownDown.length);
+  var foot = document.getElementById('at-foot');
+  var base = 'Contribution = the holding’s model weight × its move since the rebalance, in percentage points of the headline above. All ' +
+             pp.length + ' contributions sum to that headline exactly.';
+  if (hidden > 0){
+    var rest = ups.slice(shownUp.length).concat(downs.slice(shownDown.length)).map(function(x){ return x.c; });
+    var lo = Math.min.apply(null, rest), hi = Math.max.apply(null, rest);
+    base += ' The ' + hidden + ' not listed each contributed between ' + fmtPP(lo) + ' and ' + fmtPP(hi) + ' pp.';
+  }
+  foot.textContent = base;
+
+  document.getElementById('at-sub').textContent =
+    pp.length + ' priced holding' + (pp.length === 1 ? '' : 's') + ' · net ' + fmtPP(port) + '%';
+
+  card.style.display = '';
+  // shared [data-bar] applier: paint from 0 so every bar GROWS (site idiom)
+  requestAnimationFrame(function(){
+    card.querySelectorAll('[data-bar]').forEach(function(b){ b.style.width = b.dataset.bar; });
+  });
+  setTimeout(function(){
+    card.querySelectorAll('[data-bar]').forEach(function(b){ b.style.width = b.dataset.bar; });
+  }, 160);   // frame-starved fallback, same as the score distribution bar
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

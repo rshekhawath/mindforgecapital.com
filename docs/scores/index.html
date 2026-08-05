@@ -121,8 +121,25 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hp-dist{flex:1}
 .hp-dist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .hp-dist-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
-.hp-dist-bar{display:flex;height:14px;border-radius:8px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
+.hp-dist-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
 .hp-seg{height:100%;transition:width .8s cubic-bezier(.22,1,.36,1);min-width:0}
+/* ── V28.3 — the segments are a COARSE filter; the legend is the fine one ─────
+   Each band is a real button, and the smallest (18 of 2,053 stocks = 0.9%) paints
+   6.3px wide at 1440, 2.7px at 375 — below the WCAG 2.5.8 24px pointer target.
+   Two fixes were built and REJECTED on measurement:
+     • a min-width FLOOR drew that 0.9% band at 7.87% of the bar on a phone — a 9x
+       overstatement of the *Excellent* count, on the page whose whole subject is
+       the distribution. Inflating a favourable number to pass a size rule is the
+       wrong trade on an SEBI-registered surface.
+     • a transparent hit-PAD can only widen a 6px sliver by stealing pointer space
+       from its neighbour, so the reader would click "Excellent" while hovering
+       "Good"'s colour — and the bar's own overflow:hidden clips the pad anyway.
+   Neither is honest. The accessible path is the one already beside the bar: the
+   LEGEND below is a full set of comfortably-sized buttons, one per band, firing
+   the identical filter — the 2.5.8 equivalent-control exemption. So the segments
+   stay geometrically exact (painted width === true share, verified summing to
+   100%) as a pointer/hover convenience, and the legend carries the real target.
+   Bar 14 -> 16px is a small, geometry-neutral legibility bump. ─────────────── */
 .hp-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
 .hp-leg{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text2);font-weight:500}
 .hp-leg .sw{width:10px;height:10px;border-radius:3px;flex-shrink:0}
@@ -183,10 +200,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 }
 @media(max-width:520px){
   .hp-tip{font-size:11px;padding:6px 9px}
-  /* On a 390px phone the whole bar is ~320px, so the 0.7% "Excellent" band is a
-     2px-wide sliver — not a tap target. The visual stays honest (no min-width
-     that would inflate a small band's share); instead the legend chips are the
-     touch route, so give them a comfortable target height. */
+  /* On a 390px phone the whole bar is ~320px, so a 0.7% band is a 2px sliver —
+     not a tap target. The visual stays honest (no floor that would inflate a
+     small band's share, as V28.3 measured and rejected); the legend chips below
+     are the touch route, each a comfortably-sized button carrying that band's
+     exact count and share, so give them a generous target height. */
   .hp-dist-bar{height:16px}
   .hp-leg{padding:8px 10px;margin:0;font-size:12px}
   .hp-legend{gap:8px 10px}
@@ -450,7 +468,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2800">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=2830">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
