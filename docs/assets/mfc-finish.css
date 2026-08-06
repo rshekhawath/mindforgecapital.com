@@ -983,3 +983,59 @@ html .disc-table td a[href^="mailto:"]::after{
   content:''; position:absolute; left:0; right:0; top:50%;
   height:28px; transform:translateY(-50%);
 }
+
+/* ----------------------------------------------------------------------------
+   V28.5 — the one the V28.4 sweep could not see
+   ----------------------------------------------------------------------------
+   The V28.4 hit-test read every control BELOW THE FOLD as unpadded, because
+   elementFromPoint returns null outside the viewport and the sweep never
+   scrolled. Re-run with each candidate scrolled into view first — and re-checked
+   against the two controls V28.4 had just padded, which must come back
+   conformant or the instrument is the thing that is wrong — exactly one new
+   failure survived, on four pages:
+
+       .tip-icon    16x17   the "i" that opens the rolling-returns explainer on
+                            smallmicro / largemidcap / multiasset / strategies
+
+   It is tabindex="0", it is the ONLY route to that explanation, and it is not
+   the 2.5.8 inline-in-sentence exception: it sits at the end of a chart label,
+   not inside prose, and no other control opens the same tip. 26, not 24, for the
+   reason the V28.3 block records: the icon's own box measures 16.x, so a 24px
+   pad hit-tests as 23 and fails the very rule it was added to satisfy. Measured
+   at 26 it reads 26x26, and the nearest other control is the section's chart
+   image 30px below, which the pad does not reach.
+
+   .hp-seg on /scores/ still comes up — 6.3x16 at 1440, 2.8x44 at 375 for the
+   18-stock "Excellent" band — and still stays untouched: the .hp-leg legend
+   button firing the identical filter measures 162x30, i.e. the 2.5.8
+   equivalent-control exception, re-measured this release rather than assumed.
+   The signup consent checkbox (20x20) is exempt the same way: it is wrapped in
+   a padded <label> that toggles it.
+   -------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------
+   V28.5 — 13px of horizontal scroll on a 360px phone, on 18 pages
+   ----------------------------------------------------------------------------
+   Every earlier sweep audited 375/390/820/1440 and read clean, and it IS clean at
+   375. At 360 — Galaxy A / Redmi territory, i.e. a large share of this site's own
+   market — the homepage scrolled sideways by 13px, and no single element was over
+   the viewport: every .mcol-trigger measured 328px wide inside a 344px right edge.
+   What overflowed was the DOCUMENT. The V27.7 mobile accordion wraps each section
+   heading in a flex button beside a fixed 133px "Tap to read" + caret group, and a
+   flex item defaults to min-width:auto — so the longest heading's 245px min-content
+   width could not shrink and propagated up the flex chain, setting the document's
+   min-content width to 373px. min-width:0 lets the heading do what headings do,
+   which is wrap; the text needs no word-breaking to fit. Measured after: 373 -> 360
+   at 360px, 0 document overflow at 320/360/375/390, and no change at all above the
+   accordion's own 600px ceiling.
+   -------------------------------------------------------------------------- */
+@media (max-width:600px){
+  html .mcol-trigger > *:first-child{ min-width:0; }
+}
+
+html .tip-icon{ position:relative; }
+html .tip-icon::after{
+  content:''; position:absolute; left:50%; top:50%;
+  width:26px; height:26px; transform:translate(-50%,-50%);
+}
+/* the tip itself must stay above the pad, or the pad eats the pointer inside it */
+html .tip-icon .tip-popup{ z-index:51; }

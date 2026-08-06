@@ -1678,7 +1678,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2840">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2850">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://mindforgecapital.com/"},{"@type":"ListItem","position":2,"name":"Strategies","item":"https://mindforgecapital.com/strategies.html"},{"@type":"ListItem","position":3,"name":"SmallMicro 500","item":"https://mindforgecapital.com/smallmicro.html"}]},{"@type":"WebPage","@id":"https://mindforgecapital.com/smallmicro.html","url":"https://mindforgecapital.com/smallmicro.html","name":"SmallMicro 500","description":"Top 25 stocks from a 500-name NSE Smallcap and Microcap universe, ranked by a multi-factor model.","inLanguage":"en-IN","isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"},"publisher":{"@type":"Organization","name":"MindForge Capital","url":"https://mindforgecapital.com/","logo":"https://mindforgecapital.com/assets/LogoNav.png"}}]}</script>
@@ -1880,6 +1880,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         html[data-theme="dark"] .mcal-stat{background:rgba(150,180,240,.05)}
         .mcal-slabel{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
           color:var(--text3);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        /* V28.5: at two columns the tile is ~125px wide and these labels need ~180,
+           so nowrap+ellipsis clipped BOTH consistency stats to "MONTHS FINISHED …"
+           and "MONTHS AHEAD OF…" — the two headline numbers of the whole calendar,
+           rendered indistinguishable on every phone. Let them wrap to two lines and
+           reserve both, so the four tiles still align. */
+        @media (max-width:900px){
+          .mcal-slabel{white-space:normal;overflow:visible;text-overflow:clip;
+            line-height:1.35;min-height:2.7em;display:flex;align-items:flex-end}
+        }
         .mcal-sval{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.02em;
           font-variant-numeric:tabular-nums;line-height:1.15}
         .mcal-of{font-size:12.5px;font-weight:600;color:var(--text3);letter-spacing:0}

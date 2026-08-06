@@ -167,7 +167,19 @@
 // the same asset versions the live pages do. (The month-by-month calendar lands on
 // smallmicro/largemidcap and the capital-coverage card on dashboard.html; none of
 // those three are precached — HTML is network-first — so they need no bump.)
-const CACHE = 'mfc-v34';
+// v35 (V28.5): index.html — precached below as the offline navigation fallback —
+// changes twice over. Its body gains the measurement-window rail under the
+// trade-off strip (three backtest spans on one shared axis, so "windows differ per
+// strategy" stops being a footnote the reader has to carry), and its asset query
+// moves mfc-finish.css 2840 -> 2850, which adds the 24px pointer-target pad for the
+// .tip-icon tooltip trigger — the one control the V28.4 sweep could not see,
+// because its hit-test never scrolled and elementFromPoint answers null outside the
+// viewport. login.html carries the same asset bump. A precached document has no ?v
+// of its own to bust, so the cache name is the only version that can move it.
+// (dashboard.html is network-first — the whole-share weight-drift strip, the ticker
+// cell that no longer wraps its broker chip, and the broker link the phone card was
+// missing all reach members without this bump.)
+const CACHE = 'mfc-v35';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

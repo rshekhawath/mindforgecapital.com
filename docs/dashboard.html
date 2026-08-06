@@ -441,6 +441,55 @@ html[data-theme="dark"] .cvg-track{background:rgba(120,150,255,0.14);}
 html[data-theme="dark"] .cvg-name{background:rgba(255,255,255,0.06);}
 @media (max-width:560px){.cvg{padding:13px 14px;}.cvg-lead{font-size:12.5px;}.cvg-note{font-size:11.5px;}}
 @media (prefers-reduced-motion:reduce){.cvg-fill{transition:none;}}
+/* ── V28.5: weight drift — how far whole shares put the book off the model ──
+   Sibling of .cvg above and the same third-row grid slot. Coverage answers
+   "which picks does this capital buy"; this answers "and how close is what it
+   buys to the model", which is the other half of the same rounding story and
+   was nowhere on the page: the WEIGHT column prints the MODEL weight for every
+   row, so a member reading 4.0% twenty-five times has no way to see that their
+   ₹5L book actually holds 4.43% of one name and 3.55% of another.
+   One tick per pick on a shared centre line; direction is carried by which side
+   of the line the tick sits, so both directions can use one ink and neither
+   reads as good or bad. Ticks grow from 0 on paint (the site's bar idiom) and
+   re-tween on every capital change. ── */
+.drift{grid-column:1/-1;margin-top:10px;padding:15px 17px;border-radius:12px;
+  background:rgba(37,99,235,0.045);border:0.5px solid var(--border);}
+html[data-theme="dark"] .drift{background:rgba(150,180,240,0.055);}
+.drift-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.drift-lead{font-size:13.5px;color:var(--text2);line-height:1.45;}
+.drift-lead b{color:var(--white);font-weight:800;font-variant-numeric:tabular-nums;}
+.drift-chip{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;white-space:nowrap;
+  color:var(--data-mid);background:rgba(26,80,216,0.10);border:0.5px solid rgba(26,80,216,0.22);}
+html[data-theme="dark"] .drift-chip{color:var(--data-mid);background:rgba(131,170,255,0.12);border-color:rgba(131,170,255,0.26);}
+.drift-strip{position:relative;display:flex;align-items:stretch;gap:3px;height:52px;margin-top:12px;}
+/* the model weight, i.e. drift = 0. It has to be READABLE: at 25 picks each column
+   is ~47px wide, and marks that filled their column covered the line so completely
+   that "above or below it" — the entire encoding — could not be seen. Hence both
+   the firmer ink here and the max-width on the mark below. */
+.drift-strip::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;
+  background:rgba(37,99,235,.34);transform:translateY(-.5px);}
+html[data-theme="dark"] .drift-strip::before{background:rgba(255,255,255,.26);}
+.drift-t{position:relative;flex:1 1 0;min-width:0;}
+/* height is a % of the FULL strip but a tick only owns the half on its own side of
+   the centre line, so the JS caps it at 50 — at 100 the tallest tick overran the
+   strip by half its height and painted over the scale row beneath it. */
+.drift-t i{position:absolute;left:0;right:0;margin-inline:auto;max-width:13px;
+  height:0;border-radius:2px;
+  background:var(--data-mid);opacity:.68;
+  transition:height .8s cubic-bezier(.22,1,.36,1);}
+.drift-t.is-over i{bottom:50%;}
+.drift-t.is-under i{top:50%;}
+.drift-t.is-peak i{opacity:1;}
+.drift-t.is-zero i{bottom:calc(50% - 1px);top:auto;opacity:.34;}
+.drift-scale{display:flex;justify-content:space-between;margin-top:7px;
+  font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--text3);
+  font-variant-numeric:tabular-nums;}
+.drift-note{margin-top:9px;font-size:12px;color:var(--text3);line-height:1.55;}
+.drift-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums;}
+@media (max-width:560px){.drift{padding:13px 14px;}.drift-lead{font-size:12.5px;}
+  .drift-note{font-size:11.5px;}.drift-strip{height:44px;gap:2px;}}
+@media (prefers-reduced-motion:reduce){.drift-t i{transition:none;}}
 .alloc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
 .alloc-head h2,.alloc-head h3{font-size:16px;color:var(--white);font-weight:700;line-height:1.25;}
 .alloc-head .alloc-meta{font-size:12px;color:var(--text3);}
@@ -611,9 +660,18 @@ td.company{color:var(--white);font-weight:600;}
 .company-link:focus-visible{outline:2px solid rgba(37,99,235,.6);outline-offset:2px;border-radius:3px;}
 .sc-company .company-link{border-bottom-color:rgba(148,163,184,.35);}
 tr.row-bought .company-link{color:inherit;}
+/* V28.5: this rule had been dead since the picks table moved to a JS template —
+   the <td> was emitted with no class, so nothing here applied. Restoring the class
+   also restores the missing constraint: the cell holds TWO chips (ticker + the
+   broker deep-link) and without nowrap the broker chip dropped onto a second line
+   the moment the column tightened. Measured on the demo book: 22 of 25 rows wrapped
+   at 820px and 15 of 25 at 1280px, each ~23px taller than its neighbours. The cell
+   now sizes to its widest row (223px) and the table's own overflow-x scroller
+   absorbs the extra 29–63px at the widths where it was already scrolling. */
 td.ticker{
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size:12px;font-weight:800;color:var(--accent2);letter-spacing:.03em;
+  white-space:nowrap;
 }
 .ticker-chip{
   display:inline-flex;align-items:center;gap:6px;
@@ -1062,6 +1120,15 @@ footer a:hover{color:var(--accent);}
   display:inline-flex;align-items:center;gap:6px;cursor:pointer;
 }
 .sc-ticker .copy-ico{width:11px;height:11px;opacity:.55;}
+/* V28.5: the phone card carried the copy-ticker chip but NOT the broker deep-link
+   the desktop row has had since V24.x — so the one surface a member places 25
+   orders from, on the device they place them on, was the only one without a
+   one-tap route to the order ticket, even though the broker picker sits right
+   above the list. Same brokerLink() the <tr> uses; the row wraps because a long
+   ticker plus a broker name is wider than a 390px card's name column. */
+.sc-tkr-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 4px;margin-top:3px;}
+.sc-tkr-row .sc-ticker{margin-top:0;}
+.sc-tkr-row .broker-link{margin-left:0;}
 .sc-num{
   font-size:11px;color:var(--accent2);
   width:28px;height:28px;background:rgba(37,99,235,0.10);
@@ -1665,7 +1732,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2840">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2850">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -2225,6 +2292,25 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </div>
         <div class="cvg-track" aria-hidden="true"><span class="cvg-fill" id="cvg-fill"></span></div>
         <div class="cvg-note" id="cvg-note"></div>
+      </div>
+
+      <!-- V28.5 — HOW CLOSELY YOUR BOOK TRACKS THE MODEL.
+           The other half of the whole-share story V28.4 opened. Coverage says which
+           picks the capital buys; nothing said how far the ones it DOES buy land from
+           their model weight. The table's WEIGHT column prints the model weight on
+           every row — 4.0%, twenty-five times — so the page actively suggests the
+           bought book is exactly equal-weight when whole shares make that impossible:
+           at ₹5,00,000 the demo book runs from 3.55% to 4.43%, an 88bp spread nobody
+           could see. One tick per pick against a shared centre line, and it visibly
+           tightens as capital rises, which is the actionable part. -->
+      <div class="drift" id="drift" style="display:none;">
+        <div class="drift-head">
+          <div class="drift-lead" id="drift-lead">&mdash;</div>
+          <div class="drift-chip" id="drift-chip">&mdash;</div>
+        </div>
+        <div class="drift-strip" id="drift-strip" aria-hidden="true"></div>
+        <div class="drift-scale" id="drift-scale" aria-hidden="true"></div>
+        <div class="drift-note" id="drift-note"></div>
       </div>
     </div>
 
@@ -3616,6 +3702,7 @@ function refreshSizeSummary() {
   } catch(e){}
 
   refreshCoverage();
+  refreshDrift();
 }
 
 // V28.4 — "what your capital actually buys".
@@ -3678,6 +3765,111 @@ function refreshCoverage() {
     document.getElementById('cvg-note').innerHTML = note;
     box.style.display = '';
   } catch (e) { /* sizing card must survive a coverage failure */ }
+}
+
+// V28.5 — "how closely your book tracks the model".
+// The WEIGHT column prints the MODEL weight on every row, which reads as a promise
+// the arithmetic cannot keep: whole shares round, so the book a member actually
+// places is never exactly the model. This measures the gap, per pick, in basis
+// points, and draws it as a distribution against the model line.
+//
+// Two decisions that keep this from double-counting refreshCoverage above:
+//   * picks this capital cannot buy at all are EXCLUDED — a 0-share pick is a
+//     coverage finding, and leaving it in would swamp the strip with one -400bp
+//     tick and make every other pick look drifted purely by renormalisation.
+//   * the model weights are therefore RENORMALISED over the picks that are bought,
+//     so the comparison is like-for-like: what this book holds vs what the model
+//     would hold across the same names.
+// Fails silently for the same reason refreshCoverage does.
+function refreshDrift() {
+  try {
+    const box = document.getElementById('drift');
+    if (!box) return;
+    const hide = () => { box.style.display = 'none'; };
+    const list = stocksData || [];
+    if (!(currentCapital > 0)) return hide();
+
+    let total = 0, modelSum = 0;
+    const held = [];
+    list.forEach(s => {
+      const price = Number(s.recommended_price) || 0;
+      const model = Number(s.weight_pct) || 0;
+      if (!(price > 0) || !(model > 0)) return;
+      const shares = Math.floor(allocBudget(s, list, currentCapital) / price);
+      if (shares < 1) return;
+      const amt = shares * price;
+      total += amt; modelSum += model;
+      held.push({ s: s, amt: amt, model: model });
+    });
+    if (held.length < 2 || !(total > 0) || !(modelSum > 0)) return hide();
+
+    held.forEach(h => {
+      h.actual = h.amt / total * 100;
+      h.target = h.model / modelSum * 100;
+      h.bps    = Math.round((h.actual - h.target) * 100);
+    });
+    // sorted, so the strip reads as the spread it is rather than as table order
+    held.sort((a, b) => a.bps - b.bps);
+
+    let maxAbs = 0, sumAbs = 0;
+    held.forEach(h => { maxAbs = Math.max(maxAbs, Math.abs(h.bps)); sumAbs += Math.abs(h.bps); });
+    const avg  = Math.round(sumAbs / held.length);
+    const lo   = held[0], hi = held[held.length - 1];
+    const wide = Math.abs(lo.bps) >= Math.abs(hi.bps) ? lo : hi;
+    const nm   = s => escapeHtml(s.company_name || s.ticker || '');
+    const sgn  = b => (b > 0 ? '+' : '') + b;    // a signed gap always states its sign
+
+    // 50, not 100: a tick draws out from the centre line and owns only its own half.
+    // The 6% floor keeps the twenty-odd near-zero picks visible as ticks rather than
+    // as nothing — at ₹50L the spread is 17bps wide with a 2bps average, so a purely
+    // proportional strip is one bar and twenty-four invisible ones. Exact values
+    // stay on every tick's title and on the two end labels.
+    document.getElementById('drift-strip').innerHTML = held.map(h => {
+      const cls = h.bps === 0 ? 'is-zero' : (h.bps > 0 ? 'is-over' : 'is-under');
+      const peak = (h === wide && maxAbs > 0) ? ' is-peak' : '';
+      const pct = maxAbs > 0
+        ? Math.max(6, Math.abs(h.bps) / maxAbs * 50).toFixed(1)
+        : '6';
+      return '<span class="drift-t ' + cls + peak + '" data-h="' + pct + '"' +
+             ' title="' + nm(h.s) + ' — ' + h.actual.toFixed(2) + '% held vs ' +
+             h.target.toFixed(2) + '% model (' + (h.bps > 0 ? '+' : '') + h.bps + ' bps)">' +
+             '<i></i></span>';
+    }).join('');
+
+    document.getElementById('drift-scale').innerHTML = maxAbs > 0
+      ? '<span>' + sgn(lo.bps) + ' bps &middot; ' + nm(lo.s) + '</span>' +
+        '<span>' + sgn(hi.bps) + ' bps &middot; ' + nm(hi.s) + '</span>'
+      : '';
+
+    document.getElementById('drift-lead').innerHTML = maxAbs > 0
+      ? 'Your <b>' + held.length + '</b> bought pick' + (held.length === 1 ? '' : 's') +
+        ' track model weight to within <b>' + maxAbs + ' bps</b>'
+      : 'Every bought pick lands exactly on its model weight';
+    document.getElementById('drift-chip').textContent =
+      maxAbs > 0 ? ('±' + maxAbs + ' bps') : 'Exact';
+
+    document.getElementById('drift-note').innerHTML = maxAbs > 0
+      ? 'Whole shares cannot be split, so every order lands a little above or below '
+        + 'its model weight &mdash; the table’s <b>Weight</b> column is the model’s, not yours. '
+        + 'Widest: <b>' + nm(wide.s) + '</b> at <b>' + wide.actual.toFixed(2) + '%</b> against a '
+        + wide.target.toFixed(2) + '% model weight. Average gap across the book: <b>' + avg
+        + ' bps</b>. More capital narrows every one of them &mdash; 1 bp = 0.01%.'
+      : 'At this capital every order divides exactly into its model weight, so the book '
+        + 'you place is the model to the rupee.';
+
+    box.style.display = '';
+    // grow from the centre line — the same contract every bar on this site uses.
+    // Written after paint so the transition has somewhere to travel from; on later
+    // capital changes the height is already set and the transition just re-tweens.
+    const ticks = box.querySelectorAll('.drift-t');
+    const draw = () => ticks.forEach(t => {
+      const bar = t.querySelector('i');
+      if (bar) bar.style.height = t.getAttribute('data-h') + '%';
+    });
+    if (window.requestAnimationFrame) requestAnimationFrame(() => requestAnimationFrame(draw));
+    else setTimeout(draw, 40);
+    setTimeout(draw, 700);   // backstop: a document whose frames never run
+  } catch (e) { /* sizing card must survive a drift failure */ }
 }
 
 function updateAllocationCells() {
@@ -3760,9 +3952,7 @@ function renderTable(stocks) {
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}</td>
-      <td><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>
-          ${brokerLink(s)}
-      </td>
+      <td class="ticker"><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
       <td class="price right"><span class="px-rec">₹${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
       <td class="alloc-amt right">${fmtAmt(amt)}</td>
@@ -3793,7 +3983,9 @@ function renderTable(stocks) {
       <div class="sc-header">
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
-          <div class="sc-ticker" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)">${escapeHtml(s.ticker)}${copyIco}</div>
+          <div class="sc-tkr-row">
+            <span class="sc-ticker" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}
+          </div>
         </div>
         <div class="sc-num">${i+1}</div>
       </div>
@@ -5095,6 +5287,13 @@ init();
   body{ background: #fff !important; }
   .stat-card{ break-inside: avoid; box-shadow: 0 0 0 1px #ccc !important; }
   table{ font-size: 11px; }
+  /* V28.5: the same finding V28.1 made about the sector toolbar, one column over.
+     Measured on the printed sheet: 25 "Kite →" deep-links and 25 copy-to-clipboard
+     glyphs — controls that do nothing on paper — were reaching the page, and the
+     ticker column had just been widened to hold the link inline. Suppress both, and
+     let the cell wrap again so the column gives its width back to the holdings. */
+  .broker-link, .copy-ico{ display: none !important; }
+  td.ticker{ white-space: normal !important; }
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -5230,6 +5429,7 @@ th.bought-col .bought-all:indeterminate{ opacity: .65; }
   display:inline-block; margin-left:6px;
   padding:2px 8px; border-radius:6px;
   font:600 11px/1.4 -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  letter-spacing: normal;   /* V28.5: td.ticker's .03em is now live and would leak in */
   text-decoration:none; border:1px solid;
   transition: transform .12s ease, filter .15s ease;
   white-space: nowrap;
