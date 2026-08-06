@@ -179,7 +179,17 @@
 // (dashboard.html is network-first — the whole-share weight-drift strip, the ticker
 // cell that no longer wraps its broker chip, and the broker link the phone card was
 // missing all reach members without this bump.)
-const CACHE = 'mfc-v35';
+//
+// V28.6 -> mfc-v36. index.html is precached as the offline navigation fallback and
+// its BODY changed: the new "Your month" section (a month track per strategy, built
+// at parse time from the strategy cards) plus the corrected rebalance FAQ answer,
+// which is also the FAQPage answer text. No shared asset in /assets/ changed this
+// release, so no page needed a ?v bump — the cache name is the only thing that can
+// move a precached document. login.html is unchanged but shares the cache.
+// (dashboard.html stays network-first: the half-placed-book strip, the company cell
+// that no longer widows its link glyph and the wrapped sector labels reach members
+// with no cache move at all.)
+const CACHE = 'mfc-v36';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

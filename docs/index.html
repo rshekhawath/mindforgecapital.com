@@ -4920,6 +4920,240 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
 })();
 </script>
 
+<style id="mf-v286-member-month">
+.member-month{ padding:64px 0; border-top:0.5px solid var(--border); position:relative; }
+.mm-h2{ font-size:42px; color:var(--white); margin-bottom:14px; max-width:560px; }
+.mm-desc{ font-size:17px; color:var(--text2); font-weight:300; line-height:1.7; max-width:620px; margin-bottom:34px; }
+.mm-card{ background:var(--ink2); border:0.5px solid var(--border); border-radius:18px;
+  padding:24px 26px 22px;
+  box-shadow:0 1px 2px rgba(15,23,42,.04), 0 22px 50px -34px rgba(26,80,216,.26); }
+.mm-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.mm-title{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+/* Each swatch+label is one inline-flex unit so a wrap never strands a swatch at
+   the end of one line and its label at the start of the next. */
+.mm-key{ font-size:10.5px; font-weight:700; color:var(--text3); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.mm-k{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.mm-key i{ display:inline-block; width:10px; height:12px; border-radius:2px; flex-shrink:0; }
+.mm-key i.k-act{ background:linear-gradient(180deg,var(--accent),var(--accent3)); }
+.mm-key i.k-sig{ background:rgba(37,99,235,.42); }
+.mm-key i.k-idle{ background:rgba(37,99,235,.10); box-shadow:inset 0 0 0 .5px rgba(37,99,235,.14); }
+html[data-theme="dark"] .mm-key i.k-sig{ background:rgba(131,170,255,.48); }
+html[data-theme="dark"] .mm-key i.k-idle{ background:rgba(120,150,255,.14); box-shadow:inset 0 0 0 .5px rgba(120,150,255,.20); }
+
+.mm-rows{ margin-top:16px; display:grid; gap:12px; }
+.mm-row{ display:grid; grid-template-columns:196px 1fr 128px; align-items:center; gap:14px; }
+.mm-nm{ min-width:0; }
+.mm-nm b{ display:block; font-size:13px; font-weight:700; color:var(--text); line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mm-nm span{ display:block; font-size:10px; font-weight:600; letter-spacing:.04em; color:var(--text3); margin-top:2px; }
+/* 30 day-cells. A grid (not absolute marks) so nothing can escape the card's
+   box the way a position:absolute child escaped an overflow container in V28.4. */
+.mm-track{ display:grid; grid-template-columns:repeat(30,1fr); gap:2px; align-items:end; height:26px; }
+.mm-day{ height:11px; border-radius:2px; background:rgba(37,99,235,.13);
+  transform-origin:bottom; transform:scaleY(0); transition:transform .5s cubic-bezier(.22,1,.36,1); }
+html[data-theme="dark"] .mm-day{ background:rgba(120,150,255,.14); }
+.mm-card.mm-in .mm-day{ transform:scaleY(1); }
+.mm-day.is-sig{ height:17px; background:rgba(37,99,235,.42); }
+html[data-theme="dark"] .mm-day.is-sig{ background:rgba(131,170,255,.48); }
+.mm-day.is-act{ height:26px; border-radius:3px;
+  background:linear-gradient(180deg,var(--accent),var(--accent3));
+  box-shadow:0 4px 12px -6px rgba(26,80,216,.6); }
+.mm-n{ font-size:11px; font-weight:800; color:var(--text2); font-variant-numeric:tabular-nums; text-align:right; line-height:1.35; }
+.mm-n em{ display:block; font-style:normal; font-size:10px; font-weight:600; color:var(--text3); }
+.mm-axis{ display:grid; grid-template-columns:196px 1fr 128px; gap:14px; margin-top:8px; }
+.mm-ticks{ grid-column:2; display:flex; justify-content:space-between;
+  font-size:10px; font-weight:700; letter-spacing:.04em; color:var(--text3); font-variant-numeric:tabular-nums; }
+
+/* Four fixed columns rather than a wrapping flex row: at 1004px the four labels
+   plus three separators do not fit on one line, and a wrapping row left a
+   dangling arrow at the end of line one pointing at nothing. */
+.mm-flow{ margin-top:22px; padding-top:18px; border-top:0.5px solid var(--border);
+  display:grid; grid-template-columns:repeat(4,1fr); gap:10px 18px; }
+.mm-step{ position:relative; display:flex; align-items:flex-start; gap:8px;
+  font-size:12.5px; font-weight:600; color:var(--text2); line-height:1.45; }
+.mm-step b{ display:inline-grid; place-items:center; width:20px; height:20px; border-radius:6px; flex-shrink:0;
+  background:rgba(37,99,235,.10); color:var(--accent2); font-size:11px; font-weight:800; }
+html[data-theme="dark"] .mm-step b{ background:rgba(120,150,255,.16); }
+.mm-step + .mm-step::before{ content:'→'; position:absolute; left:-13px; top:1px;
+  color:var(--text3); font-size:12px; font-weight:600; }
+
+.mm-facts{ margin-top:20px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.mm-fact{ background:rgba(37,99,235,.045); border:0.5px solid var(--border); border-radius:12px; padding:13px 15px; }
+html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
+.mm-fv{ display:block; font-size:21px; font-weight:800; color:var(--accent2); line-height:1.1; font-variant-numeric:tabular-nums; }
+.mm-fv-zero{ color:var(--data-strong); }
+.mm-fl{ display:block; font-size:11px; font-weight:600; color:var(--text3); margin-top:4px; line-height:1.4; }
+.mm-foot{ margin-top:18px; font-size:12px; color:var(--text3); line-height:1.75; }
+.mm-foot b{ color:var(--text2); font-weight:700; }
+
+@media (prefers-reduced-motion: reduce){ .mm-day{ transition:none; transform:scaleY(1); } }
+@media (max-width:1080px){
+  /* 192px, not 150: "MindForge LargeMidcap 250" measures 185px at 13px/700 and a
+     narrower column silently ellipsised the longest strategy name at 900 and 1024. */
+  .mm-row,.mm-axis{ grid-template-columns:192px 1fr 104px; gap:10px; }
+  .mm-h2{ font-size:36px; }
+}
+@media (max-width:860px){
+  .member-month{ padding:52px 0; }
+  .mm-card{ padding:20px 18px 18px; }
+  /* Phones and small tablets: name and order count share the top line and the
+     30-cell track gets the FULL row beneath. Keeping the count beside the track
+     left it 189px wide at 375px — 4.4px per day, which reads as a smudge. */
+  .mm-row{ grid-template-columns:1fr auto; grid-template-areas:'nm n' 'tr tr'; row-gap:8px; column-gap:12px; }
+  .mm-nm{ grid-area:nm; } .mm-track{ grid-area:tr; } .mm-n{ grid-area:n; align-self:start; }
+  .mm-axis{ grid-template-columns:1fr; gap:0; }
+  .mm-ticks{ grid-column:1; }
+  .mm-rows{ gap:16px; }
+  .mm-facts{ grid-template-columns:repeat(2,1fr); }
+  .mm-flow{ grid-template-columns:1fr; gap:9px; }
+  .mm-step + .mm-step::before{ display:none; }
+  .mm-h2{ font-size:30px; }
+  .mm-desc{ font-size:15.5px; margin-bottom:26px; }
+}
+@media (max-width:400px){
+  .mm-ticks span:nth-child(2),.mm-ticks span:nth-child(4){ display:none; }
+  /* at 320 the name shares its line with the order count and gets 183px — two
+     short of what the longest strategy name needs at 13px. */
+  .mm-nm b{ font-size:12.5px; }
+}
+</style>
+
+<!-- ── V28.6 · THE MEMBER'S MONTH ──────────────────────────────────────────────
+     The page draws, at length, what the MODEL does — universe → score → rank →
+     cap → portfolio, five cards of it. It has never drawn what the MEMBER does,
+     and states it only in prose that is easy to walk past: "Once a month, you
+     receive your rebalance. Place the orders in your broker (or skip a month).
+     No phone calls, no meetings." plus a "~10 min PER MONTH" stat six inches
+     below, and an FAQ line saying we "never execute or place an order for you."
+     Those are the three facts a prospect actually wants — how often, how long,
+     and who touches the money — and they are spread across three components in
+     two sections. This is that month on one track: 30 day-cells per strategy,
+     day one lit because that is the only day with work in it, and the rest pale
+     because that is the honest picture.
+
+     It also draws the one place the three strategies genuinely differ in what
+     they ASK OF YOU rather than in what they return: MultiAsset publishes a
+     weekly signal between rebalances (its own card says "8 assets · Weekly
+     signals · Monthly rebalance", and the FAQ repeats it), so its month has four
+     more touch points than the two equity books. That difference has been stated
+     in a card sub-line and an FAQ sentence since the strategy shipped and has
+     never been visible anywhere.
+
+     Data contract, same as the trade-off strip above it: every row is READ FROM
+     THE STRATEGY CARDS at parse time — name from .strat-name, order count and
+     weekly-signal flag from .strat-universe — so a retired or renamed strategy
+     cannot leave a stale row here. If fewer than two cards parse, the whole
+     section removes itself and the page is as it was. ── -->
+<section class="member-month" id="your-month">
+  <div class="container">
+    <div class="section-label">Your month</div>
+    <h2 class="mm-h2 fade-up">Ten minutes on the 1st. Then nothing.</h2>
+    <p class="mm-desc fade-up">Every strategy rebalances once a month. The model does the re-scoring; you place the resulting orders in your own broker, in your own time. Here is the whole of it.</p>
+
+    <div class="mm-card fade-up" id="mm-card" hidden>
+      <div class="mm-head">
+        <span class="mm-title">One calendar month, per strategy</span>
+        <span class="mm-key">
+          <span class="mm-k"><i class="k-act" aria-hidden="true"></i>You place orders</span>
+          <span class="mm-k"><i class="k-sig" aria-hidden="true"></i>Signal published</span>
+          <span class="mm-k"><i class="k-idle" aria-hidden="true"></i>Nothing to do</span>
+        </span>
+      </div>
+
+      <div class="mm-rows" id="mm-rows"></div>
+
+      <div class="mm-axis" aria-hidden="true">
+        <span class="mm-ax-sp"></span>
+        <span class="mm-ticks"><span>Day 1</span><span>Day 8</span><span>Day 15</span><span>Day 22</span><span>Month end</span></span>
+      </div>
+
+      <div class="mm-flow">
+        <span class="mm-step"><b>1</b>The new list lands on your dashboard</span>
+        <span class="mm-step"><b>2</b>Copy the tickers, enter your capital</span>
+        <span class="mm-step"><b>3</b>Place the orders in your broker</span>
+        <span class="mm-step"><b>4</b>Hold until the next rebalance</span>
+      </div>
+
+      <div class="mm-facts">
+        <div class="mm-fact"><span class="mm-fv">1×</span><span class="mm-fl">Rebalance a month</span></div>
+        <div class="mm-fact"><span class="mm-fv">~10 min</span><span class="mm-fl">Of your time, per cycle</span></div>
+        <div class="mm-fact"><span class="mm-fv" id="mm-f-orders">25</span><span class="mm-fl">Orders in month one</span></div>
+        <div class="mm-fact"><span class="mm-fv mm-fv-zero">0</span><span class="mm-fl">Orders we place for you</span></div>
+      </div>
+
+      <p class="mm-foot">The ten minutes are genuinely yours: MindForge never holds your funds, never has access to your broker and never executes a trade on your behalf — <b>you place every order</b>. Month one is the full list; after that you are only trading the difference between last month's holdings and this month's. Skip a month and nothing breaks — the next list is waiting when you come back.</p>
+    </div>
+  </div>
+</section>
+<script id="mf-v286-member-month-js">
+(function(){
+  try{
+    var card = document.getElementById('mm-card'),
+        rowsEl = document.getElementById('mm-rows');
+    if (!card || !rowsEl) return;
+
+    // ── Read the strategies off their own cards, never a second copy of them.
+    // .strat-universe is one line of the form "25 stocks · <universe> · Monthly
+    // rebalance" (MultiAsset: "8 assets · Weekly signals · Monthly rebalance").
+    // A row is only built when BOTH a name and a holdings count parse.
+    var rows = [];
+    document.querySelectorAll('.strat-card').forEach(function(c){
+      var nmEl = c.querySelector('.strat-name'), uEl = c.querySelector('.strat-universe');
+      if (!nmEl || !uEl) return;
+      var nm = (nmEl.textContent || '').replace(/\s+/g,' ').trim();
+      var u  = (uEl.textContent  || '').replace(/\s+/g,' ').trim();
+      var m  = u.match(/(\d+)\s+(?:stocks?|assets?)/i);
+      if (!nm || !m) return;
+      rows.push({ name: nm, n: parseInt(m[1], 10), weekly: /weekly\s+signal/i.test(u) });
+    });
+    if (rows.length < 2) return;          // fail-soft: the section never appears
+
+    // Weekly-signal days, evenly through the month AFTER the day-1 rebalance.
+    var SIG = [8, 15, 22, 29];
+    rowsEl.innerHTML = rows.map(function(r){
+      var cells = '';
+      for (var d = 1; d <= 30; d++){
+        var cls = 'mm-day';
+        if (d === 1) cls += ' is-act';
+        else if (r.weekly && SIG.indexOf(d) > -1) cls += ' is-sig';
+        cells += '<i class="' + cls + '" aria-hidden="true"></i>';
+      }
+      // Kept short enough to hold one line in the 196px name column at 10px.
+      var sub = r.weekly ? 'Weekly signals in between' : 'Nothing until next month';
+      var right = r.n + ' orders' + (r.weekly ? '<em>+ 4 weekly checks</em>' : '<em>then hold</em>');
+      return '<div class="mm-row">' +
+               '<span class="mm-nm"><b>' + r.name + '</b><span>' + sub + '</span></span>' +
+               '<span class="mm-track" role="img" aria-label="' + r.name + ': ' + sub + '">' + cells + '</span>' +
+               '<span class="mm-n">' + right + '</span>' +
+             '</div>';
+    }).join('');
+
+    // "Orders in month one" = the largest book on the page, which is the number a
+    // prospect should plan for. Derived, so a strategy change moves it.
+    var maxN = rows.reduce(function(a,r){ return Math.max(a, r.n); }, 0);
+    var fo = document.getElementById('mm-f-orders');
+    if (fo && maxN) fo.textContent = String(maxN);
+
+    card.hidden = false;
+
+    // Grow the day-cells once the card is actually on screen. Same idiom as every
+    // other bar on this site (painted at zero, set later) — with a timer fallback
+    // because IntersectionObserver callbacks do not fire in some headless harnesses.
+    var lit = false, light = function(){ if (lit) return; lit = true; card.classList.add('mm-in'); };
+    if ('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if (e.isIntersecting){ light(); io.disconnect(); } });
+      }, { threshold: 0.15 });
+      io.observe(card);
+    } else { light(); }
+    setTimeout(function(){
+      var r = card.getBoundingClientRect();
+      if (r.top < (window.innerHeight || 0) && r.bottom > 0) light();
+    }, 900);
+  }catch(e){ /* the section simply stays hidden */ }
+})();
+</script>
+
 <!-- WHY MINDFORGE -->
 <section class="why-mf" id="why">
   <div class="container">
@@ -5076,7 +5310,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
 
       <details class="faq-item">
         <summary><span>How often are the portfolios rebalanced?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard, with the stocks to add, hold and exit. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf.</p></div>
+        <div class="faq-a"><p>All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard — every ticker, its weight and its recommended price. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf.</p></div>
       </details>
 
       <details class="faq-item">
@@ -5142,7 +5376,7 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
         "name": "How often are the portfolios rebalanced?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard, with the stocks to add, hold and exit. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf."
+          "text": "All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard — every ticker, its weight and its recommended price. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf."
         }
       },
       {

@@ -258,9 +258,48 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
    1440, 1600 and 1920). Reserving the second line makes the row align at every
    width. Scoped to that band only: below 1081px the grid drops to 3/2/1 columns,
    every kicker fits on one line, and reserving a second would be dead space. */
-@media(min-width:1081px){ .hl-kicker{ min-height:3.2em; } }
+/* V28.6 superseded this: the kicker no longer shares a column with the name (see
+   the stacked-card block below), so the second line it used to reserve is now
+   reserved by .hl-top's min-height instead. Kept as the historical record of why
+   the six rows have to align. */
 .hl-name{font-size:14px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hl-sym{font-size:11px;color:var(--text3);font-weight:600;margin-top:1px}
+
+/* ── V28.6 — SIX CHAMPIONS WHOSE NAMES NOBODY COULD READ ─────────────────────
+   In the 6-column band the card is 183px wide. Take 34px of padding, a 54px ring
+   and a 14px gap and .hl-name is left with 81px — against a 313px name like "The
+   Great Eastern Shipping Company Limited". With white-space:nowrap + ellipsis that
+   renders "The Great…", and it did so on ALL SIX cards at every width from 1081px
+   to 1920px: "Indian En…", "GIC Housi…", "Algoquan…", "Bafna Ph…", "Tourism F…".
+   The leaderboard of the site's free flagship tool named nobody.
+   The ring moves onto the kicker line and the name takes the card's FULL width on
+   up to three lines, which is 147px x 2 instead of 81px x 1 — 3.6x the room.
+   Applied at EVERY width rather than scoped to the 6-column band: below 1081px the
+   grid drops to 3/2/1 columns and the same stacked card just has room to spare,
+   and one layout is one thing to keep true rather than two.
+   renderHighlights() also drops the "Limited"/"Ltd" suffix, which is on nearly
+   every NSE name, carries no information and was eating a fifth of the box. The
+   full legal name stays in the title attribute.
+   Measured after, on the live data: 0 of 6 names clipped at 320/375/500/600/820/
+   900/1024/1100/1280/1440/1920, against 6 of 6 clipped at 1081px and up before. ── */
+.hl-card{ flex-direction:column; align-items:stretch; gap:10px; padding:15px 16px; }
+.hl-top{ display:flex; align-items:center; gap:11px; min-height:44px; }
+.hl-card .hl-ring{ width:44px; height:44px; }
+.hl-card .hl-ring::before{ width:32px; height:32px; }
+.hl-card .hl-ring span{ font-size:15px; }
+/* the kicker owns the top row beside the ring, so the two-line reservation that
+   kept the six rows aligned (V28.2) now belongs to that row's min-height above
+   and the kicker's own min-height is released. */
+.hl-card .hl-kicker{ margin-bottom:0; min-height:0; flex:1; min-width:0; }
+/* Up to three lines, two reserved. At 1100px the card is ~160px and "Tourism
+   Finance Corporation of India" needs a third line; every shorter name still
+   reserves two so the six cards stay in step, and the grid stretches all six to
+   the tallest anyway. The ticker is pushed to the bottom of the card rather than
+   floated under the name, so it lands on one baseline whatever each name does. */
+.hl-card .hl-meta{ flex:1; display:flex; flex-direction:column; }
+.hl-card .hl-name{ white-space:normal; overflow:hidden; text-overflow:clip;
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  line-height:1.32; min-height:2.64em; font-size:13.5px; flex:1; }
 
 /* Quality × Value quadrant map */
 .qv-panel{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:20px 24px 18px;margin-bottom:24px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 14px 40px -22px rgba(26,80,216,.18);position:relative;overflow:hidden}
@@ -450,6 +489,15 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hp-leg .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .hp-leg:last-child{grid-column:1/-1}
   .hero h1{font-size:26px}
+}
+/* V28.6: in the two-column legend the label box is 33px at 320px, so the longest
+   band name — "Excellent", the one the page's own headline stat counts — rendered
+   as "Exce…". It fits from 360 up, which is why every sweep above 320 read clean.
+   One column below 340: five rows instead of three, ~60px taller on the narrowest
+   Androids only, and every band names itself. */
+@media(max-width:340px){
+  .hp-legend{grid-template-columns:1fr}
+  .hp-leg:last-child{grid-column:auto}
 }
 </style>
 <script src="scores-engine.js?v=2780"></script>
@@ -851,7 +899,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     fundamentals. It is a <b>research starting point, not investment advice</b> or a buy/sell recommendation.
     Ratios for banks &amp; financials can read unusually. Data refreshed daily from public filings.
     <br><b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b>
-    SEBI-Registered Research Analyst · Sagar Shekhawath · <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
+    SEBI-Registered Research Analyst · Sagar Shekhawath · INH-XXXXXXXXXXX · <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
   </p>
 
   <!-- V25.7: a real, crawlable entry point to the A–Z directory. The scorecard
@@ -1333,9 +1381,17 @@ function renderHero(){
     // V17.7: ring + score tinted to the card's PILLAR accent (--c) so the six
     // champions read as distinct lenses — the old MFCScores.color(sc) band
     // colour made every high scorer identical green. Sweep driven by --hldeg.
+    // V28.6: the trailing "Limited"/"Ltd." is on nearly every NSE name, adds no
+    // information and was taking a fifth of a box that could only show a quarter of
+    // the name to begin with. The legal name stays in the title attribute.
+    const full  = d.name || d.symbol;
+    const short = String(full).replace(/[\s,]+(?:Limited|Ltd\.?)\s*$/i, '').trim() || full;
     return`<div class="hl-card" style="--c:${card.c}" onclick="location.href='company.html?symbol=${encodeURIComponent(d.symbol)}'">
-      <div class="hl-ring" data-deg="${(sc*3.6).toFixed(1)}"><span style="color:${card.c}">${sc.toFixed(0)}</span></div>
-      <div class="hl-meta"><div class="hl-kicker">${card.kick}</div><div class="hl-name" title="${scEsc(d.name||d.symbol)}">${d.name||d.symbol}</div><div class="hl-sym">${d.symbol}</div></div>
+      <div class="hl-top">
+        <div class="hl-ring" data-deg="${(sc*3.6).toFixed(1)}"><span style="color:${card.c}">${sc.toFixed(0)}</span></div>
+        <div class="hl-kicker">${card.kick}</div>
+      </div>
+      <div class="hl-meta"><div class="hl-name" title="${scEsc(full)}">${scEsc(short)}</div><div class="hl-sym">${d.symbol}</div></div>
     </div>`;
   }).join("");
   const sweepRings=()=>document.querySelectorAll("#highlights .hl-ring[data-deg]").forEach(el=>el.style.setProperty("--hldeg",el.dataset.deg+"deg"));

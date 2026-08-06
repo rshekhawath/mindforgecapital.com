@@ -2852,6 +2852,22 @@ function openRegModal(strategyName, price, strategyId){
   .ps-perf-cagr{ margin-left:0; width:100%; text-align:left; padding-top:6px; }
   .ps-perf-val{ font-size:22px; }
 }
+/* ── V28.6 — the last 9px of horizontal scroll on this site ──────────────────
+   V28.5 swept 18 accordion pages at 320/360/375 and cleared 53 of 54; the one
+   survivor was strategies.html at 320px, recorded rather than fixed. The driver
+   is .ps-funds: its comparable-funds table has a min-content width of 265px
+   (the header cells carry white-space:nowrap, so "5-yr CAGR" and "Expense ratio"
+   cannot break), and 265 + 34px of card padding and border = 299 against a 260px
+   content box at 320. It fits at 360 by one pixel, which is why every earlier
+   sweep above 320 read clean. Letting the two header labels wrap and tightening
+   the cell padding takes min-content to ~240 with nothing else touched — the
+   data cells keep their nowrap so no percentage ever breaks across lines. ── */
+@media (max-width:400px){
+  .ps-funds{ padding:16px 13px; }
+  .ps-funds-t{ font-size:12.5px; }
+  .ps-funds-t th, .ps-funds-t td{ padding-left:4px; padding-right:4px; }
+  .ps-funds-t th.r{ white-space:normal; }
+}
 @media (prefers-reduced-motion: reduce){
   .ps-panel.active{ animation:none; }
   .ps-tab{ transition:none; }

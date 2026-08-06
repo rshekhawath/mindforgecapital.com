@@ -490,6 +490,67 @@ html[data-theme="dark"] .drift-strip::before{background:rgba(255,255,255,.26);}
 @media (max-width:560px){.drift{padding:13px 14px;}.drift-lead{font-size:12.5px;}
   .drift-note{font-size:11.5px;}.drift-strip{height:44px;gap:2px;}}
 @media (prefers-reduced-motion:reduce){.drift-t i{transition:none;}}
+
+/* ── V28.6: the half-placed book ────────────────────────────────────────────
+   Sits under the buy-progress bar, which counts orders but says nothing about
+   what the partially-filled portfolio actually IS. Two inks: amber when the live
+   book is materially more concentrated than the finished model (see `hot` in
+   refreshSession), the site's usual blue when it is merely part-placed. The whole
+   panel exists only mid-session and removes itself once the book is whole. */
+.sess{margin:10px 0 4px;padding:15px 17px;border-radius:12px;
+  background:rgba(180,83,9,0.045);border:0.5px solid rgba(180,83,9,0.20);}
+html[data-theme="dark"] .sess{background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.20);}
+.sess-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.sess-lead{font-size:13.5px;color:var(--text2);line-height:1.45;}
+.sess-lead b{color:var(--white);font-weight:800;font-variant-numeric:tabular-nums;}
+.sess-chip{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;white-space:nowrap;
+  color:#b45309;background:rgba(180,83,9,0.10);border:0.5px solid rgba(180,83,9,0.24);}
+html[data-theme="dark"] .sess-chip{color:#fbbf24;background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.28);}
+.sess-track{height:7px;border-radius:4px;margin-top:11px;overflow:hidden;
+  background:rgba(180,83,9,0.12);}
+html[data-theme="dark"] .sess-track{background:rgba(251,191,36,0.14);}
+.sess-fill{display:block;height:100%;width:0;border-radius:4px;
+  background:linear-gradient(90deg,#b45309,#f59e0b);
+  transition:width .7s cubic-bezier(.22,1,.36,1);}
+html[data-theme="dark"] .sess-fill{background:linear-gradient(90deg,#f59e0b,#fbbf24);}
+/* one row per industry currently in the placed book, widest first */
+.sess-bars{display:grid;gap:6px;margin-top:12px;}
+.sess-b{display:grid;grid-template-columns:132px 1fr 46px;align-items:center;gap:10px;}
+.sess-b-nm{font-size:11.5px;font-weight:700;color:var(--text2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sess-b-tr{position:relative;height:9px;border-radius:5px;background:rgba(15,23,42,0.06);}
+html[data-theme="dark"] .sess-b-tr{background:rgba(255,255,255,0.08);}
+.sess-b-fl{display:block;height:100%;width:0;border-radius:5px;background:var(--data-mid);opacity:.75;
+  transition:width .7s cubic-bezier(.22,1,.36,1);}
+/* the amber row ink follows the CARD's materiality verdict, not the raw ">cap"
+   test — otherwise a book reading 13% against a 12.1% ceiling drew six alarm-red
+   bars inside a panel that had just said, correctly, that it was fine. */
+.sess:not(.is-clean) .sess-b.is-over .sess-b-fl{background:#b45309;opacity:.9;}
+html[data-theme="dark"] .sess:not(.is-clean) .sess-b.is-over .sess-b-fl{background:#fbbf24;}
+/* the model's own ceiling, drawn on every row so "over" is read against a line
+   rather than against a number in the prose underneath */
+.sess-b-cap{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px dashed rgba(12,24,49,.40);}
+html[data-theme="dark"] .sess-b-cap{border-left-color:rgba(255,255,255,.42);}
+.sess-b-v{font-size:11px;font-weight:800;color:var(--text2);text-align:right;font-variant-numeric:tabular-nums;}
+.sess:not(.is-clean) .sess-b.is-over .sess-b-v{color:#b45309;}
+html[data-theme="dark"] .sess:not(.is-clean) .sess-b.is-over .sess-b-v{color:#fbbf24;}
+.sess-note{margin-top:10px;font-size:12px;color:var(--text3);line-height:1.55;}
+.sess-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums;}
+/* Partway through and still inside the cap — a real and common state, e.g. when the
+   table is filtered or sorted so the ticks land across industries. Drop the amber
+   entirely there: a panel that looks like a warning when it is reporting good news
+   teaches members to ignore it when it is not. */
+.sess.is-clean{background:rgba(37,99,235,0.045);border-color:var(--border);}
+html[data-theme="dark"] .sess.is-clean{background:rgba(150,180,240,0.055);}
+.sess.is-clean .sess-chip{color:var(--data-mid);background:rgba(26,80,216,0.10);border-color:rgba(26,80,216,0.22);}
+html[data-theme="dark"] .sess.is-clean .sess-chip{background:rgba(131,170,255,0.12);border-color:rgba(131,170,255,0.26);}
+.sess.is-clean .sess-track{background:rgba(37,99,235,0.12);}
+html[data-theme="dark"] .sess.is-clean .sess-track{background:rgba(131,170,255,0.16);}
+.sess.is-clean .sess-fill{background:linear-gradient(90deg,var(--accent),var(--accent3));}
+@media (max-width:560px){.sess{padding:13px 14px;}.sess-lead{font-size:12.5px;}
+  .sess-note{font-size:11.5px;}.sess-b{grid-template-columns:104px 1fr 42px;gap:8px;}}
+@media (prefers-reduced-motion:reduce){.sess-fill,.sess-b-fl{transition:none;}}
 .alloc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
 .alloc-head h2,.alloc-head h3{font-size:16px;color:var(--white);font-weight:700;line-height:1.25;}
 .alloc-head .alloc-meta{font-size:12px;color:var(--text3);}
@@ -655,6 +716,9 @@ td.company{color:var(--white);font-weight:600;}
    calm; the dashed underline + arrow only assert themselves on hover. */
 .company-link{color:inherit;text-decoration:none;border-bottom:1px dashed rgba(148,163,184,.45);padding-bottom:1px;transition:color .15s,border-color .15s;}
 .company-link .cl-ico{margin-left:4px;opacity:0;transition:opacity .15s;vertical-align:baseline;}
+/* V28.6: last word + glyph move as one unit, so the glyph can never be widowed
+   onto a line of its own (which also drew a stray 14px of the dashed underline). */
+.company-link .cl-tail{white-space:nowrap;}
 .company-link:hover{color:var(--accent2);border-bottom-color:var(--accent2);}
 .company-link:hover .cl-ico{opacity:.9;}
 .company-link:focus-visible{outline:2px solid rgba(37,99,235,.6);outline-offset:2px;border-radius:3px;}
@@ -1095,6 +1159,17 @@ footer a:hover{color:var(--accent);}
      the scarce thing and the name keeps its 100px; the row's title attribute
      carries the full name, its holdings count and its weight. */
   @media(min-width:481px){ .alloc-name{flex-basis:134px;} }
+  /* V28.6: below 481 the name column is 100px and the swatch takes 17 of it, so
+     "Consumer Durables" (114px at 12px) still clipped to "Consumer Dura…" on every
+     phone. V28.0 accepted that because the row carries a title attribute — but a
+     title is a hover affordance and there is no hover on the device where the clip
+     happens, so on a phone the fallback does not exist. Letting the name take a
+     second line costs one row ~14px and no width at all; the track is untouched. */
+  @media(max-width:480px){
+    .alloc-name{white-space:normal;align-items:flex-start;}
+    .alloc-nm-t{white-space:normal;line-height:1.28;}
+    .alloc-swatch{margin-top:4px;}
+  }
   .alloc-pct{flex-basis:46px;font-size:11px;}
   .table-actions{width:100%;justify-content:flex-end;}
 }
@@ -2362,6 +2437,30 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </div>
         <div class="buy-prog-bar"><div class="buy-prog-fill" id="buy-prog-fill"></div></div>
         <button type="button" class="buy-prog-reset" onclick="resetBought()" title="Uncheck all">Reset</button>
+      </div>
+
+      <!-- V28.6 — WHAT YOU ACTUALLY HOLD MID-SESSION.
+           The page promises a "sector-diversified, capped at 3 per" book, and the
+           sector card, the portfolio map and the industry chips all draw the
+           FINISHED book. But a member places twenty-five orders one at a time, and
+           the table's default order is by conviction rank — which groups the same
+           industry together. So the book that actually exists between order 6 and
+           order 25 is nothing like the one every panel on this page shows: on the
+           demo book, after the first six ticks it is 100% two industries, and it
+           only converges on the 12% cap when the last order goes in.
+           That gap is invisible today and it is the one moment where a member is
+           genuinely exposed. This draws the LIVE book: what is committed, what is
+           still to place, and how concentrated the half-done portfolio is right
+           now. It exists only while the session is partial — at 0 placed there is
+           no book, and at 25 of 25 the finished panels already tell the story. -->
+      <div class="sess" id="sess" style="display:none;">
+        <div class="sess-head">
+          <div class="sess-lead" id="sess-lead">&mdash;</div>
+          <div class="sess-chip" id="sess-chip">&mdash;</div>
+        </div>
+        <div class="sess-track" aria-hidden="true"><span class="sess-fill" id="sess-fill"></span></div>
+        <div class="sess-bars" id="sess-bars" aria-hidden="true"></div>
+        <div class="sess-note" id="sess-note"></div>
       </div>
 
       <div class="table-wrap">
@@ -3703,6 +3802,7 @@ function refreshSizeSummary() {
 
   refreshCoverage();
   refreshDrift();
+  refreshSession();   // V28.6 — capital changes the amounts AND which picks are buyable
 }
 
 // V28.4 — "what your capital actually buys".
@@ -4142,13 +4242,23 @@ function brokerLink(s){
 // "Company not found" landing. The .NS test also guards a missing/odd
 // yahoo_ticker. New tab, so capital input / bought-state stay put.
 function companyCell(s){
-  var name = escapeHtml(s.company_name || s.ticker);
+  var raw = String(s.company_name || s.ticker || '');
   var y = s.yahoo_ticker || '';
-  if (!/\.NS$/i.test(y) || (s.industry || '') === 'ETF') return name;
+  if (!/\.NS$/i.test(y) || (s.industry || '') === 'ETF') return escapeHtml(raw);
+  // V28.6: the 10px external-link glyph is an inline child of the link, so it takes
+  // a line break like a word does. On the demo book exactly one row per width put it
+  // alone on a second line — TCS at 1440, M&M at 1280, Titan Company at 1200 and
+  // below — which added ~16px to that row and drew a stray 14px of the link's dotted
+  // underline beneath the name. Binding it to the LAST WORD in a nowrap span keeps
+  // the name free to wrap (long names legitimately need two lines) while making it
+  // impossible for the glyph to be widowed.
+  var words = raw.split(/\s+/), last = words.pop();
+  var head  = words.length ? escapeHtml(words.join(' ')) + ' ' : '';
   return '<a class="company-link" href="/scores/company.html?symbol=' +
          encodeURIComponent(s.ticker) + '" target="_blank" rel="noopener" ' +
-         'title="View ' + escapeHtml(s.ticker) + ' company page">' + name +
-         '<svg class="cl-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>';
+         'title="View ' + escapeHtml(s.ticker) + ' company page">' + head +
+         '<span class="cl-tail">' + escapeHtml(last) +
+         '<svg class="cl-ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span></a>';
 }
 
 // V5.2 #20 + #21: sector filter chips + click-on-sector-allocation filtering.
@@ -4392,6 +4502,109 @@ function refreshBoughtProgress() {
   // V12.2: celebratory state once every order is placed — a soft green glow +
   // a ✓ on the title. Toggled by class so it's reduced-motion safe via CSS.
   card.classList.toggle('is-complete', remaining === 0 && total > 0);
+  refreshSession(map);
+}
+
+// V28.6 — the book that exists WHILE you are placing orders.
+// Every diversification panel on this page (sector allocation, portfolio map,
+// industry chips) draws the finished 25-name book. None of them describe what a
+// member actually holds after six of twenty-five orders — which, because the
+// table's default sort groups an industry together, can be the whole of one
+// sector. This measures the live book from the same numbers the table's own
+// Shares column uses, and compares its worst industry to the model's own ceiling
+// (derived from the full book, never hardcoded at 12%).
+//
+// Deliberately partial-only: nothing placed = no book to describe, everything
+// placed = the finished panels above already say it. Fails silent like its
+// siblings — a mid-session read must never be able to break the picks table.
+function refreshSession(map) {
+  try {
+    const box = document.getElementById('sess');
+    if (!box) return;
+    const hide = () => { box.style.display = 'none'; };
+    const list = stocksData || [];
+    if (!list.length || !(currentCapital > 0)) return hide();
+    map = map || loadBought(currentStrategy);
+
+    // Value each pick exactly as the table does: whole shares at rec. price.
+    let plannedTotal = 0, placedTotal = 0, placedN = 0, plannedN = 0;
+    const byInd = {}, fullByInd = {};
+    list.forEach(s => {
+      const price = Number(s.recommended_price) || 0;
+      if (!(price > 0)) return;
+      const shares = Math.floor(allocBudget(s, list, currentCapital) / price);
+      if (shares < 1) return;                       // not buyable — a coverage finding
+      // Round per pick exactly as refreshSizeSummary does — summing raw floats and
+      // rounding once gives ₹14,69,549 against the sizing card's ₹14,69,552 on the
+      // demo book, and two rupee totals three inches apart must not disagree.
+      const amt = Math.round(shares * price);
+      const ind = (s.industry || '').trim() || '—';
+      plannedTotal += amt; plannedN++;
+      fullByInd[ind] = (fullByInd[ind] || 0) + amt;
+      if (map[s.ticker]) { placedTotal += amt; placedN++; byInd[ind] = (byInd[ind] || 0) + amt; }
+    });
+    // strictly partial, and there has to be something to draw
+    if (!(placedN > 0 && placedN < plannedN) || !(placedTotal > 0) || !(plannedTotal > 0)) return hide();
+
+    // The model's own ceiling: the heaviest industry in the FINISHED book.
+    const capPct = Math.max.apply(null, Object.keys(fullByInd)
+      .map(k => fullByInd[k] / plannedTotal * 100));
+
+    const inds = Object.keys(byInd)
+      .map(k => ({ nm: k, pct: byInd[k] / placedTotal * 100 }))
+      .sort((a, b) => b.pct - a.pct);
+    const top = inds[0], nFull = Object.keys(fullByInd).length;
+    // Materiality, not arithmetic. A part-placed book is over the finished cap almost
+    // by definition — eight equal-weight picks in eight different industries are 12.5%
+    // each against a 12.1% ceiling, which is not a risk and reporting it as one is how
+    // a panel teaches members to ignore it. Amber only at half again the cap; below
+    // that the panel says the same numbers in the neutral ink.
+    const hot = top.pct > capPct * 1.5;
+    // Every bar is drawn against the same axis: the widest of (worst industry, cap),
+    // so the dashed cap line sits in a comparable place on every row.
+    const axis = Math.max(top.pct, capPct) * 1.06;
+
+    document.getElementById('sess-fill').style.width =
+      (placedTotal / plannedTotal * 100).toFixed(1) + '%';
+    document.getElementById('sess-lead').innerHTML =
+      'Placed so far: <b>' + fmtMoney(placedTotal) + '</b> of <b>' + fmtMoney(plannedTotal) + '</b>';
+    document.getElementById('sess-chip').textContent = top.pct.toFixed(0) + '% top industry';
+    box.classList.toggle('is-clean', !hot);
+
+    const SHOWN = 6;
+    document.getElementById('sess-bars').innerHTML = inds.slice(0, SHOWN).map(i => {
+      const isOver = i.pct > capPct + 0.05;
+      return '<div class="sess-b' + (isOver ? ' is-over' : '') + '">' +
+               '<span class="sess-b-nm">' + escapeHtml(i.nm) + '</span>' +
+               '<span class="sess-b-tr"><span class="sess-b-fl" data-w="' +
+                 Math.min(100, i.pct / axis * 100).toFixed(1) + '%"></span>' +
+                 '<span class="sess-b-cap" style="left:' +
+                 Math.min(100, capPct / axis * 100).toFixed(1) + '%"></span></span>' +
+               '<span class="sess-b-v">' + i.pct.toFixed(0) + '%</span>' +
+             '</div>';
+    }).join('');
+    // grow from zero on the next frame — the site's bar idiom; a bar painted at its
+    // final width has a dead transition and never animates again on re-render.
+    requestAnimationFrame(() => {
+      document.querySelectorAll('#sess-bars .sess-b-fl').forEach(el => { el.style.width = el.dataset.w; });
+    });
+    setTimeout(() => {
+      document.querySelectorAll('#sess-bars .sess-b-fl').forEach(el => { el.style.width = el.dataset.w; });
+    }, 120);
+
+    const left = plannedN - placedN;
+    const more = inds.length > SHOWN ? ' (showing the top ' + SHOWN + ' of ' + inds.length + ')' : '';
+    const spread = '<b>' + inds.length + '</b> of <b>' + nFull + '</b> industries';
+    document.getElementById('sess-note').innerHTML = hot
+      ? ('Right now the book you actually hold is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) +
+         ', across ' + spread + ' &mdash; the finished model caps any one industry at <b>' + capPct.toFixed(1) +
+         '%</b> (dashed line)' + more + '. Placing the remaining <b>' + left + '</b> order' + (left === 1 ? '' : 's') +
+         ' brings it back; spreading them across industries as you go keeps it closer on the way.')
+      : ('Your part-placed book is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) + ' at its heaviest, across ' +
+         spread + ' &mdash; close to the finished model’s <b>' + capPct.toFixed(1) + '%</b> ceiling' + more +
+         '. <b>' + left + '</b> order' + (left === 1 ? '' : 's') + ' still to place.');
+    box.style.display = '';
+  } catch (e) { /* a mid-session read must never break the table */ }
 }
 
 // ── COPY / EXPORT ACTIONS ──────────────────────────────────────────────────
@@ -5294,6 +5507,14 @@ init();
      let the cell wrap again so the column gives its width back to the holdings. */
   .broker-link, .copy-ico{ display: none !important; }
   td.ticker{ white-space: normal !important; }
+  /* V28.6: .sess describes a live ordering session ("7 of 25 placed, 43% Banks
+     right now") — true only while the browser is open, and meaningless the moment
+     the sheet is on paper. Same reason .buy-prog-card is suppressed above it. The
+     company cell's external-link glyph joins .copy-ico for the same reason, and
+     without its nowrap the name column can wrap freely again in print. */
+  .sess{ display: none !important; }
+  .cl-ico{ display: none !important; }
+  .company-link .cl-tail{ white-space: normal !important; }
 }
 
 @media (prefers-reduced-motion: reduce){

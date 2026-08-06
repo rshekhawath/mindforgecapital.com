@@ -1074,7 +1074,10 @@ function renderScorecard(){
   /* V26.9 — the radar's ink lives in SVG fill attributes and in the legend's
      inline styles, so nothing already painted repaints when the nav toggle
      flips data-theme. Redraw it (cheap — pure string build) on the flip. */
-  new MutationObserver(function(){ try{ drawRadar(window.__mfcRadarData); }catch(e){} })
+  new MutationObserver(function(){
+      try{ drawRadar(window.__mfcRadarData); }catch(e){}
+      try{ repaintScoreInks(); }catch(e){}
+    })
     .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
   // animate fills next frame
   requestAnimationFrame(()=>{
@@ -1083,6 +1086,41 @@ function renderScorecard(){
     document.getElementById("gFill").style.width=(g==null?0:g)+"%";
     document.getElementById("mFill").style.width=(m==null?0:m)+"%";
     document.querySelectorAll(".fb-fill").forEach(el=>{el.style.width=el.dataset.w+"%";});
+  });
+}
+/* V28.6 — the same finding V26.9 made about the radar, one card over.
+   MFCScores.color() returns a hex from a LIGHT or a DARK palette depending on
+   data-theme at the moment it is called, and every score ink on this page is
+   written as an inline style at render time. Flip the nav's theme toggle after
+   the page has rendered and those inline hexes stay: the overall ring, the four
+   pillar scores and all ~30 factor scores keep their light-mode ink on a dark
+   card. Measured on the dark card: .pillar-score at 2.94:1 (needs 3.0 at 24px/800)
+   and .fb-score at 2.55:1 (needs 4.5 at 12px/700) — the two lowest-contrast text
+   nodes anywhere on the site. Every ink is recomputed from the score it already
+   carries, so this needs no data and cannot disagree with what is printed. */
+function repaintScoreInks(){
+  var D = window.__mfcRadarData;
+  if (D){
+    var oc = MFCScores.color(D._overall);
+    var ring = document.getElementById("overallRing"), os = document.getElementById("overallScore");
+    if (ring) ring.style.setProperty('--ov-col', oc);
+    if (os && D._overall != null) os.style.color = oc;
+    [["q","_q"],["v","_v"],["g","_g"],["m","_m"]].forEach(function(p){
+      var sc = D[p[1]];
+      var se = document.getElementById(p[0]+"Score"), fe = document.getElementById(p[0]+"Fill");
+      var c  = sc == null ? "var(--text3)" : MFCScores.color(sc);
+      if (se) se.style.color = c;
+      if (fe) fe.style.background = c;
+    });
+  }
+  // factor rows carry their own score on the bar's data-w — no lookup needed
+  document.querySelectorAll(".fb-row").forEach(function(row){
+    var fill = row.querySelector(".fb-fill"), sc = row.querySelector(".fb-score");
+    if (!fill || !sc) return;
+    var v = parseFloat(fill.dataset.w);
+    if (!isFinite(v)) return;
+    var c = MFCScores.color(v);
+    fill.style.background = c; sc.style.color = c;
   });
 }
 function setPillar(which,score,scoreEl,fillEl,subEl,n,total,col){
