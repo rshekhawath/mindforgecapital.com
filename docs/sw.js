@@ -213,7 +213,19 @@
 // (dashboard.html stays network-first: the four "How to invest" steps now report
 // the member's own session — capital, broker, orders placed, days to rebalance —
 // and reach members with no cache move at all.)
-const CACHE = 'mfc-v38';
+//
+// V28.9 -> mfc-v39. index.html is precached as the offline navigation fallback
+// and its BODY changed in three places, all of them corrections rather than
+// additions: the MultiAsset card no longer claims "Weekly signals" (no model has
+// a weekly leg — STRATEGY_CADENCE is "monthly" for all three), the "Your month"
+// track now draws the same twice-a-month portfolio review on all three rows
+// instead of four weekly touch points on one, and the pipeline stage that said
+// stocks are scored on "value, quality" now names the factors the models
+// actually use. No shared asset in /assets/ changed, so no page needed a ?v
+// bump; the cache name is the only thing that can move a precached document.
+// (dashboard.html stays network-first: the new "Why these 25" factor-mix card
+// reaches members with no cache move at all.)
+const CACHE = 'mfc-v39';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

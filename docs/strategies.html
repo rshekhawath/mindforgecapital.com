@@ -2162,7 +2162,187 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </div>
     <p class="compare-scroll-hint" aria-hidden="true">← swipe to compare →</p>
     <p class="cmp-crosslink">A flat monthly fee, not a % of your corpus. <a href="calculator.html">See what you'd save vs an AUM fee<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+
+    <!-- ── V28.9 · WHAT EACH MODEL SCORES ON ───────────────────────────────────
+         The table above compares these three strategies across eleven rows —
+         return, risk, cost — and not one of them says what the models actually
+         DO. The whole site calls them "multi-factor" and never once names the
+         factors or their proportions; the homepage pipeline went further and
+         said "value, quality, momentum & more", which was wrong in the most
+         checkable way possible, because no strategy has a value factor, a
+         quality factor, or any fundamentals input at all. Every weight in
+         IP/shared/config.py is price- or volume-derived.
+         This is that mix, drawn. Each percentage is an MFFAC marker rewritten
+         by runner/inject_site_stats.py from the same W_* keys
+         portfolio_builder.py multiplies the z-scores by, and the segment widths
+         are measured from the RENDERED percentages — so the published mix is
+         the mix that ran, and a bar cannot disagree with the number beside it.
+
+         MultiAsset is deliberately NOT on the axis. Its score is not an additive
+         blend: compute_allocation() takes mean(3m, 6m, 12m momentum) and
+         MULTIPLIES it by a volatility adjustment and a trend gate. Forcing that
+         into a stacked bar would invent weights the model does not have, so the
+         card states the chain and its three constants instead. Same call the
+         V28.8 narrowing rail made about the same strategy, for the same reason.
+
+         Fail-soft: a row is drawn only when its five percentages parse AND sum
+         to 100; anything else and that row is dropped. With no row left the
+         whole block removes itself and the section is exactly as it was. ── -->
+    <style>
+    .fx-wrap{ margin-top:28px; padding:22px 24px; border-radius:18px;
+      background:var(--ink2); border:0.5px solid var(--border);
+      box-shadow:0 1px 2px rgba(15,23,42,.04), 0 20px 46px -34px rgba(26,80,216,.26); }
+    .fx-wrap[hidden]{ display:none; }
+    .fx-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+    .fx-title{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+    .fx-sub{ font-size:11px; color:var(--text3); }
+    .fx-row{ margin-top:20px; }
+    .fx-row + .fx-row{ padding-top:18px; border-top:0.5px solid var(--border); }
+    .fx-nm{ font-size:13px; font-weight:800; color:var(--white); letter-spacing:-.01em; margin-bottom:9px; }
+    /* the stacked bar — one flex child per factor, width set from its own printed % */
+    .fx-bar{ display:flex; height:14px; border-radius:7px; overflow:hidden; background:rgba(37,99,235,.07); }
+    html[data-theme="dark"] .fx-bar{ background:rgba(120,150,255,.10); }
+    .fx-seg{ height:100%; width:0; transition:width .9s cubic-bezier(.22,1,.36,1); }
+    .fx-seg + .fx-seg{ box-shadow:inset 1px 0 0 var(--ink2); }
+    .fx-legend{ display:flex; flex-wrap:wrap; gap:6px 18px; margin:10px 0 0; padding:0; list-style:none; }
+    .fx-legend li{ display:inline-flex; align-items:center; gap:7px; font-size:11.5px; color:var(--text2); }
+    .fx-sw{ width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+    .fx-legend em{ font-style:normal; font-weight:800; color:var(--white); font-variant-numeric:tabular-nums; }
+    .fx-note{ margin:9px 0 0; font-size:11.5px; color:var(--text3); line-height:1.55; }
+    .fx-note b{ color:var(--white); font-weight:700; }
+    /* MultiAsset's chain — three terms multiplied, so they are drawn multiplied */
+    .fx-chain{ display:flex; align-items:stretch; flex-wrap:wrap; gap:8px; margin-top:4px; }
+    .fx-term{ flex:1 1 190px; min-width:0; padding:10px 12px; border-radius:11px;
+      background:rgba(37,99,235,.05); border:0.5px solid var(--border); }
+    html[data-theme="dark"] .fx-term{ background:rgba(120,150,255,.07); }
+    .fx-term b{ display:block; font-size:12px; font-weight:800; color:var(--white); margin-bottom:2px; }
+    .fx-term span{ font-size:11px; color:var(--text3); line-height:1.5; }
+    .fx-mul{ align-self:center; font-size:15px; font-weight:800; color:var(--text3); flex:0 0 auto; }
+    @media (max-width:640px){
+      .fx-wrap{ padding:18px 16px; }
+      .fx-legend{ gap:6px 14px; }
+      /* the multiply glyphs read as noise once the terms stack vertically */
+      .fx-mul{ display:none; }
+      .fx-term{ flex-basis:100%; }
+    }
+    @media (prefers-reduced-motion: reduce){ .fx-seg{ transition:none; } }
+    </style>
+    <div class="fx-wrap" id="fx-wrap" hidden>
+      <div class="fx-head">
+        <span class="fx-title">What each model scores on</span>
+        <span class="fx-sub">Weights from the live model configuration</span>
+      </div>
+
+      <div class="fx-row" data-fx-row data-fx-code="lm">
+        <div class="fx-nm">MindForge LargeMidcap 250</div>
+        <div class="fx-bar" aria-hidden="true"></div>
+        <ul class="fx-legend">
+          <li><span class="fx-sw"></span>Momentum <em><!--MFFAC:lm:momentum-->45<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>Trend <em><!--MFFAC:lm:trend-->45<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>Low volatility <em><!--MFFAC:lm:lowvol-->5<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>52-week high <em><!--MFFAC:lm:high52-->3<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>Liquidity <em><!--MFFAC:lm:liquidity-->2<!--/MFFAC-->%</em></li>
+        </ul>
+        <p class="fx-note" data-fx-note></p>
+      </div>
+
+      <div class="fx-row" data-fx-row data-fx-code="sm">
+        <div class="fx-nm">MindForge SmallMicro 500</div>
+        <div class="fx-bar" aria-hidden="true"></div>
+        <ul class="fx-legend">
+          <li><span class="fx-sw"></span>Momentum <em><!--MFFAC:sm:momentum-->30<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>Trend <em><!--MFFAC:sm:trend-->25<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>Volume breakout <em><!--MFFAC:sm:volume-->20<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>52-week high <em><!--MFFAC:sm:high52-->15<!--/MFFAC-->%</em></li>
+          <li><span class="fx-sw"></span>Relative volatility <em><!--MFFAC:sm:relvol-->10<!--/MFFAC-->%</em></li>
+        </ul>
+        <p class="fx-note" data-fx-note></p>
+      </div>
+
+      <div class="fx-row">
+        <div class="fx-nm">MindForge MultiAsset <span style="font-weight:600;color:var(--text3);font-size:11.5px;">— not a weighted blend</span></div>
+        <div class="fx-chain">
+          <div class="fx-term"><b>Momentum</b><span>The average of the 3-, 6- and 12-month return.</span></div>
+          <span class="fx-mul" aria-hidden="true">×</span>
+          <div class="fx-term"><b>Volatility adjustment</b><span>Scaled down as an ETF's volatility rises above the group's, to a floor of 0.2.</span></div>
+          <span class="fx-mul" aria-hidden="true">×</span>
+          <div class="fx-term"><b>Trend gate</b><span>Halved while the ETF trades below its 10-month average.</span></div>
+        </div>
+        <p class="fx-note">Momentum is <b>scaled</b> by the other two rather than added to them, so MultiAsset has no percentage weights to place on the axis above. The resulting scores also set the ETF weights — this is the one book that is not equal-weighted.</p>
+      </div>
+    </div>
   </div>
+
+  <script id="mf-v289-factormix-js">
+  (function(){
+    var wrap = document.getElementById('fx-wrap');
+    if (!wrap) return;
+    function bail(){ try{ wrap.remove(); }catch(e){ wrap.hidden = true; } }
+    try{
+      // One ramp, brand blue -> teal. The steps are deliberately wide: the first
+      // draft used the pipeline's own #1a50d8/#2563eb pair and LargeMidcap's two
+      // 45% segments — half the bar between them — read as a single blue block.
+      var INK = ['#1a50d8','#5b8def','#0891b2','#14b8a6','#5eead4'];
+
+      var rows = [].slice.call(wrap.querySelectorAll('[data-fx-row]')).map(function(row){
+        var items = [].slice.call(row.querySelectorAll('.fx-legend li')).map(function(li){
+          var em = li.querySelector('em');
+          var pct = em ? parseFloat(String(em.textContent || '').replace(/[^0-9.]/g,'')) : NaN;
+          // the label is the li's text minus the percentage it ends with
+          var label = (li.textContent || '').replace(em ? em.textContent : '', '').trim();
+          return { pct: pct, label: label, sw: li.querySelector('.fx-sw') };
+        });
+        var total = items.reduce(function(a,i){ return a + (isFinite(i.pct) ? i.pct : NaN); }, 0);
+        // a mix that does not add up to 100 is a broken marker, not a finding
+        var ok = items.length > 0 && items.every(function(i){ return isFinite(i.pct) && i.pct >= 0; })
+                 && Math.abs(total - 100) < 0.51;
+        return { el: row, items: items, ok: ok };
+      });
+
+      var good = rows.filter(function(r){ return r.ok; });
+      rows.forEach(function(r){ if (!r.ok) r.el.remove(); });
+      if (!good.length) { bail(); return; }
+
+      good.forEach(function(r){
+        var bar = r.el.querySelector('.fx-bar');
+        r.items.forEach(function(it, i){
+          var ink = INK[i % INK.length];
+          if (it.sw) it.sw.style.background = ink;
+          if (bar){
+            var seg = document.createElement('span');
+            seg.className = 'fx-seg';
+            seg.style.background = ink;
+            seg.setAttribute('data-w', it.pct + '%');
+            seg.title = it.label + ' — ' + it.pct + '%';
+            bar.appendChild(seg);
+          }
+        });
+        // the sentence a reader would otherwise have to add up themselves,
+        // written from the numbers so it can never contradict the bar
+        var note = r.el.querySelector('[data-fx-note]');
+        if (note){
+          var sorted = r.items.slice().sort(function(a,b){ return b.pct - a.pct; });
+          var top2 = sorted[0].pct + sorted[1].pct;
+          note.innerHTML = '<b>' + Math.round(top2) + '%</b> of the score is ' +
+            sorted[0].label.toLowerCase() + ' and ' + sorted[1].label.toLowerCase() +
+            '. Every input is price- or volume-derived — there is no fundamentals factor.';
+        }
+      });
+
+      wrap.hidden = false;
+
+      // grow on reveal, with the timer backstop this site uses everywhere
+      var segs = [].slice.call(wrap.querySelectorAll('.fx-seg'));
+      function grow(){ segs.forEach(function(s){ var w = s.getAttribute('data-w'); if (w) s.style.width = w; }); }
+      if (!('IntersectionObserver' in window)){ setTimeout(grow, 60); return; }
+      var io = new IntersectionObserver(function(en){
+        en.forEach(function(e){ if (e.isIntersecting){ setTimeout(grow, 80); io.disconnect(); } });
+      }, { threshold: 0.2 });
+      io.observe(wrap);
+      setTimeout(grow, 2400);
+    }catch(e){ bail(); }
+  })();
+  </script>
 
   <!-- V5.9: per-strategy cards replace the old tab interface; each card
        deep-links to the dedicated page generated in /multiasset.html etc. -->

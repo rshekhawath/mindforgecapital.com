@@ -4007,6 +4007,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
 .build-flow{ padding: 88px 0; border-top: 0.5px solid var(--border); position: relative; overflow: hidden; }
 .build-flow .container{ position: relative; z-index: 1; }
 .bf-lead{ font-size: 16px; color: var(--text2); font-weight: 300; line-height: 1.7; max-width: 580px; margin: 14px 0 0; }
+.bf-lead-note{ display: block; margin-top: 6px; font-size: 13.5px; color: var(--text3); }
 .bf-pipeline{ display: flex; align-items: stretch; gap: 10px; margin-top: 54px; }
 /* V17.7: each stage carries --sc/--sc2 (its slice of the brand gradient) so the
    pipeline literally flows blue → teal across the five cards. */
@@ -4244,7 +4245,13 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
   <div class="container">
     <div class="section-label">The process</div>
     <h2 class="fade-up">From a whole universe to your 25.</h2>
-    <p class="bf-lead fade-up">Every strategy runs the same disciplined pipeline each month — no overrides, no gut calls. Here's the path from index to portfolio.</p>
+    <!-- V28.9: said "Every strategy runs the same disciplined pipeline". Stages 01,
+         03 and 04 describe ranking a stock universe and capping it by industry, and
+         MultiAsset does none of that — it rotates eight ETFs by composite score with
+         no universe to rank and no sector cap. The narrowing rail below already
+         says so in its footnote; the lead above it was still claiming all three.
+         Scoped to the two equity books, which is what the five stages describe. -->
+    <p class="bf-lead fade-up">Both equity strategies run the same disciplined pipeline each month — no overrides, no gut calls. Here's the path from index to portfolio. <span class="bf-lead-note">(MultiAsset rotates eight ETFs by score instead — there is no universe to rank.)</span></p>
     <div class="bf-pipeline">
       <div class="bf-stage fade-up reveal-stagger" data-step="01" style="--reveal-delay:0ms;--sc:#1a50d8;--sc2:#2563eb;--scd:#1a50d8">
         <div class="bf-num">01</div>
@@ -4262,7 +4269,16 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
         <div class="bf-num">02</div>
         <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12l4-3"/><path d="M3 12h2M12 3v2M19 6l-1.5 1.5"/></svg></div>
         <div class="bf-title">Multi-factor score</div>
-        <div class="bf-desc">Each stock scored on peer-reviewed factors — value, quality, momentum &amp; more.</div>
+        <!-- V28.9: said "value, quality, momentum & more". No strategy has a value
+             or a quality factor — or any fundamentals input at all. Every weight in
+             IP/shared/config.py is price- or volume-derived: LargeMidcap scores
+             momentum / trend / low-vol / 52-week-high / Amihud liquidity, SmallMicro
+             momentum / trend / volume-breakout / 52-week-high / relative-vol, and
+             MultiAsset 3-6-12m momentum with a 10-month trend and a vol penalty.
+             (The Integrity Score screener DOES grade quality and value — that is a
+             different product, and its pages are correct.) These four are the
+             families all three models actually share. -->
+        <div class="bf-desc">Each stock scored on peer-reviewed factors — momentum, trend, volatility &amp; liquidity.</div>
         <!-- V28.8: "Academically Validated" needed 141px in a 138px content box at
              1280 and wrapped to two lines. The desc directly above already says
              "peer-reviewed", so the chip carries the shorter half of the claim. -->
@@ -4513,7 +4529,12 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
         <span class="badge-pop" style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 6px 16px -8px rgba(5,150,105,.7);">Free</span>
         <span class="strat-badge badge-teal">Multi-Asset</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> MultiAsset</div>
-        <div class="strat-universe">8 assets · Weekly signals · Monthly rebalance</div>
+        <!-- V28.9: was "8 assets · Weekly signals · Monthly rebalance". The model
+             has no weekly leg: IP/shared/config.py sets STRATEGY_CADENCE="monthly"
+             for all three and MultiAsset's own lookbacks are commented "in months
+             — same monthly cadence as LM/SM". The line now says what the other two
+             cards say in the same slot: what the universe is. -->
+        <div class="strat-universe">8 assets · Equity, gold, bonds &amp; global ETFs · Monthly rebalance</div>
         <div class="strat-metrics">
           <div class="strat-metric">
             <div class="val proof-num" data-count="21.7" data-suffix="%" data-decimals="1" style="color:var(--green);"><!--MFSTAT:ma:cagr-->21.7%<!--/MFSTAT--></div>
@@ -5200,19 +5221,27 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
      day one lit because that is the only day with work in it, and the rest pale
      because that is the honest picture.
 
-     It also draws the one place the three strategies genuinely differ in what
-     they ASK OF YOU rather than in what they return: MultiAsset publishes a
-     weekly signal between rebalances (its own card says "8 assets · Weekly
-     signals · Monthly rebalance", and the FAQ repeats it), so its month has four
-     more touch points than the two equity books. That difference has been stated
-     in a card sub-line and an FAQ sentence since the strategy shipped and has
-     never been visible anywhere.
+     V28.9 — WHAT THE IN-BETWEEN MARKS ACTUALLY ARE. V28.6 drew four marks on
+     the MultiAsset row alone and called them "weekly signals", because its card
+     and the FAQ both said so. The model does not have a weekly leg:
+     IP/shared/config.py sets STRATEGY_CADENCE = "monthly" for all three, and
+     MultiAsset's momentum windows are commented "in months — same monthly
+     cadence as LM/SM". So the row was drawing four touch points that nothing
+     produces, on the one strategy that is free, under a heading that promises
+     "Then nothing" — a claim of MORE work sitting directly beneath a promise of
+     none.
+     What actually happens between rebalances is a portfolio review, it runs
+     twice a month, and it applies to ALL THREE books. Every row now carries the
+     same two marks, and the legend and the row sub-line both say the thing that
+     matters about them: the review is ours, and there is nothing for the member
+     to do. That turns the in-between marks from a contradiction of the headline
+     into the evidence for it.
 
      Data contract, same as the trade-off strip above it: every row is READ FROM
-     THE STRATEGY CARDS at parse time — name from .strat-name, order count and
-     weekly-signal flag from .strat-universe — so a retired or renamed strategy
-     cannot leave a stale row here. If fewer than two cards parse, the whole
-     section removes itself and the page is as it was. ── -->
+     THE STRATEGY CARDS at parse time — name from .strat-name and order count
+     from .strat-universe — so a retired or renamed strategy cannot leave a stale
+     row here. If fewer than two cards parse, the whole section removes itself
+     and the page is as it was. ── -->
 <section class="member-month" id="your-month">
   <div class="container">
     <div class="section-label">Your month</div>
@@ -5224,7 +5253,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
         <span class="mm-title">One calendar month, per strategy</span>
         <span class="mm-key">
           <span class="mm-k"><i class="k-act" aria-hidden="true"></i>You place orders</span>
-          <span class="mm-k"><i class="k-sig" aria-hidden="true"></i>Signal published</span>
+          <span class="mm-k"><i class="k-sig" aria-hidden="true"></i>We review — nothing for you</span>
           <span class="mm-k"><i class="k-idle" aria-hidden="true"></i>Nothing to do</span>
         </span>
       </div>
@@ -5263,8 +5292,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
 
     // ── Read the strategies off their own cards, never a second copy of them.
     // .strat-universe is one line of the form "25 stocks · <universe> · Monthly
-    // rebalance" (MultiAsset: "8 assets · Weekly signals · Monthly rebalance").
-    // A row is only built when BOTH a name and a holdings count parse.
+    // rebalance". A row is only built when BOTH a name and a holdings count parse.
     var rows = [];
     document.querySelectorAll('.strat-card').forEach(function(c){
       var nmEl = c.querySelector('.strat-name'), uEl = c.querySelector('.strat-universe');
@@ -5273,26 +5301,28 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
       var u  = (uEl.textContent  || '').replace(/\s+/g,' ').trim();
       var m  = u.match(/(\d+)\s+(?:stocks?|assets?)/i);
       if (!nm || !m) return;
-      rows.push({ name: nm, n: parseInt(m[1], 10), weekly: /weekly\s+signal/i.test(u) });
+      rows.push({ name: nm, n: parseInt(m[1], 10) });
     });
     if (rows.length < 2) return;          // fail-soft: the section never appears
 
-    // Weekly-signal days, evenly through the month AFTER the day-1 rebalance.
-    var SIG = [8, 15, 22, 29];
+    // V28.9 — the biweekly portfolio review, the same on every book. Two marks,
+    // spaced a fortnight apart from the day-1 rebalance, so the axis ticks the
+    // module already prints (Day 15) line up with one of them by construction.
+    var REVIEW = [15, 29];
+    var SUB = 'We review it twice · nothing for you';
     rowsEl.innerHTML = rows.map(function(r){
       var cells = '';
       for (var d = 1; d <= 30; d++){
         var cls = 'mm-day';
         if (d === 1) cls += ' is-act';
-        else if (r.weekly && SIG.indexOf(d) > -1) cls += ' is-sig';
+        else if (REVIEW.indexOf(d) > -1) cls += ' is-sig';
         cells += '<i class="' + cls + '" aria-hidden="true"></i>';
       }
-      // Kept short enough to hold one line in the 196px name column at 10px.
-      var sub = r.weekly ? 'Weekly signals in between' : 'Nothing until next month';
-      var right = r.n + ' orders' + (r.weekly ? '<em>+ 4 weekly checks</em>' : '<em>then hold</em>');
+      var right = r.n + ' orders<em>then hold</em>';
       return '<div class="mm-row">' +
-               '<span class="mm-nm"><b>' + r.name + '</b><span>' + sub + '</span></span>' +
-               '<span class="mm-track" role="img" aria-label="' + r.name + ': ' + sub + '">' + cells + '</span>' +
+               '<span class="mm-nm"><b>' + r.name + '</b><span>' + SUB + '</span></span>' +
+               '<span class="mm-track" role="img" aria-label="' + r.name + ': ' + r.n +
+                 ' orders on day one, then two portfolio reviews by MindForge and nothing for you to do">' + cells + '</span>' +
                '<span class="mm-n">' + right + '</span>' +
              '</div>';
     }).join('');
@@ -5752,7 +5782,8 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
 
      Every answer is grounded in what the site already states elsewhere:
        • prices from the strategy cards (₹1,499 / ₹2,499 / free)
-       • cadence from the same cards ("Monthly rebalance", "Weekly signals")
+       • cadence from the same cards ("Monthly rebalance" on all three — V28.9
+         removed a "Weekly signals" line that no part of the model produced)
        • the free-first-month launch offer from mfc-offer.js
      Deliberately NO hard-coded return figures. The CAGR numbers are re-injected
      monthly through the MFSTAT markers, so pasting them here would silently drift
@@ -5789,7 +5820,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
 
       <details class="faq-item">
         <summary><span>How often are the portfolios rebalanced?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard — every ticker, its weight and its recommended price. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf.</p></div>
+        <div class="faq-a"><p>All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard — every ticker, its weight and its recommended price. Between rebalances we review all three portfolios twice a month; a review changes nothing you hold and asks nothing of you. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf.</p></div>
       </details>
 
       <details class="faq-item">
@@ -5855,7 +5886,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
         "name": "How often are the portfolios rebalanced?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard — every ticker, its weight and its recommended price. MindForge MultiAsset additionally publishes weekly signals between rebalances. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf."
+          "text": "All three strategies rebalance monthly. On each rebalance the model re-scores its universe and publishes the new holding list to your dashboard — every ticker, its weight and its recommended price. Between rebalances we review all three portfolios twice a month; a review changes nothing you hold and asks nothing of you. You place the resulting orders in your own broker account, in your own time — MindForge never touches your money or executes a trade on your behalf."
         }
       },
       {
