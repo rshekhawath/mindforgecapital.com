@@ -129,6 +129,23 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .meta-pill.has-switcher.open .strat-caret{ transform:rotate(180deg); }
 @keyframes stratNudge{ 0%,100%{ box-shadow:0 0 0 0 rgba(37,99,235,0); } 40%{ box-shadow:0 0 0 6px rgba(37,99,235,0.15); } }
 .meta-pill.has-switcher.nudge{ animation:stratNudge 1.7s ease 2; }
+/* V29.0: the switch now probes the target token before committing, so there is a
+   real (if short) wait between the click and the reload. Say so, and lock the
+   control while it is in flight. */
+.meta-pill.has-switcher.switching{ opacity:.72; pointer-events:none; }
+.meta-pill.has-switcher.switching .strat-caret{ animation:stratSpin .8s linear infinite; }
+@keyframes stratSpin{ to{ transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce){ .meta-pill.has-switcher.switching .strat-caret{ animation:none; } }
+/* V29.0: recovery list on the error screen */
+.err-strats-head{ margin-top:18px; font-size:11px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--text3); }
+.err-strats-list{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:10px; }
+.err-strat-btn{ font:inherit; font-size:13px; font-weight:700; cursor:pointer;
+  padding:9px 16px; border-radius:10px; color:#fff; border:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 8px 18px -10px rgba(26,80,216,.6); transition:transform .18s ease, box-shadow .18s ease; }
+.err-strat-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 22px -10px rgba(26,80,216,.7); }
+.err-strat-btn:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
 
 .strat-menu{
   position:fixed; top:0; left:0; min-width:240px; max-width:calc(100vw - 24px);
@@ -1926,6 +1943,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </div>
     <h3 id="error-title">Access Denied</h3>
     <p id="error-msg">This link is invalid or your subscription has expired.</p>
+    <!-- V29.0 — the way back. The switcher lives inside the dashboard, so an
+         error screen used to be a dead end: the member's OTHER working
+         strategies were still in the registry and completely unreachable
+         without digging the original access link out of email. Any strategy
+         this device still knows about is offered here. -->
+    <div id="error-strats" style="display:none;">
+      <div class="err-strats-head">Open one of your other strategies</div>
+      <div id="error-strats-list" class="err-strats-list"></div>
+    </div>
     <br>
     <p style="font-size:13px;color:var(--text3);"><a href="login.html" style="color:var(--accent);text-decoration:underline;">Sign in again →</a> &nbsp;·&nbsp; Lost your link? <a href="recover.html" style="color:var(--accent);text-decoration:underline;">Recover dashboard access →</a></p>
   </div>
@@ -2921,6 +2947,30 @@ function removeStratByToken(tok){
   _cookieSet(STRAT_REG_KEY, json);
   try { localStorage.setItem(STRAT_REG_KEY, json); } catch(e){}
 }
+// V29.0 — one place that decides "did this request fail, and is it definitive?".
+// The backend's errorResponse() emits BOTH {status:'error'} and {error}, but that
+// belt-and-suspenders shape only took effect on a redeploy, and other endpoints
+// have historically answered {status:'error', message}. init() tested `data.error`
+// alone, so a {status:'error', message} reply fell straight through to
+// renderDashboard(undefined, []) — which throws on `sub.expires_at`, gets caught by
+// the outer catch, and is reported to the member as "Connection Error … try again
+// in a moment" for what is actually a dead token. Measured: the error panel and
+// the dashboard panel were both display:block at once.
+function errMessage(data){
+  if (!data) return '';
+  return String(data.error || data.message || '');
+}
+function isErrorPayload(data){
+  return !!data && (data.error != null || data.status === 'error');
+}
+// Definitive = this token will never work again, as opposed to a transient blip.
+// The V21.2 contract: only a definitive failure may discard the saved session.
+function isAuthFailure(data){
+  if (!isErrorPayload(data)) return false;
+  return /subscription|expired|not active|inactive|no token|invalid token|unauthor|access denied/i
+    .test(errMessage(data));
+}
+
 const token = (function () {
   const params = new URLSearchParams(window.location.search);
   let t = params.get('token');
@@ -2937,7 +2987,12 @@ const token = (function () {
   return t;
 })();
 const demoMode = new URLSearchParams(window.location.search).get('demo');
-const isDemo = demoMode === '1';
+// V29.0: was `demoMode === '1'`, so the moment demo gained a second strategy the
+// switch to ?demo=2 fell through to the TOKEN path, found no token and rendered
+// nothing. Accept every mode _demoData() knows about, and nothing else — an
+// unrecognised ?demo= value must still take the real path, not a blank dashboard.
+const DEMO_MODES = ['1', '2'];
+const isDemo = DEMO_MODES.indexOf(demoMode) > -1;
 
 // V21.0: Sign out — clear the persisted session, then go to the sign-in page.
 (function(){
@@ -3028,6 +3083,31 @@ function _demoData(mode) {
   // backfill ".NS" suffixes here to keep the table/calculator on ₹ for the
   // Indian book (without it, the table's per-row currency falls through to $).
   stocks.forEach(s => { if (!s.yahoo_ticker) s.yahoo_ticker = s.ticker + '.NS'; });
+
+  // V29.0 — ?demo=2 is the MultiAsset book: 8 ETFs, composite-score weighted (NOT
+  // equal-weighted), which is also the fixture that exercises isWeightedBook() and
+  // the "Why these 25" multiplicative-chain branch. Weights are a real run's.
+  if (mode === '2') {
+    const etfs = [
+      {ticker:'MON100',     company_name:'NASDAQ ETF',              weight_pct:28.57, recommended_price:305.18},
+      {ticker:'HDFCSML250', company_name:'Nifty SmallCap 250 ETF',  weight_pct:15.43, recommended_price:180.67},
+      {ticker:'JUNIORBEES', company_name:'Nifty Next 50 ETF',       weight_pct:15.41, recommended_price:795.65},
+      {ticker:'MID150BEES', company_name:'Nifty Midcap 150 ETF',    weight_pct:14.50, recommended_price:239.48},
+      {ticker:'EBBETF0431', company_name:'Bharat Bond ETF',         weight_pct:11.87, recommended_price:1441.34},
+      {ticker:'GOLDBEES',   company_name:'Gold ETF',                weight_pct:8.12,  recommended_price:117.11},
+      {ticker:'SILVERBEES', company_name:'Silver ETF',              weight_pct:4.68,  recommended_price:206.51},
+      {ticker:'NIFTYBEES',  company_name:'Nifty 50 ETF',            weight_pct:1.42,  recommended_price:277.42},
+    ];
+    etfs.forEach(s => { s.industry = 'ETF'; s.yahoo_ticker = s.ticker + '.NS'; });
+    return {
+      subscription: {
+        name: 'Riya', email: 'riya@example.com', strategy: 'MindForge MultiAsset',
+        expires_at: exp.toISOString(), subscribed_at: sub0.toISOString(), status: 'active'
+      },
+      stocks: etfs
+    };
+  }
+
   return {
     subscription: {
       name: 'Riya', email: 'riya@example.com', strategy: 'MindForge LargeMidcap 250',
@@ -3058,8 +3138,11 @@ async function init() {
     // logging valid members out on a momentary glitch, forcing a needless re-login
     // (the very bug being chased). On a transient error we KEEP the token so the next
     // load / retry re-authenticates. (V21.0 cleared on ANY data.error — too eager.)
-    if (data.error) {
-      if (/subscription|expired|not active|inactive|no token|invalid token|unauthor|access denied/i.test(data.error)) {
+    // V29.0: shape-agnostic — {error}, {status:'error', error} and
+    // {status:'error', message} are all failures. Testing `data.error` alone let
+    // the third shape through to renderDashboard(undefined, …).
+    if (isErrorPayload(data)) {
+      if (isAuthFailure(data)) {
         // V21.6: clear the dead SESSION token, but KEEP the strategy switcher registry —
         // only drop this one dead strategy from it. Previously clearDashSession() wiped
         // the whole map, stranding the member's other (working) strategies on a single
@@ -3067,7 +3150,14 @@ async function init() {
         clearDashSession({ keepRegistry: true });
         removeStratByToken(token);
       }
-      showError('Access Denied', data.error);
+      showError('Access Denied', errMessage(data) || 'This link is invalid or your subscription has expired.');
+      return;
+    }
+    // V29.0: a success payload with no subscription used to reach renderDashboard
+    // and throw on sub.expires_at, surfacing as "Connection Error" AFTER
+    // state-dashboard had already been switched on — two panels, wrong message.
+    if (!data.subscription) {
+      showError('Access Denied', 'That subscription could not be loaded. Please sign in again.');
       return;
     }
     stocksData = data.stocks || [];
@@ -3198,8 +3288,14 @@ function _animateCount(el, target, opts) {
 // more strategies on this device. Demo mode seeds the demo fixture so the control
 // is still reachable; real sessions accumulate {strategy → token} pairs in the
 // cookie-backed registry (recordStrat) as each access link is opened.
+// V29.0: demo used to carry ONE strategy, so entries.length < 2 and the switcher
+// never even wired up under ?demo=1 — which is exactly why the switch path was
+// never exercised in QA and shipped broken. Two real books now, so the pill, its
+// menu and the switch itself are all reachable locally. Values are the ?demo=
+// modes _demoData() branches on.
 const _DEMO_STRATS = {
-  'MindForge LargeMidcap 250': '1'
+  'MindForge LargeMidcap 250': '1',
+  'MindForge MultiAsset':      '2'
 };
 let _stratMenuWired = false;
 function setupStrategySwitcher(activeStrategy){
@@ -3289,13 +3385,55 @@ function setupStrategySwitcher(activeStrategy){
   function closeMenu(){ menu.classList.remove('open'); pill.classList.remove('open'); pill.setAttribute('aria-expanded','false'); }
   function toggleMenu(){ pill.classList.contains('open') ? closeMenu() : openMenu(); }
 
+  // V29.0 — SWITCH ONLY ONCE THE TARGET IS KNOWN GOOD.
+  // This used to overwrite mfc_dash_token with the chosen strategy's token and
+  // reload immediately. If that token was dead — expired, revoked, superseded by
+  // a renewal, or seeded into the registry by a login that has since changed —
+  // the member did not just fail to switch: the ACTIVE session cookie was now the
+  // dead token, the reload failed, and the error screen carries no switcher (it
+  // is rendered instead of the dashboard, so setupStrategySwitcher never runs).
+  // Their working strategy was still sitting in the registry and completely
+  // unreachable. The only way back was to dig the original access link out of
+  // email. That is the "cannot switch between strategies" report.
+  // Now the target is probed FIRST and the session token is only replaced once
+  // the backend has honoured it. A failure leaves the member exactly where they
+  // were, on a working dashboard, and drops the dead entry so the menu self-heals.
+  var _switching = false;
   function chooseStrategy(kind, value){
     if (kind === 'demo'){
       window.location.href = 'dashboard.html?demo=' + encodeURIComponent(value);
-    } else {
-      writeDashToken(value);                 // persist the chosen strategy's token as the active session…
-      window.location.href = 'dashboard.html';   // …then reload clean; init() reads it back from the cookie
+      return;
     }
+    if (_switching) return;
+    _switching = true;
+    closeMenu();
+    pill.classList.add('switching');
+    if (window.showToast) showToast('Opening…');
+
+    fetch(APPS_SCRIPT_URL + '?action=stocks&token=' + encodeURIComponent(value) + '&_=' + Date.now())
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (isAuthFailure(data)){
+          // definitive: this strategy's token is gone. Drop it and stay put.
+          removeStratByToken(value);
+          setupStrategySwitcher(currentStrategy);      // rebuild the menu without it
+          if (window.showToast) showToast('That strategy is no longer active — removed from your list.');
+          return;
+        }
+        if (!data || !data.subscription){
+          if (window.showToast) showToast('Could not open that strategy. Please try again.');
+          return;
+        }
+        writeDashToken(value);                 // …only now is it the active session
+        window.location.href = 'dashboard.html';
+      })
+      .catch(function(){
+        if (window.showToast) showToast('Could not reach the server. Please try again.');
+      })
+      .then(function(){
+        _switching = false;
+        pill.classList.remove('switching');
+      });
   }
 
   // Wire interaction handlers once. pill + menu are stable elements (menu markup is
@@ -5362,9 +5500,43 @@ function updateMarketStatus() {
 
 function showError(title, msg) {
   document.getElementById('state-loading').style.display = 'none';
+  // V29.0: an error must never leave the half-built dashboard on screen. init()
+  // could reach renderDashboard (which sets this to block) and only THEN throw,
+  // leaving the error panel and a broken dashboard visible at the same time.
+  var dash = document.getElementById('state-dashboard');
+  if (dash) dash.style.display = 'none';
   document.getElementById('state-error').style.display = 'block';
   document.getElementById('error-title').textContent = title;
   document.getElementById('error-msg').textContent = msg;
+  offerOtherStrategies();
+}
+
+// V29.0 — the way back off the error screen. The strategy switcher is part of the
+// dashboard, so when a token fails there is no switcher on screen and the member's
+// other, working strategies are invisible even though this device still has their
+// tokens. List whatever the registry knows (minus the token that just failed) and
+// let one click switch to it. Silent no-op when there is nothing to offer.
+function offerOtherStrategies(){
+  try {
+    var box  = document.getElementById('error-strats'),
+        list = document.getElementById('error-strats-list');
+    if (!box || !list) return;
+    var reg = readStratRegistry();
+    var names = Object.keys(reg).filter(function(n){ return reg[n] && reg[n] !== token; });
+    if (!names.length){ box.style.display = 'none'; return; }
+    names.sort(function(a,b){ return a.localeCompare(b); });
+    list.innerHTML = names.map(function(n){
+      return '<button type="button" class="err-strat-btn" data-tok="' + encodeURIComponent(reg[n]) + '">' +
+             escapeHtml(n) + '</button>';
+    }).join('');
+    list.onclick = function(ev){
+      var b = ev.target.closest && ev.target.closest('.err-strat-btn');
+      if (!b) return;
+      writeDashToken(decodeURIComponent(b.getAttribute('data-tok')));
+      window.location.href = 'dashboard.html';
+    };
+    box.style.display = '';
+  } catch(e){}
 }
 
 async function refreshDashboard() {

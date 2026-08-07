@@ -225,7 +225,13 @@
 // bump; the cache name is the only thing that can move a precached document.
 // (dashboard.html stays network-first: the new "Why these 25" factor-mix card
 // reaches members with no cache move at all.)
-const CACHE = 'mfc-v39';
+//
+// V29.0 -> mfc-v40. index.html is unchanged this release; the work is all in
+// dashboard.html, which is network-first and reaches members without any cache
+// move. The bump is here so no installed PWA can keep serving a shell whose
+// precached assets predate the strategy-switcher fix, and to keep the cache
+// name monotonic with the release it belongs to.
+const CACHE = 'mfc-v40';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
