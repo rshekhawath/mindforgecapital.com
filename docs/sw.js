@@ -189,7 +189,19 @@
 // (dashboard.html stays network-first: the half-placed-book strip, the company cell
 // that no longer widows its link glyph and the wrapped sector labels reach members
 // with no cache move at all.)
-const CACHE = 'mfc-v36';
+//
+// V28.7 -> mfc-v37. index.html is precached as the offline navigation fallback and
+// its BODY changed: the new fee ladder under "Why MindForge" (drag per strategy on
+// one axis against the 2–2.5% AUM band, derived from STRAT_MONTHLY and each card's
+// recommended investment) plus the two hand-written fee figures in the "Honest
+// pricing" card, which now read from the same computation. Its HEAD changed too —
+// the inert frame-ancestors directive is gone from the meta CSP on all 52 pages.
+// No shared asset in /assets/ changed this release, so no page needed a ?v bump;
+// the cache name is the only thing that can move a precached document.
+// (dashboard.html stays network-first: the capital ladder, the corrected drift
+// sentence and the phone card's untangled hit pads reach members with no cache
+// move at all.)
+const CACHE = 'mfc-v37';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

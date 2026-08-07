@@ -4,8 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection.
+     V28.7: frame-ancestors dropped from the policy. A meta-delivered CSP cannot carry that directive, so every browser ignored it
+     and logged a Content-Security-Policy error on every page load of every page here, and GitHub Pages cannot send the response
+     header that would make it real. Nothing is lost: the clickjacking guard below is the script that actually refuses framing. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">

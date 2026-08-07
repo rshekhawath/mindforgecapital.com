@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection.
+     V28.7: frame-ancestors dropped from the policy. A meta-delivered CSP cannot carry that directive, so every browser ignored it
+     and logged a Content-Security-Policy error on every page load of every page here, and GitHub Pages cannot send the response
+     header that would make it real. Nothing is lost: the clickjacking guard below is the script that actually refuses framing. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
@@ -5193,7 +5196,14 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><text x="12" y="19" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif" font-size="20" font-weight="800">₹</text></svg>
         </div>
         <h3>Honest pricing</h3>
-        <p>A flat monthly subscription — no AUM-based fees, no profit share, no exit loads. At our recommended investment sizes it works out to roughly <strong>1% a year</strong> in fee drag — versus the <strong>2–2.5% expense ratio</strong> a typical active mutual fund charges on your entire corpus, every year. You keep 100% of your gains.</p>
+        <!-- V28.7: the two figures in this sentence, and the stat below it, were
+             hand-written — while the prices they describe live in the strategy
+             cards 700px above and move whenever the duration toggle is clicked.
+             #why-drag-inline / #why-drag-stat are now filled by the fee ladder
+             below the grid from the same STRAT_MONTHLY the cards are priced from.
+             The static text is the correct value for the 1-month term, so the
+             sentence is right even if the script never runs. -->
+        <p>A flat monthly subscription — no AUM-based fees, no profit share, no exit loads. At our recommended investment sizes it works out to roughly <strong><span id="why-drag-inline">1.2%</span> a year</strong> in fee drag — versus the <strong>2–2.5% expense ratio</strong> a typical active mutual fund charges on your entire corpus, every year. You keep 100% of your gains.</p>
         <!-- V28.0: the link moved ABOVE the stat rule. Every other card in this
              grid ends with its .why-stat divider, and now that the stat is
              bottom-pinned, a card that carried one more element after it held
@@ -5202,7 +5212,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
              it is (a continuation of the paragraph) and all six dividers land
              on the same baseline. -->
         <a href="calculator.html" class="why-calc-link">Calculate your exact savings<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <div class="why-stat"><span class="why-stat-val">~1%</span> <span class="why-stat-lbl">fee drag vs 2–2.5% MF</span></div>
+        <div class="why-stat"><span class="why-stat-val" id="why-drag-stat">~1.2%</span> <span class="why-stat-lbl">fee drag vs 2–2.5% MF</span></div>
       </div>
 
       <div class="why-card fade-up tilt-host">
@@ -5223,8 +5233,311 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
         <div class="why-stat"><span class="why-stat-val">RA</span> <span class="why-stat-lbl">registered</span></div>
       </div>
     </div>
+
+    <!-- ── V28.7 · THE FEE LADDER ────────────────────────────────────────────────
+         "Honest pricing" above makes the site's single most checkable numeric
+         claim — "roughly 1% a year in fee drag versus the 2–2.5% expense ratio a
+         typical active mutual fund charges" — and then asks the reader to take it
+         on trust. Both halves of it were hand-written prose: the "1%" is not a
+         figure anything on this page computes, and the three prices it summarises
+         sit 700px above in the strategy cards, where a duration click rewrites
+         them. That is the exact shape of defect this project keeps finding.
+
+         The ladder draws it instead. One shared 0 → 3% axis; each strategy's flat
+         fee expressed as a share of its OWN recommended investment; the 2–2.5%
+         AUM band shaded on the same axis so the comparison is spatial and not
+         arithmetic. Every figure is derived at render time from STRAT_MONTHLY +
+         the active duration button + each card's own "Recommended Investment"
+         line, so it re-renders when the reader changes term and it can never
+         disagree with the price printed on the card.
+
+         It also states the thing the prose could not: a flat fee is a fixed
+         number of rupees, so its share of the corpus FALLS as the corpus grows,
+         while an AUM fee never does — which means there is a capital below which
+         the flat fee is the WORSE deal. That break-even is named per strategy
+         rather than left out, because a comparison that only shows the half that
+         flatters us is the kind of claim this page exists to avoid.
+
+         Fail-soft: a row is built only when a monthly price AND a recommended
+         investment both parse; with fewer than two rows the whole block removes
+         itself and the section is exactly as it was. ── -->
+    <style id="mf-v287-feeladder">
+    .fee-lad{ margin-top:30px; padding:22px 24px; border-radius:18px;
+      background:var(--ink2); border:0.5px solid var(--border);
+      box-shadow:0 1px 2px rgba(15,23,42,.04), 0 20px 46px -34px rgba(26,80,216,.26);
+      /* geometry tokens — the AUM band is placed off these, so the band and the
+         bars stay locked to the same axis at every breakpoint by construction. */
+      --fl-nm:196px; --fl-num:64px; --fl-gap:12px;
+      /* --fl-off = where the plot column starts, --fl-plot = how wide it is.
+         Both are restated per breakpoint, because the row is three columns on a
+         desktop and two on a phone — so both the leading offset and the number
+         of gaps change with it. Carrying the desktop formula down put the
+         2–2.5% band 3px right of the 2% tick it exists to sit on. */
+      --fl-off:calc(var(--fl-nm) + var(--fl-gap));
+      --fl-plot:calc(100% - var(--fl-nm) - var(--fl-num) - var(--fl-gap) * 2);
+      --fl-b1:0.667; --fl-b2:0.833; }
+    .fl-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+    .fl-title{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+    .fl-key{ display:flex; gap:16px; font-size:10.5px; font-weight:700; letter-spacing:.04em; color:var(--text3); }
+    .fl-key span{ display:inline-flex; align-items:center; gap:6px; }
+    .fl-key i{ display:inline-block; width:16px; height:9px; border-radius:2px; }
+    .fl-key i.k-flat{ background:linear-gradient(90deg,var(--accent),var(--accent3)); }
+    .fl-key i.k-aum{ background:repeating-linear-gradient(135deg,rgba(166,77,8,.30) 0 3px,rgba(166,77,8,.10) 3px 6px);
+      border:1px solid rgba(166,77,8,.32); }
+    html[data-theme="dark"] .fl-key i.k-aum{ background:repeating-linear-gradient(135deg,rgba(251,191,36,.34) 0 3px,rgba(251,191,36,.12) 3px 6px);
+      border-color:rgba(251,191,36,.36); }
+
+    .fl-plot{ position:relative; margin-top:16px; }
+    /* the typical-AUM band, drawn once behind every row rather than repeated in
+       each track — one continuous column reads as a single region to clear. */
+    .fl-band{ position:absolute; top:-3px; bottom:-3px; pointer-events:none; z-index:0;
+      left:calc(var(--fl-off) + var(--fl-plot) * var(--fl-b1));
+      width:calc(var(--fl-plot) * (var(--fl-b2) - var(--fl-b1)));
+      border-radius:4px; border-left:1px dashed rgba(166,77,8,.55); border-right:1px dashed rgba(166,77,8,.40);
+      background:repeating-linear-gradient(135deg,rgba(166,77,8,.13) 0 4px,rgba(166,77,8,.045) 4px 8px); }
+    html[data-theme="dark"] .fl-band{ border-left-color:rgba(251,191,36,.58); border-right-color:rgba(251,191,36,.42);
+      background:repeating-linear-gradient(135deg,rgba(251,191,36,.15) 0 4px,rgba(251,191,36,.05) 4px 8px); }
+    .fl-bandlbl{ position:absolute; top:-9px; left:50%; transform:translateX(-50%);
+      font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+      color:var(--ink-warn); background:var(--ink2); padding:0 6px; white-space:nowrap; }
+
+    .fl-rows{ position:relative; z-index:1; display:grid; gap:11px; }
+    .fl-row{ display:grid; grid-template-columns:var(--fl-nm) 1fr var(--fl-num); align-items:center; gap:var(--fl-gap); }
+    .fl-nm{ min-width:0; }
+    .fl-nm b{ display:block; font-size:13px; font-weight:700; color:var(--text); line-height:1.25;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fl-nm span{ display:block; font-size:10px; font-weight:600; letter-spacing:.03em; color:var(--text3); margin-top:2px; }
+    .fl-track{ height:12px; border-radius:6px; background:rgba(37,99,235,.09); overflow:hidden; }
+    html[data-theme="dark"] .fl-track{ background:rgba(120,150,255,.16); }
+    .fl-fill{ display:block; height:100%; width:0; border-radius:6px;
+      background:linear-gradient(90deg,var(--accent),var(--accent3));
+      transition:width .95s cubic-bezier(.22,1,.36,1); }
+    /* a free strategy has no bar to draw; a dot on the zero line says "nothing
+       here" rather than leaving the lane looking unrendered. */
+    .fl-fill.is-zero{ width:5px !important; border-radius:3px; background:var(--data-strong); }
+    .fl-num{ font-size:12.5px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--accent2); text-align:right; }
+    .fl-num.is-zero{ color:var(--data-strong); }
+    html[data-theme="dark"] .fl-num{ color:var(--data-mid); }
+
+    .fl-axis{ display:grid; grid-template-columns:var(--fl-nm) 1fr var(--fl-num); gap:var(--fl-gap); margin-top:9px; }
+    .fl-ticks{ grid-column:2; display:flex; justify-content:space-between;
+      font-size:10px; font-weight:700; color:var(--text3); font-variant-numeric:tabular-nums; }
+    .fl-foot{ margin-top:14px; padding-top:13px; border-top:0.5px solid var(--border);
+      font-size:11.5px; color:var(--text3); line-height:1.7; }
+    .fl-foot b{ color:var(--text2); font-weight:700; }
+    .fl-be{ margin-top:8px; display:flex; flex-wrap:wrap; gap:7px; }
+    .fl-be-chip{ font-size:10.5px; font-weight:700; color:var(--text2);
+      background:rgba(37,99,235,.07); border:1px solid var(--border2); border-radius:999px; padding:3px 10px;
+      font-variant-numeric:tabular-nums; }
+    html[data-theme="dark"] .fl-be-chip{ background:rgba(120,150,255,.13); }
+    @media (prefers-reduced-motion: reduce){ .fl-fill{ transition:none; } }
+    @media (max-width:1080px){ .fee-lad{ --fl-nm:158px; --fl-num:58px; --fl-gap:10px; } }
+    @media (max-width:860px){
+      /* Phones: the name goes full width above its own lane, so the plot column
+         starts at the container edge — which is what --fl-nm:0 tells the band. */
+      /* Two columns here, not three: the track is the FIRST column, so there is
+         no leading offset and only one gap before the number column. */
+      .fee-lad{ padding:18px 16px; margin-top:24px; --fl-nm:0px; --fl-num:52px; --fl-gap:10px;
+        --fl-off:0px; --fl-plot:calc(100% - var(--fl-num) - var(--fl-gap)); }
+      .fl-row{ grid-template-columns:1fr var(--fl-num); grid-template-areas:'nm nm' 'tk n'; row-gap:6px; }
+      .fl-nm{ grid-area:nm; } .fl-track{ grid-area:tk; } .fl-num{ grid-area:n; }
+      .fl-nm b{ white-space:normal; }
+      .fl-rows{ gap:15px; }
+      .fl-axis{ grid-template-columns:1fr var(--fl-num); }
+      .fl-ticks{ grid-column:1; }
+      .fl-bandlbl{ font-size:9px; }
+    }
+    </style>
+
+    <div class="fee-lad fade-up" id="fee-lad" hidden>
+      <div class="fl-head">
+        <span class="fl-title">What the fee actually costs</span>
+        <span class="fl-key">
+          <span><i class="k-flat" aria-hidden="true"></i>MindForge flat fee</span>
+          <span><i class="k-aum" aria-hidden="true"></i>Typical active MF</span>
+        </span>
+      </div>
+
+      <div class="fl-plot">
+        <span class="fl-band" aria-hidden="true"><span class="fl-bandlbl">2–2.5%</span></span>
+        <div class="fl-rows" id="fl-rows"></div>
+      </div>
+
+      <div class="fl-axis" aria-hidden="true">
+        <span class="fl-ticks" id="fl-ticks"></span>
+      </div>
+
+      <p class="fl-foot" id="fl-foot"></p>
+      <div class="fl-be" id="fl-be"></div>
+    </div>
   </div>
 </section>
+<script id="mf-v287-feeladder-js">
+// STRAT_MONTHLY / DURATIONS are declared by the pricing script further down the
+// document, so this block cannot run at parse time — it waits for DOMContentLoaded,
+// by which point both globals exist and every strategy card has been priced.
+(function(){
+  function boot(){
+  try{
+    var card = document.getElementById('fee-lad'), rowsEl = document.getElementById('fl-rows');
+    if (!card || !rowsEl) return;
+
+    var AXIS_MAX = 3;          // % — the axis the AUM band is placed on
+    var AUM_LO = 2, AUM_HI = 2.5;   // the band this page has always quoted
+
+    // Rupees, Indian grouping, no paise.
+    function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+    // ── Read the strategies off their own cards. The card→key link is the price
+    // element's id ("lm-price-amt" → "lm"), which is also the key STRAT_MONTHLY
+    // and setDuration() use, so a row can only exist for a card that is actually
+    // priced by the same table the card is priced from.
+    function readRows(){
+      var out = [];
+      document.querySelectorAll('.strat-card').forEach(function(c){
+        var amtEl = c.querySelector('[id$="-price-amt"]'),
+            nmEl  = c.querySelector('.strat-name'),
+            minEl = c.querySelector('.strat-min span');
+        if (!amtEl || !nmEl || !minEl) return;
+        var key = amtEl.id.replace('-price-amt', '');
+        var monthly = (window.STRAT_MONTHLY && typeof window.STRAT_MONTHLY[key] === 'number')
+                      ? window.STRAT_MONTHLY[key] : null;
+        if (monthly === null) return;
+        // "₹15,00,000" → 1500000
+        var rec = parseFloat((minEl.textContent || '').replace(/[^0-9.]/g, ''));
+        if (!(rec > 0)) return;
+        // The "MindForge" prefix is dropped, exactly as the trade-off strip above
+        // drops it: the full names run 174–185px and the name column is 158px
+        // between 860 and 1080, so "MindForge LargeMidcap 250" ellipsised to
+        // "MindForge LargeMidcap…" — the strategy identity clipped off the end of
+        // its own row. Measured at 900px, not assumed.
+        var nm = (nmEl.textContent || '').replace(/\s+/g, ' ').trim().replace(/^MindForge\s*/, '');
+        out.push({ key:key, name:nm, monthly:monthly, rec:rec });
+      });
+      return out;
+    }
+
+    // The term the reader currently has selected — the same discount table the
+    // cards are priced with, so the ladder and the price row always agree.
+    function activeTerm(){
+      var D = window.DURATIONS || {};
+      var btn = document.querySelector('[id^="btn-dur-"].active');
+      var k = btn && btn.id ? btn.id.replace('btn-dur-', '') : '1';
+      return D[k] || { months:1, disc:0, unit:'/ month' };
+    }
+
+    function render(){
+      var rows = readRows();
+      if (rows.length < 2){ card.hidden = true; return false; }
+      var term = activeTerm(), months = term.months || 1, disc = term.disc || 0;
+
+      rows.forEach(function(r){
+        // What the member is actually charged for the term, annualised — the same
+        // Math.round the card's own price uses, so ₹4,272 / 3 months is exactly
+        // what this multiplies up.
+        r.termTotal = Math.round(r.monthly * months * (1 - disc));
+        r.annual    = r.termTotal * (12 / months);
+        r.drag      = (r.annual / r.rec) * 100;
+        r.breakEven = r.annual > 0 ? (r.annual / (AUM_LO / 100)) : 0;
+      });
+
+      rowsEl.innerHTML = rows.map(function(r){
+        var zero = !(r.drag > 0);
+        var pct  = Math.max(0, Math.min(100, (r.drag / AXIS_MAX) * 100));
+        var val  = zero ? 'Free' : r.drag.toFixed(2) + '%';
+        var sub  = zero ? 'No fee at any size'
+                        : inr(r.annual) + ' a year on ' + inr(r.rec);
+        return '<div class="fl-row">' +
+                 '<span class="fl-nm"><b>' + r.name + '</b><span>' + sub + '</span></span>' +
+                 '<span class="fl-track" role="img" aria-label="' + r.name + ': ' +
+                   (zero ? 'no fee' : r.drag.toFixed(2) + '% of a ' + inr(r.rec) + ' portfolio a year') +
+                   '"><i class="fl-fill' + (zero ? ' is-zero' : '') + '" data-w="' + pct.toFixed(2) + '"></i></span>' +
+                 '<span class="fl-num' + (zero ? ' is-zero' : '') + '">' + val + '</span>' +
+               '</div>';
+      }).join('');
+
+      var ticks = document.getElementById('fl-ticks');
+      if (ticks){
+        var t = '';
+        for (var i = 0; i <= AXIS_MAX; i++) t += '<span>' + i + '%</span>';
+        ticks.innerHTML = t;
+      }
+
+      // The claim, stated in the numbers just drawn rather than in round prose.
+      var paid = rows.filter(function(r){ return r.drag > 0; });
+      var hi = paid.length ? Math.max.apply(null, paid.map(function(r){ return r.drag; })) : 0;
+      var foot = document.getElementById('fl-foot');
+      if (foot){
+        foot.innerHTML =
+          'A flat fee is a fixed number of rupees, so its share of your corpus <b>falls as the corpus grows</b>. ' +
+          'A percentage-of-AUM fee is a share, so it never does — it takes ' + AUM_LO + '–' + AUM_HI +
+          '% of <b>everything you have</b>, every year, for as long as you hold. ' +
+          (paid.length
+            ? 'At the recommended sizes above, the widest MindForge drag is <b>' + hi.toFixed(2) + '% a year</b>' +
+              (months > 1 ? ' on the ' + months + '-month term' : '') + '.'
+            : '') +
+          ' Below each break-even the flat fee is the worse deal, and it is named here rather than left out:';
+      }
+
+      var be = document.getElementById('fl-be');
+      if (be){
+        be.innerHTML = paid.map(function(r){
+          return '<span class="fl-be-chip">' + r.name +
+                 ' beats a ' + AUM_LO + '% AUM fee above ' + inr(r.breakEven) + '</span>';
+        }).join('') || '';
+      }
+
+      // The prose above the ladder quotes this same number — keep them one value.
+      var inline = document.getElementById('why-drag-inline'),
+          stat   = document.getElementById('why-drag-stat');
+      if (paid.length){
+        if (inline) inline.textContent = hi.toFixed(1) + '%';
+        if (stat)   stat.textContent   = '~' + hi.toFixed(1) + '%';
+      }
+
+      card.hidden = false;
+      return true;
+    }
+
+    function grow(){
+      rowsEl.querySelectorAll('.fl-fill').forEach(function(el){
+        if (el.classList.contains('is-zero')) return;
+        el.style.width = (el.getAttribute('data-w') || 0) + '%';
+      });
+    }
+
+    if (!render()) { card.remove(); return; }
+
+    // Bars are painted at zero and set once the block is on screen — the site's
+    // standard grow-on-reveal idiom. Timer fallback because IntersectionObserver
+    // callbacks do not fire in some headless harnesses.
+    var lit = false, light = function(){ if (lit) return; lit = true; grow(); };
+    if ('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(es){
+        es.forEach(function(e){ if (e.isIntersecting){ light(); io.disconnect(); } });
+      }, { threshold: 0.12 });
+      io.observe(card);
+    } else { light(); }
+    setTimeout(function(){
+      var b = card.getBoundingClientRect();
+      if (b.top < (window.innerHeight || 0) && b.bottom > 0){ card.classList.add('visible'); light(); }
+    }, 900);
+
+    // Re-render on a term change. The duration buttons rewrite the card prices;
+    // if the ladder did not follow, the page would be showing a ₹14,390 annual
+    // charge and a drag computed from ₹17,988 at the same time.
+    ['1','3','6','12'].forEach(function(k){
+      var b = document.getElementById('btn-dur-' + k);
+      if (b) b.addEventListener('click', function(){
+        setTimeout(function(){ if (render()) { lit = false; light(); } }, 0);
+      });
+    });
+  }catch(e){ var c = document.getElementById('fee-lad'); if (c) c.remove(); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
 
 <!-- TEAM -->
 <section class="team" id="team">

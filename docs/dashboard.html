@@ -9,8 +9,11 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection, refuse cross-origin framing -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; frame-ancestors 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection.
+     V28.7: frame-ancestors dropped from the policy. A meta-delivered CSP cannot carry that directive, so every browser ignored it
+     and logged a Content-Security-Policy error on every page load of every page here, and GitHub Pages cannot send the response
+     header that would make it real. Nothing is lost: the clickjacking guard below is the script that actually refuses framing. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
 <script>/* V11.4 clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
 <!-- V11.4 premium PWA/install metadata: consistent, installable, light-rendered -->
 <meta name="color-scheme" content="light">
@@ -490,6 +493,65 @@ html[data-theme="dark"] .drift-strip::before{background:rgba(255,255,255,.26);}
 @media (max-width:560px){.drift{padding:13px 14px;}.drift-lead{font-size:12.5px;}
   .drift-note{font-size:11.5px;}.drift-strip{height:44px;gap:2px;}}
 @media (prefers-reduced-motion:reduce){.drift-t i{transition:none;}}
+
+/* ── V28.7: the capital ladder ──────────────────────────────────────────────
+   Three cards above this one each describe the SAME function of capital and
+   each shows it at exactly one point: coverage says how many picks today's
+   capital buys, drift says how far today's book lands from the model, and the
+   deployment meter says how much of today's capital went in. All three then end
+   in a sentence about what MORE capital would do — "All 25 become buyable from
+   ₹2,97,250", "More capital narrows every one of them" — and none of them draws
+   it. So the one question a member weighing their own number actually asks —
+   "what would change if I put in more, or less?" — is answered three times in
+   prose and never once in a picture.
+   This is that picture: the strategy's own capital presets plus the member's
+   current number, each row re-costed through the identical whole-share
+   arithmetic, so the row for today's capital is the cards above it by
+   construction and cannot drift from them. The series drawn is max drift in
+   bps — the one that actually varies (88bp at ₹5L down to single digits at
+   ₹50L) where deployment barely moves — and the bars therefore SHORTEN as
+   capital rises, which is the shape of the finding. ── */
+.clad{grid-column:1/-1;margin-top:10px;padding:15px 17px;border-radius:12px;
+  background:rgba(37,99,235,0.045);border:0.5px solid var(--border);}
+html[data-theme="dark"] .clad{background:rgba(150,180,240,0.055);}
+.clad-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.clad-lead{font-size:13.5px;color:var(--text2);line-height:1.45;}
+.clad-lead b{color:var(--white);font-weight:800;font-variant-numeric:tabular-nums;}
+.clad-chip{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;white-space:nowrap;
+  color:var(--data-mid);background:rgba(26,80,216,0.10);border:0.5px solid rgba(26,80,216,0.22);}
+html[data-theme="dark"] .clad-chip{color:var(--data-mid);background:rgba(131,170,255,0.12);border-color:rgba(131,170,255,0.26);}
+.clad-rows{margin-top:12px;display:grid;gap:7px;}
+.clad-row{display:grid;grid-template-columns:132px 1fr 74px;align-items:center;gap:10px;
+  padding:4px 7px;margin:0 -7px;border-radius:8px;}
+/* the member's own capital is a row like any other — it is marked, not restyled,
+   so the comparison it sits in stays legible. */
+.clad-row.is-you{background:rgba(26,80,216,0.09);box-shadow:inset 0 0 0 1px rgba(26,80,216,0.20);}
+html[data-theme="dark"] .clad-row.is-you{background:rgba(131,170,255,0.13);box-shadow:inset 0 0 0 1px rgba(131,170,255,0.26);}
+.clad-cap{min-width:0;}
+.clad-cap b{display:block;font-size:12.5px;font-weight:800;color:var(--white);line-height:1.25;
+  font-variant-numeric:tabular-nums;}
+.clad-cap span{display:block;font-size:10px;font-weight:600;letter-spacing:.02em;color:var(--text3);margin-top:1px;}
+.clad-cap span.is-short{color:var(--ink-warn);font-weight:700;}
+.clad-track{height:10px;border-radius:5px;background:rgba(37,99,235,0.09);overflow:hidden;}
+html[data-theme="dark"] .clad-track{background:rgba(120,150,255,0.16);}
+.clad-fill{display:block;height:100%;width:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--data-mid),var(--accent3));
+  transition:width .8s cubic-bezier(.22,1,.36,1);}
+/* a book that this capital cannot fully place is a coverage problem, not a
+   tracking one, and gets the page's existing amber for that. */
+.clad-row.is-partial .clad-fill{background:linear-gradient(90deg,#b45309,#f59e0b);}
+.clad-bps{font-size:11.5px;font-weight:800;color:var(--text2);text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap;}
+.clad-you{display:inline-block;margin-right:5px;font-size:9px;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;font-style:normal;color:var(--data-mid);}
+.clad-note{margin-top:10px;font-size:12px;color:var(--text3);line-height:1.55;}
+.clad-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums;}
+@media (max-width:560px){.clad{padding:13px 14px;}.clad-lead{font-size:12.5px;}
+  .clad-note{font-size:11.5px;}
+  .clad-row{grid-template-columns:112px 1fr 62px;gap:8px;}
+  .clad-cap b{font-size:11.5px;}.clad-bps{font-size:11px;}}
+@media (prefers-reduced-motion:reduce){.clad-fill{transition:none;}}
 
 /* ── V28.6: the half-placed book ────────────────────────────────────────────
    Sits under the buy-progress bar, which counts orders but says nothing about
@@ -1201,7 +1263,19 @@ footer a:hover{color:var(--accent);}
    one-tap route to the order ticket, even though the broker picker sits right
    above the list. Same brokerLink() the <tr> uses; the row wraps because a long
    ticker plus a broker name is wider than a 390px card's name column. */
-.sc-tkr-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 4px;margin-top:3px;}
+/* V28.7 — the two hit pads on this card were fighting each other.
+   V28.3 gave BOTH .company-link and .broker-link a 28px transparent ::after so
+   each would clear the 24px WCAG 2.2 SC 2.5.8 floor. On the phone card those two
+   controls sit on consecutive lines with a 2px gap, so their pad centres are
+   22.5px apart and two 28px pads necessarily overlap by ~5px — measured on all
+   25 demo cards, gap 2px on every one. Whichever pad paints later wins the
+   contested band, so a tap on the bottom sliver of the company name opened the
+   BROKER instead: hit-testing 11px below six of the 25 company links returned
+   a.broker-link. 2.5.8 asks for 24px targets OR 24px of separation between
+   undersized ones; this had neither.
+   margin-top 3 -> 11 puts the two centres 30.5px apart, which clears both 28px
+   pads with 2.5px to spare, and costs 8px per card. */
+.sc-tkr-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 4px;margin-top:11px;}
 .sc-tkr-row .sc-ticker{margin-top:0;}
 .sc-tkr-row .broker-link{margin-left:0;}
 .sc-num{
@@ -2386,6 +2460,23 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="drift-strip" id="drift-strip" aria-hidden="true"></div>
         <div class="drift-scale" id="drift-scale" aria-hidden="true"></div>
         <div class="drift-note" id="drift-note"></div>
+      </div>
+
+      <!-- V28.7 — WHAT A DIFFERENT CAPITAL WOULD CHANGE.
+           Coverage, drift and the deployment meter are three readings of one
+           function of capital, each taken at a single point, each ending in a
+           sentence about what a different number would do. This draws that
+           function across the strategy's own presets with the member's number
+           marked, re-costing every row through the same whole-share arithmetic
+           the cards above use — so the row that matches today's capital IS
+           those cards, not a second opinion about them. -->
+      <div class="clad" id="clad" style="display:none;">
+        <div class="clad-head">
+          <div class="clad-lead" id="clad-lead">&mdash;</div>
+          <div class="clad-chip" id="clad-chip">&mdash;</div>
+        </div>
+        <div class="clad-rows" id="clad-rows"></div>
+        <div class="clad-note" id="clad-note"></div>
       </div>
     </div>
 
@@ -3710,6 +3801,10 @@ function setupCapitalCalculator(stocks, strategy) {
   const input = document.getElementById('size-input');
   input.placeholder = '1,00,000';
 
+  // V28.7: the capital ladder draws these same presets, so it reads the list the
+  // buttons are built from rather than keeping its own copy of the ranges.
+  window._capLadderOptions = presets.options.slice();
+
   // Render preset buttons
   const presetEl = document.getElementById('size-presets');
   presetEl.innerHTML = presets.options.map(v => {
@@ -3802,6 +3897,7 @@ function refreshSizeSummary() {
 
   refreshCoverage();
   refreshDrift();
+  refreshCapitalLadder();   // V28.7 — the same story across the whole capital range
   refreshSession();   // V28.6 — capital changes the amounts AND which picks are buyable
 }
 
@@ -3953,7 +4049,12 @@ function refreshDrift() {
         + 'its model weight &mdash; the table’s <b>Weight</b> column is the model’s, not yours. '
         + 'Widest: <b>' + nm(wide.s) + '</b> at <b>' + wide.actual.toFixed(2) + '%</b> against a '
         + wide.target.toFixed(2) + '% model weight. Average gap across the book: <b>' + avg
-        + ' bps</b>. More capital narrows every one of them &mdash; 1 bp = 0.01%.'
+        // V28.7: this read "More capital narrows every one of them", which the
+        // capital ladder directly below now disproves on the same screen — whole
+        // shares round in steps, so on the demo book ₹25L tracks to ±15 bps and
+        // ₹50L to ±17. The ladder is the honest version of this sentence.
+        + ' bps</b>. Capital is the lever that moves these &mdash; the ladder below shows '
+        + 'what each size would do. 1 bp = 0.01%.'
       : 'At this capital every order divides exactly into its model weight, so the book '
         + 'you place is the model to the rupee.';
 
@@ -3970,6 +4071,187 @@ function refreshDrift() {
     else setTimeout(draw, 40);
     setTimeout(draw, 700);   // backstop: a document whose frames never run
   } catch (e) { /* sizing card must survive a drift failure */ }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V28.7 — THE CAPITAL LADDER
+   --------------------------------------------------------------------------
+   _bookAt(capital) is the single arithmetic the coverage card, the drift card
+   and this ladder all read from, so a ladder row at today's capital reports the
+   same buyable count and the same max-bps figure those cards print. It is a
+   deliberate extraction rather than a re-implementation: two functions that
+   compute "how many picks does ₹X buy" independently is precisely how the
+   V28.1 rupee totals ended up disagreeing.
+   ══════════════════════════════════════════════════════════════════════════ */
+function _bookAt(capital) {
+  const list = stocksData || [];
+  if (!(capital > 0) || !list.length) return null;
+  let buyable = 0, priced = 0, alloc = 0, total = 0, modelSum = 0;
+  const held = [];
+  list.forEach(s => {
+    const price = Number(s.recommended_price) || 0;
+    const model = Number(s.weight_pct) || 0;
+    if (!(price > 0)) return;
+    priced++;
+    const shares = Math.floor(allocBudget(s, list, capital) / price);
+    if (shares < 1) return;
+    buyable++;
+    alloc += Math.round(shares * price);           // same rounding the table prints
+    if (!(model > 0)) return;
+    const amt = shares * price;
+    total += amt; modelSum += model;
+    held.push({ amt: amt, model: model });
+  });
+  if (!priced) return null;
+  let maxBps = 0, sumAbs = 0;
+  if (held.length >= 2 && total > 0 && modelSum > 0) {
+    held.forEach(h => {
+      const bps = Math.round((h.amt / total * 100 - h.model / modelSum * 100) * 100);
+      const a = Math.abs(bps);
+      if (a > maxBps) maxBps = a;
+      sumAbs += a;
+    });
+  }
+  return {
+    capital: capital, buyable: buyable, n: priced,
+    deployed: capital > 0 ? Math.min(100, alloc / capital * 100) : 0,
+    maxBps: maxBps,
+    avgBps: held.length ? Math.round(sumAbs / held.length) : 0,
+    full: buyable === priced
+  };
+}
+
+// The capital at which every pick becomes buyable — the same figure the coverage
+// card names, derived the same way (allocBudget is exactly linear in capital, so
+// a pick's break-even is price ÷ its share of the book).
+function _fullBookCapital() {
+  const list = stocksData || [];
+  if (!(currentCapital > 0)) return 0;
+  let minCap = 0;
+  list.forEach(s => {
+    const price = Number(s.recommended_price) || 0;
+    if (!(price > 0)) return;
+    const share = allocBudget(s, list, currentCapital) / currentCapital;
+    if (share > 0) minCap = Math.max(minCap, price / share);
+  });
+  return Math.ceil(minCap - 1e-6);
+}
+
+function refreshCapitalLadder() {
+  try {
+    const box = document.getElementById('clad');
+    if (!box) return;
+    const hide = () => { box.style.display = 'none'; };
+    const list = stocksData || [];
+    if (!list.length || !(currentCapital > 0)) return hide();
+
+    // The strategy's own presets, plus the member's number wherever it falls.
+    // Sorted and de-duplicated, so entering a preset value does not draw it twice.
+    const opts = (window._capLadderOptions && window._capLadderOptions.length)
+      ? window._capLadderOptions.slice()
+      : [currentCapital];
+    const steps = opts.concat([currentCapital])
+      .map(v => Math.round(Number(v) || 0))
+      .filter(v => v > 0)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort((a, b) => a - b);
+    if (steps.length < 2) return hide();
+
+    const rows = steps.map(_bookAt).filter(Boolean);
+    if (rows.length < 2) return hide();
+
+    // The bars are max-drift, so the axis is the worst row. A book that is already
+    // exact at every step has nothing to draw and the ladder stands down rather
+    // than rendering five empty tracks.
+    const worst = rows.reduce((m, r) => Math.max(m, r.maxBps), 0);
+    if (!(worst > 0)) return hide();
+
+    const mine = rows.find(r => r.capital === currentCapital);
+    // The CLOSEST-tracking row, which is not reliably the largest one: whole-share
+    // rounding is lumpy, so a bigger capital can land a pick one share further from
+    // its weight than a smaller one did. On the demo book ₹25L tracks to ±15 bps and
+    // ₹50L to ±17. Naming "the largest" as the best would have been a claim this
+    // very ladder contradicts two rows above the sentence.
+    //
+    // Partial rows are excluded from the search, and the reason is the same one
+    // refreshDrift gives for excluding unbuyable picks: drift is renormalised over
+    // the names a capital actually holds, so a ₹1,00,000 book measured across 23
+    // names can post a NARROWER gap than a ₹5,00,000 book measured across 25 and
+    // look like the better size while holding two fewer companies. Ranking those
+    // two against each other is the comparison this card must not invite.
+    const fullRows = rows.filter(r => r.full);
+    const rankable = fullRows.length ? fullRows : rows;
+    const best = rankable.reduce((b, r) => (r.maxBps < b.maxBps ? r : b), rankable[0]);
+    const biggest = rankable[rankable.length - 1];
+    const anyPartial = rows.some(r => !r.full);
+
+    document.getElementById('clad-rows').innerHTML = rows.map(r => {
+      const you  = r.capital === currentCapital;
+      const cls  = 'clad-row' + (you ? ' is-you' : '') + (r.full ? '' : ' is-partial');
+      const pct  = Math.max(2, r.maxBps / worst * 100);
+      // Kept short enough to hold ONE line beside the "You" badge in the name
+      // column at 375: "YOU 23 of 25 picks" fits where "…buyable" wrapped and
+      // made the member's own row a line taller than the rows it is compared to.
+      const cov  = r.full
+        ? ('all ' + r.n + ' picks')
+        : (r.buyable + ' of ' + r.n + ' picks');
+      return '<div class="' + cls + '">' +
+               // The "You" marker rides the sub-line, not the amount: at 104px on a
+               // phone a badge after "₹15,00,000" wrapped to its own line and made
+               // the member's row a line taller than every row it is compared with.
+               '<span class="clad-cap"><b>' + fmtMoney(r.capital) + '</b>' +
+                 '<span' + (r.full ? '' : ' class="is-short"') + '>' +
+                 (you ? '<i class="clad-you">You</i>' : '') + cov + '</span></span>' +
+               '<span class="clad-track" role="img" aria-label="At ' + fmtMoney(r.capital) +
+                 ': ' + cov + ', widest weight gap ' + r.maxBps + ' basis points">' +
+                 '<i class="clad-fill" data-w="' + pct.toFixed(1) + '"></i></span>' +
+               '<span class="clad-bps">±' + r.maxBps + ' bps</span>' +
+             '</div>';
+    }).join('');
+
+    document.getElementById('clad-lead').innerHTML =
+      'What a different capital would change &mdash; <b>' + rows.length + '</b> sizes, same book';
+    document.getElementById('clad-chip').textContent = 'Bar = widest gap';
+
+    const need = _fullBookCapital();
+    const parts = [];
+    // Only worth saying when it is not already true at the smallest step drawn.
+    if (need > rows[0].capital) {
+      parts.push('Every pick becomes buyable from <b>' + fmtMoney(need) + '</b>.');
+    }
+    if (mine) {
+      parts.push('Your <b>' + fmtMoney(mine.capital) + '</b> holds the book to <b>±' + mine.maxBps +
+                 ' bps</b> of the model' +
+                 (best.capital === mine.capital
+                   ? ' &mdash; the closest fit of any size drawn here.'
+                   : '; the closest fit here is <b>' + fmtMoney(best.capital) + '</b> at <b>±' +
+                     best.maxBps + '</b>.'));
+    }
+    // Said plainly, because the rows can show it: tracking is not monotonic in
+    // capital. A bigger number usually helps and is not guaranteed to.
+    if (biggest.maxBps > best.maxBps) {
+      parts.push('More is not automatically closer &mdash; whole shares round in steps, so <b>' +
+                 fmtMoney(biggest.capital) + '</b> lands at <b>±' + biggest.maxBps +
+                 ' bps</b>, wider than <b>' + fmtMoney(best.capital) + '</b>.');
+    }
+    if (anyPartial) {
+      parts.push('An amber row cannot place the whole book, and its gap is measured only across ' +
+                 'the picks it does hold &mdash; so it is not comparable with a full-book row ' +
+                 'and is left out of the comparison above.');
+    }
+    parts.push('Nothing but whole-share rounding separates these rows &mdash; the model weights are ' +
+               'identical at every capital. Shorter bar = closer to the model. 1 bp = 0.01%.');
+    document.getElementById('clad-note').innerHTML = parts.join(' ');
+
+    box.style.display = '';
+    // Grow from zero, like every other bar on this site; re-tweens on each
+    // capital change because the width is re-read from data-w every time.
+    const fills = box.querySelectorAll('.clad-fill');
+    const draw = () => fills.forEach(f => { f.style.width = f.getAttribute('data-w') + '%'; });
+    if (window.requestAnimationFrame) requestAnimationFrame(() => requestAnimationFrame(draw));
+    else setTimeout(draw, 40);
+    setTimeout(draw, 700);   // backstop: a document whose frames never run
+  } catch (e) { /* sizing card must survive a ladder failure */ }
 }
 
 function updateAllocationCells() {
