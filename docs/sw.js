@@ -201,7 +201,19 @@
 // (dashboard.html stays network-first: the capital ladder, the corrected drift
 // sentence and the phone card's untangled hit pads reach members with no cache
 // move at all.)
-const CACHE = 'mfc-v37';
+//
+// V28.8 -> mfc-v38. index.html is precached as the offline navigation fallback and
+// its BODY changed: the new narrowing rail under "The process" (universe → scored
+// → survives the ≤3-per-industry cap → held, per equity strategy on one shared
+// axis, from MFFUN markers the monthly run rewrites) plus stage 01's chip, which
+// said "Up to 750 stocks" — LargeMidcap's 250-name universe added to SmallMicro's
+// 500, a field no pipeline has ever started from. No shared asset in /assets/
+// changed this release, so no page needed a ?v bump; the cache name is the only
+// thing that can move a precached document.
+// (dashboard.html stays network-first: the four "How to invest" steps now report
+// the member's own session — capital, broker, orders placed, days to rebalance —
+// and reach members with no cache move at all.)
+const CACHE = 'mfc-v38';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

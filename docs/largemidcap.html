@@ -1606,10 +1606,16 @@ body[data-route="strategies"] .nav-links a[href="strategies.html"]::after {
 }
 .strat-prose:hover { border-color: rgba(26,80,216,0.15) !important; }
 
-/* —— Pillars: more depth on cards —— */
-.pillar {
-  transition: transform .25s cubic-bezier(.2,.7,.2,1),
-              box-shadow .25s ease,
+/* —— Pillars: more depth on cards ——
+   V28.8: this rule was a truncated DUPLICATE — the first `.pillar {` opened a
+   block whose `transition` value ran straight into a second `.pillar {`, so it
+   was never closed. Browsers with CSS Nesting recovered by nesting everything
+   that followed INSIDE it: `.pillar:hover` became `& .pillar:hover`
+   (i.e. `.pillar .pillar:hover`) and `.bt-chart-card` / `.bt-chart-card:hover`
+   became descendants of `.pillar` — four rules that matched nothing, on all
+   four strategy-family pages, invisible to grep because the selectors were
+   still spelled correctly. Verified from the parsed CSSOM: the stylesheet's
+   LAST rule read `.pillar { & .pillar:hover {…} }`. —— */
 .pillar {
   transition: transform .25s cubic-bezier(.2,.7,.2,1),
               box-shadow .25s ease,

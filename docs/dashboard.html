@@ -2609,38 +2609,59 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
 
       <!-- HOW TO INVEST -->
+      <!-- ── V28.8 · THE FOUR STEPS, TOLD BACK TO THE MEMBER ─────────────────────
+           Every other panel on this page knows who is reading it: the coverage
+           row knows their capital, the drift strip knows their book, the session
+           rail knows how far through the twenty-five they are. This card — the
+           one that actually describes the job — was the last surface that knew
+           nothing, a printed leaflet at the bottom of a live dashboard. It told
+           a member on order nineteen to "enter how much you want to invest" and
+           to "use the Shares column as your quantity", in the present tense, as
+           if they had not already done both.
+           Each step now carries its own state, read from the same sources the
+           panels above use — currentCapital and the sizing summary, getBroker(),
+           the bought map, and the rebalance date the KPI already computes — so
+           the card reports the session instead of describing it, and the step
+           that is actually current is the one that is lit.
+           Fail-soft per line: a step whose figure will not derive keeps its
+           prose and hides only its own state line, so a missing rebalance date
+           can never blank the instructions. ── -->
       <div class="howto-card">
         <h3>
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></span>
           How to invest in 4 steps
         </h3>
         <div class="howto-grid">
-          <div class="howto-step">
+          <div class="howto-step" data-hs="1">
             <div class="num">1</div>
-            <div>
+            <div class="hs-body">
               <h4>Set your capital</h4>
               <p>Enter how much you want to invest at the top. The Allocation and Shares columns update instantly.</p>
+              <div class="hs-live" hidden></div>
             </div>
           </div>
-          <div class="howto-step">
+          <div class="howto-step" data-hs="2">
             <div class="num">2</div>
-            <div>
+            <div class="hs-body">
               <h4>Open your broker</h4>
               <p id="howto-broker-text">Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.</p>
+              <div class="hs-live" hidden></div>
             </div>
           </div>
-          <div class="howto-step">
+          <div class="howto-step" data-hs="3">
             <div class="num">3</div>
-            <div>
+            <div class="hs-body">
               <h4>Place the orders</h4>
               <p>Use the Shares column as your quantity for each ticker. Limit orders near rec. price are fine on liquid names.</p>
+              <div class="hs-live" hidden></div>
             </div>
           </div>
-          <div class="howto-step">
+          <div class="howto-step" data-hs="4">
             <div class="num">4</div>
-            <div>
+            <div class="hs-body">
               <h4>Hold for your cycle</h4>
               <p>Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it.</p>
+              <div class="hs-live" hidden></div>
             </div>
           </div>
         </div>
@@ -3898,6 +3919,10 @@ function refreshSizeSummary() {
   refreshCoverage();
   refreshDrift();
   refreshCapitalLadder();   // V28.7 — the same story across the whole capital range
+  // V28.8 — step 1 and step 3 both restate this card's arithmetic, and this is
+  // the one path that runs on EVERY capital change (refreshBoughtProgress
+  // returns early while nothing is ticked, so it cannot be the only caller).
+  refreshHowto();
   refreshSession();   // V28.6 — capital changes the amounts AND which picks are buyable
 }
 
@@ -4503,6 +4528,7 @@ function setBroker(key){
   // reset the view: applySort() re-renders in whatever order is current and
   // re-applies the filters, so only the chips change.
   applySort();
+  refreshHowto();           // V28.8 — step 2 names the broker that is selected
   showToast('Broker set to ' + BROKERS[key].name);
 }
 function brokerLink(s){
@@ -4785,6 +4811,81 @@ function refreshBoughtProgress() {
   // a ✓ on the title. Toggled by class so it's reduced-motion safe via CSS.
   card.classList.toggle('is-complete', remaining === 0 && total > 0);
   refreshSession(map);
+  refreshHowto();
+}
+
+// V28.8 — the four "How to invest" steps, told back to the member.
+// Reads the same sources the panels above already use rather than recomputing
+// anything: currentCapital and the rendered per-stock figure, getBroker(), the
+// bought map, and nextRebalanceDate(). Nothing here may throw into a caller —
+// this card is instructions, and instructions must survive every data shape.
+function refreshHowto() {
+  try {
+    var steps = document.querySelectorAll('.howto-step[data-hs]');
+    if (!steps.length) return;
+
+    var total   = (stocksData || []).length;
+    var map     = total ? loadBought(currentStrategy) : {};
+    var owned   = new Set((stocksData || []).map(function(s){ return s.ticker; }));
+    var placed  = Object.keys(map).filter(function(t){ return owned.has(t); }).length;
+    var left    = Math.max(0, total - placed);
+    var capital = Number(currentCapital) || 0;
+
+    // the rupees still to deploy — summed from the SAME rounded per-row amounts
+    // the Allocation column prints, for the reason refreshSizeSummary records
+    var toDeploy = 0;
+    (stocksData || []).forEach(function(s){
+      if (map[s.ticker]) return;
+      var price = Number(s.recommended_price) || 0;
+      if (price <= 0) return;
+      toDeploy += Math.round(Math.floor(allocBudget(s, stocksData, capital) / price) * price);
+    });
+
+    var perStockEl = document.getElementById('size-per-stock');
+    var perStock   = perStockEl ? String(perStockEl.textContent || '').trim() : '';
+    var brokerName = (BROKERS[getBroker()] || {}).name || '';
+
+    var days = null, rebLabel = '';
+    try {
+      var now = new Date(), nx = nextRebalanceDate(now);
+      days = Math.max(0, daysBetween(now, nx));
+      rebLabel = nx.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    } catch (e) {}
+
+    // which step is the member actually on
+    var now3 = total > 0 && left > 0;
+    var lines = {
+      1: capital > 0
+           ? '<b>' + fmtMoney(capital) + '</b> entered' +
+             (perStock && perStock !== '—' ? '<span class="hs-sep">·</span>' + perStock + ' per stock' : '')
+           : '',
+      2: (brokerName && total)
+           ? '<b>' + escapeHtml(brokerName) + '</b> selected' +
+             '<span class="hs-sep">·</span>' + total + ' ticker' + (total === 1 ? '' : 's') + ' ready to copy'
+           : '',
+      3: total
+           ? '<b>' + placed + ' of ' + total + '</b> placed' +
+             (left ? '<span class="hs-sep">·</span>' + fmtMoney(toDeploy) + ' still to deploy'
+                   : '<span class="hs-sep">·</span>book complete')
+           : '',
+      4: (days !== null && rebLabel)
+           ? '<b>' + days + ' day' + (days === 1 ? '' : 's') + '</b> to the ' + rebLabel + ' rebalance'
+           : ''
+    };
+    var done = { 1: capital > 0, 2: !!(brokerName && total), 3: total > 0 && left === 0, 4: false };
+    var nowStep = capital <= 0 ? 1 : (now3 ? 3 : (total ? 4 : 0));
+
+    steps.forEach(function(step){
+      var i = Number(step.getAttribute('data-hs'));
+      var el = step.querySelector('.hs-live');
+      if (el) {
+        if (lines[i]) { el.innerHTML = lines[i]; el.hidden = false; }
+        else { el.innerHTML = ''; el.hidden = true; }
+      }
+      step.classList.toggle('is-now', i === nowStep);
+      step.classList.toggle('is-done', !!done[i] && i !== nowStep);
+    });
+  } catch (e) {}
 }
 
 // V28.6 — the book that exists WHILE you are placing orders.
@@ -7294,6 +7395,61 @@ html[data-theme="dark"] .meta-pill.has-switcher.nudge{ animation-name:stratNudge
 .howto-step:hover::after{ color:rgba(26,80,216,.11); transform:translateY(-3px); }
 html[data-theme="dark"] .howto-step::after{ color:rgba(150,180,240,.08); }
 html[data-theme="dark"] .howto-step:hover::after{ color:rgba(150,180,240,.14); }
+
+/* ── V28.8 · the four steps carry their own state ────────────────────────────
+   The watermark numeral moves from bottom-right to TOP-right. It was declared
+   as an echo of the homepage Process watermarks, which have always been
+   top-right; at bottom-right it sat in the one band a card's LAST line
+   occupies, and step 4's paragraph — the longest of the four — already ran
+   through it (text bottom 152px inside a 169px card, against a 52px numeral
+   whose box starts at 129px: 23px of overlap at 1440, before this release adds
+   a state line underneath). Top-right is both the original intent and the only
+   band that stays empty, because every step opens with the .num badge on the
+   left and a title that ends well short of the right edge.
+   It is also sized so its box clears the FIRST LINE OF BODY COPY, measured at
+   GLYPH level with Range.getClientRects() rather than element boxes — an
+   element box is the whole column and says nothing about where the letters
+   stop, which is why the h4 read as "colliding" at every width while the
+   painted title in fact stops ~40px short of the numeral. At 46px the numeral
+   spanned y 2-48 against a first paragraph line at 38-52; 34px ends at 38. */
+.howto-step::after{ top:4px; bottom:auto; font-size:34px; }
+.howto-step:hover::after{ transform:translateY(2px); }
+/* 320px is the one width where 34px still isn't small enough: "Hold for your
+   cycle" runs to 188px in a 206px content box and clipped the "04" by 7px.
+   Measured at 320/360/375/390/414/768/834/1024/1280/1440 — 0 collisions after. */
+@media (max-width:359px){ .howto-step::after{ font-size:26px; } }
+
+/* the state line bottom-pins, so all four share one baseline however long the
+   prose above them runs — the same discipline the .why-card stats use */
+.howto-step{ align-items:stretch; }
+.howto-step .num{ align-self:flex-start; }
+.hs-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
+/* deliberately NOT a flex row: every text node between the <b> tags would become
+   its own anonymous flex item, and "₹14,69,552 still to deploy" then breaks at
+   the item boundary instead of where the line runs out. */
+.hs-live{
+  margin-top:10px; padding-top:9px; border-top:0.5px solid var(--border);
+  font-size:11.5px; font-weight:600; color:var(--text2); line-height:1.5;
+}
+.hs-body .hs-live:not([hidden]){ margin-top:auto; }
+.hs-live b{ color:var(--white); font-weight:800; font-variant-numeric:tabular-nums; }
+.hs-live .hs-sep{ opacity:.45; margin:0 5px; }
+/* the step whose work is actually current */
+.howto-step.is-now{ border-color:rgba(37,99,235,0.34); background:linear-gradient(180deg,rgba(37,99,235,0.07) 0%,transparent 70%); }
+.howto-step.is-now .num{ box-shadow:0 0 0 4px rgba(37,99,235,.16), 0 5px 12px -5px rgba(26,80,216,.45); }
+.howto-step.is-now .hs-live{ color:var(--accent); }
+.howto-step.is-now .hs-live b{ color:var(--accent); }
+html[data-theme="dark"] .howto-step.is-now .hs-live,
+html[data-theme="dark"] .howto-step.is-now .hs-live b{ color:var(--accent3); }
+/* and the ones already satisfied — the tick replaces the numeral's job of
+   saying "this one is behind you" */
+.howto-step.is-done .num::before{
+  content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,var(--green),#10b981); color:#fff; font-size:14px; font-weight:900;
+  border-radius:50%;
+}
+.howto-step.is-done .hs-live{ color:var(--text3); }
+@media (prefers-reduced-motion:reduce){ .howto-step::after{ transition:none; } }
 .howto-step .num{
   box-shadow:0 0 0 3px rgba(37,99,235,.10), 0 5px 12px -5px rgba(26,80,216,.40);
   transition:transform .25s ease, box-shadow .25s ease;
