@@ -287,6 +287,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   /* pin the line box so "two lines" is an exact, not inherited, height */
   .stat-card .stat-label{line-height:1.45;min-height:2.9em;display:flex;align-items:flex-start;}
 }
+/* ── V29.1 — the 44px reserve above is the right idea and was not enough on a
+   phone. It lets a MULTI-WORD label wrap clear of the icon ("Next rebalance"
+   does), but "SUBSCRIPTION" and "INDUSTRIES" are single words: they cannot
+   wrap, so at 11px/.1em they need 99px and 80px against a content box that is
+   58px at 320 and 93px at 390. With overflow visible the word simply ran on and
+   printed straight through the icon badge — measured overlap at 320, 360, 375
+   and 390, i.e. every common phone width, on the member's own dashboard.
+   Two changes, both scoped to phones: the icon (and its reserve) step down, and
+   the label loses the wide tracking it does not need at this size. That clears
+   360/375/390. At <=344 no arrangement fits "SUBSCRIPTION" beside an icon in a
+   half-width tile, so the row goes single-column there and the tiles get the
+   full width — verified 0 clipped labels at 320/344/360/375/390/414/768/834. */
+@media (max-width:430px){
+  .stat-card .ico-wrap{width:28px;height:28px;top:14px;right:14px;border-radius:9px;}
+  .stat-card .ico-wrap svg{width:15px;height:15px;}
+  .stat-card .stat-label{font-size:10px;letter-spacing:.03em;padding-right:34px;}
+}
+/* `html` prefix, not a bare class: a LATER @media(max-width:768px) block further
+   down this file re-declares .stats-row at the same specificity and would win on
+   source order regardless of which query is narrower — the failure mode this
+   project has already paid for twice. Verified in the CSSOM, not assumed. */
+@media (max-width:344px){
+  html .stats-row{grid-template-columns:1fr;}
+}
 .stat-card .stat-val{
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size:34px;font-weight:800;color:var(--white);letter-spacing:-.02em;line-height:1;
@@ -1025,7 +1049,11 @@ tr:hover .weight-bar::after, .stock-card:hover .weight-bar::after {
 /* FOOTER */
 footer{border-top:0.5px solid var(--border);padding:32px 0 28px;text-align:center;position:relative;z-index:1;margin-top:20px;}
 footer p{font-size:12px;color:var(--text3);}
-footer a{color:var(--accent3);transition:color .15s ease;}
+/* V29.1 — --accent3 is a lifted mid-blue built for fills and hover states; as
+   ink on the footer it measured 3.33:1 for "Privacy" / "Terms" / "Recover
+   access". --data-mid is the same family one step deeper and is theme-aware,
+   so the dark footer is unaffected. */
+footer a{color:var(--data-mid);transition:color .15s ease;}
 footer a:hover{color:var(--accent);}
 .dash-foot-social{display:flex;justify-content:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
 .dash-foot-social a{
@@ -1898,7 +1926,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2850">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2910">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -2238,7 +2266,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     td.price .px-rec{display:block;font-weight:600}
     td.price .px-live{display:block;font-size:12px;font-weight:600;color:#64748b;margin-top:3px;white-space:nowrap}
     .px-live .ret{font-weight:700}
-    .ret.up{color:#059669}.ret.down{color:#dc2626}.ret.flat{color:#64748b}
+    /* V29.1 — the per-row live return, same seam as the live module: #059669 is
+       3.77:1 on the white table at 12px. These only paint once live prices land,
+       so no headless sweep could have caught them — found by reading, and fixed
+       to the same --data-* pair everything else on this card uses. */
+    .ret.up{color:var(--data-strong)}.ret.down{color:var(--data-bad)}.ret.flat{color:var(--text3)}
     .sc-val.px-live .ret{margin-left:7px}
     </style>
     <div class="profit-card fade-up" id="profit-card" style="display:none;">
@@ -3734,12 +3766,27 @@ function renderPortfolioMap(stocks) {
   const list = (stocks || []).filter(s => s && (s.ticker || s.company_name));
   if (!list.length) { card.style.display = 'none'; return; }
   const colorMap = buildSectorColorMap(stocks);          // canonical → matches legend
+  /* V29.1 — the map groups and colours by the same axis the allocation card drew.
+     On a MultiAsset book that axis is asset class (see deriveAssetClasses): every
+     holding shares the industry "ETF", so all eight tiles came out one colour,
+     sorted by nothing, under the caption "1 sectors". Re-deriving here rather
+     than reading the `_aclass` the card stamps keeps the two independent of the
+     order the renderers happen to run in. */
+  const mapClasses = deriveAssetClasses(list);
+  const keyOf = s => (mapClasses ? (s._pmk || '') : ((s.industry || 'Unknown').trim() || 'Unknown'));
+  if (mapClasses) list.forEach((s, i) => { s._pmk = mapClasses[i]; });
+  // asset-class order follows weight, so the biggest class leads — as the card does
   const order = {};
-  Object.keys(colorMap).forEach((k, i) => { order[k] = i; }); // weight-desc sector order
+  if (mapClasses) {
+    const byClass = {};
+    list.forEach(s => { byClass[keyOf(s)] = (byClass[keyOf(s)] || 0) + (Number(s.weight_pct) || 0); });
+    Object.keys(byClass).sort((a, b) => byClass[b] - byClass[a]).forEach((k, i) => { order[k] = i; });
+  } else {
+    Object.keys(colorMap).forEach((k, i) => { order[k] = i; }); // weight-desc sector order
+  }
   const maxW = Math.max.apply(null, list.map(s => Number(s.weight_pct) || 1)) || 1;
   const sorted = list.slice().sort((a, b) => {
-    const ka = (a.industry || 'Unknown').trim() || 'Unknown';
-    const kb = (b.industry || 'Unknown').trim() || 'Unknown';
+    const ka = keyOf(a), kb = keyOf(b);
     if (order[ka] !== order[kb]) return (order[ka] ?? 99) - (order[kb] ?? 99);
     return (Number(b.weight_pct) || 0) - (Number(a.weight_pct) || 0);
   });
@@ -3763,8 +3810,8 @@ function renderPortfolioMap(stocks) {
         (Math.max.apply(null, wts) - Math.min.apply(null, wts)) < 0.05;
 
   grid.innerHTML = sorted.map((s, i) => {
-    const sector = (s.industry || 'Unknown').trim() || 'Unknown';
-    const color = colorMap[sector] || SECTOR_COLORS[0];
+    const sector = keyOf(s);
+    const color = (mapClasses && ASSET_CLASS_COLORS[sector]) || colorMap[sector] || SECTOR_COLORS[0];
     const w = Number(s.weight_pct) || 0;
     const tk = escapeHtml(s.ticker || s.company_name || '—');
     const nm = escapeHtml(s.company_name || s.ticker || '');
@@ -3804,8 +3851,12 @@ function renderPortfolioMap(stocks) {
       grid.style.setProperty('--pmap-min', Math.max(86, Math.ceil(widest + 25)) + 'px');
     }
   } catch (e) {}
-  const secCount = Object.keys(colorMap).length;
-  if (sub) sub.textContent = sorted.length + ' holdings · ' + secCount + ' sectors · ' +
+  // V29.1 — name the axis the map actually used, and count it correctly. This
+  // read "1 sectors" on every MultiAsset book: wrong noun, and wrong number too.
+  const secCount = mapClasses ? new Set(mapClasses).size : Object.keys(colorMap).length;
+  const secNoun = mapClasses ? ('asset class' + (secCount === 1 ? '' : 'es'))
+                             : ('sector' + (secCount === 1 ? '' : 's'));
+  if (sub) sub.textContent = sorted.length + ' holdings · ' + secCount + ' ' + secNoun + ' · ' +
     (equalWeighted ? 'equal-weighted' : 'bar = model weight');
   card.style.display = '';
   // Grow on reveal — the site's bar idiom. Painting the final width immediately
@@ -3815,18 +3866,70 @@ function renderPortfolioMap(stocks) {
   }, 80);
 }
 
+/* ══ V29.1 · WHEN "SECTOR" IS NOT A FACT ABOUT THE BOOK ══════════════════════
+   The card below groups holdings by `industry`. For the two equity books that
+   is the right axis and the "capped at 3 per" ruler above depends on it. For a
+   MultiAsset member it is not an axis at all: every holding is an ETF, so the
+   pipeline stamps industry "ETF" on all eight, and the card rendered a donut
+   reading "1 SECTORS", one bar at 100.0%, and the caption "1 sector · 8
+   holdings · full bar = largest sector (100.0%)". A donut, a bar and a count,
+   all of them saying nothing — on the dashboard of the strategy this site
+   gives away free, which is the one most members meet first.
+
+   The fact that book IS about is the split the strategy is named for, and the
+   strategies page promises it in words 8 ETFs across equity, gold, silver &
+   debt — while showing eight rows that all say "ETF". Model weight per holding
+   is already in memory here; only the bucket was missing.
+
+   Derived, and deliberately timid about it:
+   • It engages ONLY when the industry axis is degenerate (every holding shares
+     one industry). A real sector split is never overridden.
+   • Every holding must classify. One unrecognised name and the whole thing is
+     abandoned and the card renders exactly as it did before — a book that is
+     one-third "Other" is worse than no chart.
+   • It must yield at least two classes, or there is nothing to show.
+   So a future ETF this map has never seen degrades to the old card rather than
+   quietly filing itself under Equity. ═══════════════════════════════════════ */
+const ASSET_CLASS_RULES = [
+  { cls: 'Gold',   re: /\bgold\b|goldbees/i },
+  { cls: 'Silver', re: /\bsilver\b|silverbees/i },
+  { cls: 'Debt',   re: /\bbond\b|\bgilt\b|\bg-?sec\b|\bsdl\b|\bdebt\b|\bliquid\b|\btreasury\b|\bbharat\s*bond\b|ebbetf/i },
+  // Equity last: it is the broadest test, so anything the three above claim wins.
+  { cls: 'Equity', re: /\bnifty\b|\bsensex\b|\bnasdaq\b|\bmidcap\b|\bsmallcap\b|\bmicrocap\b|\blargecap\b|\bequity\b|\bindex\b|\bnext\s*50\b|\bbees\b|\bs&p\b/i }
+];
+function assetClassOf(stock){
+  const hay = ((stock.company_name || '') + ' ' + (stock.ticker || '')).trim();
+  if (!hay) return null;
+  for (const r of ASSET_CLASS_RULES) if (r.re.test(hay)) return r.cls;
+  return null;
+}
+function deriveAssetClasses(stocks){
+  const industries = new Set(stocks.map(s => ((s.industry || '').trim() || 'Unknown')));
+  if (industries.size > 1) return null;          // a real sector split — leave it alone
+  const classes = stocks.map(assetClassOf);
+  if (classes.some(c => !c)) return null;        // one unknown holding ⇒ abandon
+  if (new Set(classes).size < 2) return null;    // nothing to split
+  return classes;
+}
+// Fixed hues so Gold reads gold and Debt reads calm, whatever order they arrive in.
+const ASSET_CLASS_COLORS = { Equity:'#2563eb', Gold:'#d97706', Silver:'#64748b', Debt:'#0891b2' };
+
 function renderAllocation(stocks) {
   if (!stocks || !stocks.length) return;
+  const aclasses = deriveAssetClasses(stocks);
+  if (aclasses) stocks.forEach((s, i) => { s._aclass = aclasses[i]; });
+  else stocks.forEach(s => { delete s._aclass; });
+  const groupOf = s => (aclasses ? s._aclass : ((s.industry || 'Unknown').trim() || 'Unknown'));
   const map = {};
   stocks.forEach(s => {
-    const k = (s.industry || 'Unknown').trim() || 'Unknown';
+    const k = groupOf(s);
     const w = Number(s.weight_pct) || 0;
     map[k] = (map[k] || 0) + w;
   });
   const total = Object.values(map).reduce((a,b) => a+b, 0) || 1;
   const counts = {};
   stocks.forEach(s => {
-    const k = (s.industry || 'Unknown').trim() || 'Unknown';
+    const k = groupOf(s);
     counts[k] = (counts[k] || 0) + 1;
   });
   const allRows = Object.entries(map)
@@ -3881,9 +3984,13 @@ function renderAllocation(stocks) {
   const restPct = restRows.reduce((a,r) => a+r.pct, 0);
   const restN = restRows.reduce((a,r) => a+r.n, 0);
 
-  // Assign colors from the shared map so the legend/donut match the table swatches
+  // Assign colors from the shared map so the legend/donut match the table swatches.
+  // V29.1 — in asset mode the names are the four fixed classes, so they get their
+  // own fixed hues (gold reads gold) instead of a position in the sector palette.
   const secColorMap = buildSectorColorMap(stocks);
-  rows.forEach(r => { r.color = secColorMap[r.name] || SECTOR_COLORS[0]; });
+  rows.forEach(r => {
+    r.color = (aclasses && ASSET_CLASS_COLORS[r.name]) || secColorMap[r.name] || SECTOR_COLORS[0];
+  });
 
   const card = document.getElementById('alloc-card');
   const grid = document.getElementById('alloc-grid');
@@ -3894,7 +4001,7 @@ function renderAllocation(stocks) {
     const overCap = scaleIsCap && r.pct > scale + 0.01;
     return `
     <div class="alloc-row" role="button" tabindex="0" data-sector="${escapeHtml(r.name)}"
-         title="Click to filter the table to ${escapeHtml(r.name)} · ${r.n} holding${r.n===1?'':'s'} · ${r.pct.toFixed(1)}% of portfolio"
+         title="Click to filter the table to ${escapeHtml(r.name)} · ${r.n} holding${r.n===1?'':'s'} · ${r.pct.toFixed(1)}% of ${aclasses ? 'the book' : 'portfolio'}"
          onclick="filterBySector(this.dataset.sector)"
          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();filterBySector(this.dataset.sector);}">
       <div class="alloc-name" title="${escapeHtml(r.name)}"><!-- V6.8 L2: full sector name on hover; long GICS names like "Information Technology" get truncated by the 140px ellipsis -->
@@ -3922,10 +4029,18 @@ function renderAllocation(stocks) {
   }
   grid.innerHTML = rowsHTML;
 
+  // V29.1 — every word this card says about itself follows the axis it actually
+  // drew. In asset mode "sector" would be wrong in the heading, the caption, the
+  // donut label and the row tooltips alike, so all four are switched together.
+  const axisNoun = aclasses ? 'asset class' : 'sector';
+  const allocH2 = document.querySelector('#alloc-card .alloc-head h2');
+  if (allocH2) allocH2.textContent = aclasses ? 'Asset allocation' : 'Sector allocation';
+  const dcLbl = document.querySelector('#alloc-card .dc-lbl');
+  if (dcLbl) dcLbl.textContent = aclasses ? 'Asset classes' : 'Sectors';
   document.getElementById('alloc-meta').textContent =
-    allRows.length + ' sector' + (allRows.length === 1 ? '' : 's') + ' · ' + stocks.length + ' holdings · ' +
+    allRows.length + ' ' + axisNoun + (allRows.length === 1 ? '' : (aclasses ? 'es' : 's')) + ' · ' + stocks.length + ' holdings · ' +
     (scaleIsCap ? 'full bar = the 3-per-industry cap (' + scale.toFixed(1) + '%)'
-                : 'full bar = largest sector (' + scale.toFixed(1) + '%)');
+                : 'full bar = largest ' + axisNoun + ' (' + scale.toFixed(1) + '%)');
 
   // V6.8 L1: aggregate the remaining sectors into an "Other" slice so the
   // donut ring sums to 100% instead of leaving a grey gap that reads as
@@ -4640,7 +4755,7 @@ function renderTable(stocks) {
    translate), so on the normal path this is a no-op — and on a frozen clock
    it is the difference between a blank list and a readable one. Same
    safety-net device as the factor board's setTimeout(reveal,1600) and
-   mfc-live.js?v=2800's snap timer: never let a decoration own visibility. */
+   mfc-live.js?v=2910's snap timer: never let a decoration own visibility. */
 function revealHoldingsBackstop() {
   var DONE = 'mf-anim-done';                 // → animation:none (CSS)
   var LAST = 360 + 420 + 260;                // max delay + duration + slack
@@ -4796,15 +4911,19 @@ function filterBySector(sectorName){
 function applySectorFilter(){
   if (!_sectorFilter) return;
   var s = _sectorFilter.trim().toLowerCase();
+  // V29.1 — the allocation card may be grouping by ASSET CLASS (see
+  // deriveAssetClasses). Its rows stay clickable in that mode, so the filter has
+  // to match on whichever key the card actually drew. `_aclass` is only ever
+  // present when that mode engaged, so sector books are untouched.
+  var keyOf = function(st){
+    if (!st) return '';
+    return String(st._aclass || st.industry || '').toLowerCase();
+  };
   document.querySelectorAll('#stocks-tbody tr[data-row]').forEach(function(tr){
-    var i = Number(tr.dataset.row);
-    var industry = (stocksData[i] && stocksData[i].industry || '').toLowerCase();
-    if (industry !== s) tr.style.display = 'none';
+    if (keyOf(stocksData[Number(tr.dataset.row)]) !== s) tr.style.display = 'none';
   });
   document.querySelectorAll('.stock-card[data-row]').forEach(function(c){
-    var i = Number(c.dataset.row);
-    var industry = (stocksData[i] && stocksData[i].industry || '').toLowerCase();
-    if (industry !== s) c.style.display = 'none';
+    if (keyOf(stocksData[Number(c.dataset.row)]) !== s) c.style.display = 'none';
   });
 }
 function renderSectorChips(){
@@ -6346,7 +6465,12 @@ th.bought-col .bought-all:indeterminate{ opacity: .65; }
   background:rgba(15,23,42,0.06); border-radius:999px;
   font-size:11px; font-weight:700; color:var(--text2);
 }
-.sector-chips .chip.active .chip-n{ background:rgba(255,255,255,0.22); color:#fff; }
+/* V29.1 — the count pill lightened the blue underneath it (22% white over the
+   chip) to the point where its own white numeral measured 3.68:1. Recessing the
+   pill instead of lifting it keeps the same "count on a filled chip" idiom and
+   takes it to 7.4:1. A 12% white tint reaches exactly 4.50 — too close to the
+   line to spend, when a darker pill is both safer and more conventional. */
+.sector-chips .chip.active .chip-n{ background:rgba(0,0,0,0.18); color:#fff; }
 .broker-link{
   display:inline-block; margin-left:6px;
   padding:2px 8px; border-radius:6px;

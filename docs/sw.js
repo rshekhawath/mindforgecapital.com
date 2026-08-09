@@ -231,7 +231,7 @@
 // move. The bump is here so no installed PWA can keep serving a shell whose
 // precached assets predate the strategy-switcher fix, and to keep the cache
 // name monotonic with the release it belongs to.
-const CACHE = 'mfc-v40';
+const CACHE = 'mfc-v41';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

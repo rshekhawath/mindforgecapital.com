@@ -139,12 +139,21 @@
     st.textContent =
       ".live-strip{display:none;}" +
       ".live-strip.live-ready{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 6px;padding:11px 15px;border:1px solid rgba(5,150,105,.28);border-radius:12px;background:linear-gradient(135deg,rgba(5,150,105,.07),rgba(45,212,191,.05));font-size:13px;color:var(--text2,#1e3a5f);}" +
-      ".live-strip .ls-badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;letter-spacing:.14em;color:var(--green,#059669);border:1px solid rgba(5,150,105,.35);border-radius:999px;padding:2.5px 8px;}" +
+      /* V29.1 — the TEXT colours in this module moved off --green/#dc2626 and onto
+         the --data-* grading scale. --green is a brand token tuned for FILLS and
+         BORDERS (the pulsing dots and the strip's own outline still use it, and
+         still should); as INK on this module's own 7% wash it measures 3.17:1 on
+         the LIVE badge and 3.23:1 on the percentages — below AA for text this
+         small. The .lvm-* block 150 lines below already made exactly this move and
+         records the reason in its own comment; these older blocks were simply never
+         migrated with it. --data-strong/--data-bad are theme-aware and were
+         re-verified >=4.6:1 against both #ffffff and the deepest tint in use. */
+      ".live-strip .ls-badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;letter-spacing:.14em;color:var(--data-strong,#047454);border:1px solid rgba(5,150,105,.35);border-radius:999px;padding:2.5px 8px;}" +
       ".live-strip .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
       "@keyframes mfc-live-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.8);}}" +
       ".live-strip b{font-weight:800;font-variant-numeric:tabular-nums;}" +
-      ".live-strip .up{color:var(--green,#059669);}" +
-      ".live-strip .down{color:#dc2626;}" +
+      ".live-strip .up{color:var(--data-strong,#047454);}" +
+      ".live-strip .down{color:var(--data-bad,#c92020);}" +
       ".live-strip .flat{color:var(--text2,#1e3a5f);}" +
       ".live-strip .ls-meta{font-size:11.5px;color:var(--text3,#475569);}" +
       /* V28.0: this measured 19.8px tall — a standalone CTA, not a link inside a
@@ -159,8 +168,8 @@
       ".live-chip.live-ready{display:inline-flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;color:var(--text3,#475569);}" +
       ".live-chip .ls-dot{width:5px;height:5px;border-radius:50%;background:var(--green,#059669);animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
       ".live-chip b{font-weight:800;font-variant-numeric:tabular-nums;}" +
-      ".live-chip .up{color:var(--green,#059669);}" +
-      ".live-chip .down{color:#dc2626;}" +
+      ".live-chip .up{color:var(--data-strong,#047454);}" +
+      ".live-chip .down{color:var(--data-bad,#c92020);}" +
       ".live-chip .flat{color:var(--text2,#1e3a5f);}" +
       "@media (prefers-reduced-motion:reduce){.live-strip .ls-dot,.live-chip .ls-dot{animation:none;}}" +
       /* ── V24.3: deeper pivot surfaces ─────────────────────────────────────
@@ -184,8 +193,8 @@
          justify-content:flex-end packs that overflow off the LEFT edge. */
       ".strat-card .strat-metric-live.live-ready{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;flex:1 1 100%;min-width:100%;padding:0 0 10px;margin:0 0 10px;border-right:none;border-bottom:0.5px solid var(--border2,rgba(37,99,235,.2));}" +
       ".strat-metric-live .live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}" +
-      ".strat-metric-live .live-val.up{color:var(--green,#059669);}" +
-      ".strat-metric-live .live-val.down{color:#dc2626;}" +
+      ".strat-metric-live .live-val.up{color:var(--data-strong,#047454);}" +
+      ".strat-metric-live .live-val.down{color:var(--data-bad,#c92020);}" +
       ".strat-metric-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
       /* ── V27.9: the live figure finally gets the comparison the BACKTEST
          figure has had since V27.5. Directly beneath these three cards sits a
@@ -228,8 +237,18 @@
       "@media(max-width:960px){.stats-bar.has-live{grid-template-columns:1fr 1fr;}}" +
       ".stat-card.stat-live.live-ready{display:block;border:1px solid rgba(5,150,105,.35);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(45,212,191,.04));}" +
       ".stat-card.stat-live .live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:30px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;}" +
-      ".stat-card.stat-live .live-val.up{color:var(--green,#059669);}" +
-      ".stat-card.stat-live .live-val.down{color:#dc2626;}" +
+      /* V29.1 — this card's parent clips (overflow-x:hidden) and at 320-360 the
+         30px figure needs 117px against a 112-115px content box, so the last
+         column of "+5.02%" was being shaved off. Step it down where the card is
+         narrow; every other width keeps the full 30px. */
+      "@media(max-width:400px){.stat-card.stat-live .live-val{font-size:25px;}}" +
+      /* The other squeeze is at the TOP of the range, not the bottom: this row is
+         six-across until 960px, so at 1024 (iPad landscape) the card content box
+         is 112px — narrower than any phone — and the 30px figure needs 117px.
+         Measured clipped at 1024 only; 414-960 and 1280+ have room. */
+      "@media(min-width:961px) and (max-width:1120px){.stat-card.stat-live .live-val{font-size:25px;}}" +
+      ".stat-card.stat-live .live-val.up{color:var(--data-strong,#047454);}" +
+      ".stat-card.stat-live .live-val.down{color:var(--data-bad,#c92020);}" +
       ".stat-card.stat-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
       ".stat-card.stat-live .sl .ls-dot{display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-2px;}" +
       ".stats-bar.has-live .stat-card .sv{font-size:24px;}" +
@@ -252,8 +271,8 @@
       ".sidebar-live h3{display:flex;align-items:center;gap:7px;}" +
       ".sidebar-live .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);display:inline-block;animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
       ".sidebar-live .sl-live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:32px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;}" +
-      ".sidebar-live .sl-live-val.up{color:var(--green,#059669);}" +
-      ".sidebar-live .sl-live-val.down{color:#dc2626;}" +
+      ".sidebar-live .sl-live-val.up{color:var(--data-strong,#047454);}" +
+      ".sidebar-live .sl-live-val.down{color:var(--data-bad,#c92020);}" +
       ".sidebar-live .sl-live-val.flat{color:var(--text2,#1e3a5f);}" +
       ".sidebar-live .sl-live-cyc{font-size:11px;color:var(--text3,#475569);margin:4px 0 12px;}" +
       ".sidebar-live .sl-live-note{font-size:10.5px;color:var(--text3,#475569);margin-top:12px;line-height:1.5;}" +

@@ -50,9 +50,15 @@
       "@keyframes mfc-offer-glint{0%{background-position:135% 0;}34%{background-position:-35% 0;}100%{background-position:-35% 0;}}" +
       "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 44px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
       "#mfc-offer-bar .mfc-offer-gift{font-size:15px;flex-shrink:0;}" +
-      "#mfc-offer-bar .mfc-offer-text{font-weight:500;color:rgba(255,255,255,.96);}" +
+      /* V29.1 — the bar is a blue→teal gradient, so its lightest stop is the one
+         that has to carry the text. At .96 white the trailing clause measured
+         4.42:1 there and the .85-dimmed sub-clause 3.76:1, both under AA. Pure
+         white clears it on the lightest stop with margin; the hierarchy between
+         the headline and its qualifier was never carried by opacity anyway —
+         800 against 500 is what the eye reads, and that is unchanged. */
+      "#mfc-offer-bar .mfc-offer-text{font-weight:500;color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-text strong{font-weight:800;letter-spacing:.01em;}" +
-      "#mfc-offer-bar .mfc-offer-sub{opacity:.85;font-weight:500;}" +
+      "#mfc-offer-bar .mfc-offer-sub{opacity:1;font-weight:500;}" +
       "#mfc-offer-bar .mfc-offer-cta{margin-left:auto;flex-shrink:0;background:#fff;color:#1a50d8;font-weight:700;font-size:12.5px;text-decoration:none;padding:6px 14px;border-radius:8px;white-space:nowrap;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 4px 12px -6px rgba(0,0,0,.4);}" +
       "#mfc-offer-bar .mfc-offer-cta:hover{transform:translateY(-1px);box-shadow:0 8px 18px -6px rgba(0,0,0,.5);}" +
       // V23.7: padding:2px 6px left the dismiss button 23.7px wide — a hair under
