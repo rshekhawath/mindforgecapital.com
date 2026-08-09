@@ -1,0 +1,47 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>probe self-test</title>
+<style>
+  body{margin:0;font:16px/1.4 Arial;background:#fff;color:#000;overflow-x:hidden}
+  /* CASE A: genuinely clipped label — must be REPORTED by clipped() */
+  #a{width:60px;overflow:hidden;white-space:nowrap;border:0;padding:0}
+  /* CASE B: pill with an absolutely-positioned transformed ::after (shimmer) —
+     scrollWidth is inflated but the text fits: must NOT be reported */
+  #b{position:relative;display:inline-block;width:120px;overflow:hidden;padding:0}
+  #b::after{content:'';position:absolute;top:0;left:0;width:300px;height:100%;
+            transform:translateX(140px);background:linear-gradient(90deg,transparent,#eee)}
+  /* CASE C: deliberate 1400px block — overflow() must report it as a culprit */
+  #c{width:1400px;height:20px;background:#eee}
+  /* CASE D: ellipsis label — deliberate, must NOT be reported */
+  #d{width:60px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  /* CASE E: inside a horizontal scroll region — reachable, must NOT be reported */
+  #escroll{width:80px;overflow-x:auto}
+  #e{white-space:nowrap;width:400px}
+  /* contrast cases */
+  #k1{color:#000;background:#fff}          /* 21.00 exactly */
+  #k2{color:#999;background:#fff}          /* 2.85 — must FAIL */
+  #k3{color:#767676;background:#fff}       /* 4.54 — must PASS at 4.5 */
+  #k4{color:rgba(0,0,0,.5);background:#fff}/* composited to #808080 = 3.95 -> FAIL */
+  /* stacked translucent tints: must composite, not read as solid */
+  #k5wrap{background:#fff}
+  #k5a{background:rgba(37,99,235,.08)}
+  #k5b{background:rgba(37,99,235,.08)}
+  #k5{color:#1a50d8}                       /* passes once composited */
+  /* tap target cases */
+  #t1{display:inline-block;width:20px;height:20px}          /* small, no pad -> report */
+  #t2{position:relative;display:inline-block;width:20px;height:20px}
+  #t2::after{content:'';position:absolute;top:-12px;right:-12px;bottom:-12px;left:-12px}
+  #t3{display:inline-block;width:48px;height:48px}          /* fine -> no report */
+</style></head><body>
+<h1 id="a">A very long heading that cannot fit</h1>
+<span id="b">Popular</span>
+<div id="c"></div>
+<p id="d">Another long label truncated</p>
+<div id="escroll"><div id="e">Wide scrollable content here</div></div>
+<p id="k1">black on white</p>
+<p id="k2">grey 999 on white</p>
+<p id="k3">grey 767676 on white</p>
+<p id="k4">half alpha black</p>
+<div id="k5wrap"><div id="k5a"><div id="k5b"><p id="k5">brand blue on double tint</p></div></div></div>
+<a href="#" id="t1">x</a>
+<a href="#" id="t2">y</a>
+<a href="#" id="t3">z</a>
+</body></html>
