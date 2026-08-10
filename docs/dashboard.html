@@ -1354,6 +1354,8 @@ footer a:hover{color:var(--accent);}
 .sc-key{color:var(--text3);}
 .sc-val{color:var(--white);font-weight:600;font-variant-numeric:tabular-nums;}
 .sc-bar-wrap{background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:hidden;margin-top:2px;}
+/* Matches .sp-wt-cap on strategies.html — same explanation, same weight of voice. */
+.weight-cap{margin:10px 2px 0;font-size:11.5px;color:var(--text3);line-height:1.6;}
 .sc-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent3));width:0;transition:width 1.1s cubic-bezier(.22,1,.36,1);}
 
 /* Print friendliness */
@@ -2732,6 +2734,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
       <!-- MOBILE CARD VIEW (hidden on desktop via CSS) -->
       <div class="stock-cards" id="stock-cards-mobile"></div>
+
+      <!-- V29.3: what the Weight bar is measured against. Sits outside both the
+           table wrap and the card list because it explains the bar in BOTH — the
+           desktop column and the phone card draw it from the same barPct. -->
+      <p class="weight-cap" id="weightCap"></p>
 
       <!-- REBALANCE NOTIFICATIONS -->
       <div id="notif-section" class="notif-card">
@@ -4674,6 +4681,25 @@ function renderTable(stocks) {
   }
 
   const maxW = Math.max(...stocks.map(s => Number(s.weight_pct) || 0), 1);
+  /* V29.3 — say what the Weight bar is measured against, on the surface members
+     actually use. Both bars here are `weight / largest weight`, so in an
+     equal-weight book (SmallMicro and LargeMidcap: 25 names at 4.0%) EVERY bar
+     renders full, and a 100%-length bar sitting beside the number "4.0%" reads
+     as 100%. V29.1 found and captioned exactly this on the public strategy
+     pages and stopped there; the member dashboard draws the same bars for the
+     same reason and said nothing — on desktop and on the phone cards alike.
+     Wording is deliberately the same as strategies.html so the two surfaces
+     explain the identical thing identically. */
+  const wVals = stocks.map(s => Number(s.weight_pct) || 0).filter(w => w > 0);
+  const wSpread = wVals.length ? Math.max(...wVals) - Math.min(...wVals) : 0;
+  const capEl = document.getElementById('weightCap');
+  if (capEl) {
+    capEl.textContent = !wVals.length ? ''
+      : wSpread < 0.05
+        ? 'Bar = model weight. Every holding carries the same weight in this book — the model ranks the names, it does not bet more on any one of them.'
+        : 'Bar = model weight, against the largest holding in this book. This strategy is weighted by composite score, so the sizes differ.';
+    capEl.style.display = wVals.length ? '' : 'none';
+  }
   // V12.5: per-stock allocation is weight-proportional (see allocBudget()).
   const copyIco = '<svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
   const bought = loadBought(currentStrategy);

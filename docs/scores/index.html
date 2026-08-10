@@ -315,16 +315,28 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .qv-leg{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--text2)}
 .qv-leg .qd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .qv-body{display:grid;grid-template-columns:1fr;gap:14px}
-.qv-chart-wrap{position:relative;width:100%;max-width:520px;margin:0 auto;aspect-ratio:1/1}
+/* V29.3 — 2,032 companies were being plotted into a 520px square sitting inside
+   a card up to 1,180px wide, with ~330px of nothing either side. The whole SVG
+   is a 0 0 120 120 viewBox, so widening the wrap scales every dot, label and
+   axis tick with it and separates the crowded middle of the cloud. 640px is the
+   largest step that still leaves the panel's padding reading as a margin rather
+   than a hairline. */
+.qv-chart-wrap{position:relative;width:100%;max-width:640px;margin:0 auto;aspect-ratio:1/1}
 .qv-chart-wrap svg{display:block;width:100%;height:100%;overflow:visible}
 .qv-corner{position:absolute;font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1.2;pointer-events:none;text-transform:uppercase;opacity:.92;max-width:42%}
 .qv-corner.tr{top:8px;right:6px;text-align:right;color:#047857}
 .qv-corner.tl{top:8px;left:6px;text-align:left;color:var(--text3)}
 .qv-corner.br{bottom:6px;right:6px;text-align:right;color:var(--text3)}
 .qv-corner.bl{bottom:6px;left:6px;text-align:left;color:var(--text3)}
-.qv-caption{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:520px;margin:10px auto 0;font-size:11px;color:var(--text3);font-weight:500}
+.qv-caption{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;max-width:640px;margin:10px auto 0;font-size:11px;color:var(--text3);font-weight:500}
 .qv-caption b{color:var(--text2);font-weight:700}
-.qv-dot-label{font-size:5px;font-weight:800;paint-order:stroke;stroke:#fff;stroke-width:1.4px;stroke-linejoin:round}
+/* V29.3 — the halo that separates a highlighted ticker from the 2,032 dots under
+   it was a hardcoded #fff, so in dark mode the three labelled leaders wore a
+   thick white outline on a #121d33 panel and read as stickers pasted onto the
+   chart. It has to be whatever the PANEL is painted with, and .qv-panel is
+   background:var(--ink2) — so naming the same token makes the two agree by
+   construction in both themes (light --ink2 is #fff, i.e. no visual change). */
+.qv-dot-label{font-size:5px;font-weight:800;paint-order:stroke;stroke:var(--ink2,#fff);stroke-width:1.4px;stroke-linejoin:round}
 /* V11.3 — premium scatter: the cloud of dots blooms up the first time the panel
    scrolls into view, and the 3 leader markers carry a soft expanding pulse-ring.
    Bulletproof like the site's reveal layer: the hidden/animated states live only
@@ -572,6 +584,22 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 .sc-radar-cap{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
 .sc-radar-svg{width:100%;max-width:188px;height:auto;overflow:visible}
 .sc-radar-poly{transform-box:view-box;transform-origin:100px 100px;animation:radar-grow .55s cubic-bezier(.22,1,.36,1) both}
+/* V29.3 — the scorecard radar's ink, moved out of the SVG attributes (see
+   scRadar()). Light values are the literals it used to write, so light is
+   unchanged; dark gets the palette that every other chart on the site already
+   uses. stop-color is a real CSS property, so even the gradient flips. */
+.scr-grid,.scr-spoke{stroke:rgba(37,99,235,0.2)}
+.scr-label{fill:var(--text2,#1e3a5f)}
+.scr-dot{fill:#1a50d8}
+.sc-radar-poly{stroke:#1a50d8}
+.scr-s0{stop-color:#2563eb}
+.scr-s1{stop-color:#0891b2}
+html[data-theme="dark"] .scr-grid,
+html[data-theme="dark"] .scr-spoke{stroke:rgba(150,180,240,0.24)}
+html[data-theme="dark"] .scr-dot{fill:#83aaff}
+html[data-theme="dark"] .sc-radar-poly{stroke:#83aaff}
+html[data-theme="dark"] .scr-s0{stop-color:#5b8def}
+html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
 @keyframes radar-grow{from{transform:scale(.08);opacity:0}to{transform:scale(1);opacity:1}}
 .sc-overview .sc-snap{margin-bottom:0}
 @media(max-width:600px){.sc-overview{grid-template-columns:1fr;gap:14px}.sc-radar-svg{max-width:220px}}
@@ -1024,16 +1052,24 @@ function scRadar(d){
   const pills=[["Q",d._q],["V",d._v],["G",d._g],["M",d._m],["E",d._e]];
   const cx=100,cy=100,R=72;
   const pt=(i,r)=>{const a=(-90+i*72)*Math.PI/180;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  /* V29.3 — every ink in this chart used to be a hardcoded light-mode literal
+     written straight into the SVG attributes: grid and spokes rgba(37,99,235,.2),
+     axis letters #1e3a5f, vertices and outline #1a50d8. On the dark scorecard
+     that made the polygon a navy shape on a navy panel and the Q/V/G/M/E labels
+     effectively unreadable. They are CLASSES now and the colour lives in CSS —
+     which not only flips with the theme but keeps flipping AFTERWARDS: this
+     scorecard is built on demand when a row is expanded, so an attribute written
+     at expand time would go stale the moment the nav toggle was used. */
   let grid="";
-  [0.25,0.5,0.75,1].forEach(f=>{grid+=`<polygon points="${pills.map((_,i)=>pt(i,R*f).map(n=>n.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="rgba(37,99,235,0.2)" stroke-width="0.8"/>`;});
+  [0.25,0.5,0.75,1].forEach(f=>{grid+=`<polygon class="scr-grid" points="${pills.map((_,i)=>pt(i,R*f).map(n=>n.toFixed(1)).join(",")).join(" ")}" fill="none" stroke-width="0.8"/>`;});
   let spokes="",labels="";
   pills.forEach((p,i)=>{
-    const e=pt(i,R);spokes+=`<line x1="${cx}" y1="${cy}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}" stroke="rgba(37,99,235,0.2)" stroke-width="0.8"/>`;
-    const l=pt(i,R+14);labels+=`<text x="${l[0].toFixed(1)}" y="${(l[1]+3.5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="#1e3a5f">${p[0]}</text>`;
+    const e=pt(i,R);spokes+=`<line class="scr-spoke" x1="${cx}" y1="${cy}" x2="${e[0].toFixed(1)}" y2="${e[1].toFixed(1)}" stroke-width="0.8"/>`;
+    const l=pt(i,R+14);labels+=`<text class="scr-label" x="${l[0].toFixed(1)}" y="${(l[1]+3.5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800">${p[0]}</text>`;
   });
   const dpts=pills.map((p,i)=>{const s=scNum(p[1])?Math.max(0,Math.min(100,p[1])):0;return pt(i,R*s/100).map(n=>n.toFixed(1)).join(",");}).join(" ");
-  const dots=pills.map((p,i)=>{const s=scNum(p[1])?Math.max(0,Math.min(100,p[1])):0;const c=pt(i,R*s/100);return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.6" fill="#1a50d8"/>`;}).join("");
-  return`<div class="sc-radar"><svg class="sc-radar-svg" viewBox="0 0 200 200" role="img" aria-label="Factor profile radar — Quality ${d._q||"n/a"}, Value ${d._v||"n/a"}, Growth ${d._g||"n/a"}, Momentum ${d._m||"n/a"}, Efficiency ${d._e||"n/a"}"><defs><radialGradient id="radF" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#2563eb" stop-opacity="0.34"/><stop offset="1" stop-color="#0891b2" stop-opacity="0.12"/></radialGradient></defs>${grid}${spokes}<polygon class="sc-radar-poly" points="${dpts}" fill="url(#radF)" stroke="#1a50d8" stroke-width="2" stroke-linejoin="round"/>${dots}${labels}</svg><span class="sc-radar-cap">Factor profile</span></div>`;
+  const dots=pills.map((p,i)=>{const s=scNum(p[1])?Math.max(0,Math.min(100,p[1])):0;const c=pt(i,R*s/100);return `<circle class="scr-dot" cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.6"/>`;}).join("");
+  return`<div class="sc-radar"><svg class="sc-radar-svg" viewBox="0 0 200 200" role="img" aria-label="Factor profile radar — Quality ${d._q||"n/a"}, Value ${d._v||"n/a"}, Growth ${d._g||"n/a"}, Momentum ${d._m||"n/a"}, Efficiency ${d._e||"n/a"}"><defs><radialGradient id="radF" cx="50%" cy="50%" r="60%"><stop class="scr-s0" offset="0" stop-opacity="0.34"/><stop class="scr-s1" offset="1" stop-opacity="0.12"/></radialGradient></defs>${grid}${spokes}<polygon class="sc-radar-poly" points="${dpts}" fill="url(#radF)" stroke-width="2" stroke-linejoin="round"/>${dots}${labels}</svg><span class="sc-radar-cap">Factor profile</span></div>`;
 }
 function scTag(label,tone){return `<span class="vtag vt-${tone}">${label}</span>`;}
 function scVerdict(d){
