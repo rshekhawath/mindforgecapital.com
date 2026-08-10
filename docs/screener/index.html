@@ -918,13 +918,22 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     </div>
 
     <div class="sidebar-section">
-      <div class="sidebar-title">Sector</div>
+      <!-- V29.4 — the three sidebar dropdowns had no accessible name. "SECTOR" and
+           "SORT" above them are <div>s: they label the control visually and to
+           nothing else, so a screen reader announced all three as an unnamed combo
+           box. Sector's title is a real <label for> now, which also makes the word
+           itself a click target; .sidebar-title sets display:flex, so a <label>
+           renders byte-identically to the <div> it replaces. The two Sort controls
+           share one heading and a <label> can only point at one element, so they
+           carry aria-label instead — and NOT both, since an aria-label that differs
+           from a visible label breaks Label in Name. -->
+      <label class="sidebar-title" for="sector_filter">Sector</label>
       <select class="filter-select" id="sector_filter"><option value="">All Sectors</option></select>
     </div>
 
     <div class="sidebar-section">
       <div class="sidebar-title">Sort</div>
-      <select class="filter-select" id="sort_by" style="margin-bottom:7px">
+      <select class="filter-select" id="sort_by" aria-label="Sort by" style="margin-bottom:7px">
         <option value="market_cap_cr">Market Cap</option>
         <option value="pe_ratio">P/E Ratio</option>
         <option value="pb_ratio">P/B Ratio</option>
@@ -946,7 +955,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
         <option value="promoter_holding">Promoter Holding %</option>
         <option value="beta">Beta</option>
       </select>
-      <select class="filter-select" id="sort_dir">
+      <select class="filter-select" id="sort_dir" aria-label="Sort direction">
         <option value="desc">High → Low</option>
         <option value="asc">Low → High</option>
       </select>

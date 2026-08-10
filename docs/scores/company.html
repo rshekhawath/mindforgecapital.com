@@ -579,7 +579,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
     <div class="sc-explain">
       Each factor is ranked against the whole NSE universe (0 = bottom, 100 = top); the bar shows where this stock sits.
-      Scores are a research starting point, not advice. <a id="openScreener">View full financials below ↓</a>
+      Scores are a research starting point, not advice. <a id="openScreener" href="#financials">View full financials below ↓</a>
     </div>
   </div>
 
@@ -587,7 +587,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <div class="kpi-grid" id="kpiGrid"></div>
 
   <!-- TABS -->
-  <div class="tabs">
+  <!-- V29.4: id added so "View full financials below ↓" can be a real link. It used
+       to be an <a> with no href, which is neither a link nor a control — outside the
+       tab order, unfocusable, mouse-only. The JS below still smooth-scrolls; the href
+       is what makes it reachable by keyboard and survives if that script never runs. -->
+  <div class="tabs" id="financials">
     <div class="tab active" onclick="switchTab('overview',this)">Overview</div>
     <div class="tab" onclick="switchTab('ratios',this)">Ratios &amp; Valuation</div>
     <div class="tab" onclick="switchTab('shareholding',this)">Shareholding</div>
@@ -1420,7 +1424,10 @@ function switchTab(name,el){
 function toast(msg,type="info",dur=3500){const c=document.getElementById("toastContainer");const t=document.createElement("div");t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),dur);}
 
 // "View full financials" scrolls to the tabs
-document.getElementById("openScreener").addEventListener("click",()=>{document.querySelector(".tabs").scrollIntoView({behavior:"smooth",block:"start"});});
+// V29.4: preventDefault so the smooth scroll runs instead of the browser's instant
+// hash jump. The href stays on the element — it is what puts this control in the tab
+// order — and the anchor still works with JS off, just without the easing.
+document.getElementById("openScreener").addEventListener("click",(e)=>{e.preventDefault();document.querySelector(".tabs").scrollIntoView({behavior:"smooth",block:"start"});});
 
 // Hamburger
 (function(){

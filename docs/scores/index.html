@@ -110,8 +110,17 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hero-sub{font-size:16px;color:var(--text2);max-width:760px;line-height:1.6;margin-bottom:22px}
 .hero-sub b{color:var(--white);font-weight:700}
 .hero-sub .q{color:var(--pil-q);font-weight:700}.hero-sub .v{color:var(--pil-v);font-weight:700}.hero-sub .g{color:var(--pil-g);font-weight:700}.hero-sub .m{color:var(--pil-m);font-weight:700}.hero-sub .e{color:var(--pil-e);font-weight:700}
-.hero-sub a{color:var(--accent2);font-weight:600;cursor:pointer;border-bottom:1px dashed rgba(37,99,235,.4)}
-.hero-sub a:hover{color:var(--accent)}
+.hero-sub a,.hero-sub .lnk{color:var(--accent2);font-weight:600;cursor:pointer;border-bottom:1px dashed rgba(37,99,235,.4)}
+.hero-sub a:hover,.hero-sub .lnk:hover{color:var(--accent)}
+/* V29.4 — "How it's calculated →" opens the methodology modal, and until now it was
+   an <a> with NO href. That is not a link and not a control: it is skipped by the tab
+   order entirely and .focus() on it does nothing, so the only way to reach the modal
+   from this sentence was a mouse. (#btnMethod further down the page opens the same
+   modal and has always been a real <button>.) It is a <button> now — natively
+   focusable, Enter/Space work, announced as a button — reset back to inline text so
+   it still reads as the link it looks like. Its focus ring comes from the shared
+   :focus-visible rule in mfc-finish.css, which already targets button. */
+.hero-sub .lnk{font:inherit;background:none;border:0;border-bottom:1px dashed rgba(37,99,235,.4);padding:0;line-height:inherit;display:inline}
 
 /* summary stats + distribution */
 .hero-panel{display:grid;grid-template-columns:auto auto 1fr;gap:26px;align-items:center;background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:20px 26px;margin-bottom:22px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 14px 40px -22px rgba(26,80,216,.22);position:relative;overflow:hidden}
@@ -759,7 +768,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     <p class="hero-sub">
       Every NSE company graded <b>0–100</b> on five factor lenses — <span class="q">Quality</span>,
       <span class="v">Value</span>, <span class="g">Growth</span>, <span class="m">Momentum</span> and <span class="e">Efficiency</span>.
-      One transparent, data-driven read on a business. <a id="introMethod">How it's calculated →</a>
+      One transparent, data-driven read on a business. <button type="button" class="lnk" id="introMethod">How it's calculated →</button>
     </p>
 
     <!-- summary + distribution panel -->

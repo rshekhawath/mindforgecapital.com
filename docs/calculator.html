@@ -226,6 +226,40 @@ html[data-theme="dark"] .fc-kpi.hero::after{background:linear-gradient(100deg,tr
 .fc-canvas-wrap { position: relative; height: 340px; margin-top: 10px; min-width: 0; overflow: hidden; }
 .fc-canvas-wrap canvas { max-width: 100% !important; }
 
+/* ── V29.4 · FEE DRAG — the chart could not show the number the page is about ──
+   The headline says "+₹6.11L wealth saved" and the copy says to watch the gap
+   compound. On the defaults, measured off the live chart: the gap is 0.7px at
+   year 1, 1.8px at year 2 and 3.3px at year 3 — under lines drawn 2px and 3px
+   wide, so for the first third of the horizon the argument is literally painted
+   over by its own evidence. Even at year 10 it is 37px of a 303px plot, because
+   two curves that both run ₹15L → ₹50L+ share an axis where the difference
+   between them is a rounding error.
+   So the difference gets its own view and its own axis, anchored at zero, where
+   year 1's ₹12,012 is a readable bar and the curve's convexity — the actual
+   claim — is the shape of the chart rather than a sliver between two lines.
+   The default view is unchanged; this is a second lens on the same numbers. */
+.fc-chart-tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.fc-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+  background: var(--ink3, rgba(37,99,235,0.06)); border: 0.5px solid var(--border); }
+.fc-seg-b { font: inherit; font-size: 11.5px; font-weight: 600; line-height: 1;
+  color: var(--text3); background: none; border: 0; cursor: pointer;
+  padding: 7px 12px; border-radius: 999px; white-space: nowrap;
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease; }
+.fc-seg-b:hover { color: var(--text2); }
+.fc-seg-b[aria-pressed="true"] { color: var(--accent); background: var(--ink2);
+  box-shadow: 0 1px 3px rgba(12,24,49,0.10); }
+/* Dark needs its own pair rather than the tokens: --ink3 (#1b2740) is LIGHTER than
+   --ink2 (#121d33) there, so reusing them would sink the selected pill below its own
+   track and put --accent (#2f5fe0) on it at close to no contrast. --accent3 is the
+   dark-safe ink this palette already uses for links on raised surfaces. */
+html[data-theme="dark"] .fc-seg { background: rgba(150,180,240,0.07); }
+html[data-theme="dark"] .fc-seg-b[aria-pressed="true"] { color: var(--accent3); background: rgba(150,180,240,0.15); box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .fc-seg-b { transition: none; } }
+/* The caption is derived from the series on every render — never hand-written —
+   so it cannot drift from the numbers the way a typed label does. */
+.fc-chart-note { font-size: 12px; color: var(--text3); line-height: 1.5; margin: 8px 0 0; }
+@media (max-width: 600px) { .fc-seg-b { padding: 9px 11px; } }
+
 /* fee strip */
 .fc-feestrip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 0.5px solid var(--border); }
 .fc-fee { font-size: 12px; color: var(--text3); }
@@ -518,15 +552,25 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <!-- V28.2: h2, not h3 — this is the page's only content heading under the
                  h1, so an h3 here left the outline jumping h1 → h3. Its size is pinned
                  by .fc-chart-head h2 so nothing moves visually. -->
-            <h2>Portfolio value over time</h2>
-            <div class="fc-legend">
-              <span><span class="lg" id="lg-mf"></span>Mutual fund</span>
-              <span><span class="lg" id="lg-mfc"></span>MindForge</span>
+            <h2 id="fc-chart-title">Portfolio value over time</h2>
+            <div class="fc-chart-tools">
+              <div class="fc-legend" id="fc-legend">
+                <span><span class="lg" id="lg-mf"></span>Mutual fund</span>
+                <span><span class="lg" id="lg-mfc"></span>MindForge</span>
+              </div>
+              <!-- V29.4 · real <button>s with aria-pressed, not styled divs: this is the
+                   only new control on the page and it has to be reachable the same way
+                   every other control here is. -->
+              <div class="fc-seg" role="group" aria-label="Chart view">
+                <button type="button" class="fc-seg-b" id="fc-view-value" aria-pressed="true">Portfolio value</button>
+                <button type="button" class="fc-seg-b" id="fc-view-gap" aria-pressed="false">Fee drag</button>
+              </div>
             </div>
           </div>
           <div class="fc-canvas-wrap">
             <canvas id="fc-chart" role="img" aria-label="Line chart comparing a traditional mutual fund portfolio against a MindForge flat-fee portfolio over the selected horizon"></canvas>
           </div>
+          <p class="fc-chart-note" id="fc-chart-note"></p>
         </div>
 
         <div class="fc-cta fade-up">
@@ -729,12 +773,33 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       mfc: g('--green','#059669'),            // brand success — MindForge
       grid: dark ? 'rgba(150,180,240,0.10)' : 'rgba(37,99,235,0.08)',
       tick: g('--text3','#475569'),
+      // V29.4 — fee-drag bars. Read from the tokens rather than written as literals:
+      // the dark palette flips --green but NOT --red, so a hardcoded loss colour is
+      // the one that survives the theme switch wrong. --gold is the honest ink for the
+      // negative case anyway, since a flat fee costing more is a caveat, not an error.
+      gapPos: g('--green','#059669'),
+      gapNeg: g('--gold','#d97706'),
       dark: dark
     };
   }
 
   var chart = null;
+  // V29.4 — which lens the chart is showing: 'value' (two portfolios) or 'gap' (the
+  // running difference). chartBuiltAs records what is actually on the canvas, so a
+  // view switch tears the chart down (the two views are different Chart.js types)
+  // while a slider drag still takes the cheap in-place update path below.
+  var fcView = 'value', chartBuiltAs = null;
+  function gapSeries(d){
+    return d.mfcSeries.map(function(v,i){ return v - d.mfSeries[i]; });
+  }
+
   function buildChart(data){
+    if(chart && chartBuiltAs !== fcView){ chart.destroy(); chart = null; }
+    if(fcView === 'gap'){ return buildGapChart(data); }
+    return buildValueChart(data);
+  }
+
+  function buildValueChart(data){
     // fast path: chart already exists → update data in place (no destroy/recreate on every drag)
     if(chart){
       chart.data.labels = data.labels;
@@ -743,6 +808,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       chart.update('none');
       return;
     }
+    chartBuiltAs = 'value';
     var c = themeColors();
     var ctx = document.getElementById('fc-chart').getContext('2d');
     var cfg = {
@@ -796,6 +862,105 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       }
     };
     chart = new Chart(ctx, cfg);
+  }
+
+  /* ── V29.4 · the fee-drag view ─────────────────────────────────────────────
+     One series: mfcSeries[i] − mfSeries[i], the wealth kept by year i. Bars, not
+     a line, and anchored at zero — both deliberate. Zero is a real quantity for a
+     difference series (it is the break-even the negative case crosses), and a bar
+     gives year 1 a visible height where a line gave it 0.7px of vertical offset.
+     Colour is per-bar because the sign genuinely flips: on a small corpus with a
+     low AUM fee the flat fee costs more for the first years and the page says so
+     in prose already — the chart now says it too, in gold, instead of drawing a
+     "saving" that is actually a cost. ───────────────────────────────────────── */
+  function buildGapChart(data){
+    var gaps = gapSeries(data);
+    if(chart){
+      chart.data.labels = data.labels;
+      chart.data.datasets[0].data = gaps;
+      chart.update('none');
+      return;
+    }
+    chartBuiltAs = 'gap';
+    var c = themeColors();
+    var ctx = document.getElementById('fc-chart').getContext('2d');
+    function barInk(x){
+      var v = x.parsed ? x.parsed.y : x.raw;
+      return (v < 0 ? c.gapNeg : c.gapPos);
+    }
+    chart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels:data.labels, datasets:[{
+        label:'Wealth kept', data:gaps,
+        backgroundColor:function(x){ return barInk(x); },
+        hoverBackgroundColor:function(x){ return barInk(x); },
+        borderRadius:3, borderSkipped:false, maxBarThickness:38, categoryPercentage:0.82, barPercentage:0.9
+      }]},
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:false,
+        interaction:{ mode:'index', intersect:false },
+        layout:{ padding:{ top:8, right:6, left:0, bottom:0 } },
+        scales:{
+          x:{ grid:{ display:false }, border:{ display:false },
+              ticks:{ color:c.tick, font:{ size:11 }, maxRotation:0, autoSkip:true, maxTicksLimit:8 } },
+          y:{ beginAtZero:true, grid:{ color:c.grid }, border:{ display:false },
+              ticks:{ color:c.tick, font:{ size:11 }, maxTicksLimit:6,
+                      callback:function(val){ return compactInr(val); } } }
+        },
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            backgroundColor:c.dark?'rgba(17,28,48,0.96)':'rgba(12,24,49,0.96)',
+            titleColor:'#fff', bodyColor:'#e7edfb', borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
+            padding:12, cornerRadius:10, displayColors:false,
+            callbacks:{
+              title:function(items){ var i=items[0].dataIndex; return i===0?'Today':('Year '+i); },
+              label:function(item){
+                var v=item.parsed.y;
+                return (v<0?'Flat fee costs: ':'Wealth kept: ')+compactInr(Math.abs(v));
+              },
+              // The gap as a share of the fund corpus — the number that says how much
+              // of the portfolio the AUM fee has quietly taken by that year.
+              afterBody:function(items){
+                var i=items[0].dataIndex, base=data.mfSeries[i];
+                if(!base) return '';
+                var pct=(gaps[i]/base)*100;
+                return '\n'+(pct<0?'−':'+')+Math.abs(pct).toFixed(pct===0?0:(Math.abs(pct)<10?1:0))+'% of the fund portfolio';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /* The caption under the chart is DERIVED from the series on every render — never
+     typed — so it cannot drift from the numbers the way a hand-written label does.
+     Both signs and the one-year horizon are handled explicitly. */
+  function chartNote(d){
+    var note=document.getElementById('fc-chart-note'); if(!note) return;
+    if(fcView!=='gap'){
+      note.textContent='Both portfolios start at the same capital and compound at the same gross return — the only difference plotted is how the fee is charged.';
+      return;
+    }
+    var gaps=gapSeries(d), last=gaps[gaps.length-1], first=gaps.length>1?gaps[1]:last, yrs=d.years;
+    if(yrs<2){
+      note.textContent=(last<0?'After one year the flat fee has cost ':'After one year the flat fee has kept ')+
+        compactInr(Math.abs(last))+' against the AUM fee. The gap compounds from here — drag the horizon out to see it.';
+      return;
+    }
+    var span='year 1 to year '+yrs;
+    if(first>0&&last>0){
+      var mult=last/first;
+      note.textContent='The gap grows from '+compactInr(first)+' after year 1 to '+compactInr(last)+' by year '+yrs+
+        ' — '+(mult>=10?Math.round(mult):mult.toFixed(1))+'× larger, because the AUM fee scales with your corpus and the flat fee does not.';
+    } else if(last<0){
+      note.textContent='At this size the AUM fee is still the cheaper of the two: '+compactInr(Math.abs(last))+
+        ' behind by year '+yrs+'. Flat fees overtake as the corpus grows — raise the investment or the horizon and the bars cross zero.';
+    } else {
+      note.textContent='The flat fee starts behind and pulls ahead over '+span+', ending '+compactInr(Math.abs(last))+
+        ' ahead — the point where a fixed cost stops mattering and a percentage one keeps growing.';
+    }
   }
 
   // ── render everything ──
@@ -894,6 +1059,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     }
 
     buildChart(d);
+    chartNote(d);          // V29.4 — derived caption, both views
     paintSwatches();
     if(_fcFirstPaint){
       _fcFirstPaint=false;
@@ -948,6 +1114,37 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       el[k].num.value = numText(val,c);
     });
   });
+
+  /* ── V29.4 · chart-view toggle ──────────────────────────────────────────────
+     The heading, the canvas's aria-label and the legend all belong to the view,
+     not to the page, so all three move with it. The legend names two series the
+     fee-drag view does not draw, so it is removed from the accessibility tree
+     (display:none, not just visually hidden) rather than left announcing colours
+     for lines that are not there. */
+  var segValue=document.getElementById('fc-view-value'),
+      segGap=document.getElementById('fc-view-gap'),
+      chartTitle=document.getElementById('fc-chart-title'),
+      chartCanvas=document.getElementById('fc-chart'),
+      chartLegend=document.getElementById('fc-legend');
+  var VIEW_META={
+    value:{ title:'Portfolio value over time',
+            aria:'Line chart comparing a traditional mutual fund portfolio against a MindForge flat-fee portfolio over the selected horizon' },
+    gap:{   title:'Wealth kept, year by year',
+            aria:'Bar chart of the running difference between the MindForge flat-fee portfolio and the traditional mutual fund portfolio, one bar per year' }
+  };
+  function setView(v){
+    if(v===fcView) return;
+    fcView=v;
+    var m=VIEW_META[v]||VIEW_META.value;
+    if(chartTitle) chartTitle.textContent=m.title;
+    if(chartCanvas) chartCanvas.setAttribute('aria-label',m.aria);
+    if(chartLegend) chartLegend.style.display=(v==='gap'?'none':'');
+    if(segValue) segValue.setAttribute('aria-pressed',v==='value'?'true':'false');
+    if(segGap) segGap.setAttribute('aria-pressed',v==='gap'?'true':'false');
+    render(false);
+  }
+  if(segValue) segValue.addEventListener('click',function(){ setView('value'); });
+  if(segGap) segGap.addEventListener('click',function(){ setView('gap'); });
 
   // re-theme chart when the nav toggle flips the theme — destroy so it rebuilds with fresh colors
   window.__fcThemeChanged = function(){ if(chart){ chart.destroy(); chart = null; } paintSwatches(); render(false); };
