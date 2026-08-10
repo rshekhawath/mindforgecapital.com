@@ -562,7 +562,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2920">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=2950">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -2020,5 +2020,28 @@ checkHealth();
 }
 </style>
 
+<!-- ============================================================================
+     V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.
+     ----------------------------------------------------------------------------
+     iOS Safari magnifies the whole page when a form control with a computed
+     font-size under 16px receives focus, and it does NOT zoom back out when the
+     field is blurred — the visitor is left on a scaled, horizontally-scrolling
+     page and has to pinch their way back. Measured across the site at 390px, 67
+     controls on 8 pages were under the threshold, including every field in the
+     sign-up, sign-in and account-recovery funnel.
+     The alternative cure — maximum-scale=1 / user-scalable=no on the viewport —
+     is not used here: it disables pinch-zoom for everyone and fails WCAG 1.4.4.
+     Raising the font is the only fix that costs a reader nothing.
+     Scoped to (hover:none) and (pointer:coarse) so pointer devices are untouched,
+     and each selector below MATCHES the specificity of the rule it corrects
+     rather than escalating past it — so anything the page deliberately sizes
+     larger (login's 22px OTP boxes) still wins.
+     ========================================================================= -->
+<style id="mfc-v295-touch">
+@media (hover: none) and (pointer: coarse) {
+  .filter-input,.filter-select{font-size:16px;}
+  .nav-search input{font-size:16px;}
+}
+</style>
 </body>
 </html>

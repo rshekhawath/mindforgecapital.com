@@ -238,7 +238,15 @@
 // It is also the release that retires the ?v=2850 pin on the 28 generated
 // directory pages — the mismatch that kept V29.1's 44px hamburger away from
 // them for anyone who had visited one before.
-const CACHE = 'mfc-v42';
+// V29.5 -> mfc-v43. This one MUST move too: every page's mfc-finish.css
+// reference steps 2920 -> 2950 for the shared phone layer (iOS text autosizing +
+// the toast/WhatsApp de-collision), and assets are served cache-first keyed by
+// the exact URL including ?v, so an installed PWA would otherwise hold both
+// copies. login.html — the manifest start_url and a PRECACHED document, which
+// no query string can bust — is one of the eight pages that gained the 16px
+// touch rule, so the shell has to be re-installed for a member signing in on a
+// phone to stop being zoomed into the email field.
+const CACHE = 'mfc-v43';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

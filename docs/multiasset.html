@@ -206,44 +206,51 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .compare-table tr.lm-row td{background:linear-gradient(90deg,rgba(26,108,244,0.04),rgba(45,212,191,0.04));}
 
   /* ── MOBILE STICKY CTA BAR ── */
-  /* V3.7: floating Subscribe CTA pill — desktop only; mobile has its own .mobile-cta-bar */
-  .mf-tab-cta {
-    position: fixed; left: 50%; bottom: 24px; z-index: 92;
-    transform: translateX(-50%) translateY(28px); opacity: 0; pointer-events: none;
-    display: inline-flex; align-items: center; gap: 14px;
-    padding: 12px 8px 12px 22px; border-radius: 999px;
-    background: linear-gradient(135deg, #0c1831 0%, #1a50d8 60%, #2563eb 100%);
-    box-shadow: 0 16px 40px -12px rgba(26,80,216,0.50), 0 4px 14px rgba(15,23,42,0.18);
-    color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 14px; font-weight: 600; letter-spacing: 0.01em;
-    transition: opacity .32s ease, transform .32s cubic-bezier(.22,1,.36,1);
-  }
-  .mf-tab-cta.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
-  .mf-tab-cta-go {
-    background: rgba(255,255,255,0.18); border: 0; cursor: pointer;
-    color: #fff; font: inherit; font-weight: 700;
-    padding: 9px 16px; border-radius: 999px;
-    display: inline-flex; align-items: center; gap: 6px;
-    transition: background .18s ease, transform .18s ease;
-  }
-  .mf-tab-cta-go:hover { background: rgba(255,255,255,0.30); transform: translateX(2px); }
-  .mf-tab-cta-go::after { content: '→'; font-size: 15px; }
-  .mf-tab-cta-close {
-    background: transparent; border: 0; cursor: pointer;
-    color: rgba(255,255,255,0.55); padding: 4px 8px;
-    font-size: 16px; line-height: 1; transition: color .15s;
-    margin-right: 4px;
-  }
-  .mf-tab-cta-close:hover { color: #fff; }
-  @media (max-width: 768px) { .mf-tab-cta { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .mf-tab-cta { transition: opacity .2s; transform: translateX(-50%) !important; } }
-  .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px env(safe-area-inset-bottom,10px);display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
-  .mobile-cta-bar a{flex:1;padding:13px 16px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;}
+  /* V29.5 — THE BAR THIS PAGE HAS BEEN RESERVING SPACE FOR SINCE V3.7.
+     The V3.7 floating-pill CSS that used to sit here (10 rules, display:none
+     below 768px, under a comment reading "desktop only; mobile has its own
+     .mobile-cta-bar") is REMOVED — the same removal V6.1 already made on
+     strategies.html, for the same reason: the pill resolved the active strategy
+     from .tab-btn.active, and V5.9 replaced the tab interface with these
+     standalone per-strategy pages, so it had no tab to read. Its markup and its
+     controller never existed here; only the CSS did.
+     The bar it deferred to was never added either — so on a phone this page had
+     NO persistent subscribe route at all, while `body` reserved 76px at the end
+     of the document and `.fab-wa` lifted 88px, both clearing a bar that was
+     never rendered. The rules below are that bar, finally built.
+     Its primary label is written by JS from the hero Subscribe button (see
+     #mctaGo) rather than typed a second time: the price is a machine number and
+     a hand-typed copy beside one is this codebase's richest bug seam. */
+  /* V29.5 — the bottom padding used an env() with a 10px fallback, and that
+     fallback applies only where the variable is UNSUPPORTED. Every current
+     browser supports safe-area insets and returns 0px without viewport-fit=cover,
+     so this bar has always drawn 10px above its buttons and 0px below them.
+     calc() keeps the 10px unconditionally and ADDS the inset if there ever is one. */
+  .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
+  /* `button` too: on this page the primary CTA opens the registration modal, so
+     it is a real button rather than the link the two hub pages use. */
+  .mobile-cta-bar a,.mobile-cta-bar button{flex:1;padding:13px 16px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;font-family:inherit;border:none;cursor:pointer;}
   .mcta-primary{background:var(--accent);color:#fff;}
   .mcta-primary:hover{background:#2a5ef5;}
+  /* The secondary is shrink-to-fit, not a half: an equal split leaves the
+     primary 109px of text room at 320px and wraps the price onto a second
+     line, which pushes the bar to 98px — taller than the 76px this page
+     reserves for it, so the bar would then cover the end of the document. */
   .mcta-ghost{border:0.5px solid var(--border2);color:var(--text2);background:var(--ink2);}
+  /* Two classes, so this beats the `.mobile-cta-bar a,.mobile-cta-bar button`
+     flex:1 above it — a bare .mcta-ghost is one class and loses. */
+  .mobile-cta-bar .mcta-ghost{flex:0 0 auto;}
   .mcta-ghost:hover{color:var(--white);border-color:var(--accent3);}
   @media (max-width: 768px){.mobile-cta-bar{display:flex;}body{padding-bottom:76px;}.fab-wa{bottom:88px;}}
+  /* 320px is the narrowest supported width and the only one where the widest
+     label ("Subscribe \u20b92,499/mo \u2192") still needed ~160px of text room in a
+     157px button. 8px off the bar's gutters and 8px off the button's own side
+     padding buy 16px, which holds it on one line — and one line is what keeps
+     the bar at 70px, inside the 76px this page reserves for it. */
+  @media (max-width: 344px){
+    .mobile-cta-bar{padding-left:10px;padding-right:10px;gap:8px;}
+    .mobile-cta-bar a,.mobile-cta-bar button{padding-left:12px;padding-right:12px;}
+  }
 
   /* ── BACK TO TOP BUTTON ── */
   .back-to-top{position:fixed;bottom:90px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--ink2);border:0.5px solid var(--border2);color:var(--accent2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px);transition:all 0.25s ease;z-index:89;box-shadow:0 8px 24px -8px rgba(26,80,216,0.20),inset 0 1px 0 rgba(255,255,255,0.7);}
@@ -1689,7 +1696,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://mindforgecapital.com/"},{"@type":"ListItem","position":2,"name":"Strategies","item":"https://mindforgecapital.com/strategies.html"},{"@type":"ListItem","position":3,"name":"MultiAsset","item":"https://mindforgecapital.com/multiasset.html"}]},{"@type":"WebPage","@id":"https://mindforgecapital.com/multiasset.html","url":"https://mindforgecapital.com/multiasset.html","name":"MultiAsset","description":"A free monthly multi-factor rotation across 8 NSE-listed ETFs.","inLanguage":"en-IN","isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"},"publisher":{"@type":"Organization","name":"MindForge Capital","url":"https://mindforgecapital.com/","logo":"https://mindforgecapital.com/assets/LogoNav.png"}}]}</script>
@@ -2061,6 +2068,39 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 }
 .footer-social-icon svg { width: 100%; height: 100%; display: block; }
 </style>
+<!-- V29.5 — MOBILE STICKY CTA BAR. The CSS for this bar, `body{padding-bottom:76px}`
+     and `.fab-wa{bottom:88px}` have all been in this page since V3.7 waiting for it;
+     the element never existed, so on a phone the page's only subscribe routes were
+     the hero button (scrolled past in seconds) and the sidebar card (desktop-only
+     column). index.html and strategies.html have carried this bar all along.
+     The primary's label and action are MIRRORED from the hero button at runtime,
+     so the price shown here cannot drift from the price the page charges — there is
+     no second hand-written copy of it anywhere in this file. The static fallback
+     carries no number at all, so with JS off it is still true. -->
+<div class="mobile-cta-bar" id="mctaBar">
+  <a class="mcta-ghost" href="strategies.html#compare">Compare</a>
+  <button class="mcta-primary" type="button" id="mctaGo">Subscribe &rarr;</button>
+</div>
+<script>
+(function(){
+  var hero = document.querySelector('.btn-primary-page[onclick*="openRegModal"]');
+  var go   = document.getElementById('mctaGo');
+  if (!hero || !go) return;
+  // The hero's own words, minus the arrow it already carries. "/month" is
+  // shortened to "/mo" and the em-dash dropped so the whole label holds ONE line
+  // in the widest case at 320px — the price keeps its per-month qualifier, which
+  // is the one word that must not be lost: "₹2,499" alone could read as one-off.
+  // Anything that does not match the "<verb> — ₹N/month" shape falls through to
+  // the hero's text with the dash removed, so a future wording still shows the
+  // page's own copy rather than a stale hand-typed one.
+  var raw = (hero.textContent || '').replace(/\s*\u2192\s*$/, '').trim();
+  var m   = raw.match(/^(.*?)\s*[\u2014-]\s*(\u20b9[\d,]+)\/month$/);
+  var label = m ? (m[1] + ' ' + m[2] + '/mo') : raw.replace(/\s*\u2014\s*/g, ' ');
+  if (label) go.innerHTML = label.replace(/&/g,'&amp;').replace(/</g,'&lt;') + ' &rarr;';
+  go.addEventListener('click', function(){ hero.click(); });
+})();
+</script>
+
 <!-- Floating WhatsApp CTA + auto-popping invite bubble (V5.7 pattern) -->
 <a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%20want%20to%20learn%20more%20about%20your%20quant%20strategies."
    target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">

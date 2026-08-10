@@ -1300,10 +1300,50 @@ footer a:hover{color:var(--accent);}
   .table-actions{width:100%;justify-content:flex-end;}
 }
 
+/* V29.5 — the phone's sort control. Hidden by default and shown at exactly the
+   breakpoint where `.table-wrap` — and with it every `th.sortable` the desktop
+   sorts from — leaves the layout, so the two are never both present and never
+   both absent. Sizes come from .tbl-btn so it reads as part of the same toolbar;
+   the select is 16px because anything smaller makes iOS zoom the page on focus
+   (see the V29.5 block near </body>). */
+.msort{display:none;align-items:center;gap:6px;flex:1 1 100%;min-width:0;}
+.msort-lbl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);flex:0 0 auto;}
+.msort-sel{
+  flex:1 1 auto;min-width:0;
+  background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;
+  padding:9px 30px 9px 12px;font-size:16px;color:var(--white);
+  font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-weight:600;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+  box-shadow:var(--shadow-sm);transition:border-color .18s ease,box-shadow .18s ease;
+  /* 44px, the phone target size the rest of this site uses since V27.7 — the
+     padding alone renders 38px at 16px type. */
+  min-height:44px;
+}
+.msort-sel:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.10);}
+.msort-dir{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;
+  background:var(--ink2);border:0.5px solid var(--border2);border-radius:10px;
+  padding:9px 12px;font-size:13px;font-weight:600;color:var(--text2);
+  font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+  cursor:pointer;box-shadow:var(--shadow-sm);
+  transition:border-color .18s ease,color .18s ease,background .18s ease;
+  min-height:44px;
+}
+.msort-dir svg{width:14px;height:14px;flex:0 0 auto;}
+.msort-dir:hover{border-color:var(--accent);color:var(--accent);}
+.msort-dir[disabled]{opacity:.45;cursor:default;}
+.msort-dir[disabled]:hover{border-color:var(--border2);color:var(--text2);}
+html[data-theme="dark"] .msort-sel{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a9c9' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
 /* MOBILE CARD VIEW for portfolio */
 @media(max-width:600px){
   .table-wrap{display:none;}
   .stock-cards{display:flex !important;flex-direction:column;gap:10px;}
+  .msort{display:flex;}
 }
 @media(min-width:601px){.stock-cards{display:none;}}
 .stock-card{
@@ -1949,7 +1989,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -2641,6 +2681,37 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <div class="last-update">Last updated: <span id="last-update-time">—</span></div>
         </div>
         <div class="table-actions">
+          <!-- V29.5 — SORTING THE PICKS ON THE DEVICE MEMBERS PLACE ORDERS FROM.
+               The table has carried eight sortable columns since V5.x, and
+               sortByKey() → applySort() → renderTable(sorted) already re-renders
+               the PHONE CARDS from the same sorted array — the capability is
+               whole. But every trigger for it is a click handler bound to
+               `th.sortable`, and below 600px `.table-wrap` is display:none, so
+               there is no <th> in the layout to click. On a phone the member
+               got 25 cards in conviction order and no way to reorder them,
+               while the identical page on a laptop offered all eight keys.
+               This is the missing door, not a second implementation: it calls
+               the same sortByKey(), inherits its per-strategy localStorage
+               persistence, and is kept in sync by reflectSortAffordance(),
+               which already runs after every re-render. -->
+          <div class="msort" id="msort">
+            <label class="msort-lbl" for="msort-key">Sort</label>
+            <select class="msort-sel" id="msort-key" aria-label="Sort picks by">
+              <option value="">Model order</option>
+              <option value="num">Conviction rank</option>
+              <option value="company">Company</option>
+              <option value="ticker">Ticker</option>
+              <option value="industry">Industry</option>
+              <option value="price">Rec. price</option>
+              <option value="alloc">Allocation</option>
+              <option value="shares">Shares</option>
+              <option value="weight">Weight</option>
+            </select>
+            <button class="msort-dir" id="msort-dir" type="button" aria-label="Reverse sort order" title="Reverse sort order">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16"/><path d="M4 17l3 3 3-3"/><path d="M17 20V4"/><path d="M14 7l3-3 3 3"/></svg>
+              <span id="msort-dir-txt">High first</span>
+            </button>
+          </div>
           <input type="search" class="tbl-search" id="tbl-search" placeholder="Search ticker or company…" oninput="filterStocks(this.value)" aria-label="Search stocks">
           <div class="market-bar" id="market-status" title="Market hours — auto-detected from your strategy">
             <span id="market-dot" class="dot-green"></span>
@@ -5025,6 +5096,12 @@ function applySort(){
     // Re-render in original order
     renderTable(stocksData);
     reapplyViewState();
+    /* V29.5: this early return skipped the affordance re-sync. It never showed on
+       desktop because no <th> matches an empty key anyway, but the phone control
+       has a direction button and a label to reset: choosing "Model order" left
+       the button enabled and still reading "Low first" for a list that is not
+       sorted at all. Same one-line sync the sorted path already ends with. */
+    setTimeout(reflectSortAffordance, 0);
     return;
   }
   var getters = {
@@ -5045,7 +5122,11 @@ function applySort(){
     weight:   function(s){ return Number(s.weight_pct) || 0; },
   };
   var get = getters[_sortKey];
-  if (!get) { renderTable(stocksData); reapplyViewState(); return; }
+  /* V29.5: and the same sync here — this branch catches a key that is truthy but
+     has no getter, which is what a stale localStorage entry from a renamed column
+     would produce. It re-rendered in model order and left both affordances
+     claiming the old key. */
+  if (!get) { renderTable(stocksData); reapplyViewState(); setTimeout(reflectSortAffordance, 0); return; }
   // Stable copy
   var paired = stocksData.map(function(s,i){ return {s:s, k:get(s,i), i:i}; });
   paired.sort(function(a,b){
@@ -5066,7 +5147,45 @@ function reflectSortAffordance(){
       th.classList.add(_sortDir > 0 ? 'sort-asc' : 'sort-desc');
     }
   });
+  reflectMobileSort();
 }
+/* V29.5 — the phone control's half of the same affordance. Called from
+   reflectSortAffordance() rather than from its own hook, so there is exactly ONE
+   place that re-syncs sort state after a render and both surfaces move together.
+   The direction word is derived from the key, not stored: a text key reads
+   A→Z / Z→A and a numeric one High first / Low first, which is what the value
+   actually means — "ascending" is jargon for a column of rupees. */
+function reflectMobileSort(){
+  var sel = document.getElementById('msort-key');
+  var btn = document.getElementById('msort-dir');
+  var txt = document.getElementById('msort-dir-txt');
+  if (!sel || !btn || !txt) return;
+  var key = _sortKey || '';
+  // a stored key that this control does not offer must not silently show "Model
+  // order" while the list is sorted — fall back to leaving the select alone.
+  if (Array.prototype.some.call(sel.options, function(o){ return o.value === key; })) sel.value = key;
+  var isText = (key === 'company' || key === 'ticker' || key === 'industry');
+  btn.disabled = !key;                       // nothing to reverse in model order
+  txt.textContent = !key ? 'Model order'
+                  : isText ? (_sortDir > 0 ? 'A–Z' : 'Z–A')
+                           : (_sortDir > 0 ? 'Low first' : 'High first');
+}
+(function(){
+  function bindMobileSort(){
+    var sel = document.getElementById('msort-key');
+    var btn = document.getElementById('msort-dir');
+    if (!sel || sel._mfcBound) return;
+    sel._mfcBound = true;
+    // sortByKey() sets a sensible default direction for a NEW key and toggles
+    // when handed the current one — which is exactly the two behaviours needed
+    // here, so neither is reimplemented.
+    sel.addEventListener('change', function(){ sortByKey(sel.value); });
+    btn.addEventListener('click', function(){ if (_sortKey) sortByKey(_sortKey); });
+    reflectMobileSort();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindMobileSort);
+  else bindMobileSort();
+})();
 function sortByKey(key){
   if (_sortKey === key) {
     _sortDir = -_sortDir; // toggle
@@ -8395,5 +8514,31 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 }
 </style>
 
+<!-- ============================================================================
+     V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.
+     ----------------------------------------------------------------------------
+     iOS Safari magnifies the whole page when a form control with a computed
+     font-size under 16px receives focus, and it does NOT zoom back out when the
+     field is blurred — the visitor is left on a scaled, horizontally-scrolling
+     page and has to pinch their way back. Measured across the site at 390px, 67
+     controls on 8 pages were under the threshold, including every field in the
+     sign-up, sign-in and account-recovery funnel.
+     The alternative cure — maximum-scale=1 / user-scalable=no on the viewport —
+     is not used here: it disables pinch-zoom for everyone and fails WCAG 1.4.4.
+     Raising the font is the only fix that costs a reader nothing.
+     Scoped to (hover:none) and (pointer:coarse) so pointer devices are untouched,
+     and each selector below MATCHES the specificity of the rule it corrects
+     rather than escalating past it — so anything the page deliberately sizes
+     larger (login's 22px OTP boxes) still wins.
+     ========================================================================= -->
+<style id="mfc-v295-touch">
+@media (hover: none) and (pointer: coarse) {
+  .tbl-search{font-size:16px;}
+  select.broker-picker{font-size:16px;}
+  /* this one carries font-size:14px in a style attribute (it is built inline
+     beside its Save button), and an attribute beats every stylesheet rule. */
+  #notif-email-input{font-size:16px !important;}
+}
+</style>
 </body>
 </html>

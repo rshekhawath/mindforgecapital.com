@@ -19,6 +19,16 @@ html {
   -webkit-tap-highlight-color: rgba(26,80,216,0.12);
   scrollbar-width: thin;
   scrollbar-color: rgba(37,99,235,0.28) transparent;
+  /* V29.5 — iOS text autosizing. Mobile Safari inflates the type inside a block
+     whose width is much wider than the visual viewport — the classic symptom is
+     turning a phone to landscape and finding one paragraph two steps larger than
+     its neighbours. It is applied per BLOCK, so it does not scale a page evenly:
+     it picks the ones it thinks need help and leaves the rest, which is why the
+     result reads as a bug rather than as zoom. `100%` says "render the size I
+     asked for" without disabling the user's own pinch-zoom. calculator.html was
+     the only page that had ever set it; this covers the other 51. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Refined branded scrollbar — pointer (desktop) devices only; touch keeps the
@@ -1049,3 +1059,34 @@ html .tip-icon::after{
 }
 /* the tip itself must stay above the pad, or the pad eats the pointer inside it */
 html .tip-icon .tip-popup{ z-index:51; }
+
+/* ============================================================================
+   V29.5 — THE TOAST AND THE WHATSAPP BUTTON WERE PINNED TO THE SAME CORNER
+   ----------------------------------------------------------------------------
+   Four pages ship a toast container — the Scanner, the Integrity Score lister,
+   the per-stock company page and FII/DII — and all four declare it
+   `position:fixed; bottom:24px; right:24px`. Every one of those pages also
+   carries the site-wide WhatsApp FAB, which is `position:fixed; bottom:24px;
+   right:24px` (right:16px on phones). Those are the same coordinates.
+   Measured on the Scanner at 390px with a real toast in the DOM: the toast box
+   was 242x49 at x=144 and the FAB 56x56 at x=318 — a 56x49 overlap, i.e. the
+   whole button, under every "N stocks match your screen" the tool has ever
+   shown. The toast has z-index 999 against the FAB's 90, so the FAB is the one
+   that loses: the site's persistent chat affordance is covered outright for the
+   life of each toast, and the toast's own last 56px is drawn over a green
+   circle. It is the most-used free tool on the property and it fires a toast on
+   every single run.
+   The toast moves LEFT rather than up, because up is also taken: the
+   back-to-top control sits at bottom:90px (desktop) / 162px (phones) in the
+   same column, so a vertical stack would only trade one collision for another.
+   96px = the FAB's 24px offset + its 56px width + a 16px gap; 88px on phones
+   where the FAB sits at right:16px. `left` is set on phones as well so a long
+   toast wraps inside the remaining width instead of growing back under the
+   button, and the container keeps its toasts right-aligned within that space.
+   `html` prefix: this file is linked BEFORE each page's own <style>, so an
+   equal-specificity rule here would lose.
+   ========================================================================== */
+html .toast-container{ right: 96px; }
+@media (max-width: 768px){
+  html .toast-container{ right: 88px; left: 16px; align-items: flex-end; }
+}

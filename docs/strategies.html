@@ -175,7 +175,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
      its markup + controller (see comment near the footer). The pill was a
      single-strategy "Subscribe to current tab" affordance that no longer has
      a tab to track now that strategies.html is a comparison hub. */
-  .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px env(safe-area-inset-bottom,10px);display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
+  /* V29.5 — the bottom padding used an env() with a 10px fallback, and that
+     fallback applies only where the variable is UNSUPPORTED. Every current
+     browser supports safe-area insets and returns 0px without viewport-fit=cover,
+     so this bar has always drawn 10px above its buttons and 0px below them.
+     calc() keeps the 10px unconditionally and ADDS the inset if there ever is one. */
+  .mobile-cta-bar{position:fixed;bottom:0;left:0;right:0;z-index:80;background:rgba(240,245,255,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid var(--border2);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));display:none;gap:10px;box-shadow:0 -8px 24px -10px rgba(15,23,42,0.10);}
   .mobile-cta-bar a{flex:1;padding:13px 16px;border-radius:10px;font-size:14px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;}
   .mcta-primary{background:var(--accent);color:#fff;}
   .mcta-primary:hover{background:#2a5ef5;}
@@ -1779,7 +1784,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
 </head>
 <body data-route="strategies">
 <script>
@@ -3795,5 +3800,27 @@ html[data-theme="dark"] a.strat-hub-card[href="smallmicro.html"] > div:first-of-
 })();
 </script>
 
+<!-- ============================================================================
+     V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.
+     ----------------------------------------------------------------------------
+     iOS Safari magnifies the whole page when a form control with a computed
+     font-size under 16px receives focus, and it does NOT zoom back out when the
+     field is blurred — the visitor is left on a scaled, horizontally-scrolling
+     page and has to pinch their way back. Measured across the site at 390px, 67
+     controls on 8 pages were under the threshold, including every field in the
+     sign-up, sign-in and account-recovery funnel.
+     The alternative cure — maximum-scale=1 / user-scalable=no on the viewport —
+     is not used here: it disables pinch-zoom for everyone and fails WCAG 1.4.4.
+     Raising the font is the only fix that costs a reader nothing.
+     Scoped to (hover:none) and (pointer:coarse) so pointer devices are untouched,
+     and each selector below MATCHES the specificity of the rule it corrects
+     rather than escalating past it — so anything the page deliberately sizes
+     larger (login's 22px OTP boxes) still wins.
+     ========================================================================= -->
+<style id="mfc-v295-touch">
+@media (hover: none) and (pointer: coarse) {
+  .mfcalc-controls select,.mfcalc-controls input[type=text]{font-size:16px;}
+}
+</style>
 </body>
 </html>

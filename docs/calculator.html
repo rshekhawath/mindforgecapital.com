@@ -22,6 +22,13 @@
 <link rel="shortcut icon" href="assets/favicon-32.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+<!-- V29.5: this page had the icons and the theme colour but never the four
+     install/standalone metas the other 51 pages carry, so it was the one surface
+     that opened inside Safari's browser chrome when added to a home screen. -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MindForge Capital">
 <meta name="theme-color" content="#1a50d8">
 <link rel="manifest" href="/manifest.json">
 <meta property="og:type" content="website">
@@ -363,7 +370,7 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();
 </script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -1276,5 +1283,27 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 }
 </style>
 
+<!-- ============================================================================
+     V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.
+     ----------------------------------------------------------------------------
+     iOS Safari magnifies the whole page when a form control with a computed
+     font-size under 16px receives focus, and it does NOT zoom back out when the
+     field is blurred — the visitor is left on a scaled, horizontally-scrolling
+     page and has to pinch their way back. Measured across the site at 390px, 67
+     controls on 8 pages were under the threshold, including every field in the
+     sign-up, sign-in and account-recovery funnel.
+     The alternative cure — maximum-scale=1 / user-scalable=no on the viewport —
+     is not used here: it disables pinch-zoom for everyone and fails WCAG 1.4.4.
+     Raising the font is the only fix that costs a reader nothing.
+     Scoped to (hover:none) and (pointer:coarse) so pointer devices are untouched,
+     and each selector below MATCHES the specificity of the rule it corrects
+     rather than escalating past it — so anything the page deliberately sizes
+     larger (login's 22px OTP boxes) still wins.
+     ========================================================================= -->
+<style id="mfc-v295-touch">
+@media (hover: none) and (pointer: coarse) {
+  .fc-inputwrap input{font-size:16px;}
+}
+</style>
 </body>
 </html>

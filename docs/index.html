@@ -511,7 +511,13 @@ html[data-theme="dark"] .hv-tab.active {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 0.5px solid var(--border2);
-  padding: 10px 14px env(safe-area-inset-bottom, 10px);
+  /* V29.5 — the fallback inside an env() applies only where the variable is
+     UNSUPPORTED. Every current browser supports safe-area insets and returns 0px
+     without viewport-fit=cover, so this bar has always drawn 10px above its two
+     buttons and 0px below them — measured padding-bottom:0px here and on the
+     four other pages that carry this bar. calc() keeps the 10px unconditionally
+     and ADDS the inset if there ever is one. */
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
   display: none;
   gap: 10px;
   box-shadow: 0 -8px 24px -10px rgba(15,23,42,0.10);
@@ -3537,7 +3543,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
 </head>
 <body>
 
