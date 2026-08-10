@@ -776,22 +776,41 @@ html[data-theme="dark"] .alloc-n{background:rgba(6,12,26,0.42);color:var(--text)
 .market-closed{color:var(--text3);font-weight:600;}
 
 .table-wrap{
-  background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);
+  border:0.5px solid var(--border2);border-radius:var(--r);
   overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:var(--shadow-md);
   position:relative;
+
+  /* V29.2 — THE SCROLL CUE THAT WAS NEVER ON SCREEN.
+     V6.8 added a right-edge fade for exactly this table, and V18.1 then fixed
+     its colour for dark mode. Neither ever painted: it was `::after{position:
+     sticky; height:100%}` on a wrapper whose own height is auto, so the
+     percentage had nothing to resolve against and the box computed to
+     36px x 0px. Measured at 820px the table hides 409px of itself — Allocation,
+     Shares and Weight, three of the eight columns — behind an edge with no cue
+     at all, and the same is true anywhere from 768px to 1180px.
+     This is the background-attachment technique instead of a pseudo-element:
+     the two `local` layers scroll WITH the rows, so at rest each one parks over
+     the shadow at its own end and hides it; the two `scroll` layers stay pinned
+     to the container. The shadow at an edge therefore appears only when there
+     is actually something hidden past it, and both edges are handled without a
+     breakpoint, a scroll listener, or a second rule for dark — the cover colour
+     is var(--ink2), which the theme already flips. */
+  background:
+    linear-gradient(90deg,  var(--ink2) 42%, transparent) 0    0 / 46px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink2) 42%, transparent) 100% 0 / 46px 100% no-repeat local,
+    linear-gradient(90deg,  rgba(12,24,49,.16), transparent) 0    0 / 24px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(12,24,49,.16), transparent) 100% 0 / 24px 100% no-repeat scroll,
+    var(--ink2);
 }
-/* Subtle right-edge fade hints at horizontal scroll on narrow viewports */
-.table-wrap::after{
-  content:'';position:sticky;right:0;top:0;height:100%;width:36px;
-  pointer-events:none;display:none;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.85));
-}
-/* V6.8 M5: between ~600px and ~1265px the 920px-min-width table overflows
-   horizontally and the right edge (Weight column) gets clipped with no
-   visual cue. Enable the right-edge fade in that band so users see there's
-   more to scroll. Mobile (<=600px) already swaps to the card layout. */
-@media (min-width:601px) and (max-width:1265px){
-  .table-wrap::after{display:block;}
+html[data-theme="dark"] .table-wrap{
+  /* Only the shadow ink is hardcoded — a near-black wash is invisible on the
+     dark card, so the edge is drawn with light instead. */
+  background:
+    linear-gradient(90deg,  var(--ink2) 42%, transparent) 0    0 / 46px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink2) 42%, transparent) 100% 0 / 46px 100% no-repeat local,
+    linear-gradient(90deg,  rgba(150,180,240,.20), transparent) 0    0 / 24px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(150,180,240,.20), transparent) 100% 0 / 24px 100% no-repeat scroll,
+    var(--ink2);
 }
 @media (max-width:1080px){
   .table-wrap{scrollbar-width:thin;}
@@ -1342,7 +1361,9 @@ footer a:hover{color:var(--accent);}
   body{background:#fff;}
   body::before, nav, .table-actions, .market-bar, .notif-card, footer, .tbl-btn{display:none !important;}
   .dash-hero{padding:0 0 18px;}
-  .table-wrap{box-shadow:none;border-color:#e2e8f0;}
+  /* background-image:none, or the new scroll-edge shadows print as two grey
+     bands down a page that cannot be scrolled in the first place. */
+  .table-wrap{box-shadow:none;border-color:#e2e8f0;background-image:none;background-color:#fff;}
   .stat-card, .alloc-card{box-shadow:none;border-color:#e2e8f0;break-inside:avoid;}
 }
 
@@ -1926,7 +1947,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2910">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -7564,12 +7585,9 @@ html[data-theme="dark"] .size-deploy-track{ background:rgba(120,150,255,0.14); }
 html[data-theme="dark"] .sector-chips .chip-n{ background:rgba(6,12,26,0.42); color:var(--text); }
 html[data-theme="dark"] .sector-chips .chip.active .chip-n{ background:rgba(6,12,26,0.30); color:#fff; }
 html[data-theme="dark"] .pmap-wt{ color:var(--text2); }
-/* V18.1 — the 601–1265px horizontal-scroll hint fade on the picks table was a
-   hardcoded white gradient (white smear on the dark surface at iPad widths);
-   fade to the dark card surface (#121d33 = dark --ink2) instead */
-html[data-theme="dark"] .table-wrap::after{
-  background:linear-gradient(90deg,transparent,rgba(18,29,51,0.92));
-}
+/* V18.1's dark override of .table-wrap::after is gone with the pseudo-element
+   it corrected — the replacement cue draws its covers from var(--ink2) and
+   carries its own dark rule beside the light one. See .table-wrap above. */
 /* V21.3 — strategy switcher rides the CSS vars, so only the hardcoded-light
    accents need a dark pass: the menu's white top-highlight + contact shadow, and
    the blue tints (which read too faint on the dark surface). */

@@ -84,7 +84,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .dir-lede a:hover{text-decoration:underline}
 .dir-count{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent2);background:rgba(37,99,235,.08);border:1px solid var(--border2);border-radius:999px;padding:5px 12px}
 
-/* A–Z rail */
+/* A–Z rail
+   V29.2 note: making this rail position:sticky was tried and rejected. It is
+   27 buttons, which wrap to two rows even at 1280px (104px) and four at 360px
+   (192px) — 20% to 35% of the viewport held permanently, on a page whose whole
+   job is showing rows. mfc-chrome.js already puts a back-to-top button on these
+   pages, so the rail is one tap away regardless; that is the cheaper trade. */
 .dir-az{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:30px}
 .dir-az a,.dir-az span{display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:38px;padding:0 8px;border-radius:var(--r-sm);font-size:14px;font-weight:700;border:1px solid var(--border2);background:var(--ink2);color:var(--accent2);transition:transform .18s cubic-bezier(.22,.8,.2,1),box-shadow .18s,border-color .18s}
 .dir-az a:hover{transform:translateY(-2px);border-color:rgba(37,99,235,.45);box-shadow:0 8px 18px -10px rgba(26,80,216,.45)}
@@ -96,10 +101,83 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .dir-sec{margin-bottom:34px}
 .dir-sec h2{font-size:20px;margin-bottom:14px;display:flex;align-items:baseline;gap:10px}
 .dir-sec h2 .n{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0}
-.dir-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px}
-.dir-item{display:block;background:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;transition:transform .18s cubic-bezier(.22,.8,.2,1),box-shadow .18s,border-color .18s}
+/* V29.2 — EXPLICIT column counts, not auto-fill.
+   The card now carries four fields (name / ticker·sector·mcap / price / change),
+   so it has a real minimum width, and `auto-fill,minmax(N,1fr)` is exactly the
+   wrong tool for that: whatever N you pick, the viewports that land just past a
+   column boundary render every card AT N, its worst case. Measured on the 215
+   cards of /a.html — cards at 355px clipped 17 sector labels, at 371px only 2,
+   at 381px none — so the breakpoints below are set where the resulting card
+   clears ~380px, rather than where a column happens to fit.
+     1 col  <818px   2 col  818-1179px   3 col  >=1180px (card 371px, 2 clipped)
+   Card width = (min(1180,vw) - 2*pad - gap*(cols-1)) / cols. */
+.dir-grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:818px){.dir-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1180px){.dir-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* V29.2 — the card carries a price column, so it is a row, not a block.
+   .di-main MUST keep min-width:0: a flex item defaults to min-width:auto, and
+   the longest company name's min-content width would otherwise propagate all
+   the way up and set the document's own min width (the V28.5 trap — a page
+   that overflows with no single element overflowing). */
+.dir-item{display:flex;align-items:center;gap:10px;background:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.22,.8,.2,1),box-shadow .18s,border-color .18s}
 .dir-item:hover{transform:translateY(-2px);border-color:rgba(37,99,235,.34);box-shadow:0 10px 22px -14px rgba(26,80,216,.5)}
+.di-main{flex:1 1 auto;min-width:0}
+/* The guided edge, the site's V14.8 idiom: a hairline that ignites on hover.
+   Inset by the radius at both ends so it never pokes out of the rounded corner. */
+.dir-item::before{content:'';position:absolute;left:0;top:10px;bottom:10px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),#2dd4bf);transform:scaleY(0);transform-origin:center;
+  transition:transform .22s cubic-bezier(.22,.8,.2,1);pointer-events:none}
+.dir-item:hover::before,.dir-item:focus-visible::before{transform:scaleY(1)}
 .dir-item .nm{font-size:14px;font-weight:600;color:var(--text);line-height:1.35;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Price column. tabular-nums is what makes a 215-row column read as a column
+   rather than a ragged list — proportional digits shift every row's decimal. */
+.di-px{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right}
+.di-px .pv{font-size:13.5px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap}
+.di-px .ch{font-size:11.5px;font-weight:600;font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap;display:inline-flex;align-items:center;gap:2px}
+.di-px .arw{font-size:8px;line-height:1;transform:translateY(-.5px)}
+/* --data-strong / --data-bad, not raw #059669/#dc2626: this pair is the one
+   semantic family on the site that is contrast-verified in BOTH themes and
+   flips itself. The dark palette never defines --red, so a hardcoded red
+   would stay #dc2626 on a near-black card. */
+.di-px .ch.up{color:var(--data-strong)}
+.di-px .ch.dn{color:var(--data-bad)}
+.di-px .ch.fl{color:var(--text3)}
+
+/* PHONES — below 480px one column is all there is, and 328px of card cannot
+   hold "TICKER · Consumer Cyclical · ₹22.15K Cr" beside a price: 57 of 215
+   sector labels ellipsised to "C…" at 360px. The market cap moves into the
+   price column instead, which is the one place with spare vertical room, and
+   the meta row drops back to ticker · sector — which fits.
+   The generator emits the value twice and CSS shows exactly one; `display:none`
+   (not visibility/aria-hidden) is what keeps the hidden copy out of the
+   accessibility tree, so it is never announced twice. */
+.di-px .mc-p{display:none}
+@media(max-width:480px){
+  /* A 328px card cannot run two columns. Every arrangement that kept the price
+     beside the text stole the width back off the sector label — a narrow stacked
+     price column left 0 sectors clipped but cost 3 lines of card height, and a
+     compact two-up block clipped 22 of 215 sectors at 360px. So on phones the
+     price stops being a column and becomes its own full-width strip under the
+     name: nothing competes horizontally, and every field renders in full. */
+  /* The third line has to be paid for somewhere. body's line-height:1.6 was
+     inflating a 13.5px price to a 21.6px box and an 11.5px meta row to 18.4px;
+     pinning both to their own leading, and closing the grid gap, gives most of
+     it back — a 105px card becomes ~88px across 215 of them. */
+  .dir-grid{gap:6px}
+  .dir-item{flex-wrap:wrap;align-items:flex-start;padding:10px 12px}
+  .di-main{flex:1 1 100%}
+  .dir-item .mt{line-height:1.4}
+  .di-px{flex:1 1 100%;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:8px;line-height:1.3;
+         margin-top:5px;padding-top:5px;border-top:0.5px solid var(--border)}
+  .dir-item .mt .mc-d{display:none}
+  .di-px .mc-p{display:block;margin-left:auto;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* The strip costs a line, so the name gives one back: with the price no longer
+     beside it, .nm has the full card width and one line is enough for all but a
+     handful of names — clamping to two here would have added ~4,000px of scroll
+     to buy back 13 truncations at 320px alone. */
+  .dir-item .nm{white-space:nowrap}
+}
 /* One line, never two: the ticker and the market cap are the load-bearing values,
    so they never shrink — the sector truncates instead. Wrapping here made card
    heights ragged and orphaned the market cap onto its own line. */
@@ -108,7 +186,14 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .dir-item .mc{flex:0 0 auto}
 .dir-item .sec{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dir-item .dot{opacity:.4;flex:0 0 auto}
-@media(prefers-reduced-motion:reduce){.dir-item{transition:none}.dir-item:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .dir-item,.dir-item::before{transition:none}
+  .dir-item:hover{transform:none}
+  /* The edge still appears on hover — it is a state cue, not decoration; only
+     the wipe is dropped. */
+  .dir-item::before{transform:scaleY(1);opacity:0}
+  .dir-item:hover::before,.dir-item:focus-visible::before{opacity:1}
+}
 
 /* Hub cards */
 .dir-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:0 0 34px}
@@ -129,3 +214,7 @@ html[data-theme="dark"] .dir-item,
 html[data-theme="dark"] .dir-card{background:rgba(120,160,240,.06);border-color:var(--border2)}
 html[data-theme="dark"] .dir-az a.here{background:linear-gradient(135deg,#1a50d8,#2563eb 46%,#0891b2)}
 html[data-theme="dark"] .dir-count{background:rgba(120,160,240,.10)}
+/* V29.2 — the price column's own dark handling. --data-strong/--data-bad flip
+   themselves, so the inks need nothing here; the phone strip's divider is drawn
+   from --border, which flips too. Only the card tint needs the explicit help
+   already given above. */

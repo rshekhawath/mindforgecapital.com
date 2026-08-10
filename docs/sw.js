@@ -231,7 +231,14 @@
 // move. The bump is here so no installed PWA can keep serving a shell whose
 // precached assets predate the strategy-switcher fix, and to keep the cache
 // name monotonic with the release it belongs to.
-const CACHE = 'mfc-v41';
+// V29.2 -> mfc-v42. This one MUST move: every page's mfc-finish.css reference
+// steps 2910 -> 2920, and mfc-dir.css 2571 -> 2920. Assets are served
+// cache-first keyed by the exact URL including ?v, so without a new cache name
+// an installed PWA would hold both the old and the new copy of each file.
+// It is also the release that retires the ?v=2850 pin on the 28 generated
+// directory pages — the mismatch that kept V29.1's 44px hamburger away from
+// them for anyone who had visited one before.
+const CACHE = 'mfc-v42';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

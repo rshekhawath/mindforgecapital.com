@@ -1779,7 +1779,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2910">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=2920">
 </head>
 <body data-route="strategies">
 <script>
@@ -2947,6 +2947,24 @@ html[data-theme="dark"] .sp-wt-track{ background:rgba(120,150,255,.16); }
   .sample-preview-table th:first-child, .sample-preview-table td:first-child{ padding-left: 2px; }
   .sp-chip{ font-size: 11px; padding: 3px 6px; }
   .sp-gate{ padding: 56px 16px 22px; }
+  /* V29.2 — this table is the only thing on the site that pushed a page wider
+     than the phone holding it. At 320px the card is given a 260px grid track,
+     leaving 228px inside its padding, and the table's min-content is 296.5px:
+     # 18 + Holding 73 + Ticker 96 + Weight 109 (the V29.1 weight bar). A table
+     cannot render below min-content, its `.ps-card` grid parent defaults to
+     min-width:auto, and so 68px of table set the whole DOCUMENT to 362px —
+     every section on the page, nav included, scrolled sideways with it.
+     Dropping Ticker one step earlier than Sleeve leaves 200.5px and continues
+     the progressive disclosure this block already does, rather than putting the
+     table in a scroll box: two of these three wraps contain .sp-gate, whose
+     left:0/right:0 anchor is the wrap's padding box, so a scroll container
+     would slide the subscribe overlay out of register with the rows it gates. */
+  @media(max-width:420px){
+    .sample-preview-table th:nth-child(3), .sample-preview-table td:nth-child(3){ display: none; }
+  }
+  /* A grid item defaults to min-width:auto — belt and braces so a future column
+     widens the table's own scrollbar rather than the document. */
+  .ps-card{ min-width: 0; }
   .sp-gate h3{ font-size: 17px; }
   .sp-gate p{ font-size: 13px; }
   .sp-gate .sidebar-btn{ padding: 13px 20px; font-size: 14px; }
