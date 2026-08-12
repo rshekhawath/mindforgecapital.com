@@ -1,0 +1,90 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MFC build probe</title>
+<style>
+  body{font:15px -apple-system,system-ui,sans-serif;margin:0;padding:16px;background:#0b1020;color:#e7edfb}
+  h1{font-size:17px;margin:0 0 10px}
+  .row{display:flex;gap:10px;align-items:baseline;padding:7px 11px;border-radius:8px;margin-bottom:5px;background:#141c33}
+  .k{flex:0 0 250px;color:#93a4c9;font-size:12.5px}
+  .v{font-weight:800;font-size:15px;word-break:break-all}
+  .ok{color:#34d399}.bad{color:#f87171}.warn{color:#fbbf24}
+  #verdict{font-size:22px;font-weight:900;padding:13px;border-radius:11px;margin:12px 0;text-align:center;background:#141c33}
+</style>
+<h1>MindForge — which build is this browser actually running?</h1>
+<div id="verdict">checking…</div>
+<div id="out"></div>
+<script>
+/* TEMPORARY diagnostic (V29.8). noindex, unlinked, removed after use.
+   Reports which dashboard build THIS browser receives and what its service
+   worker is holding — the two things that differ between browsers on the same
+   live site. No secrets are read or shown: it never touches the dashboard
+   token, only checks for the presence of build markers in the HTML. */
+function row(k,v,cls){document.getElementById('out').insertAdjacentHTML('beforeend',
+  '<div class="row"><span class="k">'+k+'</span><span class="v '+(cls||'')+'">'+v+'</span></div>');}
+
+(async function(){
+  var v = document.getElementById('verdict');
+  row('engine', navigator.userAgent.replace(/^.*?(Version\/[\d.]+ Safari\/[\d.]+|Chrome\/[\d.]+).*$/,'$1') || navigator.userAgent.slice(0,70), 'warn');
+  row('origin', location.origin, '');
+
+  // ── 1 · service worker + caches ────────────────────────────────────────
+  var swInfo = 'unsupported', cacheNames = [], dashCached = false, tokenCached = false;
+  try {
+    var regs = await navigator.serviceWorker.getRegistrations();
+    swInfo = regs.length ? regs.map(function(r){ return (r.active && r.active.state) + ' ' + (r.active && r.active.scriptURL); }).join(' | ') : 'none registered';
+    cacheNames = await caches.keys();
+    for (const n of cacheNames){
+      const c = await caches.open(n);
+      for (const req of await c.keys()){
+        if (req.url.indexOf('dashboard') > -1) dashCached = true;
+        if (req.url.indexOf('token=') > -1)    tokenCached = true;
+      }
+    }
+  } catch(e){ swInfo = 'ERR ' + e.name; }
+  row('service worker', swInfo, swInfo.indexOf('activated') > -1 ? 'ok' : 'warn');
+  row('cache names', cacheNames.join(', ') || '(none)', cacheNames.indexOf('mfc-v46') > -1 ? 'ok' : 'bad');
+  row('dashboard in cache', dashCached, dashCached ? 'bad' : 'ok');
+  row('a TOKEN in cache', tokenCached, tokenCached ? 'bad' : 'ok');
+
+  // ── 2 · which dashboard build does THIS browser receive? ───────────────
+  var marks = {};
+  try {
+    var html = await (await fetch('/dashboard.html', {cache:'default'})).text();
+    marks = {
+      'V29.7 _cookieNuke'          : html.indexOf('function _cookieNuke') > -1,
+      'V29.7 cookieGet last-match' : html.indexOf('while ((m = re.exec(document.cookie)) !== null)') > -1,
+      'V29.8 sessionStorage handoff': html.indexOf("const DASH_SWITCH_KEY = 'mfc_dash_switch';") > -1,
+      'V29.8 location.replace'     : html.indexOf("window.location.replace('dashboard.html')") > -1,
+      'V29.8b vertical clamp'      : html.indexOf('const below = vh - r.bottom - GAP - EDGE') > -1,
+      'OLD ?token= in switch (bad)': html.indexOf("'dashboard.html?token=' + encodeURIComponent(value)") > -1
+    };
+    row('dashboard.html bytes', html.length, '');
+  } catch(e){ row('fetch dashboard.html', 'ERR ' + e.name, 'bad'); }
+
+  var missing = [];
+  Object.keys(marks).forEach(function(k){
+    var want = k.indexOf('bad') === -1;
+    var good = marks[k] === want;
+    if (!good) missing.push(k);
+    row(k, marks[k], good ? 'ok' : 'bad');
+  });
+
+  // ── 3 · a bare-network copy, bypassing every cache layer ───────────────
+  try {
+    var fresh = await (await fetch('/dashboard.html?_cb=' + Date.now(), {cache:'reload'})).text();
+    var freshHasV298b = fresh.indexOf('const below = vh - r.bottom - GAP - EDGE') > -1;
+    row('bypassing cache → has V29.8b', freshHasV298b, freshHasV298b ? 'ok' : 'bad');
+    row('cached vs network differ', String(freshHasV298b) !== String(marks['V29.8b vertical clamp']),
+        (String(freshHasV298b) !== String(marks['V29.8b vertical clamp'])) ? 'bad' : 'ok');
+  } catch(e){ row('bare-network fetch', 'ERR ' + e.name, 'bad'); }
+
+  if (!missing.length && !dashCached && !tokenCached){
+    v.textContent = 'THIS BROWSER HAS THE CURRENT BUILD'; v.className='ok'; v.style.background='#06301f';
+  } else {
+    v.textContent = 'STALE / MISMATCH: ' + (missing.join(', ') || (dashCached ? 'dashboard is cached' : 'token cached'));
+    v.className='bad'; v.style.background='#3b0d0d';
+  }
+})();
+</script>
