@@ -3749,8 +3749,49 @@ function setupStrategySwitcher(activeStrategy){
     menu.style.maxHeight = Math.max(120, Math.round(cap)) + 'px';
     menu.style.top = Math.round(Math.max(EDGE, top)) + 'px';
   }
-  function openMenu(){ positionMenu(); menu.classList.add('open'); pill.classList.add('open'); pill.setAttribute('aria-expanded','true'); }
-  function closeMenu(){ menu.classList.remove('open'); pill.classList.remove('open'); pill.setAttribute('aria-expanded','false'); }
+  // V29.9 — KEEP THE MENU ANCHORED WHILE IT IS OPEN.
+  // positionMenu() takes one measurement of the pill at open time, but the pill
+  // MOVES afterwards: the hero's reveal animations settle, late data fills the
+  // market-sentiment and live-profit cards above it, and the whole row shifts.
+  // Measured at 844x390 (phone landscape): the pill sat at y=279 when the menu
+  // was placed above it, then rose to y=269 a few hundred ms later while the
+  // fixed menu stayed put — so the menu's bottom edge ended up 2px INSIDE the
+  // pill and stayed there. The resize listener never fires for this; nothing
+  // resized.
+  // Re-measure on each frame while open, and only write styles when the pill has
+  // actually moved, so a settled layout costs one rect read per frame and no
+  // style thrash. Stops the moment the menu closes.
+  var _anchorRaf = null;
+  function cancelAnchor(){
+    if (_anchorRaf == null) return;
+    try { cancelAnimationFrame(_anchorRaf); } catch(e){}
+    _anchorRaf = null;
+  }
+  function keepAnchored(){
+    cancelAnchor();
+    if (!window.requestAnimationFrame) return;   // no rAF: the open-time placement stands
+    var last = null;
+    (function tick(){
+      if (!pill.classList.contains('open')){ _anchorRaf = null; return; }
+      var r = pill.getBoundingClientRect();
+      var key = Math.round(r.top) + ':' + Math.round(r.left) + ':' + Math.round(r.width);
+      if (key !== last){ last = key; positionMenu(); }
+      _anchorRaf = requestAnimationFrame(tick);
+    })();
+  }
+
+  function openMenu(){
+    // V29.9 — stop the one-time attention nudge the moment the menu opens. The
+    // nudge (V21.6) exists to make a first-time member NOTICE the pill is a
+    // switcher; once they have opened it, it has done its job and is only in the
+    // way. It animates the pill ~6px down, and positionMenu() anchors the menu at
+    // the pill's CURRENT bottom + 8 — so while it keeps bobbing afterwards the
+    // pill dips into that 8px gap and grazes the top of the open menu.
+    pill.classList.remove('nudge');
+    positionMenu(); menu.classList.add('open'); pill.classList.add('open'); pill.setAttribute('aria-expanded','true');
+    keepAnchored();
+  }
+  function closeMenu(){ cancelAnchor(); menu.classList.remove('open'); pill.classList.remove('open'); pill.setAttribute('aria-expanded','false'); }
   function toggleMenu(){ pill.classList.contains('open') ? closeMenu() : openMenu(); }
 
   // V29.0 — SWITCH ONLY ONCE THE TARGET IS KNOWN GOOD.

@@ -271,7 +271,13 @@
 // fires on `controllerchange` — i.e. when a NEWER worker takes over an open tab.
 // Bumping the cache name is what makes that transition happen for everyone
 // currently holding v46, so the notice ships and is exercised in the same move.
-const CACHE = 'mfc-v47';
+// V29.9 -> mfc-v48. dashboard.html changes again (the open menu now tracks the
+// pill, and the attention nudge stops when the menu opens). dashboard.html is
+// network-first and excluded from the cache since v46, so this bump is not what
+// delivers it — but it IS what makes `controllerchange` fire, which is how an
+// already-open tab learns to offer the reload that picks the change up. Keeping
+// the name monotonic with the release is the point.
+const CACHE = 'mfc-v48';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

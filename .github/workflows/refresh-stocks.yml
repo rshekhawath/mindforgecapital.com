@@ -27,24 +27,31 @@
 
 name: Refresh stock data
 
+# V29.9 — MANUAL ONLY. Every automatic trigger is removed by user instruction:
+# the stock refresh is run by hand on the Mac from now on.
+#
+# WHAT THE AUTOMATED ATTEMPT ACTUALLY SHOWED, so this is not relitigated later.
+# The cron works — after appearing dead it fired at 13:17, 14:51 and 16:39 IST,
+# i.e. 60–97 minutes past its slots, which is GitHub's documented best-effort
+# scheduling. The pipeline works too: checkout → preflight → dependencies →
+# cache → the full universe refresh all ran green on the runner.
+# What does NOT work is the DATA. Every single run — one forced, three
+# scheduled — ended the same way: the export gate refused to publish because
+# the universe came back truncated. Yahoo Finance answers HTTP 429 to GitHub's
+# datacenter IPs, so the runner fetches little or nothing and exports a file
+# that must not go live. The gate did its job every time; there was simply
+# nothing worth publishing. That is the same geo/IP limitation flagged for the
+# NSE endpoint in runner/CLOUD_AUTOMATION.md, and it turns out to bite Yahoo on
+# these runners as well.
+#
+# The workflow is KEPT, not deleted: it is proven end-to-end apart from the
+# upstream rate limit, so if the refresh ever moves to a machine with a
+# tolerated IP (the Mumbai VM option in runner/CLOUD_AUTOMATION.md) this is
+# ready to schedule again — restore a `schedule:` block here and nothing else
+# changes. workflow_dispatch stays so it can still be run by hand from the
+# Actions tab.
 on:
-  schedule:
-    - cron: '10 4,6,8,10 * * 1-5'   # 09:40 / 11:40 / 13:40 / 15:40 IST, Mon–Fri
   workflow_dispatch:
-  # V29.8 — also run when this file itself changes.
-  # The 11:40 IST slot on the day this shipped did not fire: the workflow was
-  # registered at 10:00 IST, was state=active, the repo had 487 successful
-  # Actions runs, and refresh-stocks still showed 0. GitHub states plainly that
-  # scheduled runs are best-effort and "may be delayed, or dropped entirely"
-  # during load, and a brand-new cron commonly misses its first opportunity — so
-  # a no-show is not evidence the workflow is broken, and waiting two hours to
-  # find out is a poor way to learn it. Editing this file now produces one real
-  # run on demand, which is the only proof that matters. The path filter keeps it
-  # to changes of the workflow itself, so ordinary site and data commits do not
-  # start a 35–60 minute job.
-  push:
-    paths:
-      - '.github/workflows/refresh-stocks.yml'
 
 permissions:
   contents: write
