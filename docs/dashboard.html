@@ -2992,6 +2992,16 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8
 // (belt & suspenders + migration). Read order: cookie → localStorage → sessionStorage.
 // The token still rides over HTTPS to the backend exactly as before.
 const DASH_TOKEN_KEY = 'mfc_dash_token';
+// V29.8 — how a strategy switch hands the new token to the page it reloads into.
+// V29.7 put it in the URL (dashboard.html?token=…). That worked, and it also wrote
+// the member's access tokens somewhere they must never be: sw.js caches every
+// navigation response keyed by the FULL request url, so each switch left an entry
+// literally named `/dashboard.html?token=MFC…` in CacheStorage on disk — three of
+// them were found in one live session — and every switch also pushed a token into
+// browser history. sessionStorage is the right channel: same tab, survives the
+// navigation, invisible to the cache key, the history entry and any Referer.
+// Consumed exactly once on the way in.
+const DASH_SWITCH_KEY = 'mfc_dash_switch';
 // V29.7 — take the LAST match, not the first. document.cookie serves every
 // cookie of a given name that matches the request (different path, different
 // domain scope), most-specific first, with NO way to tell them apart. A single
@@ -3210,7 +3220,20 @@ const token = (function () {
       const qs = params.toString();
       window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
     } else {
-      t = readDashToken() || t;
+      // V29.8: a strategy switch leaves the chosen token here rather than in the
+      // URL. Consume it once, promote it to the durable stores, and fall through
+      // to the cookie for every other kind of load. If sessionStorage is blocked
+      // this is simply empty and readDashToken() — which V29.7 made duplicate-proof
+      // — answers on its own.
+      let handoff = null;
+      try { handoff = sessionStorage.getItem(DASH_SWITCH_KEY); } catch (e) {}
+      if (handoff) {
+        try { sessionStorage.removeItem(DASH_SWITCH_KEY); } catch (e) {}
+        writeDashToken(handoff);
+        t = handoff;
+      } else {
+        t = readDashToken() || t;
+      }
     }
   } catch (e) { /* storage/history blocked → fall back to the URL token as-is */ }
   return t;
@@ -3695,15 +3718,16 @@ function setupStrategySwitcher(activeStrategy){
           if (window.showToast) showToast('Could not open that strategy. Please try again.');
           return;
         }
-        // V29.7: carry the token in the URL rather than trusting storage to
-        // survive the navigation. The `?token=` handler at the top of this file
-        // writes it and strips it via replaceState — the same path a freshly
-        // emailed access link takes, and the only one that has never failed.
-        // It is also a DIFFERENT url, so the navigation cannot degenerate into
-        // a same-url no-op the way `location.href = 'dashboard.html'` could
-        // while already sitting on /dashboard.html.
+        // V29.8: hand the token over in sessionStorage, NOT in the URL. V29.7's
+        // `?token=` navigation worked, but sw.js caches every navigation keyed by
+        // the full url, so it wrote the member's access tokens into CacheStorage
+        // on disk (and into history) once per switch. sessionStorage is same-tab,
+        // survives the navigation, and is read+deleted by the loader below.
+        // The cookie is still written first and is still authoritative — the
+        // handoff exists so the reload cannot depend on a cookie race at all.
         writeDashToken(value);                 // …only now is it the active session
-        window.location.href = 'dashboard.html?token=' + encodeURIComponent(value);
+        try { sessionStorage.setItem(DASH_SWITCH_KEY, value); } catch(e){}
+        window.location.replace('dashboard.html');
       })
       .catch(function(){
         if (window.showToast) showToast('Could not reach the server. Please try again.');

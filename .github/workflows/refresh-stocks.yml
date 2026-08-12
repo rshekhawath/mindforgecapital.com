@@ -31,6 +31,20 @@ on:
   schedule:
     - cron: '10 4,6,8,10 * * 1-5'   # 09:40 / 11:40 / 13:40 / 15:40 IST, Mon–Fri
   workflow_dispatch:
+  # V29.8 — also run when this file itself changes.
+  # The 11:40 IST slot on the day this shipped did not fire: the workflow was
+  # registered at 10:00 IST, was state=active, the repo had 487 successful
+  # Actions runs, and refresh-stocks still showed 0. GitHub states plainly that
+  # scheduled runs are best-effort and "may be delayed, or dropped entirely"
+  # during load, and a brand-new cron commonly misses its first opportunity — so
+  # a no-show is not evidence the workflow is broken, and waiting two hours to
+  # find out is a poor way to learn it. Editing this file now produces one real
+  # run on demand, which is the only proof that matters. The path filter keeps it
+  # to changes of the workflow itself, so ordinary site and data commits do not
+  # start a 35–60 minute job.
+  push:
+    paths:
+      - '.github/workflows/refresh-stocks.yml'
 
 permissions:
   contents: write

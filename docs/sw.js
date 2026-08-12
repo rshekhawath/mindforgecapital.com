@@ -260,7 +260,14 @@
 // the token-cookie fix changes how a session is READ, and an installed PWA that
 // kept a v44 shell would keep pairing the old login.html with it. Bumped to keep
 // the cache name monotonic with the release and force one clean re-install.
-const CACHE = 'mfc-v45';
+// V29.8 -> mfc-v46. THIS ONE MUST MOVE, and it is a purge, not a refresh: the
+// v45 cache holds `/dashboard.html?token=MFC…` entries — real member access
+// tokens written to disk by the HTML branch's blanket put(), one per emailed
+// link and one per V29.7 strategy switch. activate() deletes every cache whose
+// name is not CACHE, so bumping the name is what actually removes them from a
+// browser that already has them. The exclusion added to the fetch handler stops
+// new ones; this bump clears the ones already there.
+const CACHE = 'mfc-v46';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
@@ -291,6 +298,21 @@ self.addEventListener('fetch', (e) => {
   // Never touch live API calls (Apps Script, Yahoo, etc.) or non-GET
   if (req.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
+
+  // V29.8 — NEVER cache the member dashboard, under any query string.
+  // The HTML branch below is network-first, but it still PUTs every navigation
+  // response into the cache keyed by the full request url. dashboard.html is
+  // reached with ?token=<access token> — from every emailed access link, and
+  // (V29.7 only) from every strategy switch — so that put wrote entries literally
+  // named `/dashboard.html?token=MFC…` into CacheStorage on disk, along with the
+  // member's rendered dashboard. Three were found in one live session.
+  // Nothing is lost by excluding it: the page is token-gated, so an offline copy
+  // is useless to anyone who should see it and a liability to everyone else.
+  // A failed fetch falls back to the offline shell rather than to a stale book.
+  if (url.pathname === '/dashboard.html' || url.pathname.endsWith('/dashboard.html')) {
+    e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
+    return;
+  }
 
   // HTML: network-first (so subscribers see the latest dashboard)
   if (req.mode === 'navigate' || req.destination === 'document') {
