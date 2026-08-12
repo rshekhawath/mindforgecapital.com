@@ -84,9 +84,21 @@ jobs:
       # screener/data/screener.db is the fetch cache and stays gitignored. Without
       # restoring it every run is a cold full-universe pull; with it, only rows
       # past fetch_stock_info()'s 1-hour TTL are re-fetched.
+      #
+      # V29.8c — restore and save are SPLIT, and the save runs `if: always()`.
+      # The combined actions/cache action only saves in its post-step when the
+      # job SUCCEEDS. The first real run proved why that is fatal here: the
+      # refresh completed, the export gate correctly refused a truncated
+      # universe, the job failed — and "Post Restore the fetch cache" was
+      # skipped, so nothing was cached. Every subsequent run would have started
+      # equally cold and failed the same gate: a deadlock the workflow could
+      # never climb out of on its own. Saving unconditionally lets the database
+      # ACCUMULATE across runs, so partial progress from a rate-limited run is
+      # kept and the next one starts closer to a full universe.
       - name: Restore the fetch cache
+        id: cache
         if: steps.pre.outputs.ready == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: screener/data
           key: screener-db-${{ github.run_id }}
@@ -95,6 +107,33 @@ jobs:
       - name: Refresh the universe and re-export
         if: steps.pre.outputs.ready == 'true'
         run: cd screener && python3 refresh_data.py
+
+      # How full is the database now? Printed whatever happens, so a throttled
+      # run is visible as a number rather than inferred from a failing gate.
+      - name: Report cache depth
+        if: always() && steps.pre.outputs.ready == 'true'
+        run: |
+          python3 - <<'PY'
+          import sqlite3, pathlib
+          p = pathlib.Path('screener/data/screener.db')
+          if not p.exists():
+              print('::warning::no screener.db — nothing was cached this run'); raise SystemExit
+          try:
+              n = sqlite3.connect(str(p)).execute('SELECT COUNT(*) FROM stock_cache').fetchone()[0]
+              print(f'stock_cache rows: {n}  ({p.stat().st_size // 1024} KB)')
+              if n < 100:
+                  print(f'::warning::only {n} rows cached — Yahoo is likely rate-limiting this runner (HTTP 429). '
+                        f'The cache is saved anyway so the next run builds on it.')
+          except sqlite3.Error as e:
+              print(f'::warning::could not read stock_cache: {e}')
+          PY
+
+      - name: Save the fetch cache
+        if: always() && steps.pre.outputs.ready == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: screener/data
+          key: screener-db-${{ github.run_id }}
 
       - name: Verify the export before publishing it
         if: steps.pre.outputs.ready == 'true'

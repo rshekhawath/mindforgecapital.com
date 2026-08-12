@@ -34,6 +34,47 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('/sw.js').catch(function(){});
   });
+
+  /* V29.8c — TELL THE MEMBER WHEN THEIR TAB IS RUNNING YESTERDAY'S CODE.
+     A long-lived dashboard tab keeps the JavaScript it parsed when it opened,
+     however many releases ship afterwards. That is ordinary web behaviour and
+     nothing can change it except a reload — but until now it failed SILENTLY,
+     and the failure looks exactly like a broken feature. It cost this project
+     two separate "the switcher is still broken" reports: both times the live
+     build was correct and verified, and the tab was simply old. Chrome, freshly
+     navigated, worked; Safari, left open since before the fix, did not.
+
+     sw.js calls skipWaiting() on install and clients.claim() on activate, so an
+     open tab receives `controllerchange` the moment a newer worker takes over.
+     That is the signal, and it is exact: it fires on a real deploy and at no
+     other time. Say so and offer the reload rather than forcing it — a member
+     mid-way through placing orders should not have the page yanked. Guarded so
+     it can announce at most once per tab. */
+  (function(){
+    var told = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (told) return;
+      told = true;
+      var msg = 'A new version of the dashboard is available — reload to use it.';
+      // Deliberately NOT showToast(): that takes a message only and clears itself
+      // after 2.2s, so it would flash the one notice a member needs to act on and
+      // give them nothing to act with. This bar persists and carries the button.
+      try {
+        var b = document.createElement('div');
+        b.setAttribute('role', 'status');
+        b.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:9999;' +
+          'background:#1a50d8;color:#fff;padding:11px 16px;border-radius:12px;font:600 13.5px -apple-system,system-ui,sans-serif;' +
+          'box-shadow:0 12px 30px -12px rgba(15,23,42,.5);display:flex;gap:12px;align-items:center;max-width:calc(100vw - 32px)';
+        b.innerHTML = '<span>' + msg + '</span>';
+        var r = document.createElement('button');
+        r.type = 'button'; r.textContent = 'Reload';
+        r.style.cssText = 'background:#fff;color:#1a50d8;border:0;border-radius:8px;padding:7px 12px;font:800 13px inherit;cursor:pointer;flex:0 0 auto';
+        r.addEventListener('click', function(){ location.reload(); });
+        b.appendChild(r);
+        (document.body || document.documentElement).appendChild(b);
+      } catch(e){}
+    });
+  })();
 }
 </script>
 <!-- Perf: warm DNS + TLS for Apps Script + Yahoo price API before they're needed -->

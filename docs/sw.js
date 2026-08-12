@@ -267,7 +267,11 @@
 // name is not CACHE, so bumping the name is what actually removes them from a
 // browser that already has them. The exclusion added to the fetch handler stops
 // new ones; this bump clears the ones already there.
-const CACHE = 'mfc-v46';
+// V29.8c -> mfc-v47. dashboard.html gains the stale-tab notice, which only ever
+// fires on `controllerchange` — i.e. when a NEWER worker takes over an open tab.
+// Bumping the cache name is what makes that transition happen for everyone
+// currently holding v46, so the notice ships and is exercised in the same move.
+const CACHE = 'mfc-v47';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
