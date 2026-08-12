@@ -80,6 +80,27 @@ function row(k,v,cls){document.getElementById('out').insertAdjacentHTML('beforee
         (String(freshHasV298b) !== String(marks['V29.8b vertical clamp'])) ? 'bad' : 'ok');
   } catch(e){ row('bare-network fetch', 'ERR ' + e.name, 'bad'); }
 
+  // ── 4 · what does the SWITCHER have to work with in THIS browser? ──────
+  // Names and counts only. No token value is read, printed, or transmitted.
+  function ckGet(k){ try { var m=document.cookie.match(new RegExp('(?:^|;\\s*)'+k+'=([^;]*)','g'));
+      return m ? decodeURIComponent(String(m[m.length-1]).split('=').slice(1).join('=')) : ''; } catch(e){ return ''; } }
+  var regRaw = '';
+  try { regRaw = ckGet('mfc_dash_strats') || localStorage.getItem('mfc_dash_strats') || ''; } catch(e){}
+  var reg = {}; try { reg = JSON.parse(regRaw || '{}'); } catch(e){ reg = {}; }
+  var names = Object.keys(reg);
+  row('strategies known here', names.length + (names.length ? ' — ' + names.join(' / ') : ''),
+      names.length >= 2 ? 'ok' : 'bad');
+  var tokCount = 0;
+  try { tokCount = document.cookie.split(/;\s*/).filter(function(c){return c.indexOf('mfc_dash_token=')===0;}).length; } catch(e){}
+  row('session token present', tokCount > 0, tokCount > 0 ? 'ok' : 'bad');
+  row('mfc_dash_token cookies', tokCount, tokCount === 1 ? 'ok' : 'bad');
+  var distinct = 0; try { distinct = new Set(names.map(function(n){ return reg[n]; })).size; } catch(e){}
+  row('distinct tokens in registry', distinct, distinct === names.length ? 'ok' : 'bad');
+  try { row('sessionStorage usable', (function(){ sessionStorage.setItem('_p','1'); var r = sessionStorage.getItem('_p')==='1'; sessionStorage.removeItem('_p'); return r; })(), 'ok'); }
+  catch(e){ row('sessionStorage usable', 'THREW ' + e.name, 'bad'); }
+
+  if (names.length < 2) missing.push('only ' + names.length + ' strategy known in this browser');
+
   if (!missing.length && !dashCached && !tokenCached){
     v.textContent = 'THIS BROWSER HAS THE CURRENT BUILD'; v.className='ok'; v.style.background='#06301f';
   } else {
