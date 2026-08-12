@@ -8,7 +8,27 @@ IP/
 runner/
 shared/
 strategies/
-/screener/
+
+# ── V29.7 — screener/ is PUBLISHED, deliberately ─────────────────────────────
+# .github/workflows/refresh-stocks.yml runs the daily stock refresh on a GitHub
+# runner, and a runner can only execute what is in the repo. This repo had only
+# ever contained docs/, so every screener/*.py returned 404 on main and the job
+# no-opped at its preflight.
+#
+# What this exposes, checked rather than assumed: data plumbing only. server.py
+# is a Flask app around a Yahoo→SQLite cache — 0 occurrences of "score",
+# "integrity", "quality" or "weight" — and the Integrity Score engine has always
+# been public at docs/scores/scores-engine.js. The FACTOR MODELS remain in IP/,
+# still ignored above. live_perf.py knows the PATH to the model picks but does
+# not contain them, and those outputs live under IP/.
+#
+# What stays out: the fetch cache, the logs, and every SQLite file.
+screener/data/
+screener/logs/
+screener/**/__pycache__/
+*.db
+*.db-shm
+*.db-wal
 
 # ── Local operator scripts (double-click .command tools — never deploy) ──────
 # e.g. refresh-stock-data.command (daily data refresh). Local-only, like runner/.
