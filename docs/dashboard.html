@@ -151,6 +151,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   position:fixed; top:0; left:0; min-width:240px; max-width:calc(100vw - 24px);
   background:var(--ink2); border:0.5px solid var(--border2); border-radius:14px;
   padding:6px; z-index:500;
+  /* V29.8 — positionMenu() sets an inline max-height from the space that actually
+     exists above or below the pill; this makes the overflow scroll INSIDE the menu
+     instead of running off the bottom of a small phone. Scrolling here does not
+     dismiss the menu: the dismiss handler listens on window, not on this element.
+     -webkit-overflow-scrolling keeps it momentum-scrolled on iOS. */
+  overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   box-shadow:0 22px 50px -20px rgba(15,23,42,0.4), 0 6px 18px -12px rgba(15,23,42,0.3),
     inset 0 1px 0 rgba(255,255,255,0.6);
   opacity:0; transform:translateY(-6px) scale(.98); transform-origin:top left;
@@ -3658,16 +3664,49 @@ function setupStrategySwitcher(activeStrategy){
         '<div class="strat-menu-foot">Subscribed to more than one? Sign in to load them all here.</div>'
       : '');
 
-  // Anchor the fixed menu under the pill, clamped to the viewport's right/left edges.
+  // Anchor the fixed menu under the pill, clamped to the viewport on BOTH axes.
+  //
+  // V29.8 — the vertical clamp was missing, and on a small phone that hid a
+  // strategy behind an edge no gesture could reach. Measured at 320x568: the
+  // "Strategy:" pill wraps to two lines (69px tall) and sits at y=364, so the
+  // menu opened at y=441 with a height of 176 — bottom 617 against a 568-tall
+  // viewport. The third strategy was half off-screen, and because the menu is
+  // position:fixed with a scroll handler that DISMISSES it, scrolling to reach
+  // that row closed it instead. On the smallest common phone the third book was
+  // simply unreachable, which reads as "I can't switch to it".
+  //
+  // Now: measure the space below the pill and above it, open downwards when
+  // there is room, flip upwards when there is more room there, and in either
+  // case cap the height to what actually fits so the list scrolls INSIDE the
+  // menu. Menu-internal scrolling does not trigger the dismiss handler, which
+  // listens on window.
   function positionMenu(){
-    const r = pill.getBoundingClientRect();
+    const GAP = 8, EDGE = 12;
+    const r  = pill.getBoundingClientRect();
+    const vh = window.innerHeight, vw = window.innerWidth;
+
     menu.style.minWidth = Math.max(240, Math.round(r.width)) + 'px';
+    menu.style.maxHeight = 'none';            // measure the natural height first
     const w = menu.offsetWidth;               // layout width (transform-agnostic)
+    const h = menu.offsetHeight;
+
     let left = r.left;
-    if (left + w > window.innerWidth - 12) left = window.innerWidth - w - 12;
-    if (left < 12) left = 12;
+    if (left + w > vw - EDGE) left = vw - w - EDGE;
+    if (left < EDGE) left = EDGE;
     menu.style.left = Math.round(left) + 'px';
-    menu.style.top  = Math.round(r.bottom + 8) + 'px';
+
+    const below = vh - r.bottom - GAP - EDGE;   // room under the pill
+    const above = r.top - GAP - EDGE;           // room over it
+    let top, cap;
+    if (h <= below || below >= above) {         // downwards: fits, or is the roomier side
+      top = r.bottom + GAP;
+      cap = below;
+    } else {                                    // upwards
+      cap = above;
+      top = Math.max(EDGE, r.top - GAP - Math.min(h, cap));
+    }
+    menu.style.maxHeight = Math.max(120, Math.round(cap)) + 'px';
+    menu.style.top = Math.round(Math.max(EDGE, top)) + 'px';
   }
   function openMenu(){ positionMenu(); menu.classList.add('open'); pill.classList.add('open'); pill.setAttribute('aria-expanded','true'); }
   function closeMenu(){ menu.classList.remove('open'); pill.classList.remove('open'); pill.setAttribute('aria-expanded','false'); }
