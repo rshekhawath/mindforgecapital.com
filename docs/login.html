@@ -615,6 +615,21 @@ document.addEventListener('keydown', function(e) {
 // one-tap "Continue to your dashboard" shortcut so a member returning to Sign In
 // (e.g. via the nav after browsing other pages) isn't forced through OTP again.
 (function(){
+  // V29.6: a member sent here by the dashboard's "Find my other strategies" row
+  // (?from=switcher) already HAS a working session — "Continue to your dashboard"
+  // is the one thing that would not help them, since it returns to the single
+  // strategy they just came from. Suppress the shortcut and say what signing in
+  // will actually do for them.
+  var fromSwitcher = false;
+  try { fromSwitcher = new URLSearchParams(location.search).get('from') === 'switcher'; } catch(e){}
+  if (fromSwitcher){
+    var h = document.querySelector('#step-email h1');
+    var d = document.querySelector('#step-email .desc');
+    if (h) h.textContent = 'Load your strategies';
+    if (d) d.textContent = "Enter your subscription email. We'll send a one-time code, then add every strategy you hold to the dashboard switcher.";
+    return;
+  }
+
   // V21.2: check the cookie too (the dashboard's primary store), not just
   // localStorage — so the shortcut still shows when localStorage is blocked.
   var has = false;

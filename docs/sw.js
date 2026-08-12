@@ -246,7 +246,17 @@
 // no query string can bust — is one of the eight pages that gained the 16px
 // touch rule, so the shell has to be re-installed for a member signing in on a
 // phone to stop being zoomed into the email field.
-const CACHE = 'mfc-v43';
+// V29.6 -> mfc-v44. login.html — the manifest start_url and a PRECACHED
+// document, which no query string can bust — changed this release: arriving with
+// ?from=switcher (the dashboard's new "Find my other strategies" row) now
+// retitles the page and suppresses the "Continue to your dashboard" shortcut,
+// which is the one action that cannot help a member who came here precisely
+// BECAUSE their dashboard only knows one strategy. An installed PWA holding the
+// v43 shell would keep offering that shortcut and the switcher fix would not
+// reach it. index.html is unchanged this release and no shared asset moved — the
+// rest of the work is inline in strategies.html and dashboard.html, both
+// network-first — but the shell has to be re-installed for the above.
+const CACHE = 'mfc-v44';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
