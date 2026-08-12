@@ -2992,9 +2992,21 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8
 // (belt & suspenders + migration). Read order: cookie → localStorage → sessionStorage.
 // The token still rides over HTTPS to the backend exactly as before.
 const DASH_TOKEN_KEY = 'mfc_dash_token';
+// V29.7 — take the LAST match, not the first. document.cookie serves every
+// cookie of a given name that matches the request (different path, different
+// domain scope), most-specific first, with NO way to tell them apart. A single
+// `.match()` therefore returns whichever duplicate the browser happens to list
+// first — which may be a stale token from an earlier release, written at a
+// different path or on a host variant. writeDashToken() below now sweeps those
+// away before writing, but reading the last match makes a survivor harmless too:
+// the freshly written path=/ cookie is the one that ends up last.
 function _cookieGet(k){
-  try { var m = document.cookie.match(new RegExp('(?:^|;\\s*)' + k + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; }
-  catch(e){ return ''; }
+  try {
+    var re = new RegExp('(?:^|;\\s*)' + k + '=([^;]*)', 'g');
+    var m, last = null;
+    while ((m = re.exec(document.cookie)) !== null) last = m[1];
+    return last === null ? '' : decodeURIComponent(last);
+  } catch(e){ return ''; }
 }
 function readDashToken(){
   var c = _cookieGet(DASH_TOKEN_KEY); if (c) return c;
@@ -3002,7 +3014,36 @@ function readDashToken(){
   try { var s = sessionStorage.getItem(DASH_TOKEN_KEY); if (s) return s; } catch(e){}
   return null;
 }
+// V29.7 — delete a cookie of this name on EVERY path/domain combination a past
+// release could have written it to, so exactly one survives the next write.
+// A cookie is identified by (name, domain, path); to remove one you must expire
+// it with the SAME domain and path it was set with, and there is no API to ask
+// which those were. So we expire the plausible set: the current host with no
+// explicit domain (what this file has always written), the dot-prefixed
+// registrable domain (what a server-set cookie would use), and the current path
+// as well as root.
+function _cookieNuke(k){
+  try {
+    var host = location.hostname;
+    var parts = host.split('.');
+    var domains = ['', host, '.' + host];
+    if (parts.length > 2){
+      var reg = parts.slice(-2).join('.');
+      domains.push(reg, '.' + reg);
+    }
+    var paths = ['/', location.pathname, location.pathname.replace(/[^/]*$/, '')];
+    var sec = (location.protocol === 'https:') ? '; Secure' : '';
+    domains.forEach(function(d){
+      paths.forEach(function(p){
+        if (!p) return;
+        var base = k + '=; max-age=0; SameSite=Lax' + sec + '; path=' + p;
+        try { document.cookie = base + (d ? '; domain=' + d : ''); } catch(e){}
+      });
+    });
+  } catch(e){}
+}
 function writeDashToken(t){
+  _cookieNuke(DASH_TOKEN_KEY);      // V29.7: exactly one cookie of this name survives
   try {
     var sec = (location.protocol === 'https:') ? '; Secure' : '';
     // 1-year first-party cookie; Lax so it survives top-level navigations but not CSRF.
@@ -3018,6 +3059,7 @@ function writeDashToken(t){
 // entry (removeStratByToken) and keeps the rest.
 function clearDashSession(opts){
   opts = opts || {};
+  _cookieNuke(DASH_TOKEN_KEY);      // V29.7: a sign-out that leaves a shadow cookie is the same bug
   try { document.cookie = DASH_TOKEN_KEY + '=; path=/; max-age=0; SameSite=Lax'; } catch(e){}
   try { localStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
   try { sessionStorage.removeItem(DASH_TOKEN_KEY); } catch(e){}
@@ -3653,8 +3695,15 @@ function setupStrategySwitcher(activeStrategy){
           if (window.showToast) showToast('Could not open that strategy. Please try again.');
           return;
         }
+        // V29.7: carry the token in the URL rather than trusting storage to
+        // survive the navigation. The `?token=` handler at the top of this file
+        // writes it and strips it via replaceState — the same path a freshly
+        // emailed access link takes, and the only one that has never failed.
+        // It is also a DIFFERENT url, so the navigation cannot degenerate into
+        // a same-url no-op the way `location.href = 'dashboard.html'` could
+        // while already sitting on /dashboard.html.
         writeDashToken(value);                 // …only now is it the active session
-        window.location.href = 'dashboard.html';
+        window.location.href = 'dashboard.html?token=' + encodeURIComponent(value);
       })
       .catch(function(){
         if (window.showToast) showToast('Could not reach the server. Please try again.');

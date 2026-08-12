@@ -256,7 +256,11 @@
 // reach it. index.html is unchanged this release and no shared asset moved — the
 // rest of the work is inline in strategies.html and dashboard.html, both
 // network-first — but the shell has to be re-installed for the above.
-const CACHE = 'mfc-v44';
+// V29.7 -> mfc-v45. dashboard.html is network-first and needs no cache move, but
+// the token-cookie fix changes how a session is READ, and an installed PWA that
+// kept a v44 shell would keep pairing the old login.html with it. Bumped to keep
+// the cache name monotonic with the release and force one clean re-install.
+const CACHE = 'mfc-v45';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

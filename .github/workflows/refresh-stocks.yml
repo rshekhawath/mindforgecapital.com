@@ -1,0 +1,119 @@
+# MindForge Capital — stock-data refresh, in the cloud.
+#
+# FII/DII is deliberately NOT here: that stays a manual run on the Mac.
+#
+# SCHEDULE: every 2 hours, 09:40 → 15:40 IST, weekdays = 4 runs/day.
+# GitHub cron is UTC and IST is UTC+5:30, so 09:40/11:40/13:40/15:40 IST
+# = 04:10/06:10/08:10/10:10 UTC. All four land inside the same UTC day, so a
+# plain Mon–Fri filter needs no weekday-boundary handling.
+#
+# WHY THE PREFLIGHT STEP EXISTS
+# This repo has only ever contained docs/ — screener/, runner/ and IP/ are
+# gitignored and were never pushed, so a runner checking it out has nothing to
+# execute (verified: every screener/*.py returned 404 on main). screener/ is
+# being published deliberately so this workflow can run. Until that lands, the
+# preflight makes every scheduled run a clean no-op instead of four red failures
+# a day, and the moment screener/ is pushed the job starts working with no edit
+# here.
+#
+# WHAT IS DELIBERATELY NOT DONE HERE
+# docs/live-perf.json is not regenerated. screener/live_perf.py reads the model
+# picks from IP/strategies/*/outputs/portfolio.csv — the paid product, which is
+# not in this repo and must not be. That step stays on the Mac.
+# runner/verify_published_numbers.py is not run either: it reads
+# IP/strategies/*/outputs/*, absent here, so it would fail on missing inputs
+# rather than on anything real — and this job rewrites no published figure. The
+# export itself is gated instead.
+
+name: Refresh stock data
+
+on:
+  schedule:
+    - cron: '10 4,6,8,10 * * 1-5'   # 09:40 / 11:40 / 13:40 / 15:40 IST, Mon–Fri
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-stocks             # replaces the .lock.d guard in the .command script
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120            # the full-universe fetch runs 35–60 min
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preflight — is the pipeline in this repo yet?
+        id: pre
+        run: |
+          if [ -f screener/refresh_data.py ] && [ -f screener/requirements.txt ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::screener/ is not in this repo yet — skipping. Publish it to enable this workflow."
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.pre.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.pre.outputs.ready == 'true'
+        run: pip install -r screener/requirements.txt
+
+      # screener/data/screener.db is the fetch cache and stays gitignored. Without
+      # restoring it every run is a cold full-universe pull; with it, only rows
+      # past fetch_stock_info()'s 1-hour TTL are re-fetched.
+      - name: Restore the fetch cache
+        if: steps.pre.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: screener/data
+          key: screener-db-${{ github.run_id }}
+          restore-keys: screener-db-
+
+      - name: Refresh the universe and re-export
+        if: steps.pre.outputs.ready == 'true'
+        run: cd screener && python3 refresh_data.py
+
+      - name: Verify the export before publishing it
+        if: steps.pre.outputs.ready == 'true'
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, sys
+          bad = 0
+          for p in ('docs/screener/stocks.json', 'docs/screener/stocks-lite.json'):
+              f = pathlib.Path(p)
+              if not f.exists():
+                  print(f'::error::{p} was not written'); bad += 1; continue
+              try:
+                  d = json.loads(f.read_text())
+              except Exception as e:
+                  print(f'::error::{p} is not valid JSON: {e}'); bad += 1; continue
+              rows = d if isinstance(d, list) else d.get('stocks', d.get('data', []))
+              print(f'{p}: {len(rows)} rows, {f.stat().st_size // 1024} KB')
+              if len(rows) < 100:
+                  print(f'::error::{p} has only {len(rows)} rows — refusing to publish a truncated universe')
+                  bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Commit and push
+        if: steps.pre.outputs.ready == 'true'
+        run: |
+          git config user.name  "MFC data bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/screener docs/sitemap.xml docs/robots.txt
+          if git diff --cached --quiet; then
+            echo "no stock-data changes — nothing to publish"
+            exit 0
+          fi
+          git commit -m "data: stock-data refresh $(TZ=Asia/Kolkata date '+%Y-%m-%d %H:%M') IST"
+          git pull --rebase --autostash origin main   # the Mac publishes to main too
+          git push
