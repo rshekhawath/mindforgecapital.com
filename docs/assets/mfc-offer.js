@@ -64,7 +64,15 @@
       // V23.7: padding:2px 6px left the dismiss button 23.7px wide — a hair under
       // the 24×24 WCAG 2.2 SC 2.5.8 floor, on every page of the site. Centring on
       // a 26px min box clears it and squares up the previously 23.7×24 hit area.
-      "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.85);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;}" +
+      /* V30.0 — the dismiss glyph measured 3.3:1 against the bar it sits on.
+         Two things were against it: 85% white instead of white, and the bar is a
+         blue->teal gradient whose teal end is light enough that even pure white
+         is only 4.0:1 there. So the fix is not just the ink — a permanent 22%
+         ink scrim under the glyph takes it to 5.5:1 anywhere along the gradient,
+         and has the side benefit of giving the control a visible affordance
+         instead of one that only appeared on hover (which a touch device never
+         has). Hover keeps its brighter wash. */
+      "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(12,24,49,.22);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;}" +
       "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
       // V27.9: 26×26 clears the 24px WCAG floor but is still a small thing to hit

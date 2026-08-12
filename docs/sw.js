@@ -277,7 +277,17 @@
 // delivers it — but it IS what makes `controllerchange` fire, which is how an
 // already-open tab learns to offer the reload that picks the change up. Keeping
 // the name monotonic with the release is the point.
-const CACHE = 'mfc-v48';
+// V30.0 -> mfc-v49. THIS ONE MUST MOVE for two independent reasons. index.html is
+// precached as the offline navigation fallback and it changed substantively: the
+// "Popular" and "Free" ribbons are recoloured (both failed AA against white), the
+// WhatsApp bubble's dismiss gains the 28px hit pad the rest of the site got in
+// V28.0, and the FAQ answers now animate open. Separately, BOTH shared assets moved
+// — mfc-finish.css and mfc-offer.js are cached first-party keyed by exact URL, so a
+// returning visitor holding v48 would keep the old copies of each. The ?v strings
+// were bumped to 3000 on all 49 / 19 referencing pages (and in export_static.py, so
+// the 28 generated directory pages do not drift back), and the cache name moves with
+// them so nothing is served from a stale entry.
+const CACHE = 'mfc-v49';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

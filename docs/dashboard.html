@@ -52,7 +52,22 @@ if ('serviceWorker' in navigator) {
      it can announce at most once per tab. */
   (function(){
     var told = false;
+    /* V30.0 — and it must NOT fire on a first visit.
+       `controllerchange` is exact for the case it was built for, but it also
+       fires the very first time a worker takes control of a page that had none:
+       sw.js calls clients.claim() on activate, so a member opening the dashboard
+       for the first time — no controller, worker installs, claims — was told
+       "a new version is available, reload" about the build they had loaded three
+       seconds earlier. Measured on a clean profile: notice present on visit 1,
+       absent on visit 2. Exactly backwards, and on the one visit a new member is
+       least equipped to know it is spurious.
+       A stale tab is by definition a tab that ALREADY had a controller, so
+       reading navigator.serviceWorker.controller at parse time separates the two:
+       null here means this load is the initial claim, and the first change is
+       swallowed rather than announced. */
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (!hadController) { hadController = true; return; }
       if (told) return;
       told = true;
       var msg = 'A new version of the dashboard is available — reload to use it.';
@@ -2056,7 +2071,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3000">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -6807,7 +6822,13 @@ init();
 /* V6.8 M2: the v16 sticky-header rules were dead code — .table-wrap had
    max-height:none, so it was never a vertical scroll container, and even if
    the <th> did pin to top:0 it would have sat behind the z:100 nav. Removed
-   the broken rules to avoid implying a feature that wasn't there. */
+   the broken rules to avoid implying a feature that wasn't there.
+   V30.0: both obstacles are answered and the header IS sticky again above
+   1266px — see #mfc-v300-sticky-head at the end of this file. `overflow:clip`
+   is the part V6.8 did not have: it clips without creating a scroll container,
+   so `top` resolves against the viewport, and pinning to the nav's height
+   instead of 0 keeps the two out of each other's way. Nothing is re-added
+   here; this note is only so the paragraph above is not read as "impossible". */
 
 /* Industry chip — show full text on hover via larger tooltip (native title already there) */
 .industry-badge{
@@ -8341,7 +8362,11 @@ html[data-theme="dark"] .howto-step.is-now .hs-live b{ color:var(--accent3); }
    saying "this one is behind you" */
 .howto-step.is-done .num::before{
   content:'✓'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(135deg,var(--green),#10b981); color:#fff; font-size:14px; font-weight:900;
+  /* V30.0 — white on this emerald pair measured 3.77:1 at the --green end and
+     2.54:1 at #10b981, and a 14px/900 glyph is text for 1.4.3, not an image.
+     Same one-step darkening as the homepage's "Free" tab (emerald-700 -> 800),
+     which reads 5.48:1 / 7.68:1 and is still unmistakably the "done" green. */
+  background:linear-gradient(135deg,#047857,#065f46); color:#fff; font-size:14px; font-weight:900;
   border-radius:50%;
 }
 .howto-step.is-done .hs-live{ color:var(--text3); }
@@ -8829,6 +8854,91 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   /* this one carries font-size:14px in a style attribute (it is built inline
      beside its Save button), and an attribute beats every stylesheet rule. */
   #notif-email-input{font-size:16px !important;}
+}
+</style>
+
+<!-- ============================================================================
+     V30.0 — THE COLUMN LABELS COME BACK.
+     ----------------------------------------------------------------------------
+     The picks table is the dashboard. It is also 1,565px tall at 1440px — nearly
+     two viewport heights — so from about row 8 onward a member reads ₹2,945.85,
+     ₹58,917, 20 and 4.0% in a row of unlabelled numbers and has to scroll back up
+     to remember which column is Allocation and which is Weight.
+
+     V6.8 removed the v16 sticky-header rules and wrote down exactly why they had
+     never worked: `.table-wrap` sets `overflow-x:auto`, and because the other axis
+     is `visible` it computes to `auto` too — so the wrapper is a scroll container
+     in BOTH axes, `top` resolves against a scrollport that never scrolls
+     vertically, and the header can never pin. The note also flagged that a <th>
+     at top:0 would sit behind the z:100 nav.
+
+     Both are answerable now. `overflow:clip` clips exactly like hidden but is NOT
+     a scroll container, so sticky resolves against the viewport instead — and the
+     16px corner clipping the card depends on is kept. The nav is dodged by
+     pinning to its height rather than to 0, and z-index 5 keeps the header above
+     its own rows while staying below the nav, so the two never fight.
+
+     Scoped to >=1266px, which is where this is both needed and safe: the table's
+     1,163px minimum fits the wrapper from about 1,230px up, so no width that
+     still needs the horizontal scroller loses it, and the band that carries the
+     V29.2 edge-fade cue (601-1265px) is untouched. Below 600px the table is
+     display:none and the card layout has its own labels.
+
+     border-bottom is deliberately NOT used for the pinned edge: under
+     `border-collapse:collapse` the borders belong to the table, not the cell, so
+     a collapsed border does not travel with a sticky <th> — it detaches and stays
+     behind at the top of the table. An inset box-shadow is painted by the cell
+     itself and moves with it.
+     ========================================================================= -->
+<style id="mfc-v300-sticky-head">
+@media (min-width: 1266px) {
+  /* not `hidden` — that would re-create the scroll container this is escaping */
+  .table-wrap{ overflow: clip; }
+
+  .table-wrap thead th{
+    position: sticky;
+    top: 64px;                 /* nav measures 65px here; 64 avoids a 1px seam */
+    z-index: 5;                /* above its own rows, below the z:100 nav */
+    /* fallback first: any engine without color-mix gets a fully opaque header
+       rather than one the rows show through */
+    background:
+      linear-gradient(180deg,rgba(37,99,235,0.06) 0%,rgba(37,99,235,0.02) 100%),
+      var(--ink2);
+    background:
+      linear-gradient(180deg,rgba(37,99,235,0.06) 0%,rgba(37,99,235,0.02) 100%),
+      color-mix(in srgb, var(--ink2) 93%, transparent);
+    -webkit-backdrop-filter: blur(10px) saturate(1.25);
+    backdrop-filter: blur(10px) saturate(1.25);
+    box-shadow:
+      inset 0 -1px 0 var(--border2),
+      0 12px 20px -18px rgba(12,24,49,.55);
+  }
+  html[data-theme="dark"] .table-wrap thead th{
+    box-shadow:
+      inset 0 -1px 0 var(--border2),
+      0 12px 22px -16px rgba(0,0,0,.6);
+  }
+}
+
+/* Paper is not a viewport, and this member can print the book — there is a Print
+   button on the page. A `min-width` query is the wrong guard on its own here: it
+   is evaluated against the page box, so whether the sticky rule applies depends
+   on the paper size, and on wide stock it DOES apply. A pinned header on paper is
+   meaningless at best (nothing scrolls) and at worst it detaches or repeats over
+   a row. Print gets the plain header it should have: static, no shadow, and no
+   backdrop-filter, which some engines rasterise as a grey slab. `thead` keeps its
+   default table-header-group behaviour, which is what actually repeats the labels
+   across printed pages — the correct mechanism for this, and one that costs the
+   screen nothing. This block is last in the file, so it wins over the rule above
+   at any width. */
+@media print {
+  .table-wrap{ overflow: visible; }
+  .table-wrap thead th{
+    position: static;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 </style>
 </body>

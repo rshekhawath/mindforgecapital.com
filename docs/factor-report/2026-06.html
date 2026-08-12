@@ -61,6 +61,22 @@
 html{scroll-behavior:smooth}
 body{background:var(--ink);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 600px at 70% -10%,rgba(37,99,235,0.08) 0%,transparent 60%),radial-gradient(ellipse 500px 400px at 5% 25%,rgba(45,212,191,0.05) 0%,transparent 60%),radial-gradient(ellipse 700px 500px at 95% 75%,rgba(45,212,191,0.03) 0%,transparent 60%)}
+/* V30.0 — ambient depth parity. This page had the static base glow but never the
+   V16.2 layer every other marketing page has carried since: the glow breathes and
+   three soft brand orbs drift behind the content. z-index:-1 on the orbs because
+   the sections here are non-positioned — a fixed layer at 0 would paint over them.
+   Pointer-inert, print-hidden, motionless under prefers-reduced-motion. */
+body::after{content:'';position:fixed;inset:-6%;pointer-events:none;z-index:-1;
+  background:radial-gradient(420px 420px at 86% 6%,rgba(45,212,191,0.13) 0%,transparent 70%),
+             radial-gradient(380px 380px at 4% 92%,rgba(37,99,235,0.11) 0%,transparent 70%),
+             radial-gradient(300px 300px at 50% 120%,rgba(8,145,178,0.07) 0%,transparent 70%)}
+@media(prefers-reduced-motion:no-preference){
+  body::before{animation:v162-drift 30s ease-in-out infinite;will-change:transform}
+  body::after{animation:v162-orbs 24s ease-in-out infinite;will-change:transform}
+}
+@keyframes v162-drift{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(1.2%,-1%,0) scale(1.05)}}
+@keyframes v162-orbs{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-2.2%,1.8%,0) scale(1.06)}}
+@media print{body::before,body::after{display:none!important}}
 h1,h2,h3,h4{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.1}
 a{color:inherit;text-decoration:none}
 
@@ -220,6 +236,26 @@ a.fr-arch-item:hover{transform:translateY(-2px);box-shadow:0 12px 26px -16px rgb
 .fr-arch-badge{font-size:11px;font-weight:700;color:var(--accent);background:rgba(37,99,235,.08);padding:3px 10px;border-radius:999px;white-space:nowrap}
 .fr-arch-empty{font-size:13.5px;color:var(--text3);border:1px dashed var(--border2);border-radius:12px;padding:16px 18px;text-align:center}
 
+/* ── V30.0 · ENTRANCE CHOREOGRAPHY ─────────────────────────────────────────
+   The scoreboard's bars already grew on reveal (V23.3), but the five cards they
+   sit in did not — they were simply present, so the page's one piece of motion
+   read as an isolated twitch rather than as the section arriving. Same idiom and
+   same easing the rest of the site uses (.fade-up + .in), one observer, and the
+   full static layout is what no-JS and reduced-motion readers get. */
+.fade-up,.fade-seq>*{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .7s cubic-bezier(.22,1,.36,1);will-change:opacity,transform}
+.fade-up.in,.fade-seq.in>*{opacity:1;transform:none}
+/* the hero staggers off the SECTION, not off per-child classes: its <h1> lives
+   between <!--FR:month--> markers that are hand-rewritten every month, and a
+   class added inside a marker is a class that eventually gets published away. */
+.fade-seq>*:nth-child(1){transition-delay:.02s}
+.fade-seq>*:nth-child(2){transition-delay:.09s}
+.fade-seq>*:nth-child(3){transition-delay:.16s}
+.fade-seq>*:nth-child(4){transition-delay:.23s}
+@media(prefers-reduced-motion:reduce){
+  .fade-up,.fade-seq>*{opacity:1!important;transform:none!important;transition:none}
+}
+
+
 /* ── FOOTER ── */
 .site-foot{border-top:0.5px solid var(--border2);margin-top:44px;padding:26px 28px 34px;text-align:center;position:relative;z-index:1}
 .site-foot .links{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-bottom:14px;font-size:13.5px}
@@ -306,7 +342,7 @@ var ham=inner.querySelector('.nav-hamburger');
 if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}};
 })();
 </script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=2950">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3000">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -400,7 +436,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
        ═══════════════════════════════════════════════════════════════════════ -->
 
   <!-- HERO -->
-  <section class="hero">
+  <section class="hero fade-seq">
     <span class="eyebrow"><span class="dot"></span>Monthly factor report · India</span>
     <!--FR:month--><h1>India Factor Report — <span class="grad">June 2026</span></h1><!--/FR:month-->
     <p class="sub">How the major equity <b>style factors</b> — value, momentum, quality and low volatility — are performing in India, tracked through their flagship NSE factor indices. Free, and updated every month.</p>
@@ -411,7 +447,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
   </section>
 
   <!-- ── FACTOR LEADERBOARD ── -->
-  <section class="card">
+  <section class="card fade-up">
     <h2>The factor scoreboard</h2>
     <p class="lead">Ranked by trailing 1-year total return. Each factor is represented by its flagship NSE index (tracked via a low-cost index fund, Direct Plan). Nifty 50 is shown as the broad-market baseline.</p>
     <div class="fr-board">
@@ -472,7 +508,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
   </script>
 
   <!-- ── COMMENTARY ── -->
-  <section class="card">
+  <section class="card fade-up">
     <h2>What led, what lagged</h2>
     <!--FR:commentary-->
     <p class="fr-note"><b>Value ran away with it.</b> Over the trailing year the Nifty500 Value 50 returned about <b>+14%</b> while the broad Nifty 50 was slightly negative — a wide, decisive spread. Cheaply-valued cyclicals, PSUs and capital-goods names did the heavy lifting as the market rewarded earnings over narrative.</p>
@@ -482,7 +518,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
   </section>
 
   <!-- ── HOW MINDFORGE USES FACTORS ── -->
-  <section class="card">
+  <section class="card fade-up">
     <h2>How MindForge uses factors</h2>
     <p class="lead">Our strategies are built on these same style factors — combined, risk-weighted and rebalanced monthly, so no single factor's bad year sinks the book.</p>
     <div class="fr-use-grid">
@@ -495,7 +531,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
   </section>
 
   <!-- ── ARCHIVE ── -->
-  <section class="card">
+  <section class="card fade-up">
     <h2>Report archive</h2>
     <p class="lead">Every month's edition, kept for the record.</p>
     <ul class="fr-archive-list">
@@ -514,7 +550,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
   </section>
 
   <!-- ── METHODOLOGY / SOURCES ── -->
-  <section class="card">
+  <section class="card fade-up">
     <h2>Methodology &amp; sources</h2>
     <div class="fr-meth">
       <p>Each factor is represented by its <b>flagship NSE factor index</b>, measured through a low-cost index fund tracking that index (Direct Plan). Returns are <b>trailing 1-year total returns</b> as of the date shown, so every factor is compared on the same clock. Nifty 50 is the broad-market baseline.</p>
@@ -611,7 +647,37 @@ if(window.__mfcThemeBoot)window.__mfcThemeBoot();
 })();
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page -->
-<script src="../assets/mfc-offer.js?v=2910" defer></script>
+<!-- V30.0 — one observer reveals the hero stagger and the five cards.
+     Classes are already in the markup so the collapsed state is applied before
+     first paint (no flash of positioned content); this only adds `.in`. Two
+     safety valves, both deliberate: reduced-motion readers are opted straight
+     into the finished state, and a timeout reveals everything regardless, so a
+     browser without IntersectionObserver — or a card the observer somehow never
+     sees — can never leave the page's content stranded at opacity 0. -->
+<script>
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.fade-up,.fade-seq'));
+    if(!els.length) return;
+    var showAll=function(){ els.forEach(function(e){ e.classList.add('in'); }); };
+    if(!('IntersectionObserver' in window) ||
+       (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+      showAll(); return;
+    }
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    },{threshold:0.12,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){ io.observe(e); });
+    setTimeout(showAll,2200);
+  }catch(e){
+    try{ [].slice.call(document.querySelectorAll('.fade-up,.fade-seq'))
+           .forEach(function(x){ x.classList.add('in'); }); }catch(_){}
+  }
+})();
+</script>
+<script src="../assets/mfc-offer.js?v=3000" defer></script>
 <script defer src="../assets/mfc-chrome.js?v=6"></script>
 </body>
 </html>

@@ -304,6 +304,28 @@ html[data-theme="dark"] .strat-cta.cta-filled:hover,
 html[data-theme="dark"] .nav-cta:hover,
 html[data-theme="dark"] .oo-cta:hover{ box-shadow:0 10px 30px -8px rgba(47,95,224,0.72); }
 
+/* V30.0 — THE LAST THIRD OF EVERY PRIMARY CTA FAILED AA IN DARK.
+   The dark palette lifts --accent2 to #5b8def so it can serve as link/chip INK on
+   a near-black surface, where it reads at 4.8:1 and is correct. The same token is
+   also the light end of the primary-CTA gradient — and there it is a BACKGROUND
+   carrying white text, where #5b8def measures 3.23:1. Both ends of the gradient
+   were checked: --accent (#2f5fe0) is 5.48:1 and fine, so the failure is confined
+   to the light end and grows across the button, which is why a glance at the left
+   edge of a CTA never showed it. Light mode was never affected (6.6:1 -> 5.17:1).
+   Fixed by repainting the gradient for this family only, NOT by moving the token:
+   --accent2 is used as ink in a dozen places that need it exactly as bright as it
+   is. #3b6ae3 is one step down the same ramp and measures 4.82:1 with white.
+   The family listed here is the one the V17.4 glow rule above already enumerates,
+   plus the two surfaces the audit found painting the same gradient. */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .strat-cta.cta-filled,
+html[data-theme="dark"] .nav-cta,
+html[data-theme="dark"] .oo-cta,
+html[data-theme="dark"] .sidebar-btn,
+html[data-theme="dark"] .nav-badge{
+  background-image:linear-gradient(135deg,var(--accent) 0%,#3b6ae3 100%);
+}
+
 /* the gold "Popular" corner tab glows a touch warmer on dark */
 html[data-theme="dark"] .strat-card.featured .badge-pop{ box-shadow:0 6px 20px -6px rgba(245,158,11,0.6); }
 

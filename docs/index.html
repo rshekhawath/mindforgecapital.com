@@ -424,6 +424,14 @@ html[data-theme="dark"] .hv-tab.active {
   color: #0c1831;
   line-height: 1.4;
 }
+/* V30.0 — V28.0 grew this dismiss button's hit area from 22x22 to 28x28 on the
+   three strategy pages and on strategies.html, because 22 is under the 24px
+   WCAG 2.2 SC 2.5.8 floor this site adopted in V23.7. The homepage carries the
+   same bubble and the same 22x22 button and was the one page the fix missed —
+   which is the page it mattered on most. Identical treatment: the pseudo-element
+   grows the HIT AREA only, so the glyph does not move or change size, and 28
+   rather than 44 keeps the pad inside the bubble it is inset 6px/8px from. */
+.fab-wa-bubble-close::after { content:''; position:absolute; top:-3px; right:-3px; bottom:-3px; left:-3px; }
 .fab-wa-bubble-close {
   position: absolute;
   top: 6px; right: 8px;
@@ -495,7 +503,16 @@ html[data-theme="dark"] .hv-tab.active {
      (which forces position:relative/z-index:1) so the tab can pin absolutely.
      Gold (not the old blue→teal) so it pops against the blue featured card. */
   position: absolute; top: 0; right: 0; z-index: 4;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  /* V30.0 — white on amber-500 measured 2.15:1 here, and 3.19:1 at the dark end:
+     the worst contrast pair on the site, at 9.5px/700. Both stops move one step
+     down the same ramp (amber-700 -> amber-800), which keeps this unmistakably
+     the warm gold "featured" tab and takes white to 5.02:1 / 7.09:1.
+     This is the rule that actually paints the tab — it out-specifies the base
+     `.badge-pop` block below at (0,2,0) vs (0,1,0), which is why the identical
+     value there has to move too, and why a grep for the gradient must allow for
+     BOTH spellings: this copy is written with spaces after the commas and the
+     other is not. Searching for one form reports the other as already fixed. */
+  background: linear-gradient(135deg, #b45309, #92400e);
   color: #fff;
   font-size: 9.5px; font-weight: 700; line-height: 1;
   letter-spacing: 0.04em;
@@ -771,7 +788,15 @@ html[data-theme="dark"] .hv-tab.active {
      stays wrap-proof at every breakpoint, and reads as a premium "featured" ribbon. */
   position: absolute;
   top: 0; right: 0; z-index: 3; margin: 0;
-  background: linear-gradient(135deg,#f59e0b,#d97706);
+  /* V30.0 — white on amber-500 was 2.15:1, and 2.99:1 at the dark end of the
+     gradient: the worst contrast pair measured anywhere on the site, on the
+     featured card's own ribbon, at 9.5px/700. Both stops move down one step of
+     the same amber ramp (amber-700 -> amber-800), which keeps it unmistakably
+     the warm gold "featured" tab while taking white to 5.02:1 at the light end
+     and 6.71:1 at the dark. #b45309 is already the site's --ink-warn, so this
+     introduces no new colour. The shadow keeps the brighter amber: a glow is
+     not text, and dropping it too would flatten the ribbon. */
+  background: linear-gradient(135deg,#b45309,#92400e);
   color: #fff;
   font-size: 10px; font-weight: 700; padding: 6px 12px 6px 13px;
   border-radius: 0 0 0 13px;
@@ -978,6 +1003,32 @@ html[data-theme="dark"] .hv-tab.active {
 .faq-a a { color: var(--accent2); font-weight: 500; text-decoration: none; border-bottom: 1px solid rgba(37,99,235,.3); }
 .faq-a a:hover { border-bottom-color: var(--accent2); }
 .faq-a strong { color: var(--text); font-weight: 600; }
+/* ── V30.0 · the answer now OPENS instead of appearing ──────────────────────
+   Everything around this control already moves — the border lights, the shadow
+   blooms, the +/- rotates over 280ms — and then the answer itself snapped into
+   existence, because a native <details> has no way to transition its own panel.
+   Keeping the native element was the right call (V25.6: the answer is in the DOM
+   for crawlers and for JS-off readers, and keyboard/AT behaviour is free), so it
+   is kept: `::details-content` animates exactly that panel with no script, no
+   click interception, and nothing to go wrong with the disclosure itself.
+   `interpolate-size` is what makes 0 -> auto animatable; `content-visibility`
+   needs `allow-discrete` so the panel stays rendered for the length of the
+   collapse instead of vanishing on frame one.
+   A browser without `::details-content` ignores this whole block and keeps the
+   behaviour it has today — the control cannot end up half-open or unopenable. */
+/* scoped to the accordion, NOT :root — `interpolate-size` is inherited, and set
+   document-wide it would quietly make every keyword size on the page animatable,
+   which is a much larger blast radius than the one thing being fixed here. */
+.faq-item { interpolate-size: allow-keywords; }
+@media (prefers-reduced-motion: no-preference) {
+  .faq-item::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition: block-size .3s cubic-bezier(.22,.8,.2,1),
+                content-visibility .3s cubic-bezier(.22,.8,.2,1) allow-discrete;
+  }
+  .faq-item[open]::details-content { block-size: auto; }
+}
 @media (prefers-reduced-motion: reduce) {
   .faq-item, .faq-item > summary i, .faq-item > summary i::after { transition: none; }
 }
@@ -3543,7 +3594,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=2950">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3000">
 </head>
 <body>
 
@@ -4556,7 +4607,10 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
 
       <!-- MultiAsset — free for everyone (V18.3) -->
       <div class="strat-card tilt-host fade-up" data-live-host data-bt-start="2023-02" data-bt-end="2026-07">
-        <span class="badge-pop" style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 6px 16px -8px rgba(5,150,105,.7);">Free</span>
+        <!-- V30.0: white on emerald-500 measured 2.54:1. Same one-step darkening
+             as the amber ribbon (emerald-700 -> emerald-800) takes it to 5.48:1;
+             the glow keeps the brighter green. -->
+        <span class="badge-pop" style="background:linear-gradient(135deg,#047857,#065f46);box-shadow:0 6px 16px -8px rgba(5,150,105,.7);">Free</span>
         <span class="strat-badge badge-teal">Multi-Asset</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> MultiAsset</div>
         <!-- V28.9: was "8 assets · Weekly signals · Monthly rebalance". The model
@@ -7121,7 +7175,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
   .mobile-cta-bar{ animation:none; }
 }
 </style>
-<script src="assets/mfc-offer.js?v=2910" defer></script>
+<script src="assets/mfc-offer.js?v=3000" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
 <script src="assets/mfc-live.js?v=2910" defer></script>
 <style id="mf-navfix-sis">
