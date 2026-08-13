@@ -326,7 +326,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3010">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3040">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
@@ -813,6 +813,32 @@ function resetForm() {
   upd();
   window.addEventListener('scroll', onScroll, {passive: true});
   window.addEventListener('resize', upd);
+})();
+
+/* V30.4 — Enter did nothing on this page.
+   These fields are not inside a <form>, so the browser's own implicit submission
+   never applied, and nothing supplied a replacement: a member could fill in name,
+   email, phone and strategy, press Enter, and get silence. login.html has had
+   this shortcut since it shipped ("// Allow Enter key"), so the site's own
+   convention was already set — signup was simply the page that never got it.
+   Scoped the same way login.html's now is: only from the text fields, never from
+   a link or button (which answer Enter themselves), and never from the textarea-
+   less select, which uses Enter to commit its own open dropdown. handleSubmit()
+   already hard-gates on the T&C box and validates every field, so this adds a
+   route to the existing checks and no new path past them. */
+(function(){
+  var FIELDS = ['reg-name','reg-email','reg-phone'];
+  document.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter') return;
+    var el = e.target;
+    if (!el || !el.id || FIELDS.indexOf(el.id) === -1) return;
+    if (el.closest && el.closest('a,button')) return;
+    e.preventDefault();
+    // handleSubmit() opens with the T&C hard gate, which highlights and scrolls to
+    // the unchecked box and returns — so an un-accepted form gets the same nudge
+    // the button gives, and there is no second gate here to drift out of step.
+    if (typeof handleSubmit === 'function') handleSubmit();
+  });
 })();
 </script>
 <style id="mf-v13-auth">

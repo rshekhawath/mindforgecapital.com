@@ -2118,7 +2118,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3010">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3040">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -3130,6 +3130,14 @@ const DASH_TOKEN_KEY = 'mfc_dash_token';
 // navigation, invisible to the cache key, the history entry and any Referer.
 // Consumed exactly once on the way in.
 const DASH_SWITCH_KEY = 'mfc_dash_switch';
+// V30.4 — the query marker a strategy switch navigates with. Carries a timestamp
+// and nothing else: its only job is to make the destination URL differ from the
+// current one so the navigation cannot be coalesced into a no-op (see the note in
+// chooseStrategy). Stripped from the address bar on arrival, so it never
+// accumulates and the NEXT switch is again a different URL from a bare
+// /dashboard.html. Safe in a URL by construction — it is not a secret, and sw.js
+// excludes this page from CacheStorage on pathname regardless of query.
+const DASH_SWITCH_PARAM = 'sw';
 // V29.7 — take the LAST match, not the first. document.cookie serves every
 // cookie of a given name that matches the request (different path, different
 // domain scope), most-specific first, with NO way to tell them apart. A single
@@ -3362,10 +3370,21 @@ const token = (function () {
       } else {
         t = readDashToken() || t;
       }
+      // V30.4: drop the switch nonce once we are here. It exists only to make the
+      // switch navigation a different URL (see DASH_SWITCH_PARAM); leaving it in
+      // the bar would show a meaningless number, and — because the next switch
+      // compares against the CURRENT url — would make two rapid switches able to
+      // collide on the same millisecond value.
+      if (params.has(DASH_SWITCH_PARAM)) {
+        params.delete(DASH_SWITCH_PARAM);
+        const qs2 = params.toString();
+        window.history.replaceState(null, '', window.location.pathname + (qs2 ? '?' + qs2 : '') + window.location.hash);
+      }
     }
   } catch (e) { /* storage/history blocked → fall back to the URL token as-is */ }
   return t;
 })();
+
 const demoMode = new URLSearchParams(window.location.search).get('demo');
 // V29.0: was `demoMode === '1'`, so the moment demo gained a second strategy the
 // switch to ?demo=2 fell through to the TOKEN path, found no token and rendered
@@ -3373,6 +3392,37 @@ const demoMode = new URLSearchParams(window.location.search).get('demo');
 // unrecognised ?demo= value must still take the real path, not a blank dashboard.
 const DEMO_MODES = ['1', '2'];
 const isDemo = DEMO_MODES.indexOf(demoMode) > -1;
+
+/* V30.4 — THE BACK/FORWARD CACHE. This is the Safari fix; the nonce above is not.
+   MEASURED, in Safari 26.5.2 via safaridriver against the live origin:
+     • load the dashboard, plant `window.__bf` on it
+     • navigate to login.html, then history.back()
+     • the marker is STILL THERE, and `pageshow` fires with persisted === true
+   WebKit restored the whole document from its page cache. Not one line of this
+   page re-ran. That is the behaviour Blink does not reproduce here, and it is
+   enough on its own to produce every symptom reported: the `token` const still
+   holds the PREVIOUS strategy's token, a switch handoff can still be sitting
+   unconsumed in sessionStorage, and the member is looking at the old book while
+   the cookie says otherwise — with no error, because no code ran to raise one.
+   "I switched and it went back to the same strategy" is exactly what a restored
+   pre-switch document looks like.
+   `pageshow`+`persisted` is the one event that fires on precisely that restore.
+   Reload only when the session has actually moved underneath us — an unconsumed
+   handoff, or a stored token that is no longer the one this document rendered
+   with — so an ordinary Back to an unchanged dashboard is left alone and a member
+   placing orders never has the page pulled out from under them for nothing. */
+window.addEventListener('pageshow', function (ev) {
+  if (!ev.persisted) return;                     // a real load already re-ran everything
+  if (isDemo) return;                            // demo has no token session to drift
+  try {
+    var pending = null;
+    try { pending = sessionStorage.getItem(DASH_SWITCH_KEY); } catch (e) {}
+    var stored = readDashToken();
+    if (pending || (stored && token && stored !== token)) {
+      window.location.reload();
+    }
+  } catch (e) { /* a restore guard must never break a working page */ }
+});
 
 // V21.0: Sign out — clear the persisted session, then go to the sign-in page.
 (function(){
@@ -3929,7 +3979,35 @@ function setupStrategySwitcher(activeStrategy){
         // handoff exists so the reload cannot depend on a cookie race at all.
         writeDashToken(value);                 // …only now is it the active session
         try { sessionStorage.setItem(DASH_SWITCH_KEY, value); } catch(e){}
-        window.location.replace('dashboard.html');
+        /* V30.4 — a DIFFERENT destination url, as belt-and-braces.
+           Be careful with the reasoning here, because the obvious story is wrong
+           and was measured to be wrong. V29.7 changed this navigation to a
+           different url specifically so it "can't degenerate into a same-url
+           no-op", and V29.8 — rightly moving the token out of the url, because
+           sw.js was writing `/dashboard.html?token=MFC…` to disk — went back to
+           the bare path and restored the same-url property. That looked like the
+           Safari bug. It is NOT: driven through safaridriver on the live origin,
+           Safari 26.5.2 RELOADS on `location.replace(sameUrl)` exactly like Blink
+           (a planted window marker does not survive it). The V29.8 probe said the
+           same thing and was correct.
+           So this nonce is not the fix — the pageshow guard below is. It is kept
+           because a navigation whose destination differs from its origin cannot
+           be coalesced by ANY engine or future version, it costs nothing, and it
+           puts nothing secret in the url: sw.js excludes dashboard.html from
+           CacheStorage by PATHNAME under any query string, and the loader strips
+           the marker on arrival so it never reaches history or the address bar. */
+        var dest = 'dashboard.html?' + DASH_SWITCH_PARAM + '=' + Date.now();
+        window.location.replace(dest);
+        /* And if the navigation still does not happen, say so instead of sitting
+           there. A switch that silently does nothing has now cost two "still
+           broken" reports; a switch that tells the member to reload costs none. */
+        window._switchWatchdog = setTimeout(function(){
+          try {
+            if (window.showToast) showToast('Could not open that strategy — please reload the page.');
+            pill.classList.remove('switching');
+            _switching = false;
+          } catch(e){}
+        }, 4000);
       })
       .catch(function(){
         if (window.showToast) showToast('Could not reach the server. Please try again.');

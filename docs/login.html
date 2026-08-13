@@ -298,7 +298,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3010">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3040">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 </head>
 <body class="mfc-ambient">
@@ -604,9 +604,22 @@ function resendOTP() {
   links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { btn.classList.remove('open'); links.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Open menu'); }); });
 })();
 
-// Allow Enter key
+/* Allow Enter key.
+   V30.4 — but only from the field the step is about. This listened on the
+   DOCUMENT and fired on Enter anywhere on the page, including on the step's own
+   secondary controls: focusing "Resend" or "Change email" and pressing Enter
+   activated the button AND ran verifyOTP() against an empty box, so a keyboard
+   member trying to resend a code got "Please enter the 6-digit code." thrown at
+   them for doing nothing wrong — and on Resend the two handlers raced, one
+   clearing the field and stepping back to email while the other validated it.
+   Measured: Enter on Resend -> error visible. A button already answers Enter by
+   itself; this shortcut only ever needed to serve the text inputs. */
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
+  var el = e.target;
+  if (el && el.closest && el.closest('a,button')) return;      // the control handles its own Enter
+  var tag = el && el.tagName ? el.tagName.toLowerCase() : '';
+  if (tag && tag !== 'input' && tag !== 'body') return;        // not a text field → not our shortcut
   if (document.getElementById('step-email').style.display !== 'none') requestOTP();
   else if (document.getElementById('step-otp').style.display !== 'none') verifyOTP();
 });
