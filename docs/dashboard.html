@@ -4620,6 +4620,31 @@ function fmtMoney(v) { return '₹' + fmtNum(v); }
 function shortMoney(v) { return shortLakhs(v); }
 
 // ── POSITION SIZING ──────────────────────────────────────────────────────
+/* V30.2 — THE CAPITAL THE PAGE USED WAS NOT THE CAPITAL THE FIELD SHOWED.
+   setCapital() normalised its argument with `v|0`. A bitwise operator coerces
+   through a SIGNED 32-BIT integer, so every rupee figure on this dashboard was
+   silently computed modulo 2^32 once the entered capital passed ₹2,14,74,83,648:
+     • ₹5,00,00,00,000 entered  → the field kept reading 5,00,00,00,000 while the
+       whole page sized for ₹70,50,32,704 (5e9 − 4294967296). Allocation, Shares,
+       Total allocated, Cash residue, % deployed, coverage, drift, the capital
+       ladder, the CSV export and the ₹ figure on the live-profit card all
+       inherited the wrong number, and every one of them still tied out against
+       every other one — so nothing on screen could contradict it.
+     • ₹2,50,00,00,000 entered  → wrapped to a negative, clamped to 0, and the
+       sizing card went to ₹0 / "below one share" against a field full of digits.
+   Both were measured, not reasoned about. The fix is Math.floor (no 32-bit
+   round trip) plus an explicit ceiling that is WRITTEN BACK INTO THE FIELD, so
+   the displayed number and the arithmetic can never disagree again: past the
+   cap the digits stop growing rather than lying. The same `|0` sat in
+   saveCapital(), which would have persisted the wrapped value to localStorage
+   and reloaded into it. ₹10,000 crore is far above any retail advisory book and
+   keeps share counts and fmtINR well inside exact-integer range. */
+const MAX_CAPITAL = 100000000000;   // ₹10,000 crore
+function normaliseCapital(v) {
+  var n = Math.floor(Number(v));
+  if (!isFinite(n) || n < 0) n = 0;
+  return Math.min(n, MAX_CAPITAL);
+}
 function capitalStorageKey(strategy) {
   return 'mfc_capital_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
 }
@@ -4630,7 +4655,7 @@ function loadSavedCapital(strategy) {
   } catch (e) { return 0; }
 }
 function saveCapital(strategy, v) {
-  try { localStorage.setItem(capitalStorageKey(strategy), String(v|0)); } catch (e) {}
+  try { localStorage.setItem(capitalStorageKey(strategy), String(normaliseCapital(v))); } catch (e) {}
 }
 
 function setupCapitalCalculator(stocks, strategy) {
@@ -4639,7 +4664,9 @@ function setupCapitalCalculator(stocks, strategy) {
   const presets = (CAPITAL_PRESETS[strategy] || CAPITAL_PRESETS._default);
   // Use saved capital if present; otherwise recommended preset
   const saved = loadSavedCapital(strategy);
-  currentCapital = saved > 0 ? saved : presets.recommended;
+  // V30.2: normalise on the way IN as well — a stored value written by an older
+  // release (or hand-edited) must not re-enter the page unbounded.
+  currentCapital = normaliseCapital(saved > 0 ? saved : presets.recommended);
 
   const prefixEl = document.getElementById('size-prefix');
   if (prefixEl) prefixEl.textContent = '₹';
@@ -4676,11 +4703,13 @@ function shortLakhs(v) {
 }
 
 function setCapital(v, btn, fromInput) {
-  currentCapital = Math.max(0, v|0);
+  const asked = Math.floor(Number(v));                 // what the member actually typed
+  currentCapital = normaliseCapital(v);                // V30.2: see MAX_CAPITAL above
   // Sync preset active state
   document.querySelectorAll('.size-preset').forEach(b => b.classList.toggle('active', Number(b.dataset.val) === currentCapital));
-  // Sync input value if not coming from input
-  if (!fromInput) {
+  // Sync input value if not coming from input — and ALWAYS when the entry had to
+  // be clamped, so the field can never show a number the page is not using.
+  if (!fromInput || !(asked === currentCapital)) {
     document.getElementById('size-input').value = currentCapital ? fmtNum(currentCapital) : '';
   }
   refreshSizeSummary();
@@ -5680,6 +5709,15 @@ function resetBought() {
   document.querySelectorAll('.bought-cb').forEach(cb => { cb.checked = false; });
   document.querySelectorAll('.row-bought').forEach(el => el.classList.remove('row-bought'));
   refreshBoughtProgress();
+  /* V30.2 — `checked = false` does NOT clear `indeterminate`; the two are
+     independent properties and the dash wins in the rendering. So after ticking
+     some-but-not-all rows (which puts #bought-all into its dash state via
+     syncBoughtAllHeader) and then pressing Reset, every row cleared while the
+     select-all box kept painting the dash — the header claiming a partial
+     selection over 25 empty checkboxes. Measured: {checked:false,
+     indeterminate:true, rowsChecked:0}. This is the one mutation path that
+     never re-synced the header; syncBoughtAllHeader sets both flags. */
+  syncBoughtAllHeader();
   showToast('Cleared all marks');
 }
 function refreshBoughtProgress() {
@@ -6239,7 +6277,28 @@ async function refreshDashboard() {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=stocks&token=' + encodeURIComponent(token) + '&_=' + Date.now());
     const data = await res.json();
-    if (data.error) { showToast('Refresh failed'); return; }
+    /* V30.2 — this path never received the V29.0 guard that init() got, and it is
+       the SAME failure one function up. Testing `data.error` alone lets a
+       {status:'error', message:'…'} reply through (a shape the backend does emit,
+       which is exactly why isErrorPayload exists). What followed was worse than a
+       failed refresh: `stocksData` was overwritten with [] BEFORE the payload was
+       validated, then renderDashboard(undefined, []) threw on sub.expires_at and
+       the outer catch reported "Refresh failed" — leaving the member looking at a
+       fully-rendered table backed by an empty stocksData, so the next sort, sector
+       chip or capital change silently emptied it. Validate first, assign second.
+       A DEFINITIVE auth failure (the subscription lapsed while the tab was open)
+       is also not a toast: route it to the same Access Denied panel init() uses,
+       which carries the way back to the member's other strategies. */
+    if (isErrorPayload(data)) {
+      if (isAuthFailure(data)) {
+        clearDashSession({ keepRegistry: true });
+        removeStratByToken(token);
+        showError('Access Denied', errMessage(data) || 'This link is invalid or your subscription has expired.');
+        return;
+      }
+      showToast('Refresh failed'); return;
+    }
+    if (!data.subscription) { showToast('Refresh failed'); return; }
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
     loadLiveProfit(true);   // V14.3: force-refresh live prices on manual refresh
@@ -6366,6 +6425,14 @@ function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null;
 // tweaks re-render instantly. Reduced-motion / hidden-tab safe.
 function _animatePct(el, target){
   var fmt = function(v){ return (v > 0 ? '+' : '') + v.toFixed(2) + '%'; };
+  /* V30.2 — the tween owned no handle, so a second call inside its 750ms window
+     could not stop it: the new value was written, and the frames still queued
+     from the OLD run overwrote it and settled on the OLD number. Reproduced by
+     re-rendering the headline mid-count-up with an all-negative price set — the
+     card went into its is-down state and the attribution card read −5.15 pp
+     while the headline still said "+2.31%". Reachable from Refresh (which
+     re-arms _profitAnimated) and from the 30s repoll. Cancel before writing. */
+  if (window._pctRAF) { cancelAnimationFrame(window._pctRAF); window._pctRAF = null; }
   if (window._profitAnimated || document.hidden ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches){
     el.textContent = fmt(target); window._profitAnimated = true; return;
@@ -6375,7 +6442,8 @@ function _animatePct(el, target){
   (function step(now){
     var t = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - t, 3);
     el.textContent = fmt(target * e);
-    if (t < 1) requestAnimationFrame(step); else el.textContent = fmt(target);
+    if (t < 1) { window._pctRAF = requestAnimationFrame(step); }
+    else { window._pctRAF = null; el.textContent = fmt(target); }
   })(performance.now());
 }
 function paintLivePrices(){
@@ -6507,12 +6575,27 @@ function renderAttribution(rows, wSum, port){
   var conc = lift > 0.0001 ? Math.round((top3 / lift) * 100) : 0;
   var nDown = pp.filter(function(x){ return x.c < 0; }).length;
   var net = document.getElementById('at-net');
-  var concWord = conc >= 75 ? 'concentrated in' : conc >= 50 ? 'led by' : 'spread beyond';
-  net.innerHTML =
-    'The gain is <b>' + conc + '%</b> ' + concWord + ' the top ' + Math.min(3, pp.length) +
-    ' of ' + pp.length + ' holdings' +
-    (nDown ? ', and <b>' + nDown + '</b> holding' + (nDown === 1 ? '' : 's') +
-             ' cost you <b>' + Math.abs(drag).toFixed(2) + ' pp</b>.' : '.');
+  /* V30.2 — this sentence assumed there was a gain to describe. On a down cycle
+     — nothing in the book up, which is an ordinary month, not an edge case —
+     lift is 0 while gross is |drag|, so the card passed its guard and rendered
+     "The gain is 0% spread beyond the top 3 of 25 holdings, and 25 holdings
+     cost you 5.15 pp." There is no gain, 0% of it cannot be spread anywhere,
+     and "spread beyond the top 3" is the reassuring end of the concentration
+     scale being read out over a loss. Reproduced by feeding the card an
+     all-negative price set. Say what happened instead. */
+  if (!(lift > 0.0001)) {
+    net.innerHTML =
+      'Nothing in this book is up since the rebalance &mdash; <b>' + nDown + '</b> of <b>' +
+      pp.length + '</b> priced holding' + (pp.length === 1 ? '' : 's') + ' cost you <b>' +
+      Math.abs(drag).toFixed(2) + ' pp</b> between them.';
+  } else {
+    var concWord = conc >= 75 ? 'concentrated in' : conc >= 50 ? 'led by' : 'spread beyond';
+    net.innerHTML =
+      'The gain is <b>' + conc + '%</b> ' + concWord + ' the top ' + Math.min(3, pp.length) +
+      ' of ' + pp.length + ' holdings' +
+      (nDown ? ', and <b>' + nDown + '</b> holding' + (nDown === 1 ? '' : 's') +
+               ' cost you <b>' + Math.abs(drag).toFixed(2) + ' pp</b>.' : '.');
+  }
 
   // ── the ladder. Widest bar = largest absolute contribution.
   var LIFT_N = 5, DRAG_N = 3;
@@ -6532,7 +6615,11 @@ function renderAttribution(rows, wSum, port){
   };
   var html = shownUp.map(rowHTML).join('');
   if (shownDown.length){
-    html += '<div class="at-gap" aria-hidden="true">holding it back</div>' + shownDown.map(rowHTML).join('');
+    // V30.2: the divider separates lift from drag, so it needs something above
+    // it. On the all-down cycle above it was the first thing in the ladder —
+    // "holding it back" captioning nothing.
+    if (shownUp.length) html += '<div class="at-gap" aria-hidden="true">holding it back</div>';
+    html += shownDown.map(rowHTML).join('');
   }
   document.getElementById('at-rows').innerHTML = html;
 
