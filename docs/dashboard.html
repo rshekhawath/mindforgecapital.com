@@ -4074,15 +4074,67 @@ function setupStrategySwitcher(activeStrategy){
     // option and any programmatic focus move. focusout carries relatedTarget (the
     // element about to receive focus), so this fires on the way OUT rather than
     // relying on whatever gains focus next to bubble a focusin.
+    /* ══════════════════════════════════════════════════════════════════════
+       V30.5 — THIS IS THE BUG THAT MADE SAFARI UNABLE TO SWITCH STRATEGIES.
+       Reported four times. Four investigations failed to reproduce it, and the
+       reason they failed is the same reason it happens.
+
+       WebKit does not focus a <button> on mousedown. (macOS convention: buttons
+       take focus from Tab, not from a press.) So in Safari, pressing an option
+       fires `focusout` on the pill/menu with **relatedTarget === null** — focus
+       is leaving, and the browser cannot yet say where to. Blink focuses the
+       button on mousedown, so relatedTarget is the option itself, which is
+       inside `menu`, and this guard returns early.
+
+       The old line read `if (next && (…contains(next))) return;` — so a NULL
+       relatedTarget fell straight through to closeMenu(). Measured in Safari
+       26.5.2 over safaridriver, with a real trusted click:
+
+           POINTERDOWN <span class="strat-opt-name">  menuOpen=true
+           DOC CLICK   <body>  inMenu=false           menuOpen=false
+
+       The menu is torn down between pointerdown and click, so the click is hit-
+       tested against <body>, the menu's own click handler never runs, and
+       chooseStrategy() is never called. No fetch, no toast, no error, no
+       navigation — the exact silence every report described.
+
+       Why every previous test passed: they all drove the option with JS
+       `.click()`, which dispatches a click and nothing else — no pointerdown, no
+       focus move, so this path never engaged. A CDP sweep of 380 loads cannot
+       see it. Only a real trusted click can.
+
+       The fix: a null relatedTarget carries NO information about where focus
+       went, so it is not evidence that focus left this menu — do not act on it.
+       Nothing is lost. Clicking the page background still closes the menu via
+       the document click handler below; moving focus somewhere real still closes
+       it via `focusin`; Tab still closes it (Tab always names its next element,
+       so relatedTarget is non-null); Escape and scroll are untouched.
+       The pointer guard is belt-and-braces for the same instant: while a press
+       that STARTED inside the menu is still in flight, a focus event must not
+       dismantle the thing being pressed.
+       ══════════════════════════════════════════════════════════════════════ */
+    var _ptrInMenu = false;
+    menu.addEventListener('pointerdown', function(){ _ptrInMenu = true; });
+    menu.addEventListener('mousedown',   function(){ _ptrInMenu = true; });
+    menu.addEventListener('touchstart',  function(){ _ptrInMenu = true; }, {passive:true});
+    document.addEventListener('pointerup', function(){ setTimeout(function(){ _ptrInMenu = false; }, 0); });
+    document.addEventListener('mouseup',   function(){ setTimeout(function(){ _ptrInMenu = false; }, 0); });
+    document.addEventListener('touchend',  function(){ setTimeout(function(){ _ptrInMenu = false; }, 0); }, {passive:true});
+
     function closeIfFocusLeft(next){
       if (!pill.classList.contains('open')) return;
-      if (next && (pill.contains(next) || menu.contains(next))) return;
+      if (_ptrInMenu) return;                                     // a press inside the menu is mid-flight
+      if (!next) return;                                          // "focus left, destination unknown" — see above
+      if (pill.contains(next) || menu.contains(next)) return;
       closeMenu();
     }
     menu.addEventListener('focusout', function(ev){ closeIfFocusLeft(ev.relatedTarget); });
     pill.addEventListener('focusout', function(ev){ closeIfFocusLeft(ev.relatedTarget); });
     document.addEventListener('focusin', function(ev){
       if (!pill.classList.contains('open')) return;
+      if (_ptrInMenu) return;                  // V30.5: same in-flight press guard as above —
+                                               // WebKit parks focus on <body> when a button is
+                                               // pressed, and that must not dismiss the menu.
       if (pill.contains(ev.target) || menu.contains(ev.target)) return;
       closeMenu();
     });

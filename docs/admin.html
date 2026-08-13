@@ -484,90 +484,6 @@
       .td-phone { display: none; }
     }
 
-    /* ── Login overlay ── */
-    #login-overlay {
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #login-box {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 40px 36px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: 0 8px 40px rgba(26,80,216,.10);
-    }
-    .login-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-    .login-logo img { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; }
-    .login-logo span { font-family: "Syne", sans-serif; font-weight: 700; font-size: 17px; color: var(--ink); }
-    #login-box h2 {
-      font-family: "Syne", sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--ink);
-      margin-bottom: 6px;
-    }
-    #login-box p.sub {
-      font-size: 13px;
-      color: var(--muted);
-      margin-bottom: 28px;
-    }
-    .login-field { margin-bottom: 16px; }
-    .login-field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .login-field input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: "DM Sans", sans-serif;
-      color: var(--ink);
-      outline: none;
-      transition: border-color .2s;
-    }
-    .login-field input:focus { border-color: var(--accent); }
-    .btn-login {
-      width: 100%;
-      padding: 12px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 700;
-      font-family: "Syne", sans-serif;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: background .2s;
-    }
-    .btn-login:hover { background: #1340b0; }
-    #login-error {
-      display: none;
-      color: var(--red);
-      font-size: 13px;
-      margin-top: 12px;
-      text-align: center;
-    }
-  
 /* MF-SCROLL-PROG v3.4 */
 .mf-scroll-prog {
   position: fixed; top: 0; left: 0; height: 3px; width: 0;
@@ -601,29 +517,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
 
 
-<!-- Login overlay -->
-<div id="login-overlay">
-  <div id="login-box">
-    <div class="login-logo">
-      <img src="assets/LogoNav.png?v=ea8dcc1d" alt="MindForge Capital" onerror="this.style.display='none'">
-      <span>MindForge Capital</span>
-    </div>
-    <h2>Admin Login</h2>
-    <p class="sub">Enter your credentials to access the lead panel.</p>
-    <form id="login-form" onsubmit="doLogin(event)">
-      <div class="login-field">
-        <label>Username</label>
-        <input type="text" id="login-user" autocomplete="username" required autofocus>
-      </div>
-      <div class="login-field">
-        <label>Password</label>
-        <input type="password" id="login-pass" autocomplete="current-password" required>
-      </div>
-      <button type="submit" class="btn-login">Sign In →</button>
-      <div id="login-error">Incorrect username or password.</div>
-    </form>
-  </div>
-</div>
 
 <nav>
   <a href="/" class="nav-brand">
@@ -669,14 +562,18 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
   <!-- Controls -->
   <div class="controls">
-    <input type="text" class="search-input" id="search-input" placeholder="Search by name, email, phone…" oninput="filterTable()">
-    <select class="filter-select" id="filter-status" onchange="filterTable()">
+    <!-- V30.5: these three had no accessible name at all. A placeholder is not one
+         — several screen readers drop it, and it disappears the moment you type;
+         the two selects had nothing whatsoever. Same rule V30.1 applied to the
+         dashboard's notification-email field. -->
+    <input type="text" class="search-input" id="search-input" placeholder="Search by name, email, phone…" aria-label="Search leads by name, email or phone" oninput="filterTable()">
+    <select class="filter-select" id="filter-status" aria-label="Filter leads by status" onchange="filterTable()">
       <option value="">All statuses</option>
       <option value="pending">Pending</option>
       <option value="activated">Activated</option>
       <option value="declined">Declined</option>
     </select>
-    <select class="filter-select" id="filter-strategy" onchange="filterTable()">
+    <select class="filter-select" id="filter-strategy" aria-label="Filter leads by strategy" onchange="filterTable()">
       <option value="">All strategies</option>
       <option value="multiasset">MultiAsset</option>
       <option value="largemidcap">LargeMidcap</option>
@@ -883,9 +780,21 @@ function maybeReauthOn401(data) {
   }
   return false;
 }
-// On page load, gate the whole admin behind the passcode modal.
+/* On page load, gate the whole admin behind the passcode modal.
+   V30.5 — and LOAD THE LEADS when the gate is already open. loadLeads() was
+   reachable from exactly one place: the modal's onUnlock. The passcode lives in
+   sessionStorage, so on the second view of this page in the same tab — a plain
+   refresh, or navigating away and back — the `if` was false, no modal appeared,
+   nothing called loadLeads(), and the admin sat looking at the "Loading leads…"
+   placeholder forever: 0 rows, every stat on "—", and ZERO requests to the
+   backend, with no error to explain it. Measured: first visit 3 rows / 1 call,
+   reload 0 rows / 0 calls. The only way out was to notice the Refresh button.
+   An authenticated admin and an unauthenticated one both need the data; only the
+   route to it differs. */
 document.addEventListener('DOMContentLoaded', function() {
-  if (!getAdminSecret()) {
+  if (getAdminSecret()) {
+    loadLeads();
+  } else {
     showPasscodeModal({ onUnlock: function(){ loadLeads(); } });
   }
 });
@@ -956,9 +865,25 @@ function renderTable(leads) {
   var tbody = document.getElementById('leads-tbody');
 
   if (!leads.length) {
-    document.getElementById('table-state').innerHTML = '<div class="icon">' + ICON_INBOX + '</div><p>No leads yet. When someone registers on strategies.html, they\'ll appear here.</p>';
+    /* V30.5 — say which of the two empty states this is. renderTable() is called
+       both with the whole book and with a FILTERED subset, and it told the admin
+       "No leads yet. When someone registers on strategies.html, they'll appear
+       here." either way — so narrowing the search to something with no matches
+       reported an empty pipeline while three leads sat one keystroke away. Same
+       defect the member dashboard had in V30.3, on the other side of the site.
+       allLeads is the loaded book, so a non-empty one means a filter did this. */
+    var filtering = (allLeads && allLeads.length > 0);
+    document.getElementById('table-state').innerHTML = '<div class="icon">' + ICON_INBOX + '</div>' +
+      (filtering
+        ? '<p>No leads match this search or filter. <strong>' + allLeads.length + '</strong> lead' +
+          (allLeads.length === 1 ? ' is' : 's are') + ' loaded — clear the filters to see them.</p>'
+        : '<p>No leads yet. When someone registers on strategies.html, they\'ll appear here.</p>');
     document.getElementById('table-state').style.display = 'block';
     document.getElementById('leads-table').style.display = 'none';
+    // V30.5: the early return left the PREVIOUS rows in the tbody. They are
+    // invisible (the table is display:none), but they are still in the document,
+    // still selectable, and still exported by anything that reads the tbody.
+    tbody.innerHTML = '';
     return;
   }
 
@@ -1019,7 +944,13 @@ function renderTable(leads) {
     var isPending = !isActivated && !isDeclined;
     var bulkTs = lead.timestamp ? new Date(lead.timestamp).toISOString() : '';
     var bulkCell = isPending
-      ? '<input type="checkbox" class="bulk-cb" data-email="' + esc(lead.email||'') +
+      // V30.5: name it. #bulk-all beside it has carried an aria-label since it
+      // shipped; the per-row boxes are the ones that actually select a PERSON, and
+      // they announced as a bare "checkbox" with nothing to distinguish one row's
+      // from the next — the one control here where picking the wrong row activates
+      // the wrong member's subscription.
+      ? '<input type="checkbox" class="bulk-cb" aria-label="Select ' + esc(lead.name || lead.email || 'this lead') +
+        ' for bulk activation" data-email="' + esc(lead.email||'') +
         '" data-strategy="' + esc(lead.strategy||'') +
         '" data-name="' + esc(lead.name||'') +
         '" data-phone="' + esc(lead.phone||'') +
@@ -1459,12 +1390,22 @@ function esc(str) {
 }
 
 
-// ── Legacy login (V12: superseded by passcode modal) ──────────────────────
-// The old username/password gate was client-side only — it just hid the UI.
-// It's been replaced by the ADMIN_SECRET passcode modal which is backed by
-// real backend validation (Apps Script rejects requests without the secret).
-// Hide the legacy overlay so the new modal is the sole gate.
-document.getElementById('login-overlay').style.display = 'none';
+/* ── Legacy login: REMOVED in V30.5 ───────────────────────────────────────
+   The old username/password gate was client-side only — it just hid the UI —
+   and V12 superseded it with the ADMIN_SECRET passcode modal, which the backend
+   actually validates. The markup stayed behind, and it was not inert:
+     • #login-overlay was `display:flex; inset:0; z-index:9999` BY DEFAULT and was
+       hidden only by a line down here, so every admin load flashed a full-screen
+       "Admin Login" panel — and anything throwing in this script before that line
+       left the admin permanently locked behind it.
+     • its <form onsubmit="doLogin(event)"> called a function that exists nowhere
+       in this file, so submitting would throw and fall through to a native GET
+       with the typed username in the query string.
+     • it carried autocomplete="username" / "current-password" inputs (one with
+       autofocus) that password managers offer to fill and save, for a form which
+       authenticates nothing.
+   Markup, CSS and the hide-line are all gone. The passcode modal is the only
+   gate, which is what V12 intended. */
 
 </script>
 <script>
