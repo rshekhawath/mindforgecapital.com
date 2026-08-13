@@ -260,6 +260,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .dot-gold{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 0 3px rgba(217,119,6,.18);}
 .dot-red{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;box-shadow:0 0 0 3px rgba(220,38,38,.18);}
 .dot-blue{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;box-shadow:0 0 0 3px rgba(37,99,235,.18);}
+/* V30.1 — this page carries 64 prefers-reduced-motion blocks and `nav-pulse` was
+   the one thing they never named. A runtime audit of all 21 pages under
+   reduced-motion found exactly two elements still animating on a loop, and both
+   were .dot-green: the "Subscription active" dot and the market-pulse freshness
+   dot, breathing 1.0 -> 0.6 -> 1.0 forever. .nav-badge::before runs the same
+   keyframe and is covered here too, so the fix cannot drift apart. Everything
+   else on the site was already neutralised — including the fii-dii pulseDot,
+   which is why this reads as a gap rather than a policy. */
+@media (prefers-reduced-motion: reduce){
+  .dot-green, .nav-badge::before{ animation:none; }
+}
 
 /* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:32px 0 28px;position:relative;z-index:1;}
@@ -412,6 +423,35 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
    meter and the status pill read as one system rather than two green bars. */
 .stat-meter i.warn{background:linear-gradient(90deg,var(--gold),#fbbf24);}
 .stat-meter i.danger{background:linear-gradient(90deg,var(--red),#f87171);}
+
+/* ── V30.1 · the other two KPIs get the same bottom slot ──────────────────────
+   "Subscription" and "Next rebalance" have carried a .stat-meter since V27.5,
+   so the row read as two cards with a bar and two without — an asymmetry with
+   no meaning behind it, since "Total picks" and "Industries" are just as
+   measurable. These fill that slot at the SAME height and margin, and both
+   carry real data rather than decoration:
+     .stat-pips   — one pip per holding. Every equity book is equal-weighted,
+                    so the strip literally IS the book.
+     .stat-ribbon — the sector split as one stacked bar, drawn from the SAME
+                    buildSectorColorMap() the donut, the legend and the
+                    portfolio map use, so a sector wears one colour everywhere.
+   ------------------------------------------------------------------------- */
+.stat-pips{display:flex;gap:2px;height:4px;margin-top:10px;}
+.stat-pips i{flex:1 1 0;min-width:2px;height:100%;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent2),#2dd4bf);
+  opacity:0;transform:scaleY(.4);transform-origin:center;
+  animation:stat-pip-in .42s cubic-bezier(.22,1,.36,1) both;}
+@keyframes stat-pip-in{to{opacity:1;transform:none;}}
+.stat-ribbon{display:flex;height:4px;border-radius:3px;overflow:hidden;margin-top:10px;
+  background:rgba(37,99,235,0.10);}
+.stat-ribbon i{height:100%;min-width:2px;transform:scaleX(0);transform-origin:left center;
+  animation:stat-rib-in .8s cubic-bezier(.22,1,.36,1) both;}
+@keyframes stat-rib-in{to{transform:none;}}
+html[data-theme="dark"] .stat-ribbon{background:rgba(255,255,255,.10);}
+@media (prefers-reduced-motion: reduce){
+  .stat-pips i,.stat-ribbon i{animation:none;opacity:1;transform:none;}
+}
+@media print{ .stat-pips i,.stat-ribbon i{animation:none;opacity:1;transform:none;} }
 
 /* ── SECTOR ALLOCATION CARD ── */
 .alloc-card{
@@ -2071,7 +2111,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3000">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3010">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -2166,12 +2206,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="stat-label">Total Picks</div>
         <div class="stat-val" id="stat-stocks">—</div>
         <div class="stat-sub" id="stat-stocks-sub">across your portfolio</div>
+        <div class="stat-pips" id="stat-pips" aria-hidden="true" style="display:none"></div>
       </div>
       <div class="stat-card">
         <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a10 10 0 100-20 10 10 0 000 20z"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></div>
         <div class="stat-label">Industries</div>
         <div class="stat-val" id="stat-industries">—</div>
         <div class="stat-sub" id="stat-industries-sub">sector-diversified</div>
+        <div class="stat-ribbon" id="stat-ribbon" aria-hidden="true" style="display:none"></div>
       </div>
       <div class="stat-card" id="stat-card-days">
         <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
@@ -2913,8 +2955,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
         </div>
         <div id="notif-email-row" style="display:none;margin-top:16px;gap:10px;flex-wrap:wrap;align-items:center;">
+          <!-- V30.1: this control had no accessible name (a placeholder is not one — it
+               is dropped by several screen readers and disappears the moment you type)
+               and sat at 14px, which is the iOS form-zoom trap: mobile Safari zooms the
+               page on focus for anything under 16px and never zooms back. -->
           <input id="notif-email-input" type="email" placeholder="Confirm your email"
-            style="flex:1;min-width:200px;padding:10px 14px;border:0.5px solid var(--border2);border-radius:8px;font-size:14px;background:var(--ink);color:var(--white);outline:none;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">
+            aria-label="Email address for rebalance notifications" autocomplete="email"
+            style="flex:1;min-width:200px;padding:10px 14px;border:0.5px solid var(--border2);border-radius:8px;font-size:16px;background:var(--ink);color:var(--white);outline:none;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">
           <button onclick="saveNotifPref()" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;">Save</button>
         </div>
         <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:#059669;">✓ You'll be emailed when next month's picks are published.</div>
@@ -4087,6 +4134,10 @@ function renderDashboard(sub, stocks) {
   else                                             industryCopy = 'sector-diversified, capped at 3 per';
   document.getElementById('stat-industries-sub').textContent = industryCopy;
 
+  // V30.1 — the bottom slot on these two KPIs (see .stat-pips / .stat-ribbon).
+  renderStatPips(stocks);
+  renderStatRibbon(stocks);
+
   renderWhy25();                // V28.9: what this book was selected on
   renderAllocation(stocks);
   renderPortfolioMap(stocks);   // V17.3: holdings mosaic, coloured by sector
@@ -4157,6 +4208,49 @@ function buildSectorColorMap(stocks) {
   Object.entries(agg).sort((a, b) => b[1] - a[1])
     .forEach(([name], i) => { map[name] = SECTOR_COLORS[i % SECTOR_COLORS.length]; });
   return map;
+}
+
+/* V30.1 — "Total picks": one pip per holding, in the same slot the two
+   countdown KPIs use for their .stat-meter. Books here are 8 (MultiAsset) or
+   25 (equity), so every pip stays >= 2px wide; anything unexpectedly large
+   would squeeze below legibility, so the strip simply stands down and the card
+   goes back to looking exactly as it did before. */
+function renderStatPips(stocks) {
+  const host = document.getElementById('stat-pips');
+  if (!host) return;
+  const n = (stocks || []).length;
+  if (!n || n > 40) { host.style.display = 'none'; host.innerHTML = ''; return; }
+  let html = '';
+  for (let i = 0; i < n; i++) html += '<i style="animation-delay:' + (i * 18) + 'ms"></i>';
+  host.innerHTML = html;
+  host.style.display = '';
+  host.parentElement.title = n + ' holding' + (n === 1 ? '' : 's') + ' — one mark each';
+}
+
+/* V30.1 — "Industries": the sector split as one stacked bar. Grouping and colour
+   are taken from the SAME two helpers the donut/legend/portfolio map use —
+   deriveAssetClasses() (so a single-industry MultiAsset book splits by asset
+   class exactly as the donut does, rather than collapsing to one bar) and
+   buildSectorColorMap() — so a sector never wears two colours on this page. */
+function renderStatRibbon(stocks) {
+  const host = document.getElementById('stat-ribbon');
+  if (!host) return;
+  if (!stocks || !stocks.length) { host.style.display = 'none'; host.innerHTML = ''; return; }
+  const aclasses = deriveAssetClasses(stocks);
+  const groupOf = s => (aclasses ? assetClassOf(s) : ((s.industry || 'Unknown').trim() || 'Unknown'));
+  const map = {};
+  stocks.forEach(s => { const k = groupOf(s); map[k] = (map[k] || 0) + (Number(s.weight_pct) || 0); });
+  const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((t, e) => t + e[1], 0);
+  if (!entries.length || total <= 0) { host.style.display = 'none'; host.innerHTML = ''; return; }
+  const colorMap = buildSectorColorMap(stocks);
+  host.innerHTML = entries.map(([name, w], i) =>
+    '<i style="flex:' + (w / total).toFixed(5) + ';background:' +
+    ((aclasses && ASSET_CLASS_COLORS[name]) || colorMap[name] || SECTOR_COLORS[0]) +
+    ';animation-delay:' + (i * 45) + 'ms"></i>').join('');
+  host.style.display = '';
+  host.parentElement.title = entries.map(([n, w]) =>
+    n + ' ' + (w / total * 100).toFixed(1) + '%').join(' · ');
 }
 
 // V17.3: Portfolio map — render the whole book as a sector-coloured mosaic.

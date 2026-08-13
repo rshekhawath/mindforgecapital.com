@@ -3594,7 +3594,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3000">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3010">
 </head>
 <body>
 
@@ -5247,7 +5247,14 @@ html[data-theme="dark"] .mm-day.is-sig{ background:rgba(131,170,255,.48); }
   font-size:12.5px; font-weight:600; color:var(--text2); line-height:1.45; }
 .mm-step b{ display:inline-grid; place-items:center; width:20px; height:20px; border-radius:6px; flex-shrink:0;
   background:rgba(37,99,235,.10); color:var(--accent2); font-size:11px; font-weight:800; }
-html[data-theme="dark"] .mm-step b{ background:rgba(120,150,255,.16); }
+/* V30.1 — --accent2 (#5b8def) is the dark palette's link/chip INK and reads 4.8:1
+   on the near-black page surface, which is where V30.0 measured it. Here it sits
+   on a TINTED chip instead: rgba(120,150,255,.16) lifts the local background to
+   rgb(34,48,83) and the same ink drops to 4.0:1 at 11px — under AA. The chip is
+   what changed, not the token, so the fix is one step up the same ramp: --accent3
+   (#83aaff) measures 5.5:1 on that exact composited background. Light mode is
+   unaffected (--accent2 on a 10%-blue tint over white is 5.9:1). */
+html[data-theme="dark"] .mm-step b{ background:rgba(120,150,255,.16); color:var(--accent3); }
 .mm-step + .mm-step::before{ content:'→'; position:absolute; left:-13px; top:1px;
   color:var(--text3); font-size:12px; font-weight:600; }
 

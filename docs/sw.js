@@ -287,7 +287,18 @@
 // were bumped to 3000 on all 49 / 19 referencing pages (and in export_static.py, so
 // the 28 generated directory pages do not drift back), and the cache name moves with
 // them so nothing is served from a stale entry.
-const CACHE = 'mfc-v49';
+// V30.1 -> mfc-v50. Load-bearing twice. (1) mfc-finish.css moved: it gains the
+// site-wide @media print block that stops every page painting its floating screen
+// chrome onto paper. That file is cached first-party keyed by the EXACT url, so a
+// returning visitor holding v49 would keep the old copy — its ?v went 3000 -> 3010
+// on all 49 referencing pages AND in screener/export_static.py, so the 28
+// generated directory pages do not drift back to the old pin the next time the
+// data refresh regenerates them. (2) index.html is precached as the offline
+// navigation fallback and changed: the four numbered step chips in "Ten minutes on
+// the 1st" carry a brighter ink in dark mode (--accent2 measured 4.0:1 on that
+// tinted chip, under AA). The bump is also what makes `controllerchange` fire, so
+// an already-open tab learns to offer the reload that picks this up.
+const CACHE = 'mfc-v50';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

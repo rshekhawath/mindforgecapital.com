@@ -416,7 +416,14 @@ tbody tr.rowlink:focus-visible{outline:none;background:rgba(26,80,216,.05);box-s
 td{padding:12px 14px;white-space:nowrap}
 
 .company-cell{display:flex;flex-direction:column}
-.company-name a{font-weight:600;color:var(--white);transition:color .15s}
+/* V30.1 — the company link measured 171x16, i.e. under the 24px WCAG 2.5.8
+   pointer target. The enclosing <tr role="link"> (360x264 on a phone) already
+   satisfies the "Equivalent" exception, but a 16px line is fiddly to hit with a
+   thumb, so the anchor gets its own 24px box. Vertical padding on a non-replaced
+   INLINE element extends the hit box without changing the line box, so the table
+   geometry is untouched; the nearest other control is 50px away centre-to-centre,
+   well clear of the V28.7 hit-pad collision distance. */
+.company-name a{font-weight:600;color:var(--white);transition:color .15s;padding-block:4px}
 .company-name a:hover{color:var(--accent)}
 .company-sym{font-size:11px;color:var(--accent2);margin-top:1px;font-weight:600}
 .company-sector{font-size:11px;color:var(--text3)}
@@ -562,7 +569,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3000">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3010">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -769,22 +776,22 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
       <div class="filter-group">
         <div class="filter-label">P/E Ratio</div>
         <div class="filter-row">
-          <input class="filter-input" type="number" id="min_pe" placeholder="Min">
-          <input class="filter-input" type="number" id="max_pe" placeholder="Max">
+          <input class="filter-input" aria-label="Minimum P/E Ratio" type="number" id="min_pe" placeholder="Min">
+          <input class="filter-input" aria-label="Maximum P/E Ratio" type="number" id="max_pe" placeholder="Max">
         </div>
       </div>
       <div class="filter-group">
         <div class="filter-label">P/B Ratio</div>
         <div class="filter-row">
-          <input class="filter-input" type="number" id="min_pb" placeholder="Min">
-          <input class="filter-input" type="number" id="max_pb" placeholder="Max">
+          <input class="filter-input" aria-label="Minimum P/B Ratio" type="number" id="min_pb" placeholder="Min">
+          <input class="filter-input" aria-label="Maximum P/B Ratio" type="number" id="max_pb" placeholder="Max">
         </div>
       </div>
       <div class="filter-group">
         <div class="filter-label">P/S Ratio</div>
         <div class="filter-row">
-          <input class="filter-input" type="number" id="min_ps" placeholder="Min">
-          <input class="filter-input" type="number" id="max_ps" placeholder="Max">
+          <input class="filter-input" aria-label="Minimum P/S Ratio" type="number" id="min_ps" placeholder="Min">
+          <input class="filter-input" aria-label="Maximum P/S Ratio" type="number" id="max_ps" placeholder="Max">
         </div>
       </div>
     </div>
@@ -792,8 +799,8 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     <div class="sidebar-section">
       <div class="sidebar-title">Market Cap (₹ Cr)</div>
       <div class="filter-row">
-        <input class="filter-input" type="number" id="min_mcap" placeholder="Min">
-        <input class="filter-input" type="number" id="max_mcap" placeholder="Max">
+        <input class="filter-input" aria-label="Minimum Market Cap (₹ Cr)" type="number" id="min_mcap" placeholder="Min">
+        <input class="filter-input" aria-label="Maximum Market Cap (₹ Cr)" type="number" id="max_mcap" placeholder="Max">
       </div>
     </div>
 
@@ -802,41 +809,41 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
       <div class="filter-group">
         <div class="filter-label">ROE (%)</div>
         <div class="filter-row">
-          <input class="filter-input" type="number" id="min_roe" placeholder="Min">
-          <input class="filter-input" type="number" id="max_roe" placeholder="Max">
+          <input class="filter-input" aria-label="Minimum ROE (%)" type="number" id="min_roe" placeholder="Min">
+          <input class="filter-input" aria-label="Maximum ROE (%)" type="number" id="max_roe" placeholder="Max">
         </div>
       </div>
       <div class="filter-group">
         <div class="filter-label">Dividend Yield (%) ≥</div>
-        <input class="filter-input" type="number" id="min_div" placeholder="e.g. 1.5" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Dividend Yield (%)" type="number" id="min_div" placeholder="e.g. 1.5" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">ROCE (%) ≥</div>
-        <input class="filter-input" type="number" id="min_roce" placeholder="e.g. 15" style="width:100%">
+        <input class="filter-input" aria-label="Minimum ROCE (%)" type="number" id="min_roce" placeholder="e.g. 15" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">ROA (%) ≥</div>
-        <input class="filter-input" type="number" id="min_roa" placeholder="e.g. 5" style="width:100%">
+        <input class="filter-input" aria-label="Minimum ROA (%)" type="number" id="min_roa" placeholder="e.g. 5" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Net Margin (%) ≥</div>
-        <input class="filter-input" type="number" id="min_net_margin" placeholder="e.g. 10" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Net Margin (%)" type="number" id="min_net_margin" placeholder="e.g. 10" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Operating Margin (%) ≥</div>
-        <input class="filter-input" type="number" id="min_opm" placeholder="e.g. 15" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Operating Margin (%)" type="number" id="min_opm" placeholder="e.g. 15" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Gross Margin (%) ≥</div>
-        <input class="filter-input" type="number" id="min_gross_margin" placeholder="e.g. 40" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Gross Margin (%)" type="number" id="min_gross_margin" placeholder="e.g. 40" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">EBITDA Margin (%) ≥</div>
-        <input class="filter-input" type="number" id="min_ebitda_margin" placeholder="e.g. 20" style="width:100%">
+        <input class="filter-input" aria-label="Minimum EBITDA Margin (%)" type="number" id="min_ebitda_margin" placeholder="e.g. 20" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Promoter Holding (%) ≥</div>
-        <input class="filter-input" type="number" id="min_promoter" placeholder="e.g. 50" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Promoter Holding (%)" type="number" id="min_promoter" placeholder="e.g. 50" style="width:100%">
       </div>
     </div>
 
@@ -844,27 +851,27 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
       <div class="sidebar-title">Valuation (Advanced)</div>
       <div class="filter-group">
         <div class="filter-label">EV/EBITDA ≤</div>
-        <input class="filter-input" type="number" id="max_ev_ebitda" placeholder="e.g. 20" style="width:100%">
+        <input class="filter-input" aria-label="Maximum EV/EBITDA" type="number" id="max_ev_ebitda" placeholder="e.g. 20" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">FCF Yield (%) ≥</div>
-        <input class="filter-input" type="number" id="min_fcf_yield" placeholder="e.g. 3" style="width:100%">
+        <input class="filter-input" aria-label="Minimum FCF Yield (%)" type="number" id="min_fcf_yield" placeholder="e.g. 3" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Graham Margin of Safety (%) ≥</div>
-        <input class="filter-input" type="number" id="min_graham_mos" placeholder="e.g. 20" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Graham Margin of Safety (%)" type="number" id="min_graham_mos" placeholder="e.g. 20" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">PEG Ratio ≤</div>
-        <input class="filter-input" type="number" id="max_peg" placeholder="e.g. 1.5" style="width:100%">
+        <input class="filter-input" aria-label="Maximum PEG Ratio" type="number" id="max_peg" placeholder="e.g. 1.5" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Price/FCF ≤</div>
-        <input class="filter-input" type="number" id="max_price_to_fcf" placeholder="e.g. 20" style="width:100%">
+        <input class="filter-input" aria-label="Maximum Price/FCF" type="number" id="max_price_to_fcf" placeholder="e.g. 20" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">EV/Revenue ≤</div>
-        <input class="filter-input" type="number" id="max_ev_revenue" placeholder="e.g. 5" style="width:100%">
+        <input class="filter-input" aria-label="Maximum EV/Revenue" type="number" id="max_ev_revenue" placeholder="e.g. 5" style="width:100%">
       </div>
     </div>
 
@@ -872,23 +879,23 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
       <div class="sidebar-title">Leverage & Liquidity</div>
       <div class="filter-group">
         <div class="filter-label">Debt/Equity ≤</div>
-        <input class="filter-input" type="number" id="max_de" placeholder="e.g. 1" style="width:100%">
+        <input class="filter-input" aria-label="Maximum Debt/Equity" type="number" id="max_de" placeholder="e.g. 1" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Current Ratio ≥</div>
-        <input class="filter-input" type="number" id="min_current_ratio" placeholder="e.g. 1.5" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Current Ratio" type="number" id="min_current_ratio" placeholder="e.g. 1.5" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Interest Coverage ≥</div>
-        <input class="filter-input" type="number" id="min_int_cov" placeholder="e.g. 3" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Interest Coverage" type="number" id="min_int_cov" placeholder="e.g. 3" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Quick Ratio ≥</div>
-        <input class="filter-input" type="number" id="min_quick_ratio" placeholder="e.g. 1" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Quick Ratio" type="number" id="min_quick_ratio" placeholder="e.g. 1" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Net Debt/EBITDA ≤</div>
-        <input class="filter-input" type="number" id="max_net_debt_ebitda" placeholder="e.g. 3" style="width:100%">
+        <input class="filter-input" aria-label="Maximum Net Debt/EBITDA" type="number" id="max_net_debt_ebitda" placeholder="e.g. 3" style="width:100%">
       </div>
     </div>
 
@@ -896,15 +903,15 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
       <div class="sidebar-title">Growth</div>
       <div class="filter-group">
         <div class="filter-label">Revenue Growth (%) ≥</div>
-        <input class="filter-input" type="number" id="min_rev_growth" placeholder="e.g. 10" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Revenue Growth (%)" type="number" id="min_rev_growth" placeholder="e.g. 10" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Earnings Growth (%) ≥</div>
-        <input class="filter-input" type="number" id="min_earn_growth" placeholder="e.g. 10" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Earnings Growth (%)" type="number" id="min_earn_growth" placeholder="e.g. 10" style="width:100%">
       </div>
       <div class="filter-group">
         <div class="filter-label">Qtr Earnings Growth (%) ≥</div>
-        <input class="filter-input" type="number" id="min_earn_q_growth" placeholder="e.g. 10" style="width:100%">
+        <input class="filter-input" aria-label="Minimum Qtr Earnings Growth (%)" type="number" id="min_earn_q_growth" placeholder="e.g. 10" style="width:100%">
       </div>
       <!-- V28.0: the only checkbox in the sidebar was 16x16 with an 18px label
            beside it — the whole control sat under the 24px WCAG 2.2 SC 2.5.8
@@ -928,7 +935,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
            carry aria-label instead — and NOT both, since an aria-label that differs
            from a visible label breaks Label in Name. -->
       <label class="sidebar-title" for="sector_filter">Sector</label>
-      <select class="filter-select" id="sector_filter"><option value="">All Sectors</option></select>
+      <select class="filter-select" id="sector_filter" aria-label="Filter by sector"><option value="">All Sectors</option></select>
     </div>
 
     <div class="sidebar-section">

@@ -1112,3 +1112,97 @@ html .toast-container{ right: 96px; }
 @media (max-width: 768px){
   html .toast-container{ right: 88px; left: 16px; align-items: flex-end; }
 }
+
+/* ============================================================================
+   V30.1 — EVERY PAGE PRINTED ITS FLOATING SCREEN CHROME ONTO THE PAPER
+   ----------------------------------------------------------------------------
+   Measured under `Emulation.setEmulatedMedia({media:"print"})` on all 21 audited
+   pages, then confirmed against a real `Page.printToPDF` render: all 21 painted
+   at least one control that only exists to be clicked on a screen. The tally —
+   .mfc-btt back-to-top on 17 pages, the .fab-wa WhatsApp bubble (a 56x56 green
+   circle) on 9, the older #back-to-top variant on 2, a toast container on 2, and
+   the dashboard's strategy-switcher portal menu on 1. On page 1 of the homepage
+   PDF the WhatsApp circle sits squarely over the hero performance card.
+   Nothing had ever hidden them: this file carried no @media print block at all,
+   and the eight pages that define one locally each cover only their own content
+   (V30.0's print pass found the sticky-header hazard and confirmed the ambient
+   orbs were hidden, but floating chrome was never enumerated).
+   Deliberately NOT hidden: the nav. A masthead with the logo at the top of a
+   printed page is wanted, not clutter, and dashboard.html already hides its own.
+   `html` prefix + !important because this file is linked BEFORE each page's own
+   <style>, so an equal-specificity rule here would lose.
+   ========================================================================== */
+@media print {
+  html .fab-wa,
+  html .fab-wa-bubble,
+  html .mfc-btt,
+  html #back-to-top,
+  html .back-to-top,
+  html .toast,
+  html .toast-container,
+  html .strat-menu,
+  html #strat-portal-menu,
+  html #mfc-offer-bar,
+  html .mf-scroll-prog,
+  html #mf-scroll-prog,
+  html #scroll-progress { display: none !important; }
+}
+
+/* ============================================================================
+   V30.1 — GRADIENT INK PRINTED AS A SOLID BLOCK WITH THE TEXT MISSING
+   ----------------------------------------------------------------------------
+   The site paints its most important numbers with `background-clip:text` plus a
+   transparent text fill — the hero verb, every strategy's headline CAGR, the two
+   subscription prices, the auth H1s, the 404 code, and on the member dashboard
+   the greeting name, the donut centre and ALL FOUR KPI values. Chrome's PRINT
+   renderer does not honour background-clip:text: it paints the gradient across
+   the whole element box and leaves the glyphs transparent, so on paper each of
+   those reads as a solid coloured rectangle with nothing in it. Confirmed on a
+   real Page.printToPDF render of the homepage — "engineers" and "46.9%" are both
+   teal blocks — and enumerated at 29 elements across 14 pages. It matters most on
+   dashboard.html, which ships a Print button as a first-class feature and loses
+   its entire KPI row.
+   Two tiers, because the reversal alone is not always enough. Tier 1 removes the
+   effect and hands the glyphs back to `currentColor`; it is a no-op on any
+   element in that list that has no gradient, which is what makes the broad
+   selectors safe. Tier 2 is for the ones whose `color` is ITSELF transparent
+   (the gradient rule set both), where currentColor would still be invisible —
+   they fall back to the page's own primary ink token, so they track the active
+   theme exactly like ordinary body copy rather than being pinned to one hex.
+   ========================================================================== */
+@media print {
+  html .grad,
+  html .accent-text,
+  html .section-label,
+  html .why-stat-val,
+  html .ph-kpi-val,
+  html .sv,
+  html .stat-val,
+  html .dc-num,
+  html .proof-num,
+  html .price-amt,
+  html .mf-brand,
+  html .nf-code,
+  html .welcome-name,
+  html .dash-hero h1 .accent,
+  html .card h1,
+  html .card h2,
+  html .hero h1 em,
+  html #hv-cagr {
+    background-image: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+  html .hero h1 em,
+  html .mf-brand,
+  html .price-amt,
+  html .card h1,
+  html .card h2,
+  html .nf-code,
+  html .welcome-name,
+  html .dc-num,
+  html .dash-hero h1 .accent {
+    color: var(--white, #0c1831) !important;
+  }
+}

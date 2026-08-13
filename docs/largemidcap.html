@@ -1696,7 +1696,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3000">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3010">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://mindforgecapital.com/"},{"@type":"ListItem","position":2,"name":"Strategies","item":"https://mindforgecapital.com/strategies.html"},{"@type":"ListItem","position":3,"name":"LargeMidcap 250","item":"https://mindforgecapital.com/largemidcap.html"}]},{"@type":"WebPage","@id":"https://mindforgecapital.com/largemidcap.html","url":"https://mindforgecapital.com/largemidcap.html","name":"LargeMidcap 250","description":"Top 25 stocks from the Nifty LargeMidcap 250 universe via a proprietary multi-factor model.","inLanguage":"en-IN","isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"},"publisher":{"@type":"Organization","name":"MindForge Capital","url":"https://mindforgecapital.com/","logo":"https://mindforgecapital.com/assets/LogoNav.png"}}]}</script>
@@ -2495,14 +2495,41 @@ function openRegModal(strategyName, price, strategyId){
   opacity:0; transition:opacity .25s ease;
 }
 .mf98-lb.open{ opacity:1; }
+/* V30.1 — the image now lives in a scrolling STAGE so it has somewhere to
+   overflow into at actual size. Fit mode is unchanged from v9.8; .is-full drops
+   every size cap and lets the stage scroll, which is what finally makes the
+   chart readable on a phone. */
+.mf98-lb-stage{
+  max-width:min(1280px,96vw); max-height:80vh; overflow:auto;
+  border-radius:12px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+}
+.mf98-lb-stage.is-full{ max-width:96vw; max-height:82vh; cursor:grab; }
+.mf98-lb-stage.is-full.is-drag{ cursor:grabbing; }
 .mf98-lb img{
   max-width:min(1280px,96vw); max-height:80vh; width:auto; height:auto;
   border-radius:12px; background:#fff; padding:6px;
   box-shadow:0 40px 90px -30px rgba(0,0,0,.6);
   transform:scale(.96); transition:transform .28s cubic-bezier(.22,1,.36,1);
-  cursor:zoom-out;
+  cursor:zoom-in;
 }
 .mf98-lb.open img{ transform:scale(1); }
+.mf98-lb-stage.is-full img{
+  max-width:none; max-height:none; cursor:zoom-out;
+  transform:none; transition:none; display:block;
+}
+/* the actual-size toggle sits beside the close button */
+.mf98-lb-z{
+  position:absolute; top:14px; right:60px; min-height:38px; padding:0 14px;
+  border-radius:19px; background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.22); color:#fff; cursor:pointer;
+  font:inherit; font-size:12.5px; font-weight:600; letter-spacing:.01em;
+  display:inline-flex; align-items:center; gap:7px;
+  transition:background .2s ease, transform .2s ease;
+}
+.mf98-lb-z:hover{ background:rgba(255,255,255,.24); transform:translateY(-1px); }
+.mf98-lb-z:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+.mf98-lb-z svg{ width:13px; height:13px; }
+@media (max-width:520px){ .mf98-lb-z{ right:58px; padding:0 11px; font-size:12px; } }
 .mf98-lb-cap{ margin-top:14px; font-size:13px; font-weight:600; color:rgba(255,255,255,.92); letter-spacing:.02em; text-align:center; }
 .mf98-lb-hint{ margin-top:4px; font-size:11px; color:rgba(255,255,255,.55); }
 .mf98-lb-x{
@@ -2517,7 +2544,7 @@ function openRegModal(strategyName, price, strategyId){
 
 @media (prefers-reduced-motion: reduce){
   .page-hero::before{ animation:none; }
-  .mf98-lb, .mf98-lb img, .mf98-zoom-hint{ transition:none; }
+  .mf98-lb, .mf98-lb img, .mf98-zoom-hint, .mf98-lb-z{ transition:none; }
   .mf98-lb img{ transform:none; }
 }
 </style>
@@ -2530,10 +2557,10 @@ function openRegModal(strategyName, price, strategyId){
     try{
       var charts=document.querySelectorAll(".bt-chart-full");
       if(!charts.length) return;
-      var lb=null, lastFocus=null;
+      var lb=null, lastFocus=null, curStage=null;
       function close(){
         if(!lb) return;
-        var el=lb; lb=null;
+        var el=lb; lb=null; curStage=null;
         el.classList.remove("open");
         document.removeEventListener("keydown",onKey);
         document.documentElement.style.overflow="";
@@ -2541,7 +2568,30 @@ function openRegModal(strategyName, price, strategyId){
         setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, rm?0:260);
         if(lastFocus&&lastFocus.focus) lastFocus.focus();
       }
-      function onKey(e){ if(e.key==="Escape") close(); }
+      /* V30.1 — Esc still closes; Tab is now trapped inside the dialog (it used to
+         walk out into the page behind the overlay), and the arrow keys pan the
+         image once it is at actual size. */
+      function onKey(e){
+        if(!lb) return;
+        if(e.key==="Escape"){ close(); return; }
+        if(e.key==="Tab"){
+          var f=lb.querySelectorAll("button");
+          if(!f.length) return;
+          var first=f[0], last=f[f.length-1];
+          if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+          else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+          return;
+        }
+        if(curStage && curStage.classList.contains("is-full")){
+          var s=64, used=true;
+          if(e.key==="ArrowRight") curStage.scrollLeft+=s;
+          else if(e.key==="ArrowLeft") curStage.scrollLeft-=s;
+          else if(e.key==="ArrowDown") curStage.scrollTop+=s;
+          else if(e.key==="ArrowUp") curStage.scrollTop-=s;
+          else used=false;
+          if(used) e.preventDefault();
+        }
+      }
       function open(src,cap,trigger){
         if(lb) return;
         lastFocus=trigger;
@@ -2550,16 +2600,71 @@ function openRegModal(strategyName, price, strategyId){
         lb.setAttribute("role","dialog");
         lb.setAttribute("aria-modal","true");
         lb.setAttribute("aria-label",(cap||"Chart")+" — full-screen preview");
+        var stage=document.createElement("div"); stage.className="mf98-lb-stage";
         var img=document.createElement("img");
         img.src=src; img.alt=cap||"Backtest chart";
+        stage.appendChild(img);
+        curStage=stage;
         var x=document.createElement("button");
         x.type="button"; x.className="mf98-lb-x";
         x.setAttribute("aria-label","Close chart preview");
         x.innerHTML="×";
-        lb.appendChild(img); lb.appendChild(x);
+        /* V30.1 — actual-size toggle. Fit-to-screen alone left a 2,497px chart at
+           ~375px on a phone, which is the size it already was in the page. */
+        var z=document.createElement("button");
+        z.type="button"; z.className="mf98-lb-z"; z.setAttribute("aria-pressed","false");
+        z.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg><span>Actual size</span>';
+        lb.appendChild(stage); lb.appendChild(z); lb.appendChild(x);
         if(cap){ var c=document.createElement("div"); c.className="mf98-lb-cap"; c.textContent=cap; lb.appendChild(c); }
-        var h=document.createElement("div"); h.className="mf98-lb-hint"; h.textContent="Click anywhere or press Esc to close"; lb.appendChild(h);
-        lb.addEventListener("click",close);
+        var h=document.createElement("div"); h.className="mf98-lb-hint";
+        h.textContent="Tap the chart for actual size · Esc to close"; lb.appendChild(h);
+
+        var dragged=false;
+        function toggleZoom(){
+          var full=!stage.classList.contains("is-full");
+          /* hold the point under the middle of the stage roughly still across the
+             size change, so zooming in does not jump to a corner */
+          var midX=stage.scrollLeft+stage.clientWidth/2, midY=stage.scrollTop+stage.clientHeight/2;
+          var w0=img.clientWidth||1, h0=img.clientHeight||1;
+          stage.classList.toggle("is-full",full);
+          var kx=(img.clientWidth||1)/w0, ky=(img.clientHeight||1)/h0;
+          stage.scrollLeft=midX*kx-stage.clientWidth/2;
+          stage.scrollTop =midY*ky-stage.clientHeight/2;
+          z.setAttribute("aria-pressed",full?"true":"false");
+          z.lastChild.textContent=full?"Fit to screen":"Actual size";
+          h.textContent=full?"Drag or use the arrow keys to pan · Esc to close"
+                            :"Tap the chart for actual size · Esc to close";
+        }
+        img.addEventListener("click",function(e){
+          e.stopPropagation();
+          if(dragged){ dragged=false; return; }
+          toggleZoom();
+        });
+        z.addEventListener("click",function(e){ e.stopPropagation(); toggleZoom(); });
+        x.addEventListener("click",function(e){ e.stopPropagation(); close(); });
+        stage.addEventListener("pointerdown",function(e){
+          if(!stage.classList.contains("is-full")||e.button!==0) return;
+          dragged=false;
+          var sx=e.clientX, sy=e.clientY, sl=stage.scrollLeft, st=stage.scrollTop;
+          stage.classList.add("is-drag");
+          function mv(ev){
+            var dx=ev.clientX-sx, dy=ev.clientY-sy;
+            if(Math.abs(dx)+Math.abs(dy)>4){ dragged=true; ev.preventDefault(); }
+            stage.scrollLeft=sl-dx; stage.scrollTop=st-dy;
+          }
+          function up(){
+            stage.classList.remove("is-drag");
+            stage.removeEventListener("pointermove",mv);
+            stage.removeEventListener("pointerup",up);
+            stage.removeEventListener("pointercancel",up);
+          }
+          stage.addEventListener("pointermove",mv);
+          stage.addEventListener("pointerup",up);
+          stage.addEventListener("pointercancel",up);
+          try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+        });
+        /* backdrop closes; the stage does not */
+        lb.addEventListener("click",function(e){ if(!stage.contains(e.target)) close(); });
         document.body.appendChild(lb);
         document.documentElement.style.overflow="hidden";
         document.addEventListener("keydown",onKey);
@@ -2578,11 +2683,11 @@ function openRegModal(strategyName, price, strategyId){
         var hint=document.createElement("span");
         hint.className="mf98-zoom-hint";
         hint.setAttribute("aria-hidden","true");
-        hint.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>Click to zoom';
+        hint.innerHTML='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>Tap to zoom';
         card.appendChild(hint);
         img.setAttribute("tabindex","0");
         img.setAttribute("role","button");
-        img.setAttribute("aria-label",(cap||"Chart")+" — open full-screen preview");
+        img.setAttribute("aria-label",(cap||"Chart")+" — open full-screen preview, zoomable to actual size");
         function go(){ open(img.currentSrc||img.src,cap,img); }
         img.addEventListener("click",go);
         img.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } });
