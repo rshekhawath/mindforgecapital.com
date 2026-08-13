@@ -991,6 +991,8 @@ td.ticker{
   font-variant-numeric:tabular-nums;
 }
 .ticker-chip:hover{background:rgba(37,99,235,0.16);border-color:var(--accent);color:var(--accent);}
+/* V30.3: keyboard-reachable now (role=button + tabindex), so it needs to show it. */
+.ticker-chip:focus-visible,.sc-ticker:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .ticker-chip .copy-ico{width:11px;height:11px;opacity:.55;transition:opacity .15s ease;}
 .ticker-chip:hover .copy-ico{opacity:.95;}
 .ticker-chip.copied{background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.4);color:var(--green);}
@@ -1214,9 +1216,14 @@ footer a:hover{color:var(--accent);}
   border-radius:var(--r);padding:24px 28px;
   box-shadow:var(--shadow-sm);
 }
-.notif-switch{width:44px;height:24px;background:var(--border2);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+/* V30.3: this is a real <button role="switch"> now (it was a bare div, unreachable
+   by keyboard) — so the UA button styling has to be reset back to the pill it has
+   always looked like, and it earns a visible focus ring. */
+.notif-switch{width:44px;height:24px;background:var(--border2);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;
+  border:0;padding:0;margin:0;appearance:none;-webkit-appearance:none;font:inherit;color:inherit;display:block;}
 .notif-switch.on{background:var(--accent);}
-.notif-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.22,1,.36,1);box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.notif-switch:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.notif-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.22,1,.36,1);box-shadow:0 1px 4px rgba(0,0,0,.15);display:block;}
 .notif-switch.on .notif-knob{transform:translateX(20px);}
 
 /* LOADING / ERROR */
@@ -2210,7 +2217,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
       <div class="stat-card">
         <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a10 10 0 100-20 10 10 0 000 20z"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg></div>
-        <div class="stat-label">Industries</div>
+        <!-- V30.3: the label is written by renderDashboard — a MultiAsset book is
+             grouped by asset class, and "Industries" is the wrong word for that. -->
+        <div class="stat-label" id="stat-industries-label">Industries</div>
         <div class="stat-val" id="stat-industries">—</div>
         <div class="stat-sub" id="stat-industries-sub">sector-diversified</div>
         <div class="stat-ribbon" id="stat-ribbon" aria-hidden="true" style="display:none"></div>
@@ -2946,12 +2955,22 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <div style="font-size:13px;color:var(--text2);">Get an email when next month's portfolio is published — renew to switch your dashboard to it.</div>
           </div>
           <div id="notif-toggle-wrap">
-            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text2);">
-              <div class="notif-switch" id="notif-switch" onclick="toggleNotif()">
-                <div class="notif-knob"></div>
-              </div>
-              <span id="notif-label">Off</span>
-            </label>
+            <!-- V30.3: this was a bare <div onclick> inside a <label> that owned no
+                 control. Measured: tabIndex −1, no role, no aria-checked, Enter did
+                 nothing, and clicking the word "Off" did nothing either — only a
+                 mouse hit on the 44×24 box toggled it. Rebalance emails are offered
+                 to 3/6/12-month members only, and for a keyboard or screen-reader
+                 member on one of those plans there was no way to switch them on at
+                 all. A real <button role="switch"> is focusable and Enter/Space
+                 activate it for free; the visible word is its label. -->
+            <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text2);">
+              <button type="button" class="notif-switch" id="notif-switch" role="switch"
+                      aria-checked="false" aria-label="Rebalance notifications"
+                      onclick="toggleNotif()">
+                <span class="notif-knob"></span>
+              </button>
+              <span id="notif-label" aria-hidden="true">Off</span>
+            </div>
           </div>
         </div>
         <div id="notif-email-row" style="display:none;margin-top:16px;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -4124,13 +4143,25 @@ function renderDashboard(sub, stocks) {
   else                                             weightingCopy = 'equal-weighted by model';
   document.getElementById('stat-stocks-sub').textContent = weightingCopy;
 
-  // Industries
-  const industries = new Set(stocks.map(s => (s.industry||'Unknown').trim()).filter(Boolean));
-  _animateCount(document.getElementById('stat-industries'), industries.size);
-  // MultiAsset is single-industry (ETF) so the 3-per-sector cap copy doesn't apply.
+  /* Industries — V30.3: count what the card actually DRAWS.
+     This counted distinct `industry` values, which on the MultiAsset book is the
+     single literal string "ETF". The card therefore printed the number 1 directly
+     above its own V30.1 ribbon, which renderStatRibbon splits into FOUR segments
+     via deriveAssetClasses(), and beside an allocation card listing those same
+     four rows. A KPI that its own graphic contradicts is worse than no KPI.
+     Same helper the ribbon uses, so the number and the bar beneath it cannot
+     diverge again — and the LABEL moves with it, because four asset classes are
+     not four industries and calling them that is the other half of the error. */
+  const byAsset  = !!deriveAssetClasses(stocks);
+  const groupSet = new Set(stocks.map(s =>
+    (byAsset ? (assetClassOf(s) || 'Unknown') : ((s.industry || 'Unknown').trim() || 'Unknown'))
+  ).filter(Boolean));
+  const indLabelEl = document.getElementById('stat-industries-label');
+  if (indLabelEl) indLabelEl.textContent = byAsset ? 'Asset Classes' : 'Industries';
+  _animateCount(document.getElementById('stat-industries'), groupSet.size);
   let industryCopy;
-  if (!industries.size)                            industryCopy = '—';
-  else if (/multiasset/i.test(currentStrategy))    industryCopy = 'multi-asset diversified';
+  if (!groupSet.size)                              industryCopy = '—';
+  else if (byAsset)                                industryCopy = 'multi-asset diversified';
   else                                             industryCopy = 'sector-diversified, capped at 3 per';
   document.getElementById('stat-industries-sub').textContent = industryCopy;
 
@@ -4413,6 +4444,50 @@ function deriveAssetClasses(stocks){
 }
 // Fixed hues so Gold reads gold and Debt reads calm, whatever order they arrive in.
 const ASSET_CLASS_COLORS = { Equity:'#2563eb', Gold:'#d97706', Silver:'#64748b', Debt:'#0891b2' };
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V30.3 — ONE GROUPING AXIS FOR THE WHOLE PAGE.
+   --------------------------------------------------------------------------
+   This page groups a book two different ways and, until now, did not agree with
+   itself about which. deriveAssetClasses() splits a single-industry book (the
+   MultiAsset ETF book: every holding's industry is the literal string "ETF") by
+   ASSET CLASS, and the allocation card, the donut, the portfolio map and the
+   V30.1 KPI ribbon all draw that split. Three surfaces did not:
+
+     * renderSectorChips() built its chips from `industry`, so a MultiAsset member
+       was offered exactly one chip reading "ETF 8" — while applySectorFilter()
+       matched on `_aclass` ("Equity"/"Debt"/"Gold"/"Silver"). Clicking the only
+       chip on offer compared "equity" against "etf" and hid EVERY row. The whole
+       holdings table — the reason the page exists — went blank, the chip stayed
+       lit claiming 8 holdings, and nothing on screen said why. Measured: 8 rows
+       in, 0 visible out. The allocation card's rows filtered correctly, because
+       they pass the asset-class name; the two entry points to one filter
+       disagreed about the key.
+     * the "Industries" KPI counted distinct `industry` values and printed 1,
+       directly above its own ribbon drawn in FOUR segments and beside an
+       allocation card listing FOUR rows.
+     * refreshSession() grouped by `industry`, so a part-placed MultiAsset book
+       reported "100% ETF at its heaviest, across 1 of 1 industries — close to
+       the finished model's 100.0% ceiling": arithmetically true, and empty.
+
+   groupKeyOf() is the one key. `_aclass` is stamped by renderAllocation(), which
+   runs before every consumer below, and is deleted on a sector book — so equity
+   books resolve to `industry` exactly as before and are untouched by this.
+   ══════════════════════════════════════════════════════════════════════════ */
+function groupKeyOf(s){
+  if (!s) return '';
+  return String(s._aclass || s.industry || 'Unknown').trim() || 'Unknown';
+}
+// True when the book is being grouped by asset class rather than by industry —
+// i.e. when the word "Industries" would be the wrong label for what is counted.
+function isAssetClassBook(list){
+  return (list || []).some(s => s && s._aclass);
+}
+// The colour a group wears, from the same two sources every other surface uses:
+// the four fixed asset-class hues first, then the shared sector palette.
+function groupColorOf(name, colorMap){
+  return ASSET_CLASS_COLORS[name] || (colorMap || {})[name] || '#cbd5e1';
+}
 
 function renderAllocation(stocks) {
   if (!stocks || !stocks.length) return;
@@ -4915,10 +4990,20 @@ function refreshDrift() {
         '<span>' + sgn(hi.bps) + ' bps &middot; ' + nm(hi.s) + '</span>'
       : '';
 
+    /* V30.3 — this said "your N BOUGHT picks", and `held` has nothing to do with
+       what the member has bought: it is every pick whose slice of the entered
+       capital covers at least one whole share. With the bought map completely
+       empty the card still read "Your 25 bought picks track model weight to
+       within 25 bps", and on a part-placed book it sat directly beside the
+       session panel — which reads the actual bought map — saying "Placed so far:
+       ₹1,74,382 of ₹14,69,552" for 3 of 25. Two panels, one screen, flatly
+       contradicting each other about how much the member owns.
+       What this measures is the book the capital PLACES, so that is what it now
+       says; the session panel keeps sole ownership of the word "placed". */
     document.getElementById('drift-lead').innerHTML = maxAbs > 0
-      ? 'Your <b>' + held.length + '</b> bought pick' + (held.length === 1 ? '' : 's') +
-        ' track model weight to within <b>' + maxAbs + ' bps</b>'
-      : 'Every bought pick lands exactly on its model weight';
+      ? 'The <b>' + held.length + '</b> pick' + (held.length === 1 ? '' : 's') +
+        ' your capital sizes track model weight to within <b>' + maxAbs + ' bps</b>'
+      : 'Every pick your capital sizes lands exactly on its model weight';
     document.getElementById('drift-chip').textContent =
       maxAbs > 0 ? ('±' + maxAbs + ' bps') : 'Exact';
 
@@ -4995,7 +5080,14 @@ function _bookAt(capital) {
     deployed: capital > 0 ? Math.min(100, alloc / capital * 100) : 0,
     maxBps: maxBps,
     avgBps: held.length ? Math.round(sumAbs / held.length) : 0,
-    full: buyable === priced
+    full: buyable === priced,
+    /* V30.3 — drift is a spread BETWEEN holdings, so it does not exist below two
+       of them. maxBps stays 0 in that case, which the ladder was printing as
+       "±0 bps" beside the shortest bar on the card under a legend reading
+       "Shorter bar = closer to the model" — i.e. a capital that cannot buy a
+       single share was drawn as the best-tracking size on offer. Say measurable,
+       and let the caller render "not yet" instead of a zero it has not earned. */
+    measurable: held.length >= 2 && total > 0 && modelSum > 0
   };
 }
 
@@ -5057,10 +5149,13 @@ function refreshCapitalLadder() {
     // names can post a NARROWER gap than a ₹5,00,000 book measured across 25 and
     // look like the better size while holding two fewer companies. Ranking those
     // two against each other is the comparison this card must not invite.
-    const fullRows = rows.filter(r => r.full);
-    const rankable = fullRows.length ? fullRows : rows;
-    const best = rankable.reduce((b, r) => (r.maxBps < b.maxBps ? r : b), rankable[0]);
-    const biggest = rankable[rankable.length - 1];
+    const fullRows = rows.filter(r => r.full && r.measurable);
+    // V30.3: a row with no measurable drift can never be "the closest fit" — its
+    // 0 is an absence, not a reading. Without this guard the fallback branch
+    // (no full rows at all) ranks a capital that buys nothing as the best size.
+    const rankable = fullRows.length ? fullRows : rows.filter(r => r.measurable);
+    const best = rankable.length ? rankable.reduce((b, r) => (r.maxBps < b.maxBps ? r : b), rankable[0]) : null;
+    const biggest = rankable.length ? rankable[rankable.length - 1] : null;
     const anyPartial = rows.some(r => !r.full);
 
     document.getElementById('clad-rows').innerHTML = rows.map(r => {
@@ -5073,6 +5168,13 @@ function refreshCapitalLadder() {
       const cov  = r.full
         ? ('all ' + r.n + ' picks')
         : (r.buyable + ' of ' + r.n + ' picks');
+      // V30.3: no measurable drift ⇒ no bar and no number. A row that buys fewer
+      // than two whole shares has no spread between holdings to report, and
+      // printing its 0 next to the shortest bar on the card said the opposite.
+      const bpsTxt = r.measurable ? ('±' + r.maxBps + ' bps') : '—';
+      const aria   = r.measurable
+        ? (', widest weight gap ' + r.maxBps + ' basis points')
+        : ', too few whole shares to measure a weight gap';
       return '<div class="' + cls + '">' +
                // The "You" marker rides the sub-line, not the amount: at 104px on a
                // phone a badge after "₹15,00,000" wrapped to its own line and made
@@ -5081,9 +5183,9 @@ function refreshCapitalLadder() {
                  '<span' + (r.full ? '' : ' class="is-short"') + '>' +
                  (you ? '<i class="clad-you">You</i>' : '') + cov + '</span></span>' +
                '<span class="clad-track" role="img" aria-label="At ' + fmtMoney(r.capital) +
-                 ': ' + cov + ', widest weight gap ' + r.maxBps + ' basis points">' +
-                 '<i class="clad-fill" data-w="' + pct.toFixed(1) + '"></i></span>' +
-               '<span class="clad-bps">±' + r.maxBps + ' bps</span>' +
+                 ': ' + cov + aria + '">' +
+                 '<i class="clad-fill" data-w="' + (r.measurable ? pct.toFixed(1) : '0') + '"></i></span>' +
+               '<span class="clad-bps">' + bpsTxt + '</span>' +
              '</div>';
     }).join('');
 
@@ -5097,7 +5199,13 @@ function refreshCapitalLadder() {
     if (need > rows[0].capital) {
       parts.push('Every pick becomes buyable from <b>' + fmtMoney(need) + '</b>.');
     }
-    if (mine) {
+    if (mine && !mine.measurable) {
+      // V30.3: the honest sentence for a capital that places fewer than two whole
+      // shares. It used to read "Your ₹1,000 holds the book to ±0 bps of the
+      // model" — a claim of perfect tracking for a book holding nothing.
+      parts.push('Your <b>' + fmtMoney(mine.capital) + '</b> does not place two whole shares yet, so there is ' +
+                 'no weight gap to measure' + (best ? ' &mdash; the sizes below can be compared.' : '.'));
+    } else if (mine && best) {
       parts.push('Your <b>' + fmtMoney(mine.capital) + '</b> holds the book to <b>±' + mine.maxBps +
                  ' bps</b> of the model' +
                  (best.capital === mine.capital
@@ -5107,7 +5215,7 @@ function refreshCapitalLadder() {
     }
     // Said plainly, because the rows can show it: tracking is not monotonic in
     // capital. A bigger number usually helps and is not guaranteed to.
-    if (biggest.maxBps > best.maxBps) {
+    if (best && biggest && biggest.maxBps > best.maxBps) {
       parts.push('More is not automatically closer &mdash; whole shares round in steps, so <b>' +
                  fmtMoney(biggest.capital) + '</b> lands at <b>±' + biggest.maxBps +
                  ' bps</b>, wider than <b>' + fmtMoney(best.capital) + '</b>.');
@@ -5167,6 +5275,7 @@ function filterStocks(q) {
   });
   // V5.2 #20/#21: layer the active sector filter on top of search results
   if (_sectorFilter) applySectorFilter();
+  syncTableEmptyState();   // V30.3 — one owner for "nothing matched" (see below)
   syncBoughtAllHeader();   // V28.1 — the visible set just changed
 }
 
@@ -5231,7 +5340,7 @@ function renderTable(stocks) {
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}</td>
-      <td class="ticker"><span class="ticker-chip" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}</td>
+      <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
       <td class="price right"><span class="px-rec">₹${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
       <td class="alloc-amt right">${fmtAmt(amt)}</td>
@@ -5263,7 +5372,7 @@ function renderTable(stocks) {
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
           <div class="sc-tkr-row">
-            <span class="sc-ticker" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}
+            <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}
           </div>
         </div>
         <div class="sc-num">${i+1}</div>
@@ -5457,30 +5566,91 @@ function filterBySector(sectorName){
   if (sec && _sectorFilter) sec.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function applySectorFilter(){
-  if (!_sectorFilter) return;
+  if (!_sectorFilter) { syncTableEmptyState(); return; }
   var s = _sectorFilter.trim().toLowerCase();
   // V29.1 — the allocation card may be grouping by ASSET CLASS (see
   // deriveAssetClasses). Its rows stay clickable in that mode, so the filter has
   // to match on whichever key the card actually drew. `_aclass` is only ever
   // present when that mode engaged, so sector books are untouched.
-  var keyOf = function(st){
-    if (!st) return '';
-    return String(st._aclass || st.industry || '').toLowerCase();
-  };
+  // V30.3 — the chips are built from this same key now (groupKeyOf), so the two
+  // entry points into this filter can no longer disagree about what a group is.
   document.querySelectorAll('#stocks-tbody tr[data-row]').forEach(function(tr){
-    if (keyOf(stocksData[Number(tr.dataset.row)]) !== s) tr.style.display = 'none';
+    if (groupKeyOf(stocksData[Number(tr.dataset.row)]).toLowerCase() !== s) tr.style.display = 'none';
   });
   document.querySelectorAll('.stock-card[data-row]').forEach(function(c){
-    if (keyOf(stocksData[Number(c.dataset.row)]) !== s) c.style.display = 'none';
+    if (groupKeyOf(stocksData[Number(c.dataset.row)]).toLowerCase() !== s) c.style.display = 'none';
   });
+  syncTableEmptyState();
+}
+
+/* V30.3 — ONE owner for the "nothing matched" state, on BOTH lists.
+   The search path has had this since V28.1; the sector path never did, so a
+   filter that matched nothing left a table with a header row and no body and no
+   explanation — which is precisely the shape the chip/asset-class mismatch above
+   presented as. A filter that hides everything must say so, whichever control
+   applied it: a blank list is indistinguishable from a broken page.
+   Both filters write display:none on the same rows, so the message is derived
+   from what is actually visible rather than from either filter's own idea of its
+   result. Cheap and idempotent — safe to call from every filter path. */
+function syncTableEmptyState(){
+  try {
+    var tbody = document.getElementById('stocks-tbody');
+    var host  = document.getElementById('stock-cards-mobile');
+    if (!tbody) return;
+    var rows = tbody.querySelectorAll('tr[data-row]');
+    if (!rows.length) return;                       // empty-book state owns the table
+    var visRows = 0, visCards = 0;
+    rows.forEach(function(tr){ if (tr.style.display !== 'none') visRows++; });
+    if (host) host.querySelectorAll('.stock-card[data-row]').forEach(function(c){
+      if (c.style.display !== 'none') visCards++;
+    });
+
+    var msg = '';
+    if (_searchQ) {
+      msg = '<strong>No matches for "' + escapeHtml(_searchQ) + '"</strong>' +
+            'Try a different ticker, company name, or industry.';
+    } else if (_sectorFilter) {
+      msg = '<strong>Nothing to show for ' + escapeHtml(_sectorFilter) + '</strong>' +
+            'Choose <b>All</b> above to bring the whole book back.';
+    }
+
+    var row = tbody.querySelector('.tbl-empty-search-row');
+    if (msg && visRows === 0) {
+      if (!row) {
+        row = document.createElement('tr');
+        row.className = 'tbl-empty-search-row';
+        var td = document.createElement('td');
+        td.colSpan = 9; td.className = 'tbl-empty-search';
+        row.appendChild(td);
+        tbody.appendChild(row);
+      }
+      row.firstChild.innerHTML = msg;
+    } else if (row) { row.remove(); }
+
+    if (host) {
+      var card = host.querySelector('.tbl-empty-search-card');
+      if (msg && visCards === 0) {
+        if (!card) {
+          card = document.createElement('div');
+          card.className = 'tbl-empty-search tbl-empty-search-card';
+          host.appendChild(card);
+        }
+        card.innerHTML = msg;
+      } else if (card) { card.remove(); }
+    }
+  } catch (e) { /* an empty-state helper must never break the table */ }
 }
 function renderSectorChips(){
   var box = document.getElementById('sector-chips');
   if (!box) return;
   if (!stocksData || stocksData.length < 4) { box.innerHTML = ''; return; }
+  // V30.3: groupKeyOf(), not `industry` — see the note above it. On a sector book
+  // this is `industry` and the chips are byte-identical to before; on the
+  // MultiAsset book it is the asset class, which is both what the allocation card
+  // above offers and the only key applySectorFilter() can match.
   var sectors = {};
   stocksData.forEach(function(s){
-    var k = (s.industry || 'Unknown').trim() || 'Unknown';
+    var k = groupKeyOf(s) || 'Unknown';
     sectors[k] = (sectors[k] || 0) + 1;
   });
   var entries = Object.entries(sectors).sort(function(a,b){ return b[1]-a[1]; });
@@ -5488,7 +5658,7 @@ function renderSectorChips(){
   var html = '<button type="button" class="chip" data-sector="" onclick="filterBySector(\'\')">All <span class="chip-n">' + stocksData.length + '</span></button>';
   entries.forEach(function(e){
     var safe = String(e[0]).replace(/'/g,"\\'");
-    var dot = '<span class="chip-dot" style="background:' + (secColors[e[0]] || '#cbd5e1') + '"></span>';
+    var dot = '<span class="chip-dot" style="background:' + groupColorOf(e[0], secColors) + '"></span>';
     html += '<button type="button" class="chip" data-sector="' + escapeHtml(e[0]) + '" onclick="filterBySector(\'' + safe + '\')">' +
       dot + escapeHtml(e[0]) + ' <span class="chip-n">' + e[1] + '</span></button>';
   });
@@ -5928,7 +6098,15 @@ function refreshSession(map) {
       // rounding once gives ₹14,69,549 against the sizing card's ₹14,69,552 on the
       // demo book, and two rupee totals three inches apart must not disagree.
       const amt = Math.round(shares * price);
-      const ind = (s.industry || '').trim() || '—';
+      // V30.3: the same grouping key the chips, the allocation card and the KPI
+      // ribbon use. Grouping by raw `industry` made this panel vacuous on the
+      // MultiAsset book — every holding's industry is "ETF", so it reported
+      // "100% ETF at its heaviest, across 1 of 1 industries — close to the
+      // finished model's 100.0% ceiling", which is true of any single-industry
+      // book at any stage and tells the member nothing. By asset class it says
+      // the thing the panel exists to say: what the half-placed book is actually
+      // concentrated in right now.
+      const ind = groupKeyOf(s) || '—';
       plannedTotal += amt; plannedN++;
       fullByInd[ind] = (fullByInd[ind] || 0) + amt;
       if (map[s.ticker]) { placedTotal += amt; placedN++; byInd[ind] = (byInd[ind] || 0) + amt; }
@@ -5958,7 +6136,11 @@ function refreshSession(map) {
       (placedTotal / plannedTotal * 100).toFixed(1) + '%';
     document.getElementById('sess-lead').innerHTML =
       'Placed so far: <b>' + fmtMoney(placedTotal) + '</b> of <b>' + fmtMoney(plannedTotal) + '</b>';
-    document.getElementById('sess-chip').textContent = top.pct.toFixed(0) + '% top industry';
+    // V30.3: the axis noun follows the grouping key, so an asset-class book is not
+    // told about "industries" it does not have.
+    const axisWord  = isAssetClassBook(list) ? 'asset class'  : 'industry';
+    const axisWords = isAssetClassBook(list) ? 'asset classes' : 'industries';
+    document.getElementById('sess-chip').textContent = top.pct.toFixed(0) + '% top ' + axisWord;
     box.classList.toggle('is-clean', !hot);
 
     const SHOWN = 6;
@@ -5984,12 +6166,12 @@ function refreshSession(map) {
 
     const left = plannedN - placedN;
     const more = inds.length > SHOWN ? ' (showing the top ' + SHOWN + ' of ' + inds.length + ')' : '';
-    const spread = '<b>' + inds.length + '</b> of <b>' + nFull + '</b> industries';
+    const spread = '<b>' + inds.length + '</b> of <b>' + nFull + '</b> ' + axisWords;
     document.getElementById('sess-note').innerHTML = hot
       ? ('Right now the book you actually hold is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) +
-         ', across ' + spread + ' &mdash; the finished model caps any one industry at <b>' + capPct.toFixed(1) +
+         ', across ' + spread + ' &mdash; the finished model caps any one ' + axisWord + ' at <b>' + capPct.toFixed(1) +
          '%</b> (dashed line)' + more + '. Placing the remaining <b>' + left + '</b> order' + (left === 1 ? '' : 's') +
-         ' brings it back; spreading them across industries as you go keeps it closer on the way.')
+         ' brings it back; spreading them across ' + axisWords + ' as you go keeps it closer on the way.')
       : ('Your part-placed book is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) + ' at its heaviest, across ' +
          spread + ' &mdash; close to the finished model’s <b>' + capPct.toFixed(1) + '%</b> ceiling' + more +
          '. <b>' + left + '</b> order' + (left === 1 ? '' : 's') + ' still to place.');
@@ -6018,6 +6200,19 @@ function copyText(text) {
   return Promise.resolve();
 }
 
+/* V30.3 — the ticker chips are copy-to-clipboard controls (one per holding, 25 of
+   them on an equity book) that were plain <span onclick>: tabIndex −1, no role, no
+   key handler. Every other row control on this page is reachable — the company name
+   is an <a>, the broker pill is an <a>, the bought box is an <input>, the allocation
+   card's rows carry role=button + tabindex + onkeydown — so the chips were the one
+   affordance a keyboard member could see and not use. Enter and Space, matching the
+   allocation rows' handler, and the same aria-label the tooltip already said. */
+function tickerChipKey(ev, el) {
+  if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+    ev.preventDefault();
+    copyTicker(el);
+  }
+}
 function copyTicker(el) {
   const ticker = el.dataset.ticker;
   copyText(ticker).then(() => {
@@ -6132,6 +6327,7 @@ function _setNotifUI(on, email) {
   var input = document.getElementById('notif-email-input');
   if (!sw) return;
   if (email && input) input.value = email;
+  sw.setAttribute('aria-checked', _notifOn ? 'true' : 'false');   // V30.3: role=switch state
   if (_notifOn) {
     sw.classList.add('on'); lbl.textContent = 'On';
     if (row) row.style.display = 'flex';
@@ -7282,20 +7478,25 @@ th.sortable:hover{ color: var(--accent); }
   function hookFilter(){
     if (typeof window.filterStocks !== 'function' || window._v17FilterHooked) return;
     var orig = window.filterStocks;
+    /* V28.1 — the no-match message was only ever appended to the TABLE, whose
+       wrapper is display:none at <=767px. On a phone the card list is what
+       renders, so a no-match search produced 0 visible cards, a 0px-tall card
+       host and a blank gap between the toolbar and "How to invest" — the message
+       existed but was inside a hidden subtree. Both lists now get it.
+       V30.3 — and that logic moved into syncTableEmptyState() beside the filters
+       themselves, because the SECTOR filter can empty the same two lists and had
+       no message at all. Two owners writing the same nodes is how one of them
+       ends up deleting the other's message; this hook now just re-runs the one
+       owner, and only keeps its own copy if an older build is somehow loaded. */
     window.filterStocks = function(q){
       orig(q);
+      if (typeof window.syncTableEmptyState === 'function') { window.syncTableEmptyState(); return; }
       var tbody = document.getElementById('stocks-tbody');
       if (!tbody) return;
       var visible = 0;
       tbody.querySelectorAll('tr[data-row]').forEach(function(tr){
         if (tr.style.display !== 'none') visible++;
       });
-      /* V28.1 — this message was only ever appended to the TABLE, whose wrapper is
-         display:none at <=767px. On a phone the card list is what renders, so a
-         no-match search produced 0 visible cards, a 0px-tall card host and a blank
-         gap between the toolbar and "How to invest" — the message existed but was
-         inside a hidden subtree. The same state now renders in both places; the
-         card version is built from the same escaped string. */
       var esc = String(q).replace(/[<>&"]/g, function(c){
         return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
       });
