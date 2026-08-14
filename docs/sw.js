@@ -298,7 +298,18 @@
 // the 1st" carry a brighter ink in dark mode (--accent2 measured 4.0:1 on that
 // tinted chip, under AA). The bump is also what makes `controllerchange` fire, so
 // an already-open tab learns to offer the reload that picks this up.
-const CACHE = 'mfc-v50';
+// V30.6 -> mfc-v51. mfc-finish.css moves again — the print block gains the two
+// controls the V30.1 and V30.4 passes could not see: `.nav-hamburger` (not fixed,
+// not floating, and shown on paper because the ≤1024px query resolves against the
+// PAGE BOX) and `#mfcScrollProg` (minted by mfc-enhance.js, so it matched none of
+// the three scroll-prog names the guard already listed). That file is cached
+// first-party keyed by the EXACT url, so a returning visitor holding v50 would
+// keep the old copy: its ?v went 3040 -> 3050 on all 49 referencing pages AND in
+// screener/export_static.py — which was still pinned at 3010 and would have
+// dragged the 28 generated directory pages back two releases on the next data
+// refresh. index.html is precached as the offline navigation fallback and carries
+// the new ?v, so the shell has to be refetched regardless.
+const CACHE = 'mfc-v51';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -2118,7 +2118,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3040">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3050">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -2179,7 +2179,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
 <!-- DASHBOARD -->
 <div id="state-dashboard" style="display:none">
-  <div class="container">
+  <!-- V30.6 — role="main". The dashboard is the one page on the site a member
+       returns to every month, and it had no main landmark at all: nothing to jump
+       to past the nine-link masthead. It goes on THIS div, not on #state-dashboard,
+       because the SEBI footer is #state-dashboard's other child — a <footer> scoped
+       inside main stops being a contentinfo landmark, which would have traded one
+       landmark for another. Attribute only; no element, class or style moves. -->
+  <div class="container" role="main">
 
     <!-- HERO -->
     <div class="dash-hero fade-up">
@@ -2665,6 +2671,27 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        the site's standard width:0/scaleY(0)-then-set idiom. --i is set inline per
        term by renderWhy25(), so the count is whatever the strategy actually has
        (4 for MultiAsset, 5 for the equity books) and never a hardcoded list. */
+    /* V30.6 — THE CHAIN IS A SEQUENCE, AND ONLY THIS SIDE OF THE SITE HID THAT.
+       These five terms are the construction pipeline in order — universe, then
+       rank, then cap, then size, then hold — and the card's own subtitle says "how
+       this month's book was built". The homepage tells the identical story in
+       #how-built as NUMBERED stages, with a faint attr(data-step) watermark on
+       each; the dashboard told it as five equal tiles with nothing to say which
+       came first, so a member could read the cap as preceding the ranking. Same
+       idiom, same mechanism, scaled to a tile a third the size (30px, not 58px).
+       The hue is not a new colour: it is the SAME `224 - --i * 7` walk the left
+       rail below already uses, so the numeral and its rail are always the same
+       ink and the chain still reads blue → teal end to end. --i is stamped by
+       renderWhy25(), so a 4-step MultiAsset book numbers 1–4 and never 1–5.
+       Decorative and inert: aria-hidden by being CSS content, pointer-events:none,
+       and it cannot reflow anything because it is out of flow inside a card that
+       already clips. Opacity is higher in dark — .09 over the light tile measures
+       the same presence as .13 over the dark one. */
+    .why25-term::before{ content:attr(data-step); position:absolute; top:-3px; right:9px;
+      font-size:30px; font-weight:800; letter-spacing:-.04em; line-height:1;
+      color:hsl(calc(224 - var(--i,0) * 7) 78% 52%); opacity:.09;
+      pointer-events:none; user-select:none; }
+    html[data-theme="dark"] .why25-term::before{ opacity:.13; }
     .why25-term::after{ content:''; position:absolute; left:0; top:0; bottom:0; width:2px;
       background:linear-gradient(180deg,
         hsl(calc(224 - var(--i,0) * 7) 78% 52%),
@@ -2673,7 +2700,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       transition:transform .55s cubic-bezier(.22,1,.36,1); transition-delay:calc(var(--i,0) * 70ms); }
     .why25.is-drawn .why25-term::after{ transform:scaleY(1); }
     .why25-term b{ display:block; font-size:12px; font-weight:800; color:var(--white); margin-bottom:2px; }
-    .why25-term span{ font-size:11px; color:var(--text3); line-height:1.5; }
+    /* V30.6 — `display:block`, and it is load-bearing. An inline box cannot pull a
+       line box below the containing block's strut, so this span's own line-height
+       was discarded and every line advanced by the card's inherited 26.4px: 11px
+       copy on a 26.4px rhythm (2.4x), against the 1.5 written right here. It is
+       the same shape as the V23.7 `<span>` fill whose width was thrown away —
+       a property set on an inline element that layout silently ignores, which no
+       grep can see because the declaration IS present and correct. Measured, not
+       eyeballed: Range.getClientRects() line advance 26.4px before, 16.5px after.
+       Its sibling `b` was already display:block, which is why only this half of
+       the card read loose. */
+    .why25-term span{ display:block; font-size:11px; color:var(--text3); line-height:1.5; }
     @media (prefers-reduced-motion:reduce){
       .why25-term::after{ transition:none; transform:scaleY(1); }
     }
@@ -4292,7 +4329,17 @@ function renderDashboard(sub, stocks) {
   let industryCopy;
   if (!groupSet.size)                              industryCopy = '—';
   else if (byAsset)                                industryCopy = 'multi-asset diversified';
-  else                                             industryCopy = 'sector-diversified, capped at 3 per';
+  /* V30.6 — this line has said "capped at 3 per" since it shipped: a sentence that
+     stops before its noun and reads as truncated text, on the one KPI whose whole
+     job is to state the diversification rule. The page's own block comment above
+     the Why-these-25 card quotes the promise as "capped at 3 per industry", so the
+     word was dropped, not omitted by design. The wording below was chosen by
+     MEASUREMENT, not by taste: at 320/390/430/768/834/1024/1180/1280/1600 it wraps
+     to exactly the same number of lines as the broken string it replaces and
+     overflows at none of them, so no card grows and the KPI row keeps its heights.
+     "max 3 per industry" rather than "3 per industry" because the cap is a ceiling —
+     most industries in the book hold one or two. */
+  else                                             industryCopy = 'sector-diversified · max 3 per industry';
   document.getElementById('stat-industries-sub').textContent = industryCopy;
 
   // V30.1 — the bottom slot on these two KPIs (see .stat-pips / .stat-ribbon).
@@ -6104,7 +6151,7 @@ function renderWhy25() {
 
     body.innerHTML =
       '<div class="why25-chain">' +
-        terms.map(function(t, i){ return '<div class="why25-term" style="--i:' + i + '">' + t + '</div>'; }).join('') +
+        terms.map(function(t, i){ return '<div class="why25-term" data-step="' + (i + 1) + '" style="--i:' + i + '">' + t + '</div>'; }).join('') +
       '</div>' +
       '<p class="why25-note">The factors themselves and how they are weighted are MindForge’s intellectual property and are not published. <b>How</b> the simulation behind the published returns is constructed — and where it flatters us — is set out in full under ' +
       '<a href="disclosures.html#backtest-methodology" style="color:var(--accent2);font-weight:700;">Backtest methodology</a>.</p>';
