@@ -1483,13 +1483,59 @@ function renderQuadrant(){
   // featured markers (dedup the 3 leaders by symbol) — each gets a soft pulse-ring
   const top=key=>[...pts].sort((a,b)=>b[key]-a[key])[0];
   const seen={}, feats=[top("_overall"),top("_q"),top("_v")].filter(d=>d&&!seen[d.symbol]&&(seen[d.symbol]=1));
+  /* V30.7 — THE LEADER LABEL IS PART OF THE CHART, SO KEEP IT IN THE CHART.
+     The label used to be pinned at a fixed offset from its marker: `x±3`,
+     baseline at `y-3`. Both leaders that matter sit at the EDGE of the plot by
+     definition — the best-Value stock is at value≈100, i.e. the top of the box —
+     so its baseline landed at y=5 against a frame whose top edge is y=8, and the
+     label painted OUTSIDE the plot entirely. Measured at five widths: 26px above
+     the frame at 1440/1024/834, 21px at 600, and at 390 it sat ON TOP of the
+     "★ Quality + Value" corner annotation, two pieces of text in one place.
+     A long symbol just under the x>88 flip point had the same exposure sideways.
+
+     So place it instead of offsetting it: estimate the glyph box in user units,
+     pick the side of the marker with room, then clamp the whole box inside the
+     plot rect and out of the reserved corner. The reserve is a CONSTANT in user
+     units rather than a measurement of the corner span, because the span is sized
+     in CSS px and therefore grows in user units as the chart shrinks — a measured
+     value would be correct only at the width it was measured at, and this renders
+     once. Boxes already placed are avoided too, so two leaders in the same corner
+     stack instead of overprinting. */
+  const PL=14, PR=114, PT=8, PB=108;          // the plot rect this chart draws
+  const LBL_UP=5.0, LBL_DN=1.4;               // measured ink extent above/below the baseline at font-size 5
+  const CH=3.5;                               // measured advance per uppercase glyph, incl. the halo stroke
+  const CORNER={l:93, t:0, r:120, b:12.5};    // worst-case footprint of the ★ corner annotation
+  const hits=(a,b)=>a.l<b.r-0.2&&a.r>b.l+0.2&&a.t<b.b-0.2&&a.b>b.t+0.2;
+  const inside=b=>b.l>=PL-0.2&&b.r<=PR+0.2&&b.t>=PT-0.2&&b.b<=PB+0.2;
+  const placed=[CORNER];
   feats.forEach((d,fi)=>{
     const x=X(d._q),y=Y(d._v),c=MFCScores.color(d._overall);
-    const lx=x>88?x-3:x+3, anchor=x>88?"end":"start";
+    const w=Math.min(d.symbol.length*CH, PR-PL);
+    const mk=(anchor,lx,by)=>({anchor, lx, by,
+      box:{l:anchor==="start"?lx:lx-w, r:anchor==="start"?lx+w:lx, t:by-LBL_UP, b:by+LBL_DN}});
+    // Eight candidates, nearest-to-the-marker first: right/left of it, above/below
+    // it, then the same four stepped one line clear. The first that lands wholly
+    // inside the plot and touches nothing already drawn wins, so a leader keeps
+    // its natural position whenever it can and only travels when it must.
+    const step=LBL_UP+LBL_DN+1.4;
+    const cands=[];
+    [0,1].forEach(k=>{
+      const dy=k*step;
+      cands.push(mk("start", x+3, y-3+dy), mk("end", x-3, y-3+dy),
+                 mk("start", x+3, y+3+LBL_UP+dy), mk("end", x-3, y+3+LBL_UP+dy));
+    });
+    let pick=cands.filter(p=>inside(p.box)&&!placed.some(q=>hits(p.box,q)))[0];
+    if(!pick){                                  // nothing clean — clamp the first candidate in
+      const by=Math.max(PT+LBL_UP, Math.min(y+3+LBL_UP, PB-LBL_DN));
+      const lx=(PR-x>=x-PL) ? Math.max(PL, Math.min(x+3, PR-w)) : Math.min(PR, Math.max(x-3, PL+w));
+      pick=mk((PR-x>=x-PL)?"start":"end", lx, by);
+    }
+    const anchor=pick.anchor, lx=pick.lx, by=pick.by;
+    placed.push(pick.box);
     const pcls=fi===1?" p2":fi===2?" p3":"";
     s+=`<circle class="qv-pulse${pcls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.3" fill="none" stroke="${c}" stroke-width="0.7"/>`;
     s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.3" fill="${c}" stroke="#fff" stroke-width="1"/>`;
-    s+=`<text class="qv-dot-label" x="${lx.toFixed(1)}" y="${(y-3).toFixed(1)}" text-anchor="${anchor}" fill="${c}">${d.symbol}</text>`;
+    s+=`<text class="qv-dot-label" x="${lx.toFixed(1)}" y="${by.toFixed(1)}" text-anchor="${anchor}" fill="${c}">${d.symbol}</text>`;
   });
   svg.innerHTML=s;
   const panel=document.getElementById("qvPanel");

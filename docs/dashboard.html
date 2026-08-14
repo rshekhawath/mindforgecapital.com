@@ -8517,6 +8517,63 @@ body::after{
   .alloc-card:hover::before { opacity: 1; }
 </style>
 <!-- ============================================================================
+     V30.7 — THE AURORA HAIRLINE REACHES THE PANELS V13.6 SAID IT ALREADY HAD.
+     ----------------------------------------------------------------------------
+     V13.6's own comment above claims the brand top hairline is on "EVERY primary
+     panel". Measured on the rendered page in both books, it is on four: the KPI
+     tiles (theirs is the injected accent bar V9.8 sweeps in, not a pseudo — their
+     ::before is the hover wash and rests at opacity 0), plus the capital card,
+     the sector-allocation card and the how-to card as ::before. Two more carry a
+     deliberate 3px COLOURED LEFT RAIL instead (the live-profit card in green, the
+     1:1 benefit card in blue) and are correctly left alone.
+
+     Four primary panels carry nothing at all — and one of them, the portfolio
+     map, sits directly beneath the sector-allocation card, so the reader sees a
+     lit top edge on one panel and a bare one on its twin. `.pmap-card` and
+     `.attrib-card` are declared byte-for-byte identically to `.alloc-card`
+     (same surface, border, radius, padding, shadow, hover); they simply never
+     got the line.
+
+     Same declaration, same 0.7 → 1 hover brighten, no new colour or motion.
+     `.cyc-card` and `.notif-card` need `position:relative` first — the hairline
+     is an absolutely-positioned child and would otherwise resolve against a
+     further ancestor. That is safe on both: `.cyc-fill` is the only absolutely
+     positioned descendant either card has and it is already contained by
+     `.cyc-bar{position:relative;overflow:hidden}`.
+
+     The picks table is deliberately NOT included. Its card is `.table-wrap`, a
+     horizontal scroll container, so an inset hairline would slide out of view
+     with the columns — and V30.0 already draws that panel's top edge as the
+     sticky header's inset shadow. ========================================== -->
+<style id="mf-v307-aurora">
+  .cyc-card, .notif-card { position: relative; }
+  .cyc-card::before,
+  .attrib-card::before,
+  .pmap-card::before,
+  .notif-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.40) 50%, transparent 100%);
+    opacity: .7; pointer-events: none; z-index: 2;
+    transition: opacity .25s ease;
+  }
+  /* each panel's own top corners — .cyc-card is the one that is not var(--r) */
+  .attrib-card::before,
+  .pmap-card::before,
+  .notif-card::before { border-radius: var(--r) var(--r) 0 0; }
+  .cyc-card::before   { border-radius: 16px 16px 0 0; }
+
+  .cyc-card:hover::before,
+  .attrib-card:hover::before,
+  .pmap-card:hover::before,
+  .notif-card:hover::before { opacity: 1; }
+
+  /* No dark override, deliberately. Only .howto-card carries one; the KPI tiles,
+     the capital card and the sector card all keep this exact blue in dark, where
+     it composites to #19397d over the #121d33 card and reads as a lit edge. A
+     brighter variant here would make the four new lines louder than the four
+     they are supposed to match, which is the asymmetry this block removes. */
+</style>
+<!-- ============================================================================
      V13.8 — "Crafted chrome & a tactile number-pop" (dashboard · additive, RM-safe)
      ----------------------------------------------------------------------------
      Brings two homepage finishes to the member dashboard so the public site and

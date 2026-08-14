@@ -656,7 +656,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
    Auto-built from the .section h2 list by the script below; scroll-spy
    highlights the section in view. Pure progressive enhancement — below
    1320px (or if JS fails) the page renders exactly as before. */
-@media (min-width:1320px){ html{ scroll-padding-top:88px; } }
+/* V30.7: the anchors are reachable at every width now, so the offset that
+   keeps a target clear of the sticky masthead has to apply at every width
+   too — otherwise a tapped section lands underneath the nav. */
+html{ scroll-padding-top:88px; }
 .legal-toc{
   display:none; position:fixed; top:150px; left:calc(50% + 442px); width:196px;
   max-height:calc(100vh - 230px); overflow-y:auto; z-index:5;
@@ -688,6 +691,68 @@ html[data-theme="dark"] .legal-toc a.active{
   color:var(--ink-link,#83aaff); border-left-color:var(--ink-link,#83aaff);
 }
 @media (prefers-reduced-motion: reduce){ .legal-toc a{ transition:none; } }
+
+/* V30.7 — THE SAME WAYFINDING BELOW 1320px, WHERE THERE WAS NONE.
+   The rail above is `display:none` under 1320px and the comment called that
+   "progressive enhancement". It is, for a desktop — but these are the documents
+   a reader reaches from a footer link on a phone, and Terms is 22 numbered
+   sections deep. Every viewport under 1320px (both iPad orientations, every
+   laptop below it, every phone) got a wall of text and no way to see its shape.
+
+   Same generated list, same scroll-spy, same active ink — presented as a closed
+   disclosure directly above section 1, so it costs one 44px row of height until
+   the reader asks for it. Exactly one of the two is ever displayed, so the page
+   never carries two navigation landmarks at once. */
+.legal-toc-inline{
+  display:block; margin:0 0 30px; border-radius:var(--r); overflow:hidden;
+  background:var(--ink2); border:0.5px solid var(--border2);
+  box-shadow:0 8px 24px -18px rgba(26,80,216,0.22);
+}
+@media (min-width:1320px){ .legal-toc-inline{ display:none; } }
+.legal-toc-inline > summary{
+  list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
+  padding:12px 16px; min-height:44px; box-sizing:border-box;
+  font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--text3);
+}
+.legal-toc-inline > summary::-webkit-details-marker{ display:none; }
+.legal-toc-inline > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+.lti-n{ margin-left:auto; font-size:11.5px; font-weight:700; letter-spacing:.02em; text-transform:none; }
+.lti-chev{
+  flex:none; width:8px; height:8px; margin-left:2px;
+  border-right:2px solid currentColor; border-bottom:2px solid currentColor;
+  transform:rotate(45deg) translate(-1px,-1px); transition:transform .2s ease;
+}
+.legal-toc-inline[open] > summary .lti-chev{ transform:rotate(-135deg) translate(-1px,-1px); }
+.lti-list{ display:grid; grid-template-columns:1fr; gap:2px; padding:0 10px 12px; }
+@media (min-width:620px){ .lti-list{ grid-template-columns:1fr 1fr; column-gap:16px; } }
+.lti-list a{
+  display:flex; gap:9px; align-items:baseline; padding:10px 8px; border-radius:9px;
+  font-size:13px; line-height:1.4; font-weight:500; color:var(--text2); text-decoration:none;
+  transition:color .18s ease, background .18s ease;
+}
+.lti-list a i{
+  font-style:normal; font-weight:800; font-size:11px; color:var(--text3);
+  min-width:15px; flex:none; font-variant-numeric:tabular-nums;
+}
+.lti-list a:hover{ color:var(--text); background:rgba(37,99,235,0.05); }
+.lti-list a.active{ color:var(--accent); background:rgba(37,99,235,0.07); }
+.lti-list a.active i{ color:var(--accent); }
+/* same V30.0 correction the rail needed: var(--accent) does not flip in dark and
+   measures 3.51:1 on the near-black card, so the active row uses the palette's
+   own dark link ink instead. */
+html[data-theme="dark"] .lti-list a:hover{ background:rgba(150,180,240,0.07); }
+html[data-theme="dark"] .lti-list a.active{ color:var(--ink-link,#83aaff); background:rgba(96,150,255,0.12); }
+html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
+@media (prefers-reduced-motion: reduce){ .lti-list a, .lti-chev{ transition:none; } }
+/* On paper this is a control and nothing else: the disclosure ships closed, so it
+   prints as one row reading "On this page · N sections ⌄" with no contents under
+   it. The rail above never needed this rule because it is gated at 1320px and the
+   print PAGE BOX is ~816px at 96dpi, so the query simply does not match — the same
+   page-box mechanic that made V30.6's hamburger print. The guard lives here rather
+   than in mfc-finish.css's shared print block because .legal-toc-inline exists on
+   these three pages and nowhere else on the site. */
+@media print{ .legal-toc-inline{ display:none !important; } }
 </style>
 <script id="mf-v218-toc-js">
 (function(){
@@ -701,16 +766,42 @@ html[data-theme="dark"] .legal-toc a.active{
   toc.setAttribute('role', 'navigation');
   toc.setAttribute('aria-label', 'On this page');
   var html = '<div class="lt-head">On this page</div>';
+  var rows = '';
   heads.forEach(function(h, i){
     if (!h.id){
       var slug = h.textContent.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').split('-').slice(0,5).join('-');
       h.id = 'sec-' + (i + 1) + (slug ? '-' + slug : '');
     }
-    html += '<a href="#' + h.id + '">' + esc(h.textContent.replace(/^\d+\.\s*/,'')) + '</a>';
+    /* The rail drops the heading's own number; the inline list keeps it as a
+       separate counter, because on a phone that number is how a reader maps a
+       row back to the numbered heading they are scrolling past. Sections that
+       are not numbered in the source simply get no counter. */
+    var num = (/^(\d+)\.\s/.exec(h.textContent) || [])[1] || '';
+    var label = esc(h.textContent.replace(/^\d+\.\s*/,''));
+    html += '<a href="#' + h.id + '">' + label + '</a>';
+    rows += '<a href="#' + h.id + '">' + (num ? '<i>' + num + '</i>' : '') + '<span>' + label + '</span></a>';
   });
   toc.innerHTML = html;
   document.body.appendChild(toc);
+
+  /* the same list, for every width the fixed rail does not cover */
+  var inline = document.createElement('details');
+  inline.className = 'legal-toc-inline';
+  inline.innerHTML =
+    '<summary><span>On this page</span><span class="lti-n">' + heads.length +
+    ' sections</span><span class="lti-chev" aria-hidden="true"></span></summary>' +
+    '<div class="lti-list" role="navigation" aria-label="On this page">' + rows + '</div>';
+  var firstSec = document.querySelector('.content .section');
+  if (firstSec && firstSec.parentNode) firstSec.parentNode.insertBefore(inline, firstSec);
+  /* collapse on pick, so the reader lands on the section rather than back on
+     the list they just used */
+  inline.addEventListener('click', function(e){
+    var a = e.target && e.target.closest && e.target.closest('.lti-list a');
+    if (a) inline.open = false;
+  });
+
   var links = toc.querySelectorAll('a');
+  var links2 = inline.querySelectorAll('.lti-list a');
   var current = -1, pending = null;
   function spy(){
     pending = null;
@@ -720,7 +811,10 @@ html[data-theme="dark"] .legal-toc a.active{
     }
     if (idx !== current){
       current = idx;
-      for (var j = 0; j < links.length; j++) links[j].classList.toggle('active', j === idx);
+      for (var j = 0; j < links.length; j++){
+        links[j].classList.toggle('active', j === idx);
+        if (links2[j]) links2[j].classList.toggle('active', j === idx);
+      }
     }
   }
   /* setTimeout throttle (not rAF) so the spy also runs in throttled tabs */
