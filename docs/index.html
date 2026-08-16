@@ -1142,29 +1142,89 @@ footer {
 .proof-num { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 22px; font-weight: 800; color: var(--white); letter-spacing: -0.02em; }
 .proof-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; white-space: nowrap; }
 .proof-divider { width: 1px; height: 40px; background: var(--border2); flex-shrink: 0; }
-/* V17.0 — Verified P&L trust link (real, broker-verified track record on Zerodha) */
-/* V27.9: the only real link in the proof bar measured 23.5px tall — half a pixel
-   under the 24px WCAG 2.2 SC 2.5.8 floor, and it is the one control here a
-   sceptical reader actually taps (it opens the Zerodha-verified P&L). Padding
-   plus an equal negative margin buys a 33.5px hit area with zero layout shift.
-   Grown DOWNWARD only: this is an inline-flex box in a block flow, so a
-   symmetric padding/-margin pair does not cancel — the negative margin-top
-   repositions the box while the padding-top grows it from there, which lifted
-   the link 5px above the proof figure sitting beside it. Padding-bottom against
-   margin-bottom leaves the top edge, and therefore the shared baseline, alone. */
-.proof-pnl { display:inline-flex; align-items:center; gap:6px; color:#059669 !important; text-decoration:none; transition:color .2s, transform .15s; padding:0 0 10px; margin:0 0 -10px; }
-.proof-pnl svg { flex-shrink:0; }
-.proof-pnl .proof-arr { font-size:.66em; color:#059669; transition:transform .2s; }
-.proof-pnl:hover { color:#047857 !important; }
-.proof-pnl:hover .proof-arr { transform:translate(2px,-2px); }
+/* V17.0 — Verified P&L trust link (real, broker-verified track record on Zerodha).
+   V30.8 — TWO of them, one per paid strategy, as a pair of pill chips.
+   ----------------------------------------------------------------------------
+   V27.9 sized the single link's hit area by hand: it measured 23.5px tall, half a
+   pixel under the 24px WCAG 2.2 SC 2.5.8 floor, and was patched with a padding /
+   negative-margin pair grown DOWNWARD only (a symmetric pair does not cancel on
+   an inline-flex box in a block flow — the negative margin-top repositions the box
+   while the padding-top grows it from there, which lifted the link above the proof
+   figure beside it). The chips carry REAL padding instead, so the hit area is the
+   painted box and there is no phantom pad to collide with its neighbour — the
+   V28.7 trap. 13px copy at 7px/12px padding measures ~33px tall, and the ink is
+   --data-strong, the AA-safe green token, NOT the V13 gradient the old link
+   inherited from `.proof-item:last-child .proof-num`: a gradient fill cannot be
+   contrast-measured (V30.0) and prints as a solid block (V30.1). The chips
+   deliberately do not carry `.proof-num` for the same reason — that class is on
+   both of those lists and is re-sized at every breakpoint for a 22px numeral. */
+.proof-pnl-pair { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
+.pnl-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+  font-size:13px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap;
+  color:var(--data-strong); text-decoration:none;
+  background:rgba(5,150,105,0.07); border:0.5px solid rgba(5,150,105,0.30);
+  border-radius:999px; padding:7px 12px;
+  transition:background .2s, border-color .2s, transform .15s;
+}
+html[data-theme="dark"] .pnl-chip { background:rgba(52,211,153,0.10); border-color:rgba(52,211,153,0.30); }
+.pnl-chip svg { flex-shrink:0; }
+.pnl-chip .proof-arr { font-size:.8em; transition:transform .2s; }
+.pnl-chip:hover { background:rgba(5,150,105,0.14); border-color:rgba(5,150,105,0.55); transform:translateY(-1px); }
+html[data-theme="dark"] .pnl-chip:hover { background:rgba(52,211,153,0.18); border-color:rgba(52,211,153,0.55); }
+.pnl-chip:hover .proof-arr { transform:translate(2px,-2px); }
+.pnl-chip:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+/* GUTTERS, MEASURED. The desktop row is nowrap and every item is flex-shrink:0,
+   so it can silently spill into the card's own 20px padding rather than reporting
+   document overflow — which is how it would have shipped: at the 28px gutter the
+   four items measured 1017.2px + 3 dividers against a 1016px content box, 4px
+   over, with nothing in the console to say so. The container is at its 1120px
+   max-width for every viewport this row is used at (the wrap query takes over at
+   1180), so 1016px is the tightest case, not a sample of one. 20px on the three
+   text items and 12px on the wider chip item bring the row to ~964px.
+   Scoped to a MIN-WIDTH query on purpose: `.proof-bar .proof-item` is (0,2,0) and
+   would otherwise beat the wrapped layout's own (0,1,0) `padding` shorthand at
+   every narrower width — a rule that wins the wrong cascade is the V27.1 seam. */
+@media (min-width: 1181px) {
+  .proof-bar .proof-item { padding-left:20px; padding-right:20px; }
+  .proof-bar .proof-item-pnl { padding-left:12px; padding-right:12px; }
+}
+/* PHONE COMPACTION. The pair must stay a pair at every width — two chips stacked
+   is just two links, and the whole point is that the two books are shown together.
+   A 320px card gives the cell ~272px of content; the full-size pair needs ~333px,
+   so below 430 the chips drop the ↗ (the label under them already says these open
+   Zerodha), take 11.5px copy and tighter gutters, which measures ~268px. The ✓
+   stays: it is the verification mark, and it is the last thing to go. */
+@media (max-width: 430px) {
+  .proof-pnl-pair { gap:6px; }
+  .pnl-chip { font-size:11.5px; padding:6px 9px; gap:4px; }
+  .pnl-chip svg { width:12px; height:12px; }
+  .pnl-chip .proof-arr { display:none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pnl-chip, .pnl-chip .proof-arr { transition:none; }
+  .pnl-chip:hover { transform:none; }
+}
 /* V19.3: the proof-bar overflowed its container on iPad LANDSCAPE (~1024: a nowrap
    row was wider than the ~958px container). Wrap into a centred grid BEFORE it can
    overflow. V24.7: the bar is FOUR items since the simulated-alpha claim was
    removed, so the old 3-up (which gave 5 → a balanced 3+2) now strands a lone 4th.
-   4-up keeps one tidy row on tablets; ≤768 hands over to the 2×2 card grid. */
-@media (max-width: 1080px) {
+   4-up keeps one tidy row on tablets; ≤768 hands over to the 2×2 card grid.
+   V30.8: the fourth item now holds two ~165px chips instead of one 22px word, so
+   the nowrap row needs more room than the container gives below ~1180px — the
+   wrap threshold moves up with it. Measured, not guessed: see the sweep note on
+   the mf-v163-proofbar block. In the wrapped 4-up the chips stack, which is what
+   makes a ~230px cell hold them at all. */
+@media (max-width: 1180px) {
   .proof-bar { flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 0; }
-  .proof-item { padding: 14px 10px; width: 25%; }
+  .proof-item { padding: 14px 10px; width: 33.333%; }
+  /* MEASURED: the chip pair is ~333px wide and a QUARTER of this container is
+     ~230px, so a 4-up row silently broke the pair in two — the one thing this
+     item exists to avoid. The three text items take the row (a third is ~306px,
+     ample for "SEBI Registered" at 19px) and the pair gets its own full width,
+     which is the same shape the ≤900 card grid uses. */
+  .proof-item-pnl { width: 100%; padding-top: 4px; }
   /* keep the wide "SEBI Registered" item inside a third at tablet widths so all
      three columns stay even (it doesn't shrink, so a 22px numeral would force 2-up) */
   .proof-num { font-size: 19px; }
@@ -3353,7 +3413,7 @@ textarea:focus-visible, select:focus-visible {
 /* V28.0 — both stops of that gradient are dark (#0f172a is near-black), it is
    clipped to the glyphs, and -webkit-text-fill-color:transparent means the
    gradient IS the ink. There was no dark override anywhere, so in dark mode the
-   three subscription prices — FREE / ₹1,499 / ₹2,499, the most commercially
+   three subscription prices — FREE / ₹999 / ₹1,499, the most commercially
    important numbers on the page — painted near-black on the #121d33 card and
    measured 1.01:1 at the left of the glyph, rising to only 2.18:1 at the right.
    Same two stops, run light-to-accent instead so the figure reads against the
@@ -3987,12 +4047,26 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
         <span class="proof-label">Backtested track record</span>
       </div>
       <div class="proof-divider"></div>
-      <div class="proof-item">
-        <a class="proof-num proof-pnl" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener" aria-label="Verified live P&L on Zerodha (opens in a new tab)">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>
-          Verified<span class="proof-arr" aria-hidden="true">↗</span>
-        </a>
-        <span class="proof-label">Live P&amp;L on Zerodha</span>
+      <!-- V30.8: TWO verified P&L links, one per paid strategy, side by side.
+           Each strategy is traded in its OWN broking account, so Zerodha issues a
+           separate verified-P&L page for each — one shared link could only ever
+           evidence one of them. Both chips sit in ONE .proof-item rather than
+           becoming a fifth item: the bar's wrap widths, its 2x2 phone grid, the
+           nth-child entrance delays and the divider indices are all tuned to a
+           count of four (V24.7 records what breaks when that count moves), and a
+           pair that must read as a pair should not be split across grid rows. -->
+      <div class="proof-item proof-item-pnl">
+        <span class="proof-pnl-pair">
+          <a class="pnl-chip" href="https://console.zerodha.com/verified/10d5f408" target="_blank" rel="noopener" aria-label="MindForge LargeMidcap 250 — verified live P&L on Zerodha (opens in a new tab)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>
+            LargeMidcap 250<span class="proof-arr" aria-hidden="true">↗</span>
+          </a>
+          <a class="pnl-chip" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener" aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>
+            SmallMicro 500<span class="proof-arr" aria-hidden="true">↗</span>
+          </a>
+        </span>
+        <span class="proof-label">Verified live P&amp;L on Zerodha</span>
       </div>
     </div>
   </div>
@@ -4680,7 +4754,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
           </div>
         </div>
         <div class="strat-footer">
-          <div class="strat-min">Recommended Investment <span>₹5,00,000</span></div>
+          <div class="strat-min">Recommended Investment <span>₹1,00,000</span></div>
           <div class="price-row">
             <span class="price-amt" id="ma-price-amt" style="color:#059669;">FREE</span>
             <span class="price-mo"  id="ma-price-unit">for everyone</span>
@@ -4757,9 +4831,9 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
           </div>
         </div>
         <div class="strat-footer">
-          <div class="strat-min">Recommended Investment <span>₹15,00,000</span></div>
+          <div class="strat-min">Recommended Investment <span>₹10,00,000</span></div>
           <div class="price-row">
-            <span class="price-amt" id="lm-price-amt">₹1,499</span>
+            <span class="price-amt" id="lm-price-amt">₹999</span>
             <span class="price-mo"  id="lm-price-unit">/ month</span>
           </div>
           <div class="price-annual-note" id="lm-price-note" style="display:none;"></div>
@@ -4833,9 +4907,9 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
           </div>
         </div>
         <div class="strat-footer">
-          <div class="strat-min">Recommended Investment <span>₹25,00,000</span></div>
+          <div class="strat-min">Recommended Investment <span>₹15,00,000</span></div>
           <div class="price-row">
-            <span class="price-amt" id="sm-price-amt">₹2,499</span>
+            <span class="price-amt" id="sm-price-amt">₹1,499</span>
             <span class="price-mo"  id="sm-price-unit">/ month</span>
           </div>
           <div class="price-annual-note" id="sm-price-note" style="display:none;"></div>
@@ -5690,7 +5764,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
         var monthly = (window.STRAT_MONTHLY && typeof window.STRAT_MONTHLY[key] === 'number')
                       ? window.STRAT_MONTHLY[key] : null;
         if (monthly === null) return;
-        // "₹15,00,000" → 1500000
+        // "₹10,00,000" → 1000000
         var rec = parseFloat((minEl.textContent || '').replace(/[^0-9.]/g, ''));
         if (!(rec > 0)) return;
         // The "MindForge" prefix is dropped, exactly as the trade-off strip above
@@ -5720,7 +5794,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
 
       rows.forEach(function(r){
         // What the member is actually charged for the term, annualised — the same
-        // Math.round the card's own price uses, so ₹4,272 / 3 months is exactly
+        // Math.round the card's own price uses, so ₹2,847 / 3 months is exactly
         // what this multiplies up.
         r.termTotal = Math.round(r.monthly * months * (1 - disc));
         r.annual    = r.termTotal * (12 / months);
@@ -5811,8 +5885,8 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
     }, 900);
 
     // Re-render on a term change. The duration buttons rewrite the card prices;
-    // if the ladder did not follow, the page would be showing a ₹14,390 annual
-    // charge and a drag computed from ₹17,988 at the same time.
+    // if the ladder did not follow, the page would be showing a ₹9,590 annual
+    // charge and a drag computed from ₹11,988 at the same time.
     ['1','3','6','12'].forEach(function(k){
       var b = document.getElementById('btn-dur-' + k);
       if (b) b.addEventListener('click', function(){
@@ -5872,7 +5946,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
      structured-data violation, so the two are generated from one source of truth).
 
      Every answer is grounded in what the site already states elsewhere:
-       • prices from the strategy cards (₹1,499 / ₹2,499 / free)
+       • prices from the strategy cards (₹999 / ₹1,499 / free)
        • cadence from the same cards ("Monthly rebalance" on all three — V28.9
          removed a "Weekly signals" line that no part of the model produced)
        • the free-first-month launch offer from mfc-offer.js
@@ -5901,7 +5975,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
 
       <details class="faq-item">
         <summary><span>How much does a subscription cost?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹1,499 per month and MindForge SmallMicro 500 is ₹2,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free. You can subscribe to one strategy or to all three. The <a href="calculator.html">Fee Calculator</a> compares a flat subscription against a percentage-of-AUM fee at your own portfolio size.</p></div>
+        <div class="faq-a"><p>MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹999 per month and MindForge SmallMicro 500 is ₹1,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free. You can subscribe to one strategy or to all three. The <a href="calculator.html">Fee Calculator</a> compares a flat subscription against a percentage-of-AUM fee at your own portfolio size.</p></div>
       </details>
 
       <details class="faq-item">
@@ -5925,13 +5999,18 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
       </details>
 
       <details class="faq-item">
+        <summary><span>Is the live P&amp;L on Zerodha real, and why are there two links?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>MindForge LargeMidcap 250 and MindForge SmallMicro 500 are each traded in their own dedicated Zerodha account, executing that one strategy and nothing else. Zerodha publishes a verified P&amp;L page per account, generated by the broker from the account’s own order and holdings history — so there is one link per strategy, and each one evidences only its own book. These are real orders in real accounts, which is a different thing from the backtests shown elsewhere on this site: a backtest is simulated on historical data, a verified P&amp;L is what actually happened. The two links sit side by side at the top of this page and on each strategy page. Returns in a personal account will differ from yours — entry timing, capital and whole-share rounding all move the result — and past performance does not indicate future results.</p></div>
+      </details>
+
+      <details class="faq-item">
         <summary><span>Are the Stock Scanner and Integrity Score free?</span><i aria-hidden="true"></i></summary>
         <div class="faq-a"><p>Both are free and need no account. The <a href="screener/">Stock Scanner</a> filters 2,000+ NSE companies on 40+ fundamentals — valuation, profitability, growth and leverage — with a full equity report for every stock. The <a href="scores/">Integrity Score</a> grades every listed NSE company 0–100 on Quality (profitability and balance-sheet health) and Value (how cheaply it is priced). The <a href="fii-dii/">FII/DII activity</a> tracker and the monthly <a href="factor-report/">Factor Report</a> are free as well.</p></div>
       </details>
 
       <details class="faq-item">
         <summary><span>How much capital do I need to start?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>There is no minimum — the dashboard sizes every position to the capital you enter, so the model works at any amount. Each strategy card does show a recommended investment (₹5,00,000 for MultiAsset, ₹15,00,000 for LargeMidcap 250 and ₹25,00,000 for SmallMicro 500), which is the level at which a 25-stock portfolio can be held in whole shares without the rounding materially distorting the model's intended weights. Below that the strategy still runs; the tracking error against the model simply widens.</p></div>
+        <div class="faq-a"><p>There is no minimum — the dashboard sizes every position to the capital you enter, so the model works at any amount. Each strategy card does show a recommended investment (₹1,00,000 for MultiAsset, ₹10,00,000 for LargeMidcap 250 and ₹15,00,000 for SmallMicro 500), which is the level at which a 25-stock portfolio can be held in whole shares without the rounding materially distorting the model's intended weights. Below that the strategy still runs; the tracking error against the model simply widens.</p></div>
       </details>
 
     </div>
@@ -5961,7 +6040,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
         "name": "How much does a subscription cost?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹1,499 per month and MindForge SmallMicro 500 is ₹2,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free. You can subscribe to one strategy or to all three. The Fee Calculator compares a flat subscription against a percentage-of-AUM fee at your own portfolio size."
+          "text": "MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹999 per month and MindForge SmallMicro 500 is ₹1,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free. You can subscribe to one strategy or to all three. The Fee Calculator compares a flat subscription against a percentage-of-AUM fee at your own portfolio size."
         }
       },
       {
@@ -5998,6 +6077,14 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
       },
       {
         "@type": "Question",
+        "name": "Is the live P&L on Zerodha real, and why are there two links?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "MindForge LargeMidcap 250 and MindForge SmallMicro 500 are each traded in their own dedicated Zerodha account, executing that one strategy and nothing else. Zerodha publishes a verified P&L page per account, generated by the broker from the account’s own order and holdings history — so there is one link per strategy, and each one evidences only its own book. These are real orders in real accounts, which is a different thing from the backtests shown elsewhere on this site: a backtest is simulated on historical data, a verified P&L is what actually happened. The two links sit side by side at the top of this page and on each strategy page. Returns in a personal account will differ from yours — entry timing, capital and whole-share rounding all move the result — and past performance does not indicate future results."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "Are the Stock Scanner and Integrity Score free?",
         "acceptedAnswer": {
           "@type": "Answer",
@@ -6009,7 +6096,7 @@ html[data-theme="dark"] .mm-fact{ background:rgba(120,150,255,.06); }
         "name": "How much capital do I need to start?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "There is no minimum — the dashboard sizes every position to the capital you enter, so the model works at any amount. Each strategy card does show a recommended investment (₹5,00,000 for MultiAsset, ₹15,00,000 for LargeMidcap 250 and ₹25,00,000 for SmallMicro 500), which is the level at which a 25-stock portfolio can be held in whole shares without the rounding materially distorting the model's intended weights. Below that the strategy still runs; the tracking error against the model simply widens."
+          "text": "There is no minimum — the dashboard sizes every position to the capital you enter, so the model works at any amount. Each strategy card does show a recommended investment (₹1,00,000 for MultiAsset, ₹10,00,000 for LargeMidcap 250 and ₹15,00,000 for SmallMicro 500), which is the level at which a 25-stock portfolio can be held in whole shares without the rounding materially distorting the model's intended weights. Below that the strategy still runs; the tracking error against the model simply widens."
         }
       }
     ]
@@ -6132,7 +6219,7 @@ window.addEventListener('resize', revealFadeUps, { passive: true });
 // to match the backend's handleActivate expiry/duration computation.
 // V18.3: MultiAsset is FREE for everyone — 0 short-circuits below so its card
 // always reads "FREE for everyone" regardless of the duration toggle.
-var STRAT_MONTHLY = { ma: 0, lm: 1499, sm: 2499 };
+var STRAT_MONTHLY = { ma: 0, lm: 999, sm: 1499 };
 var DURATIONS = {
   '1':  { months: 1,  disc: 0.00, unit: '/ month'    },
   '3':  { months: 3,  disc: 0.05, unit: '/ 3 months' },
@@ -6636,9 +6723,12 @@ function setDuration(durKey) {
 .proof-item:hover{ transform:translateY(-3px); }
 .proof-divider{ background:linear-gradient(180deg,transparent,rgba(37,99,235,.20),transparent) !important; }
 .proof-num{ font-weight:800; letter-spacing:-.02em; }
-.proof-item:last-child .proof-num{
-  background:var(--v13-grad); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-}
+/* V30.8: the V13 gradient used to land here on `.proof-item:last-child .proof-num`
+   — i.e. on the single "Verified↗" link. That link is now a PAIR of chips which
+   deliberately carry solid --data-strong ink (see the .pnl-chip block), and no
+   other item should inherit the emphasis by accident of being last. The rule is
+   removed rather than repointed: a selector that no longer matches anything is
+   invisible to grep and is exactly the dead-rule seam V28.5/V28.8 cost us. */
 
 /* Strategy cards — gradient top accent reveal + stronger lift */
 .strat-card{ position:relative; overflow:hidden;
@@ -7512,21 +7602,33 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
       border-left: 0.5px solid rgba(37,99,235,.12);
       border-radius: 0;
     }
-    /* strip the outer edges of the cross so only the inner +-divider shows */
+    /* V30.8 — 1 / 2+2 / 1, not 2×2. Two of these four items refuse a half-cell:
+       "SEBI Registered" is a 15-character word-mark that V16.3 had to shrink to
+       14.5px to fit one, and the P&L item is now TWO ~165px chips that must stay
+       side by side to read as a pair (that is the whole point of showing both).
+       Both span the full width; the two numerals share the middle row. Children
+       are item/divider alternating, so the item indices are 1,3,5,7 — and the
+       dividers are display:none here, so they never take a grid cell.
+         row 1  nth-child(1)            SEBI Registered      (spans)
+         row 2  nth-child(3) | (5)      3        |   5Y
+         row 3  nth-child(7)            both verified chips  (spans)
+       Border cross recomputed from that map: only row 1 has no border-top, and
+       column 1 is now items 1, 3 and 7. */
+    .social-proof .proof-bar .proof-item:nth-child(1){ border-top: none; }
     .social-proof .proof-bar .proof-item:nth-child(1),
-    .social-proof .proof-bar .proof-item:nth-child(3){ border-top: none; }
+    .social-proof .proof-bar .proof-item:nth-child(3),
+    .social-proof .proof-bar .proof-item:nth-child(7){ border-left: none; }
     .social-proof .proof-bar .proof-item:nth-child(1),
-    .social-proof .proof-bar .proof-item:nth-child(5){ border-left: none; }
-    /* V17.0 spanned the LAST cell across both columns because, with five items,
-       it sat alone in row 3. V24.7: there are four items, so they already tile a
-       clean 2×2 — spanning the last one would push it into a third row and leave
-       cell 3 stranded (exactly the reported bug). Span removed deliberately. */
+    .social-proof .proof-bar .proof-item:nth-child(7){ grid-column: 1 / -1; }
     .social-proof .proof-bar .proof-item:hover{ transform: none; } /* no lift inside one card */
     .social-proof .proof-bar .proof-divider{ display: none; }
     .social-proof .proof-num{ font-size: 21px; line-height: 1.12; }
-    /* "SEBI Registered" is a shield + words, not a number — size it to fit a cell */
-    .social-proof .proof-item:first-child .proof-num{ font-size: 14.5px; }
-    .social-proof .proof-item:first-child .proof-num svg{ width: 16px; height: 16px; }
+    /* "SEBI Registered" is a shield + words, not a number. V16.3 cut it to 14.5px
+       to survive a half-cell; it owns a full row now, so it goes back up — but not
+       to the 21px of its neighbours, because a 15-character string at numeral size
+       would outweigh the two figures it introduces. */
+    .social-proof .proof-item:first-child .proof-num{ font-size: 17px; }
+    .social-proof .proof-item:first-child .proof-num svg{ width: 17px; height: 17px; }
     .social-proof .proof-label{
       font-size: 10.5px;
       line-height: 1.3;
@@ -7534,12 +7636,16 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
       white-space: normal;
       max-width: 15ch;
     }
+    /* the 15ch cap is sized for a half-cell; the two spanning rows have the whole
+       card, and clamping them there would wrap a caption that already fits */
+    .social-proof .proof-item:nth-child(1) .proof-label,
+    .social-proof .proof-item-pnl .proof-label{ max-width: none; }
   }
   @media (max-width: 360px){
     .social-proof .proof-bar{ max-width: 100%; }
     .social-proof .proof-bar .proof-item{ width: auto; padding: 15px 8px 13px; min-height: 78px; }
     .social-proof .proof-num{ font-size: 19px; }
-    .social-proof .proof-item:first-child .proof-num{ font-size: 13.5px; }
+    .social-proof .proof-item:first-child .proof-num{ font-size: 15.5px; }
   }
 </style>
 <script id="mf-v140-index-js">

@@ -243,8 +243,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .mcta-ghost:hover{color:var(--white);border-color:var(--accent3);}
   @media (max-width: 768px){.mobile-cta-bar{display:flex;}body{padding-bottom:76px;}.fab-wa{bottom:88px;}}
   /* 320px is the narrowest supported width and the only one where the widest
-     label ("Subscribe \u20b92,499/mo \u2192") still needed ~160px of text room in a
-     157px button. 8px off the bar's gutters and 8px off the button's own side
+     label still needed ~160px of text room in a
+     157px button. Measured against "Subscribe \u20b92,499/mo \u2192"; V30.8 repriced the
+     widest plan to \u20b91,499/mo, so the rule now has MORE room than it was cut for. 8px off the bar's gutters and 8px off the button's own side
      padding buy 16px, which holds it on one line — and one line is what keeps
      the bar at 70px, inside the 76px this page reserves for it. */
   @media (max-width: 344px){
@@ -1665,11 +1666,11 @@ body[data-route="strategies"] .nav-links a[href="strategies.html"]::after {
   "areaServed": "IN",
   "offers": {
     "@type": "Offer",
-    "price": "2499",
+    "price": "1499",
     "priceCurrency": "INR",
     "priceSpecification": {
       "@type": "UnitPriceSpecification",
-      "price": "2499",
+      "price": "1499",
       "priceCurrency": "INR",
       "referenceQuantity": {
         "@type": "QuantitativeValue",
@@ -1700,6 +1701,54 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://mindforgecapital.com/"},{"@type":"ListItem","position":2,"name":"Strategies","item":"https://mindforgecapital.com/strategies.html"},{"@type":"ListItem","position":3,"name":"SmallMicro 500","item":"https://mindforgecapital.com/smallmicro.html"}]},{"@type":"WebPage","@id":"https://mindforgecapital.com/smallmicro.html","url":"https://mindforgecapital.com/smallmicro.html","name":"SmallMicro 500","description":"Top 25 stocks from a 500-name NSE Smallcap and Microcap universe, ranked by a multi-factor model.","inLanguage":"en-IN","isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"},"publisher":{"@type":"Organization","name":"MindForge Capital","url":"https://mindforgecapital.com/","logo":"https://mindforgecapital.com/assets/LogoNav.png"}}]}</script>
+<style id="mf-v308-verified">
+/* ══════════════════════════════════════════════════════════════════════════
+   V30.8 — BROKER-VERIFIED LIVE P&L
+   --------------------------------------------------------------------------
+   Each paid strategy is traded in its OWN Zerodha account, executed independently
+   of the other, so Zerodha issues a SEPARATE verified-P&L page per strategy. This
+   page links to its own account only; the homepage proof bar carries both side by
+   side. One shared link could only ever evidence one of the two books.
+   Ink is --data-strong (the AA-safe green token), deliberately NOT a gradient: a
+   gradient fill cannot be contrast-measured (V30.0) and prints as a solid block
+   with the glyphs gone (V30.1). The hit area is REAL padding, not a pseudo-element
+   pad — 13px copy at 7px/12px measures ~33px, over the 24px WCAG 2.2 SC 2.5.8
+   floor, with no phantom box to collide with a neighbour (V28.7).
+   ══════════════════════════════════════════════════════════════════════════ */
+.pnl-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:-0.01em;
+  color:var(--data-strong);text-decoration:none;
+  background:rgba(5,150,105,0.07);border:0.5px solid rgba(5,150,105,0.30);
+  border-radius:999px;padding:7px 12px;
+  transition:background .2s,border-color .2s,transform .15s;
+}
+html[data-theme="dark"] .pnl-chip{background:rgba(52,211,153,0.10);border-color:rgba(52,211,153,0.30);}
+.pnl-chip svg{flex-shrink:0;}
+.pnl-chip .pnl-arr{font-size:.8em;transition:transform .2s;}
+.pnl-chip:hover{background:rgba(5,150,105,0.14);border-color:rgba(5,150,105,0.55);transform:translateY(-1px);}
+html[data-theme="dark"] .pnl-chip:hover{background:rgba(52,211,153,0.18);border-color:rgba(52,211,153,0.55);}
+.pnl-chip:hover .pnl-arr{transform:translate(2px,-2px);}
+.pnl-chip:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+/* Hero chip sits on its own line under the CTA row. */
+.hero-verified{margin:14px 0 0;}
+/* Sidebar card. It is the FIRST card in the rail and, unlike the live-portfolio
+   card above the fold, it is never fail-soft — the broker page exists whether or
+   not live-perf.json has landed, and it is the one number on this page that is
+   not ours. */
+.sv-lead{font-size:12.5px;line-height:1.55;color:var(--text2);margin:0 0 14px;}
+.sv-note{font-size:11px;line-height:1.5;color:var(--text3);margin-top:12px;}
+.sv-acct{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--data-strong);
+  background:rgba(5,150,105,0.09);border:0.5px solid rgba(5,150,105,0.26);
+  border-radius:999px;padding:3px 9px;margin-bottom:12px;}
+html[data-theme="dark"] .sv-acct{background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.28);}
+@media (prefers-reduced-motion: reduce){
+  .pnl-chip,.pnl-chip .pnl-arr{transition:none;}
+  .pnl-chip:hover{transform:none;}
+}
+</style>
 </head>
 <body data-route="smallmicro">
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -1736,9 +1785,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <p class="sub">Twenty-five stocks selected each month from the Nifty Smallcap 250 + Microcap 250 universe, ranked by a proprietary multi-factor model tuned to the thin-liquidity dynamics of the segment.</p>
       <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:28px;">
         <button class="btn-primary-page" type="button"
-                onclick="openRegModal('MindForge SmallMicro 500', 2499, 'smallmicro')"
+                onclick="openRegModal('MindForge SmallMicro 500', 1499, 'smallmicro')"
                 style="background:var(--accent);color:#fff;font-weight:600;padding:14px 26px;border:none;border-radius:10px;font-size:15px;cursor:pointer;box-shadow:0 8px 22px -8px rgba(26,80,216,0.45);">
-          Subscribe — ₹2,499/month →
+          Subscribe — ₹1,499/month →
         </button>
         <a class="btn-ghost-page" href="strategies.html#compare"
            style="background:#fff;border:1px solid var(--border2);color:var(--white);padding:14px 26px;border-radius:10px;font-size:15px;font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
@@ -1746,7 +1795,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </a>
       </div>
       <p style="font-size:12px;color:var(--text3);margin-top:14px;">
-        Annual plan: <span style="color:var(--data-strong);font-weight:600;">₹23,990 / yr  (save ₹5,998)</span> · 5-year backtested · SEBI-Registered Research Analyst
+        Annual plan: <span style="color:var(--data-strong);font-weight:600;">₹14,390 / yr  (save ₹3,598)</span> · 5-year backtested · SEBI-Registered Research Analyst
+      </p>
+      <!-- V30.8: broker-verified proof, at the CTA rather than buried in the rail.
+           This strategy runs in its own Zerodha account and Zerodha publishes that
+           account's P&L itself — the one figure on this page we do not compute. -->
+      <p class="hero-verified">
+        <a class="pnl-chip" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener"
+           aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>Verified live P&amp;L on Zerodha<span class="pnl-arr" aria-hidden="true">↗</span>
+        </a>
       </p>
     </div>
   </section>
@@ -1819,11 +1877,27 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <div class="pillar"><div class="pillar-dot"></div><h3>500-stock universe</h3><p>Smallcap 250 + Microcap 250 — India's broadest listed segment. Both constituent lists fetched live from NSE each cycle.</p></div>
             <div class="pillar"><div class="pillar-dot"></div><h3>Multi-factor scoring</h3><p>A proprietary factor blend tuned for small- and microcap behaviour ranks every stock each month. Composition and weighting are MindForge IP.</p></div>
             <div class="pillar"><div class="pillar-dot"></div><h3>Equal-weight, sector-capped</h3><p>Every name carries the same weight; no industry takes more than 3 of the 25 slots. The portfolio stays structurally diversified.</p></div>
-            <div class="pillar"><div class="pillar-dot"></div><h3>High risk, high reward</h3><p>Among the highest expected returns of MindForge's strategies. Recommended investment of ₹25L and genuine tolerance for -25% drawdowns.</p></div>
+            <div class="pillar"><div class="pillar-dot"></div><h3>High risk, high reward</h3><p>Among the highest expected returns of MindForge's strategies. Recommended investment of ₹15L and genuine tolerance for -25% drawdowns.</p></div>
           </div>
           <div class="disclaimer-strip">5-year backtest results (2021–2026). Simulated performance, not live trading. Past performance is not indicative of future returns. Not investment advice. This strategy carries significant risk and is suitable only for sophisticated investors.</div>
         </div>
         <div class="strat-sidebar">
+          <!-- V30.8: FIRST in the rail and never fail-soft. The live-portfolio card
+               below is display:none until /live-perf.json lands; this one links to
+               a page Zerodha hosts, which exists regardless. -->
+          <div class="sidebar-card sidebar-verified">
+            <h3>Verified live P&amp;L</h3>
+            <span class="sv-acct"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>Zerodha · dedicated account</span>
+            <p class="sv-lead">MindForge SmallMicro 500 is traded in its own broking account, executing this
+              strategy and no other. Zerodha publishes that account's realised and unrealised
+              P&amp;L on its own verified page — the numbers come from the broker, not from us.</p>
+            <a class="pnl-chip" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener"
+               aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View on Zerodha<span class="pnl-arr" aria-hidden="true">↗</span>
+            </a>
+            <div class="sv-note">Each MindForge strategy has its own account, so every book's
+              record stands alone. Past performance is not indicative of future returns.</div>
+          </div>
           <!-- V24.6: live portfolio, pinned beside the backtest snapshot so the
                simulated figure is never the only number in view. Fail-soft:
                display:none until /live-perf.json lands (mfc-live.js). -->
@@ -1852,12 +1926,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
           <div class="sidebar-card">
             <h3>Subscription details</h3>
-            <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹25,00,000</span></div>
-            <div class="sidebar-row"><span class="key">Monthly</span><span class="val">₹2,499 / mo</span></div>
-            <div class="sidebar-row"><span class="key">Annual</span><span class="val" style="color:var(--data-strong);">₹23,990 / yr <span style="font-size:10px;">(save ₹5,998)</span></span></div>
+            <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹15,00,000</span></div>
+            <div class="sidebar-row"><span class="key">Monthly</span><span class="val">₹1,499 / mo</span></div>
+            <div class="sidebar-row"><span class="key">Annual</span><span class="val" style="color:var(--data-strong);">₹14,390 / yr <span style="font-size:10px;">(save ₹3,598)</span></span></div>
             <div class="sidebar-row"><span class="key">Portfolio size</span><span class="val">25 stocks</span></div>
           </div>
-          <button class="sidebar-btn" onclick="openRegModal('MindForge SmallMicro 500', 2499, 'smallmicro')">Subscribe — ₹2,499/month →</button>
+          <button class="sidebar-btn" onclick="openRegModal('MindForge SmallMicro 500', 1499, 'smallmicro')">Subscribe — ₹1,499/month →</button>
         </div>
       </div>
 
@@ -2092,7 +2166,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <h2 class="mfcq-h" id="mfcq-h">SmallMicro 500 — common questions</h2>
     <div class="mfcq-list">
       <details class="mfcq-item"><summary><span>How many stocks are in the SmallMicro 500 portfolio?</span><i aria-hidden="true"></i></summary><div class="mfcq-a"><p>The SmallMicro 500 portfolio holds 25 high-conviction small and micro-cap NSE stocks at any time. A quantitative model re-scores the small and micro-cap universe each month and publishes the updated list of holdings and weights to your member dashboard.</p></div></details>
-      <details class="mfcq-item"><summary><span>How much does a SmallMicro 500 subscription cost?</span><i aria-hidden="true"></i></summary><div class="mfcq-a"><p>The SmallMicro 500 subscription is 2,499 rupees per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free.</p></div></details>
+      <details class="mfcq-item"><summary><span>How much does a SmallMicro 500 subscription cost?</span><i aria-hidden="true"></i></summary><div class="mfcq-a"><p>The SmallMicro 500 subscription is 1,499 rupees per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free.</p></div></details>
       <details class="mfcq-item"><summary><span>How often is the portfolio rebalanced?</span><i aria-hidden="true"></i></summary><div class="mfcq-a"><p>The portfolio rebalances monthly. On each rebalance the model re-scores its universe and publishes the complete new holding list to your dashboard — every ticker, its weight and its recommended price. You place the resulting orders in your own broker account — MindForge never touches your money or executes a trade for you.</p></div></details>
       <details class="mfcq-item"><summary><span>Are the performance figures live or backtested?</span><i aria-hidden="true"></i></summary><div class="mfcq-a"><p>The headline CAGR and risk figures shown on this page are from a historical backtest — a simulation over past data, not live trading. Backtested results are hypothetical, and past performance is not indicative of future returns. Any figure explicitly labelled Live reflects real, tracked cycle returns.</p></div></details>
     </div>
@@ -2116,7 +2190,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       "name": "How much does a SmallMicro 500 subscription cost?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The SmallMicro 500 subscription is 2,499 rupees per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free."
+        "text": "The SmallMicro 500 subscription is 1,499 rupees per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free."
       }
     },
     {
@@ -2261,7 +2335,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   // The hero's own words, minus the arrow it already carries. "/month" is
   // shortened to "/mo" and the em-dash dropped so the whole label holds ONE line
   // in the widest case at 320px — the price keeps its per-month qualifier, which
-  // is the one word that must not be lost: "₹2,499" alone could read as one-off.
+  // is the one word that must not be lost: "₹1,499" alone could read as one-off.
   // Anything that does not match the "<verb> — ₹N/month" shape falls through to
   // the hero's text with the dash removed, so a future wording still shows the
   // page's own copy rather than a stale hand-typed one.

@@ -309,7 +309,17 @@
 // dragged the 28 generated directory pages back two releases on the next data
 // refresh. index.html is precached as the offline navigation fallback and carries
 // the new ?v, so the shell has to be refetched regardless.
-const CACHE = 'mfc-v51';
+// V30.8 -> mfc-v52. THIS ONE IS A PRICE CHANGE, which makes the precached shell a
+// commercial liability rather than a cosmetic one: index.html is cached below as
+// the offline navigation fallback and now carries ₹999 / ₹1,499 (was ₹1,499 /
+// ₹2,499), the three new recommended-investment figures, the two broker-verified
+// Zerodha P&L links in the proof bar, and a new FAQ answer. Online visitors are
+// safe — navigations are network-first — but an INSTALLED app opening cold would
+// quote a price we no longer charge, straight off disk, with no ?v of its own to
+// bust. No shared docs/assets/ file changed this release (every rule is page-local
+// inline CSS), so nothing is owed a ?v bump; the cache name is again the only
+// version these documents have.
+const CACHE = 'mfc-v52';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
