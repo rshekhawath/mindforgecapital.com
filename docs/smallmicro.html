@@ -1733,17 +1733,87 @@ html[data-theme="dark"] .pnl-chip:hover{background:rgba(52,211,153,0.18);border-
 .pnl-chip:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
 /* Hero chip sits on its own line under the CTA row. */
 .hero-verified{margin:14px 0 0;}
-/* Sidebar card. It is the FIRST card in the rail and, unlike the live-portfolio
-   card above the fold, it is never fail-soft — the broker page exists whether or
-   not live-perf.json has landed, and it is the one number on this page that is
-   not ours. */
-.sv-lead{font-size:12.5px;line-height:1.55;color:var(--text2);margin:0 0 14px;}
+/* ── V31.0 — THE PROOF GETS THE WEIGHT IT EARNS ────────────────────────────
+   This card carries the only figure on the page that is NOT ours: a real
+   account, real orders, published by the broker. It shipped in V30.8 as the
+   plainest card in the rail — a pill, a paragraph and a 13px chip — sitting
+   directly above a live card with a 32px green figure and a tinted panel. A
+   reader scanning the rail met the simulated number first and loudest, and the
+   independent one as a footnote. That is a hierarchy inversion, not a taste
+   call, and it is what this block fixes.
+   BRAND INK, NOT GREEN. The obvious move is to tint this card green like its
+   neighbour, and it is the wrong one: green already MEANS "live model movement"
+   in this rail, so two green cards would read as two of the same thing. The
+   accent/teal pair says "MindForge" everywhere else on the site, so the card
+   that says "this is us, at a broker" takes brand ink and the live card keeps
+   green. The check mark stays --data-strong: a tick is semantic, not brand.
+   ────────────────────────────────────────────────────────────────────────── */
+.sidebar-verified{
+  border-color:rgba(37,99,235,.30);
+  background:linear-gradient(150deg,rgba(37,99,235,.055),rgba(8,145,178,.035) 62%,transparent);
+}
+html[data-theme="dark"] .sidebar-verified{
+  border-color:rgba(120,160,240,.30);
+  background:linear-gradient(150deg,rgba(120,160,240,.09),rgba(45,212,191,.05) 62%,transparent);
+}
+/* A shield watermark, the same device the SEBI proof-point uses on the homepage.
+   Sized and placed so it never sits under a glyph: measured clear of the h3 at
+   320/390/834/1440. pointer-events:none so it cannot eat the CTA's hit area. */
+.sidebar-verified::after{
+  content:'';position:absolute;top:-14px;right:-16px;width:118px;height:118px;
+  pointer-events:none;opacity:.055;
+  background:currentColor;color:var(--accent);
+  -webkit-mask:var(--sv-shield) no-repeat center/contain;
+          mask:var(--sv-shield) no-repeat center/contain;
+}
+html[data-theme="dark"] .sidebar-verified::after{opacity:.10;color:#9dbcff;}
+:root{--sv-shield:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E");}
+.sidebar-verified h3{position:relative;z-index:1;}
+.sv-lead{font-size:12.5px;line-height:1.55;color:var(--text2);margin:0 0 14px;position:relative;z-index:1;}
 .sv-note{font-size:11px;line-height:1.5;color:var(--text3);margin-top:12px;}
 .sv-acct{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:800;
   letter-spacing:.08em;text-transform:uppercase;color:var(--data-strong);
   background:rgba(5,150,105,0.09);border:0.5px solid rgba(5,150,105,0.26);
-  border-radius:999px;padding:3px 9px;margin-bottom:12px;}
+  border-radius:999px;padding:3px 9px;margin-bottom:12px;position:relative;z-index:1;}
 html[data-theme="dark"] .sv-acct{background:rgba(52,211,153,0.12);border-color:rgba(52,211,153,0.28);}
+/* THE ARRANGEMENT, DRAWN. "Its own account" is the whole claim and it was being
+   carried by a sentence. One strategy, one account, one broker-published record —
+   three nodes on a rail, which is the same left-rail-and-nodes device the
+   dashboard's construction chain uses. */
+.sv-chain{display:flex;flex-direction:column;gap:0;margin:0 0 15px;position:relative;z-index:1;}
+.sv-node{display:flex;align-items:flex-start;gap:10px;padding:5px 0;}
+.sv-rail{flex:0 0 auto;width:18px;display:flex;flex-direction:column;align-items:center;align-self:stretch;}
+.sv-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--accent),var(--accent3));}
+.sv-node:last-child .sv-dot{background:var(--data-strong);}
+.sv-line{width:2px;flex:1 1 auto;min-height:12px;margin-top:2px;
+  background:linear-gradient(180deg,rgba(37,99,235,.35),rgba(8,145,178,.22));border-radius:2px;}
+html[data-theme="dark"] .sv-line{background:linear-gradient(180deg,rgba(120,160,240,.4),rgba(45,212,191,.25));}
+.sv-node:last-child .sv-line{display:none;}
+.sv-txt{font-size:12px;line-height:1.45;color:var(--text2);min-width:0;}
+.sv-txt b{display:block;font-size:12.5px;font-weight:700;color:var(--white);letter-spacing:-.01em;}
+/* The CTA is the point of the card, so it is a BUTTON, not a 13px chip. Matches
+   .sidebar-btn's shape and height so the rail keeps one button language, but
+   ghosted rather than filled — the filled blue belongs to Subscribe, which is
+   the page's primary action and must stay the loudest thing in the rail. */
+.sv-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  padding:12px 14px;border-radius:var(--r-sm);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-size:13.5px;font-weight:700;letter-spacing:-.01em;text-decoration:none;
+  color:var(--accent);background:var(--ink2);border:1px solid rgba(37,99,235,.38);
+  transition:background .2s,border-color .2s,transform .15s,box-shadow .2s;
+  position:relative;z-index:1;}
+html[data-theme="dark"] .sv-cta{color:#9dbcff;border-color:rgba(120,160,240,.42);}
+.sv-cta:hover{background:rgba(37,99,235,.06);border-color:rgba(37,99,235,.6);
+  transform:translateY(-1px);box-shadow:0 10px 22px -14px rgba(26,80,216,.55);}
+html[data-theme="dark"] .sv-cta:hover{background:rgba(120,160,240,.10);border-color:rgba(120,160,240,.66);}
+.sv-cta:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.sv-cta .pnl-arr{font-size:.85em;transition:transform .2s;}
+.sv-cta:hover .pnl-arr{transform:translate(2px,-2px);}
+@media (prefers-reduced-motion: reduce){
+  .sv-cta,.sv-cta .pnl-arr{transition:none;}
+  .sv-cta:hover{transform:none;}
+}
 @media (prefers-reduced-motion: reduce){
   .pnl-chip,.pnl-chip .pnl-arr{transition:none;}
   .pnl-chip:hover{transform:none;}
@@ -1888,15 +1958,27 @@ html[data-theme="dark"] .sv-acct{background:rgba(52,211,153,0.12);border-color:r
           <div class="sidebar-card sidebar-verified">
             <h3>Verified live P&amp;L</h3>
             <span class="sv-acct"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>Zerodha · dedicated account</span>
-            <p class="sv-lead">MindForge SmallMicro 500 is traded in its own broking account, executing this
-              strategy and no other. Zerodha publishes that account's realised and unrealised
-              P&amp;L on its own verified page — the numbers come from the broker, not from us.</p>
-            <a class="pnl-chip" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener"
+            <p class="sv-lead">This strategy is traded in its own broking account, executing this
+              model and no other. The P&amp;L below comes from the broker, not from us.</p>
+            <!-- V31.0: "its own account" is the entire claim and a sentence was
+                 carrying it alone. Three nodes on a rail state the arrangement as
+                 a shape: one model, one account, one record nobody here writes. -->
+            <div class="sv-chain">
+              <div class="sv-node"><span class="sv-rail"><span class="sv-dot"></span><span class="sv-line"></span></span>
+                <span class="sv-txt"><b>One model</b>MindForge SmallMicro 500, rebalanced monthly from the Nifty Smallcap 250 + Microcap 250 universe.</span></div>
+              <div class="sv-node"><span class="sv-rail"><span class="sv-dot"></span><span class="sv-line"></span></span>
+                <span class="sv-txt"><b>One account</b>A dedicated Zerodha account that trades this strategy and nothing else.</span></div>
+              <div class="sv-node"><span class="sv-rail"><span class="sv-dot"></span><span class="sv-line"></span></span>
+                <span class="sv-txt"><b>One record</b>Zerodha publishes that account&rsquo;s realised and unrealised P&amp;L itself.</span></div>
+            </div>
+            <a class="sv-cta" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener"
                aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View on Zerodha<span class="pnl-arr" aria-hidden="true">↗</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View the verified P&amp;L<span class="pnl-arr" aria-hidden="true">↗</span>
             </a>
-            <div class="sv-note">Each MindForge strategy has its own account, so every book's
-              record stands alone. Past performance is not indicative of future returns.</div>
+            <div class="sv-note">Every MindForge strategy has its own account, so each book&rsquo;s
+              record stands alone. A personal account&rsquo;s return will differ from yours &mdash; entry
+              timing, capital and whole-share rounding all move the result. Past performance is not
+              indicative of future returns.</div>
           </div>
           <!-- V24.6: live portfolio, pinned beside the backtest snapshot so the
                simulated figure is never the only number in view. Fail-soft:

@@ -319,7 +319,14 @@
 // bust. No shared docs/assets/ file changed this release (every rule is page-local
 // inline CSS), so nothing is owed a ?v bump; the cache name is again the only
 // version these documents have.
-const CACHE = 'mfc-v52';
+// V31.0 -> mfc-v53. index.html is precached below as the offline navigation
+// fallback and gains a whole new block: the two-account verified strip under the
+// strategy grid, with both broker links and two live model figures. An installed
+// app opening cold on the v52 shell would show the pricing it was given in V30.8
+// and none of the proof that now sits directly beneath it — and a precached
+// document has no ?v of its own to bust. No shared docs/assets/ file changed this
+// release (every rule is page-local inline CSS), so nothing else is owed a bump.
+const CACHE = 'mfc-v53';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

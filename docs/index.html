@@ -1248,6 +1248,103 @@ html[data-theme="dark"] .pnl-chip:hover { background:rgba(52,211,153,0.18); bord
   .proof-item { width: 100%; }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   V31.0 — VERIFIED-ACCOUNTS STRIP (under the strategy grid)
+   --------------------------------------------------------------------------
+   Ink: brand accent/teal, NOT the green the live figures use. Green means "live
+   model movement" everywhere else on this page, and the whole point of this
+   strip is that the broker's record and the model's movement are different
+   things. The only green here is the check glyph, which is semantic.
+   No gradient TEXT anywhere in this block on purpose: gradient ink cannot be
+   contrast-measured (V30.0) and prints as a solid block (V30.1).
+   ══════════════════════════════════════════════════════════════════════════ */
+.vstrip{
+  margin-top:34px; padding:30px 32px; border-radius:var(--r);
+  background:rgba(255,255,255,.72);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  border:0.5px solid rgba(37,99,235,.18);
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 22px 48px -32px rgba(26,80,216,.28);
+}
+html[data-theme="dark"] .vstrip{ background:rgba(18,29,51,.72); border-color:rgba(120,160,240,.20); }
+.vstrip-head{ max-width:660px; margin:0 0 22px; }
+.vstrip-eyebrow{
+  display:inline-flex; align-items:center; gap:6px; margin-bottom:10px;
+  font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--data-strong);
+  background:rgba(5,150,105,.09); border:0.5px solid rgba(5,150,105,.26);
+  border-radius:999px; padding:4px 10px;
+}
+html[data-theme="dark"] .vstrip-eyebrow{ background:rgba(52,211,153,.12); border-color:rgba(52,211,153,.28); }
+.vstrip-title{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-size:23px; font-weight:800; letter-spacing:-.02em; line-height:1.25;
+  color:var(--white); margin:0 0 8px;
+}
+.vstrip-sub{ font-size:14px; line-height:1.6; color:var(--text2); margin:0; }
+.vstrip-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.vstrip-foot{ font-size:11.5px; line-height:1.55; color:var(--text3); margin:16px 0 0; }
+.vstrip-foot b{ color:var(--text2); font-weight:700; }
+
+.vcard{
+  display:flex; flex-direction:column; gap:14px; min-width:0;
+  padding:20px 22px; border-radius:14px; text-decoration:none;
+  background:var(--ink2); border:1px solid rgba(37,99,235,.20);
+  box-shadow:0 1px 2px rgba(15,23,42,.035);
+  transition:transform .25s cubic-bezier(.22,1,.36,1), box-shadow .25s, border-color .2s;
+  position:relative; overflow:hidden;
+}
+html[data-theme="dark"] .vcard{ border-color:rgba(120,160,240,.22); }
+/* the brand hairline every primary panel on this site carries */
+.vcard::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:2px; pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(37,99,235,.55) 45%,rgba(8,145,178,.55) 55%,transparent);
+  opacity:.85;
+}
+html[data-theme="dark"] .vcard::before{ background:linear-gradient(90deg,transparent,rgba(120,160,240,.6) 45%,rgba(45,212,191,.55) 55%,transparent); }
+.vcard:hover{ transform:translateY(-3px); border-color:rgba(37,99,235,.42);
+  box-shadow:0 18px 38px -24px rgba(26,80,216,.45),0 1px 2px rgba(15,23,42,.04); }
+.vcard:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+.vcard-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.vcard-name{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-size:16px; font-weight:800; letter-spacing:-.01em; color:var(--white); }
+.vcard-acct{ font-size:10px; font-weight:800; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--text3); background:rgba(37,99,235,.07); border:0.5px solid var(--border);
+  border-radius:999px; padding:3px 9px; white-space:nowrap; }
+html[data-theme="dark"] .vcard-acct{ background:rgba(120,160,240,.10); }
+/* FAIL-SOFT, AND ONLY HERE. mfc-live.js hides [data-live-wrap] containers with a
+   PER-COMPONENT rule, not a blanket one, so a new slot that does not declare its
+   own hidden state renders a row of em-dashes when live-perf.json is missing.
+   The strip itself must NOT be fail-soft — the broker page exists whether or not
+   our live file landed, and the links are the point of the block. So only the
+   model figure hides, and the card keeps its name, account and CTA either way. */
+.vcard-mid{ display:none; flex-direction:column; gap:3px; }
+.vcard-mid.live-ready{ display:flex; }
+.vcard-figure{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-size:30px; font-weight:800; letter-spacing:-.02em; line-height:1.05;
+  font-variant-numeric:tabular-nums; color:var(--text2); }
+.vcard-figure.up{ color:var(--data-strong); }
+.vcard-figure.down{ color:var(--data-bad); }
+.vcard-figlbl{ font-size:11px; line-height:1.45; color:var(--text3); }
+.vcard-figlbl b{ color:var(--text2); font-weight:700; font-variant-numeric:tabular-nums; }
+.vcard-cta{ display:inline-flex; align-items:center; gap:7px; margin-top:auto;
+  font-size:13px; font-weight:700; letter-spacing:-.01em; color:var(--accent); }
+html[data-theme="dark"] .vcard-cta{ color:#9dbcff; }
+.vcard-cta .pnl-arr{ font-size:.85em; transition:transform .2s; }
+.vcard:hover .vcard-cta .pnl-arr{ transform:translate(2px,-2px); }
+/* one card per row before the two names can crowd; 620 measured, not guessed */
+@media (max-width: 620px){
+  .vstrip{ padding:24px 20px; }
+  .vstrip-grid{ grid-template-columns:1fr; }
+  .vstrip-title{ font-size:20px; }
+  .vstrip-sub{ font-size:13.5px; }
+  .vcard{ padding:18px 18px; }
+  .vcard-figure{ font-size:27px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .vcard, .vcard-cta .pnl-arr{ transition:none; }
+  .vcard:hover{ transform:none; }
+}
+
 /* ── DURATION TOGGLE (1mo / 3mo / 6mo / 1yr) ── */
 .billing-wrap { display: flex; justify-content: center; margin-bottom: 40px; }
 .billing-toggle { display: inline-flex; flex-wrap: wrap; justify-content: center; background: var(--ink2); border: 0.5px solid var(--border2); border-radius: 10px; padding: 4px; gap: 4px; }
@@ -4918,6 +5015,60 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
       </div>
 
 
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         V31.0 — THE TWO ACCOUNTS, SHOWN RATHER THAN LINKED
+         ----------------------------------------------------------------------
+         The proof bar above carries both verified links, but it carries them as
+         two 13px pills among four proof points, 3,000px away from the price a
+         reader is actually weighing. This strip sits directly under the pricing
+         decision and states the arrangement: each paid strategy is traded in its
+         OWN broker account, so each has its own broker-published record.
+         WHY A STRIP AND NOT A ROW INSIDE EACH CARD. MultiAsset has no verified
+         account — it is free and not traded this way — so a per-card row would
+         have to either lie about the third card or leave it visibly short. The
+         grid stretches all three cards to one height (measured: 1083px each at
+         1440), so an extra row on two of them spends ~24px of empty space on the
+         third. A strip belongs to the SET, which is what the claim is about.
+         The figures here are the model's since-rebalance move from live-perf.json
+         (fail-soft, hidden until it lands) and are deliberately labelled as the
+         MODEL, not as the account's P&L — they are different things and the one
+         thing this strip must never do is let a reader read one as the other.
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div class="vstrip fade-up">
+      <div class="vstrip-head">
+        <span class="vstrip-eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>Broker-verified</span>
+        <h3 class="vstrip-title">Two strategies. Two accounts. Two records we don&rsquo;t write.</h3>
+        <p class="vstrip-sub">Each paid strategy is traded in its own dedicated Zerodha account, executing that model and nothing else. Zerodha publishes each account&rsquo;s P&amp;L on its own verified page.</p>
+      </div>
+      <div class="vstrip-grid">
+        <a class="vcard" href="https://console.zerodha.com/verified/10d5f408" target="_blank" rel="noopener"
+           aria-label="MindForge LargeMidcap 250 — verified live P&L on Zerodha (opens in a new tab)">
+          <span class="vcard-top">
+            <span class="vcard-name">LargeMidcap 250</span>
+            <span class="vcard-acct">Account 1</span>
+          </span>
+          <span class="vcard-mid" data-live-wrap>
+            <span class="vcard-figure" data-live="lm:live">&mdash;</span>
+            <span class="vcard-figlbl">model, this cycle &middot; vs <span data-live="lm:benchname">benchmark</span> <b data-live="lm:bench">&mdash;</b></span>
+          </span>
+          <span class="vcard-cta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View the verified P&amp;L<span class="pnl-arr" aria-hidden="true">↗</span></span>
+        </a>
+        <a class="vcard" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener"
+           aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)">
+          <span class="vcard-top">
+            <span class="vcard-name">SmallMicro 500</span>
+            <span class="vcard-acct">Account 2</span>
+          </span>
+          <span class="vcard-mid" data-live-wrap>
+            <span class="vcard-figure" data-live="sm:live">&mdash;</span>
+            <span class="vcard-figlbl">model, this cycle &middot; vs <span data-live="sm:benchname">benchmark</span> <b data-live="sm:bench">&mdash;</b></span>
+          </span>
+          <span class="vcard-cta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View the verified P&amp;L<span class="pnl-arr" aria-hidden="true">↗</span></span>
+        </a>
+      </div>
+      <p class="vstrip-foot">The percentages are the <b>model portfolio&rsquo;s</b> move since the last rebalance, not audited client returns and not the account&rsquo;s P&amp;L &mdash; open a card to see what the broker publishes. MultiAsset is free and is not traded in a dedicated account.</p>
     </div>
   </div>
 </section>
