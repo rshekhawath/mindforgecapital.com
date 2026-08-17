@@ -1654,6 +1654,17 @@ html[data-theme="dark"] .vcard-cta{ color:#9dbcff; }
 .crit-icon {
   transition: transform 0.25s;
 }
+/* V31.2 — SEBI shield in the proof bar. Presentation attributes can't take a
+   var(), so the paint lives here; light keeps the exact hex it had. */
+.proof-shield { stroke: var(--accent); }
+html[data-theme="dark"] .proof-shield { stroke: var(--accent2); }
+/* V31.2 — two of the five criterion pills were inked with literals that never
+   flipped: pill 2 (#0d9488) and pill 5 (#7c3aed) sat on their own 15% tint over
+   a near-black card and measured under the 3:1 non-text floor, while the three
+   beside them ride tokens that do flip. Lifted to the same family the dark
+   palette already uses, and ONLY in dark — light is unchanged. */
+html[data-theme="dark"] .criteria-row .crit-pill:nth-child(2) .crit-icon { color: #2dd4bf; }
+html[data-theme="dark"] .criteria-row .crit-pill:nth-child(5) .crit-icon { color: #a78bfa; }
 .criteria-row .crit-pill:hover .crit-icon { transform: scale(1.1) rotate(-4deg); }
 
 /* ── STRATEGY CARD: subtle hover glow ── */
@@ -3751,7 +3762,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3050">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3060">
 </head>
 <body>
 
@@ -4090,7 +4101,13 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
     if(s.fii)drv.push('FII <b>'+((Number(s.fii.net)||0)>=0?'buying':'selling')+'</b>');
     if(s.dii)drv.push('DII <b>'+((Number(s.dii.net)||0)>=0?'buying':'selling')+'</b>');
     if(s.fo&&s.fo.fii_idxfut_long!=null)drv.push('FIIs net <b>'+(Number(s.fo.fii_idxfut_long)>=Number(s.fo.fii_idxfut_short)?'long':'short')+' F&amp;O</b>');
-    host.innerHTML='<div class="mps-head"><span class="mps-k"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Market sentiment</span>'+
+    // V31.2 — this glyph was stroke="#475569", the light value of .mps-k's own
+    // colour. V17.3 lifted the LABEL to --text2 on dark cards; the icon beside
+    // it is a presentation attribute, which does not inherit `color`, so it was
+    // left behind at 2.35:1 while the words next to it read at 9.9:1.
+    // currentColor makes it follow the label it belongs to, in both themes and
+    // through any future re-ink, with no new rule to keep in sync.
+    host.innerHTML='<div class="mps-head"><span class="mps-k"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Market sentiment</span>'+
       '<span class="mps-verdict mps-'+L.tone+'">'+L.t+' · <span class="mps-score">'+s.score+'</span><i>/100</i></span></div>'+
       '<div class="mps-meter"><span class="mps-needle mps-'+L.tone+'" data-left="'+sc+'"></span></div>'+
       '<div class="mps-scale"><span>Bearish</span><span>Neutral</span><span>Bullish</span></div>'+
@@ -4128,7 +4145,12 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
     <div class="proof-bar">
       <div class="proof-item">
         <span class="proof-num" style="display:inline-flex;align-items:center;gap:6px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a50d8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          <!-- V31.2: was stroke="#1a50d8", the light brand blue, which measured
+               2.69:1 on the dark proof bar — under the 3:1 non-text floor for the
+               one glyph that carries the SEBI claim. .proof-shield takes --accent
+               (the same #1a50d8 in light, so light is untouched) and the dark
+               accent below, the same lift V26.4 gave this card's eyebrow. -->
+          <svg class="proof-shield" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L4 5v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4"/></svg>
           SEBI Registered
         </span>
         <span class="proof-label">Research Analyst</span>

@@ -326,7 +326,15 @@
 // and none of the proof that now sits directly beneath it — and a precached
 // document has no ?v of its own to bust. No shared docs/assets/ file changed this
 // release (every rule is page-local inline CSS), so nothing else is owed a bump.
-const CACHE = 'mfc-v53';
+// V31.2 -> mfc-v54. index.html is precached as the offline navigation fallback
+// and it changed this release (the Market-Pulse sentiment glyph and the SEBI
+// shield both move off hardcoded light inks, and two criterion icons gain a dark
+// tier). A precached document has no ?v of its own to bust, so an installed app
+// opening cold on v53 would keep serving the V31.1 homepage. mfc-finish.css also
+// changed — it is cache-FIRST here, keyed by exact URL including ?v — and its
+// ?v moved 3050 -> 3060 on all 49 referencing pages plus the generator that
+// rewrites the 28 stock-directory pages, so returning visitors get the toast fix.
+const CACHE = 'mfc-v54';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

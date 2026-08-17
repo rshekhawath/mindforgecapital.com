@@ -785,7 +785,18 @@ html[data-theme="dark"] .sess.is-clean .sess-track{background:rgba(131,170,255,0
 .alloc-donut svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible;}
 .alloc-donut .ring-bg{fill:none;stroke:rgba(37,99,235,0.07);}
 .alloc-donut .ring-slice{fill:none;stroke-linecap:butt;transition:stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1);}
-.alloc-donut .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+/* V31.2 — `pointer-events:none` is the whole fix for a feature that has never
+   once run. This overlay is `inset:0` on a 170x170 wrapper, so it is not a label
+   in the middle of the ring — it is a 170x170 pane sitting ON the ring, and it
+   took every pointer event aimed at it. Hit-tested at twelve points around the
+   circumference: elementFromPoint returned .donut-center at all twelve, never a
+   slice. V22.2 shipped "donut slice hover -> map tiles" and bound the listeners
+   to #alloc-donut-svg, and not one mouseover has ever reached them; the same
+   overlay swallowed the V31.2 click handler below, which is how it was found.
+   Its only children are two text nodes (the count and its label) — no control,
+   nothing focusable — so making it transparent to the pointer costs nothing and
+   hands the ring back its own surface. */
+.alloc-donut .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;}
 .alloc-donut .donut-comet{pointer-events:none;}
 @media (prefers-reduced-motion: reduce){ .alloc-donut .donut-comet{ display:none; } }
 .alloc-donut .dc-num{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:800;color:var(--white);line-height:1;letter-spacing:-.02em;}
@@ -2140,7 +2151,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3050">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3060">
 </head>
 <body>
 <!-- MF-SCROLL-PROG -->
@@ -4978,7 +4989,15 @@ function renderDonut(rows) {
     const frac = r.pct / 100;
     const len = C * frac;
     const offset = -C * cum;
-    html += `<circle class="ring-slice" cx="${CX}" cy="${CY}" r="${R}" stroke-width="${STROKE}" stroke="${r.color}" stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"><title>${escapeHtml(r.name)} · ${r.pct.toFixed(1)}%</title></circle>`;
+    // V31.2 — the slice carries its group name as an ATTRIBUTE now. The V22.2
+    // hover lens read it back out of the <title> by splitting on " · ", which
+    // works but ties the wiring to a display string; data-sector is the same key
+    // the legend rows and the chips already use, so all three entry points into
+    // the filter now agree by construction. "Other" is an aggregate of several
+    // sectors, so it deliberately gets no key and stays unpressable — exactly
+    // like its .alloc-row-other legend row.
+    const pickable = r.name !== 'Other';
+    html += `<circle class="ring-slice${pickable ? ' ring-pick' : ''}" cx="${CX}" cy="${CY}" r="${R}" stroke-width="${STROKE}" stroke="${r.color}" stroke-dasharray="${len.toFixed(2)} ${C.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"${pickable ? ` data-sector="${escapeHtml(r.name)}"` : ''}><title>${escapeHtml(r.name)} · ${r.pct.toFixed(1)}%</title></circle>`;
     cum += frac;
   });
   // V20.8: "living data" — a soft point of light orbits the ring (the dashboard's
@@ -9242,6 +9261,12 @@ html[data-theme="dark"] .oneonone-card::after{
       if(!pgrid) return;
       function mapLens(sector){
         var tiles=pgrid.querySelectorAll(".pmap-tile");
+        /* V31.2 — releasing a hover falls back to the PINNED sector rather than
+           to nothing. Before this, choosing a sector narrowed the table and then,
+           the moment the pointer left, the map and the ring reverted to showing
+           the whole book: the one surface that says which 3 of 25 names you are
+           looking at forgot it the instant you stopped pointing at it. */
+        if(!sector) sector = (typeof _sectorFilter === "string" && _sectorFilter) ? _sectorFilter : "";
         if(!sector){ pgrid.classList.remove("mf222-hot");
           for(var i=0;i<tiles.length;i++) tiles[i].classList.remove("mf222-pick");
           return; }
@@ -9332,10 +9357,80 @@ html[data-theme="dark"] .oneonone-card::after{
         lastTileSec=null;
         mapLens(null); legendPick(null,false); donutPick("",false); centreRestore();
       });
+
+      /* ── V31.2 — the ring becomes a control, and the choice stays visible ──
+         The legend row beside it has been `role="button"` since V5.2, and V22.2
+         already made the slice HOVER exactly like that row. What it could not do
+         was be pressed: the largest, most-looked-at graphic on the panel behaved
+         like a control and then did nothing when you clicked it.
+         It is deliberately NOT keyboard-focusable and #alloc-donut keeps its
+         aria-hidden. The same action is already reachable by keyboard and to
+         assistive tech from two places — the legend row for that sector and its
+         chip — so adding a third would only duplicate the ring in the a11y tree.
+         Same reasoning V28.3 applied to the .hp-seg histogram slivers.
+         "Other" carries no data-sector, so it is inert by construction rather
+         than by a check that could rot. */
+      if(svg){
+        svg.addEventListener("click",function(e){
+          var s=e.target&&e.target.closest?e.target.closest(".ring-pick"):null;
+          if(!s) return;
+          var sec=s.getAttribute("data-sector");
+          if(sec && typeof filterBySector==="function") filterBySector(sec);
+        });
+      }
+      /* Reflect the PINNED sector on the ring and the legend, so all four views
+         of one book — chips, table, ring, map — say the same thing at rest and
+         not only while a pointer is on them. Runs after filterBySector has
+         settled _sectorFilter; re-applied on re-render via the same hook. */
+      function reflectPin(){
+        var pin=(typeof _sectorFilter==="string"&&_sectorFilter)?_sectorFilter:"";
+        if(svg){
+          var slices=svg.querySelectorAll(".ring-slice");
+          for(var i=0;i<slices.length;i++)
+            slices[i].classList.toggle("mf312-pinned",!!pin&&slices[i].getAttribute("data-sector")===pin);
+          svg.classList.toggle("mf312-pinhot",!!pin);
+        }
+        if(legend){
+          var rows=legend.querySelectorAll(".alloc-row");
+          for(var j=0;j<rows.length;j++){
+            var on=!!pin&&rows[j].getAttribute("data-sector")===pin;
+            rows[j].classList.toggle("mf312-pinned",on);
+            if(rows[j].hasAttribute("data-sector")) rows[j].setAttribute("aria-pressed",on?"true":"false");
+          }
+        }
+        mapLens(null);
+      }
+      window.__mfcReflectSectorPin=reflectPin;
+      /* filterBySector is the single gate every entry point goes through, so
+         wrapping it once covers the chips, the legend rows and the ring alike. */
+      if(typeof window.filterBySector==="function"){
+        var _orig=window.filterBySector;
+        window.filterBySector=function(){ var r=_orig.apply(this,arguments); try{reflectPin();}catch(_){} return r; };
+      }
+      reflectPin();
     }catch(e){}
   });
 })();
 </script>
+<style id="mf-v312-dash">
+/* V31.2 — the ring's pressed state. The picked slice keeps full paint and gains
+   a soft ring of its own colour; the rest step back far enough to read as "not
+   this one" without vanishing, so the picked group is still read against the
+   shape of the whole book — the same 0.72/0.09 discipline /scores/ uses. */
+.alloc-donut svg .ring-pick{ cursor:pointer; }
+.alloc-donut svg.mf312-pinhot .ring-slice{ opacity:.28; transition:opacity .18s ease; }
+.alloc-donut svg.mf312-pinhot .ring-slice.mf312-pinned{ opacity:1; }
+.alloc-row.mf312-pinned{ background:rgba(26,80,216,0.10); box-shadow:inset 2px 0 0 var(--accent2); }
+html[data-theme="dark"] .alloc-row.mf312-pinned{ background:rgba(120,160,240,0.14); }
+.alloc-row.mf312-pinned .alloc-nm-t{ color:var(--white); font-weight:700; }
+@media (prefers-reduced-motion: reduce){ .alloc-donut svg.mf312-pinhot .ring-slice{ transition:none; } }
+/* Paper: a pinned ring must not print as a set of ghost arcs — print shows the
+   whole book, which is what the printed table shows too. */
+@media print{
+  .alloc-donut svg.mf312-pinhot .ring-slice{ opacity:1 !important; }
+  .alloc-row.mf312-pinned{ background:none !important; box-shadow:none !important; }
+}
+</style>
 <!-- ================================================================
      MF V25.5 — PORTFOLIO MAP: a RETURN view beside the weight view
      ----------------------------------------------------------------

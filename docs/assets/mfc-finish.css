@@ -1110,7 +1110,21 @@ html .tip-icon .tip-popup{ z-index:51; }
    ========================================================================== */
 html .toast-container{ right: 96px; }
 @media (max-width: 768px){
-  html .toast-container{ right: 88px; left: 16px; align-items: flex-end; }
+  /* V31.2 — `transform:none` is the load-bearing addition here, not tidiness.
+     This rule was written against the three pages that anchor their toast with
+     `bottom:24px; right:24px`, and it PINS BOTH EDGES (left:16px + right:88px).
+     /fii-dii/ uses the other idiom — `left:50%` plus `transform:translateX(-50%)`
+     — and the transform survived, so the container was laid out from 16px to
+     vw-88px and THEN shifted left by half its own width. Measured at 390px: box
+     16→302 (286 wide), shifted −143, painting at −127. A third of the toast, and
+     its first words, sat off the left edge of every phone. The only toast that
+     page ever fires is "Could not load data — please refresh." — the one message
+     a reader most needs to be able to read. Fixed here rather than on the page
+     because the wrong assumption is here: any future page that centres its
+     toasts would inherit exactly the same break. Above 768px the base rule leaves
+     `left:50%` alone and the transform still centres it exactly (the algebra
+     cancels to viewport/2 at every width), so desktop is untouched. */
+  html .toast-container{ right: 88px; left: 16px; align-items: flex-end; transform: none; }
 }
 
 /* ============================================================================

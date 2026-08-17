@@ -395,7 +395,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3050">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3060">
 </head>
 <body>
 
@@ -724,6 +724,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 @keyframes sc-spin{to{transform:rotate(360deg);}}
 .sc-grid{stroke:rgba(37,99,235,.09);stroke-width:1;}
 .sc-base{stroke:var(--text3);stroke-width:1;stroke-dasharray:3 4;opacity:.55;}
+/* V31.2 — the P/E trend chart's line was stroke="#1a50d8" inside an innerHTML
+   template: the light brand blue, 2.55:1 on the dark card, and it is the ONLY
+   mark in that chart — there is nothing else to read it from. A class resolves
+   the token an SVG presentation attribute cannot. Light keeps #1a50d8 exactly. */
+.pe-line{stroke:var(--accent);}
+html[data-theme="dark"] .pe-line{stroke:var(--accent3);}
 .sc-axis{fill:var(--text3);font-size:10px;font-variant-numeric:tabular-nums;}
 .sc-cross{stroke:var(--text3);stroke-width:1;opacity:.45;}
 .sc-dot{fill:#fff;stroke-width:2.5;}
@@ -944,7 +950,7 @@ function renderHistTrend(sym){
       let dline="",started=false,first=null,last=null;
       vals.forEach((v,i)=>{if(v==null)return;dline+=(started?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)+" ";started=true;if(first==null)first=v;last=v;});
       sub.textContent=`${dates[0]} → ${dates[dates.length-1]} · ${pts.length} days`;
-      host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:108px;display:block" role="img" aria-label="P/E trend ${first!=null?first.toFixed(1):""} to ${last!=null?last.toFixed(1):""}"><path d="${dline}" fill="none" stroke="#1a50d8" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:108px;display:block" role="img" aria-label="P/E trend ${first!=null?first.toFixed(1):""} to ${last!=null?last.toFixed(1):""}"><path class="pe-line" d="${dline}" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-top:5px"><span>P/E ${first!=null?first.toFixed(1):"—"}</span><span style="color:var(--white,#0c1831);font-weight:700">now ${last!=null?last.toFixed(1):"—"}</span></div>`;
     }).catch(()=>{});
 }

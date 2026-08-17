@@ -334,6 +334,17 @@ html[data-theme="dark"]{
 .ls-gauge-ends{display:flex;justify-content:space-between;width:100%;max-width:300px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-top:-4px}
 .ls-gauge-ends .e-sht{color:var(--red-ink)}
 .ls-gauge-ends .e-lng{color:var(--green-ink)}
+/* ── V31.2 — the needle was #0c1831, which is --white in LIGHT and therefore
+   1.05:1 against the dark card: the pointer of the page's headline gauge was
+   invisible in dark mode, leaving an arc with a floating white dot on it and
+   nothing indicating where it pointed. Presentation attributes cannot take a
+   var(), so the paint moves to CSS classes and follows the theme.
+   The hub's inner dot takes the CARD colour, not #fff, so it reads as a hole
+   punched in the needle rather than a white speck on a dark ground. */
+.ls-gauge .g-track{stroke:var(--ink3)}
+.ls-gauge .g-needle{stroke:var(--white)}
+.ls-gauge .g-hub{fill:var(--white)}
+.ls-gauge .g-hub-dot{fill:var(--ink2)}
 /* one-time specular sheen across the cash flow cards on reveal */
 .flow-card::after{content:'';position:absolute;top:0;left:-60%;width:42%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-18deg);opacity:0;pointer-events:none;z-index:2}
 .flow-card.in::after{animation:flow-sheen 1.05s ease-out .25s 1}
@@ -341,6 +352,40 @@ html[data-theme="dark"]{
 /* chart gridlines + scale labels */
 svg.barchart .grid{stroke:var(--border2);stroke-width:1;stroke-dasharray:2 4}
 svg.barchart .glab{font-size:9px;fill:var(--text3);font-variant-numeric:tabular-nums}
+
+/* ── V31.2 — the two inks this chart painted from literals ──────────────────
+   A `var()` cannot be used inside an SVG *presentation attribute*, so both of
+   these were written as hex and both were tuned for the white card only.
+   A CSS rule targeting the element resolves custom properties perfectly well,
+   which is the whole fix: the class does what the attribute could not.
+     • the x-axis dates were fill="#475569" — 2.22:1 on the dark card, at 9.5px.
+       --text3 is that exact hex in light, so light is unchanged, and dark
+       becomes #8698b7 → 5.76:1.
+     • the zero line was stroke="#94a3b8" — 2.56:1 on white, under the 3:1
+       non-text floor, and it is the reference every bar is read against. */
+svg.barchart .xlab{fill:var(--text3)}
+svg.barchart .zero{stroke:var(--text3);stroke-width:1}
+
+/* ── V31.2 — the day readout ───────────────────────────────────────────────
+   The chart had a native <title> per bar and nothing else: no keyboard route,
+   no way to read both series for one day at once, and on touch no route at
+   all. Each day is now a focusable group over a full-height hit band. */
+.trend-read{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;
+  color:var(--text3);margin:2px 0 8px;min-height:20px}
+.trend-read .tr-date{font-weight:700;color:var(--white);font-variant-numeric:tabular-nums}
+.trend-read .tr-v{font-weight:700;font-variant-numeric:tabular-nums}
+.trend-read .tr-v.pos{color:var(--green-ink)} .trend-read .tr-v.neg{color:var(--red-ink)}
+.trend-read .tr-sep{width:3px;height:3px;border-radius:50%;background:var(--text3);opacity:.5}
+.trend-read .tr-hint{margin-left:auto;font-size:11.5px;opacity:.8}
+svg.barchart .bargrp{cursor:pointer;outline:none}
+svg.barchart .hit{fill:transparent}
+svg.barchart .band{fill:var(--accent);opacity:0;transition:opacity .12s ease;pointer-events:none}
+svg.barchart .bargrp:hover .band,
+svg.barchart .bargrp:focus-visible .band{opacity:.09}
+svg.barchart .bargrp:focus-visible .band{opacity:.14;stroke:var(--accent);stroke-width:1}
+svg.barchart .bargrp:hover .bar,
+svg.barchart .bargrp:focus-visible .bar{filter:brightness(1.12)}
+@media(prefers-reduced-motion:reduce){svg.barchart .band{transition:none}}
 
 /* ── V14.9 finishing polish — interactive depth on the tables & position cards ── */
 table.data tbody tr{transition:background .15s ease}
@@ -421,7 +466,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3050">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3060">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -535,8 +580,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <span class="lg"><span class="sw dii"></span>DII net</span>
         <span class="lg" style="margin-left:auto">₹ crore</span>
       </div>
+      <!-- V31.2: always-present readout. It defaults to the latest session, so
+           there is no empty state and no layout shift when a day is hovered or
+           focused — the line simply changes which day it is describing. -->
+      <div class="trend-read" id="trendRead" aria-live="polite"></div>
       <div class="chart-wrap"><div id="chart"></div></div>
-      <div class="tbl-scroll" style="margin-top:18px">
+      <div class="note" id="trendTblNote" style="margin-top:14px"></div>
+      <div class="tbl-scroll" style="margin-top:8px">
         <table class="data" id="cashTbl">
           <thead><tr>
             <th>Date</th><th>FII Buy</th><th>FII Sell</th><th>FII Net</th>
@@ -566,7 +616,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="gh-sub">Long contracts ÷ short contracts held by FIIs in index futures. Below 1 = net short (cautious / bearish tilt).</div>
         <div><span class="ls-ratio" id="lsRatio"><span class="sk" style="width:120px;height:46px;display:inline-block"></span></span></div>
         <div class="ls-gauge" id="lsArc"></div>
-        <div class="ls-foot"><span id="lsLongLab">Long —</span><span id="lsShortLab">Short —</span></div>
+        <!-- V31.2: the two label rows under this arc used to disagree with each
+             other. .ls-gauge-ends reads SHORT (left) · LONG (right) because that
+             is the arc — red sweeps from the left, green to the right — and this
+             row printed "Long …" on the left, directly beneath the word SHORT.
+             The counts now sit on the same side as the percentage that describes
+             them, so one side of the gauge means one thing. -->
+        <div class="ls-foot"><span id="lsShortLab">Short —</span><span id="lsLongLab">Long —</span></div>
         <div class="sentiment neutral" id="sentiment"><span class="big">⏳</span><span>Loading positioning…</span></div>
       </div>
 
@@ -836,16 +892,29 @@ function renderCash(d){
   }
 }
 
+const TREND_BARS=20, TREND_ROWS=30;
+
 function renderTrend(d){
   const hist=(d.cash_history||[]).slice().filter(r=>r&&r.date);
-  // chronological (oldest -> newest), cap to last 20 for the chart
+  // chronological (oldest -> newest), cap to the last TREND_BARS for the chart
   const chrono=hist.slice().sort((a,b)=>dkey(a.date)-dkey(b.date));
-  const show=chrono.slice(-20);
-  document.getElementById("trendHint").textContent=hist.length<=1?"Builds each market day":`${hist.length} trading days`;
+  const show=chrono.slice(-TREND_BARS);
+  // V31.2 — this hint sits in the panel header, immediately above the legend and
+  // the chart, and it printed hist.length: "37 trading days" over a chart that
+  // draws the last 20 and a table that lists 30. It described neither. It is now
+  // derived from what is actually painted, so it cannot drift from it again.
+  document.getElementById("trendHint").textContent =
+    show.length<=1 ? "Builds each market day" : `Last ${show.length} sessions`;
   drawChart(show);
   // table: newest first
   const body=document.getElementById("cashTblBody");
-  const rows=hist.slice().sort((a,b)=>dkey(b.date)-dkey(a.date)).slice(0,30);
+  const rows=hist.slice().sort((a,b)=>dkey(b.date)-dkey(a.date)).slice(0,TREND_ROWS);
+  // …and the table gets its own count rather than borrowing the chart's.
+  const tnote=document.getElementById("trendTblNote");
+  if(tnote) tnote.innerHTML = rows.length
+    ? `Table: the <b>${rows.length}</b> most recent session${rows.length===1?"":"s"}${
+        hist.length>rows.length?` of <b>${hist.length}</b> held`:""}. The chart above plots the last <b>${show.length}</b>.`
+    : "";
   // V18.0 — same diverging mini-bar the participant table uses, shared scale
   // across the visible rows so day-to-day magnitude compares at a glance
   const maxNet=Math.max(1,...rows.flatMap(r=>[Math.abs(r.fii_net||0),Math.abs(r.dii_net||0)]));
@@ -872,17 +941,29 @@ function drawChart(rows){
   rows.forEach((r,i)=>{
     const gx=padL+i*groupW+groupW/2;
     const fx=gx-barW-2,dx=gx+2;
+    const gL=padL+i*groupW;
+    // V31.2 — each day is one focusable group over a full-height hit band.
+    // Before this the only affordance was a native <title> per bar: nothing for
+    // a keyboard, nothing on touch, and no way to read both series for one day
+    // together. aria-label carries the same pair the readout shows.
+    let one=`<rect class="band" x="${gL.toFixed(1)}" y="${padT.toFixed(1)}" width="${groupW.toFixed(1)}" height="${(H-padB-padT).toFixed(1)}" rx="3"/>`
+           +`<rect class="hit" x="${gL.toFixed(1)}" y="${padT.toFixed(1)}" width="${groupW.toFixed(1)}" height="${(H-padB-padT).toFixed(1)}"/>`;
     [["fii",r.fii_net||0,fx,"url(#gFii)"],["dii",r.dii_net||0,dx,"url(#gDii)"]].forEach(([k,v,x,fill])=>{
       const yy=y(v),h=Math.abs(zeroY-yy);
-      bars+=`<rect x="${x.toFixed(1)}" y="${(v>=0?yy:zeroY).toFixed(1)}" width="${barW}" height="${Math.max(1.5,h).toFixed(1)}" rx="2.5" fill="${fill}"><title>${k.toUpperCase()} ${cr(v)} cr · ${r.date}</title></rect>`;
+      one+=`<rect class="bar" x="${x.toFixed(1)}" y="${(v>=0?yy:zeroY).toFixed(1)}" width="${barW}" height="${Math.max(1.5,h).toFixed(1)}" rx="2.5" fill="${fill}"/>`;
     });
+    // Roving tabindex: the series is ONE tab stop, not twenty. Arrow keys / Home
+    // / End walk it — the standard composite-widget pattern, and the reason this
+    // chart does not cost a keyboard user twenty presses to get past it.
+    bars+=`<g class="bargrp" tabindex="${i===0?0:-1}" role="listitem" data-i="${i}"`
+        +` aria-label="${escapeHtml(r.date||"")}: FII net ${cr(r.fii_net||0)} crore, DII net ${cr(r.dii_net||0)} crore">${one}</g>`;
     // x label (show every nth to avoid crowding)
     const lab=r.date?r.date.slice(0,6):"";
     const every=rows.length>12?2:1;
     if(i%every===0||i===rows.length-1)
-      bars+=`<text x="${gx.toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="9.5" fill="#475569">${escapeHtml(lab)}</text>`;
+      bars+=`<text class="xlab" x="${gx.toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="9.5">${escapeHtml(lab)}</text>`;
   });
-  host.innerHTML=`<svg class="barchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="FII and DII net flow trend">
+  host.innerHTML=`<svg class="barchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="list" aria-label="FII and DII net flow trend, ${rows.length} sessions">
     <defs>
       <linearGradient id="gFii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a50d8"/><stop offset="1" stop-color="#0891b2"/></linearGradient>
       <linearGradient id="gDii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#d97706"/></linearGradient>
@@ -892,9 +973,53 @@ function drawChart(rows){
     <line class="grid" x1="${padL}" y1="${(H-padB).toFixed(1)}" x2="${W-padR}" y2="${(H-padB).toFixed(1)}"/>
     <text class="glab" x="${padL}" y="${(padT-3).toFixed(1)}">+${grp(maxV)}</text>
     <text class="glab" x="${padL}" y="${(H-padB+11).toFixed(1)}">−${grp(maxV)}</text>
-    <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+    <line class="zero" x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke-dasharray="3 3"/>
     <g filter="url(#barSh)">${bars}</g>
   </svg>`;
+  wireTrendRead(rows);
+}
+
+/* ── V31.2 — day readout ───────────────────────────────────────────────────
+   Drives #trendRead from whichever day is hovered or focused, and falls back to
+   the newest session so the line is never blank. `rows` is the SAME array the
+   chart was drawn from, indexed by the group's data-i, so the readout cannot
+   describe a day the chart did not paint. */
+function wireTrendRead(rows){
+  const read=document.getElementById("trendRead");
+  if(!read||!rows.length) return;
+  const last=rows.length-1;
+  const num=(v)=>`<span class="tr-v ${v>=0?"pos":"neg"}">${cr(v)}</span>`;
+  const paint=(i,pinned)=>{
+    const r=rows[i]; if(!r) return;
+    read.innerHTML=`<span class="tr-date">${escapeHtml(r.date||"—")}</span>`
+      +`<span class="tr-sep"></span>FII ${num(r.fii_net||0)} cr`
+      +`<span class="tr-sep"></span>DII ${num(r.dii_net||0)} cr`
+      +`<span class="tr-hint">${pinned?"Latest session · hover or tab any bar":`Session ${i+1} of ${rows.length}`}</span>`;
+  };
+  paint(last,true);
+  const host=document.getElementById("chart");
+  const groups=[...host.querySelectorAll(".bargrp")];
+  const rove=(to)=>{
+    const j=Math.max(0,Math.min(groups.length-1,to));
+    groups.forEach((g,k)=>g.setAttribute("tabindex",k===j?"0":"-1"));
+    groups[j].focus();
+  };
+  groups.forEach((g,i)=>{
+    const on=()=>paint(i,false);
+    g.addEventListener("mouseenter",on);
+    g.addEventListener("focus",on);
+    g.addEventListener("blur",()=>{ if(!host.matches(":hover")) paint(last,true); });
+    g.addEventListener("keydown",(e)=>{
+      const k=e.key;
+      if(k==="ArrowRight"||k==="ArrowDown") { e.preventDefault(); rove(i+1); }
+      else if(k==="ArrowLeft"||k==="ArrowUp"){ e.preventDefault(); rove(i-1); }
+      else if(k==="Home"){ e.preventDefault(); rove(0); }
+      else if(k==="End"){ e.preventDefault(); rove(groups.length-1); }
+    });
+  });
+  host.addEventListener("mouseleave",()=>{
+    if(!host.contains(document.activeElement)) paint(last,true);
+  });
 }
 
 // ── derivatives ──
@@ -936,12 +1061,12 @@ function renderDerivatives(d){
         <defs><linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stop-color="#dc2626"/><stop offset="0.5" stop-color="#d97706"/><stop offset="1" stop-color="#059669"/>
         </linearGradient></defs>
-        <path d="M18 100 A 82 82 0 0 1 182 100" fill="none" stroke="#e4eeff" stroke-width="15" stroke-linecap="round"/>
+        <path class="g-track" d="M18 100 A 82 82 0 0 1 182 100" fill="none" stroke-width="15" stroke-linecap="round"/>
         <path d="M18 100 A 82 82 0 0 1 182 100" fill="none" stroke="url(#arcGrad)" stroke-width="15" stroke-linecap="round" opacity="0.9"/>
         <g transform="${init}">${anim}
-          <line x1="100" y1="100" x2="100" y2="31" stroke="#0c1831" stroke-width="3.5" stroke-linecap="round"/>
-          <circle cx="100" cy="100" r="7" fill="#0c1831"/>
-          <circle cx="100" cy="100" r="3" fill="#ffffff"/>
+          <line class="g-needle" x1="100" y1="100" x2="100" y2="31" stroke-width="3.5" stroke-linecap="round"/>
+          <circle class="g-hub" cx="100" cy="100" r="7"/>
+          <circle class="g-hub-dot" cx="100" cy="100" r="3"/>
         </g>
       </svg>
       <div class="ls-gauge-ends"><span class="e-sht">Short ${shortPct.toFixed(0)}%</span><span class="e-lng">${longPct.toFixed(0)}% Long</span></div>`;
