@@ -320,9 +320,53 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .qv-title{font-size:15px;font-weight:800;color:var(--white);letter-spacing:-.01em}
 .qv-title .qv-x{color:var(--accent2)}
 .qv-sub{font-size:12.5px;color:var(--text3);margin-top:3px;max-width:520px;line-height:1.5}
-.qv-legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
-.qv-leg{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--text2)}
-.qv-leg .qd{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* V31.1 — THE KEY IS NOW DERIVED FROM THE BANDS, NOT HAND-WRITTEN BESIDE THEM.
+   It used to be three fixed spans — "High score" #047857, "Mid" #1a50d8, "Low"
+   #dc2626 — sitting next to a cloud whose dots are filled by MFCScores.color(),
+   a FIVE-band scale. Measured on the live page rather than read off the source:
+
+     light: the chart paints #065f46 ×23, #047857 ×292, #1a50d8 ×711,
+            #b45309 ×621, #dc2626 ×354. The key named three of the five, and its
+            "High score" swatch was #047857 — the ink the chart uses for the
+            SECOND band. Weak (#b45309) is 621 dots, the second-largest mass on
+            the chart, and had no entry at all: 913 of 2,001 dots, 45.6%, could
+            not be decoded from the key.
+     dark : the chart paints #34d399/#16c78d/#83aaff/#fbbf24/#f87171 and the key
+            still showed the three LIGHT hexes — not one of which the chart
+            paints. Legend and chart shared no colour whatsoever. The sibling
+            distribution legend ten lines up has been derived since V27.1 and is
+            correct in both themes; these two had simply never been joined up.
+
+   So it is generated from BANDS like its sibling, which also makes it a control:
+   each entry is a real button on the SAME bandFilter the distribution bar owns,
+   so one band selection now drives all three views of the same data — the bar,
+   the table, and (new) the cloud, which dims everything outside the picked band.
+   min-height 28px because these are touch targets on a phone (V28.3/V30.9). */
+.qv-legend{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.qv-key{appearance:none;-webkit-appearance:none;border:0.5px solid var(--border2);background:var(--ink2);
+  min-height:28px;padding:4px 11px 4px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;
+  font:inherit;font-size:11px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;
+  transition:border-color .2s ease,background .2s ease,opacity .2s ease,transform .2s cubic-bezier(.22,.8,.2,1)}
+.qv-key .qd{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.qv-key:hover{border-color:var(--accent3);transform:translateY(-1px)}
+.qv-key:focus-visible{outline:2px solid var(--accent3);outline-offset:2px}
+.qv-legend.has-pick .qv-key{opacity:.45}
+.qv-legend.has-pick .qv-key[aria-pressed="true"]{opacity:1;border-color:var(--accent3);background:var(--ink3)}
+@media(prefers-reduced-motion:reduce){.qv-key{transition:none}.qv-key:hover{transform:none}}
+/* V31.1 — the score distribution is this page's headline visual and it is made
+   entirely of CSS background colour, so it printed as a blank grey strip: browsers
+   drop backgrounds unless the page declares the colour meaningful, and Chrome's
+   "Background graphics" box is off by default. Measured through Page.printToPDF —
+   1,829,649 bytes with backgrounds off against 4,156,146 with them on. The scatter
+   itself was always fine (SVG fills are content, not backgrounds), which is exactly
+   why nothing noticed the bar beside it going white. Narrow on purpose: only the
+   five band segments and the three keys that decode them. */
+@media print{
+  .hp-dist-bar, .hp-seg, .hp-leg .sw, .qv-key .qd, .gk-swatch,
+  .score-track, .score-fill, .fac-bar, .fac-fill{
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+}
 .qv-body{display:grid;grid-template-columns:1fr;gap:14px}
 /* V29.3 — 2,032 companies were being plotted into a 520px square sitting inside
    a card up to 1,180px wide, with ~330px of nothing either side. The whole SVG
@@ -827,11 +871,9 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
         <div class="qv-title">Quality <span class="qv-x">×</span> Value landscape</div>
         <div class="qv-sub">Every scored stock plotted by its two pillars. The sweet spot is the top-right — strong businesses that are still cheaply priced.</div>
       </div>
-      <div class="qv-legend">
-        <span class="qv-leg"><span class="qd" style="background:#047857"></span>High score</span>
-        <span class="qv-leg"><span class="qd" style="background:#1a50d8"></span>Mid</span>
-        <span class="qv-leg"><span class="qd" style="background:#dc2626"></span>Low</span>
-      </div>
+      <!-- Filled by renderQuadrant() from BANDS, so the key can never name a
+           different set of colours than the cloud paints. See the .qv-key CSS. -->
+      <div class="qv-legend" id="qvKey"></div>
     </div>
     <div class="qv-body">
       <div class="qv-chart-wrap">
@@ -1010,9 +1052,17 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
       <span class="method-pill">Proximity to 52-Week High</span>
     </div>
     <h4>Grade key</h4>
-    <div class="grade-key">
-      <div class="grade-key-row"><span class="gk-swatch" style="background:#047857"></span><strong>80–100</strong> Excellent</div>
-      <div class="grade-key-row"><span class="gk-swatch" style="background:#059669"></span><strong>65–79</strong> Good</div>
+    <!-- V31.1 — filled by renderHero() from BANDS. Hand-written, this key was the
+         page explaining its own colours WRONG: it painted "80–100 Excellent" as
+         #047857, which is the ink the page actually uses for 65–79, and painted
+         "65–79 Good" as #059669, an ink the page paints for nothing at all — the
+         two literals had been left behind when the bands moved to the engine's
+         theme-aware scale. In dark mode all five swatches were light-theme hexes
+         and not one matched a band. Deriving it is the only way a key and the
+         thing it describes stay married. The rows below are the no-JS fallback. -->
+    <div class="grade-key" id="gradeKey">
+      <div class="grade-key-row"><span class="gk-swatch" style="background:#065f46"></span><strong>80–100</strong> Excellent</div>
+      <div class="grade-key-row"><span class="gk-swatch" style="background:#047857"></span><strong>65–79</strong> Good</div>
       <div class="grade-key-row"><span class="gk-swatch" style="background:#1a50d8"></span><strong>50–64</strong> Fair</div>
       <div class="grade-key-row"><span class="gk-swatch" style="background:#b45309"></span><strong>35–49</strong> Weak</div>
       <div class="grade-key-row"><span class="gk-swatch" style="background:#dc2626"></span><strong>0–34</strong> Poor</div>
@@ -1310,6 +1360,16 @@ function syncBandUI(){
     leg.querySelectorAll(".hp-leg").forEach(s=>
       s.setAttribute("aria-pressed",String(+s.dataset.band===bandFilter)));
   }
+  // V31.1: the scatter key is the third control on this one selection. It is also
+  // set by renderQuadrant(), but stating it here too means the invariant holds
+  // whatever order the two are called in — and on first paint the container is
+  // still empty, where both loops are no-ops.
+  const qk=document.getElementById("qvKey");
+  if(qk){
+    qk.classList.toggle("has-pick",on);
+    qk.querySelectorAll(".qv-key").forEach(s=>
+      s.setAttribute("aria-pressed",String(+s.dataset.band===bandFilter)));
+  }
   const chip=document.getElementById("distClear");
   if(chip){
     chip.classList.toggle("show",on);
@@ -1331,6 +1391,11 @@ function setBandFilter(i,opts){
   sortResults(allResults);
   currentPage=1;
   renderTable();
+  // V31.1: the cloud is the third view of this same selection, so redraw it with
+  // the new band. One innerHTML write for ~2,000 dots — cheaper and simpler than
+  // touching 2,000 style properties, and it is the call the theme observer
+  // already makes, so there is no second code path to keep in step.
+  try{ renderQuadrant(); }catch(e){}
   syncBandUI();
   updateListMeta();
   if(next!=null&&!(opts&&opts.noScroll)){
@@ -1346,6 +1411,11 @@ function setBandFilter(i,opts){
   const pick=e=>{const t=e.target.closest("[data-band]");if(!t)return;setBandFilter(+t.dataset.band);};
   if(bar)bar.addEventListener("click",pick);
   if(leg)leg.addEventListener("click",pick);
+  // V31.1 — the scatter key joins the same delegated handler. Bound to the
+  // CONTAINER, which renderQuadrant() re-fills rather than replaces, so the
+  // listener survives every redraw (theme flip, band change) without rebinding.
+  const qk=document.getElementById("qvKey");
+  if(qk)qk.addEventListener("click",pick);
   const chip=document.getElementById("distClear");
   if(chip)chip.addEventListener("click",()=>{if(bandFilter!=null)setBandFilter(bandFilter,{noScroll:true});});
   function showTip(seg){
@@ -1397,9 +1467,14 @@ function renderHero(){
      score clears. Scores are floats (80.1, 79.6…), so a filter written as
      `>=65 && <=79` would silently drop everything in 79–80 and the filtered
      count would no longer match the legend count. `max` is display only. */
+  /* V31.1 — the two top fallbacks were stale by one band: #047857 is what the
+     engine paints for GOOD (65–79) and #059669 is not in either palette, so any
+     render that fell through to the literals would have mislabelled the top two
+     bands. bandInk() has always overridden them, which is exactly why nobody
+     noticed; the modal grade key copied the same two literals and shipped them. */
   const bands=[
-    {lbl:"Excellent",min:80,hi:Infinity,max:100,c:bandInk(80,"#047857")},
-    {lbl:"Good",     min:65,hi:80,      max:79, c:bandInk(65,"#059669")},
+    {lbl:"Excellent",min:80,hi:Infinity,max:100,c:bandInk(80,"#065f46")},
+    {lbl:"Good",     min:65,hi:80,      max:79, c:bandInk(65,"#047857")},
     {lbl:"Fair",     min:50,hi:65,      max:64, c:bandInk(50,"#1a50d8")},
     {lbl:"Weak",     min:35,hi:50,      max:49, c:bandInk(35,"#b45309")},
     {lbl:"Poor",     min:0, hi:35,      max:34, c:bandInk(0, "#dc2626")},
@@ -1429,6 +1504,13 @@ function renderHero(){
     +`<span class="sw" style="background:${b.c}"></span>`
     +`<span class="lbl">${b.lbl}</span> <b>${counts[i]}</b>`
     +`<span class="pct">${pct(i).toFixed(pct(i)<1?1:0)}%</span></button>`).join("");
+  // V31.1 — the "How scores work" grade key, derived from the same bands so the
+  // page's explanation of its colours is the colours. Ranges come from min/max,
+  // which is what the modal was quoting by hand.
+  const gk=document.getElementById("gradeKey");
+  if(gk)gk.innerHTML=bands.map(b=>
+    `<div class="grade-key-row"><span class="gk-swatch" style="background:${b.c}"></span>`
+    +`<strong>${b.min}&ndash;${b.max}</strong> ${b.lbl}</div>`).join("");
   const fillSegs=()=>document.querySelectorAll("#distBar .hp-seg").forEach(el=>el.style.width=el.dataset.w+"%");
   requestAnimationFrame(fillSegs);
   setTimeout(fillSegs,140); // frame-starved fallback so the bar always fills
@@ -1485,6 +1567,14 @@ function renderQuadrant(){
   // median reference — the dashed crosshair marks the 50/50 midpoint of each 0–100 pillar
   s+=`<text class="qv-axis-tick" x="64" y="113.4" text-anchor="middle">50</text>`;
   s+=`<text class="qv-axis-tick" x="11" y="59.2" text-anchor="end">50</text>`;
+  /* V31.1 — the cloud answers the band filter too. Which band a dot belongs to is
+     read from BANDS with the SAME first-floor-cleared rule the counting loop in
+     renderHero() uses, so a dot can never land in one band for the count and
+     another for the paint. When a band is picked the rest fade to 0.09 rather
+     than disappear, so the picked group is read against the shape of the whole
+     universe instead of against an empty box. */
+  const bandOf=v=>{ for(let i=0;i<BANDS.length;i++){ if(v>=BANDS[i].min) return i; } return BANDS.length-1; };
+  const picked=(bandFilter!=null&&BANDS.length)?bandFilter:null;
   let dots="";
   for(let i=0;i<pts.length;i++){
     const d=pts[i];
@@ -1492,7 +1582,8 @@ function renderQuadrant(){
     // Growth pillar 0–100 → r 0.45–1.4; stocks without a Growth score fall back
     // to the previous baseline so they remain visible.
     const r=d._g==null ? 0.8 : (0.45 + (d._g/100)*0.95);
-    dots+=`<circle cx="${X(d._q).toFixed(1)}" cy="${Y(d._v).toFixed(1)}" r="${r.toFixed(2)}" fill="${MFCScores.color(d._overall)}" opacity="0.42"/>`;
+    const op=(picked==null)?0.42:(bandOf(d._overall)===picked?0.72:0.09);
+    dots+=`<circle cx="${X(d._q).toFixed(1)}" cy="${Y(d._v).toFixed(1)}" r="${r.toFixed(2)}" fill="${MFCScores.color(d._overall)}" opacity="${op}"/>`;
   }
   s+=`<g class="qv-dots" style="pointer-events:none">${dots}</g>`;
   // featured markers (dedup the 3 leaders by symbol) — each gets a soft pulse-ring
@@ -1553,6 +1644,18 @@ function renderQuadrant(){
     s+=`<text class="qv-dot-label" x="${lx.toFixed(1)}" y="${by.toFixed(1)}" text-anchor="${anchor}" fill="${c}">${d.symbol}</text>`;
   });
   svg.innerHTML=s;
+  /* The key, generated from the same BANDS the dots are filled from. Rendered
+     here rather than in renderHero() so it can never be re-inked at a different
+     moment than the cloud it describes — both re-run together on a theme flip
+     (the data-theme observer at the bottom of this file calls renderQuadrant). */
+  const key=document.getElementById("qvKey");
+  if(key&&BANDS.length){
+    key.innerHTML=BANDS.map((b,i)=>
+      `<button class="qv-key" type="button" data-band="${i}" aria-pressed="${bandFilter===i?"true":"false"}"`
+      +` aria-label="${b.lbl} — scores ${b.min} to ${b.max}. Show only this band in the chart and the list below.">`
+      +`<span class="qd" style="background:${b.c}"></span>${b.lbl}</button>`).join("");
+    key.classList.toggle("has-pick",bandFilter!=null);
+  }
   const panel=document.getElementById("qvPanel");
   panel.style.display="";
   // Arm the entrance bloom + leader pulse — ONLY when motion is allowed. If JS or

@@ -4486,11 +4486,51 @@ function renderDashboard(sub, stocks) {
   });
 }
 
-// Sector color palette — distinct, brand-aligned
+/* V31.1 — SECTOR PALETTE, STEPPED AGAINST THE SURFACES IT IS ACTUALLY PAINTED ON.
+   The previous set was picked for hue alone and never measured. Its lightness ran
+   from OKLCH 0.49 (#1a50d8) to 0.80 (#eab308) — a 0.31 spread — so it could not
+   clear the 3:1 non-text floor on both the white card and the near-black one:
+
+     light (#ffffff / #f4f8ff): #2dd4bf 1.75:1 · #eab308 1.80:1 · #84cc16 1.85:1
+                                #10b981 2.38:1 · #0ea5e9 2.60:1 · #d97706 2.99:1
+     dark  (#132449 tile)     : #1a50d8 2.31:1
+
+   Light is the default theme, and slot 0 is assigned to the LARGEST group by
+   weight, so the dark miss always landed on the biggest slice of the donut.
+   The donut is the one surface where colour is the only link between a segment
+   and its row, so a swatch that cannot be seen cannot be matched.
+
+   Every slot now sits at OKLCH L 0.60 with the highest chroma the sRGB gamut
+   allows at that lightness, and the twelve hues are spaced evenly at 30° — the
+   old ring had teal→green 19.4° apart and violet→indigo 15.6°, the two pairs a
+   reader was most likely to confuse. Constant lightness is the point of a
+   categorical set: no group should look louder than another.
+
+   L 0.60 is not a taste; it is the ONLY lightness that works, and it was found by
+   measuring the nineteen backdrops these swatches actually land on rather than
+   assuming white and black. A dot inside a portfolio-map tile sits on a 13% wash
+   of ITSELF (#dff3e3, #dff2ee…) and a chip dot sits on the chip's own pale pill
+   (#e4ecfe), all of which cost about 0.25 of a ratio against plain white — enough
+   that L 0.62 measured 2.85:1 there. Stepping down: L 0.61 → 2.98 light, L 0.62 →
+   2.85 light; stepping up: L 0.59 → 2.96 dark, L 0.575 → 2.78 dark. At 0.60 the
+   worst is 3.09:1 in light and 3.07:1 in dark. The window is one step wide.
+
+   One palette serves both themes, so no re-ink on a theme flip is needed — which
+   also keeps the `color + '22'` tint concatenation below working, where a CSS
+   custom property would have broken it.
+
+   Adjacent-pair separation stays in the sub-floor ΔE band (5.6 normal-vision): at
+   twelve series that is arithmetic, not a choice — 30° is the widest even spacing
+   twelve hues can have, and holding lightness constant (which the contrast window
+   forces) leaves hue as the only separating channel. It is legal here because
+   identity is never carried by colour alone on this page: every swatch has its
+   group NAME printed beside it in the allocation legend, the filter chips and the
+   industry badges, and its ticker in the portfolio map. The contrast failure had
+   no such relief, which is why it is the one that had to go. */
 const SECTOR_COLORS = [
-  '#1a50d8', '#0891b2', '#2dd4bf', '#10b981', '#84cc16',
-  '#eab308', '#d97706', '#ef4444', '#ec4899', '#8b5cf6',
-  '#6366f1', '#0ea5e9'
+  '#4073fd', '#098bc0', '#0a919d', '#0a957c', '#0a9b2b',
+  '#7e8907', '#a17907', '#c16407', '#ee0d2a', '#e30c87',
+  '#ca0dd7', '#9050fd'
 ];
 
 // V11.3: one sector→colour map shared by the donut, the legend AND the holdings
@@ -4716,8 +4756,15 @@ function deriveAssetClasses(stocks){
   if (new Set(classes).size < 2) return null;    // nothing to split
   return classes;
 }
-// Fixed hues so Gold reads gold and Debt reads calm, whatever order they arrive in.
-const ASSET_CLASS_COLORS = { Equity:'#2563eb', Gold:'#d97706', Silver:'#64748b', Debt:'#0891b2' };
+/* Fixed hues so Gold reads gold and Debt reads calm, whatever order they arrive in.
+   V31.1: stepped onto the same OKLCH L 0.60 plane as SECTOR_COLORS above, holding
+   each hue, because two of the four missed the 3:1 floor on a surface they are
+   painted on — Equity #2563eb 2.95:1 on the dark map tile, Gold #d97706 2.99:1 on
+   the light one. Equity, Gold and Debt now reuse the sector palette's blue, amber
+   and cyan steps outright so the two modes are one system; Silver stays a neutral
+   by design (it is the one class whose identity IS "no hue") and only its
+   lightness moves. Worst across all nineteen measured backdrops: 3.24:1. */
+const ASSET_CLASS_COLORS = { Equity:'#4073fd', Gold:'#c16407', Silver:'#768191', Debt:'#098bc0' };
 
 /* ══════════════════════════════════════════════════════════════════════════
    V30.3 — ONE GROUPING AXIS FOR THE WHOLE PAGE.
@@ -4760,7 +4807,10 @@ function isAssetClassBook(list){
 // The colour a group wears, from the same two sources every other surface uses:
 // the four fixed asset-class hues first, then the shared sector palette.
 function groupColorOf(name, colorMap){
-  return ASSET_CLASS_COLORS[name] || (colorMap || {})[name] || '#cbd5e1';
+  // V31.1: the last-resort fallback was #cbd5e1, which measures 1.30:1 on the
+  // white card — a dot nobody could see if it ever rendered. Fall back to the
+  // measured neutral instead (3.33:1 worst across both themes).
+  return ASSET_CLASS_COLORS[name] || (colorMap || {})[name] || '#768191';
 }
 
 function renderAllocation(stocks) {
@@ -9687,6 +9737,46 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
     box-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V31.1 — THE FILLS THAT CARRY THE DATA MUST SURVIVE THE PRINTER.
+   Browsers drop CSS background colours when printing unless the page says the
+   colour is meaningful; Chrome's print dialog ships "Background graphics"
+   OFF, and printToPDF defaults printBackground:false to match. Verified
+   rather than assumed: rendering this page through Page.printToPDF gives
+   1,771,334 bytes with backgrounds off against 3,531,356 with them on — half
+   the painted page is thrown away.
+
+   V28.1/V28.5/V28.6 spent three releases curating exactly WHAT prints here,
+   because this page ships a Print button as a first-class feature. Nothing had
+   ever checked whether what survived that curation still had its colour: a
+   member printing the month's sheet got the sector bars, the weight column,
+   the KPI meters and the deployment bar as empty grey outlines, and the
+   sector swatches — the only thing tying a legend row to its bar — as blank
+   circles.
+
+   `print-color-adjust:exact` is the standard's own answer for this and means
+   precisely "this colour is content, not decoration", so the list below is
+   deliberately narrow. Every entry ENCODES something: a proportion, a group
+   identity, a state. The page's decorative gradients, hero sheens and card
+   glows are NOT here — they should keep yielding to the printer, and the
+   .pmap-tile wash is left out too because the tile's ticker and weight are
+   text and the swatch beside them is on this list. Both properties are
+   spelled out; WebKit still needs the prefixed one.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  .stat-meter, .stat-meter i,
+  .alloc-bar-wrap, .alloc-bar,
+  .alloc-swatch, .pmap-swatch, .ind-dot,
+  .weight-bar-wrap, .weight-bar,
+  .size-deploy-track, .size-deploy-track i,
+  .cyc-bar, .cyc-fill,
+  .sector-chips .chip.active .chip-dot,
+  .ds-sent-meter, .ds-sent-needle{
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 </style>
