@@ -1490,6 +1490,28 @@ html[data-theme="dark"] .msort-sel{
   display:inline-flex;align-items:center;gap:6px;cursor:pointer;
 }
 .sc-ticker .copy-ico{width:11px;height:11px;opacity:.55;}
+/* V30.9 — THE ONE CONTROL IN THIS ROW THAT NEVER GOT A PAD.
+   V28.3 swept the site for sub-24px pointer targets and fixed seven, including
+   BOTH of this chip's row-mates (a.company-link, a.broker-link). It missed this
+   one for a structural reason worth recording: that sweep enumerated LINKS —
+   every selector in its block is an `a` — and the copy-ticker chip is a
+   `<span role="button">`. A control that is not an <a> was invisible to it.
+   Measured on the phone card: box 19.8px, hit-tested 20-21px, against the 24px
+   WCAG 2.2 SC 2.5.8 floor — 25 of them per book, on both books, on the surface a
+   member taps through to place the month's orders. Same transparent-::after
+   idiom and the same 28px as V28.3 (28 not 24 clears sub-pixel line-box
+   rounding), so the card does not reflow by a single pixel.
+   COLLISION CHECKED, because V28.7 is the counter-example: this pad and
+   .broker-link's sit on the SAME line, separated horizontally by 4px, so they
+   cannot overlap; and V28.7 already spaced this row 11px from the company-name
+   line above to put those pad centres 30.5px apart — 2.5px clear of two 28px
+   pads. Adding a third pad on the row that is already 30.5px away changes
+   neither number. */
+.sc-ticker{position:relative;}
+.sc-ticker::after{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  height:28px;transform:translateY(-50%);
+}
 /* V28.5: the phone card carried the copy-ticker chip but NOT the broker deep-link
    the desktop row has had since V24.x — so the one surface a member places 25
    orders from, on the device they place them on, was the only one without a
