@@ -334,7 +334,16 @@
 // changed — it is cache-FIRST here, keyed by exact URL including ?v — and its
 // ?v moved 3050 -> 3060 on all 49 referencing pages plus the generator that
 // rewrites the 28 stock-directory pages, so returning visitors get the toast fix.
-const CACHE = 'mfc-v54';
+// V31.3 -> mfc-v55. index.html is precached as the offline navigation fallback
+// and it changed twice this release: the hero chart's value readout stops being
+// mouse-only (it now works on touch and from the keyboard, which is the whole
+// point of the change on the device an installed app runs on), and the
+// "Multi-Asset" category pill moves to teal-800. A precached document has no ?v
+// of its own to bust, so an installed app opening cold on v54 would keep serving
+// a homepage whose flagship chart a phone cannot read. No file under
+// docs/assets/ changed this release — every rule and script here is page-local —
+// so no ?v bump is owed anywhere and export_static.py needs no edit.
+const CACHE = 'mfc-v55';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

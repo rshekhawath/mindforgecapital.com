@@ -1133,9 +1133,15 @@ html[data-theme="dark"] .howto-card::before{background:linear-gradient(90deg,tra
   display:flex;gap:12px;align-items:flex-start;transition:transform .18s ease,border-color .18s ease;
 }
 .howto-step:hover{transform:translateY(-2px);border-color:rgba(37,99,235,0.30);}
+/* V31.3 — the step number is white on --accent2, and the dark theme lightens
+   --accent2 to #5b8def: 4.00:1 measured against a 4.5 floor, i.e. the two steps
+   that tell a member what to do NEXT were the two hardest to read. Pinning the
+   far stop to #2563eb (5.12:1) leaves LIGHT byte-identical — it is what
+   var(--accent2) already resolves to there — and keeps the circle blue in dark
+   rather than trading it for a teal it would then share with nothing. */
 .howto-step .num{
   flex-shrink:0;width:28px;height:28px;border-radius:50%;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
+  background:linear-gradient(135deg,var(--accent),#2563eb);color:#fff;
   display:flex;align-items:center;justify-content:center;
   font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   font-size:12px;font-weight:800;
@@ -2639,13 +2645,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       background:linear-gradient(120deg,rgba(26,80,216,0.08),rgba(8,145,178,0.06));border:0.5px solid rgba(37,99,235,0.20);
       position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -16px rgba(26,80,216,.22)}
     .oneonone-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,#1a50d8,#0891b2)}
-    .oo-icon{flex-shrink:0;width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a50d8,#0891b2);color:#fff}
+    /* V31.3 — the member-benefit CTA and its icon ride a blue->teal ramp that
+       ends on #0891b2 (3.68:1 against white), so the tail of "Book your 1:1 Zoom
+       call" and the arrow after it measured 4.07:1. Ending on #0e7490 (5.36:1)
+       keeps the ramp's identity and deepens it. */
+    .oo-icon{flex-shrink:0;width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a50d8,#0e7490);color:#fff}
     .oo-icon svg{width:24px;height:24px}
     .oo-text{flex:1;min-width:220px}
     .oo-title{font-size:15px;font-weight:800;color:#0c1831;letter-spacing:-.01em;margin-bottom:3px}
     .oo-badge{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--data-mid);background:rgba(8,145,178,.12);border-radius:20px;padding:2px 8px;margin-left:8px;vertical-align:middle}
     .oo-sub{font-size:13px;color:#1e3a5f;line-height:1.55}
-    .oo-cta{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1a50d8,#0891b2);color:#fff!important;font-size:13.5px;font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(26,80,216,.5);transition:transform .2s,box-shadow .2s}
+    .oo-cta{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#1a50d8,#0e7490);color:#fff!important;font-size:13.5px;font-weight:700;padding:11px 20px;border-radius:10px;text-decoration:none;white-space:nowrap;box-shadow:0 8px 20px -8px rgba(26,80,216,.5);transition:transform .2s,box-shadow .2s}
     .oo-cta:hover{transform:translateY(-2px);box-shadow:0 14px 28px -10px rgba(26,80,216,.6)}
     /* V9.6: slow sheen pass so the member benefit reads as premium */
     @keyframes oo-sheen{0%{transform:translateX(-140%) skewX(-18deg)}45%,100%{transform:translateX(340%) skewX(-18deg)}}
@@ -3152,7 +3162,27 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <h3>
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></span>
           How to invest in 4 steps
+          <span class="hs-rail-count" id="hs-rail-count"></span>
         </h3>
+        <!-- V31.3 — the four steps have carried is-done / is-now since V28.8, but
+             only INSIDE each card: a tick here, a blue ring there, and nothing
+             that says how far through the month's job you are without reading all
+             four. This is that one line. Its state is not computed a second time —
+             refreshHowto() already decides `done` and `nowStep`, and the rail is
+             painted from those same two values in the same pass, so it cannot
+             drift from the cards the way a parallel calculation would.
+             aria-hidden: every node here restates a card that is already in the
+             accessibility tree two lines below, and the count beside the heading
+             carries the summary in words. -->
+        <div class="hs-rail" id="hs-rail" aria-hidden="true">
+          <span class="hs-node" data-node="1"><i></i></span>
+          <span class="hs-link" data-link="1"><i></i></span>
+          <span class="hs-node" data-node="2"><i></i></span>
+          <span class="hs-link" data-link="2"><i></i></span>
+          <span class="hs-node" data-node="3"><i></i></span>
+          <span class="hs-link" data-link="3"><i></i></span>
+          <span class="hs-node" data-node="4"><i></i></span>
+        </div>
         <div class="howto-grid">
           <div class="howto-step" data-hs="1">
             <div class="num">1</div>
@@ -6269,6 +6299,21 @@ function resetBought() {
   syncBoughtAllHeader();
   showToast('Cleared all marks');
 }
+/* ── V31.3 — THE ONE TRANSITION THAT NEVER REPAINTED WAS THE RETURN TO ZERO ──
+   This function ends by refreshing two things that are NOT this card: the live
+   session read, and the "How to invest in 4 steps" panel. Both sat after an
+   early `return` taken when the placed count is 0 — so every path that took the
+   count back to zero hid the progress card and then left the other two saying
+   what was true before. Reproduced with a real click on "Clear all marks":
+   localStorage emptied, the toast fired, and step 3 went on reading "25 of 25
+   placed · book complete" with the step marked done. Calling refreshHowto() by
+   hand in the console corrected it instantly, which is the whole proof — the
+   data was right and only the paint was stale.
+   It is the same shape as the V28.1 note in toggleBoughtAll a few lines above
+   ("the one mutation path that never re-synced the header"), and it is why the
+   two page-wide refreshers now run on EVERY path, including the one where this
+   card has nothing to show and the one where the card is not in the DOM at all.
+   refreshSession() already hides itself when nothing is placed, by design. ── */
 function refreshBoughtProgress() {
   const map = loadBought(currentStrategy);
   const tickers = new Set(stocksData.map(s => s.ticker));
@@ -6276,22 +6321,23 @@ function refreshBoughtProgress() {
   const total = stocksData.length;
   const pct = total ? (bought/total)*100 : 0;
   const card = document.getElementById('buy-prog-card');
-  if (!card) return;
-  if (bought === 0) {
-    card.style.display = 'none';
-    return;
+  if (card) {
+    if (bought === 0) {
+      card.style.display = 'none';
+    } else {
+      card.style.display = '';
+      document.getElementById('bp-bought').textContent = bought;
+      document.getElementById('bp-total').textContent = total;
+      document.getElementById('buy-prog-fill').style.width = pct.toFixed(1) + '%';
+      const remaining = total - bought;
+      document.getElementById('bp-meta').textContent = remaining === 0
+        ? 'All set — hold these through your subscription cycle.'
+        : remaining + ' to go. Saved automatically in your browser.';
+      // V12.2: celebratory state once every order is placed — a soft green glow +
+      // a ✓ on the title. Toggled by class so it's reduced-motion safe via CSS.
+      card.classList.toggle('is-complete', remaining === 0 && total > 0);
+    }
   }
-  card.style.display = '';
-  document.getElementById('bp-bought').textContent = bought;
-  document.getElementById('bp-total').textContent = total;
-  document.getElementById('buy-prog-fill').style.width = pct.toFixed(1) + '%';
-  const remaining = total - bought;
-  document.getElementById('bp-meta').textContent = remaining === 0
-    ? 'All set — hold these through your subscription cycle.'
-    : remaining + ' to go. Saved automatically in your browser.';
-  // V12.2: celebratory state once every order is placed — a soft green glow +
-  // a ✓ on the title. Toggled by class so it's reduced-motion safe via CSS.
-  card.classList.toggle('is-complete', remaining === 0 && total > 0);
   refreshSession(map);
   refreshHowto();
 }
@@ -6441,6 +6487,36 @@ function refreshHowto() {
       step.classList.toggle('is-now', i === nowStep);
       step.classList.toggle('is-done', !!done[i] && i !== nowStep);
     });
+
+    // V31.3 — the rail, from the SAME `done` and `nowStep` this function just
+    // used for the cards. A connector belongs to the step before it.
+    var rail = document.getElementById('hs-rail');
+    if (rail) {
+      var isDone = function (i) { return !!done[i] && i !== nowStep; };
+      for (var n = 1; n <= 4; n++) {
+        var node = rail.querySelector('.hs-node[data-node="' + n + '"]');
+        if (!node) continue;
+        node.classList.toggle('is-done', isDone(n));
+        node.classList.toggle('is-now', n === nowStep);
+      }
+      // grow from zero on the first paint so the transition is real, then set
+      // directly on later refreshes (a capital edit must not re-animate)
+      var first = !rail.dataset.painted;
+      for (var k = 1; k <= 3; k++) {
+        var link = rail.querySelector('.hs-link[data-link="' + k + '"]');
+        if (link) link.classList.toggle('is-done', isDone(k));
+      }
+      if (first) {
+        rail.dataset.painted = '1';
+        rail.querySelectorAll('.hs-link').forEach(function (l) {
+          var want = l.classList.contains('is-done');
+          l.classList.remove('is-done');
+          if (want) setTimeout(function () { l.classList.add('is-done'); }, 60);
+        });
+      }
+      var cnt = document.getElementById('hs-rail-count');
+      if (cnt) cnt.textContent = nowStep ? ('Step ' + nowStep + ' of 4') : '';
+    }
   } catch (e) {}
 }
 
@@ -9202,6 +9278,56 @@ html[data-theme="dark"] .howto-step.is-now .hs-live b{ color:var(--accent3); }
   .howto-step:hover::after{ transform:none; }
   .howto-step:hover .num{ transform:none; }
 }
+
+/* ── V31.3 · THE STEPPER RAIL ────────────────────────────────────────────────
+   Four nodes and three connectors. A connector belongs to the step BEFORE it,
+   so it fills exactly when that step is done — which means the rail can never
+   claim progress a card is not also claiming. Connectors grow from zero width
+   (the site's bar idiom); painting them at full width would leave a dead
+   transition, the V23.5 bug. */
+.hs-rail{ display:flex; align-items:center; gap:0; margin:-4px 0 18px; padding:0 2px; }
+.hs-node{ position:relative; flex:0 0 auto; width:13px; height:13px; border-radius:50%;
+  background:var(--ink2); box-shadow:inset 0 0 0 2px var(--border2);
+  transition:box-shadow .3s ease, background .3s ease; }
+.hs-node > i{ position:absolute; inset:2px; border-radius:50%; background:transparent;
+  transition:background .3s ease; }
+.hs-link{ flex:1 1 auto; height:3px; border-radius:2px; background:var(--border);
+  overflow:hidden; min-width:14px; }
+.hs-link > i{ display:block; height:100%; width:0; border-radius:2px;
+  background:linear-gradient(90deg,#047857,#059669);
+  transition:width .7s cubic-bezier(.22,1,.36,1); }
+/* done — the same emerald pair the .num tick uses, so one language, not two */
+.hs-node.is-done{ box-shadow:inset 0 0 0 2px #047857; background:#047857; }
+.hs-node.is-done > i{ background:#047857; }
+.hs-link.is-done > i{ width:100%; }
+/* current — a ring, matching .howto-step.is-now's ringed numeral */
+.hs-node.is-now{ background:var(--accent); box-shadow:inset 0 0 0 2px var(--accent), 0 0 0 4px rgba(37,99,235,.16); }
+.hs-node.is-now > i{ background:var(--accent); }
+/* At 320 and 360 the heading and the count together are wider than the card, and
+   without these two lines the count broke mid-phrase ("Step 3 of" / "4") and took
+   the h3 to two lines anyway. nowrap keeps the phrase whole; wrap on the heading
+   lets it drop to a line of its own, still right-aligned by the auto margin.
+   Measured at 320/360/390/414/480/600/744/768/820/1024/1180/1280/1440/1920. */
+.howto-card h3{ flex-wrap:wrap; }
+.hs-rail-count{ margin-left:auto; white-space:nowrap; font-size:11.5px; font-weight:700;
+  color:var(--text3); letter-spacing:.02em; font-variant-numeric:tabular-nums; }
+html[data-theme="dark"] .hs-node{ background:var(--ink2); box-shadow:inset 0 0 0 2px rgba(120,150,255,.28); }
+html[data-theme="dark"] .hs-link{ background:rgba(120,150,255,.18); }
+html[data-theme="dark"] .hs-node.is-done{ background:#34d399; box-shadow:inset 0 0 0 2px #34d399; }
+html[data-theme="dark"] .hs-node.is-done > i{ background:#34d399; }
+html[data-theme="dark"] .hs-link.is-done > i{ background:linear-gradient(90deg,#16c78d,#34d399); }
+html[data-theme="dark"] .hs-node.is-now{ background:var(--accent3); box-shadow:inset 0 0 0 2px var(--accent3), 0 0 0 4px rgba(120,160,255,.22); }
+html[data-theme="dark"] .hs-node.is-now > i{ background:var(--accent3); }
+@media (prefers-reduced-motion: reduce){
+  .hs-link > i, .hs-node, .hs-node > i{ transition:none; }
+}
+/* NO print-color-adjust BLOCK HERE, AND THE REASON IS THE POINT. V31.1 taught
+   this project that paper drops CSS backgrounds, so one was written — and then
+   measured, which showed the rail at height 0 under `media:"print"`. .howto-card
+   is `display:none !important` in the print sheet (V28.1: instructions are not
+   part of a printed holdings sheet), so the rule could never match anything
+   visible. A rule whose selector cannot match is invisible to grep and survives
+   forever; the note is cheaper than the rule. */
 </style>
 <!-- ============================================================
      MF VISUAL V22.2 — dashboard sector lens + map polish (additive, RM-safe)

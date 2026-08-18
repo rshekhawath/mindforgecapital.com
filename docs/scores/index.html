@@ -1925,6 +1925,22 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
     min-height:44px;
     display:inline-flex; align-items:center; justify-content:center;
   }
+  /* ── V31.3 — the one control on this page that is a SENTENCE, not a button ──
+     The comment above says inline text links inside prose are deliberately left
+     alone. `button` in the selector made that untrue the moment V29.4 turned
+     "How it's calculated →" from an <a> with no href into a real <button> for
+     keyboard access — a correct accessibility fix that silently opted an inline
+     word into a rule written for block controls. Measured at 390px and 560px:
+     the box grew to 44px against a 17px glyph, so its dashed underline was
+     painted 14.1px BELOW the letters it underlines — reading as a stray rule
+     floating under the paragraph — and the 44px line box broke the sentence's
+     23.2px rhythm, pushing the link onto a line of its own.
+     WCAG 2.5.8 exempts a target that "is in a sentence", which this is, so the
+     44px is not owed here; the page's own comment already says so. Restoring
+     `display:inline` restores both the underline and the line box. Scoped to
+     .lnk, the class that means "this button is a word", so a real control on
+     this page cannot pick the exemption up by accident. ─────────────────── */
+  .hero-sub .lnk{ min-height:0; display:inline; }
   /* the accordion trigger already sets its own layout — don't centre its text */
   .mcol-trigger{ justify-content:space-between; }
   /* (c) the last sub-10px text and the hero's strategy tabs. The tabs are the

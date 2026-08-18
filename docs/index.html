@@ -232,10 +232,28 @@ nav {
    viewer prefers reduced motion (the static end-dot above already marks the latest point). */
 @media (prefers-reduced-motion: reduce) { .hv-comet { display: none; } }
 
-/* V22.8: interactive hover readout — a snap-to-year crosshair + value tooltip that
+/* V22.8: interactive readout — a snap-to-year crosshair + value tooltip that
    lets the reader scrub the backtest and compare the strategy vs its benchmark at
-   each year. Pointer-fine only (wired in JS); purely additive over the existing
-   render + comet; the dots land exactly on the drawn curves (year points). */
+   each year. Purely additive over the existing render + comet; the dots land
+   exactly on the drawn curves (year points). (V31.3 removed the "pointer-fine
+   only" this line used to record — see the block below.) */
+/* ── V31.3 — THE READOUT REACHES TOUCH AND KEYBOARD ──────────────────────────
+   V22.8 built this crosshair behind `matchMedia('(pointer: fine)')`, so the
+   largest and most-looked-at graphic on the revenue page — five years of model
+   vs benchmark growth, the numbers behind the headline CAGR — existed only for
+   a mouse. Every phone and every tablet got a picture with no values, and a
+   keyboard got nothing on any device. Same shape as the FII/DII series in
+   V31.2: the chart was not missing a feature, it was missing everyone who
+   cannot hover.
+   The wrap is now the widget: one focus stop (not six), Arrow/Home/End to scrub,
+   and a live region so the values are spoken rather than only drawn. The SVG
+   keeps its aria-hidden — it is a picture of the numbers the group announces,
+   and exposing both would say everything twice. */
+.hv-chart-wrap { touch-action: pan-y; }        /* scrub across, still scroll down */
+.hv-chart-wrap:focus-visible { outline: 2px solid rgba(37,99,235,.60); outline-offset: 3px; border-radius: 10px; }
+.hv-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+         overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media print { .hv-tip, .hv-hover-line, .hv-hover-dot { display: none !important; } }
 .hv-hover-line { stroke: var(--accent2, #2563eb); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; transition: opacity .16s ease; }
 .hv-hover-dot  { stroke: #fff; stroke-width: 2; opacity: 0; pointer-events: none; transition: opacity .16s ease; }
 .hv-chart-wrap.hv-active .hv-hover-line,
@@ -2637,10 +2655,15 @@ body.scrolled nav {
   border: 0.5px solid rgba(96,165,250,0.30);
   color: #1e40af;
 }
+/* V31.3 — this ink was teal-700 while its two siblings are blue-800 and
+   amber-800, and on its own teal tint over the hero's gradient wash it measured
+   4.45:1 on 10px type. Teal-800 (#155e75, 6.04:1) puts all three pills on the
+   same tier of the palette instead of two-and-a-half. Dark is untouched — it
+   re-inks to #5eead4 twelve lines below. */
 .badge-teal {
   background: linear-gradient(135deg, rgba(13,148,136,0.16) 0%, rgba(45,212,191,0.20) 100%);
   border: 0.5px solid rgba(13,148,136,0.30);
-  color: #0e7490;
+  color: #155e75;
 }
 .badge-gold {
   background: linear-gradient(135deg, rgba(217,119,6,0.14) 0%, rgba(232,201,122,0.20) 100%);
@@ -5358,17 +5381,22 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
     tabs.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('.hv-tab') : null; if (!b) return;
       var key = b.getAttribute('data-hv');
-      if (key && DATA[key]) select(key, true);
+      if (!key || !DATA[key]) return;
+      select(key, true);
+      // V31.3 — a pinned year must survive a strategy switch, or the readout
+      // would describe the curve the reader just navigated away from.
+      if (card._hvShow && card._hvYear >= 0) card._hvShow(card._hvYear);
     });
 
-    // V22.8: interactive hover readout — a snap-to-year crosshair + tooltip that
+    // V22.8: interactive readout — a snap-to-year crosshair + tooltip that
     // scrubs the backtest, comparing the strategy vs its benchmark growth (×) at
-    // each year. Pointer-fine only; the dots land exactly on the drawn year points;
-    // recomputed live so it always follows the active tab.
+    // each year. The dots land exactly on the drawn year points; recomputed live
+    // so it always follows the active tab.
+    // V31.3: no longer pointer-fine only — pointer, touch and keyboard all drive
+    // the same show(i), so there is one code path and one thing to keep true.
     try {
       var wrap = card.querySelector('.hv-chart-wrap'), svg = card.querySelector('.hv-chart');
-      var fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
-      if (wrap && svg && fine) {
+      if (wrap && svg) {
         var NS = 'http://www.w3.org/2000/svg';
         var mk = function (tag, attrs, cls) {
           var n = document.createElementNS(NS, tag);
@@ -5396,11 +5424,16 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
             X: function (i) { return LEFT + (i / N) * (RIGHT - LEFT); },
             Y: function (v) { return BOT - ((v - minV) / (maxV - minV || 1)) * (BOT - TOP); } };
         };
-        var move = function (e) {
+        var live = document.createElement('span');
+        live.className = 'hv-sr'; live.setAttribute('aria-live', 'polite');
+        wrap.appendChild(live);
+
+        var show = function (i) {
           var key = card._hvKey || 'sm', m = META[key] || META.sm, c = COLORS[key] || COLORS.sm;
           var P = ptsFor(key), rect = wrap.getBoundingClientRect();
           if (!rect.width) return;
-          var i = Math.max(0, Math.min(N, Math.round(((e.clientX - rect.left) / rect.width) * N)));
+          i = Math.max(0, Math.min(N, i));
+          card._hvYear = i;
           var vx = P.X(i), sy = P.Y(P.sv[i]), by = P.Y(P.bv[i]);
           hLine.setAttribute('x1', vx); hLine.setAttribute('x2', vx);
           hDotS.setAttribute('cx', vx); hDotS.setAttribute('cy', sy); hDotS.setAttribute('fill', c[0]);
@@ -5431,10 +5464,74 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
           var top = py - th - 12; if (top < 0) top = py + 14;
           tip.style.left = left + 'px'; tip.style.top = top + 'px';
           wrap.classList.add('hv-active');
+          live.textContent = q('.hv-tip-yr').textContent + '. ' +
+            q('.hv-tip-nm-s').textContent + ' ' + q('.hv-tip-val-s').textContent + '. ' +
+            q('.hv-tip-nm-b').textContent + ' ' + q('.hv-tip-val-b').textContent + '.';
         };
-        wrap.addEventListener('pointermove', move, { passive: true });
-        wrap.addEventListener('pointerdown', move, { passive: true });
-        wrap.addEventListener('pointerleave', function () { wrap.classList.remove('hv-active'); }, { passive: true });
+        card._hvShow = show;
+        card._hvYear = -1;
+
+        var fromPointer = function (e) {
+          var rect = wrap.getBoundingClientRect();
+          if (!rect.width) return;
+          show(Math.round(((e.clientX - rect.left) / rect.width) * N));
+        };
+        // Mouse or finger is decided PER EVENT, from e.pointerType, not once from
+        // matchMedia('(pointer: fine)') — Chrome's own touch emulation does not
+        // flip that media query (a trap this project has paid for before), so a
+        // matchMedia branch is one the harness can never exercise and therefore
+        // never prove. pointerType is correct under emulation and on real
+        // hardware, and it is also the only thing that stays right on a hybrid
+        // laptop, where the answer changes between one gesture and the next.
+        var isMouse = function (e) { return !e.pointerType || e.pointerType === 'mouse'; };
+        wrap.addEventListener('pointerdown', function (e) {
+          fromPointer(e);
+          if (!isMouse(e) && wrap.setPointerCapture) {
+            try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
+          }
+        }, { passive: true });
+        // A mouse scrubs on hover; a finger has to be down, or a vertical swipe
+        // that merely passes over the chart would hijack the readout mid-scroll.
+        wrap.addEventListener('pointermove', function (e) {
+          if (isMouse(e) || e.buttons || e.pressure > 0) fromPointer(e);
+        }, { passive: true });
+        // Only a mouse has a meaningful "left" — a finger that lifts has not gone
+        // anywhere, and clearing on touch would flash the values away the instant
+        // they became readable. The next tap replaces them.
+        wrap.addEventListener('pointerleave', function (e) {
+          if (isMouse(e)) { wrap.classList.remove('hv-active'); card._hvYear = -1; }
+        }, { passive: true });
+
+        // ── keyboard: ONE tab stop for the whole series, the composite-widget
+        //    pattern V31.2 used for the FII/DII bars. Focus lands on the last
+        //    year rather than an empty chart, so there is no empty state and no
+        //    layout shift when the first key is pressed. ─────────────────────
+        wrap.setAttribute('tabindex', '0');
+        wrap.setAttribute('role', 'group');
+        wrap.setAttribute('aria-label',
+          'Backtested growth chart. Use the left and right arrow keys to read each year.');
+        wrap.addEventListener('focus', function () {
+          if (card._hvYear < 0) show(N);
+        });
+        wrap.addEventListener('blur', function () {
+          wrap.classList.remove('hv-active'); card._hvYear = -1; live.textContent = '';
+        });
+        // Left/Right/Home/End only — deliberately NOT Up/Down. The series runs
+        // along one axis, so the vertical keys carry no meaning here, and
+        // claiming them with preventDefault on a page this long would trap a
+        // keyboard user who tabbed in and then tried to scroll away. Escape
+        // dismisses the readout without leaving the group.
+        wrap.addEventListener('keydown', function (e) {
+          var cur = card._hvYear < 0 ? N : card._hvYear, next = null;
+          if (e.key === 'ArrowRight') next = cur + 1;
+          else if (e.key === 'ArrowLeft') next = cur - 1;
+          else if (e.key === 'Home') next = 0;
+          else if (e.key === 'End') next = N;
+          else if (e.key === 'Escape') { wrap.classList.remove('hv-active'); card._hvYear = -1; return; }
+          if (next === null) return;
+          e.preventDefault();
+          show(next);
+        });
       }
     } catch (e2) { /* readout is a progressive enhancement */ }
   } catch (e) { /* leave the static card untouched */ }

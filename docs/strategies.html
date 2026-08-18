@@ -265,7 +265,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   .cmp-strat .nm{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:14px;font-weight:700;color:var(--white);letter-spacing:-0.01em;line-height:1.15;}
   .cmp-strat .dot{width:9px;height:9px;border-radius:50%;}
   .cmp-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 9px;border-radius:999px;line-height:1.55;white-space:nowrap;}
-  .cmp-badge.pop{color:#fff;background:linear-gradient(120deg,var(--accent),var(--accent3));box-shadow:0 4px 10px -5px rgba(26,80,216,.6);}
+  /* ── V31.3 · AN INK-BEARING GRADIENT MUST END WHERE WHITE IS STILL READABLE ──
+   Found by measuring PIXELS, because no declaration could have shown it: the
+   contrast auditor in commands/qa_probes.py returns null the moment any ancestor
+   paints a background-image, since a gradient cannot be reduced to one colour
+   from CSS. That is honest, and it means every white label the site paints on a
+   gradient has never been audited — every contrast pass since V26.7 has had a
+   hole in it, and the hole is exactly the shape of a gradient.
+   The far stop of each of these ramps was picked to look good, not to carry
+   type, so the LAST third of every white word on them sits on a mid-tone. Each
+   now ends on a stop already in this site's palette that clears 4.5:1 against
+   white — #0e7490 (5.36:1, the same teal that is .badge-teal's ink) and #b45309
+   (5.05:1, the same amber as the Weak score band). Deeper, not different. ── */
+  .cmp-badge.pop{color:#fff;background:linear-gradient(120deg,var(--accent),#0e7490);box-shadow:0 4px 10px -5px rgba(26,80,216,.6);}
   /* V29.1 — --gold on its own 12% amber wash measured 2.76:1 at 9px, the worst
      reading on the page. --data-weak is the same hue one step deeper. */
   .cmp-badge.cagr{color:var(--data-weak);background:rgba(217,119,6,.12);border:0.5px solid rgba(217,119,6,.30);}
@@ -3074,6 +3086,10 @@ html[data-theme="dark"] .sp-wt-track{ background:rgba(120,150,255,.16); }
 [data-theme="dark"] .ps-tab:hover{ background:rgba(120,160,240,.10); }
 [data-theme="dark"] .ps-perf{ border-color:var(--border2); background:linear-gradient(135deg,rgba(70,120,245,.10),rgba(45,212,191,.06)); }
 [data-theme="dark"] .ps-funds-me td{ background:linear-gradient(135deg,rgba(70,120,245,.16),rgba(45,212,191,.08)); }
+/* V31.3 — the "backtested" chip rides --text3, which is right on the plain dark
+   card but measured 4.47:1 on THIS row, because the row paints a lighter
+   blue/teal gradient beneath it. One tier up for the row that has a tint. */
+[data-theme="dark"] .ps-funds-me span{ color:var(--text2); }
 [data-theme="dark"] .ps-perf-cell.win .ps-perf-val{ color:#34d399; }
 [data-theme="dark"] .ps-perf-cell.loss .ps-perf-val{ color:#f87171; }
 [data-theme="dark"] .ps-flat{ color:#34d399 !important; }
