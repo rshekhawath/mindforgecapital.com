@@ -219,8 +219,16 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .bar-legend{display:flex;gap:18px;align-items:center;font-size:12.5px;color:var(--text3);margin-bottom:6px}
 .bar-legend .lg{display:inline-flex;align-items:center;gap:6px}
 .bar-legend .sw{width:11px;height:11px;border-radius:3px}
-.sw.fii{background:linear-gradient(135deg,#1a50d8,#0891b2)}
-.sw.dii{background:linear-gradient(135deg,#7c3aed,#d97706)}
+/* V31.3 — these two swatches ARE the chart's key, so they move with the bars
+   below (gFii / gDii) and with the .flow-badge tiles above. Deepening only the
+   badges — which is what the contrast fix strictly required, since they are the
+   only one of the three that carries text — would have left this page speaking
+   two colour languages for the same two series. Neither the bars nor these
+   swatches carry text, so they answer to the 3:1 non-text floor and clear it
+   comfortably at the new stops (#0e7490 5.36:1 light / 3.4:1 on the dark card;
+   #b45309 5.05:1 / 3.6:1). One language, checked in all three places. */
+.sw.fii{background:linear-gradient(135deg,#1a50d8,#0e7490)}
+.sw.dii{background:linear-gradient(135deg,#7c3aed,#b45309)}
 svg.barchart{display:block;width:100%;min-width:380px;height:230px;overflow:visible}
 svg.barchart text{font-family:inherit}
 
@@ -977,8 +985,8 @@ function drawChart(rows){
   });
   host.innerHTML=`<svg class="barchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="list" aria-label="FII and DII net flow trend, ${rows.length} sessions">
     <defs>
-      <linearGradient id="gFii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a50d8"/><stop offset="1" stop-color="#0891b2"/></linearGradient>
-      <linearGradient id="gDii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+      <linearGradient id="gFii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a50d8"/><stop offset="1" stop-color="#0e7490"/></linearGradient>
+      <linearGradient id="gDii" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#b45309"/></linearGradient>
       <filter id="barSh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#1a50d8" flood-opacity="0.18"/></filter>
     </defs>
     <line class="grid" x1="${padL}" y1="${padT.toFixed(1)}" x2="${W-padR}" y2="${padT.toFixed(1)}"/>
