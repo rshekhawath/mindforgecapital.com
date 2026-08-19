@@ -30,7 +30,7 @@ Coverage guard: if fewer than 80% of a strategy's names return prices, that
 strategy publishes null rather than a half-measured number.
 
 Run: python3 screener/live_perf.py        (wired into refresh-stocks.command +
-auto-refresh-stocks.command, so it refreshes with every data cycle)
+commands/refresh-stocks.command, so it refreshes with every data cycle)
 """
 from __future__ import annotations
 
