@@ -2411,6 +2411,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     (function(){
       var host=document.getElementById('dsSent');if(!host)return;
       function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+  /* V31.4 — flat is its own direction. Shared by every "day change" reading on
+     this page. The ±0.049 band matches screener/export_static.py's _chg(), so a
+     stock that reads "→ 0.00%" on a generated directory page reads the same
+     here and on the Scanner instead of borrowing the up arrow. */
+  function mfArrow(pct){ return Math.abs(pct) <= 0.049 ? '→' : pct > 0 ? '▲' : '▼'; }
       function lbl(s){if(s<25)return['Strongly bearish','bear'];if(s<43)return['Bearish','bear'];if(s<=57)return['Neutral','neutral'];if(s<=75)return['Bullish','bull'];return['Strongly bullish','bull'];}
       fetch('/fii-dii/fii-dii.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
         if(!d)return;
@@ -2430,7 +2435,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           score=Math.round(50+50*comp);L=lbl(score);
         }
         var drv=[];
-        if(nf&&nf.pct!=null)drv.push('Nifty <b>'+((Number(nf.change)||0)>=0?'▲':'▼')+Math.abs(Number(nf.pct)||0).toFixed(2)+'%</b>');
+        if(nf&&nf.pct!=null)drv.push('Nifty <b>'+mfArrow(Number(nf.pct)||0)+Math.abs(Number(nf.pct)||0).toFixed(2)+'%</b>');
         if(fii)drv.push('FII <b>'+((Number(fii.net)||0)>=0?'buying':'selling')+'</b>');
         if(dii)drv.push('DII <b>'+((Number(dii.net)||0)>=0?'buying':'selling')+'</b>');
         document.getElementById('dsSentDate').textContent=d.data_date?('· '+d.data_date):'';
@@ -8480,6 +8485,12 @@ th.sortable.sort-asc, th.sortable.sort-desc{ color:var(--accent2); }
 .meta-row .meta-pill:nth-child(1){ animation-delay:.20s; }
 .meta-row .meta-pill:nth-child(2){ animation-delay:.30s; }
 .meta-row .meta-pill:nth-child(3){ animation-delay:.40s; }
+/* V31.4 — a FOURTH pill was added to this row and the stagger was left written
+   for three, so "Data refreshed Nm ago" inherited animation-delay:0s and
+   animated in ahead of the three that are supposed to precede it. Measured 0s
+   against .20/.30/.40 with all four on screen. :nth-child(n+4) rather than (4)
+   so a fifth pill cannot reopen this. */
+.meta-row .meta-pill:nth-child(n+4){ animation-delay:.50s; }
 @keyframes mf102-rise{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
 
 /* (2) toast countdown underline */
@@ -9649,7 +9660,15 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script id="mf-v255-pmap-js">
 (function(){
   "use strict";
-  var KEY = 'mfc_pmap_view';           // remembered per browser, like the other dashboard prefs
+  // V31.4 — RETURN IS THE DEFAULT VIEW.
+  // The key is versioned because the old one cannot be trusted: apply() wrote
+  // localStorage on EVERY call including the initial apply(mode()), so every
+  // member who has ever opened this page has 'weight' stored whether or not they
+  // ever pressed the toggle. Flipping the default under the old key would have
+  // reached nobody. Under mfc_pmap_view2 only a real click writes, so an absent
+  // value means "never chose" and gets the new default, and a present value is
+  // a genuine preference and is honoured.
+  var KEY = 'mfc_pmap_view2';          // remembered per browser, like the other dashboard prefs
   var BANDS = [
     { max: -10, cls: 'rt-dn3' }, { max: -4, cls: 'rt-dn2' }, { max: -1, cls: 'rt-dn1' },
     { max:   1, cls: 'rt-flat' }, { max:  4, cls: 'rt-up1' }, { max: 10, cls: 'rt-up2' },
@@ -9661,7 +9680,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
     for (var i = 0; i < BANDS.length; i++) if (r <= BANDS[i].max) return BANDS[i].cls;
     return 'rt-flat';
   }
-  function mode(){ try { return localStorage.getItem(KEY) === 'return' ? 'return' : 'weight'; } catch(e){ return 'weight'; } }
+  function mode(){ try { return localStorage.getItem(KEY) === 'weight' ? 'weight' : 'return'; } catch(e){ return 'return'; } }
 
   // Repaint every tile from the live price map. Called on first paint, on each
   // 30s repoll and after any re-render of the map.
@@ -9716,11 +9735,20 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
       if (!sub.dataset.base) sub.dataset.base = sub.textContent;
       // the holdings/sector count is still true in both views; only the last
       // clause — what a tile's COLOUR means — changes.
-      sub.textContent = on
-        ? sub.dataset.base.replace(/tile size = model weight/, 'size = weight · colour = return')
-        : sub.dataset.base;
+      // Replace whichever trailing clause renderPortfolioMap actually wrote —
+      // "equal-weighted" (MultiAsset / equal-weight books) or "bar = model
+      // weight" (weighted books). Asserted by rewriting the LAST " · " segment
+      // rather than by matching its wording, so the next rename cannot silently
+      // kill this the way the V29.1 one did.
+      if (on){
+        var i = sub.dataset.base.lastIndexOf(' · ');
+        sub.textContent = i > 0
+          ? sub.dataset.base.slice(0, i) + ' · colour = return since rebalance'
+          : sub.dataset.base + ' · colour = return since rebalance';
+      } else {
+        sub.textContent = sub.dataset.base;
+      }
     }
-    try { localStorage.setItem(KEY, m); } catch(e){}
   }
 
   function ensureToggle(){
@@ -9731,12 +9759,15 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
     tog.setAttribute('role', 'group');
     tog.setAttribute('aria-label', 'Colour the portfolio map by');
     tog.innerHTML =
-      '<button type="button" data-m="weight" aria-pressed="true">Weight</button>' +
-      '<button type="button" data-m="return" aria-pressed="false">Return</button>';
+      '<button type="button" data-m="return" aria-pressed="true">Return</button>' +
+      '<button type="button" data-m="weight" aria-pressed="false">Weight</button>';
     head.appendChild(tog);
     tog.addEventListener('click', function(e){
       var b = e.target && e.target.closest ? e.target.closest('button[data-m]') : null;
-      if (b) apply(b.dataset.m);
+      if (!b) return;
+      apply(b.dataset.m);
+      // persisted HERE and nowhere else — see the KEY note above
+      try { localStorage.setItem(KEY, b.dataset.m); } catch(e){}
     });
 
     var card = document.getElementById('pmap-card');
@@ -9995,11 +10026,333 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   .size-deploy-track, .size-deploy-track i,
   .cyc-bar, .cyc-fill,
   .sector-chips .chip.active .chip-dot,
-  .ds-sent-meter, .ds-sent-needle{
+  .ds-sent-meter, .ds-sent-needle,
+  .pspread-t i{
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 }
 </style>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MF V31.4 — THE RETURN VIEW BECOMES A RANKING, AND GAINS THE ONE READING
+     IT NEVER HAD: THE SHAPE OF THE BOOK.
+     ------------------------------------------------------------------------
+     V25.5 gave the map a return view; V31.4 made it the DEFAULT, which changes
+     what the card owes the reader. Two things were missing the moment it led:
+
+     · IT WAS NOT ORDERED. Tiles sit in sector order — right for the weight
+       view, where adjacency IS the grouping — so "which of these is working?"
+       still meant comparing 25 washes of colour scattered across five rows.
+       In the return view the tiles now sort best -> worst, so the mosaic IS
+       the ranking and the answer is the first tile. The reorder is FLIP-
+       animated: same nodes, measured before and after, inverted and released,
+       so the two views read as one set of tiles rearranging rather than a
+       redraw. Sector order is restored the instant Weight is pressed.
+       The DOM is reordered, not `order:`-ed — a CSS-only reorder would leave
+       a screen reader announcing the sector sequence while the screen shows
+       the ranking, which is precisely the disagreement WCAG 1.3.2 is about.
+
+     · IT COULD NOT BE SUMMARISED. Seven colour bands tell you where ONE tile
+       sits and nothing about the distribution: whether the cycle is four
+       names carrying twenty-one, or the whole book drifting up together.
+       The strip below is one tick per holding on a shared zero line — the
+       page's own .drift idiom from V28.5, reused deliberately rather than
+       invented, because a member has already learnt to read it two cards up.
+       One difference, and it is a real one: .drift uses a single ink because
+       over- and under-weight are not good and bad, while here they are, so
+       the ticks carry the same semantic green/red as every other return on
+       this page.
+
+     Nothing is recomputed. Both readings consume the same per-tile % that
+     paint() already derived from _retPct(rec, live) — the identical basis as
+     the table cells and the profit headline — so the ranking, the strip and
+     the rows can never disagree.
+     ════════════════════════════════════════════════════════════════════════ -->
+<style id="mf-v314-pmap-rank">
+/* ── the spread strip: one tick per holding, zero line shared ────────────── */
+.pspread{ display:none; margin-top:15px; padding:14px 16px; border-radius:12px;
+  background:rgba(37,99,235,0.045); border:0.5px solid var(--border); }
+.pmap-card.mf255-on .pspread{ display:block; }
+html[data-theme="dark"] .pspread{ background:rgba(150,180,240,0.055); }
+.pspread-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.pspread-lead{ font-size:13.5px; color:var(--text2); line-height:1.45; }
+.pspread-lead b{ color:var(--white); font-weight:800; font-variant-numeric:tabular-nums; }
+.pspread-chip{ flex:0 0 auto; font-size:10px; font-weight:800; letter-spacing:.07em;
+  text-transform:uppercase; padding:3px 9px; border-radius:20px; white-space:nowrap;
+  color:var(--data-mid); background:rgba(26,80,216,0.10); border:0.5px solid rgba(26,80,216,0.22); }
+html[data-theme="dark"] .pspread-chip{ color:var(--data-mid);
+  background:rgba(131,170,255,0.12); border-color:rgba(131,170,255,0.26); }
+
+.pspread-strip{ position:relative; display:flex; align-items:stretch; gap:3px; height:52px; margin-top:12px; }
+.pspread-strip::before{ content:''; position:absolute; left:0; right:0; top:50%; height:1px;
+  background:rgba(37,99,235,.34); transform:translateY(-.5px); }
+html[data-theme="dark"] .pspread-strip::before{ background:rgba(255,255,255,.26); }
+.pspread-t{ position:relative; flex:1 1 0; min-width:0; }
+/* Height is a % of the FULL strip but a tick owns only the half on its own side
+   of the zero line, so the JS caps it at 50 — the same cap .drift-t needs and
+   for the same reason: at 100 the tallest tick overruns the scale row. */
+.pspread-t i{ position:absolute; left:0; right:0; margin-inline:auto; max-width:13px;
+  height:0; border-radius:2px; opacity:.72;
+  transition:height .8s cubic-bezier(.22,1,.36,1); }
+.pspread-t.is-up i{ bottom:50%; background:var(--data-strong); }
+.pspread-t.is-dn i{ top:50%; background:#dc2626; }
+.pspread-t.is-flat i{ bottom:calc(50% - 1px); top:auto; background:var(--text3); opacity:.34; }
+.pspread-t.is-peak i{ opacity:1; }
+/* dark: --green flips in the dark palette but --red does NOT, so red is named
+   explicitly here rather than left to the token (see the V26.7 note above). */
+html[data-theme="dark"] .pspread-t.is-up i{ background:#34d399; }
+html[data-theme="dark"] .pspread-t.is-dn i{ background:#f87171; }
+.pspread-scale{ display:flex; justify-content:space-between; margin-top:7px;
+  font-size:10px; font-weight:700; letter-spacing:.05em; color:var(--text3);
+  font-variant-numeric:tabular-nums; }
+.pspread-scale .up{ color:var(--data-strong); }
+.pspread-scale .dn{ color:#b91c1c; }
+html[data-theme="dark"] .pspread-scale .up{ color:#34d399; }
+html[data-theme="dark"] .pspread-scale .dn{ color:#f87171; }
+.pspread-note{ margin-top:9px; font-size:12px; color:var(--text3); line-height:1.55; }
+.pspread-note b{ color:var(--text2); font-weight:700; font-variant-numeric:tabular-nums; }
+@media (max-width:560px){
+  .pspread{ padding:12px 13px; } .pspread-lead{ font-size:12.5px; }
+  .pspread-note{ font-size:11.5px; } .pspread-strip{ height:44px; gap:2px; }
+  /* the axis is the number; the names it belongs to are in the note underneath */
+  .pspread-scale .nm{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){ .pspread-t i{ transition:none; } }
+
+/* ── FLIP reorder ─────────────────────────────────────────────────────────
+   Set by JS between the two measurements. `will-change` only for the frame
+   the animation owns — leaving it on 25 tiles permanently costs a layer each. */
+.pmap-tile.mf314-flip{ transition:transform .52s cubic-bezier(.22,1,.36,1); will-change:transform; }
+@media (prefers-reduced-motion:reduce){ .pmap-tile.mf314-flip{ transition:none; } }
+/* The cascade-in animation and a FLIP transform cannot both own `transform`;
+   the entry animation is finished long before any toggle, but a repaint during
+   it would otherwise restart it and fight the invert. */
+.pmap-grid.mf314-moving .pmap-tile{ animation:none; }
+</style>
+<script id="mf-v314-pmap-rank-js">
+(function(){
+  "use strict";
+
+  function reduced(){
+    try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; }
+  }
+
+  /* Read the % a tile is currently painted with. paint() has already written it
+     to .pmap-ret as text; parsing that back would mean re-deriving a number that
+     already exists, and the minus sign there is U+2212, not a hyphen. The tile
+     carries its two inputs instead, so this is the SAME expression paint() uses. */
+  function retOf(t){
+    var rec = Number(t.getAttribute('data-rec')) || 0;
+    var px  = (window._livePx || {})[t.getAttribute('data-y')];
+    if (!rec || !px || typeof px.price !== 'number') return null;
+    return (px.price - rec) / rec * 100;
+  }
+
+  // ── FLIP: measure, reorder, invert, release ────────────────────────────────
+  function applyOrder(grid, want){
+    var tiles = [].slice.call(grid.children).filter(function(n){
+      return n.classList && n.classList.contains('pmap-tile');
+    });
+    if (tiles.length < 2) return;
+
+    var seq = want(tiles);
+    // nothing to do if the DOM already carries this order
+    var same = seq.every(function(n, i){ return n === tiles[i]; });
+    if (same) return;
+
+    if (reduced()){ seq.forEach(function(n){ grid.appendChild(n); }); return; }
+
+    var first = tiles.map(function(n){ var r = n.getBoundingClientRect(); return {n:n, x:r.left, y:r.top}; });
+    grid.classList.add('mf314-moving');
+    seq.forEach(function(n){ grid.appendChild(n); });
+
+    // one forced reflow, then invert every tile to where it just was
+    grid.offsetHeight;
+    var moved = [];
+    first.forEach(function(f){
+      var r = f.n.getBoundingClientRect();
+      var dx = f.x - r.left, dy = f.y - r.top;
+      if (!dx && !dy) return;
+      f.n.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      moved.push(f.n);
+    });
+    if (!moved.length){ grid.classList.remove('mf314-moving'); return; }
+
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        moved.forEach(function(n){ n.classList.add('mf314-flip'); n.style.transform = ''; });
+        setTimeout(function(){
+          moved.forEach(function(n){ n.classList.remove('mf314-flip'); n.style.transform = ''; });
+          grid.classList.remove('mf314-moving');
+        }, 600);
+      });
+    });
+  }
+
+  function rank(grid){
+    applyOrder(grid, function(tiles){
+      return tiles.slice().sort(function(a, b){
+        var ra = retOf(a), rb = retOf(b);
+        // unpriced tiles sink to the end rather than sorting as zero, which
+        // would drop them into the middle of the ranking as if they were flat
+        if (ra === null && rb === null) return 0;
+        if (ra === null) return 1;
+        if (rb === null) return -1;
+        return rb - ra;
+      });
+    });
+  }
+
+  function unrank(grid){
+    // renderPortfolioMap stamps --pmi with the sector-order index it painted
+    applyOrder(grid, function(tiles){
+      return tiles.slice().sort(function(a, b){
+        return (parseInt(a.style.getPropertyValue('--pmi'), 10) || 0)
+             - (parseInt(b.style.getPropertyValue('--pmi'), 10) || 0);
+      });
+    });
+  }
+
+  // ── the spread strip ───────────────────────────────────────────────────────
+  function fmt(r){
+    return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(1) + '%';
+  }
+
+  function spread(card, grid){
+    var tiles = [].slice.call(grid.querySelectorAll('.pmap-tile'));
+    var rows = [];
+    tiles.forEach(function(t){
+      var r = retOf(t);
+      if (r === null) return;
+      var tk = t.querySelector('.pmap-ticker');
+      rows.push({ r: r, tk: tk ? tk.textContent : '' });
+    });
+
+    var host = document.getElementById('pspread');
+    if (!rows.length){ if (host) host.remove(); return; }
+    if (!host){
+      host = document.createElement('div');
+      host.id = 'pspread'; host.className = 'pspread';
+      // aria-hidden: every figure below is restated in words by .pspread-lead and
+      // .pspread-note, and each tile already announces its own % via its title.
+      host.innerHTML =
+        '<div class="pspread-head">' +
+          '<div class="pspread-lead" id="pspread-lead"></div>' +
+          '<div class="pspread-chip" id="pspread-chip"></div>' +
+        '</div>' +
+        '<div class="pspread-strip" id="pspread-strip" aria-hidden="true"></div>' +
+        '<div class="pspread-scale" aria-hidden="true">' +
+          '<span class="dn" id="pspread-lo"></span>' +
+          '<span id="pspread-zero">0%<span class="nm"> · since the rebalance</span></span>' +
+          '<span class="up" id="pspread-hi"></span>' +
+        '</div>' +
+        '<div class="pspread-note" id="pspread-note"></div>';
+      var key = document.getElementById('pmap-key');
+      if (key && key.parentNode === card) card.insertBefore(host, key);
+      else card.appendChild(host);
+    }
+
+    var sorted = rows.slice().sort(function(a, b){ return b.r - a.r; });
+    var best = sorted[0], worst = sorted[sorted.length - 1];
+    var up = rows.filter(function(x){ return x.r > 0.05; }).length;
+    var dn = rows.filter(function(x){ return x.r < -0.05; }).length;
+    var peak = Math.max(Math.abs(best.r), Math.abs(worst.r)) || 1;
+
+    // strip: one tick per holding, ordered worst -> best so the strip reads
+    // left-to-right the way its own scale row is labelled
+    var strip = document.getElementById('pspread-strip');
+    var asc = rows.slice().sort(function(a, b){ return a.r - b.r; });
+    strip.innerHTML = asc.map(function(x){
+      var cls = x.r > 0.05 ? 'is-up' : x.r < -0.05 ? 'is-dn' : 'is-flat';
+      if (x === best || x === worst) cls += ' is-peak';
+      return '<span class="pspread-t ' + cls + '" title="' + x.tk + ' ' + fmt(x.r) + '"><i></i></span>';
+    }).join('');
+    // grow from 0 a frame later — the site's bar idiom. Painting the final
+    // height immediately leaves a dead transition (the V23.5 bug).
+    setTimeout(function(){
+      var ts = strip.querySelectorAll('.pspread-t');
+      for (var i = 0; i < ts.length; i++){
+        // PERCENT, not px — and 50 is therefore exactly half the strip, which is
+        // all a tick owns. Written in px first, this put a 50px tick on a 52px
+        // strip: 24px of it stood above the strip and into the lead line. It is
+        // the same overrun .drift-t's comment records, arrived at by a different
+        // route, so the unit is spelled out here rather than left to the cap.
+        var v = Math.abs(asc[i].r) / peak * 50;
+        ts[i].firstChild.style.height = (asc[i].r > 0.05 || asc[i].r < -0.05
+          ? Math.max(4, Math.min(50, v)) : 3) + '%';
+      }
+    }, 60);
+
+    document.getElementById('pspread-lead').innerHTML =
+      '<b>' + up + '</b> of <b>' + rows.length + '</b> ' +
+      (up === 1 ? 'holding is' : 'holdings are') + ' up since the rebalance';
+    document.getElementById('pspread-chip').textContent =
+      fmt(worst.r) + ' → ' + fmt(best.r);
+    // The ticker is a separate span so a phone can drop it: at 390 the three
+    // scale labels each wrapped to two lines and the row read as six fragments.
+    // The % is the axis; the name is a nicety and is restated in the note below.
+    document.getElementById('pspread-lo').innerHTML =
+      fmt(worst.r) + '<span class="nm"> · ' + worst.tk + '</span>';
+    document.getElementById('pspread-hi').innerHTML =
+      '<span class="nm">' + best.tk + ' · </span>' + fmt(best.r);
+    document.getElementById('pspread-note').innerHTML =
+      'Best <b>' + best.tk + '</b> at <b>' + fmt(best.r) + '</b>, weakest <b>' + worst.tk +
+      '</b> at <b>' + fmt(worst.r) + '</b>' +
+      (dn ? ', with <b>' + dn + '</b> ' + (dn === 1 ? 'name' : 'names') + ' below water' : '') +
+      '. Tiles are ordered best to weakest; each tick above is one holding.';
+  }
+
+  // ── hook the V25.5 painter, which already runs on first paint and every
+  //    30s repoll. One integration point, so the two can never diverge. ──────
+  function sync(){
+    var card = document.getElementById('pmap-card'), grid = document.getElementById('pmap-grid');
+    if (!card || !grid) return;
+    if (card.classList.contains('mf255-on')){ spread(card, grid); rank(grid); }
+    else { var h = document.getElementById('pspread'); if (h) h.remove(); unrank(grid); }
+  }
+  window.mf314SyncPmap = sync;
+
+  function hook(){
+    if (typeof window.paintLivePrices !== 'function') return false;
+    if (window.paintLivePrices.__mf314) return true;
+    var orig = window.paintLivePrices;
+    var wrapped = function(){
+      var out = orig.apply(this, arguments);
+      try { sync(); } catch(e){}
+      return out;
+    };
+    wrapped.__mf314 = true;
+    window.paintLivePrices = wrapped;
+    return true;
+  }
+
+  // The toggle lives in the V25.5 block and owns the class this reads, so react
+  // to the class rather than re-binding its click — one owner for the state.
+  function watch(){
+    var card = document.getElementById('pmap-card');
+    if (!card || card.__mf314obs) return;
+    card.__mf314obs = true;
+    new MutationObserver(function(){ try { sync(); } catch(e){} })
+      .observe(card, { attributes:true, attributeFilter:['class'] });
+  }
+
+  function boot(){
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      hook(); watch();
+      var grid = document.getElementById('pmap-grid');
+      if (grid && grid.querySelector('.pmap-tile') && window._livePx){
+        try { sync(); } catch(e){}
+        clearInterval(iv);
+      } else if (tries > 60) clearInterval(iv);
+    }, 1000);
+  }
+  if (document.readyState !== 'loading') boot();
+  else document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
+
 </body>
 </html>

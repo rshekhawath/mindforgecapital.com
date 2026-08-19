@@ -444,6 +444,9 @@ tbody tr.rowlink{cursor:pointer}
 @keyframes skel-sweep{0%{background-position:100% 0}100%{background-position:0 0}}
 .change-pos{color:var(--data-strong);font-weight:600}
 .change-neg{color:var(--data-bad);font-weight:600}
+/* flat: the same muted ink mfc-dir.css gives .di-px .ch.fl, so a zero day reads
+   the same on the Scanner as it does on the generated directory pages */
+.change-flat{color:var(--text3);font-weight:600}
 .na{color:var(--text3)}
 
 
@@ -1366,8 +1369,17 @@ document.addEventListener("keydown",function(e){ if((e.key==="Enter"||e.key===" 
 function showSkeleton(n){const vis=COLUMNS.filter(c=>c.visible);document.getElementById("tableBody").innerHTML=Array.from({length:n||8},()=>`<tr class="skel-row">${vis.map(()=>`<td><div class="skel"></div></td>`).join("")}</tr>`).join("");}
 function fmtChange(v){
   if(v==null)return`<span class="na">—</span>`;
-  const cls=v>=0?"change-pos":"change-neg";
-  return`<span class="${cls}">${v>=0?"▲":"▼"} ${Math.abs(v).toFixed(2)}%</span>`;
+  // V31.4 — a FLAT day is not an up day. `v>=0` gave exactly 0.00% a green ▲
+  // (17 of 2,126 stocks in the current snapshot), and would give a value of
+  // -0.004 a red ▼ beside the text "0.00%" — an arrow contradicting its own
+  // number. The ±0.049 band and the muted third class are not invented here:
+  // screener/export_static.py's _chg() has drawn the generated directory pages
+  // this way from the start, and index.html's market-pulse cell uses the same
+  // "→" for flat. This surface was the one disagreeing with both.
+  const flat = Math.abs(v) <= 0.049;
+  const cls = flat ? "change-flat" : v > 0 ? "change-pos" : "change-neg";
+  const arw = flat ? "→" : v > 0 ? "▲" : "▼";
+  return`<span class="${cls}">${arw} ${Math.abs(v).toFixed(2)}%</span>`;
 }
 
 async function checkHealth(){
@@ -1818,12 +1830,13 @@ checkHealth();
 }
 
 /* Day % change → soft tinted pill (applies to the existing change spans) */
-.change-pos,.change-neg{
+.change-pos,.change-neg,.change-flat{
   display:inline-flex;align-items:center;gap:4px;
   padding:2px 9px;border-radius:20px;font-variant-numeric:tabular-nums;
 }
 .change-pos{background:rgb(5 150 105 / .10);}
 .change-neg{background:rgb(220 38 38 / .09);}
+.change-flat{background:rgb(100 116 139 / .10);}
 
 /* Mobile: freeze the Company column while the table scrolls horizontally, so you
    never lose which stock a row is. Constrain + wrap it to a compact anchor (long

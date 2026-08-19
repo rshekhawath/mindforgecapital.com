@@ -343,7 +343,19 @@
 // a homepage whose flagship chart a phone cannot read. No file under
 // docs/assets/ changed this release — every rule and script here is page-local —
 // so no ?v bump is owed anywhere and export_static.py needs no edit.
-const CACHE = 'mfc-v55';
+// V31.4 -> mfc-v56. index.html is precached as the offline navigation fallback
+// and it changed twice this release: the Market Pulse card gains a 20-session
+// combined-net strip (drawn from cash_history the card was already fetching and
+// never using), and the Nifty driver chip stops calling a flat day an up day.
+// A precached document has no ?v of its own to bust, so an installed app opening
+// cold on v55 would keep showing the homepage without either. dashboard.html is
+// NOT precached — it is network-first — so the portfolio map's return-by-default
+// ranking and its spread strip reach members with no cache step at all, and the
+// three strategy pages and the Scanner are network-first for the same reason.
+// No file under docs/assets/ changed this release — every rule and script added
+// here is page-local — so no ?v bump is owed anywhere and export_static.py needs
+// no edit.
+const CACHE = 'mfc-v56';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

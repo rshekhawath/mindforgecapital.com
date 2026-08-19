@@ -3998,6 +3998,34 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .mpf-v.down{color:var(--data-bad)}
 .mpf-cap{margin-top:10px;font-size:11.5px;font-weight:600;color:var(--text3);line-height:1.5}
 .mpf-cap b{font-weight:800;color:var(--text2)}
+/* ── V31.4 · WHERE TODAY SITS ────────────────────────────────────────────────
+   The caption above has always ended on "combined institutional net ₹X cr" and
+   the card gave the reader no way to know whether X is a big day or an ordinary
+   one. fii-dii.json ships 39 sessions of cash_history and this card has been
+   fetching all of them since V15.3 to read two numbers off the top of the file.
+   Twenty of them, one bar per session, oldest to newest, on the same zero line
+   the row bars above already use — so the strip inherits an axis the reader has
+   just read rather than introducing one. Today is the last bar and the only one
+   at full opacity. Same construction as the dashboard's V31.4 spread strip; the
+   difference is that this axis is time and that one is rank. ── */
+.mpf-spark{margin-top:11px;padding-top:11px;border-top:0.5px solid rgba(37,99,235,0.10)}
+.mpf-sp-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px}
+.mpf-sp-t{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text3)}
+.mpf-sp-n{font-size:10.5px;font-weight:700;color:var(--text3);font-variant-numeric:tabular-nums}
+.mpf-sp-strip{position:relative;display:flex;align-items:stretch;gap:2px;height:34px}
+.mpf-sp-strip::before{content:'';position:absolute;left:0;right:0;top:50%;height:1px;
+  background:rgba(15,23,42,.20);transform:translateY(-.5px)}
+html[data-theme="dark"] .mpf-sp-strip::before{background:rgba(255,255,255,.26)}
+.mpf-sp-b{position:relative;flex:1 1 0;min-width:0}
+.mpf-sp-b i{position:absolute;left:0;right:0;margin-inline:auto;max-width:9px;height:0;border-radius:1.5px;
+  opacity:.42;transition:height .7s cubic-bezier(.22,1,.36,1)}
+.mpf-sp-b.up i{bottom:50%;background:var(--data-strong)}
+.mpf-sp-b.dn i{top:50%;background:var(--data-bad)}
+.mpf-sp-b.today i{opacity:1}
+.mpf-sp-scale{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;font-weight:700;
+  color:var(--text3);font-variant-numeric:tabular-nums}
+@media(max-width:600px){.mpf-spark{margin-top:9px;padding-top:9px}.mpf-sp-strip{height:28px;gap:1.5px}}
+@media(prefers-reduced-motion:reduce){.mpf-sp-b i{transition:none}}
 html[data-theme="dark"] .mpf-bar{background:rgba(255,255,255,.08)}
 html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
 @media(max-width:600px){
@@ -4069,7 +4097,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
      Fail-soft: renders nothing at all unless BOTH nets are finite numbers, so a
      partial or missing feed leaves the card exactly as it was. Reuses the same
      fmtCr() the cells above use, so the strip can never drift from them. */
-  function renderFlow(fii,dii){
+  function renderFlow(fii,dii,hist){
     var host=document.getElementById('mpFlow');if(!host)return;
     var fn=fii&&fii.net!=null?Number(fii.net):null, dn=dii&&dii.net!=null?Number(dii.net):null;
     if(fn==null||dn==null||!isFinite(fn)||!isFinite(dn))return;
@@ -4093,8 +4121,47 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
       cap=(big?'Foreign':'Domestic')+' funds '+(fn>=0?'bought':'sold')+' <b>'+r.toFixed(1)+'×</b> what '+
           (big?'domestic':'foreign')+' funds did · combined institutional net <b>'+fmtCr(tot)+'</b>';
     }
-    host.innerHTML=row('FII',fn)+row('DII',dn)+'<div class="mpf-cap">'+cap+'</div>';
+    host.innerHTML=row('FII',fn)+row('DII',dn)+'<div class="mpf-cap">'+cap+'</div>'+spark(hist);
     host.className='mp-flow mpf-on';
+    // grow from 0 a frame later — the site's bar idiom. Painting the final
+    // height immediately would leave a dead transition (the V23.5 bug).
+    setTimeout(function(){
+      var bs=host.querySelectorAll('.mpf-sp-b');
+      for(var i=0;i<bs.length;i++){var h=bs[i].getAttribute('data-h');if(h)bs[i].firstChild.style.height=h;}
+    },70);
+  }
+
+  /* Twenty sessions of combined institutional net, oldest -> newest.
+     Returns '' for anything it cannot draw, so a feed without cash_history
+     leaves the card exactly as it was before this existed — the same
+     fail-soft contract renderFlow itself is written to. */
+  function spark(hist){
+    if(!hist||!hist.length)return'';
+    var rows=[];
+    for(var i=0;i<hist.length;i++){
+      var h=hist[i];if(!h)continue;
+      var f=Number(h.fii_net),d=Number(h.dii_net);
+      if(!isFinite(f)||!isFinite(d))continue;
+      rows.push({d:h.date||'',v:f+d});
+    }
+    if(rows.length<4)return'';
+    // cash_history is newest-first in the feed; a time axis has to read forwards
+    rows=rows.slice(0,20).reverse();
+    var peak=0;
+    for(var j=0;j<rows.length;j++)peak=Math.max(peak,Math.abs(rows[j].v));
+    if(!peak)return'';
+    var up=0;for(var k=0;k<rows.length;k++)if(rows[k].v>0)up++;
+    var bars=rows.map(function(r,i){
+      var pc=Math.max(4,Math.min(50,Math.abs(r.v)/peak*50));
+      return '<span class="mpf-sp-b '+(r.v>=0?'up':'dn')+(i===rows.length-1?' today':'')+
+             '" data-h="'+pc.toFixed(1)+'%" title="'+r.d+' · '+fmtCr(r.v)+'"><i></i></span>';
+    }).join('');
+    return '<div class="mpf-spark">'+
+      '<div class="mpf-sp-head"><span class="mpf-sp-t">Combined net · last '+rows.length+' sessions</span>'+
+      '<span class="mpf-sp-n">'+up+' of '+rows.length+' net positive</span></div>'+
+      '<div class="mpf-sp-strip" aria-hidden="true">'+bars+'</div>'+
+      '<div class="mpf-sp-scale" aria-hidden="true"><span>'+rows[0].d+'</span><span>'+rows[rows.length-1].d+' · today</span></div>'+
+      '</div>';
   }
   // Market-sentiment score (0–100): weighted blend of Nifty momentum + FII/DII cash
   // flows + FII index-futures positioning. Transparent (drivers shown); NOT advice.
@@ -4116,11 +4183,16 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
     return {score:Math.round(50+50*comp),nifty:nifty,fii:fii,dii:dii,fo:dh};
   }
   function sentLabel(s){if(s<25)return{t:'Strongly bearish',tone:'bear'};if(s<43)return{t:'Bearish',tone:'bear'};if(s<=57)return{t:'Neutral',tone:'neutral'};if(s<=75)return{t:'Bullish',tone:'bull'};return{t:'Strongly bullish',tone:'bull'};}
+  /* V31.4 — flat is its own direction. Shared by every "day change" reading on
+     this page. The ±0.049 band matches screener/export_static.py's _chg(), so a
+     stock that reads "→ 0.00%" on a generated directory page reads the same
+     here and on the Scanner instead of borrowing the up arrow. */
+  function mfArrow(pct){ return Math.abs(pct) <= 0.049 ? '→' : pct > 0 ? '▲' : '▼'; }
   function renderSentiment(d){
     var host=document.getElementById('mpSent');if(!host)return;
     var s=sentiment(d);if(!s){host.style.display='none';return;}
     var L=(s.label&&s.tone)?{t:s.label,tone:s.tone}:sentLabel(s.score),sc=clamp(s.score,2,98),drv=[];
-    if(s.nifty&&s.nifty.pct!=null)drv.push('Nifty <b>'+((Number(s.nifty.change)||0)>=0?'▲':'▼')+Math.abs(Number(s.nifty.pct)||0).toFixed(2)+'%</b>');
+    if(s.nifty&&s.nifty.pct!=null)drv.push('Nifty <b>'+mfArrow(Number(s.nifty.pct)||0)+Math.abs(Number(s.nifty.pct)||0).toFixed(2)+'%</b>');
     if(s.fii)drv.push('FII <b>'+((Number(s.fii.net)||0)>=0?'buying':'selling')+'</b>');
     if(s.dii)drv.push('DII <b>'+((Number(s.dii.net)||0)>=0?'buying':'selling')+'</b>');
     if(s.fo&&s.fo.fii_idxfut_long!=null)drv.push('FIIs net <b>'+(Number(s.fo.fii_idxfut_long)>=Number(s.fo.fii_idxfut_short)?'long':'short')+' F&amp;O</b>');
@@ -4156,7 +4228,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
     if(dii){var dp=(dii.net||0)>=0;html+=cellHTML('DII net',fmtCr(dii.net),dp?'Net buying':'Net selling',dp?'up':'down');}
     if(!html)return;
     grid.innerHTML=html;
-    renderFlow(fii,dii);
+    renderFlow(fii,dii,d.cash_history);
     card.style.display='block';
   }).catch(function(){});
 })();
