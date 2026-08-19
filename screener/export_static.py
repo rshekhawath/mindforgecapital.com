@@ -183,7 +183,7 @@ def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
      and expects exactly one distinct value, so this note deliberately does not
      spell that pattern out — 28 copies of it would be 28 false hits.) -->
 <link rel="stylesheet" href="/assets/mfc-dir.css?v=2920">
-<link rel="stylesheet" href="/assets/mfc-finish.css?v=3060">
+<link rel="stylesheet" href="/assets/mfc-finish.css?v=3070">
 <!-- V29.2: this was the apply-only half of the site's theme script — it READ the
      saved preference but never built the nav toggle, so these 28 pages were the
      only ones on the site with no way to change theme. A visitor who arrived here
@@ -212,7 +212,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <nav>
   <div class="nav-inner">
     <a href="/" class="logo" aria-label="MindForge Capital — Home">
-      <img src="/assets/LogoNav.png" alt="MindForge Capital" decoding="async" height="36">
+      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="/strategies.html">Strategies</a>

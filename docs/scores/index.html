@@ -175,6 +175,22 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hp-dist-bar.has-pick .hp-seg[aria-pressed="true"]{opacity:1;filter:saturate(1.15) brightness(1.06)}
 .hp-seg[aria-pressed="true"]::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 2px var(--ink2)}
 
+/* ── V31.5 — a 1px seam so five bands read as five ────────────────────────────
+   The band inks are a deliberate ordered ramp and two neighbours in it are
+   adjacent greens: Excellent #065f46 against Good #047857 (and, on the dark
+   theme, their two light-green counterparts). Excellent is also the SMALLEST
+   band — 23 of 1,996 stocks, 7px of a 722px bar at 1440 — so it butted against
+   103px of an almost identical green and the bar read as four segments, on the
+   page whose entire subject is a five-band distribution.
+   Drawn as an INSET BOX-SHADOW on every segment after the first, which paints
+   inside the segment's own box and takes no layout space, so the V28.3 promise
+   that painted width === true share is untouched (still verified summing to
+   100%) and the 7px band stays 7px. The ink is --ink2, the card colour, so the
+   seam reads as a gap in the bar rather than as a sixth colour — the same token
+   and the same reasoning as the pressed-state ring directly above. It flips
+   with the theme for free, which a hardcoded white or black could not. */
+.hp-seg + .hp-seg{box-shadow:inset 1px 0 0 var(--ink2)}
+
 .hp-leg{appearance:none;-webkit-appearance:none;background:none;border:0;font:inherit;
   padding:3px 8px;margin:-3px -2px;border-radius:8px;cursor:pointer;
   transition:background .16s ease,color .16s ease,transform .16s ease}
@@ -599,7 +615,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3060">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3070">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -801,7 +817,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
 <nav>
   <div class="nav-inner">
     <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
-      <img src="/assets/LogoNav.png" alt="MindForge Capital" decoding="async" height="36">
+      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="https://mindforgecapital.com/strategies.html">Strategies</a>

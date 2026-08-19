@@ -355,7 +355,27 @@
 // No file under docs/assets/ changed this release — every rule and script added
 // here is page-local — so no ?v bump is owed anywhere and export_static.py needs
 // no edit.
-const CACHE = 'mfc-v56';
+//
+// V31.5 -> mfc-v57. THREE shared assets moved this release and all three are
+// served cache-first keyed by the exact URL:
+//   • LogoNav.png and LogoNav-dark.png were re-cut. The 256x256 canvas carried
+//     34% transparent margin, so the mark painted at 24x20 inside the 44px box
+//     the CSS reserves and the baked "MindForge CAPITAL" wordmark rendered ~5px
+//     tall — illegible on every page of the site. Cropped to the artwork's own
+//     alpha bounds (142x116); the artwork itself is untouched. Every <img src>
+//     gains ?v=b1f0c2 (49 pages, incl. the 34 generated directory pages and
+//     export_static.py, whose tag also had no width attribute at all), and the
+//     DARK file — referenced only from mfc-finish.css's content:url() where
+//     there is no per-page src — gains the same token there.
+//   • mfc-finish.css 3060 -> 3070 for that url() change, on all 49 pages AND in
+//     export_static.py, which regenerates 28 of them and has reverted this bump
+//     before (V31.4) when the scheduled refresh ran mid-session.
+//   • index.html is a PRECACHED document with no ?v of its own and it changed,
+//     so an installed app opening cold on v56 would keep serving the old shell.
+// The <img> aspect hints moved with the file: width/height were 80x80 for the
+// square canvas and are now 98x80 (same 142:116 ratio), because a stale hint is
+// a layout shift, not a cosmetic detail.
+const CACHE = 'mfc-v57';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

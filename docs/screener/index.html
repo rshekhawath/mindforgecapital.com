@@ -368,6 +368,97 @@ html[data-theme="dark"] .sidebar{background:linear-gradient(180deg,var(--ink2) 0
 }
 .col-toggle-item input{cursor:pointer;accent-color:var(--accent)}
 
+/* ── V31.5 — DATA COVERAGE, SHOWN WHERE THE CHOICE IS MADE ─────────────────
+   The panel used to be 48 identical checkboxes; enabling "EV/Rev" (89% of rows
+   populated) and "Asset T/O" (0%) looked like the same decision and produced
+   completely different tables. Each row now carries a measured coverage meter.
+   Sizing: the chips became two-line at 12px, so they get an explicit min-width
+   and a fixed-width meter — a % that reflows its own row is unreadable to
+   compare against its neighbours, which is the entire job here. */
+.col-cov-head{
+  font-size:11.5px;line-height:1.5;color:var(--text3);
+  margin:-2px 0 12px;padding-bottom:10px;border-bottom:0.5px solid var(--border2);
+}
+.col-cov-head b{color:var(--text2);font-weight:700}
+.col-cov-head em{font-style:italic;color:var(--text2)}
+/* GRID, not flex-wrap. The point of putting 48 percentages on screen is that a
+   reader can compare them down a column; wrapped flex items line up only by
+   accident, so the meters staggered and the eye had nothing to run down.
+   `auto-fill` with an explicit min is the idiom used elsewhere in this repo —
+   the min is set to the width the longest label + meter + % actually needs
+   (measured, not guessed: "Graham MoS%" is the widest at 12px/600). */
+.col-toggle-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(214px,1fr));gap:4px 14px}
+.col-toggle-item{padding:5px 8px;border-radius:8px;border:0.5px solid transparent;
+  transition:background .16s ease,border-color .16s ease}
+.col-toggle-item:hover{background:var(--ink3);border-color:var(--border2)}
+.col-toggle-item .ct-lbl{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-toggle-item .ct-meter{
+  flex:0 0 34px;height:4px;border-radius:2px;background:var(--border2);
+  overflow:hidden;position:relative;
+}
+.col-toggle-item .ct-meter i{
+  display:block;height:100%;border-radius:2px;background:var(--accent);
+  transition:width .7s cubic-bezier(.22,1,.36,1);
+}
+/* Amber is hardcoded rather than tokenised because this repo has no --warn, and
+   the light amber (#b45309) drops to ~2.9:1 on the dark card — the exact seam
+   V26.9 documents. Dark gets #fbbf24, the value the rest of the site's dark
+   data-ink scale already uses. */
+.col-toggle-item .ct-meter.thin i{background:#b45309}
+.col-toggle-item .ct-pct{
+  flex:0 0 32px;text-align:right;font-size:10.5px;font-weight:700;
+  font-variant-numeric:tabular-nums;color:var(--text3);
+}
+.col-toggle-item .ct-pct.thin{color:#b45309}
+.col-toggle-item.thin .ct-lbl{color:var(--text3)}
+html[data-theme="dark"] .col-toggle-item .ct-meter.thin i{background:#fbbf24}
+html[data-theme="dark"] .col-toggle-item .ct-pct.thin{color:#fbbf24}
+
+/* the same measurement, restated under any THIN filter the user can set */
+.filter-cov{
+  display:flex;align-items:center;gap:6px;margin-top:6px;
+  font-size:10.5px;line-height:1.35;color:var(--text3);
+}
+.filter-cov b{color:#b45309;font-weight:700}
+.filter-cov .fc-meter{flex:0 0 26px;height:3px;border-radius:2px;background:var(--border2);overflow:hidden}
+.filter-cov .fc-meter i{display:block;height:100%;background:#b45309;border-radius:2px;
+  transition:width .7s cubic-bezier(.22,1,.36,1)}
+html[data-theme="dark"] .filter-cov b{color:#fbbf24}
+html[data-theme="dark"] .filter-cov .fc-meter i{background:#fbbf24}
+
+/* the tail on the "Matching N stocks" line */
+.rm-cov{display:block;margin-top:5px;font-size:11.5px;line-height:1.45;color:var(--text3);max-width:62ch}
+@media (prefers-reduced-motion: reduce){
+  .col-toggle-item .ct-meter i,.filter-cov .fc-meter i{transition:none}
+}
+
+/* ── V31.5 — PRINT: the colour on this page that is CONTENT ─────────────────
+   dashboard.html has carried a print-color-adjust block since V31.1; the
+   Scanner never had one, and it has three things whose colour is the whole
+   message. On paper, without this, browsers drop background paint as
+   decoration and they come out as empty outlines:
+     • .px52 / .px52-mark — the 52-week range bar under every price. The bar IS
+       a gradient and the dot's position on it IS the reading; printed blank
+       it is a 4px grey gap and a hollow ring.
+     • .sector-pill.sp-tinted::before — the sector dot. It is the only thing
+       tying a row to a sector at a glance once the tint is gone.
+     • .ct-meter / .fc-meter — the coverage meters added this release. A
+       coverage bar with no fill states the opposite of what it means.
+   Deliberately NOT here, matching the dashboard block's own reasoning: the
+   day-change pills (the ▲/▼ glyph and the sign carry it, the tint is
+   decoration) and every card sheen, glow and hero gradient, which should keep
+   yielding to the printer. Both properties spelled out; WebKit needs the
+   prefixed one. */
+@media print {
+  .px52, .px52-mark,
+  .sector-pill.sp-tinted::before,
+  .col-toggle-item .ct-meter, .col-toggle-item .ct-meter i,
+  .filter-cov .fc-meter, .filter-cov .fc-meter i {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
 /* ── TABLE ── */
 .table-card{
   background:var(--ink2);
@@ -576,7 +667,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3060">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3070">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -727,7 +818,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 <nav>
   <div class="nav-inner">
     <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
-      <img src="/assets/LogoNav.png" alt="MindForge Capital" decoding="async" height="36">
+      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
@@ -1148,23 +1239,50 @@ const API="/api";
 let allResults=[],currentPage=1;
 const PAGE_SIZE=30;
 
+/* ── V31.5 — THE POPULAR SCREENS WERE GATED ON A FIELD 85% OF THE MARKET DOES
+   NOT REPORT. ───────────────────────────────────────────────────────────────
+   `chk()` in screener-data.js excludes a row whose value is null the moment a
+   bound is set on that field — correct, and the only safe reading of a missing
+   number. But `roe` is populated for 325 of 2,126 snapshot rows (15.3%), so
+   every preset carrying a min_roe clause was silently screening the OTHER 85%
+   of the market out before its own criteria ran. Measured against the shipped
+   snapshot, as-shipped vs the same intent expressed on a field the data carries:
+
+       Value       34 -> 217     Growth      18 -> 208     Small Cap   33 -> 331
+       Quality     21 -> 327     GARP        14 -> 123     Blue Chips  19 ->  36
+
+   A user reading "34 stocks" concluded the Indian market has 34 cheap, decently
+   profitable large-caps. It has ~217; the other 183 simply had no ROE in the
+   snapshot. Same for min_current_ratio (15.1%), which gated Deep Value and Low
+   Debt on top of their real criteria.
+
+   THE RULE APPLIED HERE: a preset whose NAME promises a metric keeps that metric
+   — "High ROE" still screens on roe, "High FCF Yield" still screens on
+   fcf_yield — and the coverage note under the result count now says out loud
+   what that costs. A preset whose name describes an INTENT ("Quality", "Value",
+   "Low Debt") is expressed on the field the snapshot actually carries: roce at
+   96.9%, net_debt_ebitda at 75.7%. ROE is NOT redefined as ROCE anywhere — the
+   ROE filter, the ROE column and the High-ROE screen all still mean ROE.
+   Sorting follows the same rule: `sortBy` coerces null to 0, so ranking by a
+   15%-populated field ties 1,801 rows at the bottom — Momentum now ranks on
+   roce, High ROE still ranks on roe because that is its subject. ─────────── */
 const PRESETS={
   // Classic, widely-used equity screens. Each fills the sidebar filters + sort
   // and auto-runs. Keys map to the filter input ids (plus above_sma200/sort_*).
-  value:        {min_mcap:500,  max_pe:20,  max_pb:3,   min_roe:10},
-  quality:      {min_mcap:500,  min_roe:20, min_roce:20},
-  growth:       {min_mcap:1000, min_roe:18, min_rev_growth:15, min_earn_growth:15},
-  garp:         {min_mcap:1000, min_roe:15, min_earn_growth:15, max_pe:25},
+  value:        {min_mcap:500,  max_pe:20,  max_pb:3,   min_roce:10},
+  quality:      {min_mcap:500,  min_roce:20},
+  growth:       {min_mcap:1000, min_roce:18, min_rev_growth:15, min_earn_growth:15},
+  garp:         {min_mcap:1000, min_roce:15, min_earn_growth:15, max_pe:25},
   dividend:     {min_mcap:1000, min_div:2,  max_de:1.5},
   magicformula: {min_mcap:500,  min_roce:25, max_ev_ebitda:12, sort_by:"roce", sort_dir:"desc"},
   compounders:  {min_mcap:1000, min_roce:18, min_rev_growth:10, max_de:0.5},
-  deepvalue:    {max_pe:15, max_pb:1.5, min_graham_mos:20, min_current_ratio:1.5},
-  bluechip:     {min_mcap:50000, min_roe:12, min_div:1},
-  lowdebt:      {max_de:0.3, min_current_ratio:2, min_roe:12},
+  deepvalue:    {max_pe:15, max_pb:1.5, min_graham_mos:20},
+  bluechip:     {min_mcap:50000, min_roce:12, min_div:1},
+  lowdebt:      {max_de:0.3, max_net_debt_ebitda:0.5, min_roce:15},
   fcf:          {min_mcap:1000, min_fcf_yield:5, sort_by:"fcf_yield", sort_dir:"desc"},
   highroe:      {min_mcap:500, min_roe:25, sort_by:"roe", sort_dir:"desc"},
-  smallcap:     {min_mcap:500, max_mcap:5000, min_roe:12},
-  momentum:     {min_mcap:1000, above_sma200:true, sort_by:"roe", sort_dir:"desc"},
+  smallcap:     {min_mcap:500, max_mcap:5000, min_roce:12},
+  momentum:     {min_mcap:1000, above_sma200:true, sort_by:"roce", sort_dir:"desc"},
 };
 
 // V12.9: plain-language metric definitions shown on column-header hover (a pro
@@ -1181,7 +1299,11 @@ const COL_TIPS={
   ev_ebitda:"Enterprise value ÷ EBITDA — capital-structure-neutral valuation.",
   ev_revenue:"Enterprise value ÷ revenue.",
   roe:"Return on equity — net profit ÷ shareholder equity. Higher = more profitable.",
-  roce:"Return on capital employed.",
+  /* V31.5: no coverage figure in this string. The Columns panel prints the real
+     one beside every field, counted from the loaded snapshot — a percentage
+     typed here would be a hand label that drifts away from the machine number
+     at the next data refresh, which is the bug this release is about. */
+  roce:"Return on capital employed — operating profit divided by all the capital the business uses (equity + debt). Like ROE, but leverage cannot flatter it.",
   roa:"Return on assets.",
   dividend_yield:"Annual dividend ÷ price.",
   net_margin:"Net profit ÷ revenue.",
@@ -1214,13 +1336,19 @@ const COLUMNS=[
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`, visible:true},
   {key:"pe_ratio",      label:"P/E",          render:d=>fmtTone(d.pe_ratio,1,"pe"), visible:true},
   {key:"pb_ratio",      label:"P/B",          render:d=>fmtN(d.pb_ratio,1), visible:true},
-  {key:"roe",           label:"ROE %",        render:d=>fmtTone(d.roe,1,"q"), visible:true},
+  /* V31.5: ROCE leads the quality slot, ROE moves one click away into "Columns".
+     Not a preference — a coverage measurement. In the shipped snapshot roe is
+     present on 325 of 2,126 rows and roce on 2,059, so the default table was
+     painting an em-dash in 85% of its quality cells while the well-populated
+     column sat hidden. ROE is unchanged and still one toggle away, now with its
+     coverage printed beside it. */
+  {key:"roce",          label:"ROCE %",       render:d=>fmtTone(d.roce,1,"q"), visible:true},
   {key:"dividend_yield",label:"Div Yield %",  render:d=>fmtTone(d.dividend_yield,2,"div"), visible:true},
   {key:"net_margin",    label:"Net Margin %", render:d=>fmtTone(d.net_margin,1,"q"), visible:false},
   {key:"operating_margin",label:"OPM %",      render:d=>fmtTone(d.operating_margin,1,"q"), visible:false},
   {key:"gross_margin",  label:"Gross Mgn %",  render:d=>fmtTone(d.gross_margin,1,"q"), visible:false},
   {key:"ebitda_margin", label:"EBITDA Mgn %", render:d=>fmtTone(d.ebitda_margin,1,"q"), visible:false},
-  {key:"roce",          label:"ROCE %",      render:d=>fmtTone(d.roce,1,"q"), visible:false},
+  {key:"roe",           label:"ROE %",       render:d=>fmtTone(d.roe,1,"q"), visible:false},
   {key:"roa",           label:"ROA %",       render:d=>fmtTone(d.roa,1,"q"), visible:false},
   {key:"graham_mos",    label:"Graham MoS%", render:d=>fmtTone(d.graham_mos,1,"gmos"), visible:false},
   {key:"fcf_yield",     label:"FCF Yield %", render:d=>fmtTone(d.fcf_yield,2,"fcf"), visible:false},
@@ -1409,6 +1537,14 @@ async function loadInitialData(){
   try{
     const d=await(await fetch(`${API}/screen?limit=0`)).json();
     const ci=document.getElementById("cacheInfo");if(ci)ci.textContent=`${(d.cached_total||0).toLocaleString("en-IN")} stocks loaded`;
+    /* V31.5: count field coverage BEFORE the first screen so the coverage note,
+       the Columns meters and the per-filter notes all exist by the time anything
+       is rendered. `limit=0` returns the whole matching set, which with no
+       filters set is the whole snapshot — the exact rows the screen runs
+       against, so the denominator here can never disagree with the table.
+       Fail-soft: if this throws, COVERAGE stays null and every consumer of it
+       renders exactly what it rendered before this release. */
+    try{ COVERAGE=buildCoverage(d.results||[]); paintFilterCoverage(); }catch(e){ COVERAGE=null; }
     applyURLFilters();   // V15.2: restore a shared screen from the URL before the first run
     if((d.cached_total||0)>0)runScreen();
   }catch{}
@@ -1454,9 +1590,19 @@ async function runScreen(){
   try{
     const d=await(await fetch(`${API}/screen?${params}`)).json();
     allResults=d.results;currentPage=1;
+    /* V31.5 — the count said 500 when 2,126 matched. The response has ALWAYS
+       carried both figures: `count` is how many rows passed the screen and
+       `results` is that list capped at the `limit` above. Both the headline and
+       the toast read results.length, so an unfiltered screen announced
+       "500 stocks match your screen" — the cap, presented as the answer — and
+       nothing anywhere said 1,626 rows had been dropped. Truncation is now
+       named where it happens. */
+    lastScreen={matched:(d.count==null?d.results.length:d.count),shown:d.results.length,
+                universe:(d.cached_total||0)};
     renderTable();
-    rollResultCount(d.results.length);
-    showToast(`✓ ${d.results.length} stock${d.results.length===1?"":"s"} match your screen`,"success",2000);
+    rollResultCount(lastScreen.matched);
+    showToast(`✓ ${lastScreen.matched} stock${lastScreen.matched===1?"":"s"} match your screen`
+              +(lastScreen.shown<lastScreen.matched?` · showing the first ${lastScreen.shown}`:""),"success",2200);
     // On narrow/stacked layouts the results sit below the long filter sidebar —
     // bring them into view so the click visibly does something.
     /* V26.8: 900 → 1100, kept in lockstep with the .app-layout stacking
@@ -1475,9 +1621,19 @@ async function runScreen(){
 
 // V9.7: roll the "Showing N stocks" figure up on each screen run, same
 // easing as the dashboard stat tiles. Reduced-motion users get it instantly.
+// V31.5: the number that rolls is now the MATCH count, and a tail names the cap
+// and the thin fields whenever either is doing work. Both come from lastScreen
+// / COVERAGE, never from a literal — see coverageNote().
 function rollResultCount(target){
   const el=document.getElementById("resultMeta");
-  const set=v=>{el.innerHTML=`Showing <strong>${Number(v).toLocaleString("en-IN")}</strong> stocks`;};
+  const tail=()=>{
+    let t="";
+    if(lastScreen.shown<lastScreen.matched)
+      t+=` · showing the first <strong>${Number(lastScreen.shown).toLocaleString("en-IN")}</strong>`;
+    const cn=coverageNote();
+    return t+(cn?`<span class="rm-cov">${cn}</span>`:"");
+  };
+  const set=v=>{el.innerHTML=`Matching <strong>${Number(v).toLocaleString("en-IN")}</strong> stocks`+tail();};
   if(window.matchMedia("(prefers-reduced-motion: reduce)").matches||!("requestAnimationFrame" in window)){set(target);return;}
   const t0=performance.now(),D=600;
   (function step(now){
@@ -1485,6 +1641,113 @@ function rollResultCount(target){
     set(Math.round(target*eased));
     if(t<1)requestAnimationFrame(step);
   })(t0);
+}
+
+/* ─── V31.5 — FIELD COVERAGE, MEASURED FROM THE LOADED SNAPSHOT ──────────────
+   Yahoo does not report every fundamental for every NSE listing, and the gaps
+   are not small: in the shipped snapshot `asset_turnover` is absent from ALL
+   2,126 rows, `peg_ratio` from 96%, `price_to_fcf` from 95%, and `roe`,
+   `roa`, `current_ratio` and `quick_ratio` from ~85% each. Two things follow,
+   and neither was visible anywhere on this page before:
+
+     1. A COLUMN you enable can be an em-dash in nine rows out of ten.
+     2. A FILTER you set on such a field silently deletes every stock that does
+        not report it — screener-data.js's chk() rejects null, which is the only
+        safe reading of a missing number, but it means an ROE bar of 10 costs
+        you 85% of the market before it tests anybody's ROE.
+
+   Every number below is COUNTED from the same rows the screen runs against
+   (window.MFCScreenerData.load() -> BUNDLE.stocks). Nothing here is a literal:
+   the next data refresh moves these figures without anyone editing this file,
+   which is the whole point — a hand-typed "15%" beside a machine-filtered table
+   is the bug this feature exists to prevent.
+
+   THIN is 50% — "fewer than half the tracked stocks can fill this" — and it is
+   not a knife edge. Measured on the shipped snapshot the fields separate into
+   two clusters with nothing between them: the sparse ones all sit at or under
+   15.3% (asset_turnover 0.0, peg_ratio 3.8, price_to_fcf 5.3, fcf_cr 13.0,
+   fcf_yield 12.2, opcf_margin 13.8, quick_ratio 15.1, current_ratio 15.1,
+   roa 15.2, roe 15.3) and the next field up is dividend_yield at 58.4%. Any
+   threshold in that gap yields the same set, so this cannot flip on a normal
+   refresh. 60% was tried first and REJECTED because it caught dividend_yield,
+   where a null is mostly "pays no dividend" rather than "not reported" — a
+   ≥2% dividend screen is *supposed* to drop those 884 rows, so warning about
+   them would be crying wolf on the one field whose gaps are meaningful. */
+const THIN=0.50;
+let COVERAGE=null, lastScreen={matched:0,shown:0,universe:0};
+
+/* The filter-input -> data-field map. It MUST mirror the chk() calls in
+   screener-data.js's doScreen(); if a filter is added there and not here it
+   simply gets no coverage note (fail-soft), never a wrong one. */
+const FILTER_FIELD={
+  min_pe:"pe_ratio",max_pe:"pe_ratio",min_pb:"pb_ratio",max_pb:"pb_ratio",
+  min_ps:"ps_ratio",max_ps:"ps_ratio",min_roe:"roe",max_roe:"roe",min_roa:"roa",
+  min_roce:"roce",min_mcap:"market_cap_cr",max_mcap:"market_cap_cr",
+  min_div:"dividend_yield",min_net_margin:"net_margin",max_de:"debt_to_equity",
+  min_current_ratio:"current_ratio",min_rev_growth:"revenue_growth",
+  min_earn_growth:"earnings_growth",max_ev_ebitda:"ev_ebitda",
+  min_fcf_yield:"fcf_yield",min_graham_mos:"graham_mos",min_opm:"operating_margin",
+  max_peg:"peg_ratio",min_promoter:"promoter_holding",min_int_cov:"interest_coverage",
+  min_gross_margin:"gross_margin",min_ebitda_margin:"ebitda_margin",
+  max_price_to_fcf:"price_to_fcf",max_ev_revenue:"ev_revenue",
+  min_quick_ratio:"quick_ratio",max_net_debt_ebitda:"net_debt_ebitda",
+  min_earn_q_growth:"earnings_q_growth"
+};
+
+function buildCoverage(rows){
+  if(!rows||!rows.length)return null;
+  const fields=new Set();
+  COLUMNS.forEach(c=>{if(c.key&&c.key!=="_actions"&&c.key!=="name")fields.add(c.key);});
+  Object.values(FILTER_FIELD).forEach(f=>fields.add(f));
+  const cov={__n:rows.length};
+  fields.forEach(f=>{
+    let hit=0;
+    for(let i=0;i<rows.length;i++){const v=rows[i][f];if(v!==null&&v!==undefined&&v!=="")hit++;}
+    cov[f]=hit/rows.length;
+  });
+  return cov;
+}
+const covPct=f=>(COVERAGE&&COVERAGE[f]!=null)?COVERAGE[f]:null;
+const covFmt=p=>p==null?"":(p>=0.995?"100%":p<0.005?"0%":(p*100).toFixed(p<0.1?1:0)+"%");
+
+/* Which of the filters the user has actually SET sit on a thin field, and what
+   that costs. Returns "" when nothing is set on a thin field — silence here
+   means "no filter of yours is throwing rows away", not "not measured". */
+function coverageNote(){
+  if(!COVERAGE)return "";
+  const thin=[];
+  Object.keys(FILTER_FIELD).forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el||!el.value)return;
+    const f=FILTER_FIELD[id],p=covPct(f);
+    if(p!=null&&p<THIN&&thin.indexOf(f)<0)thin.push(f);
+  });
+  if(!thin.length)return "";
+  const n=COVERAGE.__n;
+  const worst=thin.slice().sort((a,b)=>covPct(a)-covPct(b))[0];
+  const missing=Math.round((1-covPct(worst))*n);
+  const label=(COLUMNS.find(c=>c.key===worst)||{}).label||worst;
+  return `Heads up: ${label} is reported by only ${covFmt(covPct(worst))} of the `
+        +`${n.toLocaleString("en-IN")} tracked stocks, so filtering on it excluded `
+        +`${missing.toLocaleString("en-IN")} that simply do not report it`
+        +(thin.length>1?` (and ${thin.length-1} more thin field${thin.length>2?"s":""})`:"")+`.`;
+}
+
+/* One note per thin filter input, injected into its own .filter-group. Written
+   from the measurement, so a field that becomes well-populated in a later
+   snapshot loses its note with no edit here. */
+function paintFilterCoverage(){
+  if(!COVERAGE)return;
+  Object.keys(FILTER_FIELD).forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    const grp=el.closest(".filter-group");if(!grp)return;
+    const f=FILTER_FIELD[id],p=covPct(f);
+    let note=grp.querySelector(".filter-cov");
+    if(p==null||p>=THIN){if(note)note.remove();return;}
+    if(!note){note=document.createElement("div");note.className="filter-cov";grp.appendChild(note);}
+    note.innerHTML=`<span class="fc-meter"><i style="width:${(p*100).toFixed(1)}%"></i></span>`
+                  +`<span>only <b>${covFmt(p)}</b> of stocks report this</span>`;
+  });
 }
 
 function renderTable(){
@@ -1512,8 +1775,34 @@ function renderTable(){
 function goPage(p){currentPage=Math.max(1,Math.min(p,Math.ceil(allResults.length/PAGE_SIZE)));renderTable();scrollTo(0,0);}
 function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}allResults.sort((a,b)=>{const av=a[k],bv=b[k];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;return(av-bv)*sortDir;});currentPage=1;renderTable();}
 
+/* V31.5 — every column now shows how much of the universe can actually fill it,
+   so "add EV/Rev" and "add Asset T/O" stop looking like the same decision. The
+   meter is the site's standard bar idiom (track + fill, grown from 0 on reveal);
+   the percentage is counted from the loaded snapshot in buildCoverage(). */
 function buildColPanel(){
-  document.getElementById("colToggleGrid").innerHTML=COLUMNS.filter(c=>c.key!=="_actions"&&c.label).map(c=>`<label class="col-toggle-item"><input type="checkbox" ${c.visible?"checked":""} onchange="toggleCol('${c.key}',this.checked)"> ${c.label}</label>`).join("");
+  const cols=COLUMNS.filter(c=>c.key!=="_actions"&&c.label);
+  const head=COVERAGE
+    ? `<div class="col-cov-head">Coverage = share of the <b>${COVERAGE.__n.toLocaleString("en-IN")}</b> tracked stocks that report the field. `
+      +`A column under ${Math.round(THIN*100)}% is mostly em-dashes — and a <em>filter</em> on it drops every stock that does not report it.</div>`
+    : "";
+  document.getElementById("colToggleGrid").innerHTML=cols.map(c=>{
+    const p=c.key==="name"?1:covPct(c.key);
+    const thin=(p!=null&&p<THIN);
+    const meter=p==null?"":`<span class="ct-meter${thin?" thin":""}" aria-hidden="true"><i style="width:${(p*100).toFixed(1)}%"></i></span>`
+                          +`<span class="ct-pct${thin?" thin":""}">${covFmt(p)}</span>`;
+    const tip=p==null?c.label
+      :`${c.label} — reported by ${covFmt(p)} of the ${COVERAGE.__n.toLocaleString("en-IN")} tracked stocks`;
+    return `<label class="col-toggle-item${thin?" thin":""}" title="${tip.replace(/"/g,"&quot;")}">`
+      +`<input type="checkbox" ${c.visible?"checked":""} onchange="toggleCol('${c.key}',this.checked)">`
+      +`<span class="ct-lbl">${c.label}</span>${meter}</label>`;
+  }).join("");
+  const grid=document.getElementById("colToggleGrid");
+  if(head&&grid&&!grid.previousElementSibling?.classList?.contains("col-cov-head"))
+    grid.insertAdjacentHTML("beforebegin",head);
+  else if(head&&grid&&grid.previousElementSibling)grid.previousElementSibling.outerHTML=head;
+  // grow the meters from 0 like every other bar on the site
+  requestAnimationFrame(()=>document.querySelectorAll("#colToggleGrid .ct-meter i")
+    .forEach(el=>{const w=el.style.width;el.style.width="0";requestAnimationFrame(()=>{el.style.width=w;});}));
 }
 function toggleColPanel(){const p=document.getElementById("colPanel");p.classList.toggle("show");if(p.classList.contains("show"))buildColPanel();}
 function toggleCol(k,v){const c=COLUMNS.find(x=>x.key===k);if(c){c.visible=v;renderTable();}}
