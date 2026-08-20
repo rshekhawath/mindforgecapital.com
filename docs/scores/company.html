@@ -221,9 +221,26 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .gp-weak{background:rgba(180,83,9,.08);color:#b45309;border:0.5px solid rgba(180,83,9,.2)}
 .gp-bad{background:rgba(220,38,38,.07);color:#dc2626;border:0.5px solid rgba(220,38,38,.18)}
 .gp-na{background:var(--ink3);color:var(--text3);border:0.5px solid var(--border2)}
-.sc-pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-@media(max-width:900px){.sc-pillars{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:480px){.sc-pillars{grid-template-columns:1fr}}
+/* V31.9 — re-tuned from four tracks to five when the Efficiency lens was added.
+   `min-width:0` is not optional: this is the 1fr track of `.sc-top`, and a grid
+   item's automatic minimum size is its content's min-content width, so five
+   cards would push the track past the card and take the page with it (the
+   V31.8 lesson, applied before it could bite rather than after).
+   Five is prime, so the ladder is chosen for where the row COMPLETES rather
+   than by halving: 5 / 3 (3+2) / 2 (2+2+1) / 1. In the two-column band the
+   lone fifth card spans both tracks so the block still ends on a straight
+   edge instead of a notch. */
+.sc-pillars{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;min-width:0}
+@media(max-width:1180px){.sc-pillars{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){
+  .sc-pillars{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sc-pillars > .pillar:last-child:nth-child(odd){grid-column:1 / -1}
+}
+/* No 480px rule here on purpose — line 335's `@media(max-width:600px)` block comes
+   later in the sheet and already collapses this grid to one column, so a 480px
+   copy could never match anything. The version that was here before this release
+   was exactly that: a rule whose selector was live but whose declaration was
+   always overridden. */
 .pillar{background:var(--ink);border:0.5px solid var(--border);border-radius:var(--r);padding:16px 18px}
 .pillar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .pillar-name{font-size:13px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:7px}
@@ -237,6 +254,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
 /* Factor breakdown */
 .fb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
+/* V31.9 — five factor cards in two columns leave the fifth alone in its row with
+   an empty cell beside it, which reads as a card that failed to load rather than
+   as the end of the set. Same treatment the pillar strip above now gets: the odd
+   last child spans the row so the block closes on a straight edge. Guarded by
+   :nth-child(odd) so it does nothing if a sixth card is ever added. */
+.fb-grid > .fb-card:last-child:nth-child(odd){grid-column:1 / -1}
 @media(max-width:760px){.fb-grid{grid-template-columns:1fr}.sc-top{grid-template-columns:1fr;gap:18px}.sc-overall{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:12px 18px}.sc-rank{flex-basis:100%}}
 .fb-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
 .fb-card-head{padding:13px 18px;border-bottom:0.5px solid var(--border);background:linear-gradient(180deg,var(--ink3) 0%,rgba(255,255,255,0) 100%);display:flex;align-items:center;justify-content:space-between}
@@ -297,7 +320,16 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
 /* TABS */
 .tabs{display:flex;border-bottom:0.5px solid var(--border2);margin-bottom:20px;gap:0;overflow-x:auto;background:rgba(255,255,255,.6);backdrop-filter:blur(8px);border-radius:var(--r) var(--r) 0 0;padding:0 4px}
-.tab{position:relative;padding:12px 20px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s cubic-bezier(.22,.8,.2,1);margin-bottom:-0.5px;white-space:nowrap;border-radius:var(--r-sm) var(--r-sm) 0 0}
+/* V31.9 — these became real <button>s. A button does NOT inherit font-family and
+   arrives with a UA background and border, so those four are reset explicitly;
+   every other declaration is byte-for-byte what the <div> carried, which is why
+   the strip looks identical. */
+.tab{position:relative;padding:12px 20px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s cubic-bezier(.22,.8,.2,1);margin-bottom:-0.5px;white-space:nowrap;border-radius:var(--r-sm) var(--r-sm) 0 0;
+  font-family:inherit;background:none;border-top:0;border-left:0;border-right:0;-webkit-appearance:none;appearance:none;text-align:center;line-height:normal}
+/* The shared focus ring uses outline-offset:2px, which `.tabs{overflow-x:auto}`
+   would clip on the first and last tab. Inset it so the whole ring stays inside
+   the scrollport at every width. */
+.tab:focus-visible{outline:2px solid rgba(37,99,235,0.60);outline-offset:-3px;border-radius:var(--r-sm)}
 /* V17.7: gradient underline grows in on the active tab (site hairline idiom) */
 .tab::after{content:'';position:absolute;left:14px;right:14px;bottom:-0.5px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--teal));transform:scaleX(0);transition:transform .28s cubic-bezier(.22,.8,.2,1)}
 .tab.active::after{transform:scaleX(1)}
@@ -395,7 +427,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3070">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3090">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock
@@ -531,6 +563,29 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <div class="pillar-track"><div class="pillar-fill" id="mFill" style="background:var(--pil-m)"></div></div>
           <div class="pillar-sub" id="mSub">Is the stock in an uptrend</div>
         </div>
+        <!-- V31.9: THE FIFTH LENS. This strip shipped with four cards while every
+             other surface on the page carried five — the radar is labelled "All five
+             lenses at a glance", the factor breakdown has an Efficiency card, and
+             /scores/ tells the reader the grade is built from "five factor lenses —
+             Quality, Value, Growth, Momentum and Efficiency". The score itself was
+             never missing: D._e is computed, painted into the radar and printed on
+             #eCardScore further down. Only the summary a reader actually reads first
+             dropped it. Coverage measured before adding it, per the house rule: of
+             the five EFFICIENCY factors asset_turnover is 0% populated (Yahoo drops
+             it for NSE), but inventory_turnover 80%, receivable_days 93%,
+             cash_conv_cycle 89% and capex_to_revenue 95% are not, and MIN_E is 2 —
+             so this card carries a real number, not an em-dash. The "n/5" denominator
+             follows the same convention as its four neighbours (Quality prints n/8
+             against eight DEFINED factors, not against the ones Yahoo happened to
+             send), so 4/5 is the honest ceiling and reads correctly. -->
+        <div class="pillar">
+          <div class="pillar-head">
+            <div class="pillar-name"><span class="pillar-dot" style="background:var(--pil-e)"></span>Efficiency</div>
+            <div class="pillar-score" id="eScore" style="color:var(--pil-e)">—</div>
+          </div>
+          <div class="pillar-track"><div class="pillar-fill" id="eFill" style="background:var(--pil-e)"></div></div>
+          <div class="pillar-sub" id="eSub">How productively assets turn into sales</div>
+        </div>
       </div>
     </div>
 
@@ -612,15 +667,23 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        to be an <a> with no href, which is neither a link nor a control — outside the
        tab order, unfocusable, mouse-only. The JS below still smooth-scrolls; the href
        is what makes it reachable by keyboard and survives if that script never runs. -->
-  <div class="tabs" id="financials">
-    <div class="tab active" onclick="switchTab('overview',this)">Overview</div>
-    <div class="tab" onclick="switchTab('ratios',this)">Ratios &amp; Valuation</div>
-    <div class="tab" onclick="switchTab('shareholding',this)">Shareholding</div>
-    <div class="tab" onclick="switchTab('about',this)">Company</div>
+  <!-- V31.9: THESE FOUR WERE BARE <div onclick>. No role, no tabindex, no key
+       handler — so on ~2,100 indexed company URLs three quarters of the page's
+       content could only be reached with a mouse, and a screen reader was never
+       told a tab strip existed. The chart-timeframe strip 40 lines below has been
+       role="tablist" since it shipped, so the standard was already in the file;
+       this strip simply never got it. Real <button>s (focusable, Enter/Space for
+       free, announced as controls) plus the ARIA tab pattern: roving tabindex so
+       one Tab reaches the strip and Left/Right/Home/End move within it. -->
+  <div class="tabs" id="financials" role="tablist" aria-label="Financial detail">
+    <button type="button" class="tab active" role="tab" id="tabbtn-overview" aria-selected="true"  aria-controls="tab-overview"     tabindex="0"  onclick="switchTab('overview',this)">Overview</button>
+    <button type="button" class="tab"        role="tab" id="tabbtn-ratios"   aria-selected="false" aria-controls="tab-ratios"       tabindex="-1" onclick="switchTab('ratios',this)">Ratios &amp; Valuation</button>
+    <button type="button" class="tab"        role="tab" id="tabbtn-shareholding" aria-selected="false" aria-controls="tab-shareholding" tabindex="-1" onclick="switchTab('shareholding',this)">Shareholding</button>
+    <button type="button" class="tab"        role="tab" id="tabbtn-about"    aria-selected="false" aria-controls="tab-about"        tabindex="-1" onclick="switchTab('about',this)">Company</button>
   </div>
 
   <!-- OVERVIEW -->
-  <div class="tab-content active" id="tab-overview">
+  <div class="tab-content active" id="tab-overview" role="tabpanel" aria-labelledby="tabbtn-overview" tabindex="0">
 
     <!-- V12.9: live price chart (timestamped series via the Apps Script chart endpoint) -->
     <div class="card chart-card" id="priceChartCard">
@@ -671,7 +734,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </div>
 
   <!-- RATIOS -->
-  <div class="tab-content" id="tab-ratios">
+  <div class="tab-content" id="tab-ratios" role="tabpanel" aria-labelledby="tabbtn-ratios" tabindex="0" hidden>
     <div class="two-col">
       <div>
         <div class="card"><div class="card-header"><span class="card-title">Valuation</span></div><div class="card-body"><div class="ratio-grid" id="ratioValuation"></div></div></div>
@@ -687,7 +750,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </div>
 
   <!-- SHAREHOLDING -->
-  <div class="tab-content" id="tab-shareholding">
+  <div class="tab-content" id="tab-shareholding" role="tabpanel" aria-labelledby="tabbtn-shareholding" tabindex="0" hidden>
     <div class="two-col">
       <div class="card"><div class="card-header"><span class="card-title">Shareholding Pattern</span></div><div class="card-body" id="holdingBody"></div></div>
       <div class="card"><div class="card-header"><span class="card-title">Market Position</span></div><div class="card-body"><div class="ratio-grid" id="mktPosition"></div></div></div>
@@ -698,7 +761,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </div>
 
   <!-- ABOUT -->
-  <div class="tab-content" id="tab-about">
+  <div class="tab-content" id="tab-about" role="tabpanel" aria-labelledby="tabbtn-about" tabindex="0" hidden>
     <div class="card"><div class="card-header"><span class="card-title">Business Description</span></div>
       <div class="card-body"><p class="about-text" id="aboutText">Loading…</p><div class="info-grid" id="companyInfo"></div></div>
     </div>
@@ -1105,6 +1168,7 @@ function renderScorecard(){
   setPillar("v",v,document.getElementById("vScore"),document.getElementById("vFill"),document.getElementById("vSub"),D._vn,6,"#1a50d8");
   setPillar("g",g,document.getElementById("gScore"),document.getElementById("gFill"),document.getElementById("gSub"),D._gn,3,"#b45309");
   setPillar("m",m,document.getElementById("mScore"),document.getElementById("mFill"),document.getElementById("mSub"),D._mn,3,"#7c3aed");
+  setPillar("e",D._e,document.getElementById("eScore"),document.getElementById("eFill"),document.getElementById("eSub"),D._en,5,"#0e7490");
   document.getElementById("qCardScore").textContent=q==null?"—":q.toFixed(0);
   document.getElementById("vCardScore").textContent=v==null?"—":v.toFixed(0);
   document.getElementById("gCardScore").textContent=g==null?"—":g.toFixed(0);
@@ -1176,7 +1240,8 @@ function setPillar(which,score,scoreEl,fillEl,subEl,n,total,col){
   const base={q:"Returns, margins &amp; balance-sheet health",
               v:"How cheaply the stock is priced",
               g:"How fast the business is compounding",
-              m:"Is the stock in an uptrend"}[which]||"";
+              m:"Is the stock in an uptrend",
+              e:"How productively assets turn into sales"}[which]||"";
   subEl.innerHTML=`${base} · <span style="color:var(--text2);font-weight:600">${n}/${total} factors</span>`;
 }
 /* V26.9 — pillar hexes for the radar. The mirror of the --pil-* tokens in
@@ -1442,12 +1507,46 @@ function renderAbout(){
   ].map(k=>`<div class="info-item"><div class="ii-label">${k.l}</div><div class="ii-value">${k.v}</div></div>`).join("");
 }
 
+/* V31.9 — the same switch, but it now keeps the ARIA state and the roving
+   tabindex in step with the class it always set. `hidden` is set alongside
+   `.active` rather than instead of it: the class drives the existing CSS, the
+   attribute is what keeps a hidden panel's contents out of the tab order and
+   out of the accessibility tree (a display:none panel is already excluded, but
+   the attribute states it once and survives any future CSS change). */
 function switchTab(name,el){
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.querySelectorAll(".tab-content").forEach(t=>t.classList.remove("active"));
-  el.classList.add("active");
-  document.getElementById(`tab-${name}`).classList.add("active");
+  document.querySelectorAll(".tabs .tab").forEach(t=>{
+    const on = (t===el);
+    t.classList.toggle("active",on);
+    t.setAttribute("aria-selected",on?"true":"false");
+    t.tabIndex = on?0:-1;
+  });
+  document.querySelectorAll(".tab-content").forEach(p=>{
+    const on = (p.id===`tab-${name}`);
+    p.classList.toggle("active",on);
+    if(on) p.removeAttribute("hidden"); else p.setAttribute("hidden","");
+  });
 }
+/* Left/Right/Home/End inside the strip — the ARIA tab pattern. One Tab press
+   reaches the selected tab; the arrows move between them, which is why the
+   unselected ones carry tabindex="-1" rather than being skipped entirely. */
+(function(){
+  const strip=document.getElementById("financials");
+  if(!strip) return;
+  strip.addEventListener("keydown",e=>{
+    const tabs=Array.from(strip.querySelectorAll('[role="tab"]'));
+    const i=tabs.indexOf(document.activeElement);
+    if(i<0) return;
+    let n=-1;
+    if(e.key==="ArrowRight"||e.key==="ArrowDown") n=(i+1)%tabs.length;
+    else if(e.key==="ArrowLeft"||e.key==="ArrowUp") n=(i-1+tabs.length)%tabs.length;
+    else if(e.key==="Home") n=0;
+    else if(e.key==="End") n=tabs.length-1;
+    if(n<0) return;
+    e.preventDefault();
+    tabs[n].focus();
+    tabs[n].click();
+  });
+})();
 function toast(msg,type="info",dur=3500){const c=document.getElementById("toastContainer");const t=document.createElement("div");t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);setTimeout(()=>t.remove(),dur);}
 
 // "View full financials" scrolls to the tabs

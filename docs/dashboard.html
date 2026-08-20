@@ -2178,7 +2178,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3070">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3090">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -3061,14 +3061,20 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <th class="bought-col" title="Tick to mark every visible pick as bought">
                 <input type="checkbox" class="bought-cb bought-all" id="bought-all" aria-label="Select all picks as bought" onchange="toggleBoughtAll(this)">
               </th>
-              <th style="width:48px;" class="sortable" data-sort="num">#</th>
-              <th class="sortable" data-sort="company">Company</th>
-              <th class="sortable" data-sort="ticker">Ticker</th>
-              <th class="sortable" data-sort="industry">Industry</th>
-              <th class="right sortable" data-sort="price">Rec. Price</th>
-              <th class="right sortable" data-sort="alloc">Allocation</th>
-              <th class="right sortable" data-sort="shares">Shares</th>
-              <th class="right sortable" data-sort="weight" style="width:170px;">Weight</th>
+              <!-- V31.9: role/tabindex/aria-sort. These eight carried a click listener
+                   bound in JS and nothing else — no role, no tab stop, no announced
+                   sort state — so the member's own picks table could be re-ordered
+                   with a mouse and not with a keyboard, while the phone's #msort-key
+                   <select> beside it has always been reachable. Same fix, and the
+                   same reason, as the two free tools' headers this release. -->
+              <th style="width:48px;" class="sortable" data-sort="num" role="button" tabindex="0" aria-sort="none">#</th>
+              <th class="sortable" data-sort="company" role="button" tabindex="0" aria-sort="none">Company</th>
+              <th class="sortable" data-sort="ticker" role="button" tabindex="0" aria-sort="none">Ticker</th>
+              <th class="sortable" data-sort="industry" role="button" tabindex="0" aria-sort="none">Industry</th>
+              <th class="right sortable" data-sort="price" role="button" tabindex="0" aria-sort="none">Rec. Price</th>
+              <th class="right sortable" data-sort="alloc" role="button" tabindex="0" aria-sort="none">Allocation</th>
+              <th class="right sortable" data-sort="shares" role="button" tabindex="0" aria-sort="none">Shares</th>
+              <th class="right sortable" data-sort="weight" style="width:170px;" role="button" tabindex="0" aria-sort="none">Weight</th>
             </tr>
           </thead>
           <tbody id="stocks-tbody">
@@ -6214,9 +6220,14 @@ function applySort(){
 function reflectSortAffordance(){
   document.querySelectorAll('th.sortable').forEach(function(th){
     th.classList.remove('sort-asc','sort-desc');
-    if (th.getAttribute('data-sort') === _sortKey) {
-      th.classList.add(_sortDir > 0 ? 'sort-asc' : 'sort-desc');
-    }
+    var on = th.getAttribute('data-sort') === _sortKey;
+    if (on) th.classList.add(_sortDir > 0 ? 'sort-asc' : 'sort-desc');
+    /* V31.9 — the ARIA half of the same affordance. The ↑/↓ glyph is drawn by a
+       ::after pseudo-element, which is decoration a screen reader never sees, so
+       until now the sorted column was communicated by CSS alone. Set here rather
+       than in the click handler so it also tracks a sort restored from storage
+       on load, which is how this table usually arrives. */
+    th.setAttribute('aria-sort', on ? (_sortDir > 0 ? 'ascending' : 'descending') : 'none');
   });
   reflectMobileSort();
 }
@@ -6299,6 +6310,16 @@ function restoreSort(){
       th.addEventListener('click', function(){
         var key = th.getAttribute('data-sort');
         if (key) sortByKey(key);
+      });
+      /* V31.9 — role="button" does not bring the implicit key-to-click a real
+         <button> has, so the tab stop added to the markup would otherwise be a
+         focus ring that does nothing. These headers are static (never
+         re-rendered), so focus survives the sort on its own and needs no
+         restoring, unlike the two free tools' rebuilt theads. */
+      th.addEventListener('keydown', function(e){
+        if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+        e.preventDefault();
+        th.click();
       });
     });
   }
@@ -7939,6 +7960,10 @@ html[data-theme="dark"] .broker-link{ color: var(--bk-ink-d); }
 
 /* Sortable column headers — visual affordance */
 th.sortable{ cursor: pointer; user-select: none; position: relative; }
+/* V31.9 — these became keyboard-reachable, so they need a visible focus state.
+   Inset, because this thead is `position:sticky` inside `.table-wrap` and an
+   outward ring on the first or last column is clipped by the scroller. */
+th.sortable:focus-visible{ outline: 2px solid rgba(37,99,235,0.65); outline-offset: -3px; color: var(--accent2); }
 th.sortable::after{
   content: '↕';
   margin-left: 6px; font-size: 10px; opacity: .35;

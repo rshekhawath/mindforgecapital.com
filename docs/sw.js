@@ -399,7 +399,7 @@
 // release is page-local: a pinned header and a scroll-edge cue on the Scanner, a
 // frozen identity pair and the same cue on the Integrity Score, and 24 rewritten
 // weight values on strategies.html. All of those are network-first HTML.
-const CACHE = 'mfc-v59';
+const CACHE = 'mfc-v60';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

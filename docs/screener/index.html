@@ -296,13 +296,25 @@ html[data-theme="dark"] .sidebar{background:linear-gradient(180deg,var(--ink2) 0
 .query-builder::placeholder{color:var(--text3)}
 
 .preset-queries{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+/* V31.9 — "Popular Screens" is the first thing a visitor can DO on this page, and
+   for fourteen releases it was fourteen <span onclick>: not focusable, not in the
+   tab order, announced as text rather than as a control, and dead to Enter and
+   Space. They are real <button>s now, which is why the four resets below exist —
+   a button does not inherit font-family and arrives with its own background,
+   border and appearance. Everything else is the span's own styling, one step up:
+   11px was the smallest interactive text on the page and 3px of vertical padding
+   made a 20px chip, which is under the 24px WCAG 2.5.8 floor before a finger is
+   anywhere near it. 12px/6px gives a 27px chip that still fits three-to-a-row in
+   the 270px sidebar. */
 .preset-tag{
   background:var(--ink3);border:0.5px solid var(--border2);
-  border-radius:20px;padding:3px 10px;
-  font-size:11px;font-weight:500;color:var(--text2);cursor:pointer;
+  border-radius:20px;padding:6px 11px;
+  font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;
   transition:all .15s;
+  font-family:inherit;line-height:1.2;-webkit-appearance:none;appearance:none;
 }
 .preset-tag:hover{border-color:var(--accent3);color:var(--accent);background:rgba(26,80,216,0.06)}
+.preset-tag:focus-visible{outline:2px solid rgba(37,99,235,0.60);outline-offset:2px}
 
 /* ── MAIN ── */
 /* V31.8: `overflow-x:hidden` made this a SCROLL CONTAINER in both axes, so
@@ -493,12 +505,23 @@ th{
   padding:12px 14px;text-align:left;
   font-size:10px;font-weight:700;color:var(--text3);
   letter-spacing:.10em;text-transform:uppercase;
-  white-space:nowrap;cursor:pointer;user-select:none;
+  white-space:nowrap;user-select:none;
   transition:color .15s;
 }
-th:hover{color:var(--accent2)}
+/* V31.9 — `cursor:pointer` used to sit on EVERY th, including Company, which has
+   nosort:true. A pointer cursor is a promise, and on that column nothing was
+   listening. It now follows the role that actually carries the handler. */
+th[role="button"]{cursor:pointer}
+th[role="button"]:hover{color:var(--accent2)}
+th[role="button"]:focus-visible{outline:2px solid rgba(37,99,235,0.60);outline-offset:-3px;color:var(--accent)}
 th.sorted{color:var(--accent);position:relative}
 th.sorted::after{content:'';position:absolute;bottom:0;left:14px;right:14px;height:2px;background:linear-gradient(90deg,var(--accent),var(--teal));border-radius:2px}
+/* The direction arrow was an inline opacity:.5 span on every header at once, so
+   the ↕ "you could sort by this" and the ↓ "you ARE sorted by this" were drawn at
+   identical weight. The idle arrow recedes, the active one takes the accent and
+   full opacity, so which column is driving the table reads at a glance. */
+.th-arrow{opacity:.42;font-weight:600}
+th.sorted .th-arrow{opacity:1;color:var(--accent)}
 tbody tr{border-bottom:0.5px solid var(--border);transition:background .15s,box-shadow .15s}
 /* V9.7: rows ease in with a soft stagger on each render (matches the
    dashboard's mf-row-in). Rows beyond the first screenful enter together. */
@@ -682,7 +705,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3070">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3090">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -888,20 +911,20 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     <div class="sidebar-section">
       <div class="sidebar-title">Popular Screens</div>
       <div class="preset-queries">
-        <span class="preset-tag" onclick="loadPreset('value')">Value</span>
-        <span class="preset-tag" onclick="loadPreset('quality')">Quality</span>
-        <span class="preset-tag" onclick="loadPreset('growth')">Growth</span>
-        <span class="preset-tag" onclick="loadPreset('garp')">GARP</span>
-        <span class="preset-tag" onclick="loadPreset('dividend')">High Dividend</span>
-        <span class="preset-tag" onclick="loadPreset('magicformula')">Magic Formula</span>
-        <span class="preset-tag" onclick="loadPreset('compounders')">Compounders</span>
-        <span class="preset-tag" onclick="loadPreset('deepvalue')">Deep Value</span>
-        <span class="preset-tag" onclick="loadPreset('bluechip')">Blue Chips</span>
-        <span class="preset-tag" onclick="loadPreset('lowdebt')">Low Debt</span>
-        <span class="preset-tag" onclick="loadPreset('fcf')">High FCF Yield</span>
-        <span class="preset-tag" onclick="loadPreset('highroe')">High ROE</span>
-        <span class="preset-tag" onclick="loadPreset('smallcap')">Small Cap</span>
-        <span class="preset-tag" onclick="loadPreset('momentum')">Uptrend</span>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('value')">Value</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('quality')">Quality</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('growth')">Growth</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('garp')">GARP</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('dividend')">High Dividend</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('magicformula')">Magic Formula</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('compounders')">Compounders</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('deepvalue')">Deep Value</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('bluechip')">Blue Chips</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('lowdebt')">Low Debt</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('fcf')">High FCF Yield</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('highroe')">High ROE</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('smallcap')">Small Cap</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('momentum')">Uptrend</button>
       </div>
     </div>
 
@@ -1788,7 +1811,21 @@ function paintFilterCoverage(){
 
 function renderTable(){
   const vis=COLUMNS.filter(c=>c.visible);
-  document.getElementById("tableHead").innerHTML=`<tr>${vis.map(c=>`<th class="${c.key===sortKey?"sorted":""}" title="${COL_TIPS[c.key]||c.label}" ${c.nosort?"":` onclick="sortBy('${c.key}')"`}>${c.label}${c.nosort?"":` <span style="opacity:.5">${c.key===sortKey?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`).join("")}</tr>`;
+  /* V31.9 — these headers were the ONLY way to sort this table on a pointer
+     device and they were bare <th onclick>: no role, no tabindex, no key
+     handler, no aria-sort. The mobile `.ms-chip` row below has been a proper
+     <button> with aria-pressed since it shipped, so the same table could be
+     sorted from the keyboard on a phone and not on a laptop. Sortable columns
+     are now role="button" + tabindex="0" + aria-sort (so the current sort is
+     ANNOUNCED, not just drawn as a 50%-opacity arrow), and the one column that
+     does not sort — Company — is marked .nosort so it stops showing a pointer
+     cursor that promises a click nothing handles. */
+  document.getElementById("tableHead").innerHTML=`<tr>${vis.map(c=>{
+    const on=c.key===sortKey;
+    const a=c.nosort?` class="nosort"`
+      :` class="${on?"sorted":""}" role="button" tabindex="0" aria-sort="${on?(sortDir>0?"ascending":"descending"):"none"}" onclick="sortBy('${c.key}')"`;
+    return `<th${a} title="${COL_TIPS[c.key]||c.label}">${c.label}${c.nosort?"":` <span class="th-arrow" aria-hidden="true">${on?(sortDir>0?"↑":"↓"):"↕"}</span>`}</th>`;
+  }).join("")}</tr>`;
   const _ms=document.getElementById("mobSort");
   if(_ms) _ms.innerHTML=`<span class="ms-lbl">Sort</span>`+vis.filter(c=>!c.nosort).map(c=>`<button type="button" class="ms-chip${c.key===sortKey?" on":""}" aria-pressed="${c.key===sortKey}" onclick="sortBy('${c.key}')">${c.label}${c.key===sortKey?`<i aria-hidden="true">${sortDir>0?"↑":"↓"}</i>`:""}</button>`).join("");
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
@@ -1810,6 +1847,25 @@ function renderTable(){
 
 function goPage(p){currentPage=Math.max(1,Math.min(p,Math.ceil(allResults.length/PAGE_SIZE)));renderTable();scrollTo(0,0);}
 function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}allResults.sort((a,b)=>{const av=a[k],bv=b[k];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;return(av-bv)*sortDir;});currentPage=1;renderTable();}
+/* V31.9 — Enter/Space on a focused header. A role="button" element does NOT get
+   the browser's implicit key-to-click behaviour that a real <button> does, so
+   without this the tabindex would be a focus ring that leads nowhere. Delegated
+   on the thead because renderTable() replaces its innerHTML on every sort, and
+   focus is restored to the header the reader was on so repeat presses toggle the
+   direction instead of dumping them back at the top of the document. */
+(function(){
+  var head=document.getElementById("tableHead");
+  if(!head) return;
+  head.addEventListener("keydown",function(e){
+    if(e.key!=="Enter"&&e.key!==" "&&e.key!=="Spacebar") return;
+    var th=e.target.closest('th[role="button"]'); if(!th) return;
+    e.preventDefault();
+    var i=Array.prototype.indexOf.call(th.parentNode.children,th);
+    th.click();
+    var again=head.querySelectorAll("th")[i];
+    if(again&&again.getAttribute("role")==="button") again.focus();
+  });
+})();
 
 /* V31.5 — every column now shows how much of the universe can actually fill it,
    so "add EV/Rev" and "add Asset T/O" stop looking like the same decision. The
@@ -2010,7 +2066,12 @@ checkHealth();
   var box = document.querySelector('.preset-queries');
   var tags = document.querySelectorAll('.preset-tag');
   if (!box || !tags.length) return;
-  function clearActive(){ tags.forEach(function(t){ t.classList.remove('active'); t.removeAttribute('aria-pressed'); }); }
+  /* V31.9: aria-pressed is now always PRESENT and set to "false" rather than
+     removed. A toggle whose state attribute disappears is announced as a plain
+     button, so a screen-reader user could hear "Value, pressed" once and then
+     never hear the state again after clearing — the control has to say what it
+     is at rest, not only when it is on. */
+  function clearActive(){ tags.forEach(function(t){ t.classList.remove('active'); t.setAttribute('aria-pressed','false'); }); }
   // Highlight the clicked preset. Additive — the inline loadPreset() still runs.
   box.addEventListener('click', function(e){
     var t = e.target.closest('.preset-tag'); if(!t) return;

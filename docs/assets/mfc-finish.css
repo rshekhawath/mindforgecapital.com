@@ -1256,3 +1256,114 @@ html .toast-container{ right: 96px; }
     color: var(--white, #0c1831) !important;
   }
 }
+
+/* ============================================================================
+   V31.9 — THE 44px TAP TARGETS STOPPED AT 600px, AND EVERY TABLET IS WIDER
+   ----------------------------------------------------------------------------
+   V27.7 sized this site's controls for a finger: 44px minimum on buttons,
+   button-styled links, the hero's strategy tabs and the offer-bar CTA. That
+   work is real and it is on nineteen pages — but every copy of it lives inside
+   `@media (max-width: 600px)`, i.e. it is scoped by WIDTH, and touch is not a
+   width. Measured on the homepage with touch emulation on:
+
+       390px   .hv-tab 44.0px   .mfc-offer-cta 44.0px
+       600px   .hv-tab 44.0px   .mfc-offer-cta 44.0px
+       768px   .hv-tab 24.0px   .mfc-offer-cta 28.3px      <- iPad mini
+       820px   .hv-tab 24.0px   .mfc-offer-cta 28.3px      <- iPad Air
+      1024px   .hv-tab 24.0px   .mfc-offer-cta 28.3px      <- iPad Pro
+      1180px   .hv-tab 24.0px   .mfc-offer-cta 28.3px      <- iPad landscape
+
+   `(hover:none)` and `(pointer:coarse)` are BOTH true at all four of those
+   widths, so the device is telling the page it has no mouse and the page is not
+   listening. The controls that halve are not incidental ones: the hero tab
+   strip is how a reader changes which strategy the homepage chart is showing,
+   and the offer CTA is the site's conversion link on eighteen pages. 24px is
+   also under the 24x24 WCAG 2.5.8 floor once the ~0.5px border is counted, and
+   a long way under the 44px the site itself decided on.
+
+   THE FIX IS ADDITIVE AND CARRIES ONLY THE SIZING. The phone blocks also change
+   type scale, padding and layout; turning those on for an iPad would be a
+   redesign, not a fix. This block repeats ONLY the tap-target declarations from
+   the V27.7 boilerplate, against the identical selector list, scoped to a coarse
+   pointer instead of a narrow screen. Phones at or below 600px already match
+   both blocks and compute the same 44px, so nothing there moves; mouse devices
+   never match this at all.
+
+   `html` prefixes keep the specificity at the page-block level so a page that
+   deliberately sizes a control LARGER still wins, exactly as the V29.5 iOS-zoom
+   block does. `.mcol-trigger` keeps its own justification for the same reason
+   the phone block spells that out — the accordion trigger lays itself out.
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+  html button,
+  html .btn,
+  html .btn-sm,
+  html a.nav-cta,
+  html a[class*="-cta"],
+  html .toggle-btn,
+  html .cap-chip,
+  html a.strat-cta,
+  html .hero-cta,
+  html .fab-wa {
+    min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  html .mcol-trigger { justify-content: space-between; }
+  html .hv-tab,
+  html .hv-tabs button { min-height: 44px; }
+
+  /* --- THE THREE CARVE-OUTS, EACH ONE MEASURED RATHER THAN GUESSED ---------
+     A before/after geometry diff over 21 pages x 7 widths was run before this
+     block shipped; it found exactly three places where the V27.7 declarations
+     do damage at tablet widths, and each already has a precedent in this
+     codebase for why. */
+
+  /* (1) /scores/ score-distribution bar. V28.3 deliberately keeps these band
+     segments at their true geometric width — the smallest is 6px, i.e. its
+     honest 0.9% share — and puts the real 44px target on the LEGEND beside
+     them, which is the WCAG 2.5.8 equivalent-control exemption. A blanket
+     min-height turns a 16px bar into a 44px slab and re-opens the argument
+     V28.3 settled. Measured: 20 segments, 16px -> 44px, on all four iPads. */
+  html #distBar .hp-seg { min-height: 0; display: block; }
+
+  /* (2) The one control on /scores/ that is a SENTENCE. V31.3 found the same
+     `button` selector capturing "How it's calculated →", an inline word inside
+     the hero paragraph, and pushed its dashed underline 14px below its own
+     letters. 2.5.8 exempts a target that is in a sentence. Same carve-out,
+     same class, now on the pointer axis too. */
+  html .hero-sub .lnk { min-height: 0; display: inline; }
+
+  /* (3) The strategy-card CTA is `display:block` by design and fills its card
+     footer — 394px at 768, 245px at 1024. `inline-flex` shrink-wraps it to
+     109px, which is not a tap-target improvement, it is a different button.
+     `flex` gives the identical centring while staying block-level, so the
+     control keeps its width AND gains the height. */
+  html a.strat-cta { display: flex; }
+
+  /* The two round/square chrome controls that V27.7's min-height would otherwise
+     distort — same casualties, same cure as the max-width:768/600 rules above,
+     which now have a coarse-pointer twin so an iPad does not get a 40x44 ellipse
+     where a phone gets a circle. */
+  html .back-to-top,
+  html .mfc-btt { width: 44px; height: 44px; }
+  html .mfc-theme-toggle { width: 44px; height: 44px; }
+}
+
+/* ============================================================================
+   V31.9 — THE COMPLIANCE EMAIL RAN OFF THE EDGE OF THE NARROWEST PHONES
+   ----------------------------------------------------------------------------
+   `sagar.shekhawath@mindforgecapital.com` is 37 characters with no break
+   opportunity in it. In the dispute-resolution clause of terms.html it sits in
+   a `<li>` whose content box is 270px at a 320px viewport, and the address
+   needs 285px — so 15px of it ran past the list item. Nothing on the page
+   scrolled, because `body{overflow-x:hidden}` simply CLIPPED it: the reader saw
+   a truncated address, on the one page whose whole purpose is telling them how
+   to escalate a complaint, and had no way to reveal the rest.
+   `break-word` rather than `anywhere` on purpose — `anywhere` also shrinks the
+   element's min-content contribution, which would let flex and grid parents on
+   the other three pages collapse narrower than they do today. `break-word`
+   breaks the token visually and leaves intrinsic sizing exactly as it is.
+   Scoped to mailto links, which is the only 30+ character unbreakable token on
+   the property (checked: 8 such links across four pages, all this address).
+   ========================================================================== */
+html a[href^="mailto:"] { overflow-wrap: break-word; }
