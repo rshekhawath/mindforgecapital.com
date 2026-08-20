@@ -102,6 +102,25 @@ var MFC_OG_ALT = "MindForge Capital — systematic, factor-based investing for I
   c.href = canon;
 }catch(e){}})();
 </script>
+<!-- V32.0 — A `<link rel="preload" as="fetch">` FOR stocks.json WAS BUILT HERE,
+     MEASURED, AND REMOVED. Recording it so the next release does not rediscover
+     it as a good idea.
+     The problem is real and measured on the live site, cold cache, Fast 3G
+     (1.6 Mbps / 150 ms RTT): stocks.json is 1,512 KB over the wire, its request
+     does not START until 747 ms (the parser has to reach scores-engine.js, fetch
+     it, parse it and run it first), and the page's first real content appears at
+     7.07 s. On Slow 4G it is 2.3 s. Nothing here can render sooner on its own —
+     every score is a percentile against the whole NSE universe, so the universe
+     IS the payload.
+     Why the preload did not work: the engine fetches with `cache: "no-cache"`,
+     and a preload only satisfies a later request whose cache mode MATCHES. The
+     hint cannot express `no-cache`, so the two never paired and the file was
+     downloaded TWICE — 2 requests, 6,270 KB each, measured, i.e. strictly worse
+     than no hint at all. Making it work means dropping `no-cache` from a shared
+     data engine, which trades bounded staleness on a price-bearing surface for
+     ~0.5 s, and that is a call for its own release rather than a side effect of
+     an SEO pass. The honest fix is per-symbol precomputed scores from
+     export_static.py so the page stops needing the universe at all. -->
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
 <script src="scores-engine.js?v=2780"></script>
 <script src="../assets/mfc-company.js?v=2840"></script>
@@ -409,6 +428,78 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
 /* loading / not-found */
 .center-msg{text-align:center;padding:70px 24px;color:var(--text3)}
+/* V32.0 — loading skeleton. Boxes mirror the real layout so nothing jumps when
+   the data lands. `.skel` (gradient + sweep) is byte-identical to the one both
+   listers use, so the three surfaces shimmer the same way. */
+.skel{border-radius:6px;background:linear-gradient(90deg,rgba(37,99,235,.07) 25%,rgba(37,99,235,.16) 37%,rgba(37,99,235,.07) 63%);background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+@keyframes skel-sweep{0%{background-position:100% 0}100%{background-position:0 0}}
+.sk-wrap{max-width:1180px;margin:0 auto;padding:4px 0 0}
+.sk-hero{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);
+  padding:24px 26px;margin-bottom:20px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+.sk-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:20px}
+.sk-top{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;min-width:0}
+.sk-ring{width:150px;height:150px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(90deg,rgba(37,99,235,.07) 25%,rgba(37,99,235,.16) 37%,rgba(37,99,235,.07) 63%);
+  background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+.sk-pillars{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;min-width:0}
+.sk-pill{height:118px;border-radius:var(--r);
+  background:linear-gradient(90deg,rgba(37,99,235,.06) 25%,rgba(37,99,235,.14) 37%,rgba(37,99,235,.06) 63%);
+  background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+.sk-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.sk-kpi{height:74px;border-radius:var(--r);
+  background:linear-gradient(90deg,rgba(37,99,235,.06) 25%,rgba(37,99,235,.14) 37%,rgba(37,99,235,.06) 63%);
+  background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+.sk-radar{height:391px;border-radius:var(--r-lg);margin-bottom:20px;
+  background:linear-gradient(90deg,rgba(37,99,235,.05) 25%,rgba(37,99,235,.12) 37%,rgba(37,99,235,.05) 63%);
+  background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+.sk-fb{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+.sk-fbcard{height:290px;border-radius:var(--r);
+  background:linear-gradient(90deg,rgba(37,99,235,.05) 25%,rgba(37,99,235,.12) 37%,rgba(37,99,235,.05) 63%);
+  background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
+.sk-fbwide{grid-column:1 / -1;height:250px}
+@media(max-width:760px){.sk-fb{grid-template-columns:1fr}.sk-radar{height:546px}}
+.sk-note{text-align:center;font-size:13px;font-weight:600;color:var(--text3);padding:6px 0 40px}
+/* The skeleton follows the SAME ladder as the real grids it stands in for, or it
+   would reflow the moment the data replaced it — which is the one thing a
+   skeleton exists to prevent. */
+@media(max-width:1180px){.sk-pillars{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sk-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:900px){.sk-pillars{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:880px){.sk-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.sk-top{grid-template-columns:1fr;gap:18px;justify-items:center}}
+@media(max-width:600px){.sk-hero{grid-template-columns:1fr;padding:18px 16px}
+  .sk-price{text-align:left}.sk-price .skel{margin-left:0!important;margin-right:auto!important}
+  .sk-card{padding:18px 16px}.sk-pillars{grid-template-columns:1fr}
+  .sk-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:388px){.sk-kpis{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){.skel,.sk-ring,.sk-pill,.sk-kpi,.sk-radar,.sk-fbcard{animation:none}}
+/* V32.0 — the "stock not found" panel. Built from the tokens the rest of the
+   page uses so it reads as part of the product rather than as an error screen.
+   `auto-fit,minmax(210px,1fr)` and not `auto-fill`: with three cards auto-fill
+   would render them at the 210px minimum in a 1,180px card and leave a third of
+   the row empty (the V29.2 lesson). The routes are <a>, so they are focusable,
+   crawlable and openable in a new tab without any script. */
+.nf-card{max-width:760px;margin:0 auto;background:var(--ink2);border:0.5px solid var(--border2);
+  border-radius:var(--r-lg);padding:38px 28px 30px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 44px -22px rgba(26,80,216,.22)}
+.nf-icon{font-size:38px;line-height:1;margin-bottom:12px}
+.nf-title{font-size:20px;font-weight:800;color:var(--white);margin:0 0 8px;letter-spacing:-.01em}
+.nf-sub{font-size:13.5px;line-height:1.6;color:var(--text2);margin:0 auto 24px;max-width:52ch}
+.nf-sub strong{color:var(--accent);font-weight:700}
+.nf-routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;text-align:left}
+.nf-route{display:block;padding:15px 16px;border-radius:var(--r);background:var(--ink);
+  border:0.5px solid var(--border);text-decoration:none;color:inherit;position:relative;overflow:hidden;
+  transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s,border-color .2s}
+.nf-route::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--accent),var(--teal));transition:width .25s cubic-bezier(.22,.8,.2,1)}
+.nf-route:hover{transform:translateY(-3px);border-color:var(--border2);
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 32px -18px rgba(26,80,216,.34)}
+.nf-route:hover::before{width:5px}
+.nf-route:focus-visible{outline:2px solid rgba(37,99,235,.7);outline-offset:-3px}
+.nf-route-ico{display:block;font-size:18px;line-height:1;margin-bottom:9px}
+.nf-route-t{display:block;font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+.nf-route-d{display:block;font-size:11.5px;line-height:1.45;color:var(--text3)}
+@media(prefers-reduced-motion:reduce){.nf-route,.nf-route::before{transition:none}.nf-route:hover{transform:none}}
+@media(max-width:600px){.nf-card{padding:30px 18px 24px}.nf-routes{grid-template-columns:1fr}}
 .spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -482,16 +573,89 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <span id="bcSymbol">Loading…</span>
   </div>
 
-  <div id="loadingState" class="center-msg">
-    <div class="spinner"></div>
-    <div style="font-size:14px;font-weight:600;color:var(--text2)">Scoring this stock against the NSE universe…</div>
+  <!-- V32.0 — a SKELETON, not a spinner. This page cannot paint anything real
+       until a 1.5 MB (over the wire) universe file lands, which is 7.07 s on
+       Fast 3G and 2.3 s on Slow 4G, measured on production. For that whole time
+       the reader got a 22px spinner on an empty page and no idea what was
+       coming. A skeleton in the shape of the actual layout — hero, overall ring,
+       five pillar cards, KPI strip — paints immediately, so the page has content
+       from the first frame, the arrival of the data does not reflow the view,
+       and the wait reads as loading rather than as broken. The shimmer is the
+       `.skel` idiom already used by both listers, lifted verbatim.
+       aria-busy + role=status so a screen reader is told the page is working
+       rather than being read a wall of empty boxes. -->
+  <div id="loadingState" role="status" aria-busy="true" aria-label="Loading this company's scorecard">
+    <div class="sk-wrap" aria-hidden="true">
+      <div class="sk-hero">
+        <div>
+          <div class="skel sk-l" style="width:min(340px,62%);height:26px"></div>
+          <div class="skel sk-l" style="width:min(230px,44%);height:12px;margin-top:12px"></div>
+        </div>
+        <div class="sk-price">
+          <div class="skel sk-l" style="width:118px;height:30px;margin-left:auto"></div>
+          <div class="skel sk-l" style="width:84px;height:12px;margin:10px 0 0 auto"></div>
+        </div>
+      </div>
+      <div class="sk-card">
+        <div class="sk-top">
+          <div class="sk-ring"></div>
+          <div class="sk-pillars">
+            <div class="sk-pill"></div><div class="sk-pill"></div><div class="sk-pill"></div>
+            <div class="sk-pill"></div><div class="sk-pill"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sk-kpis">
+        <div class="sk-kpi"></div><div class="sk-kpi"></div><div class="sk-kpi"></div>
+        <div class="sk-kpi"></div><div class="sk-kpi"></div><div class="sk-kpi"></div>
+      </div>
+      <!-- The radar card and the factor-breakdown grid are stood in for too, and
+           NOT for decoration: measured at 1280 the real content region is 3,985px
+           and a skeleton that stopped at the KPI strip left the footer 1,200px
+           above where it would land, so the swap moved it — CLS 0.133 against the
+           spinner's 0.103, i.e. the skeleton was making desktop WORSE while making
+           mobile 64x better. These two blocks are the sections that actually
+           follow, at the heights they actually take (391px and 927px at 1280). -->
+      <div class="sk-radar"></div>
+      <div class="sk-fb">
+        <div class="sk-fbcard"></div><div class="sk-fbcard"></div>
+        <div class="sk-fbcard"></div><div class="sk-fbcard"></div>
+        <div class="sk-fbcard sk-fbwide"></div>
+      </div>
+    </div>
+    <div class="sk-note">Scoring this stock against the whole NSE universe…</div>
   </div>
 
+  <!-- V32.0 — this state used to be an emoji, one sentence and a single way out,
+       which on a page reachable by typo, stale link or delisting is a dead end.
+       It is now a real panel with THREE routes, and the middle one is the A-Z
+       directory: those 28 pages carry the link graph for all ~2,126 per-stock
+       URLs and had exactly two inbound links on the whole property before this
+       release. A reader who lands here wanted a specific company, so the routes
+       are ordered by how directly each answers that — search, browse, filter. -->
   <div id="notFound" class="center-msg" style="display:none">
-    <div style="font-size:40px;margin-bottom:10px">🔍</div>
-    <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:6px">Stock not found</div>
-    <div style="font-size:13px;margin-bottom:18px">We couldn't find <strong id="nfSym"></strong> in the latest snapshot.</div>
-    <a href="index.html" class="btn btn-primary" style="font-size:13px;padding:9px 18px">← Back to all scores</a>
+    <div class="nf-card">
+      <div class="nf-icon" aria-hidden="true">🔍</div>
+      <h2 class="nf-title">Stock not found</h2>
+      <p class="nf-sub">We couldn't find <strong id="nfSym"></strong> in the latest NSE snapshot. It may be delisted, renamed, or spelled differently.</p>
+      <div class="nf-routes">
+        <a href="index.html" class="nf-route">
+          <span class="nf-route-ico" aria-hidden="true">🔎</span>
+          <span class="nf-route-t">Search every scored stock</span>
+          <span class="nf-route-d">Type a name or ticker on the Integrity Score</span>
+        </a>
+        <a href="../screener/stocks/" class="nf-route">
+          <span class="nf-route-ico" aria-hidden="true">🔤</span>
+          <span class="nf-route-t">Browse the A–Z directory</span>
+          <span class="nf-route-d">Every NSE company we score, by first letter</span>
+        </a>
+        <a href="../screener/" class="nf-route">
+          <span class="nf-route-ico" aria-hidden="true">⚙️</span>
+          <span class="nf-route-t">Open the Stock Scanner</span>
+          <span class="nf-route-d">Filter 2,000+ companies on 40+ fundamentals</span>
+        </a>
+      </div>
+    </div>
   </div>
 
   <div id="content" style="display:none">
@@ -1091,10 +1255,52 @@ function mfcSEO(D, sym){
     let s=document.getElementById("mfc-jsonld");if(!s){s=document.createElement("script");s.type="application/ld+json";s.id="mfc-jsonld";document.head.appendChild(s);}s.textContent=JSON.stringify(ld);
   }catch(e){}
 }
+/* ── V32.0 — THE SOFT 404 ────────────────────────────────────────────────────
+   This one file serves ~2,126 URLs off a `?symbol=` parameter, and the symbol
+   space is unbounded: a typo, a stale link, a stock that has left the snapshot,
+   or a crawler guessing all mint a NEW url. Every one of them returned HTTP 200
+   with a confident keyword-bearing title ("ZZZZZ Share Price, Integrity Score &
+   Fundamentals — MindForge Capital"), a SELF-REFERENCING rel=canonical and no
+   robots directive — i.e. the page told Google "I am a real, canonical document,
+   index me" while rendering ~700 characters of em-dashes. That is the textbook
+   soft 404, and on a template with 2,126 legitimate siblings it invites a cluster
+   of thin near-duplicates against the exact same layout.
+
+   The BODY was never the problem — the #notFound panel has been there all along.
+   The HEAD was. So: noindex (with `follow`, so the links out still pass through),
+   drop the canonical rather than point it anywhere (a canonical to /scores/ would
+   claim this URL is a duplicate of the lister, which is a different and also
+   false statement), strip the OG/Twitter tags so a shared link does not preview
+   as a real report, and remove the bootstrap's JSON-LD. The title says what the
+   page is.
+
+   Note this runs AFTER the bootstrap head, deliberately: the bootstrap must stay
+   synchronous and symbol-shaped so a VALID stock never serves a generic head
+   (the V25.6 rule). Only the data can tell us the symbol is unknown, so only the
+   post-data path can retract it. */
+function mfcNotFound(sym){
+  try{
+    document.title = sym + " — stock not found · MindForge Capital";
+    var head = document.head;
+    var rm = function(sel){ var n=document.querySelectorAll(sel); for(var i=0;i<n.length;i++) n[i].remove(); };
+    rm('link[rel="canonical"]');
+    rm('meta[property^="og:"]');
+    rm('meta[name^="twitter:"]');
+    rm('script#mfc-jsonld');
+    var r = document.querySelector('meta[name="robots"]');
+    if(!r){ r=document.createElement("meta"); r.setAttribute("name","robots"); head.appendChild(r); }
+    r.setAttribute("content","noindex, follow");
+    var d = document.querySelector('meta[name="description"]');
+    if(d) d.setAttribute("content","No NSE stock matching "+sym+" is in the latest MindForge Capital snapshot. Browse every scored company A-Z or search the Integrity Score.");
+  }catch(e){}
+  var n=document.getElementById("nfSym"); if(n) n.textContent=sym;
+  var nf=document.getElementById("notFound"); if(nf) nf.style.display="block";
+  var bc=document.getElementById("bcSymbol"); if(bc) bc.textContent="Not found";
+}
 MFCScores.load().then(()=>{
   D=MFCScores.bySym(SYMBOL);
   document.getElementById("loadingState").style.display="none";
-  if(!D){document.getElementById("nfSym").textContent=SYMBOL;document.getElementById("notFound").style.display="block";document.getElementById("bcSymbol").textContent="Not found";return;}
+  if(!D){mfcNotFound(SYMBOL);return;}
   document.getElementById("content").style.display="block";
   document.title=mfcTitle(D.name,SYMBOL);
   mfcSEO(D, SYMBOL);

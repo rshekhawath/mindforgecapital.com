@@ -869,7 +869,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
   </div>
 </nav>
 
-<div class="wrap" id="main-content">
+<main class="wrap" id="main-content">
 
   <!-- HERO -->
   <section class="hero">
@@ -909,9 +909,9 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     <!-- search -->
     <div class="search-hero">
       <span class="search-icon">🔍</span>
-      <input type="text" id="globalSearch" placeholder="Search any stock — e.g. RELIANCE, TCS, INFY…" autocomplete="off" aria-label="Search stocks">
+      <input type="text" id="globalSearch" placeholder="Search any stock — e.g. RELIANCE, TCS, INFY…" autocomplete="off" aria-label="Search stocks" role="combobox" aria-expanded="false" aria-controls="searchDropdown" aria-autocomplete="list" aria-haspopup="listbox">
       <span class="search-kbd" aria-hidden="true">/</span>
-      <div class="search-dropdown" id="searchDropdown"></div>
+      <div class="search-dropdown" id="searchDropdown" role="listbox" aria-label="Stock search results"></div>
     </div>
   </section>
 
@@ -1066,7 +1066,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
   </p>
   </footer>
 
-</div>
+</main>
 
 <!-- Toast -->
 <div class="toast-container" id="toastContainer"></div>
@@ -1772,6 +1772,29 @@ function rollNum(id,target,dec){
 // ── search ──
 let searchTimer, kbdIndex=-1, lastResults=[];
 const searchEl=document.getElementById("globalSearch");
+
+/* V32.0 — `?q=` makes this search addressable.
+   Three things follow from one small change. (1) A search on the site's own
+   stock database becomes a URL you can bookmark, share or link to, which it was
+   not — the box held its state only in the DOM. (2) It is the precondition for
+   the SearchAction in the homepage's WebSite node: declaring a search target a
+   page does not honour is worse than declaring none, so the parameter has to
+   exist FIRST and this is it. (3) The site can now link straight at a query.
+   Deliberately does NOT navigate anywhere on its own — it fills the box and
+   opens the same dropdown a typed query would, so the reader stays in control
+   and a shared link never teleports them to a stock they did not pick. */
+function applyQueryParam(){
+  try{
+    const q=(new URLSearchParams(location.search).get("q")||"").trim().slice(0,40);
+    if(!q||!searchEl) return;
+    searchEl.value=q;
+    doSearch(q);
+    // Bring the box into view without stealing focus from a reader who has
+    // already started interacting — and never on a reduced-motion preference.
+    const rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+    searchEl.scrollIntoView({behavior:rm?"auto":"smooth",block:"center"});
+  }catch(e){}
+}
 // V17.7: "/" jumps to search from anywhere on the page (unless already typing)
 document.addEventListener("keydown",function(e){
   if(e.key!=="/"||e.metaKey||e.ctrlKey||e.altKey)return;
@@ -1782,10 +1805,10 @@ document.addEventListener("keydown",function(e){
 searchEl.addEventListener("input",function(){
   clearTimeout(searchTimer);
   const q=this.value.trim();
-  if(!q){document.getElementById("searchDropdown").classList.remove("show");return;}
+  if(!q){document.getElementById("searchDropdown").classList.remove("show");scSetExpanded(false);return;}
   searchTimer=setTimeout(()=>doSearch(q),130);
 });
-searchEl.addEventListener("blur",()=>setTimeout(()=>document.getElementById("searchDropdown").classList.remove("show"),200));
+searchEl.addEventListener("blur",()=>setTimeout(()=>{document.getElementById("searchDropdown").classList.remove("show");scSetExpanded(false);},200));
 searchEl.addEventListener("keydown",function(e){
   const dd=document.getElementById("searchDropdown");
   if(!dd.classList.contains("show"))return;
@@ -1794,7 +1817,7 @@ searchEl.addEventListener("keydown",function(e){
   else if(e.key==="ArrowUp"){e.preventDefault();kbdIndex=Math.max(kbdIndex-1,0);}
   else if(e.key==="Enter"){if(kbdIndex>=0&&lastResults[kbdIndex]){location.href=`company.html?symbol=${encodeURIComponent(lastResults[kbdIndex].symbol)}`;}return;}
   else return;
-  items.forEach((it,i)=>it.classList.toggle("kbd-active",i===kbdIndex));
+  scSetActive(kbdIndex);
 });
 function doSearch(q){
   const Q=q.toUpperCase();
@@ -1802,10 +1825,24 @@ function doSearch(q){
     .sort((a,b)=>{const ap=a.symbol.indexOf(Q)===0?0:1,bp=b.symbol.indexOf(Q)===0?0:1;if(ap!==bp)return ap-bp;return (b._overall)-(a._overall);}).slice(0,12);
   lastResults=res; kbdIndex=-1;
   const dd=document.getElementById("searchDropdown");
-  if(!res.length){dd.innerHTML=`<div class="search-result-item" style="cursor:default"><div class="search-result-name">No matches for "${q}"</div></div>`;dd.classList.add("show");return;}
-  dd.innerHTML=res.map(d=>{
+  /* V32.0 — scEsc() on the echoed query. This branch interpolated the raw
+     search string straight into innerHTML. It was a self-XSS while the only
+     way to reach it was typing into the box; adding ?q= in this same release
+     would have turned it into a REFLECTED one, triggerable by a link, on a
+     page whose CSP allows 'unsafe-inline'. Proven before the fix with
+     /scores/?q=<img src=x onerror=...> — the handler ran — and proven inert
+     after. The parameter is also length-capped at 40 chars where it is read. */
+  if(!res.length){dd.innerHTML=`<div class="search-result-item" style="cursor:default" role="option" aria-disabled="true"><div class="search-result-name">No matches for "${scEsc(q)}"</div></div>`;dd.classList.add("show");scSetExpanded(true);return;}
+  /* V32.0 — the results are `role="option"` inside a `role="listbox"`, each with an
+     id so `aria-activedescendant` on the input can point at the highlighted one.
+     The arrow-key handler below has moved a `.kbd-active` class since V17.7, but
+     that class is paint: a screen reader was never told the list existed, how many
+     results it held, or which one the arrows had landed on. `onmousedown` rather
+     than onclick is kept deliberately — it fires before the input's blur closes
+     the dropdown, which is why it was chosen. */
+  dd.innerHTML=res.map((d,i)=>{
     const qc=MFCScores.color(d._q),vc=MFCScores.color(d._v),oc=MFCScores.color(d._overall);
-    return`<div class="search-result-item" onmousedown="location.href='company.html?symbol=${encodeURIComponent(d.symbol)}'">
+    return`<div class="search-result-item" id="sc-opt-${i}" role="option" aria-selected="false" onmousedown="location.href='company.html?symbol=${encodeURIComponent(d.symbol)}'">
       <div><div class="search-result-sym">${d.symbol}</div><div class="search-result-name">${d.name||d.symbol}</div></div>
       <div class="sr-scores">
         <div class="sr-mini"><b style="color:${qc}">${d._q!=null?d._q.toFixed(0):"—"}</b><small>Qual</small></div>
@@ -1814,6 +1851,21 @@ function doSearch(q){
       </div></div>`;
   }).join("");
   dd.classList.add("show");
+  scSetExpanded(true);
+}
+/* Keep the input's combobox state in step with the dropdown. Split out so the
+   three places that open or close the list cannot drift apart. */
+function scSetExpanded(open){
+  if(!searchEl) return;
+  searchEl.setAttribute("aria-expanded", open?"true":"false");
+  if(!open) searchEl.removeAttribute("aria-activedescendant");
+}
+function scSetActive(i){
+  const dd=document.getElementById("searchDropdown");
+  const items=dd.querySelectorAll('.search-result-item[role="option"]');
+  items.forEach((it,n)=>{it.classList.toggle("kbd-active",n===i);it.setAttribute("aria-selected",n===i?"true":"false");});
+  if(i>=0&&items[i]) searchEl.setAttribute("aria-activedescendant",items[i].id);
+  else searchEl.removeAttribute("aria-activedescendant");
 }
 
 // ── CSV ──
@@ -1838,6 +1890,7 @@ MFCScores.load().then(()=>{
   currentPage=1;
   renderHero();
   renderTable();
+  applyQueryParam();
 }).catch(e=>{
   document.getElementById("tableBody").innerHTML=`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">Couldn't load scores — please refresh.</div></td></tr>`;
   showToast("Could not load data — please refresh.","error",8000);
