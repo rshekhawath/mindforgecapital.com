@@ -391,7 +391,15 @@
 // the V31.5 entry above; the rest of this release is page-local CSS/JS on
 // calculator, dashboard and the three legal pages, which are network-first and
 // owe no bump.
-const CACHE = 'mfc-v58';
+// V31.8 -> mfc-v59. assets/mfc-live.js 2920 -> 2930: the stat-card live value's
+// size ladder gained a step under 300px, where 25px was 2.4px wider than the box
+// it centres in. FIVE pages carry the token — index, strategies and the three
+// strategy pages — and index.html is a PRECACHED document with no ?v of its own,
+// so its new bytes are the reason this constant moves at all. The rest of the
+// release is page-local: a pinned header and a scroll-edge cue on the Scanner, a
+// frozen identity pair and the same cue on the Integrity Score, and 24 rewritten
+// weight values on strategies.html. All of those are network-first HTML.
+const CACHE = 'mfc-v59';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

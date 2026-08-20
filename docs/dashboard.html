@@ -10423,5 +10423,102 @@ html[data-theme="dark"] .pspread-scale .dn{ color:#f87171; }
 })();
 </script>
 
+<!-- ============================================================================
+     V31.8 — THE PICKS TABLE SCROLLED THE MEMBER'S OWN COLUMNS OUT FROM UNDER THEM.
+     ----------------------------------------------------------------------------
+     Between 601px and 1265px this table is wider than its wrapper: it needs
+     1,163px and gets 734px at 768, 958px at 1024 — so 205 to 429px of it sits
+     past the right edge. Scrolling right to read Allocation, Shares and Weight
+     scrolls the checkbox, the rank and the company name off the left. At 768 the
+     identity is gone entirely and 41px of the ticker is all that is left; at
+     1024, iPad landscape and one of the commonest ways this page is opened, the
+     name is cut in half. "42 shares, Rs 39,698" is not an instruction anyone can
+     act on without knowing which stock it belongs to.
+
+     V30.0 pinned the header for the same table and stopped at 1266 because the
+     table genuinely fits from there — re-measured this release and that number
+     is still right, so nothing about it changed. This is the other axis, and it
+     matters in exactly the band the header rule correctly leaves alone.
+
+     Same pattern now used on the Scanner (V26.8) and the Integrity Score (this
+     release), with the two details this table adds:
+
+     · THREE columns are frozen, not two, because the checkbox is column one and
+       "mark as bought" belongs beside the name it marks.
+     · The offsets are MEASURED. The rank column is 62px on a 25-pick book, and a
+       hard-coded left would open a seam the moment a column's content changed.
+     · A sticky cell paints its own background, so all SIX of this table's row
+       states have to be repainted onto the frozen trio or it reads as a detached
+       white strip: zebra, hover, focus-within, bought, bought+hover — and the
+       3px accent bar the row paints on hover, which the frozen first cell now
+       covers. Each one is asserted in the release notes, not assumed.
+     ========================================================================= -->
+<style id="mf-v318-freeze-picks">
+@media screen and (min-width:601px) and (max-width:1265px){
+  .table-wrap thead th:nth-child(-n+3),
+  .table-wrap tbody tr:not(.skel-row) > td:nth-child(-n+3){
+    position:sticky; z-index:4; background-color:var(--ink2);
+  }
+  .table-wrap thead th:nth-child(-n+3){
+    z-index:5;
+    background-color:var(--ink2);
+    background-image:linear-gradient(180deg,rgba(37,99,235,0.05) 0%,rgba(37,99,235,0.015) 100%);
+  }
+  .table-wrap thead th:nth-child(1),
+  .table-wrap tbody tr:not(.skel-row) > td:nth-child(1){ left:0; }
+  .table-wrap thead th:nth-child(2),
+  .table-wrap tbody tr:not(.skel-row) > td:nth-child(2){ left:var(--dw1,44px); }
+  .table-wrap thead th:nth-child(3),
+  .table-wrap tbody tr:not(.skel-row) > td:nth-child(3){
+    left:var(--dw2,106px);
+    box-shadow:6px 0 12px -9px rgba(15,23,42,.16), 1px 0 0 var(--border);
+  }
+  /* the six row states, repainted onto the frozen trio */
+  .table-wrap tbody tr:nth-child(even):not(.skel-row) > td:nth-child(-n+3){
+    background-image:linear-gradient(rgba(37,99,235,0.012),rgba(37,99,235,0.012));
+  }
+  .table-wrap tbody tr.row-bought:not(.skel-row) > td:nth-child(-n+3){
+    background-image:linear-gradient(rgba(5,150,105,0.045),rgba(5,150,105,0.045));
+  }
+  .table-wrap tbody tr:not(.skel-row):hover > td:nth-child(-n+3){
+    background-image:linear-gradient(180deg,rgba(37,99,235,0.03),rgba(8,145,178,0.04));
+  }
+  .table-wrap tbody tr.row-bought:not(.skel-row):hover > td:nth-child(-n+3){
+    background-image:linear-gradient(rgba(5,150,105,0.08),rgba(5,150,105,0.08));
+  }
+  .table-wrap tbody tr:not(.skel-row):focus-within > td:nth-child(-n+3){
+    background-image:linear-gradient(180deg,rgba(37,99,235,0.06),rgba(8,145,178,0.05));
+  }
+  /* the row's own hover bar is painted by the <tr> and the frozen first cell now
+     covers it — the cell carries it instead (this selector already exists for the
+     un-frozen case; it keeps working because it targets the same cell) */
+  .table-wrap tbody tr:not(.skel-row):hover > td:nth-child(1){
+    box-shadow:inset 3px 0 0 0 var(--accent);
+  }
+}
+</style>
+<script id="mf-v318-freeze-picks-js">
+(function(){
+  try{
+    function sync(){
+      var w=document.querySelector('.table-wrap'); if(!w) return;
+      var th=w.querySelectorAll('thead th'); if(th.length<3) return;
+      var a=th[0].getBoundingClientRect().width, b=th[1].getBoundingClientRect().width;
+      if(a>0&&b>0){ w.style.setProperty('--dw1', a.toFixed(1)+'px');
+                    w.style.setProperty('--dw2', (a+b).toFixed(1)+'px'); }
+    }
+    function arm(){
+      var w=document.querySelector('.table-wrap'); if(!w) return;
+      sync();
+      // the table is re-rendered on sort, filter and capital change; one observer
+      // on the wrapper catches every one of them plus window resize.
+      if('ResizeObserver' in window){ new ResizeObserver(sync).observe(w); }
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', arm); else arm();
+    window.addEventListener('resize', sync, {passive:true});
+    window.addEventListener('load', sync);
+  }catch(e){ /* fail-soft: the 44/106 fallbacks are the measured page-1 values */ }
+})();
+</script>
 </body>
 </html>

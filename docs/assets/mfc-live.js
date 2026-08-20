@@ -250,6 +250,15 @@
          column of "+5.02%" was being shaved off. Step it down where the card is
          narrow; every other width keeps the full 30px. */
       "@media(max-width:400px){.stat-card.stat-live .live-val{font-size:25px;}}" +
+      /* V31.8 — the ladder above stops at 25px, and 25px is 2.4px too wide for the
+         card below ~292px: the value's own box is 95px there and "+6.84%" paints
+         97.4px of glyphs, so it starts hard against the left edge instead of
+         centring and runs past its box. Nothing is CLIPPED (the card is wider
+         still) and no phone on the market is this narrow — a Fold cover screen and
+         a heavily zoomed page are what reach it — so this is a tidy-up, not a
+         visible bug. 22px leaves 9px of slack rather than parking the fix on the
+         failure point, and the guard sits at 300 so it can never reach 320. */
+      "@media(max-width:300px){.stat-card.stat-live .live-val{font-size:22px;}}" +
       /* The other squeeze is at the TOP of the range, not the bottom: this row is
          six-across until 960px, so at 1024 (iPad landscape) the card content box
          is 112px — narrower than any phone — and the 30px figure needs 117px.

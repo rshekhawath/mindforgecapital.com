@@ -305,7 +305,22 @@ html[data-theme="dark"] .sidebar{background:linear-gradient(180deg,var(--ink2) 0
 .preset-tag:hover{border-color:var(--accent3);color:var(--accent);background:rgba(26,80,216,0.06)}
 
 /* ── MAIN ── */
-.main-content{padding:24px 28px;overflow-x:hidden}
+/* V31.8: `overflow-x:hidden` made this a SCROLL CONTAINER in both axes, so
+   every sticky descendant resolved against it instead of the page — and it
+   has no height limit, so its scrollport is the whole column and nothing
+   inside could ever appear to stick. `clip` gives the identical clipping
+   without the scrollport. `hidden` is kept first as the fallback for any
+   engine that does not know `clip`, which then behaves exactly as before.
+   `min-width:0` IS NOT OPTIONAL AND WAS ADDED AFTER MEASURING THE DAMAGE. This
+   is the 1fr track of a grid, and a grid item's automatic minimum size is only
+   waived while its overflow is a scroll container. Swapping `hidden` for `clip`
+   removed that waiver, so the track grew to the table's 921px min-content: at
+   1101-1180 the whole results column ran 117px past the viewport, and at
+   601-768 the table widened to 746px inside a 601px window where body's
+   overflow-x:hidden silently CLIPPED the last columns away instead of letting
+   them scroll. Pinning the minimum to 0 restores the shrink the scroll
+   container used to provide, independently of which overflow value wins. */
+.main-content{padding:24px 28px;min-width:0;overflow-x:hidden;overflow-x:clip}
 
 .content-header{
   display:flex;align-items:flex-start;justify-content:space-between;
@@ -2376,6 +2391,133 @@ checkHealth();
   .filter-input,.filter-select{font-size:16px;}
   .nav-search input{font-size:16px;}
 }
+</style>
+<!-- ============================================================================
+     V31.8 — THE SCANNER'S COLUMN HEADERS LEFT THE SCREEN AND NEVER CAME BACK.
+     ----------------------------------------------------------------------------
+     This table is 30 rows x 8 columns and measures 2,752px tall at 1440 and
+     3,064px at 820, against a document of 3,789 / 4,203 — so it IS the page, and
+     its header scrolled away after the first screenful. Everything below that
+     point is eight columns of bare numbers: "8,28,180  16.6  7.5  54.6  2.84".
+     Which of those is P/E and which is P/B is not recoverable from the row; the
+     reader has to scroll back to the top, read the header, and scroll down again.
+     dashboard.html has had a pinned header since V30.0 for a 25-row table. This
+     one has 30 rows a page and seventeen pages of them.
+
+     WHY IT COULD NOT SIMPLY BE `position:sticky`. A sticky box sticks inside its
+     nearest scroll-container ancestor, and this table has TWO of them:
+     `.table-card{overflow:hidden}` (hidden IS a scroll container — the V30.0
+     lesson) and `.tbl-scroll{overflow-x:auto}` (auto in one axis makes the
+     element a scroll container in both). `.tbl-scroll` has no height limit, so
+     its scrollport is exactly as tall as the table: a header stuck to the top of
+     THAT never appears to move at all. Both have to stop being scroll containers
+     for the page to be the thing the header sticks to, and `overflow:clip` does
+     that while still clipping the card's rounded corners and its gradient rule.
+
+     BUT `.tbl-scroll` EXISTS FOR A REASON — the columns genuinely exceed the
+     available width in two bands (601-768, and 1101-~1246 where the filter
+     sidebar returns), and clipping there would cut the right-hand columns off.
+     So this is not a media query, it is a MEASUREMENT: a ResizeObserver watches
+     the scroller and the table and sets `.is-fit` only while
+     `scrollWidth <= clientWidth`. One consequence is better than a breakpoint
+     could have been — the reader controls the column count from the Columns
+     panel, so hiding a column to make the table fit turns the pinned header on
+     by itself, and showing one turns it back off.
+
+     Details that are load-bearing, all from V30.0:
+     · `overflow:clip`, never `hidden` — `hidden` re-creates the container.
+     · Pin to the nav's HEIGHT, not 0. It is 56px at <=1024 and 64px above.
+     · An INSET box-shadow, not border-bottom: under `border-collapse:collapse`
+       the border belongs to the table, so it detaches and stays behind.
+     · An opaque background, or the rows show through the header they pass under.
+     · z-index below the nav's 200 and above the frozen first column's 3.
+     · `@media screen` — print evaluates media queries against the PAGE BOX, and
+       a pinned header is meaningless on paper anyway.
+     ========================================================================= -->
+<style id="mf-v318-sticky-head">
+@media screen and (min-width:601px){
+  .table-card.is-fit{ overflow:clip; }
+  .tbl-scroll.is-fit{ overflow:clip; }
+  .tbl-scroll.is-fit #resultsTable thead th{
+    position:sticky; top:56px; z-index:6;
+    background:linear-gradient(180deg,var(--ink3) 0%,var(--ink) 100%);
+    box-shadow:inset 0 -1px 0 var(--border2);
+  }
+  /* the frozen identifier column is sticky in both axes here; keep it on top */
+  .tbl-scroll.is-fit #resultsTable thead th:first-child{ z-index:7; }
+}
+@media screen and (min-width:1025px){
+  .tbl-scroll.is-fit #resultsTable thead th{ top:64px; }
+}
+</style>
+<script id="mf-v318-sticky-head-js">
+(function(){
+  try{
+    var sc=document.querySelector('.tbl-scroll'), card=document.querySelector('.table-card');
+    var tb=document.getElementById('resultsTable');
+    if(!sc||!card||!tb) return;
+    function sync(){
+      // 1px of tolerance: sub-pixel column widths round scrollWidth up by a
+      // fraction on some zoom levels, and a header that flickers on and off
+      // while the reader scrolls is worse than one that never pins.
+      var fits = sc.scrollWidth <= sc.clientWidth + 1;
+      sc.classList.toggle('is-fit', fits);
+      card.classList.toggle('is-fit', fits);
+    }
+    sync();
+    if ('ResizeObserver' in window){
+      // watching BOTH the scroller and the table catches every cause with one
+      // hook: window resize, a re-render, a page change, and the Columns panel
+      // adding or removing a column — none of which need to know this exists.
+      var ro=new ResizeObserver(sync); ro.observe(sc); ro.observe(tb);
+    }
+    window.addEventListener('resize', sync, {passive:true});
+    window.addEventListener('load', sync);
+  }catch(e){ /* fail-soft: no class, no sticky, the table behaves exactly as before */ }
+})();
+</script>
+<!-- ============================================================================
+     V31.8 — THE HORIZONTAL SCROLL WITH NOTHING TO SAY IT WAS THERE.
+     ----------------------------------------------------------------------------
+     Both of these tables scroll sideways — the Scanner's in two bands (601-768
+     and 1101-~1246, where the filter sidebar returns) and the Integrity Score's
+     at EVERY width, because thirteen columns need 1,491px and the card is never
+     wider than 1,182px. Neither had any cue that more existed past the edge.
+     macOS paints overlay scrollbars, which stay invisible until something
+     scrolls, so on the Integrity Score a reader could look at the five factor
+     columns and never learn that Intrinsic Value, Mkt Cap, ROE and P/E were
+     sitting just past the right edge.
+
+     dashboard.html solved this in V29.2 and the technique is lifted verbatim:
+     four background layers instead of a pseudo-element. The two `local` layers
+     scroll WITH the rows, so at rest each parks over the shadow at its own end
+     and hides it; the two `scroll` layers stay pinned to the container. An edge
+     therefore shows a shadow only while something is actually hidden past it,
+     and both edges are handled with no breakpoint, no scroll listener and no
+     second rule for dark — the cover colour is var(--ink2), which the theme
+     already flips. Only the shadow ink is hardcoded, because a near-black wash
+     is invisible on the dark card and has to be drawn with light instead.
+     ========================================================================= -->
+<style id="mf-v318-scroll-edge">
+.tbl-scroll{
+  background:
+    linear-gradient(90deg,  var(--ink2) 42%, transparent) 0    0 / 46px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink2) 42%, transparent) 100% 0 / 46px 100% no-repeat local,
+    linear-gradient(90deg,  rgba(12,24,49,.16), transparent) 0    0 / 24px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(12,24,49,.16), transparent) 100% 0 / 24px 100% no-repeat scroll,
+    var(--ink2);
+}
+html[data-theme="dark"] .tbl-scroll{
+  background:
+    linear-gradient(90deg,  var(--ink2) 42%, transparent) 0    0 / 46px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink2) 42%, transparent) 100% 0 / 46px 100% no-repeat local,
+    linear-gradient(90deg,  rgba(150,180,240,.20), transparent) 0    0 / 24px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(150,180,240,.20), transparent) 100% 0 / 24px 100% no-repeat scroll,
+    var(--ink2);
+}
+/* same reason the dashboard's print block carries this line: on paper the page
+   cannot be scrolled, so the two edge washes would print as grey bands. */
+@media print{ .tbl-scroll{ background-image:none !important; background-color:#fff !important; } }
 </style>
 </body>
 </html>

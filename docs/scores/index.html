@@ -1992,5 +1992,127 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
 }
 </style>
 
+<!-- ============================================================================
+     V31.8 — THE INTEGRITY SCORE TABLE LOST THE COMPANY THE MOMENT YOU READ IT.
+     ----------------------------------------------------------------------------
+     Thirteen columns measuring 1,491px in a card that is 966px at 1024 and never
+     wider than 1,182px, so this table is scrolled sideways at EVERY desktop and
+     tablet width — there is no window in which it fits. The five factor scores,
+     the Integrity score, the intrinsic value and P/E all live to the right of the
+     fold, which means the reader reaches them by scrolling the name off the left
+     edge. "Which stock is 84 / 61 / 43?" is then unanswerable without scrolling
+     back, and the whole page is a comparison tool.
+
+     The Scanner solved exactly this in V26.8 — "a data-grid standard so you never
+     lose which stock a row is" — and its sibling never got it. Ported here, with
+     the differences this table actually has:
+
+     · TWO columns are frozen, not one. Column 1 is the rank and its expand caret;
+       the identity is column 2. Freezing only the first would pin an ordinal and
+       let the name scroll away, which is the defect with extra steps.
+     · The second column's `left` is the first one's WIDTH, and that width is
+       measured rather than typed. It is 58px on page 1 and grows on page 17 where
+       the ranks reach three digits, so a hard-coded offset would open a 12px seam
+       exactly where nobody would look for it.
+     · A sticky cell paints its own background, so the row's zebra, hover and
+       expanded tints have to be composited back onto it — otherwise the frozen
+       pair reads as a detached white strip on every second row and never responds
+       to the pointer. Same for the 3px accent bar the row paints on hover: the
+       frozen cell now covers it, so it carries its own.
+     · `tr.detail-row` is excluded. Its single cell is a colspan across the whole
+       table; making that sticky-left would pin the entire expanded panel.
+     ========================================================================= -->
+<style id="mf-v318-freeze-id">
+@media screen and (min-width:901px){
+  #resultsTable thead th:nth-child(-n+2),
+  #resultsTable tbody tr:not(.detail-row) > td:nth-child(-n+2){
+    position:sticky; z-index:2; background-color:var(--ink2);
+  }
+  #resultsTable thead th:nth-child(-n+2){
+    z-index:3; background-color:var(--ink3);
+    background-image:linear-gradient(180deg,var(--ink3) 0%,var(--ink) 100%);
+  }
+  #resultsTable thead th:nth-child(1),
+  #resultsTable tbody tr:not(.detail-row) > td:nth-child(1){ left:0; }
+  #resultsTable thead th:nth-child(2),
+  #resultsTable tbody tr:not(.detail-row) > td:nth-child(2){
+    left:var(--scr-c1,58px);
+    box-shadow:6px 0 12px -9px rgba(15,23,42,.16), 1px 0 0 var(--border);
+  }
+  #resultsTable tbody tr:nth-child(even):not(.detail-row) > td:nth-child(-n+2){
+    background-image:linear-gradient(rgba(37,99,235,.012),rgba(37,99,235,.012));
+  }
+  #resultsTable tbody tr.rowlink:hover > td:nth-child(-n+2){
+    background-image:linear-gradient(rgba(26,80,216,.05),rgba(26,80,216,.05));
+  }
+  #resultsTable tbody tr.rowlink.expanded > td:nth-child(-n+2){
+    background-image:linear-gradient(rgba(26,80,216,.06),rgba(26,80,216,.06));
+  }
+  #resultsTable tbody tr.rowlink:hover > td:nth-child(1),
+  #resultsTable tbody tr.rowlink.expanded > td:nth-child(1){
+    box-shadow:inset 3px 0 0 var(--accent);
+  }
+}
+</style>
+<script id="mf-v318-freeze-id-js">
+(function(){
+  try{
+    var tb=document.getElementById('resultsTable'); if(!tb) return;
+    function sync(){
+      var th=tb.querySelector('thead th'); if(!th) return;
+      // display:none in card mode measures 0 — leave the fallback in place then
+      var w=th.getBoundingClientRect().width;
+      if (w > 0) tb.style.setProperty('--scr-c1', w.toFixed(1)+'px');
+    }
+    sync();
+    if ('ResizeObserver' in window){ new ResizeObserver(sync).observe(tb); }
+    window.addEventListener('resize', sync, {passive:true});
+    window.addEventListener('load', sync);
+  }catch(e){ /* fail-soft: the fallback 58px keeps the pair aligned on page 1 */ }
+})();
+</script>
+<!-- ============================================================================
+     V31.8 — THE HORIZONTAL SCROLL WITH NOTHING TO SAY IT WAS THERE.
+     ----------------------------------------------------------------------------
+     Both of these tables scroll sideways — the Scanner's in two bands (601-768
+     and 1101-~1246, where the filter sidebar returns) and the Integrity Score's
+     at EVERY width, because thirteen columns need 1,491px and the card is never
+     wider than 1,182px. Neither had any cue that more existed past the edge.
+     macOS paints overlay scrollbars, which stay invisible until something
+     scrolls, so on the Integrity Score a reader could look at the five factor
+     columns and never learn that Intrinsic Value, Mkt Cap, ROE and P/E were
+     sitting just past the right edge.
+
+     dashboard.html solved this in V29.2 and the technique is lifted verbatim:
+     four background layers instead of a pseudo-element. The two `local` layers
+     scroll WITH the rows, so at rest each parks over the shadow at its own end
+     and hides it; the two `scroll` layers stay pinned to the container. An edge
+     therefore shows a shadow only while something is actually hidden past it,
+     and both edges are handled with no breakpoint, no scroll listener and no
+     second rule for dark — the cover colour is var(--ink2), which the theme
+     already flips. Only the shadow ink is hardcoded, because a near-black wash
+     is invisible on the dark card and has to be drawn with light instead.
+     ========================================================================= -->
+<style id="mf-v318-scroll-edge">
+.table-card{
+  background:
+    linear-gradient(90deg,  var(--ink2) 42%, transparent) 0    0 / 46px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink2) 42%, transparent) 100% 0 / 46px 100% no-repeat local,
+    linear-gradient(90deg,  rgba(12,24,49,.16), transparent) 0    0 / 24px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(12,24,49,.16), transparent) 100% 0 / 24px 100% no-repeat scroll,
+    var(--ink2);
+}
+html[data-theme="dark"] .table-card{
+  background:
+    linear-gradient(90deg,  var(--ink2) 42%, transparent) 0    0 / 46px 100% no-repeat local,
+    linear-gradient(270deg, var(--ink2) 42%, transparent) 100% 0 / 46px 100% no-repeat local,
+    linear-gradient(90deg,  rgba(150,180,240,.20), transparent) 0    0 / 24px 100% no-repeat scroll,
+    linear-gradient(270deg, rgba(150,180,240,.20), transparent) 100% 0 / 24px 100% no-repeat scroll,
+    var(--ink2);
+}
+/* same reason the dashboard's print block carries this line: on paper the page
+   cannot be scrolled, so the two edge washes would print as grey bands. */
+@media print{ .table-card{ background-image:none !important; background-color:#fff !important; } }
+</style>
 </body>
 </html>
