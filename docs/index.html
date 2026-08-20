@@ -7616,7 +7616,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 </style>
 <script src="assets/mfc-offer.js?v=3000" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=2910" defer></script>
+<script src="assets/mfc-live.js?v=2920" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -8198,6 +8198,40 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
     white-space:nowrap; letter-spacing:.01em;
   }
   .mcol-trigger[aria-expanded="true"] .mcol-hint{ opacity:0; }
+  /* ══ V31.7 — ONE OF THESE FOUR HEADINGS DOES NOT FIT THE COLUMN IT IS GIVEN ══
+     The trigger is a flex row: [heading] gap:12 [hint + caret, flex:0 0 auto].
+     The right-hand block measures 99px, so the heading gets `width - 32 - 111`.
+     Three of the four headings are 24-30px and clear that easily. The fourth —
+     "Built by practitioners, not theorists." on #team — is 42px, and its longest
+     unbreakable word, "practitioners,", measures 247.6px. Against the column it
+     is actually handed:
+         320px  ->  177px column  ->  the word paints 70.6px OUTSIDE the heading
+         360px  ->  217px column  ->  30.6px outside
+         390px  ->  247px column  ->  0.6px outside   (grazes)
+         414px  ->  271px column  ->  fits, 23.4px to spare
+     Nothing clips it — the button is wider than the heading, so the word simply
+     escapes its own box and crowds the "Tap to read" control it was supposed to
+     leave room for. That is also why no earlier sweep saw it: it never overflows
+     the DOCUMENT, and the heading is a .fade-up that sat at opacity:0 whenever a
+     probe sampled it without walking the page first.
+
+     THE THRESHOLD IS DELIBERATELY NOT AT THE FAILURE POINT. Solving for the hint
+     puts the break-even at 390.6px — i.e. exactly between the two commonest phone
+     widths on the market, which is the worst possible place to bet a layout. So
+     the hint's WORDS stand down for the whole portrait-phone band (<=430px covers
+     the 430px iPhone Pro Max) and come back at 431px with 40px of slack rather
+     than 0.4px. The caret stays, the whole row stays tappable, aria-expanded still
+     carries the state, so nothing is lost but seventy-three pixels of politeness.
+
+     AND THE BACKSTOP IS THE REAL FIX. With the hint gone the column is 250px at
+     320px — 2.4px more than the word needs, which is a fit, not a margin. So the
+     heading also gets overflow-wrap:break-word: any word that still cannot fit
+     breaks INSIDE its box instead of escaping it. Today that never fires; it is
+     what makes this a graceful degradation rather than a second knife edge. */
+  .mcol-trigger h2{ overflow-wrap:break-word; }
+}
+@media (max-width: 430px){
+  .mcol-hint{ display:none; }
   .mcol-panel[data-open="false"]{ display:none; }
   .mcol-panel[data-open="true"]{ animation:mcolIn .24s ease both; }
   @keyframes mcolIn{ from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:none;} }

@@ -375,7 +375,18 @@
 // The <img> aspect hints moved with the file: width/height were 80x80 for the
 // square canvas and are now 98x80 (same 142:116 ratio), because a stale hint is
 // a layout shift, not a cosmetic detail.
-const CACHE = 'mfc-v57';
+// V31.7 -> mfc-v58. ONE shared asset moved: assets/mfc-live.js 2910 -> 2920,
+// whose injected `.live-vs-a` rule gained `white-space:nowrap` so the rounded
+// live-alpha pill on the homepage stops breaking in half across a line (it did,
+// at 360px and at 1024px, on two of the three strategy cards). The bump lands on
+// all six pages that load the file — index, dashboard, strategies and the three
+// strategy pages. index.html is a PRECACHED document with no ?v of its own, and
+// carrying that new token is a change to its bytes, so an installed app opening
+// cold on v57 would keep serving the shell that points at 2910. Same reason as
+// the V31.5 entry above; the rest of this release is page-local CSS/JS on
+// calculator, dashboard and the three legal pages, which are network-first and
+// owe no bump.
+const CACHE = 'mfc-v58';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

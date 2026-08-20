@@ -664,6 +664,44 @@ html{ scroll-padding-top:88px; }
   display:none; position:fixed; top:150px; left:calc(50% + 442px); width:196px;
   max-height:calc(100vh - 230px); overflow-y:auto; z-index:5;
   padding:2px 2px 6px 0; scrollbar-width:thin;
+  /* V31.7 — see the block below. 0/0 is a no-op mask, so a rail that fits is
+     painted exactly as it was. */
+  --lt-fade-t:0px; --lt-fade-b:0px;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 var(--lt-fade-t),
+                     #000 calc(100% - var(--lt-fade-b)), transparent 100%);
+          mask-image:linear-gradient(to bottom, transparent 0, #000 var(--lt-fade-t),
+                     #000 calc(100% - var(--lt-fade-b)), transparent 100%);
+}
+/* ══ V31.7 — THE RAIL IS A SCROLLER THAT NEVER ADMITTED IT WAS ONE ══════════
+   Terms carries 22 sections and the rail is capped at `100vh - 230px`, so on a
+   1366x768 laptop it shows about thirteen of them. Three things followed, and
+   the third is the one that matters:
+
+   · Nothing said the list continued. macOS paints overlay scrollbars, which are
+     invisible until something scrolls, so the list simply stopped mid-item at
+     the panel edge — the reader's evidence for "22 sections" was a list that
+     appeared to hold thirteen.
+   · Nothing said how many there were. The phone disclosure directly below has
+     said "22 sections" since V30.7; the rail, which is the one that hides most
+     of them, said only "On this page".
+   · AND THE SCROLL-SPY HIGHLIGHTED ITEMS THE READER COULD NOT SEE. Past about
+     section 13 the active item sat below the rail's own scrollport. The one
+     element whose entire job is to answer "where am I" was, for the back half
+     of the longest document on the site, reliably out of frame.
+
+   So: a mask fades whichever edge is currently clipped (both, in the middle of
+   a long list) and retracts at each end, the head carries the count, and the
+   rail keeps the active item in view by scrolling ITSELF — via scrollTop
+   arithmetic on the rail, never scrollIntoView, which would walk up and move
+   the page the reader is reading. */
+.legal-toc .lt-count{
+  display:block; margin-top:3px; font-size:10px; font-weight:600;
+  letter-spacing:.04em; text-transform:none; color:var(--text3);
+  /* NO opacity here. The first cut dimmed this to .75 to sit it below the head,
+     and measured 3.82:1 light / 4.18:1 dark at 10px — under AA, on a line whose
+     entire job is to be read. The separation it was reaching for is already
+     carried by case, tracking and weight against an uppercase 700 head, so the
+     ink stays at the same --text3 the head and every link use: 6.93 / 6.64. */
 }
 @media (min-width:1320px){ .legal-toc{ display:block; } }
 .legal-toc .lt-head{
@@ -765,7 +803,8 @@ html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
   toc.className = 'legal-toc';
   toc.setAttribute('role', 'navigation');
   toc.setAttribute('aria-label', 'On this page');
-  var html = '<div class="lt-head">On this page</div>';
+  var html = '<div class="lt-head">On this page<span class="lt-count">' +
+             heads.length + ' sections</span></div>';
   var rows = '';
   heads.forEach(function(h, i){
     if (!h.id){
@@ -803,6 +842,35 @@ html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
   var links = toc.querySelectorAll('a');
   var links2 = inline.querySelectorAll('.lti-list a');
   var current = -1, pending = null;
+
+  /* V31.7 — the rail's two self-descriptions: which edges are clipped, and
+     keeping the active item inside its own scrollport. Both are cheap reads of
+     scrollTop/scrollHeight and both no-op when the list fits, which is the
+     common case on Privacy (10 sections) and on a tall display. */
+  var FADE = 26;
+  function edges(){
+    var over = toc.scrollHeight - toc.clientHeight;
+    if (over <= 1){ toc.style.setProperty('--lt-fade-t','0px');
+                    toc.style.setProperty('--lt-fade-b','0px'); return; }
+    var top = toc.scrollTop;
+    toc.style.setProperty('--lt-fade-t', (top > 2 ? FADE : 0) + 'px');
+    toc.style.setProperty('--lt-fade-b', (top < over - 2 ? FADE : 0) + 'px');
+  }
+  function keepActiveVisible(a){
+    if (!a || toc.scrollHeight - toc.clientHeight <= 1) return;
+    var pad = 30;                                  // clear of whichever edge is faded
+    var top = a.offsetTop, bot = top + a.offsetHeight;
+    var want = null;
+    if (top - pad < toc.scrollTop) want = Math.max(0, top - pad);
+    else if (bot + pad > toc.scrollTop + toc.clientHeight) want = bot + pad - toc.clientHeight;
+    if (want == null) return;
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (toc.scrollTo) toc.scrollTo({top: want, behavior: still ? 'auto' : 'smooth'});
+    else toc.scrollTop = want;
+  }
+  toc.addEventListener('scroll', edges, {passive:true});
+  window.addEventListener('resize', edges, {passive:true});
+
   function spy(){
     pending = null;
     var idx = 0;
@@ -815,7 +883,9 @@ html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
         links[j].classList.toggle('active', j === idx);
         if (links2[j]) links2[j].classList.toggle('active', j === idx);
       }
+      keepActiveVisible(links[idx]);
     }
+    edges();
   }
   /* setTimeout throttle (not rAF) so the spy also runs in throttled tabs */
   window.addEventListener('scroll', function(){

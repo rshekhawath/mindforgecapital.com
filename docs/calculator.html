@@ -348,7 +348,12 @@ html[data-theme="dark"] .fc-feebar { background: rgba(120,150,255,0.14); }
 .fc-method summary .chev { transition: transform .2s; }
 .fc-method[open] summary .chev { transform: rotate(90deg); }
 .fc-method .m-body { font-size: 13px; color: var(--text3); line-height: 1.7; margin-top: 12px; max-width: 820px; }
-.fc-method .m-body code { background: var(--ink); border: 0.5px solid var(--border2); border-radius: 6px; padding: 1px 6px; font-size: 12px; color: var(--text2); }
+/* V31.7: these chips are bordered, tinted and rounded, and two of them hold a
+   phrase rather than a token ("monthly fee x 12", "return - AUM fee"). An inline
+   box breaks between words, so at 320/360/414/768/820/834 the chip split across
+   a line and painted as two fragments with one rounded end each. nowrap keeps
+   each chip whole; the break simply moves in front of it. */
+.fc-method .m-body code { background: var(--ink); border: 0.5px solid var(--border2); border-radius: 6px; padding: 1px 6px; font-size: 12px; color: var(--text2); white-space: nowrap; }
 .fc-method ul { margin: 8px 0 0 18px; }
 
 /* footer */
@@ -468,8 +473,29 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   ]
 }
 </script>
+<style id="mf-v317-skip">
+/* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
+   skip link since the Round-5 a11y pass; the four free tools and the per-stock
+   page never got one, so a keyboard user reaching the Scanner had to tab the
+   9-item masthead, the theme toggle and the CTA before the first control —
+   and on the Scanner, then the whole filter sidebar. Same rule, same ink and
+   same slide as index.html's, kept page-local exactly like the other thirteen
+   so no shared asset (and therefore no ?v on 49 pages) has to move for it. */
+.skip-link{
+  position:absolute; top:-100px; left:16px;
+  background:var(--accent); color:#fff;
+  padding:14px 22px; font-size:14px; font-weight:600; text-decoration:none;
+  z-index:1000; border-radius:0 0 10px 10px;
+  box-shadow:0 8px 20px -8px rgba(26,80,216,0.55);
+  transition:top .2s ease;
+}
+.skip-link:focus{ top:0; outline:none; }
+@media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
+</style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
 
 <nav>
@@ -490,7 +516,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </div>
 </nav>
 
-<section class="calc-hero">
+<section class="calc-hero" id="main-content">
   <div class="calc-hero-bg"></div>
   <div class="container">
     <span class="eyebrow fade-up"><span class="dot"></span>Interactive · your numbers</span>

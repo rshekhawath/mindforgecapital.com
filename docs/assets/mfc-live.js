@@ -213,7 +213,15 @@
       ".strat-metric-live .live-vs .down{color:var(--ink-neg,#c92020);}" +
       ".strat-metric-live .live-vs .flat{color:var(--text2,#1e3a5f);}" +
       /* the alpha is the payoff of the line — give it the weight of a verdict */
-      ".strat-metric-live .live-vs .live-vs-a{padding:1px 7px;border-radius:999px;background:rgba(37,99,235,.07);}" +
+      /* V31.7 — THE PILL IS A SHAPE, SO IT MUST NOT BE ALLOWED TO BREAK IN HALF.
+         `.live-vs-a` carries a rounded, tinted chip and its content is two words
+         ("+0.87 pts"). Inline elements break between words, so at 360px and at
+         1024px the chip painted "+0.87" at the end of one line and "pts" at the
+         start of the next — two half-pills, each with one rounded end and one
+         sheared end, around the single most-read live figure on the homepage.
+         nowrap keeps the chip atomic; the line break moves in front of it, which
+         is what the two-line reservation on .strat-card .live-vs already expects. */
+      ".strat-metric-live .live-vs .live-vs-a{padding:1px 7px;border-radius:999px;background:rgba(37,99,235,.07);white-space:nowrap;}" +
       ".strat-metric-live .live-vs .live-vs-a.up{background:rgba(5,150,105,.10);}" +
       ".strat-metric-live .live-vs .live-vs-a.down{background:rgba(220,38,38,.08);}" +
       /* V28.0: this was --border2 — a BORDER token, tuned for a 1px hairline, used

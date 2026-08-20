@@ -1481,6 +1481,10 @@ footer a:hover{color:var(--accent);}
 .msort-dir:hover{border-color:var(--accent);color:var(--accent);}
 .msort-dir[disabled]{opacity:.45;cursor:default;}
 .msort-dir[disabled]:hover{border-color:var(--border2);color:var(--text2);}
+/* V31.7 — `display:inline-flex` above outranks the UA's `[hidden]{display:none}`,
+   so the attribute alone would leave the button on screen. See reflectMobileSort()
+   for why it hides at all. */
+.msort-dir[hidden]{display:none !important;}
 html[data-theme="dark"] .msort-sel{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a9c9' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
@@ -1562,6 +1566,23 @@ html[data-theme="dark"] .msort-sel{
 .sc-key{color:var(--text3);}
 .sc-val{color:var(--white);font-weight:600;font-variant-numeric:tabular-nums;}
 .sc-bar-wrap{background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:hidden;margin-top:2px;}
+/* ── V31.7 — THE PHONE CARD'S WEIGHT METER WAS A FULL-BLEED SLAB FOR 4.0%. ──
+   The bar is scaled to the largest weight in the book (`barPct = w / maxW`), so
+   in an equal-weight book EVERY holding is the maximum and every bar paints at
+   100%. On the desktop table that is legible: 25 identical fills sit in one
+   column, capped at an 80px track beside their own value, and the eye reads
+   "all the same" down the column. On a phone there is no column — the member
+   sees ONE card, in which a solid bar spanning the full card width sat directly
+   under the words "Weight 4.0%". The number was right and the encoding said the
+   opposite; that reading is only available by scrolling to a second card and
+   noticing it is identical.
+   So the phone gets the desktop's arrangement rather than the desktop's excuse:
+   the meter moves INTO the weight row, capped at the same short track, with the
+   percentage beside it. Same data, same [data-bar] applier, same grow-on-reveal
+   transition — and one fewer row of height per card. */
+.sc-wt{display:flex;align-items:center;gap:10px;min-width:0;}
+.sc-row-wt .sc-bar-wrap{flex:0 0 84px;width:84px;margin-top:0;}
+.sc-row-wt .sc-val{flex:0 0 auto;}
 /* Matches .sp-wt-cap on strategies.html — same explanation, same weight of voice. */
 .weight-cap{margin:10px 2px 0;font-size:11.5px;color:var(--text3);line-height:1.6;}
 .sc-bar{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent3));width:0;transition:width 1.1s cubic-bezier(.22,1,.36,1);}
@@ -2158,8 +2179,24 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
 <link rel="stylesheet" href="assets/mfc-finish.css?v=3070">
+<style id="mf-v317-skip">
+/* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
+   carries. Page-local like every other copy, so no shared asset moves. */
+.skip-link{
+  position:absolute; top:-100px; left:16px;
+  background:var(--accent); color:#fff;
+  padding:14px 22px; font-size:14px; font-weight:600; text-decoration:none;
+  z-index:1000; border-radius:0 0 10px 10px;
+  box-shadow:0 8px 20px -8px rgba(26,80,216,0.55);
+  transition:top .2s ease;
+}
+.skip-link:focus{ top:0; outline:none; }
+@media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
+</style>
 </head>
 <body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <!-- MF-SCROLL-PROG -->
 <!-- V6.8 L7: dropped role=progressbar + aria-label — the bar is decorative
      (aria-hidden=true), so the role/label were contradictory dead weight. -->
@@ -2184,6 +2221,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
+
+<!-- V31.7 — the skip target. This page swaps between three sibling state boxes
+     (#state-loading / #state-error / #state-dashboard) and the real content one
+     starts at display:none, so pointing the link at it would leave the link
+     inert for as long as the fetch takes. A zero-height anchor in normal flow
+     always exists, is focusable via tabindex="-1", paints nothing, and cannot
+     overflow anything (block, width auto, height 0). Verified: this file has no
+     `nav +` / `nav ~` sibling selector that a new element could disturb. -->
+<div id="main-content" tabindex="-1"></div>
 
 <!-- LOADING STATE -->
 <div id="state-loading" class="container">
@@ -2936,9 +2982,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <option value="shares">Shares</option>
               <option value="weight">Weight</option>
             </select>
-            <button class="msort-dir" id="msort-dir" type="button" aria-label="Reverse sort order" title="Reverse sort order">
+            <!-- starts hidden because the default state IS model order; reflectMobileSort()
+                 reveals it the moment a sort key is chosen. Without the attribute here the
+                 button would flash "High first" for one frame on every load. -->
+            <button class="msort-dir" id="msort-dir" type="button" hidden disabled aria-label="Reverse sort order" title="Reverse sort order">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16"/><path d="M4 17l3 3 3-3"/><path d="M17 20V4"/><path d="M14 7l3-3 3 3"/></svg>
-              <span id="msort-dir-txt">High first</span>
+              <span id="msort-dir-txt"></span>
             </button>
           </div>
           <input type="search" class="tbl-search" id="tbl-search" placeholder="Search ticker or company…" oninput="filterStocks(this.value)" aria-label="Search stocks">
@@ -5804,8 +5853,7 @@ function renderTable(stocks) {
       <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></div>
       <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(amt)}</span></div>
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
-      <div class="sc-row"><span class="sc-key">Weight</span><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div>
-      <div class="sc-bar-wrap"><div class="sc-bar" data-bar="${barPct.toFixed(1)}%"></div></div>
+      <div class="sc-row sc-row-wt"><span class="sc-key">Weight</span><div class="sc-wt"><div class="sc-bar-wrap"><div class="sc-bar" data-bar="${barPct.toFixed(1)}%"></div></div><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div></div>
       <div class="sc-bought-row">
         <label><input type="checkbox" class="bought-cb" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>
       </div>
@@ -5834,7 +5882,7 @@ function renderTable(stocks) {
    translate), so on the normal path this is a no-op — and on a frozen clock
    it is the difference between a blank list and a readable one. Same
    safety-net device as the factor board's setTimeout(reveal,1600) and
-   mfc-live.js?v=2910's snap timer: never let a decoration own visibility. */
+   mfc-live.js?v=2920's snap timer: never let a decoration own visibility. */
 function revealHoldingsBackstop() {
   var DONE = 'mf-anim-done';                 // → animation:none (CSS)
   var LAST = 360 + 420 + 260;                // max delay + duration + slack
@@ -6187,8 +6235,20 @@ function reflectMobileSort(){
   // order" while the list is sorted — fall back to leaving the select alone.
   if (Array.prototype.some.call(sel.options, function(o){ return o.value === key; })) sel.value = key;
   var isText = (key === 'company' || key === 'ticker' || key === 'industry');
+  /* V31.7 — IN MODEL ORDER THIS BUTTON SAID "Model order", WHICH IS WHAT THE
+     SELECT SITTING 6px TO ITS LEFT ALREADY SAID. The phone's sort row therefore
+     opened as two adjacent controls carrying the identical label, one of them
+     greyed out — which reads as a rendering fault, not as a disabled control.
+     V29.5 correctly stopped it claiming "Low first" for an unsorted list; the
+     replacement text described the LIST rather than the BUTTON, and a direction
+     toggle has nothing to describe when there is no direction. So it leaves
+     instead: hidden while there is nothing to reverse, and it appears — already
+     reading "High first" / "A-Z" — the moment a sort key is chosen, which makes
+     its own arrival the feedback for that choice. `disabled` is kept alongside
+     `hidden` so the control is out of the tab order either way. */
   btn.disabled = !key;                       // nothing to reverse in model order
-  txt.textContent = !key ? 'Model order'
+  btn.hidden   = !key;
+  txt.textContent = !key ? ''
                   : isText ? (_sortDir > 0 ? 'A–Z' : 'Z–A')
                            : (_sortDir > 0 ? 'Low first' : 'High first');
 }
