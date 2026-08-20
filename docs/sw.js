@@ -378,9 +378,14 @@
 // V31.7 -> mfc-v58. ONE shared asset moved: assets/mfc-live.js 2910 -> 2920,
 // whose injected `.live-vs-a` rule gained `white-space:nowrap` so the rounded
 // live-alpha pill on the homepage stops breaking in half across a line (it did,
-// at 360px and at 1024px, on two of the three strategy cards). The bump lands on
-// all six pages that load the file — index, dashboard, strategies and the three
-// strategy pages. index.html is a PRECACHED document with no ?v of its own, and
+// at 360px and at 1024px, on two of the three strategy cards). FIVE pages load
+// the file — index, strategies and the three strategy pages. dashboard.html was
+// bumped too and should not have been: its only mention of mfc-live.js is inside
+// a comment, so it has no <script src> to version. Caught by the live check,
+// which found neither token in the served dashboard bytes once comments were
+// stripped; the stale version has been taken out of that comment rather than
+// kept in lockstep for a file the page never fetches.
+// index.html is a PRECACHED document with no ?v of its own, and
 // carrying that new token is a change to its bytes, so an installed app opening
 // cold on v57 would keep serving the shell that points at 2910. Same reason as
 // the V31.5 entry above; the rest of this release is page-local CSS/JS on
