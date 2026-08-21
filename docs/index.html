@@ -3793,7 +3793,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3100">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3110">
 </head>
 <body>
 
@@ -4082,7 +4082,23 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
 .mps-needle.mps-bear{box-shadow:0 2px 7px rgba(0,0,0,.30),0 0 0 4px rgba(220,38,38,.16)}
 .mps-needle.mps-neutral{box-shadow:0 2px 7px rgba(0,0,0,.30),0 0 0 4px rgba(245,158,11,.20)}
 .mps-needle.mps-bull{box-shadow:0 2px 7px rgba(0,0,0,.30),0 0 0 4px rgba(5,150,105,.16)}
-.mps-scale{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-top:7px}
+/* ── V32.2 — THE SCALE UNDER THE SENTIMENT METER TELLS THE TRUTH NOW ────────
+   Two problems, one shared component. On the DASHBOARD the identical meter
+   (.ds-sent-meter) had no scale row at all — a needle somewhere on a red-to-
+   green ramp with two unexplained white notches. Here the row existed but was
+   three words at even thirds (space-between), so "Neutral" sat at 50% by
+   coincidence and "Bearish"/"Bullish" sat at 0% and 100% — i.e. exactly where
+   the STRONGLY bands live. The verdict boundaries are 25 / 43 / 57 / 75, so
+   even thirds mislabels the ramp it sits under.
+   Each word is now positioned at the true CENTRE of its tone zone, and those
+   zones are not hand-typed: sentZones() walks 0..100 through sentLabel()
+   itself — the same function that picks the verdict — and merges neighbouring
+   bands of the same tone. The scale therefore cannot drift from the labeller,
+   because it IS the labeller. Words carry their zone's ink (the V27.9/V26.7
+   tiers already AA-checked in both themes), which is what decodes the ramp. */
+.mps-scale{position:relative;height:13px;margin-top:7px;font-size:9.5px;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.mps-scale i{position:absolute;top:0;transform:translateX(-50%);font-style:normal;white-space:nowrap}
 .mps-drivers{font-size:11.5px;color:#475569;font-weight:600;margin-top:9px;line-height:1.5}
 .mps-drivers b{color:#0c1831;font-weight:700}
 @media(prefers-reduced-motion:reduce){.mps-needle{transition:none}}
@@ -4196,6 +4212,33 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
     var comp=sigs.reduce(function(a,s,i){return a+s*w[i];},0)/ws;
     return {score:Math.round(50+50*comp),nifty:nifty,fii:fii,dii:dii,fo:dh};
   }
+  /* V32.2 — derive the meter's scale from the labeller instead of guessing it.
+     Walk every integer score through sentLabel() (scores are rounded, so
+     integers are the whole domain), collect the runs, then merge neighbouring
+     runs that share a TONE so the row reads Bearish / Neutral / Bullish rather
+     than five words. Returns the true centre of each zone as a percentage. */
+  function sentZones(){
+    var runs=[],prev=null;
+    for(var i=0;i<=100;i++){
+      var L=sentLabel(i);
+      if(!prev||prev.tone!==L.tone){prev={tone:L.tone,t:L.t,from:i,to:i};runs.push(prev);}
+      else prev.to=i;
+    }
+    return runs.map(function(r){
+      var word=r.tone==='bear'?'Bearish':r.tone==='bull'?'Bullish':'Neutral';
+      return {tone:r.tone,word:word,from:r.from,to:r.to,mid:(r.from+r.to)/2};
+    });
+  }
+  function sentScaleHTML(){
+    var z=sentZones();
+    if(z.length!==3)return'';   // fail soft: an unexpected band map draws nothing
+    return '<div class="mps-scale" role="img" aria-label="Scale: '+z.map(function(x){
+        return x.word+' '+x.from+' to '+x.to;}).join(', ')+'.">'
+      +z.map(function(x){
+        var left=Math.min(88,Math.max(12,x.mid));
+        return '<i class="mps-'+x.tone+'" style="left:'+left+'%" aria-hidden="true">'+x.word+'</i>';
+      }).join('')+'</div>';
+  }
   function sentLabel(s){if(s<25)return{t:'Strongly bearish',tone:'bear'};if(s<43)return{t:'Bearish',tone:'bear'};if(s<=57)return{t:'Neutral',tone:'neutral'};if(s<=75)return{t:'Bullish',tone:'bull'};return{t:'Strongly bullish',tone:'bull'};}
   /* V31.4 — flat is its own direction. Shared by every "day change" reading on
      this page. The ±0.049 band matches screener/export_static.py's _chg(), so a
@@ -4219,7 +4262,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
     host.innerHTML='<div class="mps-head"><span class="mps-k"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Market sentiment</span>'+
       '<span class="mps-verdict mps-'+L.tone+'">'+L.t+' · <span class="mps-score">'+s.score+'</span><i>/100</i></span></div>'+
       '<div class="mps-meter"><span class="mps-needle mps-'+L.tone+'" data-left="'+sc+'"></span></div>'+
-      '<div class="mps-scale"><span>Bearish</span><span>Neutral</span><span>Bullish</span></div>'+
+      sentScaleHTML()+
       '<div class="mps-drivers">'+drv.join(' · ')+'</div>';
     // V22.7: count the score up from the neutral midpoint as the needle sweeps to it.
     var n=host.querySelector('.mps-needle'),scEl=host.querySelector('.mps-score');

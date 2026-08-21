@@ -1455,3 +1455,66 @@ html a[href^="mailto:"] { overflow-wrap: break-word; }
     print-color-adjust: exact !important;
   }
 }
+
+/* ============================================================================
+   V32.2 — TWO SITE-WIDE SEAMS THAT ONLY SHOW UP FROM OUTSIDE THE PAGE
+   ==========================================================================*/
+
+/* ── 1) PSEUDO-ELEMENT MOTION SURVIVES EVERY reduced-motion RESET ───────────
+   Six looping animations kept running with `prefers-reduced-motion: reduce`
+   set. Every one of them is painted by a ::before or ::after, and that is
+   exactly why they were missed: the two blanket resets on this site are
+   `*{animation:none!important}` (factor-report) and
+   `*{animation-duration:.001ms!important}` (fii-dii), and the universal
+   selector does NOT match pseudo-elements — so the guard that looks like it
+   covers the page covers only half of it. The per-page guards that do exist
+   name `.fab-wa-bubble` (the tooltip's transition), never `.fab-wa::after`
+   (the ring that actually pulses).
+   Measured under emulated reduce, before this block:
+     .fab-wa::after        fab-pulse 2.4s   — Scanner, Integrity Score,
+                                              company, FII/DII (declared, and
+                                              unguarded, on 9 pages)
+     .ss-dot::after        live-ping 1.9s   — Scanner status strip
+     .status-dot.live::after  live-ping     — Scanner header
+     .hero-badge .dot::after  live-ping     — Integrity Score hero
+     .last-update::before  mf-live-pulse    — member dashboard
+   `!important` is load-bearing, not lazy: these declarations live in inline
+   <style> blocks that come AFTER this file in document order on several pages,
+   and a media query adds no specificity of its own. Scoped to the exact
+   selectors that were measured, so nothing else on the site changes. */
+@media (prefers-reduced-motion: reduce) {
+  .fab-wa::after,
+  .ss-dot::after, .scan-strip .ss-dot::after,
+  .status-dot.live::after,
+  .hero-badge .dot::after,
+  .last-update::before {
+    animation: none !important;
+  }
+}
+
+/* ── 2) THE SKIP LINK LANDED ITS TARGET UNDERNEATH THE STICKY NAV ──────────
+   Every page carries `<a class="skip-link" href="#main-content">` and a
+   `position:sticky` masthead, and #main-content had no scroll-margin anywhere
+   on the site. Browsers scroll the target to viewport y=0, so on any page
+   whose content starts flush the first line is painted BEHIND the nav — i.e.
+   the one control a keyboard user presses to reach the content hides the
+   content. Measured on the first painted glyph line (not the container box,
+   which is padded on the pages that read fine):
+     Scanner        "Stock Scanner"            line top  24 · nav bottom 65
+     Integrity      "Free · Refreshed daily"   line top  46 · nav bottom 65
+     FII/DII        "Live institutional flows" line top  56 · nav bottom 65
+     Factor Report  "Monthly factor report"    line top  56 · nav bottom 65
+     Directory      "Home"                     line top  22 · nav bottom 65
+     company / dashboard — same landing, no text in the first 65px
+   scroll-margin only shifts where a scroll-into-view STOPS; it cannot move
+   anything or change layout, so the pages that already cleared the nav are
+   untouched (their target simply stops a little higher). 88px = the tallest
+   masthead on the site (the legal pages' two-row nav) + a hair of breathing
+   room, so one value is correct everywhere. In-page section anchors get it too
+   — the legal TOCs clear the nav today only because their headings happen to
+   carry top padding. */
+#main-content,
+[id^="sec-"],
+#financials, #backtest-methodology {
+  scroll-margin-top: 88px;
+}

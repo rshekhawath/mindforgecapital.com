@@ -133,8 +133,34 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .hp-dist{flex:1}
 .hp-dist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .hp-dist-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em}
-.hp-dist-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
+.hp-dist-bar{display:flex;height:26px;border-radius:9px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(15,23,42,.06)}
 .hp-seg{height:100%;transition:width .8s cubic-bezier(.22,1,.36,1);min-width:0}
+/* ── V32.2 — THE DISTRIBUTION BAR NOW READS AS A DISTRIBUTION ────────────────
+   Two things were wrong with a 16px strip of colour, and only one of them was
+   ever examined. The examined one is WIDTH (see the V28.3 note below, which
+   still stands untouched). The unexamined one is HEIGHT: every band measured
+   16px on its short axis at every width in both themes — so even the 264px-wide
+   "Fair" band failed the WCAG 2.5.8 24px floor, on an axis that carries no data
+   at all. Height encodes nothing here; the widths are the reading. Taking the
+   bar to 26px leaves every painted width byte-identical and lifts the four
+   bands that are wide enough (Good / Fair / Weak / Poor, 36–264px) to a real
+   pointer target on a phone. Only the sliver stays under, and that is the data.
+   The extra room also earns its keep: each band now carries its own share, so
+   the bar stops being a colour strip you have to decode against the legend
+   below it. The label is painted only where it FITS — measured with canvas
+   measureText against the band's true width, not by letting it overflow and
+   clip — so a 3px sliver silently has none, and nothing is ever half a glyph.
+   Ink is theme-derived, not fixed: measured against the five live band fills,
+   white scores 4.83–7.68 in light and 1.67–2.77 in dark, while #0c1831 scores
+   6.38–10.57 in dark. One hard-coded colour would have failed AA on all five
+   bands in one of the two themes. */
+.hp-seg{display:grid;place-items:center;overflow:hidden}
+.hp-seg-n{font-size:10.5px;font-weight:800;letter-spacing:.01em;color:#fff;
+  font-variant-numeric:tabular-nums;white-space:nowrap;opacity:0;
+  transition:opacity .35s ease .55s;pointer-events:none}
+.hp-seg.has-n .hp-seg-n{opacity:1}
+html[data-theme="dark"] .hp-seg-n{color:#0c1831}
+@media(prefers-reduced-motion:reduce){.hp-seg-n{transition:none}}
 /* ── V28.3 — the segments are a COARSE filter; the legend is the fine one ─────
    Each band is a real button, and the smallest (18 of 2,053 stocks = 0.9%) paints
    6.3px wide at 1440, 2.7px at 375 — below the WCAG 2.5.8 24px pointer target.
@@ -233,7 +259,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
      small band's share, as V28.3 measured and rejected); the legend chips below
      are the touch route, each a comfortably-sized button carrying that band's
      exact count and share, so give them a generous target height. */
-  .hp-dist-bar{height:16px}
+  .hp-dist-bar{height:24px}   /* V32.2 — see the height note above */
   .hp-leg{padding:8px 10px;margin:0;font-size:12px}
   .hp-legend{gap:8px 10px}
 }
@@ -629,7 +655,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3100">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3110">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1363,8 +1389,8 @@ function renderTable(){
      non-sorting columns showing a pointer cursor. */
   document.getElementById("tableHead").innerHTML=`<tr>${COLUMNS.map(c=>{
     const on=c.key===sortKey, tt=c.title?` title="${scEsc(c.title)}"`:"";
-    if(c.nosort) return `<th class="nosort"${tt}>${c.label}</th>`;
-    return `<th class="${on?"sorted":""}"${tt} role="button" tabindex="0" aria-sort="${on?(sortDir>0?"ascending":"descending"):"none"}" onclick="sortBy('${c.key}')">${c.label} <span class="th-arrow" aria-hidden="true">${on?(sortDir>0?"↑":"↓"):"↕"}</span></th>`;
+    if(c.nosort) return `<th scope="col" class="nosort"${tt}>${c.label}</th>`;
+    return `<th scope="col" class="${on?"sorted":""}"${tt} role="button" tabindex="0" aria-sort="${on?(sortDir>0?"ascending":"descending"):"none"}" onclick="sortBy('${c.key}')">${c.label} <span class="th-arrow" aria-hidden="true">${on?(sortDir>0?"↑":"↓"):"↕"}</span></th>`;
   }).join("")}</tr>`;
   const _ms=document.getElementById("mobSort");
   if(_ms) _ms.innerHTML=`<span class="ms-lbl">Sort</span>`+COLUMNS.filter(c=>!c.nosort).map(c=>`<button type="button" class="ms-chip${c.key===sortKey?" on":""}" aria-pressed="${c.key===sortKey}" onclick="sortBy('${c.key}')">${c.label}${c.key===sortKey?`<i aria-hidden="true">${sortDir>0?"↑":"↓"}</i>`:""}</button>`).join("");
@@ -1574,7 +1600,7 @@ function renderHero(){
     `<button class="hp-seg" type="button" data-band="${i}" data-w="${pct(i)}"`
     +` aria-pressed="${bandFilter===i?"true":"false"}"`
     +` aria-label="${b.lbl}: ${counts[i]} stocks scoring ${b.min}–${b.max}. Filter the list to this band."`
-    +` style="background:${b.c};width:0"></button>`).join("")
+    +` style="background:${b.c};width:0"><span class="hp-seg-n" aria-hidden="true">${pct(i).toFixed(pct(i)<1?1:0)}%</span></button>`).join("")
     +`<span class="hp-tip" id="distTip" aria-hidden="true"></span>`;
   document.getElementById("distLegend").innerHTML=bands.map((b,i)=>
     `<button class="hp-leg" type="button" data-band="${i}" aria-pressed="${bandFilter===i?"true":"false"}"`
@@ -1590,8 +1616,38 @@ function renderHero(){
     `<div class="grade-key-row"><span class="gk-swatch" style="background:${b.c}"></span>`
     +`<strong>${b.min}&ndash;${b.max}</strong> ${b.lbl}</div>`).join("");
   const fillSegs=()=>document.querySelectorAll("#distBar .hp-seg").forEach(el=>el.style.width=el.dataset.w+"%");
+  /* V32.2 — a band shows its share only if the band is wide enough to hold it.
+     Measured with canvas measureText against the width the band WILL have
+     (barWidth x its own %), never against the live box: the segments animate
+     their width over 0.8s, so anything read from layout during that window is
+     a width the bar never actually settles at. Re-run on resize because the
+     bar is fluid and a band that fits at 1440 does not at 360. */
+  const labelSegs=()=>{
+    try{
+      const barEl=document.getElementById("distBar"); if(!barEl)return;
+      const barW=barEl.clientWidth; if(!barW)return;
+      const segs=[...barEl.querySelectorAll(".hp-seg")]; if(!segs.length)return;
+      const probe=segs[0].querySelector(".hp-seg-n"); if(!probe)return;
+      const cs=getComputedStyle(probe);
+      const ctx=document.createElement("canvas").getContext("2d");
+      ctx.font=cs.fontWeight+" "+cs.fontSize+" "+cs.fontFamily;
+      const ls=parseFloat(cs.letterSpacing)||0;
+      segs.forEach(el=>{
+        const n=el.querySelector(".hp-seg-n"); if(!n)return;
+        const txt=n.textContent||"";
+        const need=ctx.measureText(txt).width+ls*txt.length;
+        const have=barW*(parseFloat(el.dataset.w)||0)/100;
+        el.classList.toggle("has-n", have>=need+10);
+      });
+    }catch(e){}
+  };
   requestAnimationFrame(fillSegs);
   setTimeout(fillSegs,140); // frame-starved fallback so the bar always fills
+  labelSegs();
+  if(!window.__mfcSegLblBound){
+    window.__mfcSegLblBound=1;
+    let tId; addEventListener("resize",()=>{clearTimeout(tId);tId=setTimeout(labelSegs,120);});
+  }
   syncBandUI();
   // highlight cards: top Overall, top Quality, top Value
   const top=(key)=>[...ALL].filter(d=>d[key]!=null).sort((a,b)=>b[key]-a[key])[0];

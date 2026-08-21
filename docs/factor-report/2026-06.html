@@ -148,6 +148,35 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-name span{font-size:11.5px;color:var(--text3)}
 .fr-bar-wrap{position:relative;height:26px;background:linear-gradient(90deg,rgba(220,38,38,.05),rgba(37,99,235,.03) 50%,rgba(5,150,105,.05));border-radius:7px;overflow:hidden}
 .fr-bar-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);z-index:1}
+/* ── V32.2 — THE SCOREBOARD NOW SAYS WHAT ITS BARS MEAN ─────────────────────
+   This is a diverging bar chart and it shipped without an axis. `.fr-bar-mid`
+   drew the zero line at 1px of --border2 (rgba(37,99,235,.20)) — the faintest
+   token on the site — and there was no number anywhere saying what the ends of
+   the track are worth, so the reader could see that Value's bar is ~4x Low
+   Volatility's but had no way to read either off the chart; only the figure in
+   the right-hand column carried the value, which makes the bar decoration
+   rather than data. The axis below is DERIVED at runtime from the bars
+   themselves (|value| x 50 / inline width% — the half-track is the largest
+   |return| in the month), never hand-typed, so a new month's publish cannot
+   leave the labels disagreeing with the geometry. The zero line gets enough
+   ink to actually read as an axis. */
+.fr-bar-mid{width:1px;background:var(--fr-zero,rgba(12,24,49,.30))}
+[data-theme="dark"] .fr-bar-mid{--fr-zero:rgba(215,228,255,.34)}
+.fr-axis{display:grid;grid-template-columns:26px 1.15fr 1.5fr 82px;gap:14px;padding:2px 6px 0;margin-top:-2px}
+.fr-axis-track{grid-column:3;position:relative;height:19px}
+.fr-axis-track::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;
+  border-left:1px solid var(--border2);border-right:1px solid var(--border2)}
+.fr-axis-t{position:absolute;top:5px;font-size:10.5px;font-weight:700;color:var(--text3);
+  font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.01em}
+.fr-axis-l{left:0}
+.fr-axis-r{right:0}
+.fr-axis-c{left:50%;transform:translateX(-50%)}
+.fr-axis-c::before{content:'';position:absolute;left:50%;top:-5px;width:1px;height:4px;
+  background:var(--fr-zero,rgba(12,24,49,.30))}
+@media(max-width:640px){
+  .fr-axis{grid-template-columns:minmax(0,1fr);padding:0 8px 0;margin-top:-3px}
+  .fr-axis-track{grid-column:1}
+}
 .fr-bar{position:absolute;top:4px;bottom:4px;border-radius:5px}
 .fr-bar.pos{left:50%;background:linear-gradient(90deg,rgba(5,150,105,.55),var(--green))}
 .fr-bar.neg{right:50%;background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red))}
@@ -345,7 +374,7 @@ var ham=inner.querySelector('.nav-hamburger');
 if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}};
 })();
 </script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3100">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3110">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -406,6 +435,24 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
 }
 .skip-link:focus{ top:0; outline:none; }
 @media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
+</style>
+<style>
+/* ── V32.2 — THE SCOREBOARD PRINTED AS FIVE EMPTY TRACKS ─────────────────────
+   Same seam as the per-stock report, and this page had it worse: the whole
+   chart is CSS background. Under emulated print media .fr-bar-wrap (the
+   red/blue/green diverging track), .fr-bar (the data bar itself) and
+   .fr-bar-mid (the zero line) all reported printColorAdjust "economy", so a
+   printed factor report carried the names and the numbers and five blank
+   rectangles. That also makes the new axis actively misleading — labelling the
+   ends of a track that prints with nothing in it — so the fix ships with it.
+   The two axis ticks are backgrounds too and are included; the leader/laggard
+   row washes and the alpha chips are decoration and are left to print flat. */
+@media print{
+  .fr-bar-wrap, .fr-bar, .fr-bar-mid,
+  .fr-axis-track::before, .fr-axis-c::before{
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -661,6 +708,43 @@ if(window.__mfcThemeBoot)window.__mfcThemeBoot();
         '<span>Leadership spread: <b>'+spread.toFixed(1)+' pts</b> separate <b>'+hi.name+'</b> ('+fmtPct(hi.v)+') from <b>'+lo.name+'</b> ('+fmtPct(lo.v)+') over the trailing year — the gap a single-style bet had to get right.</span>';
       var board=document.querySelector('.fr-board');
       if(board&&board.parentNode)board.parentNode.insertBefore(d,board.nextSibling);
+    }
+
+    /* V32.2 — publish the axis this chart never had. Everything is read back
+       out of the rows that are already on the page: a bar's inline width is a
+       percentage of the WRAPPER and the positive half starts at 50%, so
+       half-track = |value| * 50 / width%. Derived from the widest bar (most
+       significant figures) and cross-checked against every other row; if any
+       row disagrees by more than 2% the board is not the shape this assumes and
+       the axis is simply not drawn. */
+    var scale=[];
+    rows.forEach(function(r){
+      var bar=r.querySelector('.fr-bar'), v=num(r);
+      if(!bar||v==null||!v)return;
+      var m=/width\s*:\s*([0-9.]+)%/.exec(bar.getAttribute('style')||'');
+      if(!m)return;
+      var w=parseFloat(m[1]); if(!isFinite(w)||w<=0)return;
+      scale.push({half:Math.abs(v)*50/w, w:w});
+    });
+    if(scale.length>=2){
+      scale.sort(function(a,b){return b.w-a.w;});
+      var half=scale[0].half;
+      var agree=scale.every(function(s){return Math.abs(s.half-half)/half<0.02;});
+      if(agree&&half>0){
+        var lab=half.toFixed(1)+'%';
+        var ax=document.createElement('div');
+        ax.className='fr-axis';
+        ax.innerHTML='<span></span><span></span>'
+          +'<div class="fr-axis-track" role="img" aria-label="Chart scale: the bars run from '
+          +'minus '+lab+' at the left edge, through zero at the centre line, to plus '+lab
+          +' at the right edge.">'
+          +'<span class="fr-axis-t fr-axis-l" aria-hidden="true">−'+lab+'</span>'
+          +'<span class="fr-axis-t fr-axis-c" aria-hidden="true">0</span>'
+          +'<span class="fr-axis-t fr-axis-r" aria-hidden="true">+'+lab+'</span>'
+          +'</div><span></span>';
+        var b2=document.querySelector('.fr-board');
+        if(b2&&b2.parentNode)b2.parentNode.insertBefore(ax,b2.nextSibling);
+      }
     }
   }catch(e){}
 })();

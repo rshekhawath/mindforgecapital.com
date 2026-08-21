@@ -183,7 +183,7 @@ def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
      and expects exactly one distinct value, so this note deliberately does not
      spell that pattern out — 28 copies of it would be 28 false hits.) -->
 <link rel="stylesheet" href="/assets/mfc-dir.css?v=2920">
-<link rel="stylesheet" href="/assets/mfc-finish.css?v=3100">
+<link rel="stylesheet" href="/assets/mfc-finish.css?v=3110">
 <!-- V29.2: this was the apply-only half of the site's theme script — it READ the
      saved preference but never built the nav toggle, so these 28 pages were the
      only ones on the site with no way to change theme. A visitor who arrived here

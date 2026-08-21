@@ -57,16 +57,51 @@
 </script>
 <meta http-equiv="refresh" content="0; url=/scores/company.html">
 <style>
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  /* V32.2 — the four redirect shims are the only pages on the site that decided
+     their own theme, and all four decided it wrong. Three (scanner.html,
+     scanner/index.html, screener.html) were hard-coded light, so a member in dark
+     mode got a full-white flash on the way to a dark page; the fourth
+     (screener/company.html) was dark-aware but keyed off @media
+     (prefers-color-scheme), which is NOT how this site chooses — the theme is an
+     explicit opt-in stored in localStorage['mfc-theme'] and DEFAULTS TO LIGHT
+     (see the shared bootstrap in index.html). Following the OS instead of the
+     stored choice is wrong in both directions: dark-OS/light-site got a dark
+     flash, light-OS/dark-site got a white one. All four now read the same key the
+     rest of the site reads, before first paint, and style off [data-theme]. */
+  :root{ --sb:#f0f5ff; --sc:#0c1831; --sm:#475569; --sa:#1a50d8; --sr:rgba(37,99,235,.18); --scard:#ffffff; --sbd:rgba(37,99,235,.14); }
+  html[data-theme="dark"]{ --sb:#080d1a; --sc:#e7edfb; --sm:#94a3b8; --sa:#5b8def; --sr:rgba(120,150,255,.22); --scard:#0f1626; --sbd:rgba(120,150,255,.16); color-scheme:dark; }
+  html,body{height:100%;margin:0}
+  body{background:var(--sb);color:var(--sc);
        font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
-       background:#f0f5ff;color:#0c1831;text-align:center;padding:24px}
-  a{color:#1a50d8}
-  @media (prefers-color-scheme: dark){body{background:#080d1a;color:#e7edfb}a{color:#5b8def}}
+       display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+  .box{max-width:420px;padding:30px 26px;border-radius:18px;background:var(--scard);
+       border:0.5px solid var(--sbd);box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 44px -26px rgba(26,80,216,.30)}
+  .spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--sr);
+           border-top-color:var(--sa);margin:0 auto 16px;animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .box p{margin:0;font-size:15px;line-height:1.6;color:var(--sm)}
+  .box b{display:block;margin-bottom:6px;font-size:17px;font-weight:700;color:var(--sc);letter-spacing:-.01em}
+  a.go{display:inline-block;margin-top:14px;padding:9px 16px;border-radius:10px;
+       font-size:14px;font-weight:700;color:#fff;text-decoration:none;
+       background:linear-gradient(135deg,#1a50d8,#0891b2)}
+  a.go:focus-visible{outline:2px solid var(--sa);outline-offset:3px}
+  /* The spinner was the one piece of motion on the site with no reduced-motion
+     guard at all — an infinite rotation on a page you cannot dismiss. */
+  @media (prefers-reduced-motion: reduce){
+    .spinner{animation:none;border-top-color:var(--sa);opacity:.85}
+  }
 </style>
+<script>/* V32.2: same rule as the site-wide bootstrap — explicit opt-in, default light. */
+(function(){try{var t=localStorage.getItem('mfc-theme')==='dark'?'dark':'light';
+document.documentElement.setAttribute('data-theme',t);
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='dark'?'#080d1a':'#1a50d8');}catch(e){}})();</script>
 </head>
 <body>
-  <p>Taking you to the full equity report…<br>
-     <a id="fallback" href="/scores/company.html">Continue to the report →</a></p>
+  <div class="box">
+    <div class="spinner" aria-hidden="true"></div>
+    <p><b>Opening the full equity report…</b>Integrity Score, fundamentals and history for this company.</p>
+    <a class="go" id="fallback" href="/scores/company.html">Continue to the report →</a>
+  </div>
   <script>
     // point the visible fallback at the symbol too, for the no-JS-redirect edge case
     (function () {

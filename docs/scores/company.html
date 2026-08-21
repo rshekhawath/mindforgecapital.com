@@ -529,7 +529,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3100">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3110">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock
@@ -548,6 +548,33 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 }
 .skip-link:focus{ top:0; outline:none; }
 @media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
+</style>
+<style>
+/* ── V32.2 — THIS PAGE PRINTS ITS DATA AS BLANK WHITE TRACKS ─────────────────
+   V31.1 fixed exactly this on /scores/ and V30.1 swept 21 pages for it, but the
+   per-stock report — the single page a member is most likely to save or print,
+   and the template behind 2,126 indexed URLs — has never carried an @media
+   print block at all. Every quantity on it is drawn as a CSS background, and
+   browsers drop backgrounds unless the page declares the colour meaningful
+   (Chrome's "Background graphics" box is off by default). Measured under
+   emulated print media before this block: printColorAdjust reported "economy"
+   on all of .pillar-track/.pillar-fill (the five-lens scorecard), .fb-bar/
+   .fb-fill (~30 factor rows), .rl-bar/.rl-fill/.rl-dot (the radar's only key),
+   .trend-track/.trend-bar, .range-bar/.range-marker and .ring (the headline
+   score arc, a conic-gradient). The scores and labels printed; every bar beside
+   them printed empty. Narrow on purpose, per V31.1: only marks whose COLOUR IS
+   THE DATA. Decorative card tints, chips and tags are deliberately left to
+   print flat. */
+@media print{
+  .ring,
+  .pillar-track, .pillar-fill, .pillar-dot,
+  .fb-bar, .fb-fill,
+  .rl-bar, .rl-fill, .rl-dot,
+  .trend-track, .trend-bar,
+  .range-bar, .range-marker{
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1381,11 +1408,22 @@ function renderScorecard(){
     } else { rk.hidden=true; }
   }
   // pillars
-  setPillar("q",q,document.getElementById("qScore"),document.getElementById("qFill"),document.getElementById("qSub"),D._qn,8,"#047857");
-  setPillar("v",v,document.getElementById("vScore"),document.getElementById("vFill"),document.getElementById("vSub"),D._vn,6,"#1a50d8");
-  setPillar("g",g,document.getElementById("gScore"),document.getElementById("gFill"),document.getElementById("gSub"),D._gn,3,"#b45309");
-  setPillar("m",m,document.getElementById("mScore"),document.getElementById("mFill"),document.getElementById("mSub"),D._mn,3,"#7c3aed");
-  setPillar("e",D._e,document.getElementById("eScore"),document.getElementById("eFill"),document.getElementById("eSub"),D._en,5,"#0e7490");
+  /* V32.2 — ONE list drives both the pillar render and the bar-fill animation.
+     They used to be two hand-written sequences: five setPillar() calls here and
+     four width assignments in the requestAnimationFrame below. When V31.9 added
+     Efficiency as the fifth lens it was added to this list and NOT to that one,
+     so on all 2,126 per-stock pages the Efficiency score printed correctly
+     (59, 67, 60, 76 on RELIANCE / TCS / INFY / HDFCBANK) beside a bar that was
+     never given a width at all — a permanently empty grey track, at every
+     viewport width, in both themes, for eleven months of pages. The bars start
+     at width:0 by design (the site-wide grow-on-reveal idiom), so a missing
+     assignment is not a smaller bar, it is no bar. Keeping the two in one array
+     is the only version of this that cannot drift again. */
+  const PILLARS=[["q",q,8,"#047857"],["v",v,6,"#1a50d8"],["g",g,3,"#b45309"],
+                 ["m",m,3,"#7c3aed"],["e",D._e,5,"#0e7490"]];
+  PILLARS.forEach(([k,val,total,col])=>setPillar(k,val,
+    document.getElementById(k+"Score"),document.getElementById(k+"Fill"),
+    document.getElementById(k+"Sub"),D["_"+k+"n"],total,col));
   document.getElementById("qCardScore").textContent=q==null?"—":q.toFixed(0);
   document.getElementById("vCardScore").textContent=v==null?"—":v.toFixed(0);
   document.getElementById("gCardScore").textContent=g==null?"—":g.toFixed(0);
@@ -1408,10 +1446,10 @@ function renderScorecard(){
     .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
   // animate fills next frame
   requestAnimationFrame(()=>{
-    document.getElementById("qFill").style.width=(q==null?0:q)+"%";
-    document.getElementById("vFill").style.width=(v==null?0:v)+"%";
-    document.getElementById("gFill").style.width=(g==null?0:g)+"%";
-    document.getElementById("mFill").style.width=(m==null?0:m)+"%";
+    PILLARS.forEach(([k,val])=>{
+      const el=document.getElementById(k+"Fill");
+      if(el)el.style.width=(val==null?0:val)+"%";
+    });
     document.querySelectorAll(".fb-fill").forEach(el=>{el.style.width=el.dataset.w+"%";});
   });
 }
