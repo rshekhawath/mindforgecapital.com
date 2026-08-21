@@ -84,9 +84,40 @@ html[data-theme="dark"] .card-icon::after{
 }
 .card h1, .card h2{font-size:26px;color:var(--white);margin-bottom:6px;}
 .card .desc{font-size:15px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
-.step-indicator{display:flex;gap:8px;margin-bottom:32px;}
-.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:background .2s;}
-.step-dot.active{background:var(--accent);}
+/* ── V32.3 — THE SIGN-IN PROGRESS SAID NOTHING TO ANYONE ────────────────────
+   The three-screen OTP flow (Email -> Code -> Dashboard) was tracked by three
+   8px dots: no text, no number, no role, no aria — one of them just happened to
+   be blue. A sighted visitor could not tell what the steps were, how many were
+   left or which one they were on; a screen-reader user got nothing at all,
+   because three empty <div>s expose nothing. This is the same "a scale nobody
+   labelled" seam V32.2 fixed on the two sentiment meters and the factor
+   scoreboard — and the odd one out on this site, because the dashboard's
+   "How to invest in 4 steps" rail and signup's numbered success steps both name
+   theirs. It is now a real <ol> with visible names, a connecting rail that
+   fills as you advance, aria-current="step" on the one you are on, and an
+   sr-only role="status" line ("Step 2 of 3: Code.") so the change is announced
+   rather than merely repainted. Completed steps carry a check, so the row reads
+   as progress rather than as decoration. */
+.step-indicator{display:flex;align-items:flex-start;gap:0;margin:0 0 30px;padding:0;list-style:none;}
+.step-item{position:relative;flex:1 1 0;display:flex;flex-direction:column;align-items:center;
+  gap:7px;min-width:0;font-size:11px;font-weight:700;letter-spacing:.03em;color:var(--text3);
+  text-transform:uppercase;}
+.step-item::before{content:'';position:absolute;top:6px;left:calc(-50% + 7px);right:calc(50% + 7px);
+  height:2px;border-radius:2px;background:var(--border2);}
+.step-item:first-child::before{display:none;}
+.step-item.done::before,.step-item.active::before{background:linear-gradient(90deg,var(--accent),var(--accent3));}
+.step-dot{width:13px;height:13px;border-radius:50%;background:var(--border2);
+  box-shadow:0 0 0 3px transparent;transition:background .25s ease,box-shadow .25s ease,transform .25s ease;}
+.step-item.done .step-dot{background:linear-gradient(135deg,var(--accent),var(--accent3));}
+.step-item.done .step-dot::after{content:'';display:block;width:100%;height:100%;
+  background:no-repeat center/8px 8px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");}
+.step-item.active .step-dot{background:linear-gradient(135deg,var(--accent),var(--accent3));
+  transform:scale(1.15);box-shadow:0 0 0 4px rgba(26,80,216,0.16);}
+.step-item.active{color:var(--white);}
+.step-item.done{color:var(--text2);}
+.step-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+@media (max-width:360px){ .step-item{font-size:10px;letter-spacing:.02em;} }
+@media (prefers-reduced-motion: reduce){ .step-dot{transition:none;} }
 .form-group{margin-bottom:20px;}
 label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;}
 input[type=email],input[type=text]{width:100%;padding:13px 16px;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink3);font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;}
@@ -173,8 +204,8 @@ body::after {
   box-shadow: none;
   transform: none;
 }
-.step-dot.active {
-  box-shadow: 0 0 0 3px rgba(26,80,216,0.18);
+.step-item.active .step-dot {
+  box-shadow: 0 0 0 4px rgba(26,80,216,0.18);
 }
 .sub-row {
   transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
@@ -228,10 +259,6 @@ body::before {
 .btn { letter-spacing: 0.02em; font-feature-settings: 'tnum' 1, 'lnum' 1; }
 .step-dot {
   transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
-}
-.step-dot.active {
-  background: linear-gradient(135deg, var(--accent), var(--accent3));
-  transform: scale(1.4);
 }
 
 /* MF-SCROLL-PROG v3.4 */
@@ -298,7 +325,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3110">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3120">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 </head>
 <body class="mfc-ambient">
@@ -342,11 +369,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2.5"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg></div>
       <h1>Sign In</h1>
       <p class="desc">Enter your subscription email. We'll send you a one-time code to access your dashboard.</p>
-      <div class="step-indicator">
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-      </div>
+      <ol class="step-indicator" aria-label="Sign-in progress">
+        <li class="step-item active" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Email</span></li>
+        <li class="step-item"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Code</span></li>
+        <li class="step-item"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Dashboard</span></li>
+        </ol>
+        <p class="sr-only" role="status">Step 1 of 3: Email.</p>
       <div class="form-group">
         <label for="email-input">Email address</label>
         <input type="email" id="email-input" name="email" placeholder="you@example.com" autocomplete="email" required autofocus>
@@ -363,11 +391,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12a10 10 0 11-5-8.66"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <h2>Check your inbox</h2>
       <p class="desc" id="otp-desc">We've sent a 6-digit code to your email. It expires in 10 minutes.</p>
-      <div class="step-indicator">
-        <div class="step-dot"></div>
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-      </div>
+      <ol class="step-indicator" aria-label="Sign-in progress">
+        <li class="step-item done"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Email</span></li>
+        <li class="step-item active" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Code</span></li>
+        <li class="step-item"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Dashboard</span></li>
+        </ol>
+        <p class="sr-only" role="status">Step 2 of 3: Code.</p>
       <div class="form-group">
         <label for="otp-input">One-time code</label>
         <div class="otp-row">
@@ -384,11 +413,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5" rx="0.6"/><rect x="12" y="9" width="3" height="9" rx="0.6"/><rect x="17" y="5" width="3" height="13" rx="0.6"/></svg></div>
       <h2>Your subscriptions</h2>
       <p class="desc" id="subs-desc">Select a strategy to open your dashboard.</p>
-      <div class="step-indicator">
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot active"></div>
-      </div>
+      <ol class="step-indicator" aria-label="Sign-in progress">
+        <li class="step-item done"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Email</span></li>
+        <li class="step-item done"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Code</span></li>
+        <li class="step-item active" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Dashboard</span></li>
+        </ol>
+        <p class="sr-only" role="status">Step 3 of 3: Dashboard.</p>
       <div class="subs-list" id="subs-list"></div>
       <div class="err-box" id="subs-error"></div>
       <hr class="divider">
@@ -841,7 +871,7 @@ html[data-theme="dark"] .card::after{
   .card::after{ animation:none; }
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=6"></script>
+<script defer src="assets/mfc-chrome.js?v=7"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

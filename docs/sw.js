@@ -399,7 +399,7 @@
 // release is page-local: a pinned header and a scroll-edge cue on the Scanner, a
 // frozen identity pair and the same cue on the Integrity Score, and 24 rewritten
 // weight values on strategies.html. All of those are network-first HTML.
-// V32.1 -> mfc-v62. THIS ONE MUST MOVE. The release adds a print block to the
+// V32.1 -> mfc-v63. THIS ONE MUST MOVE. The release adds a print block to the
 // shared assets/mfc-finish.css — the one that stops nine pages printing their
 // proportion bars as empty grey tracks — so its ?v token steps 3090 -> 3100 on
 // all 50 pages that link it. BOTH precached documents are in that set:
@@ -412,7 +412,7 @@
 // symbol ink on the per-stock not-found panel, filter-select focus parity on
 // the Scanner, slider press feedback on the calculator, and the 404 page's
 // strategy links rebuilt as route cards.
-const CACHE = 'mfc-v62';
+const CACHE = 'mfc-v63';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

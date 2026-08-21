@@ -372,6 +372,7 @@ html[data-theme="dark"]{
 /* chart gridlines + scale labels */
 svg.barchart .grid{stroke:var(--border2);stroke-width:1;stroke-dasharray:2 4}
 svg.barchart .glab{font-size:9px;fill:var(--text3);font-variant-numeric:tabular-nums}
+svg.barchart .glab-zero{font-size:9.5px;font-weight:700;fill:var(--text2)}
 
 /* ── V31.2 — the two inks this chart painted from literals ──────────────────
    A `var()` cannot be used inside an SVG *presentation attribute*, so both of
@@ -384,7 +385,16 @@ svg.barchart .glab{font-size:9px;fill:var(--text3);font-variant-numeric:tabular-
      • the zero line was stroke="#94a3b8" — 2.56:1 on white, under the 3:1
        non-text floor, and it is the reference every bar is read against. */
 svg.barchart .xlab{fill:var(--text3)}
-svg.barchart .zero{stroke:var(--text3);stroke-width:1}
+/* ── V32.3 — THE MOST IMPORTANT LINE ON THIS CHART LOOKED LIKE THE OTHER TWO ─
+   This is a diverging bar chart: every reading is "which side of zero", and the
+   zero line was drawn dashed 3 3 — the same dashed idiom as the two ±extent
+   rules above and below it — and was the only one of the three with no label,
+   while both extents carry theirs (+5,842 / −5,842). So the chart showed three
+   similar dashes and named the two that matter least. Zero is now a solid rule
+   with its own ink and a "0" label in the same .glab style as the extents; the
+   extents keep their dashes. Same correction V32.2 made to the factor
+   scoreboard, on this site's other hand-built chart. */
+svg.barchart .zero{stroke:var(--text2);stroke-width:1.25;opacity:.85}
 
 /* ── V31.2 — the day readout ───────────────────────────────────────────────
    The chart had a native <title> per bar and nothing else: no keyboard route,
@@ -486,7 +496,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3110">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3120">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -1014,7 +1024,8 @@ function drawChart(rows){
     <line class="grid" x1="${padL}" y1="${(H-padB).toFixed(1)}" x2="${W-padR}" y2="${(H-padB).toFixed(1)}"/>
     <text class="glab" x="${padL}" y="${(padT-3).toFixed(1)}">+${grp(maxV)}</text>
     <text class="glab" x="${padL}" y="${(H-padB+11).toFixed(1)}">−${grp(maxV)}</text>
-    <line class="zero" x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke-dasharray="3 3"/>
+    <line class="zero" x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}"/>
+    <text class="glab glab-zero" x="${padL}" y="${(zeroY-3).toFixed(1)}">0</text>
     <g filter="url(#barSh)">${bars}</g>
   </svg>`;
   wireTrendRead(rows);
@@ -1243,7 +1254,7 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
 <script src="../assets/mfc-offer.js?v=3000" defer></script>
-<script defer src="../assets/mfc-chrome.js?v=6"></script>
+<script defer src="../assets/mfc-chrome.js?v=7"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

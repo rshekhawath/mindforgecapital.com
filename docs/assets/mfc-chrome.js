@@ -181,4 +181,111 @@
     if (e.target.closest && e.target.closest('.nav-hamburger')) return; // its own toggle
     mfcCloseNav();
   }, true);
+
+  /* — V32.3: the drawer's OPEN half, for pages that never got one —
+     The comment above says "every page ships its own hamburger IIFE". Twenty-
+     eight of them do not. `/screener/stocks/*.html` are written by
+     screener/export_static.py, and that template emits the button, the
+     `#primary-nav` drawer and the whole `.nav-links.open{display:flex}` rule in
+     mfc-dir.css — but no script binds the click. Measured at 390px: pressing it
+     left aria-expanded at "false" and the drawer at display:none/height 0, while
+     every other page opened a 446–505px drawer. So on the 28 pages that ARE the
+     search-engine landing surface for 2,126 stocks, a phone visitor had no
+     navigation at all beyond the logo.
+     Binding it here rather than adding a 46th copy of the same IIFE also stops
+     the next generated page inheriting the same hole. It cannot double-toggle:
+     the per-page scripts flip `aria-expanded` synchronously inside their own
+     click handler, so by the time this deferred check runs the attribute has
+     already moved and we do nothing. Only a page where NOTHING handled the
+     click falls through to the fallback. */
+  function mfcOpenNav() {
+    var btn = D.querySelector('.nav-hamburger');
+    var links = D.querySelector('.nav-links');
+    if (!btn || !links) return;
+    var open = !links.classList.contains('open');
+    links.classList.toggle('open', open);
+    btn.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    if (!links.__mfcNavLinks) {                 // close on navigation, once
+      links.__mfcNavLinks = 1;
+      Array.prototype.forEach.call(links.querySelectorAll('a'), function (a) {
+        a.addEventListener('click', function () { mfcCloseNav(); });
+      });
+    }
+  }
+  // CAPTURE phase is load-bearing. The per-page IIFEs bind on the BUTTON, so a
+  // bubble-phase listener on document reads `before` AFTER they have already
+  // flipped aria-expanded — the check then compares "true" with "true", decides
+  // nothing handled the click, and toggles the drawer straight back shut. That
+  // is exactly what happened on the first cut: the 28 broken pages started
+  // working and four working pages started closing on open. Capturing on
+  // document runs before any target-phase handler, so `before` is the true pre-click
+  // state on every page.
+  D.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.nav-hamburger');
+    if (!btn) return;
+    var before = btn.getAttribute('aria-expanded');
+    setTimeout(function () {
+      if (btn.getAttribute('aria-expanded') === before) mfcOpenNav();
+    }, 0);
+  }, true);
+
+  /* — V32.3: a region that scrolls must be reachable from the keyboard —
+     WCAG 2.1.1. Two containers on this site scroll horizontally with no
+     focusable descendant at all, so there is no way to reach their hidden
+     columns without a pointer: `.tbl-scroll` on /fii-dii/ (the cash-market and
+     participant tables — 870px of content in a 664px box at 768, 708 in 310 at
+     390) and `.disc-scroll` on /disclosures.html (401 in 290 at 320). The
+     Scanner's own `.tbl-scroll` is exempt and stays untouched, because every row
+     holds a link and Tab already lands inside it.
+     Applied here rather than as a static attribute because a tab stop that
+     leads nowhere is its own defect: the container only becomes focusable while
+     it actually overflows, and loses it again when the viewport is wide enough
+     that it does not. Re-evaluated on resize. */
+  function mfcScrollRegions() {
+    var els = D.querySelectorAll('.tbl-scroll, .disc-scroll, .scn-scroll, [data-scroll-region]');
+    Array.prototype.forEach.call(els, function (el) {
+      var overflows = el.scrollWidth > el.clientWidth + 2 || el.scrollHeight > el.clientHeight + 2;
+      var reachable = el.querySelector('a[href],button,input:not([type=hidden]),select,textarea,summary,[tabindex]:not([tabindex="-1"])');
+      if (overflows && !reachable) {
+        if (el.getAttribute('data-mfc-sr') === '1') return;
+        el.setAttribute('data-mfc-sr', '1');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('role', 'group');
+        if (!el.getAttribute('aria-label')) {
+          var t = el.querySelector('caption');
+          var label = t && t.textContent.trim();
+          if (!label) {                                   // nearest heading above
+            var n = el.previousElementSibling, hops = 0;
+            while (n && hops++ < 6) {
+              if (/^H[1-6]$/.test(n.tagName)) { label = n.textContent.trim(); break; }
+              var h = n.querySelector && n.querySelector('h1,h2,h3,h4');
+              if (h) { label = h.textContent.trim(); break; }
+              n = n.previousElementSibling;
+            }
+          }
+          if (!label) {                                   // else the section it lives in
+            var sec = el.closest('section,.card,.panel,.sec,article');
+            var sh = sec && sec.querySelector('h1,h2,h3,h4');
+            if (sh) label = sh.textContent.trim();
+          }
+          el.setAttribute('aria-label', (label ? label.slice(0, 60) + ' — ' : '') + 'scrollable table');
+        }
+      } else if (el.getAttribute('data-mfc-sr') === '1') {
+        el.removeAttribute('data-mfc-sr');
+        el.removeAttribute('tabindex');
+        el.removeAttribute('role');
+      }
+    });
+  }
+  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', mfcScrollRegions);
+  else mfcScrollRegions();
+  var _srT;
+  addEventListener('resize', function () {
+    clearTimeout(_srT); _srT = setTimeout(mfcScrollRegions, 150);
+  });
+  // the FII/DII and disclosures tables are painted by script after load
+  setTimeout(mfcScrollRegions, 900);
+  setTimeout(mfcScrollRegions, 2600);
 })();
