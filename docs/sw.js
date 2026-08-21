@@ -399,7 +399,20 @@
 // release is page-local: a pinned header and a scroll-edge cue on the Scanner, a
 // frozen identity pair and the same cue on the Integrity Score, and 24 rewritten
 // weight values on strategies.html. All of those are network-first HTML.
-const CACHE = 'mfc-v60';
+// V32.1 -> mfc-v61. THIS ONE MUST MOVE. The release adds a print block to the
+// shared assets/mfc-finish.css — the one that stops nine pages printing their
+// proportion bars as empty grey tracks — so its ?v token steps 3090 -> 3100 on
+// all 50 pages that link it. BOTH precached documents are in that set:
+// index.html is the offline navigation fallback and login.html is the manifest
+// start_url, and neither carries a ?v of its own, so an installed app would
+// keep serving the old bytes (and therefore the old stylesheet URL) until this
+// constant moves. The stylesheet itself needs no help — a new ?v is a new URL
+// and cache-first fetches it — but the DOCUMENTS pointing at it do.
+// Everything else this release is page-local network-first HTML: the dark-mode
+// symbol ink on the per-stock not-found panel, filter-select focus parity on
+// the Scanner, slider press feedback on the calculator, and the 404 page's
+// strategy links rebuilt as route cards.
+const CACHE = 'mfc-v61';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

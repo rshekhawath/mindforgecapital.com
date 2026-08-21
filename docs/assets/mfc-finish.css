@@ -1367,3 +1367,91 @@ html .toast-container{ right: 96px; }
    the property (checked: 8 such links across four pages, all this address).
    ========================================================================== */
 html a[href^="mailto:"] { overflow-wrap: break-word; }
+
+/* ============================================================================
+   V32.1 — NINE PAGES PRINTED THEIR PROPORTION BARS AS EMPTY GREY TRACKS
+   ----------------------------------------------------------------------------
+   V31.1 established that paper drops CSS backgrounds unless a rule says the
+   colour is content, and fixed it on the three surfaces that were audited then:
+   dashboard.html, scores/index.html and screener/index.html. Every OTHER page
+   that draws a proportion as a painted bar was left behind, and re-measuring
+   under `media:"print"` at an 816px page box — the A4/Letter content width at
+   96dpi, which is what print media queries actually resolve against — found
+   them still `print-color-adjust: economy` on nine pages.
+
+   The strongest case is factor-report/. Its scoreboard is five bars growing out
+   of a shared centre line: a positive factor paints green to the RIGHT, a
+   negative one red to the LEFT. Drop the fill and all five become identical
+   empty tracks, so on paper the reader cannot see that the Nifty 50 baseline
+   was the one negative row — on the page whose entire subject is which factors
+   led and which lagged. fii-dii's tug bar is the same shape of loss (rose =
+   FII selling, green = DII buying, and the whole point is which side is
+   longer), and so is the homepage market-pulse bar.
+
+   The list stays narrow on purpose, reusing the criterion dashboard.html's own
+   block set in V31.1: an entry earns its place only if its colour ENCODES
+   something — a proportion, a sign, a group identity. That is why the form
+   fields measured alongside these are absent: `#reg-email`, `#globalSearch`,
+   `#fc-*-num` and friends paint a tinted background that is decoration around
+   text which prints perfectly well on its own, and a printed page of grey-boxed
+   inputs is worse than a clean one. `.mcal-empty` (the calendar's no-data cell
+   tint) is out for the same reason.
+
+   Selectors carry the `html` prefix and `!important` because this file is
+   linked BEFORE each page's own <style>, so an equal-specificity rule here
+   would lose. dashboard.html keeps curating its own block — its one gap,
+   .sub-prog-fill, is fixed there rather than here, so that page's print policy
+   stays readable in one place instead of being split across two files.
+   ========================================================================== */
+@media print {
+  /* factor-report/ — the sign of every factor's excess return */
+  html .fr-bar,
+  /* fii-dii/ — FII vs DII, on the headline tug bar and every daily row */
+  html .tug-fill, html .dfill,
+  /* index.html — market-pulse split, sentiment needle, in/out keys, fee funnel */
+  html .mpf-fill, html .mps-needle, html .k-in, html .k-out,
+  html .fun-in, html .fun-gone,
+  /* strategies.html + the three strategy pages — live vs model, sector and
+     allocation weights, and the head-to-head comparison bars */
+  html .lvm-fill, html .sp-wt-fill, html .cmp-bar,
+  html .mf179-fill, html .mcal-sfill,
+  /* calculator.html — the two fee bars under "drained" vs "paid"; they are
+     <i> elements with ids and no class, so they are addressed via the track */
+  html .fc-feebar i,
+  /* index.html, second pass. These live far enough down the homepage that they
+     only exist after the scroll-reveal has run, so the first enumeration — which
+     scrolled but did not wait long enough for the IO callbacks — simply did not
+     see them. They are the same class of loss as everything above:
+       .to-fill is-fall / is-ret   red drawdown vs green recovery, sign = colour
+       .to-wr-span / .to-wr-pre    solid span against a 26% tint of itself
+       .cagr-cmp-fill is-strat / is-bench   green strategy vs grey benchmark
+       .risk-cmp-fill             the risk half of that same comparison
+       .mm-day (+ is-act / is-sig)  a month map whose three intensities ARE the
+                                    reading; flattened, every day looks the same
+       .k-pre / .k-sol / .k-flat / .k-aum   the key swatches that decode them,
+                                    including the hatched AUM one
+       .fl-fill                    the fee-line fill                            */
+  html .to-fill, html .to-wr-span, html .to-wr-pre,
+  html .cagr-cmp-fill, html .risk-cmp-fill,
+  html .mm-day, html .fl-fill,
+  html .k-pre, html .k-sol, html .k-flat, html .k-aum,
+  /* fii-dii/ — the legend swatches are the ONLY thing telling blue from purple,
+     i.e. FII from DII, on every chart on the page; .lsbar's halves are the same
+     long/short split as .tug-fill above, drawn small per row */
+  html .lg .sw, html .lsbar i,
+  /* the two remaining DECODERS, both found by re-scanning with a longer reveal
+     settle. A legend is the strongest case in this whole block: it is the only
+     thing that says which colour means what, so when it flattens the chart it
+     decodes goes with it.
+       .mcal-swatch (n4..n1, p1..p4) — the eight bands of the monthly calendar
+         legend on the three strategy pages, i.e. the key to .mcal-sfill above
+       .fc-legend .lg — "Mutual fund" (grey) vs "MindForge" (green) on the fee
+         calculator. The chart is a <canvas> and prints fine on its own, which
+         is exactly why a blank legend beside it is worse than useless.
+     Scoped `.fc-legend .lg` rather than bare `.lg`, because on fii-dii/ `.lg` is
+     the legend WRAPPER, not a swatch, and its child .sw is already covered. */
+  html .mcal-swatch, html .fc-legend .lg {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

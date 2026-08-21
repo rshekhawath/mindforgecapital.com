@@ -485,6 +485,17 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .nf-title{font-size:20px;font-weight:800;color:var(--white);margin:0 0 8px;letter-spacing:-.01em}
 .nf-sub{font-size:13.5px;line-height:1.6;color:var(--text2);margin:0 auto 24px;max-width:52ch}
 .nf-sub strong{color:var(--accent);font-weight:700}
+/* V32.1 — the symbol the visitor actually typed was the least readable word on
+   the page. `--accent` (#2f5fe0) does not lighten for the dark theme, so on the
+   #121d33 not-found card it measured 3.07:1 at 13.5px/700 — an AA failure on
+   the ONE token in the sentence "We couldn't find RELIANCE.NS in the latest NSE
+   snapshot", which is the word the reader is scanning to check their own
+   spelling. Same trap V30.0 recorded for the legal-page TOC and V26.7 for the
+   semantic inks: the light palette hardcodes an accent the dark palette never
+   flips. --accent3 is already redefined to #83aaff in dark on this page, so it
+   needs no new token and measures 7.33:1 on the same card. Dark-only, because
+   in light --accent3 is #3b82f6 and would itself fail on the pale card. */
+html[data-theme="dark"] .nf-sub strong{color:var(--accent3)}
 .nf-routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;text-align:left}
 .nf-route{display:block;padding:15px 16px;border-radius:var(--r);background:var(--ink);
   border:0.5px solid var(--border);text-decoration:none;color:inherit;position:relative;overflow:hidden;
@@ -518,7 +529,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3090">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3100">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock

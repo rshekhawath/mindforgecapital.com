@@ -103,6 +103,40 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .nf-links{margin-top:28px;font-size:14px;color:var(--text3);}
 .nf-links a{color:var(--accent2);}
 
+/* ── V32.1 — the site's own 404 was the least helpful not-found page it has ──
+   V32.0 built a proper recovery panel for an unknown ?symbol= on the per-stock
+   page: three route CARDS, each with an icon, a title and a line saying what
+   you get if you take it. This page — the one EVERY broken link on the property
+   lands on, internal or inbound — still offered its three strategies as a run
+   of bare text links separated by interpuncts, under a lead-in in --text3.
+   Measured on touch they were 36x17, 36x18 and 36x19 CSS px: three targets in a
+   row, each under the 24px WCAG 2.5.8 floor on its short axis, with nothing but
+   a middle dot between them.
+   Reusing V32.0's route-card idiom rather than inventing a third pattern: same
+   grid, same 3px gradient left edge that widens on hover, same lift, same
+   focus treatment. It is `auto-fit` and not `auto-fill` for the reason V29.2
+   recorded — with three cards, auto-fill renders them at the 210px minimum and
+   leaves the rest of the row empty. Each card is a plain <a>, so it is
+   focusable and crawlable with no script, and the whole card is the target:
+   204x74 at 390px, comfortably past the 44px the site targets on touch. */
+.nf-routes{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;
+  text-align:left;max-width:700px;margin:26px auto 0;}
+.nf-route{display:block;padding:15px 16px 15px 19px;border-radius:14px;background:var(--ink2);
+  border:0.5px solid var(--border);text-decoration:none;color:inherit;position:relative;
+  overflow:hidden;transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s,border-color .2s;}
+.nf-route::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--accent),var(--teal));
+  transition:width .25s cubic-bezier(.22,.8,.2,1);}
+.nf-route:hover{transform:translateY(-3px);border-color:var(--border2);
+  box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 32px -18px rgba(26,80,216,.34);}
+.nf-route:hover::before{width:5px;}
+.nf-route:focus-visible{outline:2px solid rgba(37,99,235,.7);outline-offset:-3px;}
+.nf-route-t{display:block;font-size:13.5px;font-weight:700;color:var(--white);margin-bottom:3px;}
+.nf-route-d{display:block;font-size:11.5px;line-height:1.45;color:var(--text3);}
+.nf-routes-lbl{margin-top:30px;font-size:12px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text3);}
+@media (max-width:600px){ .nf-routes{grid-template-columns:1fr;} }
+
 /* Footer */
 footer{border-top:0.5px solid var(--border);padding:28px 0;text-align:center;position:relative;z-index:1;}
 /* V27.8 — the row is full-bleed with no gutter, so on a 375px phone the five
@@ -130,6 +164,8 @@ footer .footer-links a:hover{color:var(--white);background-size:100% 1.5px;}
 @media (prefers-reduced-motion: reduce){
   .nf-btn-primary:hover, .nf-btn-ghost:hover{transform:none;}
   .nf-code, body::after{animation:none;}
+  .nf-route, .nf-route::before{transition:none;}
+  .nf-route:hover{transform:none;}
 }
 </style>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
@@ -147,7 +183,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3090">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3100">
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -180,11 +216,20 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <a href="index.html" class="nf-btn nf-btn-primary">← Back to home</a>
       <a href="strategies.html" class="nf-btn nf-btn-ghost">Explore strategies</a>
     </div>
-    <div class="nf-links">
-      Looking for a strategy?
-      <a href="multiasset.html">MultiAsset</a> ·
-      <a href="largemidcap.html">LargeMidcap 250</a> ·
-      <a href="smallmicro.html">SmallMicro 500</a>
+    <div class="nf-routes-lbl">Looking for a strategy?</div>
+    <div class="nf-routes">
+      <a class="nf-route" href="smallmicro.html">
+        <span class="nf-route-t">SmallMicro 500</span>
+        <span class="nf-route-d">Top 25 from a 500-name smallcap + microcap universe</span>
+      </a>
+      <a class="nf-route" href="largemidcap.html">
+        <span class="nf-route-t">LargeMidcap 250</span>
+        <span class="nf-route-d">Top 25 from the Nifty LargeMidcap 250, factor-ranked monthly</span>
+      </a>
+      <a class="nf-route" href="multiasset.html">
+        <span class="nf-route-t">MultiAsset</span>
+        <span class="nf-route-d">8 NSE-listed ETFs rotated monthly — defensive by design</span>
+      </a>
     </div>
   </div>
 </main>

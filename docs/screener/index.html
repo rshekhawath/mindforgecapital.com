@@ -247,9 +247,22 @@ html[data-theme="dark"] .sidebar{background:linear-gradient(180deg,var(--ink2) 0
   background:var(--ink);border:0.5px solid var(--border2);
   border-radius:8px;color:var(--text);
   font-size:13px;padding:7px 10px;width:100%;outline:none;cursor:pointer;
-  transition:border-color .18s;
+  /* V32.1 — was `border-color .18s`, which left the two new properties below to
+     snap while the border eased. .filter-input beside it uses `all .18s`; these
+     are the same three properties named explicitly, matching its duration. */
+  transition:border-color .18s,background .18s,box-shadow .18s;
 }
-.filter-select:focus{border-color:var(--accent3)}
+/* V32.1 — the two controls in this sidebar answered focus differently.
+   .filter-input above lights its border, brightens its ground and draws a 3px
+   brand halo; .filter-select moved a border colour and nothing else. They sit
+   in the same panel, in alternating rows (Sector is a select, the two P/E
+   fields beside it are inputs), so a keyboard user tabbing down the filters
+   watched the focus ring appear and disappear on every other stop and had to
+   re-find where they were. Same three declarations, same duration; the select
+   also gains the hover it never had despite already carrying cursor:pointer,
+   which was the other half of the mismatch. */
+.filter-select:hover{border-color:var(--border2);background:var(--ink2)}
+.filter-select:focus{border-color:var(--accent3);background:var(--ink2);box-shadow:0 0 0 3px rgba(37,99,235,0.07)}
 .filter-select option{background:var(--ink2)}
 
 .btn{
@@ -705,7 +718,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3090">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3100">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}

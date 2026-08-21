@@ -223,6 +223,53 @@ nav {
 .fc-range::-webkit-slider-thumb:hover { transform: scale(1.12); }
 .fc-range::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 2px solid var(--accent2); box-shadow: 0 2px 6px rgba(26,80,216,0.35); cursor: pointer; }
 .fc-range:focus-visible { outline: 2px solid var(--accent3); outline-offset: 4px; }
+
+/* ── V32.1 — the five sliders were the only controls on the site that said
+   nothing back when you actually used them ─────────────────────────────────
+   The thumb had exactly one state change, `:hover { scale(1.12) }`, on the
+   WebKit pseudo-element only. Three consequences, all measured:
+     • On TOUCH there is no hover at all, so on every phone and iPad — where a
+       finger also covers the thumb it is dragging — grabbing a slider produced
+       zero feedback. This is the page's primary interaction and its whole
+       invitation is "move the sliders and watch the gap compound".
+     • Firefox got no transition and no hover, because ::-moz-range-thumb was
+       never given either. The two vendor pseudo-elements cannot be combined in
+       one selector list — a browser drops the WHOLE rule on a selector it does
+       not recognise — which is exactly how the pair drifted apart.
+     • :focus-visible drew a ring around the 248x28 INPUT, so a keyboard user
+       arrowing a value saw a rectangle the width of the track and nothing on
+       the handle that was moving.
+   The press state grows the thumb further than hover and swaps the drop shadow
+   for a brand halo, which is the same "ignite on interaction" idiom the cards
+   and CTAs already use; the focus halo reuses the ring colour the rest of the
+   page focuses with. Reduced motion keeps every state — only the tween goes,
+   so the feedback survives for anyone who has asked the animation not to. */
+.fc-range::-webkit-slider-thumb:active {
+  transform: scale(1.26);
+  box-shadow: 0 2px 8px rgba(26,80,216,.30), 0 0 0 7px rgba(37,99,235,.14);
+}
+.fc-range::-moz-range-thumb {
+  transition: transform .12s, box-shadow .18s ease;
+}
+.fc-range::-moz-range-thumb:hover { transform: scale(1.12); }
+.fc-range::-moz-range-thumb:active {
+  transform: scale(1.26);
+  box-shadow: 0 2px 8px rgba(26,80,216,.30), 0 0 0 7px rgba(37,99,235,.14);
+}
+/* The track keeps its own outline — a range input focuses as ONE widget and
+   removing that ring in favour of a pseudo-element halo would mean any engine
+   that drops the vendor selector below shows no focus at all. The halo is
+   additive: it says which handle the arrow keys are about to move. */
+.fc-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 2px 6px rgba(26,80,216,.35), 0 0 0 4px rgba(37,99,235,.55);
+}
+.fc-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 2px 6px rgba(26,80,216,.35), 0 0 0 4px rgba(37,99,235,.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fc-range::-webkit-slider-thumb { transition: none; }
+  .fc-range::-moz-range-thumb { transition: none; }
+}
 .fc-scale { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text3); margin-top: 7px; letter-spacing: .01em; }
 
 /* results / KPIs */
@@ -425,7 +472,7 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();
 </script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3090">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3100">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->

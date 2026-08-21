@@ -183,7 +183,7 @@ def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
      and expects exactly one distinct value, so this note deliberately does not
      spell that pattern out — 28 copies of it would be 28 false hits.) -->
 <link rel="stylesheet" href="/assets/mfc-dir.css?v=2920">
-<link rel="stylesheet" href="/assets/mfc-finish.css?v=3070">
+<link rel="stylesheet" href="/assets/mfc-finish.css?v=3100">
 <!-- V29.2: this was the apply-only half of the site's theme script — it READ the
      saved preference but never built the nav toggle, so these 28 pages were the
      only ones on the site with no way to change theme. A visitor who arrived here
@@ -240,7 +240,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </div>
 </nav>
 
-<div class="dir-wrap" id="main-content">
+<!-- V32.0: these 28 pages carried a skip link to #main-content and no <main>
+     landmark, so the keyboard bypass worked and the screen-reader one did not.
+     Same id, same position, real landmark. -->
+<main class="dir-wrap" id="main-content">
   <nav class="dir-crumb" aria-label="Breadcrumb">
     <a href="/">Home</a> <span aria-hidden="true">›</span>
     <a href="/screener/">Stock Scanner</a> <span aria-hidden="true">›</span>
@@ -251,7 +254,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <p class="dir-lede">{lede}</p>
   </header>
 {body}
-</div>
+</main>
 
 <footer class="dir-foot">
   Stock data is sourced from public filings for research and education only — <b>not investment advice</b> or a buy/sell recommendation. <b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b><br>
