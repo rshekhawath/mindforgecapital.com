@@ -1169,12 +1169,57 @@ td.row-num{
 .ind-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;
   vertical-align:middle;position:relative;top:-1px;box-shadow:0 0 0 1.5px rgba(255,255,255,.55);}
 .weight-cell{display:flex;align-items:center;gap:10px;min-width:130px;justify-content:flex-end;}
-.weight-bar-wrap{flex:1;max-width:80px;background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:hidden;position:relative;}
+.weight-bar-wrap{flex:1;max-width:80px;background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:visible;position:relative;}
+/* ── V32.7 — THE WEIGHT BAR MEASURES THE GAP, NOT THE LEVEL ─────────────────
+   MEASURED FIRST, then changed. On LargeMidcap the old bar had ONE distinct width
+   across all 25 rows (every model weight is 4.00%, so `w / maxW * 100` was 100
+   every time); on MultiAsset it had eight. Twenty-five identical fills spent 80px
+   of a dense table re-encoding the number printed beside them.
+   The level is already on the row — "4.0%" is right there. What the table could
+   not answer is the question the panel above it raises: whole shares cannot be
+   split, so how close did MY capital land to the model? That gap varies on every
+   row, in both books, and it is what this gauge now shows: a centre line at "on
+   model", a segment growing right when the rounding puts you over and left when it
+   puts you under.
+   SCALED, NOT PROPORTIONAL, and that is the whole trick. The spread is ±8 bps
+   against a 400 bps weight, so a proportional bar moves by a pixel and every row
+   still looks the same — the first cut of this change did exactly that and had to
+   be thrown away. The drift strip 300 lines above hit the identical wall and
+   solved it by scaling to the widest gap in the book with a floor under it; this
+   reuses that idiom exactly, so the two surfaces read as one system rather than as
+   two different pictures of the same number. Exact figures stay on every bar's
+   title and aria-label, derived from the same reading that sizes it.
+   ────────────────────────────────────────────────────────────────────────── */
+/* The centre line is what makes this a GAUGE rather than a bar — without a visible
+   "on model" mark a tick to the left of centre reads as a short bar, not as being
+   under. --border2 at 1px was too faint to do that job (measured: invisible in the
+   render), so it steps up and stands 2px proud of the track top and bottom. */
+.wt-axis{
+  position:absolute; left:50%; top:-3px; bottom:-3px; width:1.5px; margin-left:-0.75px;
+  background:rgba(26,80,216,.72); border-radius:1px; pointer-events:none;
+}
+html[data-theme="dark"] .wt-axis{ background:rgba(157,188,255,.52); }
 .weight-bar{
-  height:100%;border-radius:4px;
-  background:linear-gradient(90deg,var(--accent) 0%,var(--accent3) 100%);
-  width:0;transition:width 1.1s cubic-bezier(.22,1,.36,1);
-  position:relative;
+  position:absolute; top:0; bottom:0; height:auto; border-radius:3px;
+  width:0; transition:width 1.1s cubic-bezier(.22,1,.36,1);
+}
+/* MEASURED, then corrected. The first ramps ran --green → #2dd4bf and --gold →
+   #f59e0b, and both light-mode fills came back UNDER the 3:1 floor WCAG 2.1 SC
+   1.4.11 sets for a non-text graphic: 2.40:1 for the green against its track and
+   2.49:1 for the amber. The far stop of each gradient was the problem — #2dd4bf
+   and #f59e0b are decorative tints, fine as a wash and far too light as the thing
+   the reader is meant to see. Both ramps now END darker than they start, so every
+   point along the fill clears the floor rather than only the left edge of it.
+   Dark mode measured 8.85 and 7.58 already and keeps its own lighter ramps — on a
+   near-black track the same hexes would disappear. */
+.weight-bar.is-over { left:50%;  background:linear-gradient(90deg,#059669 0%,#047454 100%); }
+.weight-bar.is-under{ right:50%; background:linear-gradient(270deg,#b45309 0%,#92400e 100%); }
+.weight-bar.is-exact{ left:50%; background:var(--text3); }
+html[data-theme="dark"] .weight-bar.is-over { background:linear-gradient(90deg,#34d399 0%,#16c78d 100%); }
+html[data-theme="dark"] .weight-bar.is-under{ background:linear-gradient(270deg,#fbbf24 0%,#f59e0b 100%); }
+html[data-theme="dark"] .weight-bar.is-exact{ background:var(--data-na); }
+@media print{
+  .weight-bar, .wt-axis{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
 }
 /* V3.7: gleam sweep over the weight-bar when its row is hovered */
 @keyframes mf-weight-gleam {
@@ -1194,6 +1239,7 @@ tr:hover .weight-bar::after, .stock-card:hover .weight-bar::after {
 @media (prefers-reduced-motion: reduce) {
   .weight-bar::after { display:none; }
 }
+.th-sub{display:block;font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:none;color:var(--text3);margin-top:1px;}
 .weight-val{font-size:12px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums;min-width:42px;text-align:right;}
 
 /* DISCLAIMER */
@@ -1566,6 +1612,11 @@ html[data-theme="dark"] .msort-sel{
 .sc-key{color:var(--text3);}
 .sc-val{color:var(--white);font-weight:600;font-variant-numeric:tabular-nums;}
 .sc-bar-wrap{background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:hidden;margin-top:2px;}
+/* V32.7 — the phone's weight row uses the same gauge as the table, and the
+   gauge is absolutely positioned from the centre line, so its track has to be
+   a containing block. `overflow:hidden` above would also clip the 2px the axis
+   tick stands proud of the track, so the weight row's copy opts out. */
+.sc-row-wt .sc-bar-wrap{position:relative;overflow:visible;}
 /* ── V31.7 — THE PHONE CARD'S WEIGHT METER WAS A FULL-BLEED SLAB FOR 4.0%. ──
    The bar is scaled to the largest weight in the book (`barPct = w / maxW`), so
    in an equal-weight book EVERY holding is the maximum and every bar paints at
@@ -3122,7 +3173,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <th scope="col" class="right sortable" data-sort="price" role="button" tabindex="0" aria-sort="none">Rec. Price</th>
               <th scope="col" class="right sortable" data-sort="alloc" role="button" tabindex="0" aria-sort="none">Allocation</th>
               <th scope="col" class="right sortable" data-sort="shares" role="button" tabindex="0" aria-sort="none">Shares</th>
-              <th scope="col" class="right sortable" data-sort="weight" style="width:170px;" role="button" tabindex="0" aria-sort="none">Weight</th>
+              <th scope="col" class="right sortable" data-sort="weight" style="width:170px;" role="button" tabindex="0" aria-sort="none" title="Model weight, and how far your capital lands from it after whole-share rounding">Weight <span class="th-sub">vs model</span></th>
             </tr>
           </thead>
           <tbody id="stocks-tbody">
@@ -5534,7 +5585,7 @@ function refreshDrift() {
 
     document.getElementById('drift-note').innerHTML = maxAbs > 0
       ? 'Whole shares cannot be split, so every order lands a little above or below '
-        + 'its model weight &mdash; the table’s <b>Weight</b> column is the model’s, not yours. '
+        + 'its model weight &mdash; the table’s <b>Weight</b> percentage is the model’s, not yours, and the gauge beside it is the gap between the two. '
         + 'Widest: <b>' + nm(wide.s) + '</b> at <b>' + wide.actual.toFixed(2) + '%</b> against a '
         + wide.target.toFixed(2) + '% model weight. Average gap across the book: <b>' + avg
         // V28.7: this read "More capital narrows every one of them", which the
@@ -5765,7 +5816,105 @@ function refreshCapitalLadder() {
   } catch (e) { /* sizing card must survive a ladder failure */ }
 }
 
+/* ── V32.7 — THE WEIGHT BAR NOW CARRIES DATA ─────────────────────────────────
+   On an equal-weight book — which LargeMidcap and SmallMicro both are — every
+   model weight is 4.00%, so the column's `w / maxW * 100` was 100 on all 25 rows
+   and it drew twenty-five identical full bars. A bar that is the same on every row
+   is decoration, not data: it spent 80px of a dense table telling the reader
+   nothing the 4.0% beside it had not already said.
+   What DOES vary per row is what the member actually ends up holding. Whole shares
+   cannot be split, so a ₹10,00,000 book lands each pick a little above or below its
+   model weight — the "±44 bps" panel above this table already measures that spread.
+   The bar now shows both: a pale track for the MODEL weight (which is what the
+   number beside it states) and a solid segment for YOUR weight at the capital
+   entered. MultiAsset, whose model weights genuinely differ, keeps the shape it had
+   and gains the overlay on top.
+   ONE IMPLEMENTATION, TWO CALLERS, and that is deliberate. renderTable() draws the
+   rows and updateAllocationCells() patches them in place every time the capital
+   changes — it does NOT re-render — so a bar computed only at render time would
+   have frozen at the first capital and quietly shown the wrong book from the second
+   chip onwards. Both call this.
+   The arithmetic is lifted from the drift strip verbatim (allocBudget → floor →
+   shares × price, normalised over the picks that clear one whole share) so the two
+   surfaces cannot disagree about the same gap. Always measured over the CANONICAL
+   stocksData, never a filtered or sorted view: hiding a row does not change what
+   the member holds. */
+let HELD_MAXBPS = 0;
+function heldWeights(capital) {
+  const list = stocksData || [];
+  let total = 0, modelSum = 0, maxW = 0;
+  list.forEach(s => {
+    const p = Number(s.recommended_price) || 0, m = Number(s.weight_pct) || 0;
+    if (m > maxW) maxW = m;
+    if (!(p > 0) || !(m > 0)) return;
+    const sh = Math.floor(allocBudget(s, list, capital) / p);
+    if (sh < 1) return;
+    total += sh * p; modelSum += m;
+  });
+  const ok = total > 0 && modelSum > 0;
+  /* The gauge scales to the widest gap in the BOOK, so one pick's tick means the
+     same thing on every row. Computed here, where the totals already exist, and
+     parked on a module-level so gaugeBar() can read it without threading it
+     through every call site. */
+  HELD_MAXBPS = 0;
+  if (ok) {
+    list.forEach(s => {
+      const p = Number(s.recommended_price) || 0, m = Number(s.weight_pct) || 0;
+      if (!(p > 0) || !(m > 0)) return;
+      const sh = Math.floor(allocBudget(s, list, capital) / p);
+      if (sh < 1) return;
+      const bps = Math.round((sh * p / total * 100 - m / modelSum * 100) * 100);
+      HELD_MAXBPS = Math.max(HELD_MAXBPS, Math.abs(bps));
+    });
+  }
+  return {
+    maxW: maxW,
+    ok: ok,
+    /* null when the book cannot be sized at all (no capital, or nothing clears a
+       whole share) — the caller then draws no overlay and the pale model track
+       stands alone, exactly as this column looked before. */
+    read: function (s, amt) {
+      const w = Number(s.weight_pct) || 0;
+      if (!ok || !(w > 0)) return null;
+      const actual = amt / total * 100;
+      const target = w / modelSum * 100;
+      return { actual: actual, target: target, bps: Math.round((actual - target) * 100),
+               pct: maxW > 0 ? Math.min(100, actual / maxW * 100) : 0 };
+    }
+  };
+}
+
+/* The chip, and its accessible name, DERIVED from the same reading. Writing the
+   figures out by hand beside a machine-drawn number is the drift trap; the label
+   is built from `hr` or it is not built at all. */
+function heldClass(hr) {
+  return hr.bps > 0 ? 'is-over' : hr.bps < 0 ? 'is-under' : 'is-exact';
+}
+function heldLabel(s, hr, w) {
+  const nm = escapeHtml(s.company_name || s.ticker || '');
+  if (!hr) return nm + ' \u2014 ' + (w ? w.toFixed(2) : '\u2014') + '% model weight';
+  const sgn = (hr.bps > 0 ? '+' : '') + hr.bps;
+  const gap = hr.bps === 0 ? 'exactly on the model weight'
+                           : sgn + ' bps ' + (hr.bps > 0 ? 'over' : 'under') + ' the model';
+  return nm + ' \u2014 you hold ' + hr.actual.toFixed(2) + '% against a ' +
+         hr.target.toFixed(2) + '% model weight (' + gap + ')';
+}
+function gaugeBar(hr) {
+  /* 50, not 100: the segment grows out from the centre line and owns only its own
+     half. The 6% floor is what keeps the twenty-odd near-zero picks visible as
+     ticks rather than as nothing — the same floor, for the same reason, as the
+     drift strip. */
+  if (!hr) return '';
+  const cls = heldClass(hr);
+  const pct = HELD_MAXBPS > 0
+    ? Math.max(6, Math.abs(hr.bps) / HELD_MAXBPS * 50)
+    : (hr.bps === 0 ? 2 : 6);
+  return '<span class="weight-bar ' + cls + '" data-bar="' +
+         (hr.bps === 0 ? 2 : pct).toFixed(1) + '%"></span>';
+}
+
 function updateAllocationCells() {
+  const HW = heldWeights(currentCapital);   // V32.7 — one reading per update
   stocksData.forEach((s, i) => {
     const price = Number(s.recommended_price) || 0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
@@ -5779,6 +5928,27 @@ function updateAllocationCells() {
     const mShares = document.querySelector('.stock-card[data-row="'+i+'"] .sc-shares');
     if (mAlloc) mAlloc.textContent = fmtMoney(amt);
     if (mShares) mShares.textContent = shares;
+    /* V32.7 — the held-weight overlay is a function of the capital, so it has to
+       move with it. This function patches cells in place rather than re-rendering,
+       so without this the bar would freeze at whatever capital first drew it and
+       show the wrong book from the second chip onwards — a stale bar that still
+       looks authoritative. Both the desktop row and the mobile card are updated. */
+    const hr = HW.read(s, amt);
+    const w  = Number(s.weight_pct) || 0;
+    /* V32.7 — the gap is a function of the capital, so the gauge moves with it.
+       This function patches cells in place rather than re-rendering, so without
+       this the bar would freeze at whatever capital first drew it and keep looking
+       authoritative while describing a different book. */
+    document.querySelectorAll('tr[data-row="'+i+'"] .weight-bar-wrap, ' +
+                              '.stock-card[data-row="'+i+'"] .weight-bar-wrap')
+      .forEach(function (wrap) {
+        const lbl = heldLabel(s, hr, w);
+        wrap.setAttribute('title', lbl);
+        wrap.setAttribute('aria-label', lbl);
+        const axis = wrap.querySelector('.wt-axis');
+        wrap.innerHTML = (axis ? '<i class="wt-axis" aria-hidden="true"></i>' : '') + gaugeBar(hr);
+        wrap.querySelectorAll('[data-bar]').forEach(function (b) { b.style.width = b.dataset.bar; });
+      });
   });
 }
 
@@ -5847,6 +6017,8 @@ function renderTable(stocks) {
 
   // V24.5: every book is NSE-listed, so price and allocation are always ₹.
   const fmtAmt = n => '₹' + fmtINR(n);
+  // V32.7 — one reading of held-vs-model for the whole render pass
+  const HW = heldWeights(currentCapital);
 
   // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {
@@ -5861,6 +6033,7 @@ function renderTable(stocks) {
     // filterStocks/applySectorFilter/updateAllocationCells — which look up
     // stocksData[data-row] — stay correct after a column sort reorders the rows.
     const ci = stocksData.indexOf(s);
+    const hr = HW.read(s, amt);
     return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
@@ -5872,7 +6045,7 @@ function renderTable(stocks) {
       <td class="shares right"><span class="qty">${shares}</span></td>
       <td class="right">
         <div class="weight-cell">
-          <div class="weight-bar-wrap"><div class="weight-bar" data-bar="${barPct.toFixed(1)}%"></div></div>
+          <div class="weight-bar-wrap" role="img" title="${heldLabel(s, hr, w)}" aria-label="${heldLabel(s, hr, w)}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(hr)}</div>
           <div class="weight-val">${w ? w.toFixed(1)+'%' : '—'}</div>
         </div>
       </td>
@@ -5880,6 +6053,7 @@ function renderTable(stocks) {
   }).join('');
 
   // Mobile cards
+  const HWM = HW;                     // V32.7 — same reading the desktop rows used
   mobileCards.innerHTML = stocks.map((s,i) => {
     const entry = Number(s.recommended_price) || 0;
     const w = Number(s.weight_pct) || 0;
@@ -5907,7 +6081,7 @@ function renderTable(stocks) {
       <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></div>
       <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(amt)}</span></div>
       <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
-      <div class="sc-row sc-row-wt"><span class="sc-key">Weight</span><div class="sc-wt"><div class="sc-bar-wrap"><div class="sc-bar" data-bar="${barPct.toFixed(1)}%"></div></div><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div></div>
+      <div class="sc-row sc-row-wt"><span class="sc-key">Weight</span><div class="sc-wt"><div class="sc-bar-wrap weight-bar-wrap" role="img" title="${heldLabel(s, HWM.read(s, amt), w)}" aria-label="${heldLabel(s, HWM.read(s, amt), w)}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(HWM.read(s, amt))}</div><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}</span></div></div>
       <div class="sc-bought-row">
         <label><input type="checkbox" class="bought-cb" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>
       </div>

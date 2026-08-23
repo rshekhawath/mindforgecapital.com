@@ -3952,6 +3952,16 @@ html[data-theme="dark"] .ptx-bar{ background:rgba(248,113,113,.22); }
 .ptx-bar-keep{ display:block; width:0; height:100%; border-radius:5px;
   background:linear-gradient(90deg,var(--green),#2dd4bf);
   transition:width .9s cubic-bezier(.22,.8,.2,1); }
+/* V32.7 — the bar's own caption. A green segment against a red track is a picture
+   without a label; these two shares say what the split IS, and they are written by
+   the same function that sizes the bar, from the same two numbers, so they cannot
+   drift from it. Ink matches the segments: --data-strong for what survives,
+   --data-bad for what does not. */
+.ptx-split{ display:flex; justify-content:space-between; gap:10px; margin:-4px 0 0;
+  font-size:10.5px; font-weight:600; letter-spacing:.01em; }
+.ptx-split-keep{ color:var(--data-strong); }
+.ptx-split-tax { color:var(--data-bad); }
+.ptx-split b{ font-weight:800; font-variant-numeric:tabular-nums; }
 .ptx-rows{ display:flex; flex-direction:column; gap:6px; margin:0; }
 .ptx-r{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
 .ptx-r dt{ font-size:11.5px; color:var(--text3); }
@@ -4567,6 +4577,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
           <div class="ptx-bar" role="img">
             <span class="ptx-bar-keep"></span>
           </div>
+          <p class="ptx-split"></p>
           <dl class="ptx-rows">
             <div class="ptx-r is-gross"><dt>Gross backtest</dt>
               <dd><!--MFSTAT:lm:cagr_pretax-->35.6%<!--/MFSTAT--></dd></div>
@@ -4591,6 +4602,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
           <div class="ptx-bar" role="img">
             <span class="ptx-bar-keep"></span>
           </div>
+          <p class="ptx-split"></p>
           <dl class="ptx-rows">
             <div class="ptx-r is-gross"><dt>Gross backtest</dt>
               <dd><!--MFSTAT:sm:cagr_pretax-->46.9%<!--/MFSTAT--></dd></div>
@@ -4615,6 +4627,7 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
           <div class="ptx-bar" role="img">
             <span class="ptx-bar-keep"></span>
           </div>
+          <p class="ptx-split"></p>
           <dl class="ptx-rows">
             <div class="ptx-r is-gross"><dt>Gross backtest</dt>
               <dd><!--MFSTAT:ma:cagr_pretax-->21.7%<!--/MFSTAT--></dd></div>
@@ -9323,7 +9336,20 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
    markers get rewritten every publish and a duplicated attribute does not, so the
    bar would have kept drawing last month's ratio under this month's numbers.
    Reading .ptx-keep and .ptx-r.is-gross means there is only one copy of each
-   number on the page and the bar is derived from it. */
+   number on the page and the bar is derived from it.
+
+   V32.7 — TWO ADDITIONS, both about the bar doing its job rather than existing.
+   (a) IT NOW SAYS WHAT IT IS. A green segment against a red track is a picture
+       without a caption: a reader has to be told that the split IS the tax. The
+       two shares are written under the bar ends, computed from the same ratio that
+       draws it, so the graphic explains itself and no legend is needed.
+   (b) IT GROWS WHEN IT IS SEEN. The bar was painted at load, so on a page where it
+       sits 1,500px down the whole animation had already finished before anyone
+       scrolled to it — motion spent on an empty room. An IntersectionObserver holds
+       it at zero until the card enters the viewport. The unconditional paint stays
+       as the fallback: no IO, reduced motion, or an element that never intersects
+       (print, a hidden tab) all fall through to the same setTimeout that drew it
+       before, because a bar left at zero reads as the number ZERO, not as pending. */
 (function () {
   "use strict";
   function num(el) {
@@ -9331,32 +9357,55 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
     var v = parseFloat((el.textContent || "").replace(/[^0-9.\-]/g, ""));
     return isFinite(v) ? v : NaN;
   }
-  function paint() {
-    document.querySelectorAll(".ptx-card").forEach(function (card) {
-      var fill  = card.querySelector(".ptx-bar-keep");
-      var bar   = card.querySelector(".ptx-bar");
-      if (!fill) return;
-      var keep  = num(card.querySelector(".ptx-keep"));
-      var gross = num(card.querySelector(".ptx-r.is-gross dd"));
-      if (!isFinite(keep) || !isFinite(gross) || gross <= 0) { fill.style.width = "100%"; return; }
-      var pct = Math.max(0, Math.min(100, keep / gross * 100));
-      fill.style.width = pct.toFixed(1) + "%";
-      if (bar) {
-        bar.setAttribute("data-keep-pct", pct.toFixed(1));
-        // the accessible name is DERIVED, never hand-typed: it repeated both
-        // figures in the markup, so a publish that moved the numbers would have
-        // left a screen reader announcing last month's ones.
-        var nm = card.querySelector(".ptx-name");
-        bar.setAttribute("aria-label",
-          (nm ? nm.textContent.trim() + ": " : "") +
-          gross.toFixed(1) + "% gross becomes " + keep.toFixed(1) + "% after tax");
-      }
-    });
+  function ratioOf(card) {
+    var keep  = num(card.querySelector(".ptx-keep"));
+    var gross = num(card.querySelector(".ptx-r.is-gross dd"));
+    if (!isFinite(keep) || !isFinite(gross) || gross <= 0) return null;
+    return { keep: keep, gross: gross, pct: Math.max(0, Math.min(100, keep / gross * 100)) };
   }
+  function label(card, r) {
+    var host = card.querySelector(".ptx-split");
+    if (!host || !r) return;
+    host.innerHTML =
+      '<span class="ptx-split-keep">you keep <b>' + r.pct.toFixed(0) + '%</b></span>' +
+      '<span class="ptx-split-tax">tax takes <b>' + (100 - r.pct).toFixed(0) + '%</b></span>';
+  }
+  function paint(card) {
+    var fill = card.querySelector(".ptx-bar-keep");
+    var bar  = card.querySelector(".ptx-bar");
+    if (!fill) return;
+    var r = ratioOf(card);
+    if (!r) { fill.style.width = "100%"; return; }
+    fill.style.width = r.pct.toFixed(1) + "%";
+    label(card, r);
+    if (bar) {
+      bar.setAttribute("data-keep-pct", r.pct.toFixed(1));
+      /* the accessible name is DERIVED, never hand-typed: it repeated both figures
+         in the markup, so a publish that moved the numbers would have left a screen
+         reader announcing last month's ones. */
+      var nm = card.querySelector(".ptx-name");
+      bar.setAttribute("aria-label",
+        (nm ? nm.textContent.trim() + ": " : "") +
+        r.gross.toFixed(1) + "% gross becomes " + r.keep.toFixed(1) + "% after tax, so tax takes " +
+        (100 - r.pct).toFixed(0) + "% of the gain");
+    }
+  }
+  function all() { document.querySelectorAll(".ptx-card").forEach(paint); }
   function go() {
-    if (typeof requestAnimationFrame === "function") requestAnimationFrame(paint);
-    setTimeout(paint, 180);
-    setTimeout(paint, 1500);      // backstop: an empty bar reads as zero, not as pending
+    // captions first, so the numbers are readable even if no bar ever grows
+    document.querySelectorAll(".ptx-card").forEach(function (c) { label(c, ratioOf(c)); });
+    var reduced = false;
+    try { reduced = window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    if (!reduced && "IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { paint(e.target); io.unobserve(e.target); } });
+      }, { threshold: 0.25, rootMargin: "0px 0px -8% 0px" });
+      document.querySelectorAll(".ptx-card").forEach(function (c) { io.observe(c); });
+    }
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(all);
+    setTimeout(all, 180);
+    setTimeout(all, 1500);      // backstop: an empty bar reads as zero, not as pending
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go);
   else go();

@@ -399,6 +399,13 @@
 // release is page-local: a pinned header and a scroll-edge cue on the Scanner, a
 // frozen identity pair and the same cue on the Integrity Score, and 24 rewritten
 // weight values on strategies.html. All of those are network-first HTML.
+// V32.7 -> mfc-v66. index.html is the offline navigation fallback, carries no ?v
+// of its own, and this release rewrites it again: the after-tax bar gained a
+// caption that names both shares of the split and now grows when the card is seen
+// rather than at load. Online visitors get the new page anyway (HTML is
+// network-first); what goes stale without this constant is the offline shell.
+// No shared asset changed — the caption, the comparison-row emphasis and the
+// dashboard's weight gauge are all page-local — so no ?v token steps.
 // V32.6 -> mfc-v65. index.html is the offline navigation fallback, carries no ?v
 // of its own, and this release rewrites every backtest figure on it: the site now
 // publishes POST-TAX returns, so the homepage's hero card, strategy cards, FAQ and
@@ -430,7 +437,7 @@
 // symbol ink on the per-stock not-found panel, filter-select focus parity on
 // the Scanner, slider press feedback on the calculator, and the 404 page's
 // strategy links rebuilt as route cards.
-const CACHE = 'mfc-v65';
+const CACHE = 'mfc-v66';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
