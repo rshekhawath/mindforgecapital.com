@@ -447,7 +447,16 @@
 // symbol ink on the per-stock not-found panel, filter-select focus parity on
 // the Scanner, slider press feedback on the calculator, and the 404 page's
 // strategy links rebuilt as route cards.
-const CACHE = 'mfc-v67';
+// V32.9 -> mfc-v68. THIS ONE MUST MOVE. index.html is precached as the offline
+// navigation fallback and carries no ?v of its own, and this release rewrites its
+// text: the &nbsp; bindings that stop "after tax", a number and its unit, or a
+// fund name being torn across a line, plus the page-local mf-v329-linebreak style
+// block. An installed app would keep printing the old breaks until this constant
+// moves. login.html is untouched this release but rides the same bump — the
+// precache is written whole, not per-file. Everything else changed here is
+// network-first HTML (strategies, the three strategy pages, Scanner, Integrity
+// Score, FII/DII, factor report, calculator, recover, dashboard) and needs no bump.
+const CACHE = 'mfc-v68';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

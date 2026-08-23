@@ -690,7 +690,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <div class="panel" style="margin-top:18px">
       <div class="panel-h">
         <h3>Participant-wise open interest</h3>
-        <span class="hint">Net = long − short · contracts</span>
+        <span class="hint">Net = long − short&nbsp;· contracts</span>
       </div>
       <div class="tbl-scroll">
         <table class="data" id="partTbl">
@@ -801,7 +801,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     index levels are from public market data. This is a <b>research dashboard, not investment advice</b> or a buy/sell
     recommendation. Provisional cash numbers can be revised by the exchange. Refreshed every market day.
     <br><b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b>
-    SEBI-Registered Research Analyst · Sagar Shekhawath · INH-XXXXXXXXXXX · <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
+    SEBI-Registered Research Analyst&nbsp;· Sagar Shekhawath&nbsp;· INH-XXXXXXXXXXX&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
   </p>
   </footer>
 
@@ -1046,7 +1046,7 @@ function wireTrendRead(rows){
     read.innerHTML=`<span class="tr-date">${escapeHtml(r.date||"—")}</span>`
       +`<span class="tr-sep"></span>FII ${num(r.fii_net||0)} cr`
       +`<span class="tr-sep"></span>DII ${num(r.dii_net||0)} cr`
-      +`<span class="tr-hint">${pinned?"Latest session · hover or tab any bar":`Session ${i+1} of ${rows.length}`}</span>`;
+      +`<span class="tr-hint">${pinned?"Latest session\u00A0· hover or tab any bar":`Session ${i+1} of ${rows.length}`}</span>`;
   };
   paint(last,true);
   const host=document.getElementById("chart");
@@ -1316,5 +1316,35 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 }
 </style>
 
+<!-- =========================================================================
+     V32.9 · WHERE A LINE IS ALLOWED TO BREAK
+     V32.6 appended ", after tax" to labels that were already at their width
+     limit, and the breaks landed in the wrong places: "· after tax" opening a
+     line, the word "tax" alone on a third, "+5.1" parted from "pts". Nothing
+     overflowed and nothing was clipped, so every structural probe read these
+     pages as clean — it is a defect only the eye catches.
+     The markup half of the fix binds the atoms with &nbsp; (the "·" separator,
+     "after tax", a number and its unit, a fund name). This is the other half,
+     for the case CSS *can* express: a paragraph that leaves one word alone on
+     the last line, or a short label that runs line one full and orphans the
+     remainder. Both properties are progressive — an engine that does not know
+     them ignores the declaration and renders exactly as it does today, so there
+     is no fallback to write and nothing to feature-detect.
+       pretty  … avoids the short last line. Meant for running prose.
+       balance … evens the lines instead. Chrome caps it at a few lines, which
+                 is precisely the label case and never the paragraph case.
+     ========================================================================= -->
+<style id="mf-v329-linebreak">
+p, li, dd, figcaption, blockquote,
+.bf-desc, .flow-sub, .fc-disclaimer, .ps-cta-side, .strat-desc, .fr-note,
+#cvg-note, #howto-broker-text, #weightCap, #dash-subtitle, #stat-stocks-sub{
+  text-wrap: pretty;
+}
+h1, h2, h3, h4, th,
+.lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel, .grad,
+.hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
+  text-wrap: balance;
+}
+</style>
 </body>
 </html>

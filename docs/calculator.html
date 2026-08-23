@@ -386,6 +386,13 @@ html[data-theme="dark"] .fc-feebar { background: rgba(120,150,255,0.14); }
 .fc-cta { margin-top: 22px; text-align: center; }
 .btn-primary { display: inline-block; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; padding: 14px 30px; border-radius: 12px; transition: all .2s; box-shadow: 0 12px 26px -12px rgba(26,80,216,0.5); }
 .btn-primary:hover { background: #2a5ef5; transform: translateY(-1px); }
+/* V32.9 — every other surface on the site states its basis in the label beside
+   the figure; this panel stated its own only in the 11px disclaimer below the
+   fold of the card. The three KPIs are a FEE comparison — same gross return on
+   both sides, no tax modelled — so the basis is named here, once, where it
+   governs all three. */
+.fc-basis { display:block; margin-top:5px; font-size:12px; font-weight:500;
+            color:var(--text3); letter-spacing:0; text-transform:none; }
 .fc-disclaimer { font-size: 11px; color: var(--text3); line-height: 1.55; max-width: 640px; margin: 14px auto 0; text-align: center; }
 
 /* methodology */
@@ -572,8 +579,8 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <section class="calc-hero">
   <div class="calc-hero-bg"></div>
   <div class="container">
-    <span class="eyebrow fade-up"><span class="dot"></span>Interactive · your numbers</span>
-    <h1 class="fade-up">A 2% fee doesn't sound like much.<br>Over 10 years, it quietly costs you <span class="hl">lakhs</span>.</h1>
+    <span class="eyebrow fade-up"><span class="dot"></span>Interactive&nbsp;· your numbers</span>
+    <h1 class="fade-up">A 2% fee doesn't sound like much.<br>Over 10&nbsp;years, it quietly costs you <span class="hl">lakhs</span>.</h1>
     <p class="lede fade-up">Percentage-based AUM fees scale with your corpus — the bigger you grow, the more they take. A flat monthly subscription doesn't. Move the sliders and watch the gap compound in real time.</p>
   </div>
 </section>
@@ -617,14 +624,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <div class="fc-field">
             <div class="fc-field-head">
               <label for="fc-years-num">Investment horizon</label>
-              <span class="fc-valpill" id="fc-years-pill">10 yrs</span>
+              <span class="fc-valpill" id="fc-years-pill">10&nbsp;yrs</span>
             </div>
             <div class="fc-inputwrap has-suf">
               <input type="number" id="fc-years-num" min="1" max="40" step="1" value="10" aria-label="Investment horizon in years">
               <span class="fc-suf">yr</span>
             </div>
             <input type="range" class="fc-range" id="fc-years-rng" min="1" max="40" step="1" value="10" aria-label="Investment horizon">
-            <div class="fc-scale"><span>1 yr</span><span>20 yrs</span><span>40 yrs</span></div>
+            <div class="fc-scale"><span>1&nbsp;yr</span><span>20&nbsp;yrs</span><span>40&nbsp;yrs</span></div>
           </div>
 
           <div class="fc-field">
@@ -658,7 +665,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <!-- RESULTS + CHART -->
       <div class="fc-right">
         <div class="card card-pad fade-up fc-res-card">
-          <div class="card-title" style="margin-bottom:16px;">After <span id="fc-yrs-echo">10</span> years, on ₹<span id="fc-cap-echo">10,00,000</span></div>
+          <div class="card-title" style="margin-bottom:16px;">After <span id="fc-yrs-echo">10</span> years, on ₹<span id="fc-cap-echo">10,00,000</span><span class="fc-basis">fees are the only difference modelled&nbsp;· before&nbsp;tax</span></div>
           <div class="fc-kpis" aria-live="polite">
             <div class="fc-kpi hero" id="fc-saved-kpi">
               <div class="k-lbl" id="fc-saved-lbl">Wealth saved by switching</div>
@@ -760,7 +767,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
     </div>
     <div class="footer-bottom">
-      <p><span class="sebi-line">SEBI-Registered Research Analyst · INH-XXXXXXXXXXX · Sagar Shekhawath · <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;">Investments in the securities market are subject to market risks. Read all the related documents carefully before investing.</span><br>© 2026 MindForge Capital. All rights reserved.</p>
+      <p><span class="sebi-line">SEBI-Registered Research Analyst&nbsp;· INH-XXXXXXXXXXX&nbsp;· Sagar Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;">Investments in the securities market are subject to market risks. Read all the related documents carefully before investing.</span><br>© 2026 MindForge Capital. All rights reserved.</p>
     </div>
   </div>
 </footer>
@@ -1450,6 +1457,36 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <style id="mfc-v295-touch">
 @media (hover: none) and (pointer: coarse) {
   .fc-inputwrap input{font-size:16px;}
+}
+</style>
+<!-- =========================================================================
+     V32.9 · WHERE A LINE IS ALLOWED TO BREAK
+     V32.6 appended ", after tax" to labels that were already at their width
+     limit, and the breaks landed in the wrong places: "· after tax" opening a
+     line, the word "tax" alone on a third, "+5.1" parted from "pts". Nothing
+     overflowed and nothing was clipped, so every structural probe read these
+     pages as clean — it is a defect only the eye catches.
+     The markup half of the fix binds the atoms with &nbsp; (the "·" separator,
+     "after tax", a number and its unit, a fund name). This is the other half,
+     for the case CSS *can* express: a paragraph that leaves one word alone on
+     the last line, or a short label that runs line one full and orphans the
+     remainder. Both properties are progressive — an engine that does not know
+     them ignores the declaration and renders exactly as it does today, so there
+     is no fallback to write and nothing to feature-detect.
+       pretty  … avoids the short last line. Meant for running prose.
+       balance … evens the lines instead. Chrome caps it at a few lines, which
+                 is precisely the label case and never the paragraph case.
+     ========================================================================= -->
+<style id="mf-v329-linebreak">
+p, li, dd, figcaption, blockquote,
+.bf-desc, .flow-sub, .fc-disclaimer, .ps-cta-side, .strat-desc, .fr-note,
+#cvg-note, #howto-broker-text, #weightCap, #dash-subtitle, #stat-stocks-sub{
+  text-wrap: pretty;
+}
+h1, h2, h3, h4, th,
+.lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel, .grad,
+.hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
+  text-wrap: balance;
 }
 </style>
 </body>

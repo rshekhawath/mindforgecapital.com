@@ -899,7 +899,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
 
   <!-- HERO -->
   <section class="hero">
-    <span class="hero-badge"><span class="dot"></span>Free · Refreshed daily</span>
+    <span class="hero-badge"><span class="dot"></span>Free&nbsp;· Refreshed daily</span>
     <h1>Integrity <span class="grad">Score</span></h1>
     <p class="hero-sub">
       Every NSE company graded <b>0–100</b> on five factor lenses — <span class="q">Quality</span>,
@@ -1080,7 +1080,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     fundamentals. It is a <b>research starting point, not investment advice</b> or a buy/sell recommendation.
     Ratios for banks &amp; financials can read unusually. Data refreshed daily from public filings.
     <br><b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b>
-    SEBI-Registered Research Analyst · Sagar Shekhawath · INH-XXXXXXXXXXX · <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
+    SEBI-Registered Research Analyst&nbsp;· Sagar Shekhawath&nbsp;· INH-XXXXXXXXXXX&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
   </p>
 
   <!-- V25.7: a real, crawlable entry point to the A–Z directory. The scorecard
@@ -2271,6 +2271,36 @@ html[data-theme="dark"] .table-card{
 /* same reason the dashboard's print block carries this line: on paper the page
    cannot be scrolled, so the two edge washes would print as grey bands. */
 @media print{ .table-card{ background-image:none !important; background-color:#fff !important; } }
+</style>
+<!-- =========================================================================
+     V32.9 · WHERE A LINE IS ALLOWED TO BREAK
+     V32.6 appended ", after tax" to labels that were already at their width
+     limit, and the breaks landed in the wrong places: "· after tax" opening a
+     line, the word "tax" alone on a third, "+5.1" parted from "pts". Nothing
+     overflowed and nothing was clipped, so every structural probe read these
+     pages as clean — it is a defect only the eye catches.
+     The markup half of the fix binds the atoms with &nbsp; (the "·" separator,
+     "after tax", a number and its unit, a fund name). This is the other half,
+     for the case CSS *can* express: a paragraph that leaves one word alone on
+     the last line, or a short label that runs line one full and orphans the
+     remainder. Both properties are progressive — an engine that does not know
+     them ignores the declaration and renders exactly as it does today, so there
+     is no fallback to write and nothing to feature-detect.
+       pretty  … avoids the short last line. Meant for running prose.
+       balance … evens the lines instead. Chrome caps it at a few lines, which
+                 is precisely the label case and never the paragraph case.
+     ========================================================================= -->
+<style id="mf-v329-linebreak">
+p, li, dd, figcaption, blockquote,
+.bf-desc, .flow-sub, .fc-disclaimer, .ps-cta-side, .strat-desc, .fr-note,
+#cvg-note, #howto-broker-text, #weightCap, #dash-subtitle, #stat-stocks-sub{
+  text-wrap: pretty;
+}
+h1, h2, h3, h4, th,
+.lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel, .grad,
+.hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
+  text-wrap: balance;
+}
 </style>
 </body>
 </html>

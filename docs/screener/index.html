@@ -936,7 +936,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
         <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('lowdebt')">Low Debt</button>
         <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('fcf')">High FCF Yield</button>
         <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('highroe')">High ROE</button>
-        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('smallcap')">Small Cap</button>
+        <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('smallcap')">Small&nbsp;Cap</button>
         <button type="button" class="preset-tag" aria-pressed="false" onclick="loadPreset('momentum')">Uptrend</button>
       </div>
     </div>
@@ -1293,7 +1293,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 
 <footer class="scan-legal" style="max-width:1180px;margin:20px auto 0;padding:18px 20px 8px;border-top:0.5px solid var(--border2,rgba(37,99,235,0.2));font-size:12px;line-height:1.65;color:var(--text3,#475569);text-align:center;">
   Stock data is sourced from public filings for research and education only — <b>not investment advice</b> or a buy/sell recommendation. <b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b><br>
-  SEBI-Registered Research Analyst · Sagar Shekhawath · INH-XXXXXXXXXXX · <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a>
+  SEBI-Registered Research Analyst&nbsp;· Sagar Shekhawath&nbsp;· INH-XXXXXXXXXXX&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a>
   <!-- V25.7: a real, crawlable entry point to the A–Z directory. The company
        links on this page are built inside a JS template literal in a paginated
        table, so before this line nothing in the served HTML pointed a crawler at
@@ -1396,7 +1396,7 @@ const COL_TIPS={
   earnings_q_growth:"Latest-quarter year-on-year earnings growth.",
   promoter_holding:"% of the company held by promoters.",
   institutional_holding:"% held by institutional investors.",
-  eps:"Earnings per share (trailing 12 months).",
+  eps:"Earnings per share (trailing 12\u00A0months).",
   book_value:"Net assets per share.",
   beta:"Volatility vs the market (1 = moves with the index).",
   price_to_fcf:"Price ÷ free cash flow per share."
@@ -1531,7 +1531,7 @@ function priceCell(d){
   const pct=Math.max(0,Math.min(100,(px-lo)/(hi-lo)*100));
   const f=v=>Number(v).toLocaleString("en-IN",{maximumFractionDigits:0});
   return `<span class="px-wrap">${val}`
-    + `<span class="px52" title="52-week ₹${f(lo)} – ₹${f(hi)} · price at ${pct.toFixed(0)}% of range">`
+    + `<span class="px52" title="52-week ₹${f(lo)} – ₹${f(hi)}\u00A0· price at ${pct.toFixed(0)}% of range">`
     + `<span class="px52-mark" style="left:${pct.toFixed(1)}%"></span></span></span>`;
 }
 
@@ -2592,6 +2592,36 @@ html[data-theme="dark"] .tbl-scroll{
 /* same reason the dashboard's print block carries this line: on paper the page
    cannot be scrolled, so the two edge washes would print as grey bands. */
 @media print{ .tbl-scroll{ background-image:none !important; background-color:#fff !important; } }
+</style>
+<!-- =========================================================================
+     V32.9 · WHERE A LINE IS ALLOWED TO BREAK
+     V32.6 appended ", after tax" to labels that were already at their width
+     limit, and the breaks landed in the wrong places: "· after tax" opening a
+     line, the word "tax" alone on a third, "+5.1" parted from "pts". Nothing
+     overflowed and nothing was clipped, so every structural probe read these
+     pages as clean — it is a defect only the eye catches.
+     The markup half of the fix binds the atoms with &nbsp; (the "·" separator,
+     "after tax", a number and its unit, a fund name). This is the other half,
+     for the case CSS *can* express: a paragraph that leaves one word alone on
+     the last line, or a short label that runs line one full and orphans the
+     remainder. Both properties are progressive — an engine that does not know
+     them ignores the declaration and renders exactly as it does today, so there
+     is no fallback to write and nothing to feature-detect.
+       pretty  … avoids the short last line. Meant for running prose.
+       balance … evens the lines instead. Chrome caps it at a few lines, which
+                 is precisely the label case and never the paragraph case.
+     ========================================================================= -->
+<style id="mf-v329-linebreak">
+p, li, dd, figcaption, blockquote,
+.bf-desc, .flow-sub, .fc-disclaimer, .ps-cta-side, .strat-desc, .fr-note,
+#cvg-note, #howto-broker-text, #weightCap, #dash-subtitle, #stat-stocks-sub{
+  text-wrap: pretty;
+}
+h1, h2, h3, h4, th,
+.lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel, .grad,
+.hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
+  text-wrap: balance;
+}
 </style>
 </body>
 </html>
