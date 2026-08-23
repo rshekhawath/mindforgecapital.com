@@ -1176,7 +1176,6 @@ footer {
    contrast-measured (V30.0) and prints as a solid block (V30.1). The chips
    deliberately do not carry `.proof-num` for the same reason — that class is on
    both of those lists and is re-sized at every breakpoint for a 22px numeral. */
-.proof-pnl-pair { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; }
 .pnl-chip {
   display:inline-flex; align-items:center; gap:5px;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
@@ -1206,7 +1205,6 @@ html[data-theme="dark"] .pnl-chip:hover { background:rgba(52,211,153,0.18); bord
    every narrower width — a rule that wins the wrong cascade is the V27.1 seam. */
 @media (min-width: 1181px) {
   .proof-bar .proof-item { padding-left:20px; padding-right:20px; }
-  .proof-bar .proof-item-pnl { padding-left:12px; padding-right:12px; }
 }
 /* PHONE COMPACTION. The pair must stay a pair at every width — two chips stacked
    is just two links, and the whole point is that the two books are shown together.
@@ -1215,7 +1213,6 @@ html[data-theme="dark"] .pnl-chip:hover { background:rgba(52,211,153,0.18); bord
    Zerodha), take 11.5px copy and tighter gutters, which measures ~268px. The ✓
    stays: it is the verification mark, and it is the last thing to go. */
 @media (max-width: 430px) {
-  .proof-pnl-pair { gap:6px; }
   .pnl-chip { font-size:11.5px; padding:6px 9px; gap:4px; }
   .pnl-chip svg { width:12px; height:12px; }
   .pnl-chip .proof-arr { display:none; }
@@ -1237,12 +1234,9 @@ html[data-theme="dark"] .pnl-chip:hover { background:rgba(52,211,153,0.18); bord
 @media (max-width: 1180px) {
   .proof-bar { flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 0; }
   .proof-item { padding: 14px 10px; width: 33.333%; }
-  /* MEASURED: the chip pair is ~333px wide and a QUARTER of this container is
-     ~230px, so a 4-up row silently broke the pair in two — the one thing this
-     item exists to avoid. The three text items take the row (a third is ~306px,
-     ample for "SEBI Registered" at 19px) and the pair gets its own full width,
-     which is the same shape the ≤900 card grid uses. */
-  .proof-item-pnl { width: 100%; padding-top: 4px; }
+  /* V32.8: three items now, so a third of this container (~306px) holds each of
+     them and the row needs no special case. The rule that gave the P&L pair its
+     own full-width row went with the item. */
   /* keep the wide "SEBI Registered" item inside a third at tablet widths so all
      three columns stay even (it doesn't shrink, so a 22px numeral would force 2-up) */
   .proof-num { font-size: 19px; }
@@ -3891,100 +3885,6 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
 <link rel="stylesheet" href="assets/mfc-finish.css?v=3120">
-<style id="mf-v326-ptx">
-/* ══════════════════════════════════════════════════════════════════════════
-   V32.6 — AFTER-TAX BAND
-   --------------------------------------------------------------------------
-   Ink: the KEPT figure takes --data-strong (AA-safe green, measured); the tax
-   line takes --data-bad; everything structural is brand. No gradient text
-   anywhere — gradient ink cannot be contrast-measured (V30.0) and prints as a
-   solid block with the glyphs gone (V30.1).
-   The bar is one track: the green segment is the share of the gross figure that
-   survives tax, the remainder is the tax. Width is set by JS from the two
-   numbers in the card's own data attributes, never hand-tuned, so it cannot
-   contradict them. It starts at 0 and grows — the site-wide idiom — with a
-   timeout backstop, because an empty bar reads as ZERO rather than as
-   "not animated yet" (V23.5 / V23.7).
-   ══════════════════════════════════════════════════════════════════════════ */
-.ptx-section{ padding:8px 0 34px; position:relative; z-index:1; }
-.ptx{ padding:30px 32px; border-radius:var(--r);
-  background:rgba(255,255,255,.72);
-  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-  border:0.5px solid rgba(37,99,235,.18);
-  box-shadow:0 1px 2px rgba(15,23,42,.04),0 22px 48px -32px rgba(26,80,216,.28); }
-html[data-theme="dark"] .ptx{ background:rgba(18,29,51,.72); border-color:rgba(120,160,240,.20); }
-.ptx-head{ max-width:74ch; margin:0 0 22px; }
-.ptx-eyebrow{ display:inline-flex; align-items:center; gap:6px; margin-bottom:10px;
-  font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
-  color:var(--data-strong); background:rgba(5,150,105,.09);
-  border:0.5px solid rgba(5,150,105,.26); border-radius:999px; padding:4px 10px; }
-html[data-theme="dark"] .ptx-eyebrow{ background:rgba(52,211,153,.12); border-color:rgba(52,211,153,.28); }
-.ptx-title{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
-  font-size:clamp(20px,2.4vw,25px); font-weight:800; letter-spacing:-.02em; line-height:1.25;
-  color:var(--white); margin:0 0 9px; }
-.ptx-sub{ font-size:14px; line-height:1.65; color:var(--text2); margin:0; }
-.ptx-sub b{ color:var(--white); font-weight:700; }
-.ptx-foot{ font-size:11.5px; line-height:1.6; color:var(--text3); margin:18px 0 0; }
-
-.ptx-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
-.ptx-card{ display:flex; flex-direction:column; gap:12px; min-width:0;
-  padding:20px 22px; border-radius:14px; background:var(--ink2);
-  border:1px solid rgba(37,99,235,.20); box-shadow:0 1px 2px rgba(15,23,42,.035);
-  position:relative; overflow:hidden; }
-html[data-theme="dark"] .ptx-card{ border-color:rgba(120,160,240,.22); }
-.ptx-card::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  pointer-events:none; opacity:.85;
-  background:linear-gradient(90deg,transparent,rgba(5,150,105,.55) 45%,rgba(45,212,191,.55) 55%,transparent); }
-.ptx-card-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-.ptx-name{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
-  font-size:15px; font-weight:800; letter-spacing:-.01em; color:var(--white); }
-.ptx-cap{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
-  color:var(--text3); background:rgba(37,99,235,.07); border:0.5px solid var(--border);
-  border-radius:999px; padding:3px 9px; white-space:nowrap; }
-html[data-theme="dark"] .ptx-cap{ background:rgba(120,160,240,.10); }
-.ptx-fig{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-.ptx-keep{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
-  font-size:33px; font-weight:800; letter-spacing:-.025em; line-height:1;
-  font-variant-numeric:tabular-nums; color:var(--data-strong); }
-.ptx-keep-lbl{ font-size:11.5px; color:var(--text3); }
-.ptx-bar{ height:9px; border-radius:5px; background:rgba(201,32,32,.16); overflow:hidden; }
-html[data-theme="dark"] .ptx-bar{ background:rgba(248,113,113,.22); }
-.ptx-bar-keep{ display:block; width:0; height:100%; border-radius:5px;
-  background:linear-gradient(90deg,var(--green),#2dd4bf);
-  transition:width .9s cubic-bezier(.22,.8,.2,1); }
-/* V32.7 — the bar's own caption. A green segment against a red track is a picture
-   without a label; these two shares say what the split IS, and they are written by
-   the same function that sizes the bar, from the same two numbers, so they cannot
-   drift from it. Ink matches the segments: --data-strong for what survives,
-   --data-bad for what does not. */
-.ptx-split{ display:flex; justify-content:space-between; gap:10px; margin:-4px 0 0;
-  font-size:10.5px; font-weight:600; letter-spacing:.01em; }
-.ptx-split-keep{ color:var(--data-strong); }
-.ptx-split-tax { color:var(--data-bad); }
-.ptx-split b{ font-weight:800; font-variant-numeric:tabular-nums; }
-.ptx-rows{ display:flex; flex-direction:column; gap:6px; margin:0; }
-.ptx-r{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-.ptx-r dt{ font-size:11.5px; color:var(--text3); }
-.ptx-r dd{ margin:0; font-size:12.5px; font-weight:700; color:var(--text2);
-  font-variant-numeric:tabular-nums; }
-.ptx-r.is-tax dd{ color:var(--data-bad); }
-.ptx-r.is-keep dd{ color:var(--data-strong); }
-.ptx-vs{ margin:2px 0 0; padding-top:11px; border-top:1px dashed var(--border2);
-  font-size:11.5px; line-height:1.5; color:var(--text3); }
-html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
-.ptx-vs b{ color:var(--text2); font-weight:800; font-variant-numeric:tabular-nums; }
-.ptx-vs-name{ color:var(--text2); }
-@media (max-width: 1040px){ .ptx-grid{ grid-template-columns:1fr 1fr; } }
-@media (max-width: 720px){
-  .ptx{ padding:24px 20px; }
-  .ptx-grid{ grid-template-columns:1fr; }
-  .ptx-keep{ font-size:29px; }
-}
-@media (prefers-reduced-motion: reduce){ .ptx-bar-keep{ transition:none; } }
-@media print{
-  .ptx-bar, .ptx-bar-keep{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-}
-</style>
 </head>
 <body>
 
@@ -4508,149 +4408,33 @@ html[data-theme="dark"] .mpf-bar::before{background:rgba(255,255,255,.26)}
         <span class="proof-num" data-count="5" data-suffix="Y">5Y</span>
         <span class="proof-label">Backtested track record</span>
       </div>
-      <div class="proof-divider"></div>
-      <!-- V30.8: TWO verified P&L links, one per paid strategy, side by side.
-           Each strategy is traded in its OWN broking account, so Zerodha issues a
-           separate verified-P&L page for each — one shared link could only ever
-           evidence one of them. Both chips sit in ONE .proof-item rather than
-           becoming a fifth item: the bar's wrap widths, its 2x2 phone grid, the
-           nth-child entrance delays and the divider indices are all tuned to a
-           count of four (V24.7 records what breaks when that count moves), and a
-           pair that must read as a pair should not be split across grid rows. -->
-      <div class="proof-item proof-item-pnl">
-        <span class="proof-pnl-pair">
-          <a class="pnl-chip" href="https://console.zerodha.com/verified/10d5f408" target="_blank" rel="noopener" aria-label="MindForge LargeMidcap 250 — verified live P&L on Zerodha (opens in a new tab)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>
-            LargeMidcap 250<span class="proof-arr" aria-hidden="true">↗</span>
-          </a>
-          <a class="pnl-chip" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener" aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>
-            SmallMicro 500<span class="proof-arr" aria-hidden="true">↗</span>
-          </a>
-        </span>
-        <span class="proof-label">Verified live P&amp;L on Zerodha</span>
-      </div>
+      <!-- V32.8 — THE VERIFIED-P&L PROOF ITEM IS GONE, and its absence is the point.
+           It carried the same two Zerodha links that the broker-verified strip
+           directly below this bar carries in full, with the account arrangement
+           spelled out and each book's live figure beside it. Two copies of one
+           claim inside a single screen is not twice the proof; the bar states the
+           claim and the strip evidences it, so the bar keeps the three points that
+           are ONLY here (SEBI registration, the strategy count, the window) and
+           hands the P&L back to the block built for it.
+           THE COUNT MOVED FROM FOUR TO THREE, which V24.7 records as the thing that
+           breaks this bar: its wrap widths, the phone grid, the nth-of-type
+           entrance delays and the divider indices were all tuned to four. Every one
+           was re-measured after this cut — see the CSS below, where the count-coupled
+           rules were retuned rather than left to degrade quietly. -->
     </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
-     V32.6 — AFTER TAX, WHICH IS THE ONLY NUMBER ANYONE SPENDS
-     --------------------------------------------------------------------------
-     Every backtest figure on this site is now net of tax, and that needs saying
-     out loud rather than in a footnote: our headline numbers got SMALLER while
-     everyone else's stayed gross, and a reader who does not know why will read
-     the smaller number as a worse strategy.
-     The asymmetry is real and it is structural. A monthly rebalance never holds
-     a position twelve months, so every gain is SHORT term and pays 20% (s.111A)
-     the month it is booked. A fund is bought and held, so it pays 12.5% LONG
-     term (s.112A) once, at exit, on gains over ₹1,25,000 — and pays nothing in
-     between, which is the part that compounds. Publishing our gross against
-     their net would have flattered us by exactly the gap this block measures.
-     Every figure inside is an MFSTAT marker, so it is rewritten from the same
-     stats.json every other published number comes from. The one hand-written
-     string is each peer FUND'S NAME, which is config, not data — the gate checks
-     it against shared/config.PEER_FUNDS.
-     ══════════════════════════════════════════════════════════════════════════ -->
-<section class="ptx-section" aria-labelledby="ptx-h">
-  <div class="container">
-    <div class="ptx fade-up">
-      <div class="ptx-head">
-        <span class="ptx-eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>After tax</span>
-        <h2 class="ptx-title" id="ptx-h">Every backtest figure here is what you actually keep.</h2>
-        <p class="ptx-sub">Published fund returns are gross of your tax. Ours are not. Because these
-          strategies rebalance <b>every month</b>, no position is ever held twelve months, so every
-          gain is short-term and pays <b>20%</b> the month it is booked. A fund you buy and hold pays
-          <b>12.5%</b> once, at exit, on gains above ₹1,25,000 &mdash; and nothing in between. We show
-          both sides after their own tax, because that is the only comparison worth making.</p>
-      </div>
-      <div class="ptx-grid">
-        <article class="ptx-card">
-          <header class="ptx-card-top">
-            <span class="ptx-name">LargeMidcap 250</span>
-            <span class="ptx-cap">on <!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></span>
-          </header>
-          <div class="ptx-fig">
-            <span class="ptx-keep"><!--MFSTAT:lm:cagr_posttax-->24.0%<!--/MFSTAT--></span>
-            <span class="ptx-keep-lbl">a year, after tax</span>
-          </div>
-          <div class="ptx-bar" role="img">
-            <span class="ptx-bar-keep"></span>
-          </div>
-          <p class="ptx-split"></p>
-          <dl class="ptx-rows">
-            <div class="ptx-r is-gross"><dt>Gross backtest</dt>
-              <dd><!--MFSTAT:lm:cagr_pretax-->35.6%<!--/MFSTAT--></dd></div>
-            <div class="ptx-r is-tax"><dt>Short-term tax paid</dt>
-              <dd>&minus;<!--MFSTAT:lm:tax_paid-->₹9,87,790<!--/MFSTAT--></dd></div>
-            <div class="ptx-r is-keep"><dt>What you keep</dt>
-              <dd><!--MFSTAT:lm:posttax_end-->₹30,38,058<!--/MFSTAT--></dd></div>
-          </dl>
-          <p class="ptx-vs">Best comparable fund, after <b>its</b> tax
-            (<span class="ptx-vs-name">Motilal Oswal Large &amp; Midcap</span>):
-            <b><!--MFSTAT:lm:peer_best_posttax-->19.5%<!--/MFSTAT--></b></p>
-        </article>
-        <article class="ptx-card">
-          <header class="ptx-card-top">
-            <span class="ptx-name">SmallMicro 500</span>
-            <span class="ptx-cap">on <!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></span>
-          </header>
-          <div class="ptx-fig">
-            <span class="ptx-keep"><!--MFSTAT:sm:cagr_posttax-->30.6%<!--/MFSTAT--></span>
-            <span class="ptx-keep-lbl">a year, after tax</span>
-          </div>
-          <div class="ptx-bar" role="img">
-            <span class="ptx-bar-keep"></span>
-          </div>
-          <p class="ptx-split"></p>
-          <dl class="ptx-rows">
-            <div class="ptx-r is-gross"><dt>Gross backtest</dt>
-              <dd><!--MFSTAT:sm:cagr_pretax-->46.9%<!--/MFSTAT--></dd></div>
-            <div class="ptx-r is-tax"><dt>Short-term tax paid</dt>
-              <dd>&minus;<!--MFSTAT:sm:tax_paid-->₹23,05,673<!--/MFSTAT--></dd></div>
-            <div class="ptx-r is-keep"><dt>What you keep</dt>
-              <dd><!--MFSTAT:sm:posttax_end-->₹59,51,973<!--/MFSTAT--></dd></div>
-          </dl>
-          <p class="ptx-vs">Best comparable fund, after <b>its</b> tax
-            (<span class="ptx-vs-name">Nippon India Small Cap</span>):
-            <b><!--MFSTAT:sm:peer_best_posttax-->20.0%<!--/MFSTAT--></b></p>
-        </article>
-        <article class="ptx-card">
-          <header class="ptx-card-top">
-            <span class="ptx-name">MultiAsset</span>
-            <span class="ptx-cap">on <!--MFSTAT:ma:tax_capital-->₹5,00,000<!--/MFSTAT--></span>
-          </header>
-          <div class="ptx-fig">
-            <span class="ptx-keep"><!--MFSTAT:ma:cagr_posttax-->15.2%<!--/MFSTAT--></span>
-            <span class="ptx-keep-lbl">a year, after tax</span>
-          </div>
-          <div class="ptx-bar" role="img">
-            <span class="ptx-bar-keep"></span>
-          </div>
-          <p class="ptx-split"></p>
-          <dl class="ptx-rows">
-            <div class="ptx-r is-gross"><dt>Gross backtest</dt>
-              <dd><!--MFSTAT:ma:cagr_pretax-->21.7%<!--/MFSTAT--></dd></div>
-            <div class="ptx-r is-tax"><dt>Short-term tax paid</dt>
-              <dd>&minus;<!--MFSTAT:ma:tax_paid-->₹1,31,009<!--/MFSTAT--></dd></div>
-            <div class="ptx-r is-keep"><dt>What you keep</dt>
-              <dd><!--MFSTAT:ma:posttax_end-->₹8,11,393<!--/MFSTAT--></dd></div>
-          </dl>
-          <p class="ptx-vs">Best comparable fund, after <b>its</b> tax
-            (<span class="ptx-vs-name">Quant Multi Asset</span>):
-            <b><!--MFSTAT:ma:peer_best_posttax-->22.0%<!--/MFSTAT--></b></p>
-        </article>
-      </div>
-      <p class="ptx-foot">Backtested, not live trading. Past performance is not indicative of future
-        returns. Tax is modelled at 20% on every month that books a profit, with no set-off of losing
-        months &mdash; the harshest reading of the rules, chosen deliberately. Rupee figures assume the
-        capital shown on each card. Risk metrics elsewhere on this site (Sharpe, maximum drawdown) are
-        measured on the gross curve, as is standard. This is not tax advice; your own rate, slab and
-        set-offs will differ.</p>
-    </div>
-  </div>
-</section>
-
+<!-- V32.8 — THE AFTER-TAX BAND LIVES ON strategies.html, NOT HERE.
+     It shipped on both surfaces in V32.6. On this page it sat between the proof
+     bar and the broker-verified strip and explained, at card length and for all
+     three books, a basis the homepage never states a figure in: the homepage's own
+     numbers are the hero card and the strategy cards, both of which already say
+     "after tax" beside every figure they show. The full explanation belongs where
+     a reader is comparing the books against funds — the strategies page — and one
+     copy of it is the right number of copies.
+     Its page-local CSS and script went with it; a rule whose selector matches
+     nothing is the dead-CSS seam (V28.5/V28.8), not harmless weight. -->
 <!-- ══════════════════════════════════════════════════════════════════════════
      V32.4 — THE PROOF LEADS THE PAGE
      --------------------------------------------------------------------------
@@ -7576,8 +7360,6 @@ function setDuration(durKey) {
 .proof-item:nth-of-type(1){ animation-delay:.05s; }
 .proof-item:nth-of-type(2){ animation-delay:.15s; }
 .proof-item:nth-of-type(3){ animation-delay:.25s; }
-.proof-item:nth-of-type(4){ animation-delay:.35s; }
-.proof-item:nth-of-type(5){ animation-delay:.45s; }
 @keyframes v14-rise{
   from { opacity:0; transform: translateY(8px); }
   to   { opacity:1; transform: translateY(0); }
@@ -7859,17 +7641,20 @@ section[id]{ scroll-margin-top: 80px; }
      ============================================================ -->
 <style id="mf-v101-home">
 /* (1) proof strip entrance — children alternate item/divider, so nth-child
-       indices are 1,3,5,7 (items) and 2,4,6 (dividers) */
+       indices are 1,3,5 (items) and 2,4 (dividers).
+       V32.8: retuned from four items to three. The stagger for child 7 and the
+       divider at child 6 are gone with the verified-P&L item they belonged to —
+       a delay rule for a child that no longer exists is invisible to grep and is
+       exactly the dead-rule seam V28.5/V28.8 records. Caught by the sweep's own
+       proof-bar check, not by reading. */
 .proof-bar .proof-item{ animation: mf101-rise .6s cubic-bezier(.22,1,.36,1) both; } /* fill `both`: v14 layer leaves .proof-item{opacity:0}, so the end state must persist */
 .proof-bar .proof-item:nth-child(1){ animation-delay:.10s; }
 .proof-bar .proof-item:nth-child(3){ animation-delay:.22s; }
 .proof-bar .proof-item:nth-child(5){ animation-delay:.34s; }
-.proof-bar .proof-item:nth-child(7){ animation-delay:.46s; }
 @keyframes mf101-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
 .proof-bar .proof-divider{ animation: mf101-divider .5s ease-out both; }
 .proof-bar .proof-divider:nth-child(2){ animation-delay:.26s; }
 .proof-bar .proof-divider:nth-child(4){ animation-delay:.38s; }
-.proof-bar .proof-divider:nth-child(6){ animation-delay:.50s; }
 @keyframes mf101-divider{ from{ transform:scaleY(0); opacity:0; } to{ transform:scaleY(1); opacity:1; } }
 
 /* (2) section-h2 underline draw-in */
@@ -8361,24 +8146,20 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
       border-left: 0.5px solid rgba(37,99,235,.12);
       border-radius: 0;
     }
-    /* V30.8 — 1 / 2+2 / 1, not 2×2. Two of these four items refuse a half-cell:
-       "SEBI Registered" is a 15-character word-mark that V16.3 had to shrink to
-       14.5px to fit one, and the P&L item is now TWO ~165px chips that must stay
-       side by side to read as a pair (that is the whole point of showing both).
-       Both span the full width; the two numerals share the middle row. Children
-       are item/divider alternating, so the item indices are 1,3,5,7 — and the
-       dividers are display:none here, so they never take a grid cell.
-         row 1  nth-child(1)            SEBI Registered      (spans)
-         row 2  nth-child(3) | (5)      3        |   5Y
-         row 3  nth-child(7)            both verified chips  (spans)
-       Border cross recomputed from that map: only row 1 has no border-top, and
-       column 1 is now items 1, 3 and 7. */
+    /* V32.8 — 1 / 2, remapped from V30.8's 1 / 2+2 / 1 when the verified-P&L item
+       moved out of this bar. "SEBI Registered" still refuses a half-cell — it is a
+       15-character word-mark V16.3 had to shrink to 14.5px to fit one — so it keeps
+       the full first row and the two numerals share the second. Children are
+       item/divider alternating and the dividers are display:none here, so they never
+       take a grid cell; the item indices are 1,3,5 and there is no 7 any more.
+         row 1  nth-child(1)        SEBI Registered   (spans)
+         row 2  nth-child(3) | (5)  3      |     5Y
+       Border cross recomputed from THAT map, not edited around the old one: only
+       row 1 has no border-top, and column 1 is now items 1 and 3. */
     .social-proof .proof-bar .proof-item:nth-child(1){ border-top: none; }
     .social-proof .proof-bar .proof-item:nth-child(1),
-    .social-proof .proof-bar .proof-item:nth-child(3),
-    .social-proof .proof-bar .proof-item:nth-child(7){ border-left: none; }
-    .social-proof .proof-bar .proof-item:nth-child(1),
-    .social-proof .proof-bar .proof-item:nth-child(7){ grid-column: 1 / -1; }
+    .social-proof .proof-bar .proof-item:nth-child(3){ border-left: none; }
+    .social-proof .proof-bar .proof-item:nth-child(1){ grid-column: 1 / -1; }
     .social-proof .proof-bar .proof-item:hover{ transform: none; } /* no lift inside one card */
     .social-proof .proof-bar .proof-divider{ display: none; }
     .social-proof .proof-num{ font-size: 21px; line-height: 1.12; }
@@ -8395,10 +8176,9 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
       white-space: normal;
       max-width: 15ch;
     }
-    /* the 15ch cap is sized for a half-cell; the two spanning rows have the whole
-       card, and clamping them there would wrap a caption that already fits */
-    .social-proof .proof-item:nth-child(1) .proof-label,
-    .social-proof .proof-item-pnl .proof-label{ max-width: none; }
+    /* the 15ch cap is sized for a half-cell; the spanning row has the whole card,
+       and clamping it there would wrap a caption that already fits */
+    .social-proof .proof-item:nth-child(1) .proof-label{ max-width: none; }
   }
   @media (max-width: 360px){
     .social-proof .proof-bar{ max-width: 100%; }
@@ -9327,88 +9107,6 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
     io.observe(rail);
     setTimeout(grow, 2400);
   }catch(e){ bail(); }
-})();
-</script>
-<script id="mf-v326-ptx-js">
-/* V32.6 — size the after-tax bar from the two figures ALREADY PRINTED in the card.
-   The first cut carried them again as data-ptx-keep / data-ptx-gross attributes,
-   which is the hand-value-beside-machine-value seam this project keeps finding: the
-   markers get rewritten every publish and a duplicated attribute does not, so the
-   bar would have kept drawing last month's ratio under this month's numbers.
-   Reading .ptx-keep and .ptx-r.is-gross means there is only one copy of each
-   number on the page and the bar is derived from it.
-
-   V32.7 — TWO ADDITIONS, both about the bar doing its job rather than existing.
-   (a) IT NOW SAYS WHAT IT IS. A green segment against a red track is a picture
-       without a caption: a reader has to be told that the split IS the tax. The
-       two shares are written under the bar ends, computed from the same ratio that
-       draws it, so the graphic explains itself and no legend is needed.
-   (b) IT GROWS WHEN IT IS SEEN. The bar was painted at load, so on a page where it
-       sits 1,500px down the whole animation had already finished before anyone
-       scrolled to it — motion spent on an empty room. An IntersectionObserver holds
-       it at zero until the card enters the viewport. The unconditional paint stays
-       as the fallback: no IO, reduced motion, or an element that never intersects
-       (print, a hidden tab) all fall through to the same setTimeout that drew it
-       before, because a bar left at zero reads as the number ZERO, not as pending. */
-(function () {
-  "use strict";
-  function num(el) {
-    if (!el) return NaN;
-    var v = parseFloat((el.textContent || "").replace(/[^0-9.\-]/g, ""));
-    return isFinite(v) ? v : NaN;
-  }
-  function ratioOf(card) {
-    var keep  = num(card.querySelector(".ptx-keep"));
-    var gross = num(card.querySelector(".ptx-r.is-gross dd"));
-    if (!isFinite(keep) || !isFinite(gross) || gross <= 0) return null;
-    return { keep: keep, gross: gross, pct: Math.max(0, Math.min(100, keep / gross * 100)) };
-  }
-  function label(card, r) {
-    var host = card.querySelector(".ptx-split");
-    if (!host || !r) return;
-    host.innerHTML =
-      '<span class="ptx-split-keep">you keep <b>' + r.pct.toFixed(0) + '%</b></span>' +
-      '<span class="ptx-split-tax">tax takes <b>' + (100 - r.pct).toFixed(0) + '%</b></span>';
-  }
-  function paint(card) {
-    var fill = card.querySelector(".ptx-bar-keep");
-    var bar  = card.querySelector(".ptx-bar");
-    if (!fill) return;
-    var r = ratioOf(card);
-    if (!r) { fill.style.width = "100%"; return; }
-    fill.style.width = r.pct.toFixed(1) + "%";
-    label(card, r);
-    if (bar) {
-      bar.setAttribute("data-keep-pct", r.pct.toFixed(1));
-      /* the accessible name is DERIVED, never hand-typed: it repeated both figures
-         in the markup, so a publish that moved the numbers would have left a screen
-         reader announcing last month's ones. */
-      var nm = card.querySelector(".ptx-name");
-      bar.setAttribute("aria-label",
-        (nm ? nm.textContent.trim() + ": " : "") +
-        r.gross.toFixed(1) + "% gross becomes " + r.keep.toFixed(1) + "% after tax, so tax takes " +
-        (100 - r.pct).toFixed(0) + "% of the gain");
-    }
-  }
-  function all() { document.querySelectorAll(".ptx-card").forEach(paint); }
-  function go() {
-    // captions first, so the numbers are readable even if no bar ever grows
-    document.querySelectorAll(".ptx-card").forEach(function (c) { label(c, ratioOf(c)); });
-    var reduced = false;
-    try { reduced = window.matchMedia &&
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
-    if (!reduced && "IntersectionObserver" in window) {
-      var io = new IntersectionObserver(function (es) {
-        es.forEach(function (e) { if (e.isIntersecting) { paint(e.target); io.unobserve(e.target); } });
-      }, { threshold: 0.25, rootMargin: "0px 0px -8% 0px" });
-      document.querySelectorAll(".ptx-card").forEach(function (c) { io.observe(c); });
-    }
-    if (typeof requestAnimationFrame === "function") requestAnimationFrame(all);
-    setTimeout(all, 180);
-    setTimeout(all, 1500);      // backstop: an empty bar reads as zero, not as pending
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go);
-  else go();
 })();
 </script>
 </body>
