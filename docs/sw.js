@@ -399,6 +399,15 @@
 // release is page-local: a pinned header and a scroll-edge cue on the Scanner, a
 // frozen identity pair and the same cue on the Integrity Score, and 24 rewritten
 // weight values on strategies.html. All of those are network-first HTML.
+// V32.3 -> mfc-v64. index.html is the offline navigation fallback and carries no
+// ?v of its own, and this release rewrites it: the broker-verified strip moves
+// from under the pricing grid to the top of the page and grows a backtest row.
+// HTML is network-first, so an ONLINE visitor already gets the new bytes without
+// this constant moving — what goes stale without it is the offline shell, which
+// would keep serving a V32.3 homepage (verified P&L 3,000px down, no backtest row)
+// to an installed app with no connection. No shared asset changed this release —
+// the strip's CSS is page-local on both pages that use it — so no ?v token steps
+// and strategies.html, which is not precached, needs nothing at all.
 // V32.1 -> mfc-v63. THIS ONE MUST MOVE. The release adds a print block to the
 // shared assets/mfc-finish.css — the one that stops nine pages printing their
 // proportion bars as empty grey tracks — so its ?v token steps 3090 -> 3100 on
@@ -412,7 +421,7 @@
 // symbol ink on the per-stock not-found panel, filter-select focus parity on
 // the Scanner, slider press feedback on the calculator, and the 404 page's
 // strategy links rebuilt as route cards.
-const CACHE = 'mfc-v63';
+const CACHE = 'mfc-v64';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
