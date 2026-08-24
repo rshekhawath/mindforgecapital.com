@@ -1531,3 +1531,156 @@ html a[href^="mailto:"] { overflow-wrap: break-word; }
   display:block; width:1px; height:1px; overflow:hidden;
   clip-path:inset(50%); white-space:nowrap; border:0; padding:0; margin:0;
 }
+
+
+/* ── V33.0 — REDUCED MOTION, EVERYWHERE, INCLUDING PSEUDO-ELEMENTS ──────────
+   Eight pages carried the complete `*, *::before, *::after` blanket. Three
+   carried a `*`-only one — and `*` does NOT match pseudo-elements, which is
+   exactly where this site keeps its motion: sheens, shimmers, pings and orbs
+   are almost all ::before/::after. The rest carried no blanket at all, relying
+   on hand-written per-selector rules that a new component silently escapes.
+
+   Measured before this block, with prefers-reduced-motion: reduce set:
+     · fii-dii     .flow-card.in::after   flow-sheen  1.05s  — swept on reveal
+     · screener/   .btn-primary::after    btn-shimmer 2.4s   — swept on load
+     · screener/   .fab-wa::after, .ss-dot::after, .status-dot.live::after
+     · scores/     .fab-wa::after, .hero-badge .dot::after   — looping pings
+     · factor-report ×2  body::before/::after  24s and 30s ambient orbs
+   All of those are decorative, all of them loop or sweep, and every one of
+   them ran for a reader who had asked the OS for no motion.
+
+   This lives in the one stylesheet every page loads, so the guarantee no
+   longer depends on a page remembering to write its own. Durations collapse
+   rather than being set to `none`, which keeps `forwards` fills landing on
+   their final frame — content that an animation reveals stays revealed.
+   `animation-delay` is zeroed for the same reason: a 0.9s-delayed shimmer must
+   not leave its element mid-state. Anything a page still wants to suppress
+   outright keeps working — a per-selector `animation:none` is more specific
+   than `*` and wins. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ============================================================================
+   V33.0 — THE SITE'S OWN 44px RULE STOPPED AT ITS BUTTONS
+   ----------------------------------------------------------------------------
+   V27.7 sized this site's controls for a finger and V31.9 carried that from a
+   width query onto the pointer axis, so an iPad stopped getting the mouse
+   boxes. Both passes covered BUTTONS: `button`, `.btn`, the CTAs, the hero tab
+   strip, the round chrome. Neither covered NAVIGATION, or the form controls the
+   two free tools are made of. Re-measured this release with touch emulation on,
+   hit-testing outward from each control's centre with elementFromPoint at 375 /
+   414 / 768 / 834 / 1024 / 1180, across all 22 surfaces:
+
+       #primary-nav a          53x40   every page, at 1180 (iPad landscape)
+       nav .logo               44x36   every page, at 375 / 414 / 768
+       a#nav-signout           55x42   dashboard
+       .ph-back                88x26   the three strategy pages, ALL widths
+       .pnl-chip              236x37   smallmicro, largemidcap
+       .fab-wa-bubble-msg     243x31   the WhatsApp invite, 834 and up
+       .fab-wa-bubble-close    28x49   ditto — 28 wide including its ::after pad
+       .breadcrumb a           85x38   company page   (V28.3 pad: 28px, not 44)
+       #companyMeta a          65x36   company page
+       .dir-az a               38x38   the 28 stock-directory pages
+       .dir-crumb a            34x38   ditto
+       footer .footer-links a  36x27   404, at 834 and up
+       .filter-input          115x34   Scanner — 32 of them, the whole left rail
+       .ms-chip                79x34   Scanner — the ONLY way to sort on a phone
+       #resultsTable thead th  93x41   Scanner — the only way to sort on a tablet
+       .fc-input / .fc-range  156x38 / 348x28   fee calculator
+       #pill-strategy         289x40   dashboard — the strategy switcher
+       #tbl-search            260x36   dashboard
+       #broker-picker          96x36   dashboard
+       .ticker-chip            70x30   dashboard — copy-ticker, tapped 25x a month
+       .mf-fab-top             40x44   dashboard, at 768
+       .qv-key                 87x28   Integrity Score — the scatter legend
+
+   Every one of those clears the 24x24 WCAG 2.5.8 floor that V28.0/V28.3 fixed;
+   none of them clears the 44px the site chose for itself. This block closes
+   that gap on touch only. Mouse devices never match it, and phones at or below
+   600px that already compute 44px from the V27.7 blocks are unmoved.
+
+   Where padding would reflow a layout that is currently correct — a table
+   header, a link inside a line of chrome — the target is grown with the
+   transparent ::after pad V28.3 established, which changes the hit box and
+   nothing else. Where the control owns its own box, min-height is used.
+
+   CARRIED FORWARD, NOT RE-OPENED — the exemptions V28.3/V31.9 measured and
+   argued, all of which stay untouched:
+     · #distBar .hp-seg      geometric band widths, real target is the legend
+     · .hero-sub .lnk        a control that is a word inside a sentence
+     · a.strat-cta           block-level by design; flex, never inline-flex
+     · .company-cell a and the picks-table names, which inherit a row link
+     · 404's .nf-links a, inline inside "Looking for a strategy? X · Y · Z"
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+
+  /* — navigation chrome, every page — */
+  html nav .logo,
+  html .nav-links a,
+  html #primary-nav a{ min-height: 44px; }
+
+  /* — the WhatsApp invite bubble — */
+  html .fab-wa-bubble-msg{ min-height: 44px; }
+  html .fab-wa-bubble-close{ width: 38px; height: 38px; }   /* +6px of ::after pad = 44 */
+
+  /* — the standalone back link on the three strategy pages. It carries an
+       inline `style` attribute, which no ordinary rule can outrank, so this one
+       declaration is !important. The class was added this release purely so
+       there is something to select. — */
+  html .ph-back{ min-height: 44px !important; }
+
+  /* — links whose box must not grow, so the PAD grows instead. 44, where V28.3
+       used 28 for the 24px floor. — */
+  html .breadcrumb a::after,
+  html .dir-crumb a::after,
+  html #companyMeta a::after{ height: 44px; }
+  /* .dir-az tiles own their box and are square-ish already */
+  html .dir-az a, html .dir-az span{ min-width: 44px; height: 44px; }
+  /* footer nav lists: the V28.0 tiers are 3px (>=600px) and 9px (phones); a
+     27px link on an 834px tablet fell between them */
+  html footer .footer-links a,
+  html footer .links a,
+  html footer .footer-col ul li a{
+    /* 12, not the phone tier's 9: these links have a 21px line box, so 9px each
+       way lands on 39 — measured, and short of the 44 this block exists for. */
+    padding-top: 12px; padding-bottom: 12px;
+    background-position: 0 calc(100% - 12px);
+  }
+  /* the verified-P&L chip is a standalone link on its own line, not prose */
+  html .pnl-chip{ min-height: 44px; }
+
+  /* — Stock Scanner — */
+  html .filter-input, html .filter-select{ min-height: 44px; }
+  html .ms-chip{ min-height: 44px; }
+  /* a sortable header cannot take padding without re-rowing the table */
+  html #resultsTable thead th{ position: relative; }
+  html #resultsTable thead th::after{
+    content: ''; position: absolute; left: 0; right: 0; top: 50%;
+    height: 44px; transform: translateY(-50%); pointer-events: none;
+  }
+  html #resultsTable thead th[role="button"]::after,
+  html #resultsTable thead th[tabindex]::after{ pointer-events: auto; }
+
+  /* — fee calculator — */
+  html .fc-inputwrap input{ min-height: 44px; }
+  html input.fc-range{ height: 44px; }
+
+  /* — member dashboard — */
+  html #pill-strategy,
+  html #tbl-search,
+  html #broker-picker{ min-height: 44px; }
+  html .ticker-chip{ min-height: 44px; }
+  html .mf-fab-top{ width: 44px; height: 44px; }
+
+  /* — Integrity Score scatter legend — */
+  html .qv-key{ min-height: 44px; }
+}

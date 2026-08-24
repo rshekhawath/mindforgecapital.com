@@ -526,6 +526,13 @@ html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .pmap-wt{ display:flex; align-items:center; gap:5px; font-size:10.5px; color:var(--text3); font-variant-numeric:tabular-nums; }
 .pmap-swatch{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+/* V33.0 — the equal-weight tile's second line. Unlike .pmap-wtn this must NOT be
+   a fixed width: it is a name, not a quantity on a shared axis, so there is no
+   comparison for a ragged edge to distort. min-width:0 is what lets the ellipsis
+   engage inside the flex row — without it the longest sector ("Communication
+   Services") pushes the tile past its grid column instead of truncating. */
+.pmap-sec{ flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; letter-spacing:.01em; }
 @media (prefers-reduced-motion: reduce){ .pmap-tile:hover{ transform:none; } }
 @media (max-width:600px){ .pmap-card{ padding:20px 18px; } .pmap-tile{ min-width:0; min-height:52px; padding:9px 10px; } }
 
@@ -2229,7 +2236,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3120">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3300">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -4876,9 +4883,23 @@ function renderPortfolioMap(stocks) {
       + ' style="--pmi:' + i + ';background:' + color + '22;border-color:' + color + '55;--lens-c:' + color + ';"'
       + ' title="' + nm + ' · ' + escapeHtml(sector) + ' · ' + w.toFixed(1) + '% weight">'
       + '<span class="pmap-ticker">' + tk + '</span>'
+      // ── V33.0 — THE SECOND LINE NOW CARRIES THE THING THE MAP IS GROUPED BY ──
+      // V28.2 stopped SIZING an equal-weight tile by its weight, and V32.7 removed
+      // the twenty-five identical bars from the picks table for the same reason.
+      // The map still printed "4.0%" on all twenty-five tiles — the caption above
+      // it already says "equal-weighted", so every tile spent its only other line
+      // restating one shared fact — while the axis the tiles are sorted, grouped
+      // and COLOURED by was written nowhere on them. A reader had to hover for a
+      // title tooltip, or match a pastel against the legend in the card above, to
+      // learn that this block of eight is Banks and the next is Pharma.
+      // So: an equal-weight book labels the sector; a weighted book keeps the
+      // percentage and its bar, because there the number varies and is the point.
+      // The exact weight stays on the tile's title either way, so nothing is lost.
       + '<span class="pmap-wt"><span class="pmap-swatch" style="background:' + color + '"></span>'
-      + '<span class="pmap-wtn">' + w.toFixed(1) + '%</span>'
-      + (equalWeighted ? '' : '<i class="pmap-wtbar"><b data-bar="' + share.toFixed(1) + '%"></b></i>')
+      + (equalWeighted
+          ? '<span class="pmap-sec">' + escapeHtml(sector) + '</span>'
+          : '<span class="pmap-wtn">' + w.toFixed(1) + '%</span>'
+            + '<i class="pmap-wtbar"><b data-bar="' + share.toFixed(1) + '%"></b></i>')
       + '</span>'
       + '</div>';
   }).join('');
@@ -4910,7 +4931,8 @@ function renderPortfolioMap(stocks) {
   const secNoun = mapClasses ? ('asset class' + (secCount === 1 ? '' : 'es'))
                              : ('sector' + (secCount === 1 ? '' : 's'));
   if (sub) sub.textContent = sorted.length + ' holdings\u00A0· ' + secCount + ' ' + secNoun + ' · ' +
-    (equalWeighted ? 'equal-weighted' : 'bar = model weight');
+    (equalWeighted ? 'equal-weighted\u00A0· tile label = ' + secNoun.replace(/e?s$/, '')
+                   : 'bar = model weight');
   card.style.display = '';
   // Grow on reveal — the site's bar idiom. Painting the final width immediately
   // would leave a dead transition (the V23.5 bug), so apply a frame later.
@@ -7916,6 +7938,13 @@ init();
 @keyframes v15-skel{
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
+}
+/* V33.0 — this is the ONE animation on the site declared !important outside a
+   reduced-motion block, so the site-wide blanket in mfc-finish.css (specificity
+   0, and loaded earlier) cannot reach it. A skeleton that shimmers forever is
+   the single most motion-heavy thing a reader sees while the dashboard loads. */
+@media (prefers-reduced-motion: reduce){
+  .skel-bar, .skel-pill{ animation: none !important; }
 }
 
 /* Better print styling — hide controls + FAB, ensure table prints cleanly */

@@ -464,6 +464,80 @@ html[data-theme="dark"] .col-toggle-item .ct-pct.thin{color:#fbbf24}
 .filter-cov .fc-meter i{display:block;height:100%;background:#b45309;border-radius:2px;
   transition:width .7s cubic-bezier(.22,1,.36,1)}
 html[data-theme="dark"] .filter-cov b{color:#fbbf24}
+
+/* ── V33.0 — THE SHAPE OF THE UNIVERSE, BESIDE THE BOX YOU TYPE INTO ────────
+   Every range filter in this rail was two empty boxes labelled Min and Max. To
+   use one you had to already know what a normal P/E is on this exchange, what
+   a small cap costs in crore, or whether a 20% ROE is common or rare — and the
+   whole point of the Scanner is that you are here to find that out. So the five
+   paired ranges now carry a 30-bin histogram of the tracked universe for that
+   metric, with the bins your current Min/Max keeps drawn in the accent and the
+   rest dropped back, plus the median and a live count of what survives.
+
+   Only the PAIRED min/max filters get one. A distribution answers "what range
+   should I type", which is a question a two-ended filter asks and a single
+   "ROE ≥" threshold mostly does not — and there are twenty of those, which
+   would turn a rail into a scroll. Same reasoning as .filter-cov, which is
+   likewise only drawn where it changes a decision.
+
+   Binned over the 2nd–98th percentile so one ₹18-lakh-crore company cannot
+   flatten the other 2,125 into the first bin, with everything outside folded
+   into the end bins so no stock is hidden. Market cap is binned on log10 for
+   the same reason — it spans five orders of magnitude and a linear axis draws
+   it as a single spike. Heights are sqrt-scaled so a thin tail stays visible
+   next to a fat mode.
+
+   The bars are aria-hidden; the caption beneath them carries the median and the
+   counts as text, which is the part a screen reader needs. Colours are the two
+   tokens below rather than literals so the dark palette flips them, and both
+   were measured against this rail's own background rather than assumed. */
+/* Measured in PIXELS off a screenshot, not from computed styles — the first
+   pair of values here shipped at 2.05:1 for the out-of-range fill on the light
+   rail, i.e. a bar a reader could barely see, and a computed-style walk would
+   have called it fine. #7787a5 measures 3.5:1 against this panel and #5b7196
+   measures 3.5:1 against the dark one. */
+.fdist{ margin-top:8px; padding:0 2px;
+  --fd-in:#1a50d8; --fd-out:#7787a5; --fd-base:rgba(37,99,235,.10);
+  --fd-win:rgba(26,80,216,.09); }
+html[data-theme="dark"] .fdist{ --fd-in:#83aaff; --fd-out:#5b7196;
+  --fd-base:rgba(255,255,255,.09); --fd-win:rgba(131,170,255,.13); }
+.fdist-bars{ position:relative; display:flex; align-items:flex-end; gap:1px; height:28px;
+  border-bottom:1px solid var(--border2); }
+/* THE RANGE BAND. On a light panel you cannot stack three 3:1 steps between
+   white, an accent and a grey — the arithmetic runs out — so the in/out split
+   must not rest on fill colour alone, which is also what makes it work for a
+   reader who sees no hue at all. The band marks the selection by POSITION:
+   two accent edges and a wash, over bars that stay legible either way. */
+.fdist-win{ position:absolute; top:-3px; bottom:0; display:none; pointer-events:none;
+  background:var(--fd-win);
+  border-left:1.5px solid var(--fd-in); border-right:1.5px solid var(--fd-in); }
+.fdist-win.fd-open-l{ border-left-color:transparent; }
+.fdist-win.fd-open-r{ border-right-color:transparent; }
+.fdist-bars i{ display:block; flex:1 1 0; min-width:0; height:0;
+  border-radius:1.5px 1.5px 0 0; background:var(--fd-out);
+  transition:height .55s cubic-bezier(.22,1,.36,1), background-color .16s ease; }
+.fdist-bars i.fd-in{ background:var(--fd-in); }
+/* a bin with no stocks at all still needs to read as "measured and empty",
+   not as a rendering gap — 2px of the track colour says that */
+.fdist-bars i.fd-nil{ height:2px !important; background:var(--fd-base); }
+/* The end bins hold every stock past the drawn axis, so on a heavy-tailed
+   ratio the last bar can out-top the real mode and read as a cluster sitting
+   at exactly 9.6. The axis "+" says otherwise in words; these stripes say it
+   in the bar itself. Same hue, so it still reads as part of the series. */
+.fdist-bars i.fd-fold{
+  background-image:repeating-linear-gradient(135deg,
+    rgba(255,255,255,.72) 0 2px, rgba(255,255,255,0) 2px 4px); }
+html[data-theme="dark"] .fdist-bars i.fd-fold{
+  background-image:repeating-linear-gradient(135deg,
+    rgba(10,17,32,.72) 0 2px, rgba(10,17,32,0) 2px 4px); }
+.fdist-axis{ display:flex; justify-content:space-between; gap:8px; margin-top:2px;
+  font-size:9.5px; letter-spacing:.02em; color:var(--text3); font-variant-numeric:tabular-nums; }
+.fdist-cap{ display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  margin-top:5px; font-size:10.5px; line-height:1.4; color:var(--text3);
+  font-variant-numeric:tabular-nums; }
+.fdist-cap b{ color:var(--text2); font-weight:700; }
+.fdist-hit{ color:var(--data-mid); font-weight:700; white-space:nowrap; }
+@media (prefers-reduced-motion: reduce){ .fdist-bars i{ transition:none; } }
 html[data-theme="dark"] .filter-cov .fc-meter i{background:#fbbf24}
 
 /* the tail on the "Matching N stocks" line */
@@ -493,7 +567,11 @@ html[data-theme="dark"] .filter-cov .fc-meter i{background:#fbbf24}
   .px52, .px52-mark,
   .sector-pill.sp-tinted::before,
   .col-toggle-item .ct-meter, .col-toggle-item .ct-meter i,
-  .filter-cov .fc-meter, .filter-cov .fc-meter i {
+  .filter-cov .fc-meter, .filter-cov .fc-meter i,
+  /* V33.0 — the range histograms. Same argument as the coverage meters: the
+     fill IS the reading, and an unfilled histogram prints as a blank strip
+     that says the universe is empty. */
+  .fdist-bars, .fdist-bars i, .fdist-win {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -718,7 +796,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3120">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3300">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1617,7 +1695,11 @@ async function loadInitialData(){
        Fail-soft: if this throws, COVERAGE stays null and every consumer of it
        renders exactly what it rendered before this release. */
     try{ COVERAGE=buildCoverage(d.results||[]); paintFilterCoverage(); }catch(e){ COVERAGE=null; }
+    /* V33.0 — same snapshot, same fail-soft contract as the line above: the
+       histograms are built from the identical rows the coverage note counts. */
+    try{ DIST=buildDistributions(d.results||[]); paintFilterDistributions(); }catch(e){ DIST=null; }
     applyURLFilters();   // V15.2: restore a shared screen from the URL before the first run
+    distSyncAll();       // V33.0: a shared URL sets .value directly, firing no input event
     if((d.cached_total||0)>0)runScreen();
   }catch{}
 }
@@ -1655,6 +1737,7 @@ function applyURLFilters(){
   return any;
 }
 async function runScreen(){
+  distSyncAll();                    // V33.0 — keep the range histograms honest
   const params=currentScreenParams();
   params.append("limit",500);
   const vis=COLUMNS.filter(c=>c.visible);
@@ -1819,6 +1902,197 @@ function paintFilterCoverage(){
     if(!note){note=document.createElement("div");note.className="filter-cov";grp.appendChild(note);}
     note.innerHTML=`<span class="fc-meter"><i style="width:${(p*100).toFixed(1)}%"></i></span>`
                   +`<span>only <b>${covFmt(p)}</b> of stocks report this</span>`;
+  });
+}
+
+/* ── V33.0 — RANGE DISTRIBUTIONS ────────────────────────────────────────────
+   Built from the same `limit=0` snapshot buildCoverage() counts, so the
+   histogram, the coverage note and the table can never disagree about the
+   universe. Fail-soft throughout: if anything here throws, DIST stays null and
+   the rail renders exactly what it rendered before this release. */
+const DIST_BINS = 30;
+/* Market cap spans ~₹2 Cr to ~₹18,00,000 Cr. On a linear axis that is one bar
+   and twenty-nine empty ones, which is not a distribution, it is a rounding
+   error with a legend. */
+const DIST_LOG = { market_cap_cr: 1 };
+/* The five PAIRED ranges. Keyed by the min input id; the max is derived, and
+   the strip is inserted after the .filter-row the pair shares. */
+const DIST_PAIRS = [
+  { min: "min_pe",   max: "max_pe",   field: "pe_ratio",      unit: ""    },
+  { min: "min_pb",   max: "max_pb",   field: "pb_ratio",      unit: ""    },
+  { min: "min_ps",   max: "max_ps",   field: "ps_ratio",      unit: ""    },
+  { min: "min_mcap", max: "max_mcap", field: "market_cap_cr", unit: " Cr" },
+  { min: "min_roe",  max: "max_roe",  field: "roe",           unit: "%"   }
+];
+let DIST = null;
+
+function buildDistributions(rows){
+  if(!rows || !rows.length) return null;
+  const out = {};
+  DIST_PAIRS.forEach(pair => {
+    const f = pair.field, log = !!DIST_LOG[f], vals = [];
+    for(let i=0; i<rows.length; i++){
+      const raw = rows[i][f];
+      if(raw === null || raw === undefined || raw === "") continue;
+      const n = +raw;
+      if(!isFinite(n)) continue;
+      if(log && n <= 0) continue;          // log10 of a non-positive cap is not a number
+      vals.push(n);
+    }
+    if(vals.length < 40) return;           // too thin to be a shape rather than noise
+    /* A field the page itself calls untrustworthy must not be drawn as though
+       it were. `roe` is reported by 228 of 2,126 stocks (10.7%): a histogram of
+       that slice looks exactly as authoritative as one built from 2,112, and it
+       is not. THIN is the same 50% cut .filter-cov already uses to decide a
+       field warrants a warning — below it the warning stands alone, which is
+       the honest thing to put on the rail. */
+    if(vals.length / rows.length < THIN) return;
+    vals.sort((a,b) => a-b);
+    const q = t => vals[Math.min(vals.length-1, Math.max(0, Math.round(t*(vals.length-1))))];
+    /* p2–p90, NOT p2–p98. Every ratio here is heavy-tailed: P/E runs to 4,885
+       and its p98 is 312, so a 30-bin p98 axis is 10.4 wide per bin — the 10–25
+       window a value investor actually types then lights up ONE bar out of
+       thirty while holding 37% of the universe. At p90 the bin is 2.7 wide and
+       that window reads as the five-and-a-half bars it really is. The 10% above
+       the cut is not dropped, it is folded into the last bin, and the axis label
+       below carries a "+" so the reader can see that is what happened. */
+    const lo = q(0.02), hi = q(0.90);
+    if(!(hi > lo)) return;                 // a constant field has no distribution
+    const tf = log ? (x => Math.log10(x)) : (x => x);
+    const tlo = tf(lo), thi = tf(hi), w = (thi - tlo) / DIST_BINS;
+    const counts = new Array(DIST_BINS).fill(0);
+    for(let i=0; i<vals.length; i++){
+      let b = Math.floor((tf(vals[i]) - tlo) / w);
+      if(b < 0) b = 0; else if(b >= DIST_BINS) b = DIST_BINS - 1;   // fold the tails in
+      counts[b]++;
+    }
+    out[f] = { lo, hi, tlo, w, log, counts, vals, n: vals.length,
+               med: q(0.5), max: Math.max.apply(null, counts),
+               over: vals[vals.length-1] > hi, under: vals[0] < lo };
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+/* Exact, not estimated: binary-search the sorted array rather than summing the
+   bins the reader can see, so "1,204 in range" is the number the screen will
+   actually return and not a bin-edge artefact. */
+function distCountInRange(d, min, max){
+  const lower = (arr, x) => { let a=0, b=arr.length; while(a<b){ const m=(a+b)>>1; if(arr[m] < x) a=m+1; else b=m; } return a; };
+  const upper = (arr, x) => { let a=0, b=arr.length; while(a<b){ const m=(a+b)>>1; if(arr[m] <= x) a=m+1; else b=m; } return a; };
+  const i = (min === null) ? 0 : lower(d.vals, min);
+  const j = (max === null) ? d.vals.length : upper(d.vals, max);
+  return Math.max(0, j - i);
+}
+
+const distNum = v => Math.abs(v) >= 1000 ? Math.round(v).toLocaleString("en-IN")
+                   : Math.abs(v) >= 10   ? v.toFixed(0)
+                                         : v.toFixed(1);
+
+/* Repaint the in-range highlight and the live count for one pair. Called on
+   every keystroke, so it only toggles a class — no re-binning, no reflow of
+   the bar heights. */
+function distSync(pair){
+  const d = DIST && DIST[pair.field]; if(!d) return;
+  const strip = document.querySelector('.fdist[data-f="' + pair.field + '"]'); if(!strip) return;
+  const rd = id => { const el = document.getElementById(id); if(!el || el.value === "") return null;
+                     const n = parseFloat(el.value); return isFinite(n) ? n : null; };
+  const min = rd(pair.min), max = rd(pair.max);
+  const bars = strip.querySelectorAll("i");
+  for(let b=0; b<bars.length; b++){
+    // the bin's real-value edges, undoing the log transform where there is one
+    const e0 = d.tlo + b * d.w, e1 = e0 + d.w;
+    const v0 = d.log ? Math.pow(10, e0) : e0, v1 = d.log ? Math.pow(10, e1) : e1;
+    const inRange = (min === null || v1 >= min) && (max === null || v0 <= max);
+    bars[b].classList.toggle("fd-in", inRange);
+  }
+  /* Place the band on the same transformed axis the bins are binned on, so a
+     log-scaled market cap lands its edges where its bars actually are. */
+  const win = strip.querySelector(".fdist-win");
+  if(win){
+    if(min === null && max === null){ win.style.display = "none"; }
+    else {
+      const span = d.w * DIST_BINS;
+      const pos = v => {
+        if(d.log && v <= 0) return 0;
+        const tv = d.log ? Math.log10(v) : v;
+        return Math.max(0, Math.min(1, (tv - d.tlo) / span));
+      };
+      const l = min === null ? 0 : pos(min);
+      const r = max === null ? 1 : pos(max);
+      if(r <= l){ win.style.display = "none"; }        // an empty or inverted range draws nothing
+      else {
+        win.style.display = "block";
+        win.style.left  = (l * 100).toFixed(2) + "%";
+        win.style.right = ((1 - r) * 100).toFixed(2) + "%";
+        // an unbounded side gets no edge — the band runs off the axis, which is
+        // what "no maximum" means
+        win.classList.toggle("fd-open-l", min === null);
+        win.classList.toggle("fd-open-r", max === null);
+      }
+    }
+  }
+  const hit = strip.querySelector(".fdist-hit");
+  if(hit){
+    if(min === null && max === null){ hit.textContent = ""; }
+    else { const c = distCountInRange(d, min, max);
+           hit.textContent = c.toLocaleString("en-IN") + " in range"; }
+  }
+}
+
+/* Every programmatic path that writes a filter value — a shared URL, a preset
+   chip, Clear Filters — sets `.value` directly, and that fires no `input`
+   event. Without this the strip would keep highlighting the range the reader
+   typed by hand three clicks ago. Hooked into runScreen(), which every one of
+   those paths already ends with. */
+function distSyncAll(){ if(!DIST) return; try{ DIST_PAIRS.forEach(distSync); }catch(e){} }
+
+function paintFilterDistributions(){
+  if(!DIST) return;
+  DIST_PAIRS.forEach(pair => {
+    const d = DIST[pair.field]; if(!d) return;
+    const el = document.getElementById(pair.min); if(!el) return;
+    const row = el.closest(".filter-row"); if(!row) return;
+    if(row.parentElement.querySelector('.fdist[data-f="' + pair.field + '"]')) return;
+    const strip = document.createElement("div");
+    strip.className = "fdist";
+    strip.setAttribute("data-f", pair.field);
+    const bars = d.counts.map((c, bi) => {
+      // sqrt so a thin tail is still a bar next to a fat mode; nil bins are
+      // flagged so they read as measured-and-empty rather than as a gap, and
+      // the two end bins are striped because they also carry everything the
+      // drawn axis cuts off
+      const h = d.max > 0 ? Math.sqrt(c / d.max) * 100 : 0;
+      const fold = (bi === 0 && d.under) || (bi === DIST_BINS - 1 && d.over);
+      const cls = (c ? "" : "fd-nil") + (fold ? " fd-fold" : "");
+      return '<i class="' + cls.trim() + '" data-h="' + h.toFixed(1) + '"></i>';
+    }).join("");
+    /* An unlabelled histogram is a decoration. These two ends are what make
+       it readable — and the trailing "+" is what stops the folded tail from
+       reading as a real cluster sitting exactly at the axis end. */
+    const axis = '<div class="fdist-axis" aria-hidden="true">'
+      + "<span>" + (d.under ? "\u2264" : "") + distNum(d.lo) + pair.unit + "</span>"
+      + "<span>" + distNum(d.hi) + pair.unit + (d.over ? "+" : "") + "</span></div>";
+    strip.innerHTML =
+      '<div class="fdist-bars" aria-hidden="true">' + bars
+        + '<span class="fdist-win"></span></div>' + axis +
+      '<div class="fdist-cap"><span>median <b>' + distNum(d.med) + pair.unit + "</b>" +
+      " · " + d.n.toLocaleString("en-IN") + " reported</span>" +
+      '<span class="fdist-hit"></span></div>';
+    row.insertAdjacentElement("afterend", strip);
+    // The site's bar idiom: paint at zero, set the real size on a later frame,
+    // so the growth transition has something to animate from. A bar painted at
+    // its final height has a dead transition (V23.5).
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      strip.querySelectorAll("i").forEach(b => {
+        if(b.classList.contains("fd-nil")) return;
+        b.style.height = Math.max(3, parseFloat(b.dataset.h) || 0) + "%";
+      });
+    }));
+    [pair.min, pair.max].forEach(id => {
+      const inp = document.getElementById(id);
+      if(inp) inp.addEventListener("input", () => distSync(pair));
+    });
+    distSync(pair);
   });
 }
 

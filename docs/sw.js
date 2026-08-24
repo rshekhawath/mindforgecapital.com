@@ -456,7 +456,7 @@
 // precache is written whole, not per-file. Everything else changed here is
 // network-first HTML (strategies, the three strategy pages, Scanner, Integrity
 // Score, FII/DII, factor report, calculator, recover, dashboard) and needs no bump.
-const CACHE = 'mfc-v68';
+const CACHE = 'mfc-v69';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
