@@ -108,7 +108,7 @@
   var MIN_Q = 4, MIN_V = 3, MIN_G = 2, MIN_M = 2, MIN_E = 2;
 
   // ── State ─────────────────────────────────────────────────────────────────
-  var BUNDLE = null, BY_SYM = Object.create(null), STOCKS = [];
+  var BUNDLE = null, BY_SYM = Object.create(null), STOCKS = [], COVERAGE = null;
   var loadPromise = null;
   var META = { count: 0, generated_at: "", data_through: "", scored: 0 };
 
@@ -211,6 +211,31 @@
     var pools = {};
     QUALITY.concat(VALUE).concat(GROWTH).concat(MOMENTUM).concat(EFFICIENCY).forEach(function (f) { pools[f.key] = buildPool(stocks, f); });
 
+    /* ── V33.1 — HOW MANY STOCKS REPORT EACH FACTOR AT ALL ───────────────────
+       A pool IS the set of non-null values across the universe, so coverage is
+       already sitting here and costs nothing to publish. It exists because a
+       bare "—" on a factor row tells a reader nothing about WHY the number is
+       missing, and the answer differs enormously by factor:
+
+           asset_turnover   0.0%   Yahoo never returns it for NSE listings
+           fcf_yield        4.1%
+           current_ratio    5.9%
+           roa              6.0%
+           roe              6.9%   <- five blank rows on Reliance alone
+           roce            97.7%   <- the same idea, reported by nearly everyone
+
+       Reliance Industries showing "Return on Equity —" reads as a broken page.
+       "Rarely reported — only 7% of stocks have it" reads as what it is. The
+       Scanner has told readers this since V31.5 (`.filter-cov`); the deepest
+       data surface on the site never has. Computed off `fn()` where a factor
+       has one, so the two DERIVED momentum factors — which are 0% in the raw
+       snapshot because they are calculated at score time — are not mislabelled
+       as missing. */
+    COVERAGE = {};
+    Object.keys(pools).forEach(function (k) {
+      COVERAGE[k] = stocks.length ? pools[k].length / stocks.length : null;
+    });
+
     var scored = 0;
     for (var i = 0; i < stocks.length; i++) {
       var d = stocks[i];
@@ -309,6 +334,9 @@
     grade: grade,
     color: color,
     FACTORS: FACTORS,
+    /* {factorKey: 0..1} — the share of the scored universe that reports each
+       factor. null until load() resolves; every consumer must tolerate that. */
+    coverage: function () { return COVERAGE; },
   };
   window.MFCScores = MFCScores;
 

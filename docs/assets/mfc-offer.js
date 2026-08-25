@@ -48,7 +48,16 @@
          overflow:hidden on the bar). Purely decorative; paused for reduced-motion. */
       "#mfc-offer-bar::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.14) 50%,transparent 58%);background-size:220% 100%;background-position:135% 0;animation:mfc-offer-glint 9s ease-in-out infinite;}" +
       "@keyframes mfc-offer-glint{0%{background-position:135% 0;}34%{background-position:-35% 0;}100%{background-position:-35% 0;}}" +
-      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 44px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
+      /* V33.1 — this row could not wrap and could not shrink: `display:flex` with
+   no flex-wrap, a CTA that is `flex-shrink:0` + `white-space:nowrap`, and a
+   text span at the default `min-width:auto`. Any growth in the text — a
+   reader who has asked for larger type, longer copy, a different language —
+   pushed the whole bar past the viewport instead of on to a second line.
+   Measured at 150% text on a 375px phone: the bar ran to 506px and the
+   headline slid underneath the dismiss button, on all 18 pages that carry
+   it. Wrapping costs nothing at the default size (nothing wraps) and makes
+   the bar grow DOWN, which is the only direction it has room in. */
+      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 44px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
       "#mfc-offer-bar .mfc-offer-gift{font-size:15px;flex-shrink:0;}" +
       /* V29.1 — the bar is a blue→teal gradient, so its lightest stop is the one
          that has to carry the text. At .96 white the trailing clause measured
@@ -56,10 +65,10 @@
          white clears it on the lightest stop with margin; the hierarchy between
          the headline and its qualifier was never carried by opacity anyway —
          800 against 500 is what the eye reads, and that is unchanged. */
-      "#mfc-offer-bar .mfc-offer-text{font-weight:500;color:#fff;}" +
+      "#mfc-offer-bar .mfc-offer-text{font-weight:500;color:#fff;min-width:0;}" +
       "#mfc-offer-bar .mfc-offer-text strong{font-weight:800;letter-spacing:.01em;}" +
       "#mfc-offer-bar .mfc-offer-sub{opacity:1;font-weight:500;}" +
-      "#mfc-offer-bar .mfc-offer-cta{margin-left:auto;flex-shrink:0;background:#fff;color:#1a50d8;font-weight:700;font-size:12.5px;text-decoration:none;padding:6px 14px;border-radius:8px;white-space:nowrap;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 4px 12px -6px rgba(0,0,0,.4);}" +
+      "#mfc-offer-bar .mfc-offer-cta{margin-left:auto;flex-shrink:0;max-width:100%;background:#fff;color:#1a50d8;font-weight:700;font-size:12.5px;text-decoration:none;padding:6px 14px;border-radius:8px;white-space:nowrap;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 4px 12px -6px rgba(0,0,0,.4);}" +
       "#mfc-offer-bar .mfc-offer-cta:hover{transform:translateY(-1px);box-shadow:0 8px 18px -6px rgba(0,0,0,.5);}" +
       // V23.7: padding:2px 6px left the dismiss button 23.7px wide — a hair under
       // the 24×24 WCAG 2.2 SC 2.5.8 floor, on every page of the site. Centring on

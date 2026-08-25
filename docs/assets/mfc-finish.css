@@ -1684,3 +1684,74 @@ html a[href^="mailto:"] { overflow-wrap: break-word; }
   /* — Integrity Score scatter legend — */
   html .qv-key{ min-height: 44px; }
 }
+
+
+/* ============================================================================
+   V33.1 — THE LAYOUTS THAT FIT BY LUCK RATHER THAN BY CONSTRUCTION
+   ----------------------------------------------------------------------------
+   Every width sweep this site has ever run varies the VIEWPORT. None of them
+   varied the TEXT. A reader who raises their minimum font size (or uses
+   Firefox's text-only zoom) grows the copy inside a layout whose columns cannot
+   shrink — and a grid or flex item defaults to `min-width:auto`, which means it
+   refuses to go narrower than its own min-content width and pushes the document
+   instead. That is the V28.5 lesson — "a page can overflow with NO overflowing
+   element" — arriving from the other direction.
+
+   Measured at 150% text, which is a realistic accessibility setting:
+
+       strategies   .ps-funds        min-content 1047px, so the .ps-grid blew
+                                     past its own max-width:1040 and the page
+                                     ran to 2314px at a 1440 viewport
+       strategies   .ps-perf-cell    375 viewport -> 956px document
+       smallmicro   .strat-prose     390px inside a 375px viewport
+       largemidcap  .strat-prose     ditto
+
+   `min-width:0` is a no-op at the default text size — the columns already fit,
+   and nothing here changes by a pixel — but it is the difference between a
+   layout that fits because the numbers happen to work and one that cannot
+   overflow. Browser PAGE zoom, which is what WCAG 1.4.4 actually asks about,
+   was already clean at every width from 320 to 1440; this is robustness, not a
+   conformance fix, and it is cheap. */
+.ps-grid > *,
+.ps-perf-row > *,
+.strat-prose,
+.strat-layout > *,
+.disc-matrix > li,
+.two-col > *{ min-width: 0; }
+
+/* The comparable-funds table is the same defect V28.6 measured and fixed — it
+   just had a second trigger nobody had looked for. That release found the last
+   9px of horizontal scroll on this site: `.ps-funds-t th.r` carries
+   `white-space:nowrap`, so "5-yr CAGR" and "Expense ratio" cannot break and the
+   table's min-content width is what pushes the card. The fix was to let those
+   two HEADERS wrap — scoped to `max-width:600px`, because 320px phones were the
+   only place it had been seen. At 150% text the same cells go to a 1001px
+   min-content on a 1440px desktop and take the document to 1827px. Promoting
+   the identical rule out of the width query costs nothing where the labels
+   already fit on one line, which is everywhere at the default size. The DATA
+   cells keep their nowrap, exactly as V28.6 argued, so no percentage ever
+   breaks across lines. */
+html .ps-funds-t th.r{ white-space: normal; }
+/* NOT DONE, and recorded so it is not re-attempted: `overflow-wrap:anywhere` on
+   this table's NAME column. It is the one value that reduces min-content
+   sizing, so it looked like the fix for the table overflowing its own card at
+   150% text. Measured before/after at the default size: the table went 256px →
+   232px at a 320px viewport and the name column 85px → 53px, i.e. it broke fund
+   names mid-word on exactly the phones V28.6 tuned this table for — and it
+   still left 1549px of document at 1440/150% because the three NUMERIC columns
+   then became the constraint. A change that damages the default rendering and
+   does not fix the case it was for is not a fix. The comparable-funds table
+   therefore still overflows its card under large text; the page scrolls and no
+   content is lost, and browser page zoom — the path WCAG 1.4.4 and 1.4.10
+   actually describe — is clean at every width from 320 to 1440. */
+
+/* ── V33.1 — A BOUND TOKEN MUST STILL BE ABLE TO BREAK AS A LAST RESORT ──────
+   V32.9 added 69 non-breaking bindings so numbers would stop being parted from
+   their units. A binding is a promise not to break — which is right until the
+   bound run is wider than the box, at which point the only options are "break
+   it" or "overflow the page". Measured at 150% text: the factor report's
+   sources list pushed a 375px viewport to 398px on a single bound fund name.
+   `break-word` (not `anywhere`) leaves min-content sizing alone, so it changes
+   nothing anywhere the text already fits — it only ever fires instead of an
+   overflow. */
+body{ overflow-wrap: break-word; }

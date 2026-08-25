@@ -122,7 +122,7 @@ var MFC_OG_ALT = "MindForge Capital — systematic, factor-based investing for I
      an SEO pass. The honest fix is per-symbol precomputed scores from
      export_static.py so the page stops needing the universe at all. -->
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
-<script src="scores-engine.js?v=2780"></script>
+<script src="scores-engine.js?v=3310"></script>
 <script src="../assets/mfc-company.js?v=2840"></script>
 <style>
 :root{
@@ -287,6 +287,12 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fb-body{padding:8px 18px 14px}
 .fb-row{display:grid;grid-template-columns:1.25fr 0.7fr 1fr 34px;gap:10px;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--border)}
 .fb-row:last-child{border-bottom:none}
+/* V33.1 — the "why is this blank" note. Sized and coloured like the existing
+   .fb-hint it replaces, so a row that gains one does not change height; the
+   dotted rule marks it as a statement about the DATA rather than about the
+   company, which is what .fb-hint says everywhere else. */
+.fb-cov{border-bottom:1px dotted var(--border2);display:inline-block;padding-bottom:1px}
+.fb-row-na .fb-bar{opacity:.55}
 .fb-label{font-size:12px;font-weight:600;color:var(--text2)}
 .fb-hint{font-size:9.5px;color:var(--text3);font-weight:500}
 .fb-raw{font-size:12.5px;font-weight:700;color:var(--white);font-variant-numeric:tabular-nums;text-align:right}
@@ -529,7 +535,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3300">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3310">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock
@@ -1605,9 +1611,40 @@ function drawRadar(D){
     });
   }
 }
+/* V33.1 — WHY THIS ROW IS BLANK.
+   A factor with no value rendered as a bare em dash in three places at once —
+   the value, the bar and the score — and said nothing about the reason. On
+   Reliance Industries, one of the most heavily covered companies in India,
+   five of the twenty-five rows read that way, which looks like a broken page
+   rather than a data-source limit. The engine already knows how much of the
+   universe reports each factor (it is the length of the scoring pool), so the
+   row can say which of the three very different things is going on:
+     · nothing in the dataset has it   -> the field is absent for NSE listings
+     · few stocks have it              -> this stock is normal, the field is thin
+     · most stocks have it             -> this company is the exception
+   Fail-soft: if coverage is not loaded yet the row renders exactly as before. */
+function naNote(f){
+  var cov=null;
+  try{ cov=(window.MFCScores&&MFCScores.coverage&&MFCScores.coverage()||{})[f.key]; }catch(e){}
+  if(cov==null||isNaN(cov)) return "";
+  /* Wording lifted verbatim from the Scanner's `.filter-cov` note, which has
+     said exactly this beside a thin filter since V31.5 — one sentence for one
+     idea, on both surfaces. It is also short enough to stay on one line at the
+     narrowest column this row is ever drawn in; the first draft ("rarely
+     reported · only 6.9% of stocks have it") wrapped and made five rows taller
+     than their neighbours. */
+  if(cov<0.005) return "not in this dataset for NSE listings";
+  if(cov<0.5)   return "only " + (cov<0.1?(cov*100).toFixed(1):Math.round(cov*100)) +
+                       "% of stocks report this";
+  return "not reported for this company";
+}
 function factorRow(f){
   const raw=formatRaw(f);
-  if(f.score==null)return`<div class="fb-row"><div><div class="fb-label">${f.label}</div>${f.hint?`<div class="fb-hint">${f.hint}</div>`:""}</div><div class="fb-raw fb-na">—</div><div class="fb-bar"></div><div class="fb-score fb-na">—</div></div>`;
+  if(f.score==null){
+    const note=naNote(f);
+    const sub=note?`<div class="fb-hint fb-cov">${note}</div>`:(f.hint?`<div class="fb-hint">${f.hint}</div>`:"");
+    return`<div class="fb-row fb-row-na"><div><div class="fb-label">${f.label}</div>${sub}</div><div class="fb-raw fb-na">—</div><div class="fb-bar"></div><div class="fb-score fb-na">—</div></div>`;
+  }
   const c=MFCScores.color(f.score);
   return`<div class="fb-row"><div><div class="fb-label">${f.label}</div>${f.hint?`<div class="fb-hint">${f.hint}</div>`:""}</div><div class="fb-raw">${raw}</div><div class="fb-bar"><div class="fb-fill" data-w="${f.score}" style="background:${c}"></div></div><div class="fb-score" style="color:${c}">${f.score.toFixed(0)}</div></div>`;
 }
@@ -1621,20 +1658,34 @@ function formatRaw(f){
 }
 
 function renderKPIs(){
+  /* V33.1 — the same disclosure the factor rows gained. Without it this grid
+     printed "ROE —" three inches above a factor row that now explains itself,
+     which is a worse inconsistency than either state alone. `k` names the
+     scored factor whose coverage answers the question; KPIs with no scored
+     equivalent (market cap, revenue) carry none and behave exactly as before. */
   const kpis=[
     {l:"Market Cap",v:fmtCr(D.market_cap)},
-    {l:"P/E (TTM)",v:D.pe_ratio?fmtN(D.pe_ratio,1):"—",cls:tone(D.pe_ratio,"pe"),s:D.pe_forward?`Fwd: ${fmtN(D.pe_forward,1)}`:""},
-    {l:"P/B",v:D.pb_ratio?fmtN(D.pb_ratio,2):"—"},
+    {l:"P/E (TTM)",v:D.pe_ratio?fmtN(D.pe_ratio,1):"—",cls:tone(D.pe_ratio,"pe"),s:D.pe_forward?`Fwd: ${fmtN(D.pe_forward,1)}`:"",k:"earnings_yield"},
+    {l:"P/B",v:D.pb_ratio?fmtN(D.pb_ratio,2):"—",k:"pb_ratio"},
     {l:"P/S",v:D.ps_ratio?fmtN(D.ps_ratio,2):"—"},
-    {l:"EV/EBITDA",v:D.ev_ebitda?fmtN(D.ev_ebitda,2):"—"},
-    {l:"ROE",v:D.roe?`${fmtN(D.roe,1)}%`:"—",cls:tone(D.roe,"q")},
-    {l:"ROCE",v:D.roce?`${fmtN(D.roce,1)}%`:"—",cls:tone(D.roce,"q")},
-    {l:"Net Margin",v:D.net_margin?`${fmtN(D.net_margin,1)}%`:"—",cls:tone(D.net_margin,"q")},
-    {l:"D/E Ratio",v:D.debt_to_equity?fmtN(D.debt_to_equity/100,2):"—"},
+    {l:"EV/EBITDA",v:D.ev_ebitda?fmtN(D.ev_ebitda,2):"—",k:"ev_ebitda"},
+    {l:"ROE",v:D.roe?`${fmtN(D.roe,1)}%`:"—",cls:tone(D.roe,"q"),k:"roe"},
+    {l:"ROCE",v:D.roce?`${fmtN(D.roce,1)}%`:"—",cls:tone(D.roce,"q"),k:"roce"},
+    {l:"Net Margin",v:D.net_margin?`${fmtN(D.net_margin,1)}%`:"—",cls:tone(D.net_margin,"q"),k:"net_margin"},
+    {l:"D/E Ratio",v:D.debt_to_equity?fmtN(D.debt_to_equity/100,2):"—",k:"debt_to_equity"},
     {l:"Revenue",v:fmtCr(D.revenue)},
     {l:"Net Profit",v:fmtCr(D.net_profit),cls:clsPct(D.net_profit)},
-    {l:"Div Yield",v:D.dividend_yield?`${fmtN(D.dividend_yield,2)}%`:"—",cls:tone(D.dividend_yield,"div")},
+    {l:"Div Yield",v:D.dividend_yield?`${fmtN(D.dividend_yield,2)}%`:"—",cls:tone(D.dividend_yield,"div"),k:"dividend_yield"},
   ];
+  kpis.forEach(function(x){
+    if(x.s||x.v!=="—"||!x.k) return;
+    var cov=null;
+    try{ cov=(window.MFCScores&&MFCScores.coverage&&MFCScores.coverage()||{})[x.k]; }catch(e){}
+    if(cov==null||isNaN(cov)) return;
+    x.s = cov<0.005 ? "not in this dataset"
+        : cov<0.5   ? "only " + (cov<0.1?(cov*100).toFixed(1):Math.round(cov*100)) + "% of stocks report it"
+                    : "not reported here";
+  });
   document.getElementById("kpiGrid").innerHTML=kpis.map(k=>`<div class="kpi-card"><div class="kpi-label">${k.l}</div><div class="kpi-value ${k.cls||""}">${k.v}</div>${k.s?`<div class="kpi-sub">${k.s}</div>`:""}</div>`).join("");
 }
 
@@ -1874,7 +1925,7 @@ document.getElementById("openScreener").addEventListener("click",(e)=>{e.prevent
   if(msg)msg.addEventListener('click',function(){try{sessionStorage.setItem(DISMISS_KEY,'1');}catch(_){}});
 })();
 </script>
-<script src="../assets/mfc-offer.js?v=3000" defer></script>
+<script src="../assets/mfc-offer.js?v=3310" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.

@@ -115,6 +115,38 @@ def _chg(v):
     return "0.00%", "fl"
 
 
+# ── V33.1 — THE STYLESHEET TOKEN IS NO LONGER A LITERAL IN THIS FILE ─────────
+# These 28 pages carried `mfc-finish.css?v=NNNN` as a hardcoded string. That is
+# the same file the other 21 hand-maintained pages link, and every release that
+# touches it bumps the token on those 21 — so each release this generator was
+# one refresh away from silently reverting the 28 back to the previous token.
+# It has now happened at least three times:
+#   V29.2  pinned at 2850 while the site was on 2910 — the 44px hamburger fix
+#          never reached the pages Google actually lands on, for weeks
+#   V31.4  reverted mid-session by the scheduled refresh
+#   V33.1  found live: the site was on 3300, these 28 were back on 3120, so the
+#          release's reduced-motion blanket and touch-target block were absent
+#          from every stock-directory page
+# Editing the literal fixes the symptom for exactly one release. Reading the
+# token from a hand-maintained page makes drift impossible: whatever the rest of
+# the site asks for, these pages ask for too. The literal below is only a
+# fallback for the case where index.html cannot be read at all.
+_FINISH_FALLBACK = "3310"
+
+def _finish_ver() -> str:
+    """The ?v token the rest of the site is currently using for mfc-finish.css."""
+    import re as _re
+    try:
+        idx = os.path.normpath(os.path.join(HERE, "..", "docs", "index.html"))
+        with open(idx, encoding="utf-8") as fh:
+            m = _re.search(r"mfc-finish\.css\?v=(\d+)", fh.read())
+        if m:
+            return m.group(1)
+    except Exception:
+        pass
+    return _FINISH_FALLBACK
+
+
 def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
     """One directory page. The head mirrors the hand-maintained pages: same CSP,
     same PWA metadata, same FOUC-free theme boot, same nav — so the directory is
@@ -181,9 +213,12 @@ def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
      smallest. Both stylesheets now move together with the rest of the site.
      (The standing audit greps this tree for the stylesheet-plus-version string
      and expects exactly one distinct value, so this note deliberately does not
-     spell that pattern out — 28 copies of it would be 28 false hits.) -->
+     spell that pattern out — 28 copies of it would be 28 false hits.)
+     V33.1: the token is no longer written here as a literal. It is read from
+     the site's own index.html at generation time, so a refresh can no longer
+     revert these pages to a stylesheet the rest of the site has moved past. -->
 <link rel="stylesheet" href="/assets/mfc-dir.css?v=2920">
-<link rel="stylesheet" href="/assets/mfc-finish.css?v=3120">
+<link rel="stylesheet" href="/assets/mfc-finish.css?v={_finish_ver()}">
 <!-- V29.2: this was the apply-only half of the site's theme script — it READ the
      saved preference but never built the nav toggle, so these 28 pages were the
      only ones on the site with no way to change theme. A visitor who arrived here
