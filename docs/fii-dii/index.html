@@ -417,6 +417,68 @@ svg.barchart .bargrp:hover .bar,
 svg.barchart .bargrp:focus-visible .bar{filter:brightness(1.12)}
 @media(prefers-reduced-motion:reduce){svg.barchart .band{transition:none}}
 
+/* ── V33.1a — CUMULATIVE NET FLOW ───────────────────────────────────────────
+   A running total from zero over every session the page holds, drawn as two
+   lines on the same axis. Deliberately a SUMMARY, not a second interactive
+   chart: no per-point hit bands, no roving tabindex, no readout — the daily
+   chart above already owns that interaction, and duplicating it would cost a
+   keyboard user a second twenty-stop walk over the same numbers. The <svg>
+   carries role="img" and an aria-label with both totals, and the caption
+   beneath repeats them as ordinary text, so nothing here is only in the shape.
+   Line colours are the START stops of the two gradients the bars already use,
+   so a reader does not have to learn a second key; both were pixel-measured
+   against this panel at 4.8:1 (FII) and 5.6:1 (DII) in light, 5.1:1 and 4.4:1
+   in dark — comfortably past the 3:1 floor a graphical object needs. */
+.cumu{margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.cumu-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin-bottom:10px}
+.cumu-t{font-size:13px;font-weight:700;color:var(--white)}
+.cumu-sub{font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums;margin-left:8px}
+.cumu-keys{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.cumu-key{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.cumu-key i{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.cumu-key.fii i{background:#1a50d8} .cumu-key.fii{color:#1a50d8}
+.cumu-key.dii i{background:#7c3aed} .cumu-key.dii{color:#7c3aed}
+html[data-theme="dark"] .cumu-key.fii i{background:#83aaff} html[data-theme="dark"] .cumu-key.fii{color:#83aaff}
+html[data-theme="dark"] .cumu-key.dii i{background:#a78bfa} html[data-theme="dark"] .cumu-key.dii{color:#a78bfa}
+.cumu-chart{width:100%;position:relative}
+/* The zero rule needs a label, and it cannot be <text> inside a stretched
+   viewBox (it would stretch with it). Positioned in HTML against the chart box
+   at the same fraction the line is drawn at, so the two cannot drift apart. */
+.cumu-zero-tag{position:absolute;left:0;transform:translateY(-100%);
+  font-size:10px;font-weight:600;color:var(--text3);background:var(--ink2);
+  padding:0 3px;pointer-events:none}
+/* An explicit height, because `height:auto` on a 760x132 viewBox scales the
+   whole drawing with the width — measured 187px tall at a 1180px panel and just
+   54px on a 390px phone, which is not a chart any more. A fixed height plus a
+   stretched viewBox (see preserveAspectRatio below) gives the same readable
+   band at every width. */
+.cumu-chart svg{display:block;width:100%;height:150px;overflow:visible}
+@media(max-width:600px){ .cumu-chart svg{height:118px} }
+.cumu-chart .cu-zero{stroke:var(--border2);stroke-width:1}
+/* `vector-effect:non-scaling-stroke` is what makes a stretched viewBox safe:
+   without it a non-uniform scale draws the vertical parts of a line thicker
+   than the horizontal ones. */
+.cumu-chart .cu-line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;
+  vector-effect:non-scaling-stroke}
+.cumu-chart .cu-zero{vector-effect:non-scaling-stroke}
+.cumu-chart .cu-fii{stroke:#1a50d8}
+.cumu-chart .cu-dii{stroke:#7c3aed}
+
+html[data-theme="dark"] .cumu-chart .cu-fii{stroke:#83aaff}
+html[data-theme="dark"] .cumu-chart .cu-dii{stroke:#a78bfa}
+.cumu-note{margin-top:10px}
+.cumu-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums}
+/* The line grows in from the left on reveal — the page's own bar idiom, applied
+   to a path. Falls back to a static line wherever motion is reduced. */
+@media(prefers-reduced-motion:no-preference){
+  .cumu-chart .cu-line{stroke-dasharray:var(--len,0);stroke-dashoffset:var(--len,0);
+    animation:cu-draw 1.1s cubic-bezier(.22,1,.36,1) .1s forwards}
+  @keyframes cu-draw{to{stroke-dashoffset:0}}
+}
+/* Paper drops CSS backgrounds but strokes are content here, so this block only
+   needs the colour guard the rest of the page's meters carry. */
+@media print{ .cumu-chart svg{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; } }
+
 /* ── V14.9 finishing polish — interactive depth on the tables & position cards ── */
 table.data tbody tr{transition:background .15s ease}
 table.data tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
@@ -636,6 +698,29 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            focused — the line simply changes which day it is describing. -->
       <div class="trend-read" id="trendRead" aria-live="polite"></div>
       <div class="chart-wrap"><div id="chart"></div></div>
+      <!-- V33.1a — CUMULATIVE. The bars above answer "what happened on a given
+           day"; forty-two signed bars cannot be summed by eye, so the question
+           the page actually exists for — who has been accumulating and who
+           distributing over the window — had no answer on it. Same rows, same
+           colours, running total from zero. Hidden until it has data, like every
+           other data-driven block here. -->
+      <div class="cumu" id="cumu" style="display:none">
+        <div class="cumu-h">
+          <div>
+            <span class="cumu-t">Cumulative net flow</span>
+            <span class="cumu-sub" id="cumuSub"></span>
+          </div>
+          <!-- V33.2 — the two totals are HTML, not <text> inside the SVG. The
+               first draft drew them at the end of each line and they clipped on
+               the viewBox edge ("FII −5,94"), because a label's length is in
+               glyphs and the reserve was in viewBox units. Out here they cannot
+               clip, they wrap when the panel is narrow, they inherit the theme,
+               and they are selectable. -->
+          <div class="cumu-keys" id="cumuKeys"></div>
+        </div>
+        <div class="cumu-chart" id="cumuChart"></div>
+        <div class="note cumu-note" id="cumuNote"></div>
+      </div>
       <div class="note" id="trendTblNote" style="margin-top:14px"></div>
       <div class="tbl-scroll" style="margin-top:8px">
         <table class="data" id="cashTbl">
@@ -957,6 +1042,7 @@ function renderTrend(d){
   document.getElementById("trendHint").textContent =
     show.length<=1 ? "Builds each market day" : `Last ${show.length} sessions`;
   drawChart(show);
+  try{ renderCumulative(d); }catch(e){ const b=document.getElementById("cumu"); if(b) b.style.display="none"; }
   // table: newest first
   const body=document.getElementById("cashTblBody");
   const rows=hist.slice().sort((a,b)=>dkey(b.date)-dkey(a.date)).slice(0,TREND_ROWS);
@@ -975,6 +1061,73 @@ function renderTrend(d){
     <td>${grp(r.fii_buy)}</td><td>${grp(r.fii_sell)}</td><td class="${sign(r.fii_net)}"><span class="netnum">${cr(r.fii_net)}</span>${dbar(r.fii_net||0,maxNet)}</td>
     <td>${grp(r.dii_buy)}</td><td>${grp(r.dii_sell)}</td><td class="${sign(r.dii_net)}"><span class="netnum">${cr(r.dii_net)}</span>${dbar(r.dii_net||0,maxNet)}</td>
   </tr>`).join("");
+}
+
+/* ── V33.1a — CUMULATIVE NET FLOW ──────────────────────────────────────────
+   Runs over EVERY session the payload holds, not the 20 the bars draw: the
+   whole point is the window the daily view cannot show. Fail-soft — any throw
+   leaves #cumu display:none and the page renders exactly as before. */
+function renderCumulative(d){
+  const box=document.getElementById("cumu");
+  if(!box) return;
+  const rows=(d.cash_history||[]).filter(r=>r&&r.date)
+    .slice().sort((a,b)=>dkey(a.date)-dkey(b.date));
+  if(rows.length<5){ box.style.display="none"; return; }
+
+  let f=0,di=0; const pts=[];
+  rows.forEach(r=>{ f+=(+r.fii_net||0); di+=(+r.dii_net||0); pts.push({d:r.date,f:f,i:di}); });
+
+  const W=760,H=132,padT=14,padB=18,padL=10,padR=10;
+  const all=pts.flatMap(p=>[p.f,p.i]).concat([0]);
+  const lo=Math.min(...all), hi=Math.max(...all);
+  const span=Math.max(1,hi-lo);
+  const x=i=>padL+(i/(pts.length-1))*(W-padL-padR);
+  const y=v=>padT+(hi-v)/span*(H-padT-padB);
+  const line=k=>pts.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(" ");
+  const last=pts[pts.length-1];
+  const zeroY=y(0);
+
+  // A path animating from zero length needs its own length; measuring it in the
+  // browser would need the node to exist first, so approximate generously —
+  // dasharray only has to be >= the true length for the reveal to look right.
+  const approx=Math.round((W-padL-padR)*1.6);
+  const cr0=v=>(v<0?"−":"+")+grp(Math.abs(Math.round(v)));
+
+  document.getElementById("cumuChart").innerHTML =
+    /* `none` — the drawing stretches to a fixed-height band so it reads the same
+       on a phone as on a desktop. The only marks left are strokes, and they
+       carry non-scaling-stroke, so a non-uniform scale cannot distort them; the
+       end points are named by the HTML keys above rather than by dots that a
+       stretch would turn into ellipses. The one <text> is the zero label, which
+       sits at the left edge where the horizontal scale does not reach it. */
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative net flow over ${pts.length} sessions: FII ${cr0(last.f)} crore, DII ${cr0(last.i)} crore">
+       <line class="cu-zero" x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${zeroY.toFixed(1)}"/>
+       <path class="cu-line cu-fii" style="--len:${approx}" d="${line("f")}"/>
+       <path class="cu-line cu-dii" style="--len:${approx}" d="${line("i")}"/>
+     </svg>`;
+
+  // …and the label for it, placed at the same fraction of the box the line is
+  // drawn at (zeroY / H), so the tag can never sit off the rule it names.
+  document.getElementById("cumuChart").insertAdjacentHTML("beforeend",
+    `<span class="cumu-zero-tag" style="top:${(zeroY / H * 100).toFixed(2)}%">0</span>`);
+
+  document.getElementById("cumuKeys").innerHTML =
+    `<span class="cumu-key fii"><i></i>FII ${cr0(last.f)}\u00A0cr</span>`
+  + `<span class="cumu-key dii"><i></i>DII ${cr0(last.i)}\u00A0cr</span>`;
+
+  document.getElementById("cumuSub").textContent =
+    `${pts.length} sessions · ${rows[0].date} → ${last.d}`;
+
+  // The caption is the accessible reading of the shape, and it names the basis
+  // the cash panel above already declares (provisional NSE figures).
+  const verb=v=>v>=0?"net bought":"net sold";
+  document.getElementById("cumuNote").innerHTML =
+    `Over these <b>${pts.length}</b> sessions FIIs have <b>${verb(last.f)}</b> `
+    + `<b>₹${grp(Math.abs(Math.round(last.f)))} cr</b> and DIIs have <b>${verb(last.i)}</b> `
+    + `<b>₹${grp(Math.abs(Math.round(last.i)))} cr</b> in the cash market · `
+    + `combined <b>₹${grp(Math.abs(Math.round(last.f+last.i)))} cr</b> of net `
+    + `${last.f+last.i>=0?"inflow":"outflow"}. Provisional NSE figures, the same rows as the table below.`;
+  box.style.display="";
 }
 
 function dkey(s){const m=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];try{const[d,mo,y]=String(s).split("-");return new Date(+y,m.indexOf(mo.toLowerCase().slice(0,3)),+d).getTime();}catch(_){return 0;}}
