@@ -456,7 +456,17 @@
 // precache is written whole, not per-file. Everything else changed here is
 // network-first HTML (strategies, the three strategy pages, Scanner, Integrity
 // Score, FII/DII, factor report, calculator, recover, dashboard) and needs no bump.
-const CACHE = 'mfc-v70';
+// V33.3 -> mfc-v71. THIS ONE MUST MOVE, for the reason the V33.1 note above
+// spells out: mfc-finish.css goes 3310 -> 3320 on all 49 pages, and both
+// PRECACHED documents point at it while carrying no ?v of their own. index.html
+// is the offline navigation fallback and also changed in its own right (the hero
+// alpha chip may now wrap instead of being clipped at 320); login.html is
+// untouched but rides the bump because the precache is written whole.
+// Everything else this release is network-first HTML — the three strategy pages
+// (dark-theme charts, zoom-pill layout), Integrity Score (card-mode specificity,
+// the fifth lens, the SVG icons), the Scanner, FII/DII (the rebuilt trend chart)
+// and the three legal pages.
+const CACHE = 'mfc-v71';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -204,7 +204,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
 /* combined insight */
 .combined{margin-top:16px;display:flex;align-items:center;gap:13px;background:linear-gradient(120deg,rgba(26,80,216,.045),rgba(8,145,178,.04));border:0.5px solid var(--border);border-radius:var(--r);padding:14px 18px}
-.combined .ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--ink2);border:0.5px solid var(--border);flex-shrink:0;font-size:18px}
+.mfi{width:1.05em;height:1.05em;vertical-align:-0.17em;flex:none}
+.combined .ico{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--ink2);border:0.5px solid var(--border);flex-shrink:0;color:var(--text2)}
+.combined .ico svg{width:19px;height:19px}
 .combined .txt{font-size:14px;color:var(--text2);line-height:1.5}
 .combined .txt b{color:var(--white)}
 
@@ -229,7 +231,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
    #b45309 5.05:1 / 3.6:1). One language, checked in all three places. */
 .sw.fii{background:linear-gradient(135deg,#1a50d8,#0e7490)}
 .sw.dii{background:linear-gradient(135deg,#7c3aed,#b45309)}
-svg.barchart{display:block;width:100%;min-width:380px;height:230px;overflow:visible}
+svg.barchart{display:block;width:100%;height:230px;overflow:visible}
 svg.barchart text{font-family:inherit}
 
 /* ── TABLE ── */
@@ -308,7 +310,8 @@ html[data-theme="dark"]{
 .sentiment.bear{background:var(--red-bg);border:0.5px solid rgba(220,38,38,.18);color:#b91c1c}
 .sentiment.bull{background:var(--green-bg);border:0.5px solid rgba(5,150,105,.18);color:#047857}
 .sentiment.neutral{background:rgba(217,119,6,.07);border:0.5px solid rgba(217,119,6,.2);color:#b45309}
-.sentiment .big{font-size:20px}
+.sentiment .big{line-height:0;flex:none}
+.sentiment .big svg{width:21px;height:21px}
 .sentiment b{font-weight:700}
 
 .inst-card{background:var(--ink2);border:0.5px solid var(--border);border-radius:var(--r-lg);padding:22px;box-shadow:0 6px 28px -18px rgba(26,80,216,.25)}
@@ -558,7 +561,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3310">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3320">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -1009,13 +1012,13 @@ function renderCash(d){
     // ink) — it just has to name the same tokens everything else on the page uses.
     const tot=(fn||0)+(dn||0);
     const box=document.getElementById("combined");
-    let ico="⚖️",msg;
+    let ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v16M7.5 20h9M4 7.5h16M6.5 7 3.5 13.5a3 3 0 0 0 6 0L6.5 7ZM17.5 7l-3 6.5a3 3 0 0 0 6 0L17.5 7Z"/></svg>',msg;
     const fSide=fn>=0?"bought":"sold",dSide=dn>=0?"bought":"sold";
     if(fn!=null&&dn!=null&&((fn>=0)!==(dn>=0))){
-      ico="🔀";
+      ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7h4.2l3.4 5m0 0 3.4 5H21M3 17h4.2l3.4-5"/><path d="M17.8 3.8 21 7l-3.2 3.2M17.8 13.8 21 17l-3.2 3.2"/></svg>';
       msg=`<b>Opposing flows.</b> FIIs net <b>${fSide}</b> ₹${grp(Math.abs(fn))} cr while DIIs net <b>${dSide}</b> ₹${grp(Math.abs(dn))} cr. Combined net <b class="${tot>=0?'up':'down'}" style="color:${tot>=0?'var(--green-ink)':'var(--red-ink)'}">${cr(tot)} cr</b>.`;
     }else{
-      ico=tot>=0?"📈":"📉";
+      ico=tot>=0?'<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 16.5 5.4-5.4 3.6 3.6L21 5.5"/><path d="M15.5 5.5H21v5.5"/></svg>':'<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 7.5 5.4 5.4 3.6-3.6L21 18.5"/><path d="M15.5 18.5H21V13"/></svg>';
       msg=`Both sides net <b>${fSide==='bought'&&dSide==='bought'?'bought':'sold'}</b>. Combined institutional net flow <b class="${tot>=0?'up':'down'}" style="color:${tot>=0?'var(--green-ink)':'var(--red-ink)'}">${cr(tot)} cr</b> on ${escapeHtml(cash.date||d.data_date||"")}.`;
     }
     // tug-of-war: FII vs DII cash net on a shared scale (who moved the market, by how much)
@@ -1030,11 +1033,36 @@ function renderCash(d){
 
 const TREND_BARS=20, TREND_ROWS=30;
 
+/* ── V33.3 — THE TREND CHART WAS DRAWN AT 47.5% ON A PHONE ──────────────────
+   `drawChart` sizes its viewBox from the DATA (20 sessions x 40 units = an
+   800-unit box) while the CSS paints that box at `width:100%;min-width:380px`.
+   On a 375px phone the wrap is 297px, so the whole 800-unit drawing was scaled
+   to 380 — a factor of 0.475 — and every label written at 9.5 units rendered at
+   5px. Measured: `.xlab` glyph height 5.0px, `.glab` 5.0px, against this site's
+   own 10px floor. The `min-width` then made the chart 83px wider than its
+   window as well, so the newest sessions sat off the right edge of a scroller
+   with no affordance, on the page whose subject is the newest sessions.
+
+   Both come from the same mistake — a viewBox that does not agree with the box
+   it is painted into. The fix is to let the AVAILABLE WIDTH choose the viewBox
+   and the session count together: keep every session at least MIN_GROUP px, drop
+   the oldest sessions until they fit, and draw at 1:1 so 9.5 units is 9.5px.
+   The count is computed here rather than inside drawChart because the panel
+   hint, the table note and the keyboard readout all derive from `show.length`
+   and would otherwise describe a chart with more bars than it has. */
+const MIN_GROUP = 17;   // px per session: two 6px bars, a 2px gap and air
+function trendBars(){
+  const wrap = document.querySelector('.chart-wrap');
+  const avail = wrap ? wrap.clientWidth : 0;
+  if (!avail) return TREND_BARS;
+  return Math.max(6, Math.min(TREND_BARS, Math.floor((avail - 16) / MIN_GROUP)));
+}
+
 function renderTrend(d){
   const hist=(d.cash_history||[]).slice().filter(r=>r&&r.date);
   // chronological (oldest -> newest), cap to the last TREND_BARS for the chart
   const chrono=hist.slice().sort((a,b)=>dkey(a.date)-dkey(b.date));
-  const show=chrono.slice(-TREND_BARS);
+  const show=chrono.slice(-trendBars());
   // V31.2 — this hint sits in the panel header, immediately above the legend and
   // the chart, and it printed hist.length: "37 trading days" over a chart that
   // draws the last 20 and a table that lists 30. It described neither. It is now
@@ -1135,12 +1163,29 @@ function dkey(s){const m=["jan","feb","mar","apr","may","jun","jul","aug","sep",
 function drawChart(rows){
   const host=document.getElementById("chart");
   if(!rows.length){host.innerHTML=`<div style="padding:30px;text-align:center;color:var(--text3)">No trend data yet.</div>`;return;}
-  const W=Math.max(380,rows.length*Math.min(64,Math.max(40,760/rows.length))),H=230,padB=34,padT=14,padL=8,padR=8;
+  // 1:1 with the box it is painted into, so a unit is a pixel and the labels
+  // are the size they say they are. Falls back to the old data-derived width
+  // only if the wrap has no layout yet (print, display:none, pre-paint).
+  const wrap=host.closest('.chart-wrap');
+  const avail=wrap?wrap.clientWidth:0;
+  const W=avail>200?avail:Math.max(380,rows.length*Math.min(64,Math.max(40,760/rows.length))),
+        H=230,padB=34,padT=14,padL=8,padR=8;
   const vals=rows.flatMap(r=>[r.fii_net||0,r.dii_net||0]);
   const maxV=Math.max(1,...vals.map(Math.abs));
   const innerH=H-padB-padT,zeroY=padT+innerH*(maxV/(2*maxV)),half=innerH/2;
   const groupW=(W-padL-padR)/rows.length,barW=Math.min(15,groupW/2.6);
   const y=v=>zeroY-(v/maxV)*half;
+  /* V33.3 — the x labels are "03-Aug" at 9.5px, which needs ~46px with air
+     around it. The old rule ("every 2nd once past 12 sessions") was written
+     when the viewBox was always 800 units wide and therefore always had room;
+     at 1:1 on a 297px phone it asked for eight labels in 281px and they ran
+     into one another. Count what fits instead, and force the final date only
+     when it is at least one label away from the one before it. */
+  const LABEL_W=46, innerW=W-padL-padR;
+  const fits=Math.max(2,Math.floor(innerW/LABEL_W));
+  const every=Math.max(1,Math.ceil(rows.length/fits));
+  const lastI=rows.length-1;
+  const showLast=lastI>0 && (lastI%every===0 || (lastI-Math.floor(lastI/every)*every)*((W-padL-padR)/rows.length)>=LABEL_W);
   let bars="";
   rows.forEach((r,i)=>{
     const gx=padL+i*groupW+groupW/2;
@@ -1163,8 +1208,7 @@ function drawChart(rows){
         +` aria-label="${escapeHtml(r.date||"")}: FII net ${cr(r.fii_net||0)} crore, DII net ${cr(r.dii_net||0)} crore">${one}</g>`;
     // x label (show every nth to avoid crowding)
     const lab=r.date?r.date.slice(0,6):"";
-    const every=rows.length>12?2:1;
-    if(i%every===0||i===rows.length-1)
+    if(i%every===0||(i===lastI&&showLast))
       bars+=`<text class="xlab" x="${gx.toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="9.5">${escapeHtml(lab)}</text>`;
   });
   host.innerHTML=`<svg class="barchart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="list" aria-label="FII and DII net flow trend, ${rows.length} sessions">
@@ -1281,12 +1325,12 @@ function renderDerivatives(d){
   // sentiment
   const sent=document.getElementById("sentiment");
   let cls,ico,txt;
-  if(ratio==null){cls="neutral";ico="⏳";txt="Ratio unavailable.";}
-  else if(ratio<0.5){cls="bear";ico="🐻";txt=`<b>Heavily net short.</b> FIIs hold ${Math.round(shortPct)}% of their index-futures OI on the short side — a defensive / bearish tilt.`;}
-  else if(ratio<0.9){cls="bear";ico="🐻";txt=`<b>Net short.</b> FIIs are leaning short index futures (${Math.round(shortPct)}% short) — cautious positioning.`;}
-  else if(ratio<=1.1){cls="neutral";ico="⚖️";txt=`<b>Balanced.</b> FII long & short index-futures OI are roughly even — no strong directional bias.`;}
-  else if(ratio<=2){cls="bull";ico="🐂";txt=`<b>Net long.</b> FIIs are leaning long index futures (${Math.round(longPct)}% long) — constructive positioning.`;}
-  else {cls="bull";ico="🐂";txt=`<b>Heavily net long.</b> FIIs hold ${Math.round(longPct)}% of their index-futures OI on the long side — an aggressive bullish tilt.`;}
+  if(ratio==null){cls="neutral";ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3 1.8"/></svg>';txt="Ratio unavailable.";}
+  else if(ratio<0.5){cls="bear";ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 7.5 5.4 5.4 3.6-3.6L21 18.5"/><path d="M15.5 18.5H21V13"/></svg>';txt=`<b>Heavily net short.</b> FIIs hold ${Math.round(shortPct)}% of their index-futures OI on the short side — a defensive / bearish tilt.`;}
+  else if(ratio<0.9){cls="bear";ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 7.5 5.4 5.4 3.6-3.6L21 18.5"/><path d="M15.5 18.5H21V13"/></svg>';txt=`<b>Net short.</b> FIIs are leaning short index futures (${Math.round(shortPct)}% short) — cautious positioning.`;}
+  else if(ratio<=1.1){cls="neutral";ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4v16M7.5 20h9M4 7.5h16M6.5 7 3.5 13.5a3 3 0 0 0 6 0L6.5 7ZM17.5 7l-3 6.5a3 3 0 0 0 6 0L17.5 7Z"/></svg>';txt=`<b>Balanced.</b> FII long & short index-futures OI are roughly even — no strong directional bias.`;}
+  else if(ratio<=2){cls="bull";ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 16.5 5.4-5.4 3.6 3.6L21 5.5"/><path d="M15.5 5.5H21v5.5"/></svg>';txt=`<b>Net long.</b> FIIs are leaning long index futures (${Math.round(longPct)}% long) — constructive positioning.`;}
+  else {cls="bull";ico='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 16.5 5.4-5.4 3.6 3.6L21 5.5"/><path d="M15.5 5.5H21v5.5"/></svg>';txt=`<b>Heavily net long.</b> FIIs hold ${Math.round(longPct)}% of their index-futures OI on the long side — an aggressive bullish tilt.`;}
   sent.className="sentiment "+cls;
   sent.innerHTML=`<span class="big">${ico}</span><span>${txt}</span>`;
 
@@ -1357,6 +1401,19 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
   renderCash(d);
   renderTrend(d);
   renderDerivatives(d);
+  /* V33.3 — the trend chart now sizes its viewBox and its session count from the
+     available width, so a rotation or a window drag has to re-fit it. Redraw
+     only when the count would actually change, so a resize that does not cross
+     a MIN_GROUP boundary costs nothing and the chart does not flicker. */
+  let lastBars = -1, rzT;
+  const refit = () => {
+    const n = trendBars();
+    if (n === lastBars) return;
+    lastBars = n;
+    try { renderTrend(d); } catch (_) {}
+  };
+  refit();
+  window.addEventListener("resize", () => { clearTimeout(rzT); rzT = setTimeout(refit, 180); }, {passive:true});
 }).catch(e=>{
   document.getElementById("updated").innerHTML=`<span style="color:var(--red-ink)">Could not load data — please refresh.</span>`;
   document.getElementById("cashGrid").innerHTML=`<div class="err-box" style="grid-column:1/-1"><b>Couldn't load FII/DII data</b>Please check your connection and refresh the page.</div>`;

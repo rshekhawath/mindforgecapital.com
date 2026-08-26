@@ -607,20 +607,125 @@ html[data-theme="dark"] .ls-cta,
 html[data-theme="dark"] .fr-arch-badge,
 html[data-theme="dark"] .hint a{ color:var(--accent3); }
 
-/* .bt-chart-full is a DELIBERATELY-light card even on the dark theme (it frames
-   a white chart PNG, so its #fafbfd background is kept and only the border/glow
-   flip). Its accent-inked label and info icon therefore live on a LIGHT surface
-   in dark mode — and --accent2 flips to a light-bg blue (#5b8def), which then
-   read 2.5:1 on that white card. Pin them to the light-theme accent so they
-   stay dark-on-light regardless of theme. This is the opposite of the lift
-   above precisely because the surface here does not flip. */
-html[data-theme="dark"] .bt-chart-full .bt-chart-label{ color:#2563eb; }
-html[data-theme="dark"] .bt-chart-full .tip-icon{ color:#1a50d8; background:rgba(37,99,235,0.18); }
+/* ═══════════════════════════════════════════════════════════════════════════
+   V33.3 — THE FIFTEEN BACKTEST CHARTS NOW BELONG TO THE DARK THEME.
+   ───────────────────────────────────────────────────────────────────────────
+   Every chart on the three strategy pages is a matplotlib PNG rendered on a
+   white figure with a #fafbfd panel. There is no dark variant of any of them.
+   The previous answer was to keep the CARD light so the image had somewhere to
+   sit — which is why the note this block replaces existed, and why the label,
+   the info icon and the zoom pill were all pinned to light-theme inks. The
+   result on the dark theme was five bright-white slabs per page, each about
+   1040x420, on a page whose body is #080d1a. Measured: the card background was
+   rgb(250,251,253) against a body of rgb(8,13,26).
 
-/* strategy-page "click to zoom" chart hint: a hardcoded rgba(255,255,255,.88)
-   pill sitting on the SAME light chart card, so it must stay dark-on-light too.
-   Its text3 ink read 2.9:1 — darken it rather than the (correctly light) pill. */
-html[data-theme="dark"] .mf98-zoom-hint{ color:#475569; }
+   A PNG cannot be re-inked, but it CAN be re-mapped on the way to the screen,
+   and the transform that does it is exact rather than approximate because the
+   source palette is only six colours. `invert(1)` turns the white figure black
+   and the near-black title white; `hue-rotate(185deg)` returns the inverted
+   line to blue (the inversion sends #1a50d8 to an orange, and the rotation is
+   what brings it home — 185deg, not the reflexive 180, because CSS hue-rotate
+   is a luminance-preserving matrix and not a true HSL rotation, and 185 lands
+   the line closest to the palette's own dark-theme blue); `brightness(1.15)`
+   lifts every grey off the new black floor without clipping the title;
+   `saturate(1.2)` restores the chroma the matrix costs.
+
+   Every value below is computed from the actual PNG palette, not guessed.
+   Contrast against the chart's own panel, light theme -> dark treatment:
+       axis tick labels  (122,138,160)   3.40:1  ->  5.84:1   <- was under 4.5
+       chart title       (12,24,49)     17.03:1  -> 20.38:1
+       MindForge line    (26,80,216)     6.37:1  ->  9.9:1  as (149,202,255)
+       benchmark dashes  (148,163,184)   2.48:1  ->  4.1:1
+   The dark chart is therefore MORE legible than the published light one, which
+   is the point: the tick labels never cleared the text floor on white.
+
+   Greys are untouched by hue-rotate (the matrix is identity on r==g==b), so
+   the rotation buys the line its blue back and costs the axis furniture
+   nothing. The card itself now flips to the page's own surface so the image
+   has no visible edge, and the three light-pinned inks below are gone with the
+   light card that forced them.
+
+   PRINT is exempt further down: paper is white, so an inverted chart would be
+   a black rectangle at the printer.
+   ═══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] .bt-chart-full{
+  background:#080d1a;
+}
+html[data-theme="dark"] .bt-chart-img{
+  filter:invert(1) hue-rotate(185deg) brightness(1.15) saturate(1.2);
+}
+html[data-theme="dark"] .mf98-lb img{
+  filter:invert(1) hue-rotate(185deg) brightness(1.15) saturate(1.2);
+}
+/* the skeleton shimmer is a CSS gradient on the same element, so it would be
+   inverted too — give it the already-dark ramp instead of a filtered light one */
+html[data-theme="dark"] .bt-chart-img:not(.loaded){
+  filter:none;
+  background:linear-gradient(90deg,#0e1728 25%,#16203a 50%,#0e1728 75%);
+  background-size:200% 100%;
+}
+/* the zoom pill is a hardcoded rgba(255,255,255,.88) chip that used to sit on a
+   light card. The card is dark now, so the chip flips with it. */
+html[data-theme="dark"] .mf98-zoom-hint{
+  color:#c3cfe4;                       /* 8.8:1 on the pill below */
+  background:rgba(30,44,74,.92);       /* 1.40:1 vs the card — the light pill is 1.03:1 */
+  border-color:rgba(130,170,245,.60);  /* 3.14:1 vs the pill — the light border is 1.28:1 */
+}
+/* ═══════════════════════════════════════════════════════════════════════════
+   V33.3 — "Tap to zoom" WAS SITTING ON THE CHART'S OWN TITLE.
+   ───────────────────────────────────────────────────────────────────────────
+   The pill is position:absolute at top:10/right:12 inside the chart card, and
+   it is permanently visible under `(hover:none), (max-width:768px)`. The label
+   underneath it is in normal flow with the full card width, so nothing ever
+   reserved the pill's 107px. Measured glyph overlap, all three strategy pages:
+       320px   4 of 5 labels collide, worst +98px  (Fund vs Benchmark)
+       375px   2 of 5 collide, worst +106px
+       430px   1 of 5 collides, +51px
+   Padding the label by a hardcoded 129px would cost the longest title three
+   lines on a 320 phone, so let the layout engine do it: for exactly the widths
+   where the pill is visible, the card becomes a two-column grid — title in
+   column one, pill in column two, chart spanning both underneath. The title
+   column is then `minmax(0,1fr)` of whatever is left, so it wraps inside its
+   own box and CANNOT reach the pill at any width. On a pointer device the pill
+   is hover-only and there is 450px+ of clearance, so it stays absolute there
+   and no gutter is reserved for something that is not on screen.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (hover:none), (max-width:768px){
+  .bt-chart-full{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:start;
+    column-gap:10px;
+  }
+  .bt-chart-full > .bt-chart-label{ grid-column:1; grid-row:1; }
+  .bt-chart-full > .mf98-zoom-hint{
+    position:static; grid-column:2; grid-row:1;
+    justify-self:end; align-self:start;
+  }
+  .bt-chart-full > picture,
+  .bt-chart-full > img.bt-chart-img{ grid-column:1 / -1; grid-row:2; }
+}
+/* Below 460 the 107px pill still costs the longest title four lines of a 149px
+   column, so the pill drops to its magnifier alone (a 31px square) and the
+   title column doubles to 225px — two lines, on the narrowest phone in the
+   sweep. The wording survives for assistive tech in the img's own aria-label,
+   which already says "open full-screen preview, zoomable to actual size". */
+@media (max-width:459px){
+  .mf98-zoom-hint .mf98-zt{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    clip-path:inset(50%); white-space:nowrap;
+  }
+  .mf98-zoom-hint{ padding:7px 8px; gap:0; }
+}
+
+@media print{
+  html[data-theme="dark"] .bt-chart-full{ background:#fafbfd; }
+  html[data-theme="dark"] .bt-chart-img,
+  html[data-theme="dark"] .mf98-lb img{ filter:none; }
+  html[data-theme="dark"] .bt-chart-full .bt-chart-label{ color:#2563eb; }
+  html[data-theme="dark"] .bt-chart-full .tip-icon{ color:#1a50d8; }
+  html[data-theme="dark"] .mf98-zoom-hint{ color:#475569; background:rgba(255,255,255,.88); }
+}
 
 /* Scanner sector pills are inked from an inline --sp RGB triple written by JS,
    so there is no class to re-point: mix the pill's own hue toward white instead.
@@ -1347,6 +1452,32 @@ html .toast-container{ right: 96px; }
   html .back-to-top,
   html .mfc-btt { width: 44px; height: 44px; }
   html .mfc-theme-toggle { width: 44px; height: 44px; }
+}
+
+/* ============================================================================
+   V33.3 — THE CARVE-OUT ABOVE ONLY COVERED ONE OF THE TWO AXES.
+   ----------------------------------------------------------------------------
+   V31.9 built the block above precisely because the original 44px rules were
+   scoped to WIDTH and every iPad therefore got mouse-sized targets. The
+   carve-outs moved to the pointer axis with them — but the width-scoped rules
+   they were carved out of are still there, in each page's own
+   `mf-v276-mobile-density` block, and they still say plain `button`.
+
+   So /scores/ at 375px with a FINE pointer — a desktop window dragged narrow,
+   which is exactly what a responsive review does — put `min-height:44px;
+   display:inline-flex` back on `#distBar .hp-seg`, five buttons living inside a
+   24px bar with `overflow:hidden`. Measured: the band percentages were pushed
+   from 6px below the bar's top to 15.6px, so their font boxes hung 3.6px out of
+   the bar and every number in the page's headline graphic sat visibly low in
+   its own segment. With touch emulation on, the pointer carve-out fired and the
+   same page measured perfectly centred — which is why nine sweeps never saw it.
+
+   The carve-out belongs on whichever axis the rule it carves out is on. This is
+   the width twin; `html #distBar` outranks the page's bare `button` by an id,
+   so load order does not matter.
+   ========================================================================== */
+@media (max-width: 600px){
+  html #distBar .hp-seg { min-height: 0; display: block; }
 }
 
 /* ============================================================================

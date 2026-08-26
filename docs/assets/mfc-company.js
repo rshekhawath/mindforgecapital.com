@@ -172,6 +172,7 @@
     .mfx-more{appearance:none;-webkit-appearance:none;border:none;background:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:700;color:var(--accent2);padding:6px 0 0;display:inline-block}
     .mfx-more:hover{color:var(--accent3);text-decoration:underline}
     .mfx-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+    .mfi{width:1.05em;height:1.05em;vertical-align:-0.17em;flex:none}
     .mfx-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text2);background:var(--ink);border:0.5px solid var(--border2);border-radius:999px;padding:5px 12px;line-height:1.3}
     .mfx-chip b{color:var(--white);font-weight:700}
     .mfx-chip.accent{color:var(--accent2);background:rgba(37,99,235,.07);border-color:var(--border2)}
@@ -567,11 +568,11 @@
 
     var chips = [];
     var sector = clean(D.sector), industry = clean(D.industry);
-    if (sector) chips.push('<span class="mfx-chip">🏢 <b>' + esc(sector) + "</b></span>");
-    if (industry && industry !== sector) chips.push('<span class="mfx-chip">📦 ' + esc(industry) + "</span>");
+    if (sector) chips.push('<span class="mfx-chip"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21V5.5A1.5 1.5 0 0 1 5.5 4h7A1.5 1.5 0 0 1 14 5.5V21"/><path d="M14 10h4.5A1.5 1.5 0 0 1 20 11.5V21"/><path d="M2.5 21h19"/><path d="M7 8h4M7 12h4M7 16h4M17 14h1M17 18h1"/></svg> <b>' + esc(sector) + "</b></span>");
+    if (industry && industry !== sector) chips.push('<span class="mfx-chip"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 7.8v8.4a1.6 1.6 0 0 1-.85 1.41l-6.9 3.72a1.6 1.6 0 0 1-1.5 0l-6.9-3.72A1.6 1.6 0 0 1 3.5 16.2V7.8a1.6 1.6 0 0 1 .85-1.41l6.9-3.72a1.6 1.6 0 0 1 1.5 0l6.9 3.72A1.6 1.6 0 0 1 20.5 7.8Z"/><path d="m3.8 6.9 8.2 4.4 8.2-4.4M12 21v-9.7"/></svg> ' + esc(industry) + "</span>");
     chips.push('<span class="mfx-chip" id="mfxCapChip" style="display:none"></span>');
-    if (num(D.employees) != null) chips.push('<span class="mfx-chip">👥 <b>' + num(D.employees).toLocaleString("en-IN") + "</b> employees</span>");
-    if (D.website) chips.push('<span class="mfx-chip accent">🔗 <a href="' + esc(D.website) + '" target="_blank" rel="noopener">Website</a></span>');
+    if (num(D.employees) != null) chips.push('<span class="mfx-chip"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15.5 20v-1.8a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.2V20"/><circle cx="9.25" cy="7.6" r="3.6"/><path d="M21 20v-1.8a3.6 3.6 0 0 0-2.7-3.48M16.2 4.24a3.6 3.6 0 0 1 0 6.97"/></svg> <b>' + num(D.employees).toLocaleString("en-IN") + "</b> employees</span>");
+    if (D.website) chips.push('<span class="mfx-chip accent"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.2 13.8a4 4 0 0 0 5.66 0l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.4 1.4"/><path d="M13.8 10.2a4 4 0 0 0-5.66 0l-2.83 2.83a4 4 0 1 0 5.66 5.66l1.4-1.4"/></svg> <a href="' + esc(D.website) + '" target="_blank" rel="noopener">Website</a></span>');
     el("mfxStripChips").innerHTML = chips.join("");
 
     var more = el("mfxStripMore");
@@ -775,7 +776,7 @@
     var cc = capCategory(D, all);
     if (!cc) return;
     var chip = el("mfxCapChip");
-    if (chip) { chip.style.display = ""; chip.innerHTML = "📊 <b>" + cc.cat + "</b>"; }
+    if (chip) { chip.style.display = ""; chip.innerHTML = '<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20V12.5M10 20V5M16 20v-9M22 20H2"/></svg> <b>' + cc.cat + "</b>"; }
     var fact = el("mfxCapFact");
     if (fact) fact.innerHTML = '<b style="color:var(--white)">' + cc.cat + "</b> <span style='color:var(--text3);font-weight:500'>· #" + cc.rank + " of " + cc.total.toLocaleString("en-IN") + " by market cap</span>";
   }
@@ -1133,8 +1134,8 @@
           : "<p class='mfx-sig-none'>" + empty + "</p>") + "</div>";
     }
     body.innerHTML =
-      col(up, "up", "✓ Strengths", "No threshold-beating strengths in this snapshot.") +
-      col(dn, "dn", "⚠ Watch-outs", "Nothing tripped the watch-out thresholds in this snapshot.");
+      col(up, "up", '<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m4.5 12.6 5 5 10-11"/></svg> Strengths', "No threshold-beating strengths in this snapshot.") +
+      col(dn, "dn", '<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 4.5 2.9 20h18.2L12 4.5Z"/><path d="M12 10v4.4M12 17.3h.01"/></svg> Watch-outs', "Nothing tripped the watch-out thresholds in this snapshot.");
     card.style.display = "";
   }
 

@@ -285,7 +285,19 @@ html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--b
      Allow the row to wrap and let the chip keep its intrinsic width. */
   flex-wrap: wrap; gap: 8px 12px;
 }
-.hv-foot .hv-alpha { flex: 0 0 auto; }
+/* V33.3 — this rule was `flex: 0 0 auto`, and on a 320px phone that is what
+   broke it. The chip's intrinsic width is 293px against a 232px hero footer, so it overflowed the
+   card by 61px and the hero section clipped it: the label read
+   "+15.19% annual alpha · backte" with the rest cut off at the card edge.
+   V24.7 let the ROW wrap so the chip could keep its intrinsic width — that is
+   still right down to 360, where the chip fits. Below that nothing can make
+   293px fit in 232, so the chip itself is allowed to wrap. Both non-breaking
+   spans inside it ("alpha ·" and "after tax") are already bound with &nbsp;,
+   so the second line can only ever begin at a real word boundary. No
+   breakpoint: `0 1 auto` is identical to `0 0 auto` at every width where the
+   chip already fits, and the wrap only engages where the alternative was a
+   clipped label. Measured across 320-1440, the chip is one line from 390 up. */
+.hv-foot .hv-alpha{ flex: 0 1 auto; max-width: 100%; }
 .hv-alpha {
   display: inline-flex; align-items: center; gap: 8px;
   background: rgba(5,150,105,0.10); color: #047857;
@@ -3884,7 +3896,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3310">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3320">
 </head>
 <body>
 
