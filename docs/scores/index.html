@@ -544,7 +544,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 .iv-cell{display:flex;flex-direction:column;gap:2px;min-width:92px}
 .iv-num{font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;color:var(--text)}
 .iv-mos{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
-.iv-mos.iv-strong{color:#065f46}.iv-mos.iv-good{color:#047857}.iv-mos.iv-weak{color:#b45309}.iv-mos.iv-bad{color:#dc2626}
+.iv-mos.iv-strong{color:#065f46}.iv-mos.iv-good{color:#046b4c}.iv-mos.iv-weak{color:#944306}.iv-mos.iv-bad{color:#b51a1a}
 .score-cell{display:flex;flex-direction:column;gap:4px;min-width:74px}
 .score-num{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .score-track{height:5px;background:var(--ink3);border-radius:3px;overflow:hidden}
@@ -641,7 +641,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hp-leg:last-child{grid-column:auto}
 }
 </style>
-<script src="scores-engine.js?v=3310"></script>
+<script src="scores-engine.js?v=3340"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -657,7 +657,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3320">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3340">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -794,7 +794,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
   /* rank rides the corner as a leaderboard badge (it was display:none) */
   #tableBody tr.rowlink td.rank-cell{position:absolute;top:9px;right:12px;padding:0;border:none;background:none;z-index:1;display:block;width:max-content}
   #tableBody tr.rowlink td.rank-cell::before{display:none}
-  #tableBody tr.rowlink td.rank-cell .rank-cell{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--accent2);background:rgba(37,99,235,.08);border:0.5px solid var(--border2);border-radius:999px;padding:2px 9px}
+  #tableBody tr.rowlink td.rank-cell .rank-cell{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:var(--ink-link,#0951c6);background:rgba(37,99,235,.08);border:0.5px solid var(--border2);border-radius:999px;padding:2px 9px}
   /* hero row: the composite score leads, price and intrinsic value beside it */
   #tableBody tr.rowlink td[data-label="Integrity"],#tableBody tr.rowlink td[data-label="Price (₹)"],#tableBody tr.rowlink td[data-label="Intrinsic"]{padding-top:11px;border-bottom:0.5px solid var(--border)}
   #tableBody .overall-cell{min-width:0;flex-direction:row;align-items:center;gap:7px;flex-wrap:wrap}
@@ -1185,8 +1185,9 @@ function fmtTone(v,d,kind){if(v==null)return`<span class="na">—</span>`;return
 function toneClass(v,kind){if(v==null)return"";if(kind==="q")return v>=25?"v-strong":v>=15?"v-good":v>=0?"":"v-bad";if(kind==="pe")return v<0?"v-bad":v<=18?"v-good":v<=35?"":v<=60?"v-weak":"v-bad";return"";}
 function scoreCell(s){
   if(s==null)return`<div class="score-cell"><span class="score-num na">—</span></div>`;
-  const c=MFCScores.color(s);
-  return`<div class="score-cell"><span class="score-num" style="color:${c}">${s.toFixed(0)}</span><div class="score-track"><div class="score-fill" style="width:${s}%;background:${c}"></div></div></div>`;
+  const c=MFCScores.color(s);                      // the BAR keeps the band hue
+  const k=(MFCScores.colorInk||MFCScores.color)(s); // the NUMBER takes the ink tier
+  return`<div class="score-cell"><span class="score-num" style="color:${k}">${s.toFixed(0)}</span><div class="score-track"><div class="score-fill" style="width:${s}%;background:${c}"></div></div></div>`;
 }
 function overallCell(d){
   const s=d._overall;const c=MFCScores.color(s),g=MFCScores.grade(s);
@@ -1328,6 +1329,28 @@ function scCTA(d){
     : "Prefer a ready-made, rules-based portfolio? Our SEBI-registered quant strategies handle the screening, sizing & monthly rebalancing for you.";
   return `<a class="sc-cta" href="https://mindforgecapital.com/strategies.html"><span class="sc-cta-ico" aria-hidden="true"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 16.5 5.4-5.4 3.6 3.6L21 5.5"/><path d="M15.5 5.5H21v5.5"/></svg></span><span class="sc-cta-tx">${msg}</span><span class="sc-cta-go">Explore strategies →</span></a>`;
 }
+/* ── V33.4 — 52-WEEK RANGE UNDER EVERY PRICE ────────────────────────────────
+   This table printed a bare last-close and nothing to read it against, while
+   the expanded scorecard below each row has shown the 52-week position since
+   V16. The Scanner has carried the same bar under its price since V12 — same
+   data, same idiom, same three numbers — so the two listers now agree.
+   Coverage measured before shipping it, per the rule that a sparse field must
+   never lead a column: 52w_high and 52w_low are present on 2,123 of 2,126 rows
+   (99.9%) and every single price sits INSIDE its own range, so the mark never
+   pins to an end. The three rows without it keep the plain figure. */
+function priceCell52(d){
+  const px=d.current_price;
+  if(!scNum(px)) return `<span class="na">—</span>`;
+  const val=`<span class="num">₹${Number(px).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`;
+  const lo=d["52w_low"], hi=d["52w_high"];
+  if(!scNum(lo)||!scNum(hi)||!(hi>lo)) return val;
+  const pct=Math.max(0,Math.min(100,(px-lo)/(hi-lo)*100));
+  const f=v=>Number(v).toLocaleString("en-IN",{maximumFractionDigits:0});
+  return `<span class="px-wrap">${val}`
+    + `<span class="px52" title="52-week ₹${f(lo)} – ₹${f(hi)}\u00A0· price at ${pct.toFixed(0)}% of range">`
+    + `<span class="px52-mark" style="left:${pct.toFixed(1)}%"></span></span></span>`;
+}
+
 function buildScorecard(d){
   const lo=d["52w_low"],hi=d["52w_high"],cur=d.current_price;
   let pos=null;
@@ -1382,7 +1405,7 @@ const COLUMNS=[
   {key:"_m",            label:"Momentum",     render:d=>scoreCell(d._m)},
   {key:"_e",            label:"Efficiency",   render:d=>scoreCell(d._e)},
   {key:"_overall",      label:"Integrity",    render:d=>overallCell(d)},
-  {key:"current_price", label:"Price (₹)",    render:d=>d.current_price?`<span class="num">₹${Number(d.current_price).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`:`<span class="na">—</span>`},
+  {key:"current_price", label:"Price (₹)",    title:"Last close, with the 52-week range beneath it. The dot marks where today's price sits between the 52-week low (left) and high (right).", render:d=>priceCell52(d)},
   {key:"_iv",           label:"Intrinsic Value", cardLabel:"Intrinsic", title:"Graham intrinsic value √(22.5 × EPS × Book Value); % shows upside vs the current price (positive = trading below fair value). Sort to surface the most undervalued names.", render:d=>intrinsicCell(d)},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", cardLabel:"Mkt Cap ₹Cr", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`},
   {key:"roe",           label:"ROE %",        render:d=>fmtTone(d.roe,1,"q")},
@@ -2319,6 +2342,35 @@ h1, h2, h3, h4, th,
 .hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
   text-wrap: balance;
 }
+
+/* ── V33.4 — the 52-week range bar (see priceCell52) ────────────────────────
+   Geometry copied from the Scanner so the two listers read identically. The
+   track is a fixed 62px so every row's mark sits on the SAME axis — a
+   percentage-width track would make two rows' dots incomparable, which is the
+   whole point of the mark. Green end = the 52-week low, amber end = the high.
+   V29.4: the mark is a circle whose centre rides the track edge at 0% and
+   100%, so the track is not allowed to clip it. */
+.px-wrap{display:inline-flex;flex-direction:column;align-items:flex-end;gap:5px;overflow:visible}
+.px52{
+  position:relative;width:62px;height:4px;border-radius:2px;overflow:visible;
+  background:linear-gradient(90deg,rgba(5,150,105,.30),rgba(37,99,235,.16) 50%,rgba(217,119,6,.32));
+  box-shadow:inset 0 0 0 .5px rgba(37,99,235,.12);
+}
+.px52-mark{
+  position:absolute;top:50%;width:8px;height:8px;border-radius:50%;
+  background:var(--ink2,#fff);border:2px solid var(--accent);transform:translate(-50%,-50%);
+  box-shadow:0 1px 2px rgba(15,23,42,.32);
+}
+html[data-theme="dark"] .px52{
+  background:linear-gradient(90deg,rgba(52,211,153,.34),rgba(131,170,255,.18) 50%,rgba(251,191,36,.36));
+  box-shadow:inset 0 0 0 .5px rgba(131,170,255,.16);
+}
+html[data-theme="dark"] .px52-mark{ border-color:var(--accent2); box-shadow:0 1px 3px rgba(0,0,0,.55); }
+/* the card view stacks label above value, so the bar goes under the number */
+@media(max-width:900px){ .px-wrap{align-items:flex-end} }
+/* V32.1 — a CSS background prints white without this; the bar is data, not decoration */
+@media print{ .px52,.px52-mark{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+@media (prefers-reduced-motion: reduce){ .px52-mark{ transition:none; } }
 </style>
 </body>
 </html>

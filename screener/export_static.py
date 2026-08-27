@@ -131,7 +131,7 @@ def _chg(v):
 # token from a hand-maintained page makes drift impossible: whatever the rest of
 # the site asks for, these pages ask for too. The literal below is only a
 # fallback for the case where index.html cannot be read at all.
-_FINISH_FALLBACK = "3320"
+_FINISH_FALLBACK = "3340"
 
 def _finish_ver() -> str:
     """The ?v token the rest of the site is currently using for mfc-finish.css."""

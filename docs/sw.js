@@ -466,7 +466,7 @@
 // (dark-theme charts, zoom-pill layout), Integrity Score (card-mode specificity,
 // the fifth lens, the SVG icons), the Scanner, FII/DII (the rebuilt trend chart)
 // and the three legal pages.
-const CACHE = 'mfc-v71';
+const CACHE = 'mfc-v72';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

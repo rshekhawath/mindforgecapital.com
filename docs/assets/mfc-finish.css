@@ -524,9 +524,20 @@ html[data-theme="dark"]{
    unchanged. */
 :root{
   --pil-q:#047857; --pil-v:#1a50d8; --pil-g:#b45309; --pil-m:#7c3aed; --pil-e:#0e7490;
+  /* V33.4 — the five lens hues are DATA colours: they drive dots, bars and
+     the scatter as well as text, so deepening them would re-colour the
+     chart. Split a text tier instead, exactly as V27.9 split --green-ink
+     from --green on the FII/DII page. Worst case over the eleven measured
+     tints: q 4.77, v 4.82, g 5.00, m 5.19, e 4.81. */
+  --pil-q-ink:#046b4c; --pil-v-ink:#1a50d8; --pil-g-ink:#944306;
+  --pil-m-ink:#6d28d9; --pil-e-ink:#0c6580;
 }
 html[data-theme="dark"]{
   --pil-q:#34d399; --pil-v:#83aaff; --pil-g:#fbbf24; --pil-m:#a78bfa; --pil-e:#38bdf8;
+  /* dark: the graphic hues already clear AA as ink on both dark surfaces
+     (measured 7.4-10.1 on #121d33), so the text tier simply tracks them. */
+  --pil-q-ink:#34d399; --pil-v-ink:#83aaff; --pil-g-ink:#fbbf24;
+  --pil-m-ink:#a78bfa; --pil-e-ink:#38bdf8;
 }
 
 /* — re-point the existing grading classes at the scale, dark only —
@@ -896,12 +907,20 @@ html[data-theme="dark"] .mob-sort{
    blocks, so an equal-specificity rule here would lose. Every rule below is
    scoped under html:not([data-theme="dark"]) — which both wins on specificity
    and keeps the dark theme, already correct, completely untouched. */
+/* V33.4 — one step deeper again. V27.9 verified these against #dee9fa on the
+   stated belief that it was "the deepest tint in use anywhere on the site".
+   A pixel audit of all 22 surfaces in both themes says it is not: the chips
+   actually sit on tints down to rgb(205 221 251), rgb(204 224 228) and
+   rgb(195 228 228), where the V27.9 values land at 4.12-4.16 — which is
+   exactly the 4.18-4.41 band the audit measured across 40 distinct chips.
+   Every value below is verified >= 4.7:1 against ELEVEN measured tints, the
+   deepest included, and stays inside its own hue. */
 :root{
-  --ink-pos:#047653;
-  --ink-neg:#c92020;
-  --ink-warn:#a64d08;
-  --ink-info:#067089;
-  --ink-link:#0a5de3;
+  --ink-pos:#046b4c;
+  --ink-neg:#b51a1a;
+  --ink-warn:#944306;
+  --ink-info:#056177;
+  --ink-link:#0951c6;
 }
 html[data-theme="dark"]{
   --ink-pos:#34d399;
@@ -1331,6 +1350,7 @@ html .toast-container{ right: 96px; }
   html .section-label,
   html .why-stat-val,
   html .ph-kpi-val,
+  html .hv-num .val,          /* V33.4 — the one gradient-ink class V30.1 missed */
   html .sv,
   html .stat-val,
   html .dc-num,
@@ -1357,6 +1377,7 @@ html .toast-container{ right: 96px; }
   html .nf-code,
   html .welcome-name,
   html .dc-num,
+  html .hv-num .val,          /* V33.4 — its `color` is transparent too */
   html .dash-hero h1 .accent {
     color: var(--white, #0c1831) !important;
   }
@@ -1886,3 +1907,278 @@ html .ps-funds-t th.r{ white-space: normal; }
    nothing anywhere the text already fits — it only ever fires instead of an
    overflow. */
 body{ overflow-wrap: break-word; }
+
+
+/* ============================================================================
+   V33.4 — THE DISPLAY-INK RAMPS, WHOSE LIGHT END WAS NEVER MEASURED
+   ----------------------------------------------------------------------------
+   This site paints its largest, most prominent text with `background-clip:text`
+   over a gradient — the homepage hero verb, the three strategy headlines, the
+   free-tool H1s, the live-cycle figure, the strategies KPI row, the dashboard
+   donut centre. V31.3 recorded that the ink auditor "returns null on ANY
+   gradient ancestor, so every white label on a ramp went unaudited", and V32.7
+   added the rule that BOTH stops have to be checked. Neither pass ever checked
+   these: the audit that could see them is per-PIXEL, and a pixel probe cannot
+   tell a gradient fill from its own anti-aliasing (V30.0).
+
+   Measured this release by reading each ramp's declared stops and compositing
+   every background layer above the first opaque one — 19 elements across 9
+   pages fail, and they fail for one reason in each theme:
+
+     light   the ramps end on teal-400 #2dd4bf (1.70:1 on the page wash),
+             cyan-500 #06b6d4 (2.22), emerald-400 #34d399 (1.92) or
+             amber-400 #f5a623 (2.03). The blue START is fine; the last
+             third of every headline is the part that is hard to read.
+     dark    the ramps START on #1a50d8 (2.55:1 on a card), because six of
+             them have no dark variant at all and keep the light one.
+
+   The fix is a pair of ramps per theme rather than 37 ad-hoc edits, so the
+   whole display tier moves together and dark mode is answered once:
+
+                  stop 1     stop 2     stop 3     worst on its surface
+     light  lg    #1a50d8    #0e7490    #0d9488    3.43  (needs 3.0)
+     light  sm    #1a50d8    #0369a1    #0f766e    4.90  (needs 4.5)
+     dark   both  #83aaff    #38bdf8    #5eead4    7.33  (on #121d33)
+
+   The hue journey — brand blue into cyan into teal — is the one the site
+   already had; only the last two stops move down the same ramp. `--dg-shim`
+   keeps the five-stop symmetric form the homepage verb animates across, so
+   its 11s shimmer is unchanged.
+
+   NOT FIXED, deliberately: `.mf-brand`. It is the wordmark in the masthead,
+   and WCAG 1.4.3 exempts logotypes. Its cyan tail measures 2.30:1 and stays.
+
+   Ordering: mfc-finish.css is linked BEFORE several per-page <style> blocks
+   (index.html loads it at line 3899, after three of them), so specificity
+   alone cannot win here — hence `!important` on background-image only. It is
+   the same reason V33.0 needed it for `.ph-back`.
+   ========================================================================== */
+:root{
+  --dg-lg:   linear-gradient(110deg,#1a50d8 0%,#0e7490 55%,#0d9488 100%);
+  --dg-sm:   linear-gradient(110deg,#1a50d8 0%,#0369a1 55%,#0f766e 100%);
+  --dg-grn:  linear-gradient(115deg,#059669 0%,#0d9488 52%,#0f766e 100%);
+  --dg-blu:  linear-gradient(110deg,#1a50d8 0%,#2563eb 100%);
+  --dg-grn-sm: linear-gradient(110deg,#047857 0%,#0f766e 100%);  /* 5.02 / 5.01 */
+  --dg-gld:  linear-gradient(110deg,#a16207 0%,#b45309 100%);
+  --dg-vert: linear-gradient(180deg,#1a50d8 0%,#0d9488 110%);
+  --dg-shim: linear-gradient(110deg,#1a50d8 0%,#0d9488 35%,#0e7490 50%,#0d9488 65%,#1a50d8 100%);
+}
+html[data-theme="dark"]{
+  --dg-lg:   linear-gradient(110deg,#83aaff 0%,#38bdf8 55%,#5eead4 100%);
+  --dg-sm:   linear-gradient(110deg,#83aaff 0%,#38bdf8 55%,#5eead4 100%);
+  --dg-grn:  linear-gradient(115deg,#16c78d 0%,#2dd4bf 52%,#28bcd8 100%);
+  --dg-blu:  linear-gradient(110deg,#83aaff 0%,#38bdf8 100%);
+  --dg-grn-sm: linear-gradient(110deg,#16c78d 0%,#2dd4bf 100%);
+  --dg-gld:  linear-gradient(110deg,#f0a836 0%,#fbbf24 100%);
+  --dg-vert: linear-gradient(180deg,#83aaff 0%,#5eead4 110%);
+  --dg-shim: linear-gradient(110deg,#83aaff 0%,#5eead4 35%,#38bdf8 50%,#5eead4 65%,#83aaff 100%);
+}
+
+/* — display sizes (>= 24px, or >= 18.66px bold): the 3.0 tier — */
+html .page-hero h1 .accent-text,
+html .hero h1 .grad,
+html .alloc-donut .dc-num,
+html .donut-center .dc-num{ background-image: var(--dg-lg) !important; }
+
+/* the homepage verb animates background-position across a 220% box, so its
+   ramp has to stay symmetric or the shimmer reverses character mid-sweep */
+html .hero h1 em{ background-image: var(--dg-shim) !important; }
+
+/* the live-cycle figure runs its ramp vertically */
+html .hv-num .val{ background-image: var(--dg-vert) !important; }
+
+/* the green highlight figure on the three strategy pages: only its MIDDLE stop
+   failed (#10b981, 2.20:1), so this keeps the emerald identity and moves the
+   mid and end one tier down the same ramp */
+html .stat-card.highlight .sv.green{ background-image: var(--dg-grn) !important; }
+
+/* — small sizes: the 4.5 tier — */
+html .section-label,
+html .why-stat-val{ background-image: var(--dg-sm) !important; }
+html .ph-kpi-val{ background-image: var(--dg-sm) !important; }
+html .ph-kpi-val.ph-blue,
+html .ph-kpi-val.ph-indigo{ background-image: var(--dg-blu) !important; }
+html .ph-kpi-val.ph-gold{ background-image: var(--dg-gld) !important; }
+/* the 4.5 tier, NOT --dg-grn: that ramp is built for the 24px .sv.green figure
+   and its stops sit at 3.74-3.77 on white, which is fine at 3.0 and short at
+   4.5. Caught by re-running the audit after the first pass. */
+html .ph-kpi-val.ph-green,
+html .ph-kpi-val.ph-teal{ background-image: var(--dg-grn-sm) !important; }
+
+
+/* ============================================================================
+   V33.4 — THE CHIPS V27.9 NEVER REACHED
+   ----------------------------------------------------------------------------
+   V27.9 built the on-tint ink tier and routed nine surfaces through it. The
+   pixel audit this release finds forty more chips that were never routed —
+   every one of them in the same 4.18-4.41 band, for the same reason, and now
+   answered by the same tokens (which moved one step deeper above).
+
+   Scoped under html:not([data-theme="dark"]) for the ordering reason V27.9
+   documented: this file loads before several per-page <style> blocks, so an
+   equal-specificity rule would lose. The dark column is handled separately
+   where it fails, which is only where a dark tint is unusually pale.
+   ========================================================================== */
+html:not([data-theme="dark"]) .ticker-chip,
+html:not([data-theme="dark"]) .grade-pill.gp-fair,
+html:not([data-theme="dark"]) .rank-cell,
+html:not([data-theme="dark"]) .row-chip,
+html:not([data-theme="dark"]) .sym-tag,
+html:not([data-theme="dark"]) .sc-rank-top,
+html:not([data-theme="dark"]) .bf-chip,
+html:not([data-theme="dark"]) .sc-chip,
+html:not([data-theme="dark"]) button.lnk{ color: var(--ink-link); }
+
+html:not([data-theme="dark"]) .iv-mos.iv-bad,
+html:not([data-theme="dark"]) .sc-chg.down,
+html:not([data-theme="dark"]) .pt-chg.chg-neg{ color: var(--ink-neg); }
+/* …and the price-change chip keeps inheriting its up/down ink from .sc-chg,
+   which the line above just made one step deeper. Without this it would have
+   been captured by the .sc-chip rule and every falling price would read blue. */
+html:not([data-theme="dark"]) .sc-chg.up .sc-chip,
+html:not([data-theme="dark"]) .sc-chg.down .sc-chip{ color: inherit; }
+
+html:not([data-theme="dark"]) .cvg-chip,
+html:not([data-theme="dark"]) .updated-badge,
+html:not([data-theme="dark"]) .sv-acct,
+html:not([data-theme="dark"]) .ls-badge,
+html:not([data-theme="dark"]) .fr-alpha.pos{ color: var(--ink-pos); }
+
+/* the five-lens text on the Integrity Score pages rides the new pillar TEXT
+   tier; the dots, bars and scatter keep the graphic hue they were designed on */
+html .hero-sub .q{ color: var(--pil-q-ink); }
+html .hero-sub .v{ color: var(--pil-v-ink); }
+html .hero-sub .g{ color: var(--pil-g-ink); }
+html .hero-sub .m{ color: var(--pil-m-ink); }
+html .hero-sub .e{ color: var(--pil-e-ink); }
+/* .fb-card-score carries an inline `style="color:var(--pil-*)"`, which no
+   stylesheet rule can outrank without !important. It is switched to the -ink
+   tier at the source in scores/company.html rather than fought here. */
+
+
+/* ============================================================================
+   V33.4 — THE TOUCH TARGETS BELOW 44px THAT SURVIVED V33.0
+   ----------------------------------------------------------------------------
+   V33.0 measured this by ELEMENT BOX and fixed 22 controls. Re-measured this
+   release by hit-test — scrolling each control into view and binary-searching
+   outward from its centre with elementFromPoint until the point stops
+   resolving to it — which is the only thing that answers "can a finger hit
+   this", because a control inherits its row's target, a ::after pad extends
+   it, and a wrapping <label> is part of it.
+   That distinction is most of the answer: 212 box-measured signatures across
+   22 pages x 10 touch devices collapse to EIGHT controls whose real pointer
+   target is under 44. The other 204 were already reachable — the Scanner's
+   company links inherit a `role="link"` row (verified: role, onclick and
+   tabindex all present), the sortable headers already carry V33.0's 44px
+   ::after (all five probe points return the TH), and `.mf-fab-top` measured
+   38x38 only because it was photographed mid-fade at opacity 0.29 with
+   pointer-events already none.
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+
+  /* — dashboard, the mobile stock cards. `.ticker-chip` got min-height:44px in
+       V33.0; `.sc-ticker` is its card-view twin and carries the same
+       role="button" copy-to-clipboard, so it had the same claim and none of
+       the fix. Measured 48-59 x 37-41 on every phone. — */
+  html .sc-ticker{ min-height: 44px; }
+
+  /* — the per-row broker link. 59x37-41 on every phone; it sits inline beside
+       the ticker chip, so it takes the height and keeps its own width. — */
+  html .sc-tkr-row .broker-link,
+  html .broker-link{ min-height: 44px; display: inline-flex; align-items: center; }
+
+  /* — the sector rows in the allocation card are role="button" (they filter the
+       picks table) and measured 42-43 tall at 768. — */
+  html .alloc-row{ min-height: 44px; }
+
+  /* — NOT the Integrity Score distribution bands (.hp-seg), and this release
+       finally has the measurement that settles it rather than an argument.
+       V28.3 exempted their WIDTH because the bands are geometric — a 1% band
+       cannot be 44px wide without lying about the data — and asserted that the
+       legend beside it is the real target. Two things were tried here and both
+       are wrong: min-height thickens the DISTRIBUTION BAR itself (the segments
+       ARE the bar, so a 24px chart becomes a 44px slab on every phone), and the
+       V28.3 transparent ::after pad is clipped away by the segment's own
+       `overflow:hidden`, which is what keeps a narrow band's "1%" label inside
+       it. Measured instead: every `.hp-leg` button in #distLegend carries the
+       SAME data-band and the same "Filter the list to this band" action, and
+       hit-tests 59x44 at 320 / 375 / 768 — so the equivalent control really is
+       44px, on every touch width, and the assertion holds. — */
+
+  /* — company page chart-range tabs (1D / 5D / 1M / 1Y). 44 tall already,
+       34-43 wide. — */
+  html .sc-tab{ min-width: 44px; }
+
+  /* — Scanner + Integrity Score pagination. 44 tall, 30-40 wide. — */
+  html .page-btn{ min-width: 44px; }
+
+  /* — the offer bar's close button. It already carries a 34x44 ::before pad
+       from V33.0, but the bar itself is 39px tall and the pad is overlapped
+       above and below by the masthead and the page, so the reachable target
+       is 54x39. Grow the BAR's minimum instead: the button then has 44px of
+       its own to sit in. — */
+  html #mfc-offer-bar{ min-height: 44px; }
+
+  /* — homepage, the fee-calculator link under the "why" block: 42-43 tall
+       from 768 up. — */
+  html .why-calc-link{ min-height: 44px; display: inline-flex; align-items: center; }
+}
+
+
+/* ============================================================================
+   V33.4 — THE DARK COLUMN'S OWN VERSION OF THE SAME PROBLEM
+   ----------------------------------------------------------------------------
+   --text3 (#8698b7) clears AA comfortably on the two dark SURFACES — 4.40 on a
+   card, 4.9 on the page — which is why V26.7 and V27.4 both passed it. It does
+   not clear it on the dark CHIPS, whose tints run up to rgb(50 67 99): there it
+   measures 3.93-4.40. Same shape as the light-mode finding, opposite direction.
+   Lifting the token itself would collapse it into --text2 (#b2c2de) and flatten
+   the dark text hierarchy site-wide, so only the chips move.
+   ========================================================================== */
+html[data-theme="dark"] .mcal-tag,
+html[data-theme="dark"] .hv-live-cyc,
+html[data-theme="dark"] .hv-live-sub,
+html[data-theme="dark"] .fc-seg-b,
+html[data-theme="dark"] .ds-sent-k,
+html[data-theme="dark"] .ds-sent-drv,
+html[data-theme="dark"] .clad-cap span{ color:#a1b1ca; }
+
+/* the dark link ink on a blue chip: #5b8def measures 3.07 on the deepest of
+   them, where the established dark link token #83aaff measures 4.32 */
+html[data-theme="dark"] .ticker-chip,
+html[data-theme="dark"] .sc-tab.active,
+html[data-theme="dark"] .cmp-row .v{ color: var(--ink-link); }
+
+
+/* ============================================================================
+   V33.4 — AND THE RAMPS ABOVE MUST NOT OUTRANK THE PRINT FIX
+   ----------------------------------------------------------------------------
+   V30.1 removes background-clip:text for print with `background-image:none
+   !important`, so on paper the glyphs come back instead of a solid coloured
+   rectangle. The display-ramp block above ALSO uses !important — for the
+   ordering reason documented there — and it sits later in this file, so at
+   equal specificity it won, and the hero verb, the section labels and the
+   why-stat figures went back to printing a gradient band. Caught by re-reading
+   the computed style under `Emulation.setEmulatedMedia: print` after the ramp
+   work landed, not by looking at the screen.
+   This re-asserts the print reversal last. Any future gradient-ink rule added
+   with !important has to be added here too — that is the "BOTH tiers" rule
+   from V30.1, now with a third tier that exists purely to stay last.
+   ========================================================================== */
+@media print {
+  html .page-hero h1 .accent-text,
+  html .hero h1 .grad,
+  html .hero h1 em,
+  html .alloc-donut .dc-num,
+  html .donut-center .dc-num,
+  html .hv-num .val,
+  html .stat-card.highlight .sv.green,
+  html .section-label,
+  html .why-stat-val,
+  html .ph-kpi-val,
+  html .ph-kpi-val.ph-blue,
+  html .ph-kpi-val.ph-indigo,
+  html .ph-kpi-val.ph-gold,
+  html .ph-kpi-val.ph-green,
+  html .ph-kpi-val.ph-teal{ background-image: none !important; }
+}

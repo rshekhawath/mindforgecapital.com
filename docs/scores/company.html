@@ -122,7 +122,7 @@ var MFC_OG_ALT = "MindForge Capital — systematic, factor-based investing for I
      an SEO pass. The honest fix is per-symbol precomputed scores from
      export_static.py so the page stops needing the universe at all. -->
 <script>window.MFC_USE_FULL=1;/* detail page needs the full stocks.json (business description) */</script>
-<script src="scores-engine.js?v=3310"></script>
+<script src="scores-engine.js?v=3340"></script>
 <script src="../assets/mfc-company.js?v=2850"></script>
 <style>
 :root{
@@ -188,7 +188,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 
 .container{max-width:1400px;margin:0 auto;padding:24px 32px;position:relative;z-index:1}
 .breadcrumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3);margin-bottom:16px;flex-wrap:wrap}
-.breadcrumb a{color:var(--accent2);font-weight:500}
+.breadcrumb a{color:var(--ink-link,#0951c6);font-weight:500}
 
 /* HERO */
 .hero-card{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:24px 28px;margin-bottom:16px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 30px -14px rgba(26,80,216,.20),0 30px 60px -30px rgba(26,80,216,.14);position:relative;overflow:hidden}
@@ -316,7 +316,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .kpi-value{font-size:20px;font-weight:800;color:var(--white);letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
 .kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
 .kpi-pos{color:var(--data-strong)}.kpi-neg{color:var(--red)}
-.kpi-value.v-strong{color:#065f46}.kpi-value.v-good{color:#047857}.kpi-value.v-weak{color:#b45309}.kpi-value.v-bad{color:#dc2626}
+.kpi-value.v-strong{color:#065f46}.kpi-value.v-good{color:var(--ink-pos,#046b4c)}.kpi-value.v-weak{color:var(--ink-warn,#944306)}.kpi-value.v-bad{color:var(--ink-neg,#b51a1a)}
 /* V26.7 — dark-mode legibility: the four semantic value-tones above are light-theme
    inks (#047857 / #059669 / #b45309 / #dc2626) that were reused unchanged in dark
    mode, where they drop to ~3.0–3.5:1 on the dark card (--ink2) — a "strong" green
@@ -538,7 +538,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3320">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3340">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock
@@ -843,23 +843,23 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <!-- Factor breakdown -->
     <div class="fb-grid">
       <div class="fb-card">
-        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-q)"></span>Quality factors</div><div class="fb-card-score" id="qCardScore" style="color:var(--pil-q)">—</div></div>
+        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-q)"></span>Quality factors</div><div class="fb-card-score" id="qCardScore" style="color:var(--pil-q-ink)">—</div></div>
         <div class="fb-body" id="qFactors"></div>
       </div>
       <div class="fb-card">
-        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-v)"></span>Value factors</div><div class="fb-card-score" id="vCardScore" style="color:var(--pil-v)">—</div></div>
+        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-v)"></span>Value factors</div><div class="fb-card-score" id="vCardScore" style="color:var(--pil-v-ink)">—</div></div>
         <div class="fb-body" id="vFactors"></div>
       </div>
       <div class="fb-card">
-        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-g)"></span>Growth factors</div><div class="fb-card-score" id="gCardScore" style="color:var(--pil-g)">—</div></div>
+        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-g)"></span>Growth factors</div><div class="fb-card-score" id="gCardScore" style="color:var(--pil-g-ink)">—</div></div>
         <div class="fb-body" id="gFactors"></div>
       </div>
       <div class="fb-card">
-        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-m)"></span>Momentum factors</div><div class="fb-card-score" id="mCardScore" style="color:var(--pil-m)">—</div></div>
+        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-m)"></span>Momentum factors</div><div class="fb-card-score" id="mCardScore" style="color:var(--pil-m-ink)">—</div></div>
         <div class="fb-body" id="mFactors"></div>
       </div>
       <div class="fb-card">
-        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-e)"></span>Efficiency factors</div><div class="fb-card-score" id="eCardScore" style="color:var(--pil-e)">—</div></div>
+        <div class="fb-card-head"><div class="fb-card-title"><span class="pillar-dot" style="background:var(--pil-e)"></span>Efficiency factors</div><div class="fb-card-score" id="eCardScore" style="color:var(--pil-e-ink)">—</div></div>
         <div class="fb-body" id="eFactors"></div>
       </div>
     </div>

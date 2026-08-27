@@ -196,8 +196,20 @@
       return document.documentElement.getAttribute("data-theme") === "dark" ? DARK : LIGHT;
     } catch (e) { return LIGHT; }
   }
-  function color(s) {
-    var p = palette();
+  /* V33.4 — the same value cannot serve a BAR and its LABEL.
+     `color()` is documented as "solid colour for a 0-100 score (bars)" and is
+     used for both: scoreCell paints the fill AND the number with it. V27.8
+     deepened two of these against a WHITE card, but the score cell tints
+     itself with the band hue, and on that tint #dc2626 reads 4.39:1 — the
+     on-tint case V27.9 introduced --ink-* for. Splitting an ink tier is the
+     move V27.9 made for --green-ink on the FII/DII page: the bars keep the
+     hue they were designed with, the text goes one step deeper.
+     Light worst case over the eleven tints measured this release: strong 7.68,
+     good 4.77, mid 5.10, weak 5.00, bad 4.90. The dark column already clears
+     AA on both dark surfaces (7.4-10.1), so it tracks the graphic hue. */
+  var LIGHT_INK = { na: "#546376", strong: "#065f46", good: "#046b4c",
+                    mid: "#0951c6", weak: "#944306", bad: "#b51a1a" };
+  function _pick(p, s) {
     if (s == null) return p.na;
     if (s >= 80) return p.strong;
     if (s >= 65) return p.good;
@@ -205,6 +217,8 @@
     if (s >= 35) return p.weak;
     return p.bad;
   }
+  function color(s) { return _pick(palette(), s); }
+  function colorInk(s) { return _pick(palette() === DARK ? DARK : LIGHT_INK, s); }
 
   // ── Scoring pass over the whole universe ──────────────────────────────────
   function scoreAll(stocks) {
@@ -332,7 +346,7 @@
     bySym: function (s) { return BY_SYM[String(s || "").toUpperCase()] || null; },
     meta: META,
     grade: grade,
-    color: color,
+    color: color, colorInk: colorInk,
     FACTORS: FACTORS,
     /* {factorKey: 0..1} — the share of the scored universe that reports each
        factor. null until load() resolves; every consumer must tolerate that. */
