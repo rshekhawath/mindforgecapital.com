@@ -414,9 +414,16 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text3)}
 
 .qs-table{width:100%;font-size:12px;border-collapse:collapse}
-.qs-table td{padding:6px 4px;border-bottom:0.5px solid var(--border)}
-.qs-table tr:last-child td{border-bottom:none}
-.qs-table td:first-child{color:var(--text3);font-weight:500;width:55%}
+.qs-table td,.qs-table th{padding:6px 4px;border-bottom:0.5px solid var(--border)}
+.qs-table tr:last-child td,.qs-table tr:last-child th{border-bottom:none}
+/* V33.6 — the first cell of every row in these three tables is the NAME of the
+   metric, i.e. it is that row's header, and it is now a <th scope="row"> so a
+   screen reader reading the value announces "EPS (TTM), ₹58.20" instead of a
+   bare number. `th` brings its own UA defaults — bold and centred — so it has to
+   be told to look exactly like the <td> it replaced, or seventeen labels across
+   three cards would restyle themselves on 2,126 pages. */
+.qs-table th{text-align:left;font-weight:500}
+.qs-table td:first-child,.qs-table th:first-child{color:var(--text3);font-weight:500;width:55%}
 .qs-table td:last-child{text-align:right;font-weight:600;color:var(--white)}
 .pos-val{color:var(--data-strong);font-weight:600}.neg-val{color:var(--red);font-weight:600}
 
@@ -683,7 +690,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <div id="notFound" class="center-msg" style="display:none">
     <div class="nf-card">
       <div class="nf-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5 16.2 16.2"/></svg></div>
-      <h2 class="nf-title">Stock not found</h2>
+      <!-- V33.6 — h1, not h2. This card IS the page in the not-found state, and
+           the only other heading of that rank is #companyName, which in this
+           state holds a bare em-dash inside a container that has collapsed to
+           0x0. So the page a stranger actually lands on offered "heading level
+           2: Stock not found" with no h1 above it, and the h1 that did exist
+           said "—". Safe on a FOUND page too: #notFound is display:none there,
+           so exactly one h1 is exposed in either state — and mfcNotFound()
+           retires the dash outright rather than leaving two in the DOM. The
+           class already fixes font-size, weight and margin, so nothing moves. -->
+      <h1 class="nf-title">Stock not found</h1>
       <p class="nf-sub">We couldn't find <strong id="nfSym"></strong> in the latest NSE snapshot. It may be delisted, renamed, or spelled differently.</p>
       <div class="nf-routes">
         <a href="index.html" class="nf-route">
@@ -1340,6 +1356,10 @@ function mfcNotFound(sym){
     var d = document.querySelector('meta[name="description"]');
     if(d) d.setAttribute("content","No NSE stock matching "+sym+" is in the latest MindForge Capital snapshot. Browse every scored company A-Z or search the Integrity Score.");
   }catch(e){}
+  /* V33.6 — retire the placeholder heading. #companyName is the h1 the FOUND
+     path fills in; here it never gets a name and keeps its "—" placeholder, so
+     leaving it in place would give this state two h1s, one of them a dash. */
+  var ct=document.getElementById("companyName"); if(ct && ct.parentNode) ct.parentNode.removeChild(ct);
   var n=document.getElementById("nfSym"); if(n) n.textContent=sym;
   var nf=document.getElementById("notFound"); if(nf) nf.style.display="block";
   var bc=document.getElementById("bcSymbol"); if(bc) bc.textContent="Not found";
@@ -1721,26 +1741,34 @@ function renderOverview(){
   const hi=D["52w_high"],lo=D["52w_low"],cur=D.current_price;
   if(hi&&lo&&cur&&hi>lo){
     const pct=Math.max(0,Math.min(100,Math.round((cur-lo)/(hi-lo)*100)));
-    document.getElementById("weekRange").innerHTML=`<div class="range-labels"><span>₹${Number(lo).toFixed(2)}</span><span>₹${Number(hi).toFixed(2)}</span></div><div class="range-bar"><div class="range-marker" style="left:${pct}%"></div></div><div style="font-size:11px;color:var(--text3);margin-top:6px">₹${Number(cur).toFixed(2)} · ${pct}% of 52W range</div>`;
+    /* V33.6 — fmtI, not toFixed(2). These three figures were the only ones on
+       the page written with a raw fixed-decimal number, so the 52-Week Range
+       card printed "₹1249.80 … ₹1611.80" in its labels and "₹1,249.8 … ₹1,611.8"
+       in the table forty pixels below it — the same three numbers in two
+       formats inside one card, and the un-grouped pair is the wrong one on an
+       India-only site. fmtI is the helper every other figure here already uses
+       (en-IN grouping, max 2 decimals), so this now matches the table under it
+       and the price in the masthead exactly. */
+    document.getElementById("weekRange").innerHTML=`<div class="range-labels"><span>${fmtI(lo,"₹")}</span><span>${fmtI(hi,"₹")}</span></div><div class="range-bar"><div class="range-marker" style="left:${pct}%"></div></div><div style="font-size:11px;color:var(--text3);margin-top:6px">${fmtI(cur,"₹")} · ${pct}% of 52W range</div>`;
   }
   document.getElementById("quickStats").innerHTML=[
     ["EPS (TTM)",fmtI(D.eps,"₹")],["EPS (Forward)",fmtI(D.eps_forward,"₹")],["Book Value",fmtI(D.book_value,"₹")],
     ["52W High",fmtI(D["52w_high"],"₹")],["52W Low",fmtI(D["52w_low"],"₹")],["Beta",fmtN(D.beta,2)],
     ["Shares Out.",D.shares_outstanding?`${(D.shares_outstanding/1e7).toFixed(2)} Cr`:"—"],
     ["Free Cash Flow",fmtCr(D.free_cashflow)],["Operating CF",fmtCr(D.operating_cf)],
-  ].map(([l,v])=>`<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+  ].map(([l,v])=>`<tr><th scope="row">${l}</th><td>${v}</td></tr>`).join("");
   document.getElementById("marginsTable").innerHTML=[
     ["Gross Margin",D.gross_margin!=null?`${fmtN(D.gross_margin,1)}%`:"—"],
     ["EBITDA Margin",D.ebitda_margin!=null?`${fmtN(D.ebitda_margin,1)}%`:"—"],
     ["Operating Margin",D.operating_margin!=null?`${fmtN(D.operating_margin,1)}%`:"—"],
     ["Net Margin",D.net_margin!=null?`${fmtN(D.net_margin,1)}%`:"—"],
     ["Payout Ratio",D.payout_ratio!=null?`${fmtN(D.payout_ratio,1)}%`:"—"],
-  ].map(([l,v])=>`<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+  ].map(([l,v])=>`<tr><th scope="row">${l}</th><td>${v}</td></tr>`).join("");
   document.getElementById("growthTable").innerHTML=[
     ["Revenue Growth (YoY)",D.revenue_growth!=null?`<span class="${clsPct(D.revenue_growth)}">${fmtPct(D.revenue_growth)}</span>`:"—"],
     ["Earnings Growth (YoY)",D.earnings_growth!=null?`<span class="${clsPct(D.earnings_growth)}">${fmtPct(D.earnings_growth)}</span>`:"—"],
     ["Earnings Growth (QoQ)",D.earnings_q_growth!=null?`<span class="${clsPct(D.earnings_q_growth)}">${fmtPct(D.earnings_q_growth)}</span>`:"—"],
-  ].map(([l,v])=>`<tr><td>${l}</td><td>${v}</td></tr>`).join("");
+  ].map(([l,v])=>`<tr><th scope="row">${l}</th><td>${v}</td></tr>`).join("");
   document.getElementById("plSummary").innerHTML=[
     {l:"Revenue",v:fmtCr(D.revenue)},{l:"Gross Profit",v:fmtCr(D.gross_profit),cls:clsPct(D.gross_profit)},
     {l:"EBITDA",v:fmtCr(D.ebitda),cls:clsPct(D.ebitda)},{l:"Net Profit",v:fmtCr(D.net_profit),cls:clsPct(D.net_profit)},
