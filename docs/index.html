@@ -163,6 +163,57 @@ nav {
 }
 .hv-num.bench .val { background: none; -webkit-text-fill-color: var(--text2); color: var(--text2); font-weight: 600; font-size: 22px; }
 .hv-vs { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 6px; }
+/* ── V33.5 · THE HEADLINE PAIR GETS ITS PROPORTION ──────────────────────────
+   Everywhere else on this page a strategy CAGR next to its benchmark CAGR is
+   drawn as well as printed: the three .strat-card blocks below carry .cagr-cmp,
+   a MODEL row and an INDEX row on one shared scale. The hero card — the first
+   thing every visitor sees, and the card those same two figures lead with —
+   printed them as bare text with the word "vs" between, leaving the reader to
+   do the division. These are the same bars, sized to this card: one 5px track
+   per figure, both on ONE scale (the larger figure fills its track), sitting in
+   the two 1fr columns of .hv-nums so each bar is directly under the number it
+   measures. `align-items:end` on .hv-nums puts both on the same baseline even
+   though the two columns are different heights.
+   Width starts at 0 and is set from JS — a bar painted at its final width has a
+   dead transition (V23.5), and this one has to re-run on every tab switch. */
+.hv-nbar { display: block; margin-top: 9px; height: 5px; border-radius: 3px;
+  background: rgba(37,99,235,0.09); overflow: hidden; }
+.hv-nbar-fill { display: block; height: 100%; width: 0; border-radius: 3px;
+  background: linear-gradient(90deg, #1a50d8, #0d9488);
+  transition: width 1s cubic-bezier(.22,1,.36,1); }
+/* The strategy bar wears its own strategy's hue, because inside THIS card that
+   is already what "strategy" looks like — the curve, the legend mark and the
+   tab all carry it, and borrowing the strategy cards' fixed green would put a
+   fourth colour on the same object. One tier deeper than the curve in light,
+   though: measured against this card's surface (#fefeff), the curve's own
+   stops land at 3.59/2.37 (cyan), 6.43/1.81 (blue-teal) and 3.11/2.09 (amber),
+   i.e. every light end is under the 3:1 non-text floor. Deepened, both stops of
+   every ramp clear it — 5.32/3.65, 6.55/3.71 and 4.98/3.16 — with the hue
+   unmistakably the same. Dark needs no such move: on the dark card (#111b32)
+   the same families measure 7.05/9.47, 6.73/9.20 and 5.37/7.97, so there the
+   bar keeps the curve's colours exactly. Set by JS as data-k, not as an inline
+   background, so the theme flip stays in CSS where it can be seen. */
+.hv-nbar-fill[data-k="ma"] { background: linear-gradient(90deg, #0e7490, #0891b2); }
+.hv-nbar-fill[data-k="lm"] { background: linear-gradient(90deg, #1a50d8, #0d9488); }
+.hv-nbar-fill[data-k="sm"] { background: linear-gradient(90deg, #b45309, #d97706); }
+html[data-theme="dark"] .hv-nbar-fill[data-k="ma"] { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+html[data-theme="dark"] .hv-nbar-fill[data-k="lm"] { background: linear-gradient(90deg, #60a5fa, #2dd4bf); }
+html[data-theme="dark"] .hv-nbar-fill[data-k="sm"] { background: linear-gradient(90deg, #d97706, #f59e0b); }
+/* The benchmark bar deliberately stays on the muted grey the .cagr-cmp bars
+   below this fold already use, so the two are one object. Measured 2.30 / 1.58
+   in light against the card, i.e. under 3:1 — and left there on purpose: the
+   figure it draws is printed in full immediately above it, so nothing here is
+   "required to understand the content", while a grey deep enough to clear the
+   floor (#64748b -> #7d8ea9, 4.64 / 3.24) reads as heavy as the strategy bar
+   and inverts the hierarchy the pair exists to show. Dark already clears it at
+   3.18 / 5.86. */
+.hv-nbar-fill.is-bench { background: linear-gradient(90deg, #9aabc9, #c3cee0); }
+html[data-theme="dark"] .hv-nbar { background: rgba(120,150,255,0.16); }
+html[data-theme="dark"] .hv-nbar-fill.is-bench { background: linear-gradient(90deg, #5b6b88, #8698b7); }
+@media (prefers-reduced-motion: reduce) { .hv-nbar-fill { transition: none; } }
+/* the tracks are a picture of the two figures printed right above them, so a
+   printer that drops backgrounds would leave two empty grey slots (V31.1) */
+@media print { .hv-nbar, .hv-nbar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
 /* ── V24.2: live-cycle strip — the card's PRIMARY stat once live-perf.json lands.
    display:none until .live-ready, so a failed fetch leaves the pre-pivot,
    backtest-first card untouched. With live present, .has-live demotes the
@@ -3896,7 +3947,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3340">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3350">
 </head>
 <body>
 
@@ -3980,11 +4031,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <div class="hv-num">
               <div class="val" id="hv-cagr"><!--MFSTAT:sm:cagr_posttax-->30.6%<!--/MFSTAT--></div>
               <div class="lbl" id="hv-cagr-lbl">SmallMicro&nbsp;· backtest&nbsp;CAGR, after&nbsp;tax</div>
+              <span class="hv-nbar" aria-hidden="true"><i class="hv-nbar-fill" id="hv-nbar-strat"></i></span>
             </div>
             <div class="hv-vs">vs</div>
             <div class="hv-num bench">
               <div class="val" id="hv-bench"><!--MFSTAT:sm:bench_cagr_posttax-->15.38%<!--/MFSTAT--></div>
               <div class="lbl">Benchmark&nbsp;· backtest, after&nbsp;tax</div>
+              <span class="hv-nbar" aria-hidden="true"><i class="hv-nbar-fill is-bench" id="hv-nbar-bench"></i></span>
             </div>
           </div>
           <div class="hv-legend">
@@ -5511,6 +5564,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
       line: document.getElementById('hv-strat-line'), bline: document.getElementById('hv-bench-line'),
       dotS: document.getElementById('hv-dot-strat'), dotB: document.getElementById('hv-dot-bench'),
       alpha: document.getElementById('hv-alpha'), period: document.getElementById('hv-period'),
+      nbarS: document.getElementById('hv-nbar-strat'), nbarB: document.getElementById('hv-nbar-bench'),
       g0: document.getElementById('hv-stroke-0'),
       g1: document.getElementById('hv-stroke-1'), gTop: document.getElementById('hv-grad-top'),
       gBot: document.getElementById('hv-grad-bot'),
@@ -5528,6 +5582,33 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
       if (el.cometGlow) el.cometGlow.setAttribute('fill', c[1]); // tracer halo matches the line's leading colour
       var ms = card.querySelector('.hv-leg.strat .hv-leg-mark');
       if (ms) ms.style.background = 'linear-gradient(90deg,' + c[0] + ',' + c[1] + ')';
+      // V33.5 — the proportion bar under the strategy figure follows the active
+      // strategy, so the bar, the curve, the legend mark and the tab read as one
+      // object across a switch. The ramp itself lives in CSS keyed off data-k
+      // (see .hv-nbar-fill) rather than being written inline here, because it
+      // has to differ per theme and an inline background cannot.
+      if (el && el.nbarS) el.nbarS.setAttribute('data-k', key);
+    }
+    /* V33.5 — size the two proportion bars. ONE shared scale: the larger of the
+       pair fills its track, the other is drawn as its true fraction of that, so
+       the gap between the two figures is the gap between the two bars.
+       Deliberately fail-soft in two ways. A non-finite figure, or either figure
+       at or below zero, hides BOTH bars rather than drawing something wrong: a
+       zero-anchored linear track cannot honestly place a negative CAGR beside a
+       positive one, and a strategy whose backtest went nowhere should not get a
+       full-width bar for it. The numbers above never go away, so the card still
+       says everything it said before. */
+    function sizeBars(d) {
+      if (!el.nbarS || !el.nbarB) return;
+      var a = d && d.cagr, b = d && d.bench;
+      var ok = isFinite(a) && isFinite(b) && a > 0 && b > 0;
+      var wrapS = el.nbarS.parentNode, wrapB = el.nbarB.parentNode;
+      if (wrapS) wrapS.style.display = ok ? '' : 'none';
+      if (wrapB) wrapB.style.display = ok ? '' : 'none';
+      if (!ok) return;
+      var top = Math.max(a, b);
+      el.nbarS.style.width = (a / top * 100).toFixed(2) + '%';
+      el.nbarB.style.width = (b / top * 100).toFixed(2) + '%';
     }
     function countTo(node, target, dec, suffix) {
       if (target == null || !node) return;
@@ -5640,7 +5721,17 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
       var d = DATA[key]; if (!d) return;
       var m = META[key] || { name: key, bench: 'Benchmark', period: '' };
       setColors(key);
-      if (el.cagrLbl) el.cagrLbl.textContent = m.name + ' · backtest&nbsp;CAGR, after\u00A0tax';
+      /* V33.5 — `textContent` does NOT decode entities, so the `&nbsp;` that used
+         to sit in this string was written to the page as the six literal
+         characters "&nbsp;": one click on any hero tab turned the label under
+         the headline CAGR into "SMALLMICRO · BACKTEST&NBSP;CAGR, AFTER TAX".
+         The static markup this replaces is correct, which is why it survived —
+         the defect only appears after a tab switch, and only in the label, not
+         the figure. Note the author already had it right two words later
+         (`after\u00A0tax`); this now matches the static string exactly,
+         including the no-break space after the strategy name that keeps
+         "SmallMicro ·" from breaking across a line at 320px. */
+      if (el.cagrLbl) el.cagrLbl.textContent = m.name + '\u00A0· backtest\u00A0CAGR, after\u00A0tax';
       if (el.legS) el.legS.textContent = 'MindForge ' + (m.label || m.name); /* V28.0: published name, see META */
       if (el.legB) el.legB.textContent = m.bench;
       if (el.period && m.period) el.period.textContent = m.period;
@@ -5652,6 +5743,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
       quietWhileTweening(animate ? 780 : 0);
       fillLive(key, animate);   // V24.2: the live-cycle strip follows the selected strategy; V25.1: counts up on switch
       var p = build(d.cagr != null ? d.cagr : 0, d.bench != null ? d.bench : 0);
+      sizeBars(d);   /* V33.5 — the proportion bars follow the selected strategy */
       if (animate) { countTo(el.cagr, d.cagr, 1, '%'); countTo(el.bench, d.bench, 2, '%'); countAlpha(el.alpha, d.alphaTxt); redraw(p); }
       else { if (el.cagr) el.cagr.textContent = d.cagrTxt; if (el.bench) el.bench.textContent = d.benchTxt; if (el.alpha) el.alpha.textContent = (d.alphaTxt || '') + ' annual alpha\u00A0· backtest, after\u00A0tax'; }
       tabs.querySelectorAll('.hv-tab').forEach(function (b) {
@@ -5662,6 +5754,13 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
     }
 
     setColors('sm'); card._hvKey = 'sm'; // default: keep static numbers + the CSS first-draw
+    /* V33.5 — select() is not called on load (the static numbers are already
+       correct), so the bars have to be sized here or they would sit at width 0
+       until the first tab click. A frame late, on purpose: setting width in the
+       same frame as the initial style would land at the final value with no
+       transition to run, which is the V23.5 dead-bar bug. */
+    if (window.requestAnimationFrame) requestAnimationFrame(function () { sizeBars(DATA.sm); });
+    else sizeBars(DATA.sm);
     tabs.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('.hv-tab') : null; if (!b) return;
       var key = b.getAttribute('data-hv');
@@ -7296,8 +7395,14 @@ function setDuration(durKey) {
 .strat-card:hover{ transform:translateY(-6px); box-shadow:var(--v13-shadow) !important; border-color:rgba(37,99,235,.25); }
 .strat-card:hover::after{ transform:scaleX(1); }
 
-/* Section eyebrows → gradient text */
+/* Section eyebrows → gradient text.
+   V33.5 — `--dg-label` is this page's OPT-IN to the shared contrast-tuned ramp
+   in mfc-finish.css. It belongs here, beside the clip that makes the eyebrow
+   gradient INK, because the ramp is only ever safe on an element whose glyphs
+   are knocked out of the fill. Pages that leave .section-label as a solid label
+   simply never set it and the shared rule resolves to `none`. */
 .section-label{
+  --dg-label: var(--dg-sm);
   background:var(--v13-grad); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
 }
 
@@ -7828,7 +7933,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
   .mobile-cta-bar{ animation:none; }
 }
 </style>
-<script src="assets/mfc-offer.js?v=3310" defer></script>
+<script src="assets/mfc-offer.js?v=3350" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
 <script src="assets/mfc-live.js?v=2930" defer></script>
 <style id="mf-navfix-sis">

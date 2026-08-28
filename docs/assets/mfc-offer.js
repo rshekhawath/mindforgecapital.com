@@ -90,11 +90,21 @@
       // crowding the copy — extend the HIT AREA instead, with the same invisible
       // 44×44 ::before overlay the dashboard's "Order placed" checkbox already
       // uses. The button stays 26px; the thumb gets a full 44px target.
-      // Kept to 34px WIDE deliberately: the "Get started" CTA sits immediately to
-      // its left and a full 44px overlay would reach back over the CTA's right
-      // edge and swallow taps meant for the conversion button. 26px is already
-      // past the 24px horizontal floor; it is the VERTICAL axis that was tight.
-      "#mfc-offer-bar .mfc-offer-x::before{content:'';position:absolute;left:50%;top:50%;width:34px;height:44px;transform:translate(-50%,-50%);}" +
+      // V27.9 kept it 34px WIDE deliberately, reasoning that the "Get started" CTA
+      // sits immediately to its left and a full 44px overlay CENTRED on the button
+      // would reach back over the CTA's right edge and swallow taps meant for the
+      // conversion button. That reasoning was right about the collision and wrong
+      // about the conclusion — see below.
+      /* V33.5 — the pad is anchored to the bar's RIGHT edge, not centred on the
+         button, and that is what makes 44px fit. Measured at eleven widths from
+         320 to 1440: the gap between the CTA's right edge and this button's left
+         edge is 6px at every one of them, and the button sits 12px in from the
+         bar's edge — so the room between the CTA and the screen is 6+26+12 = 44
+         exactly. A pad CENTRED on the button (V33.4's 34px) either stays short or
+         reaches across the CTA and steals its taps, which is the collision V28.7
+         recorded; anchored right, it fills the corner precisely and touches the
+         CTA without overlapping it. */
+      "#mfc-offer-bar .mfc-offer-x::before{content:'';position:absolute;left:auto;right:-12px;top:50%;width:44px;height:44px;transform:translateY(-50%);}" +
       "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
       "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}#mfc-offer-bar::after{animation:none;}}";
 

@@ -493,7 +493,16 @@ table.data tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
 table.data td .netnum{display:block}
 .dbar{display:block;position:relative;width:74px;height:4px;margin:5px 0 0 auto;background:var(--ink3);border-radius:3px}
 .dbar::before{content:'';position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--border2)}
-.dbar .dfill{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%}
+/* V33.5 — `min-width`. These bars are drawn as a percentage of the LARGEST
+   figure in their column, so a real but small session — 0.4% of the biggest
+   day — resolved to `width:0.2%` of a 74px track, i.e. 0.15 of a pixel, and
+   painted nothing at all. The number beside it said money moved; the bar said
+   none did, on 22 of 22 device/theme combinations. Two pixels is enough to see
+   and small enough that no reader could mistake it for a quantity. The renderer
+   now emits no fill AT ALL when the value is exactly zero, so the floor can
+   never manufacture a bar out of nothing — that distinction is the whole reason
+   this is a min-width and not a `max(2px, …)` in the width itself. */
+.dbar .dfill{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%;min-width:2px}
 .dbar .dfill.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
 .dbar .dfill.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
 /* V27.2 — the fill gradients end on the LIGHT semantic pair (#059669 / #dc2626),
@@ -520,7 +529,10 @@ html[data-theme="dark"] .dbar .dfill.l{background:linear-gradient(90deg,#fb7185,
   background:var(--ink3);border-radius:3px;overflow:hidden}
 /* the 50/50 reference — a book with equal longs and shorts sits exactly here */
 .lsbar::before{content:'';position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--border2);z-index:2}
-.lsbar i{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%}
+/* same floor, same reasoning — but here zero has a MEANING (a book that is
+   exactly 50/50 long/short sits on the reference line and must stay empty), so
+   the renderer omits the <i> at exactly 50.0% rather than drawing a 2px stub */
+.lsbar i{position:absolute;top:0;bottom:0;border-radius:3px;max-width:50%;min-width:2px}
 .lsbar i.r{left:50%;background:linear-gradient(90deg,#10b981,#059669)}
 .lsbar i.l{right:50%;background:linear-gradient(90deg,#f43f5e,#dc2626)}
 html[data-theme="dark"] .lsbar i.r{background:linear-gradient(90deg,#16c78d,#34d399)}
@@ -561,7 +573,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3340">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3350">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -1083,7 +1095,7 @@ function renderTrend(d){
   // V18.0 — same diverging mini-bar the participant table uses, shared scale
   // across the visible rows so day-to-day magnitude compares at a glance
   const maxNet=Math.max(1,...rows.flatMap(r=>[Math.abs(r.fii_net||0),Math.abs(r.dii_net||0)]));
-  const dbar=(v,mx)=>`<span class="dbar"><span class="dfill ${v>=0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span></span>`;
+  const dbar=(v,mx)=>`<span class="dbar">${v?`<span class="dfill ${v>0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span>`:""}</span>`;
   body.innerHTML=rows.map(r=>`<tr>
     <td>${escapeHtml(r.date)}</td>
     <td>${grp(r.fii_buy)}</td><td>${grp(r.fii_sell)}</td><td class="${sign(r.fii_net)}"><span class="netnum">${cr(r.fii_net)}</span>${dbar(r.fii_net||0,maxNet)}</td>
@@ -1367,7 +1379,7 @@ function renderDerivatives(d){
   // as a comparison. Scaled per column, exactly like the futures pair.
   const maxIdxO=Math.max(1,...parts.map(x=>Math.abs(x.idxO)));
   const maxStkO=Math.max(1,...parts.map(x=>Math.abs(x.stkO)));
-  const dbar=(v,mx)=>`<span class="dbar"><span class="dfill ${v>=0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span></span>`;
+  const dbar=(v,mx)=>`<span class="dbar">${v?`<span class="dfill ${v>0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span>`:""}</span>`;
   // V27.2: long share = long ÷ (long + short). 50% is an even book; the bar
   // measures the distance from 50 so a lean in either direction is visible at a
   // glance. Guarded: a participant with no open contracts renders "—", not NaN.
@@ -1380,7 +1392,7 @@ function renderDerivatives(d){
     const w=Math.min(50,Math.abs(pctv-50)).toFixed(1);
     return `<span class="lsw ${tone}">${pctv.toFixed(1)}%</span>`
       + `<span class="lsbar" role="img" aria-label="${pctv.toFixed(1)} percent of this participant's open contracts are long">`
-      + `<i class="${side}" style="width:${w}%"></i></span>`;
+      + (parseFloat(w)>0?`<i class="${side}" style="width:${w}%"></i>`:"") + `</span>`;
   };
   body.innerHTML=parts.map(({k,p,idxF,stkF,idxO,stkO})=>`<tr>
       <td><span class="who-chip"><span class="who-dot" style="background:${dot[k]}"></span>${escapeHtml(k)}</span></td>
@@ -1463,7 +1475,7 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 })();
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
-<script src="../assets/mfc-offer.js?v=3310" defer></script>
+<script src="../assets/mfc-offer.js?v=3350" defer></script>
 <script defer src="../assets/mfc-chrome.js?v=7"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════

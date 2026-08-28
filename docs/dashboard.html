@@ -546,6 +546,16 @@ html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
   display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;
 }
 @media (max-width:760px){.size-card{grid-template-columns:1fr;gap:16px;}}
+/* V33.5 — between 761 and 920 this card is still two columns, but the left one
+   has wrapped from one line to five (heading + intro + the three capital
+   figures + the deployed meter) while the right one is still a single 45px row
+   of input and presets. `align-items:center` then floats that row halfway down
+   a 239px column — measured 194px of surplus split above and below it at 768
+   and 820 — so the control a member is meant to reach for first sits in the
+   middle of nowhere. Top-align it there and the card reads down the page.
+   Desktop is untouched: at 1024+ the two columns are within 40px of each other
+   and centring is what balances them. */
+@media (min-width:761px) and (max-width:920px){.size-card{align-items:start;}}
 .size-card .size-head h2,.size-card .size-head h3{font-size:16px;color:var(--white);font-weight:700;margin-bottom:4px;line-height:1.25;}
 .size-card .size-meta{font-size:12.5px;color:var(--text3);}
 .size-input-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
@@ -787,7 +797,18 @@ html[data-theme="dark"] .sess.is-clean .sess-track{background:rgba(131,170,255,0
 .alloc-head h2,.alloc-head h3{font-size:16px;color:var(--white);font-weight:700;line-height:1.25;}
 .alloc-head .alloc-meta{font-size:12px;color:var(--text3);}
 .alloc-layout{display:grid;grid-template-columns:auto 1fr;gap:32px;align-items:center;}
-@media (max-width:760px){.alloc-layout{grid-template-columns:1fr;gap:18px;justify-items:center;}}
+/* V33.5 — 760 -> 920, so this breakpoint agrees with .alloc-grid's below.
+   The legend drops to ONE column at 920px; the layout used to keep the donut
+   beside it down to 760. Between those two numbers the 170px donut was
+   vertically centred against a ~570px column of eleven sector rows, so
+   `align-items:center` split 394px of surplus into 197px of dead space above it
+   and 197px below — measured at 768, 820 and 900, i.e. iPad mini, iPad Air and
+   iPad Pro portrait, which is most of the tablet traffic this card sees. The
+   card read as a large empty panel with a small ring floating in the middle of
+   it. Stacking is what the phone layout already does; this just extends it to
+   the full width band where the legend is single-column. The two rules are
+   coupled — a change to either must move the other. */
+@media (max-width:920px){.alloc-layout{grid-template-columns:1fr;gap:18px;justify-items:center;}}
 .alloc-donut{position:relative;width:170px;height:170px;flex-shrink:0;}
 .alloc-donut svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible;}
 .alloc-donut .ring-bg{fill:none;stroke:rgba(37,99,235,0.07);}
@@ -2246,7 +2267,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3340">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3350">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */

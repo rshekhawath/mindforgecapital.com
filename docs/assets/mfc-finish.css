@@ -1377,7 +1377,10 @@ html .toast-container{ right: 96px; }
   html .nf-code,
   html .welcome-name,
   html .dc-num,
-  html .hv-num .val,          /* V33.4 — its `color` is transparent too */
+  html .hv-num:not(.bench) .val,  /* V33.4 — its `color` is transparent too.
+        V33.5 — but the .bench twin's is not: it is an opaque --text2 by design,
+        and forcing it to the primary ink on paper would erase the very contrast
+        that marks it as the secondary figure. */
   html .dash-hero h1 .accent {
     color: var(--white, #0c1831) !important;
   }
@@ -1984,8 +1987,16 @@ html .donut-center .dc-num{ background-image: var(--dg-lg) !important; }
    ramp has to stay symmetric or the shimmer reverses character mid-sweep */
 html .hero h1 em{ background-image: var(--dg-shim) !important; }
 
-/* the live-cycle figure runs its ramp vertically */
-html .hv-num .val{ background-image: var(--dg-vert) !important; }
+/* the live-cycle figure runs its ramp vertically.
+   V33.5 — `:not(.bench)` is load-bearing. The benchmark figure beside it was
+   DESIGNED flat (index.html: `.hv-num.bench .val{ background:none;
+   -webkit-text-fill-color:var(--text2) }`) and its clip therefore resolves to
+   border-box. An unscoped `!important` here beat that `background:none`, so the
+   ramp painted a 184x17 SOLID blue-teal rectangle behind opaque navy glyphs —
+   on the homepage hero, above the fold, on all three strategy tabs, in both
+   themes. A ramp may only ever be handed to an element that is already
+   gradient INK; see the --dg-label note below for the general form of this. */
+html .hv-num:not(.bench) .val{ background-image: var(--dg-vert) !important; }
 
 /* the green highlight figure on the three strategy pages: only its MIDDLE stop
    failed (#10b981, 2.20:1), so this keeps the emerald identity and moves the
@@ -1993,7 +2004,20 @@ html .hv-num .val{ background-image: var(--dg-vert) !important; }
 html .stat-card.highlight .sv.green{ background-image: var(--dg-grn) !important; }
 
 /* — small sizes: the 4.5 tier — */
-html .section-label,
+/* V33.5 — `.section-label` is OPT-IN, via `--dg-label`, and must stay that way.
+   The class is not one thing across the site: index.html paints it as gradient
+   INK (`-webkit-background-clip:text`), while strategies.html, dashboard.html
+   and the three strategy pages declare it as an ordinary solid `--data-mid`
+   label with a kicker rule. Handing every one of them a ramp with `!important`
+   painted a solid gradient slab behind the opaque glyphs of the plain ones —
+   "Three strategies" above the strategies hero and "Member Dashboard" above the
+   member welcome both read as a decorative bar with the words gone.
+   The fallback is `none`, so a page that has NOT opted in is unreachable by
+   this rule no matter what it adds later; a page that paints the label as ink
+   sets `--dg-label: var(--dg-sm)` on its own rule, next to the clip that makes
+   the opt-in true. Opt-in is the safe direction: the worst a missed opt-in can
+   do is leave a label on its own colour, where a missed opt-OUT hides words. */
+html .section-label{ background-image: var(--dg-label, none) !important; }
 html .why-stat-val{ background-image: var(--dg-sm) !important; }
 html .ph-kpi-val{ background-image: var(--dg-sm) !important; }
 html .ph-kpi-val.ph-blue,
@@ -2182,3 +2206,165 @@ html[data-theme="dark"] .cmp-row .v{ color: var(--ink-link); }
   html .ph-kpi-val.ph-green,
   html .ph-kpi-val.ph-teal{ background-image: none !important; }
 }
+
+
+/* ============================================================================
+   V33.5 — THE TAP TARGETS THAT WERE SHORT ON THE OTHER AXIS
+   ----------------------------------------------------------------------------
+   V31.9 and V33.4 sized this site's controls for a finger and between them
+   closed thirty of them. Both worked on HEIGHT, because height is what padding
+   and `min-height` move and every control they measured was already wide
+   enough. Re-measured here by hit-test (scroll into view, then binary-search
+   outward from the centre with elementFromPoint until the point stops resolving
+   to a control that would fire the same action), 148 raw signatures across 22
+   pages x 4 touch devices reduce to five real ones — and every one of them is
+   short on WIDTH, not height:
+
+       .nav-links a  "FII/DII"        37.2 x 44.8   21 pages, iPad landscape
+       footer .footer-links a "Home"  34.7 x 44.8   404
+       footer .footer-links a "Terms" 38.1 x 46.3   404
+       .dir-crumb a  "Home"           34.7 x 44.8   the 28 generated pages
+       .mfc-offer-x  (fixed in mfc-offer.js)        34.8 x 44.0   19 pages
+
+   Each is a SHORT WORD in a row of longer ones — "FII/DII" beside "Integrity
+   Score", "Home" beside "Recover Access" — so the height work reached them and
+   the width work never had to exist. The pad is transparent and centred, so
+   nothing reflows; it can only ever grow to 44, so a link that is already wider
+   keeps its own box exactly.
+
+   COLLISION CHECKED, because V28.7 is what happens when it is not: the widest
+   any of these can grow is (44 - 34.7) / 2 = 4.7px per side, and the smallest
+   gap any of them sits in is 8px (.dir-crumb) — 20px in the footer, 16px in the
+   nav. No pad can reach its neighbour. `::before`, not `::after`: the nav's
+   `::after` is the V19.3 active-underline and the crumb's is its own 28px pad.
+
+   MEASURED, NOT FIXED — `#resultsTable thead th` hit-tests 42.8 x 42.8 against
+   V31.9's 44px `::after`. The pad is centred on a 41px cell inside
+   `.tbl-scroll`, which clips the 1.5px that runs past the table's top edge.
+   Growing it downward instead would take that 1.2px out of the first data row,
+   whose `<tr role="link">` opens a company page — trading a sort tap for a
+   navigation tap is a worse outcome than 42.8, and 42.8 clears WCAG 2.5.8's
+   24px floor with room to spare.
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+  html .nav-links a:not(.nav-cta),
+  html footer .footer-links a,
+  html footer .links a{ position: relative; }
+
+  html .nav-links a:not(.nav-cta)::before,
+  html footer .footer-links a::before,
+  html footer .links a::before{
+    content: ''; position: absolute;
+    left: 50%; top: 50%;
+    width: 100%; min-width: 44px; height: 100%; min-height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* the crumb already has a 44px-tall ::after from V31.9; give it the width */
+  html .dir-crumb a::after{
+    left: 50%; right: auto;
+    width: 100%; min-width: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* The live strip's own CTA on the three strategy pages — "Track it live in
+     your dashboard →", a standalone link, not a word inside a sentence, and the
+     only control in that strip. 236x23.8 measured. Every earlier sweep missed it
+     for a reason worth writing down: `.live-strip` is `display:none` until
+     mfc-live.js has fetched live-perf.json and added `.live-ready`, so whether
+     the probe sees it at all depends on a network fetch racing the page load —
+     it appeared in one shard of one run and in none of the three before it. Its
+     rule lives in mfc-live.js's injected CSS; putting the fix here instead keeps
+     every touch-target rule on this site in one file and costs no second asset
+     token. `inline-flex`, not a bare min-height: the link is inline-block, where
+     a min-height would leave the words at the top of a 44px box. Its parent is
+     `flex-wrap:wrap` with an 8px row gap, so growing the BOX (rather than
+     hanging a 44px pad off a 23.8px one) is what keeps it from reaching into the
+     wrapped row above. */
+  html .live-strip .ls-cta{
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+
+  /* ── The five below came out of the SAME sweep once its scroll was fixed. The
+     probe was calling `window.scrollTo` to bring each control into view while
+     `html{scroll-behavior:smooth}` was still in force, so the very next
+     `getBoundingClientRect` read the position the page had NOT moved to yet and
+     a control still sitting under the fixed mobile CTA bar measured as partly
+     unreachable. Forcing `scroll-behavior:auto` for the probe's own scrolling
+     took it from 18 signatures to 73 — not a regression, a backlog that three
+     previous sweeps could not see. These are the five that are neither a word
+     inside a sentence nor already argued as exempt. ── */
+
+  /* the footer's COLUMN lists. V31.9 gave these 12px of vertical padding and
+     they measure 45px tall; the one-word entries ("Team", 33px) are short on the
+     other axis. Same three selectors V31.9 used, so the pair cannot drift. */
+  html footer .footer-col ul li a{ position: relative; }
+  html footer .footer-col ul li a::before{
+    content: ''; position: absolute;
+    left: 50%; top: 50%;
+    width: 100%; min-width: 44px; height: 100%; min-height: 44px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* The dashboard's 24 company links. V31.9 listed these as exempt "because they
+     inherit a row link" — that is true of the SCANNER, whose <tr> carries
+     role="link", tabindex and an onclick, and it is NOT true here: the picks
+     table's <tr> has none of the three, so the only target is the 63x19 link
+     itself, wearing V28.3's 28px pad. Verified in the DOM rather than inherited
+     from the note. The row is 73px tall and the cell 141x73, so a 44px pad
+     centred on a 19px link stays inside its own cell, and the 73px row pitch
+     keeps it clear of the link above and below.
+     Re-measured after the change: 28.9 -> 42.2, not 44. The last 1.8px is the
+     anchor being `display:inline`, where the ::after's containing block is the
+     FIRST line box while the rect the probe centres on is the union of all of
+     them — the pad really is 44px, it is just centred ~1px off. Making the link
+     inline-block would close it and would also change how a two-line name like
+     "Dr. Reddy's Laboratories" wraps inside a table cell, which is a worse trade
+     than 1.8px. */
+  html a.company-link::after{ height: 44px; }
+
+  /* the dashboard footer's four social buttons: 40x40 on a 50px pitch, so 44
+     still leaves 6px between them */
+  html .dash-foot-social a{ min-width: 44px; min-height: 44px; }
+
+  /* the copy-ticker chip is 44 tall since V33.4, but its width is its TEXT: a
+     four-letter ticker measures 48 and "LT" measures 33 */
+  html .sc-ticker{ min-width: 44px; justify-content: center; }
+
+  /* the capital field the whole position-sizing card is driven from: 140x38 */
+  html .size-input{ min-height: 44px; }
+}
+
+/* ============================================================================
+   V33.5 — MEASURED, NOT FIXED. The numbers, so the next sweep starts here.
+   ----------------------------------------------------------------------------
+   Everything the corrected tap sweep reports that is NOT in the block above,
+   with the reason it stays:
+
+     · links inline inside a sentence — "Sign up here", "Recover it here",
+       "Backtest methodology", "the fee calculator", "full directory",
+       "Disclosures & Investor Charter", the SEBI/SCORES/Smart-ODR addresses and
+       the analyst's email. 13.8-19.1px tall, all of them constrained by the
+       line-height of the prose around them, which is WCAG 2.5.8's explicit
+       inline exception. Padding them would only overlap their own sentence.
+     · #distBar .hp-seg   3.6-79.7 x 20.2-24.4. Carried forward from V28.3 and
+       re-argued in V33.4: the bands ARE the chart, a 1% band cannot be 44px wide
+       without lying about the data, and every .hp-leg beside them carries the
+       same data-band and the same action at 59x44.
+     · .hero-sub .lnk     79.7x25.0. The class means "this button is a word".
+     · a.rs-all           79.7x31.9. Argued in V31.9.
+     · .tip-icon          26.9x26.9 on the three strategy pages. A 16px icon with
+       a 26px pad, sitting immediately after a heading it annotates; growing it
+       to 44 would reach back over the heading's own words. It clears the 24px
+       2.5.8 floor, and its content is repeated in the prose it points at.
+     · #resultsTable thead th   79.7x42.8. See the note higher up this file: the
+       missing 1.2px is clipped by .tbl-scroll, and taking it from the first data
+       row would trade a sort tap for a navigation tap.
+     · a.company-link   42.2 after this release's fix, up from 28.9. See above.
+     · a select on strategies.html (41.4) and a <summary> on the calculator
+       (28.8) — both are native controls whose box is set by their own page's
+       type scale; left for a pass that can re-measure that scale as a whole.
+     · nav .logo reported 36.9 by the sweep and hit-tests 44.0 x 44.0 when
+       probed directly at all four of the sweep's own widths on both pages it
+       named — an instrument reading taken mid-reveal, not a defect.
+   ========================================================================== */
