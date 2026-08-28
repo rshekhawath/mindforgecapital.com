@@ -36,7 +36,21 @@ h1,h2,h3,h4{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helve
 a{color:inherit;text-decoration:none}
 
 /* ── NAV (verbatim from the hand-maintained pages) ─────────────────────────── */
-nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.05);padding:0 32px}
+/* V33.7 — SCOPED TO THE MASTHEAD.
+   This was a bare `nav{…}` element selector, and the directory pages contain
+   three <nav> elements: the masthead, the breadcrumb (.dir-crumb) and the A–Z
+   rail (.dir-az). Both of the latter were therefore being painted AS mastheads —
+   position:sticky, top:0, z-index:200, a translucent blurred background, a
+   border-bottom and 16–32px of horizontal padding. The A–Z rail wraps to four
+   rows on a phone, so it pinned a 295px bar (52% of a 568px viewport) over the
+   page and, at z-index 200, swallowed the tap on every one of the 215 company
+   cards beneath it — measured at 320px on /screener/stocks/a.html.
+   V29.2 had already considered and REJECTED a sticky rail for exactly the
+   reason this reproduced by accident: "20% to 35% of the viewport held
+   permanently, on a page whose whole job is showing rows."
+   The masthead is the only <nav> export_static.py writes without a class, on
+   all 28 pages, so :not([class]) selects it and nothing else. */
+nav:not([class]){position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.05);padding:0 32px}
 .nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;height:64px;gap:26px}
 .logo{display:flex;align-items:center;flex-shrink:0}
 .logo img{height:44px;width:auto;display:block}
@@ -57,7 +71,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .nav-cta{background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);background-size:170% 170%;color:#fff;font-size:14px;font-weight:600;padding:10px 22px;border-radius:var(--r-sm);transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s cubic-bezier(.22,.8,.2,1),background-position .55s cubic-bezier(.22,.8,.2,1);white-space:nowrap;box-shadow:0 6px 16px -8px rgba(26,80,216,.55)}
 .nav-cta:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 10px 22px -8px rgba(26,80,216,.7),0 0 0 4px rgba(45,212,191,.10)}
 @media(max-width:1024px){
-  nav{padding:0 16px}
+  nav:not([class]){padding:0 16px}
   .nav-inner{gap:12px;height:56px}
   .nav-hamburger{display:flex}
   .nav-links{display:none;position:fixed;top:56px;left:0;right:0;margin-left:0;background:rgba(240,245,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border2);flex-direction:column;align-items:stretch;padding:18px 22px 26px;gap:2px;z-index:250;box-shadow:0 8px 32px rgba(26,80,216,0.10)}
@@ -207,7 +221,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .dir-foot a{color:inherit;text-decoration:underline}
 
 /* ── DARK (mfc-finish.css flips the tokens; these surfaces need explicit help) ─ */
-html[data-theme="dark"] nav{background:rgba(10,16,32,0.94)}
+html[data-theme="dark"] nav:not([class]){background:rgba(10,16,32,0.94)}
 @media(max-width:1024px){html[data-theme="dark"] .nav-links{background:rgba(10,16,32,0.98)}}
 html[data-theme="dark"] .dir-az a,
 html[data-theme="dark"] .dir-item,

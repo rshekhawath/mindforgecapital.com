@@ -657,7 +657,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3350">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3370">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1412,6 +1412,29 @@ const COLUMNS=[
   {key:"pe_ratio",      label:"P/E",          render:d=>fmtTone(d.pe_ratio,1,"pe")},
 ];
 
+/* V33.7 — the row carries role="button", and an aria-label on a role=button
+   element SUPERSEDES its contents: a screen reader announced only the company
+   name and none of the thirteen columns the table exists to show. The label now
+   carries the substance a sighted user reads off the row. Derived from the same
+   fields the cells render, so it can never drift from them. */
+function rowAria(d){
+  const n=v=>{ if(v==null||v==="") return null; const x=Number(v); return isFinite(x)?x:null; };
+  const parts=[];
+  parts.push((d.name||d.symbol)+(d.name?" ("+d.symbol+")":""));
+  if(d.sector) parts.push(d.sector);
+  const ov=n(d._overall);
+  if(ov!=null){
+    let band=""; try{ band=(window.MFCScores&&MFCScores.grade)?(MFCScores.grade(ov).label||""):""; }catch(e){}
+    parts.push("Integrity "+Math.round(ov)+" of 100"+(band?", "+band:""));
+  } else parts.push("Integrity not scored");
+  const pil=[["Quality",d._q],["Value",d._v],["Growth",d._g],["Momentum",d._m],["Efficiency",d._e]]
+    .filter(x=>n(x[1])!=null).map(x=>x[0]+" "+Math.round(x[1]));
+  if(pil.length) parts.push(pil.join(", "));
+  const pr=n(d.current_price);
+  if(pr!=null) parts.push("price \u20b9"+Number(pr).toLocaleString("en-IN",{maximumFractionDigits:2}));
+  return parts.join(". ")+". Expand scorecard.";
+}
+
 function showSkeleton(n){const c=COLUMNS.length;document.getElementById("tableBody").innerHTML=Array.from({length:n||12},()=>`<tr>${Array.from({length:c},()=>`<td><div class="skel"></div></td>`).join("")}</tr>`).join("");}
 
 function sortResults(arr){
@@ -1438,7 +1461,7 @@ function renderTable(){
   const page=allResults.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   document.getElementById("tableBody").innerHTML=page.length===0
     ?`<tr class="empty-row"><td colspan="${COLUMNS.length}"><div style="font-weight:600;color:var(--text2)">No stocks to show</div></td></tr>`
-    :page.map((d,i)=>`<tr class="rowlink" data-sym="${scEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scEsc(d.name||d.symbol)} — expand scorecard" onclick="toggleScorecard(this)" title="Click to expand the full scorecard">${COLUMNS.map(c=>`<td${c.cls?` class="${c.cls}"`:""} data-label="${c.cardLabel||c.label}">${c.render(d,i)}</td>`).join("")}</tr>`).join("");
+    :page.map((d,i)=>`<tr class="rowlink" data-sym="${scEsc(d.symbol)}" role="button" tabindex="0" aria-expanded="false" aria-label="${scEsc(rowAria(d))}" onclick="toggleScorecard(this)" title="Click to expand the full scorecard">${COLUMNS.map(c=>`<td${c.cls?` class="${c.cls}"`:""} data-label="${c.cardLabel||c.label}">${c.render(d,i)}</td>`).join("")}</tr>`).join("");
   const pages=Math.ceil(allResults.length/PAGE_SIZE);
   const pg=document.getElementById("pagination");
   if(pages<=1){pg.style.display="none";return;}
@@ -2113,7 +2136,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="../assets/mfc-chrome.js?v=7"></script>
+<script defer src="../assets/mfc-chrome.js?v=3370"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

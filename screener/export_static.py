@@ -131,20 +131,40 @@ def _chg(v):
 # token from a hand-maintained page makes drift impossible: whatever the rest of
 # the site asks for, these pages ask for too. The literal below is only a
 # fallback for the case where index.html cannot be read at all.
-_FINISH_FALLBACK = "3350"
+#
+# V33.7: mfc-chrome.js had exactly the same literal, and it bit the same way —
+# the 28 pages were bumped by hand this release while line 300 still said
+# `?v=7`, so the next refresh would have reverted them. Reading BOTH tokens from
+# index.html is the same fix applied to the second asset, so the helper below is
+# now generic rather than mfc-finish-specific.
+# (mfc-dir.css deliberately keeps its literal: index.html does not link it, and
+# this generator is the ONLY writer of the 28 pages that do, so there is no
+# second maintainer for it to drift away from.)
+_ASSET_FALLBACK = {"mfc-finish.css": "3370", "mfc-chrome.js": "3370"}
 
-def _finish_ver() -> str:
-    """The ?v token the rest of the site is currently using for mfc-finish.css."""
+
+def _asset_ver(name: str) -> str:
+    """The ?v token the rest of the site is currently using for a shared asset.
+
+    Read from docs/index.html at generation time so these 28 generated pages can
+    never ask for an older build of a shared asset than the 21 hand-maintained
+    pages do. The fallback is only for the case where index.html cannot be read.
+    """
     import re as _re
     try:
         idx = os.path.normpath(os.path.join(HERE, "..", "docs", "index.html"))
         with open(idx, encoding="utf-8") as fh:
-            m = _re.search(r"mfc-finish\.css\?v=(\d+)", fh.read())
+            m = _re.search(_re.escape(name) + r"\?v=(\d+)", fh.read())
         if m:
             return m.group(1)
     except Exception:
         pass
-    return _FINISH_FALLBACK
+    return _ASSET_FALLBACK.get(name, "1")
+
+
+def _finish_ver() -> str:
+    """Back-compat alias — mfc-finish.css's token."""
+    return _asset_ver("mfc-finish.css")
 
 
 def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
@@ -217,7 +237,7 @@ def _dir_page(title, desc, canon, h1, lede, body, crumb, day, extra_ld=None):
      V33.1: the token is no longer written here as a literal. It is read from
      the site's own index.html at generation time, so a refresh can no longer
      revert these pages to a stylesheet the rest of the site has moved past. -->
-<link rel="stylesheet" href="/assets/mfc-dir.css?v=2920">
+<link rel="stylesheet" href="/assets/mfc-dir.css?v=3370">
 <link rel="stylesheet" href="/assets/mfc-finish.css?v={_finish_ver()}">
 <!-- V29.2: this was the apply-only half of the site's theme script — it READ the
      saved preference but never built the nav toggle, so these 28 pages were the
@@ -297,7 +317,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <span style="opacity:.7">Directory regenerated {day}.</span>
 </footer>
 
-<script defer src="/assets/mfc-chrome.js?v=7"></script>
+<script defer src="/assets/mfc-chrome.js?v={_asset_ver('mfc-chrome.js')}"></script>
 </body>
 </html>
 """

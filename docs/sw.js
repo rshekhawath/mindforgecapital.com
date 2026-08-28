@@ -466,7 +466,23 @@
 // (dark-theme charts, zoom-pill layout), Integrity Score (card-mode specificity,
 // the fifth lens, the SVG icons), the Scanner, FII/DII (the rebuilt trend chart)
 // and the three legal pages.
-const CACHE = 'mfc-v73';
+// V33.7 -> mfc-v74. THIS ONE MUST MOVE, same mechanic as V33.3 above, and this
+// time for TWO cache-first assets rather than one: mfc-finish.css goes
+// 3350 -> 3370 on all 49 pages (it gains the line-breaking block) and
+// mfc-chrome.js goes 7 -> 3370 on all 45 that load it (it gains the footer
+// clearance that keeps the injected back-to-top button off the page's last
+// line). Both PRECACHED documents link mfc-finish.css and login.html links
+// mfc-chrome.js too — index.html registers the SW inline and does NOT load that
+// script, only mentions it in a comment — and neither document carries a ?v of
+// its own, so a returning installed-app user would otherwise keep the old
+// assets indefinitely. login.html is otherwise untouched but rides the bump
+// because the precache is written whole, not per-file.
+// mfc-dir.css also moved (2920 -> 3370), but none of its 28 generated pages is
+// precached, so that one alone would not have required a bump.
+// Everything else this release is network-first HTML — the Integrity Score
+// table (its rows now carry a full aria-label), the per-stock company template
+// (the two financial columns are rebalanced) and the three auth pages.
+const CACHE = 'mfc-v74';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

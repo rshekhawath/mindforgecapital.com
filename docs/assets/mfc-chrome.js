@@ -56,7 +56,19 @@
         'border-color:var(--accent,#1a50d8);box-shadow:0 12px 28px -8px rgba(26,80,216,.45);}',
       '.mfc-btt:focus-visible{outline:2px solid var(--accent2,#2563eb);outline-offset:3px;}',
       'html[data-theme="dark"] .mfc-btt{box-shadow:0 8px 24px -8px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);}',
-      '@media(max-width:768px){.mfc-btt{right:16px;width:40px;height:40px;bottom:var(--mfc-btt-bm,24px);}}'
+      '@media(max-width:768px){.mfc-btt{right:16px;width:40px;height:40px;bottom:var(--mfc-btt-bm,24px);}}',
+      /* V33.7 — keep this button off the page's last line. It is fixed to the
+         viewport corner, so at the very end of the document there is no scroll
+         left to move content out from under it: measured on recover/signup/login
+         at 320-375, the 40px circle sat on the footer's centred "Terms" link and
+         swallowed the tap. margin (not padding) so it ADDS to whatever the page
+         already reserves and can never shrink it. Gated on a CLASS rather than a
+         variable for two reasons: `margin-bottom:var(--x,0px)` still emits a
+         declaration when the value is 0, which would have flattened the footer
+         margins of pages that need no clearance; and `html.mfc-footclear footer`
+         (0,1,1) outranks the page-level `.dir-foot` / `.scan-legal` / `.site-foot`
+         rules (0,1,0) that swallowed the first attempt on four pages. */
+      '@media(max-width:768px){html.mfc-footclear footer{margin-bottom:80px;}}'
     ].join('');
   }
   var st = D.createElement('style'); st.id = 'mfc-chrome-style'; st.textContent = css;
@@ -102,6 +114,12 @@
       // over this button. 162px gives a clean 18px gap. Pages with only the
       // sticky CTA bar (no FAB) keep the original clearance.
       root.setProperty('--mfc-btt-bm', fab ? '162px' : (mctaOn ? '150px' : '24px')); // mobile
+      /* V33.7 — footer clearance for the injected button, mobile only.
+         Only when this button is the ONLY thing in the corner: a page with a
+         WhatsApp FAB or a sticky CTA bar already reserves its own bottom space,
+         and stacking another 200px of blank on top of that would be worse than
+         the overlap. 24px offset + 40px button + 16px gap = 80px. */
+      D.documentElement.classList.toggle('mfc-footclear', !fab && !mctaOn);
     };
     place();
     W.addEventListener('resize', place, { passive: true });

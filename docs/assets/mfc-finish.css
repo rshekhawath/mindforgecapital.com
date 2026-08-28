@@ -2368,3 +2368,44 @@ html[data-theme="dark"] .cmp-row .v{ color: var(--ink-link); }
        probed directly at all four of the sweep's own widths on both pages it
        named — an instrument reading taken mid-reveal, not a defect.
    ========================================================================== */
+
+/* ============================================================================
+   V33.7 — LINE BREAKING (the one typographic defect no structural probe sees)
+   ----------------------------------------------------------------------------
+   Every probe on this site measures whether text FITS. None of them measures
+   whether it breaks in a sensible PLACE, so a heading was free to drop its last
+   word onto a line of its own and nothing complained. Measured before this
+   block: terms.html's "9. Subscription, billing, cancellation, refunds" broke
+   with "refunds" alone at 375 and 430 — a 70px final line under a 324px one.
+
+   `balance` equalises the lines of a short block, which is what a heading is;
+   Chrome caps it at six lines, so longer blocks are left alone at no cost.
+   `pretty` only reflows the TAIL of a paragraph to pull an orphan back, so body
+   copy keeps its natural rag. Browsers without either simply ignore the
+   declaration — there is no fallback to get wrong.
+
+   SCOPE — headings and <p>, and nothing else. Two things forced that:
+
+   1. `text-wrap-style` INHERITS. Putting `pretty` on li/dd/blockquote would push
+      it into any table nested inside one, and where a table's text breaks is a
+      hard commitment on its column widths (V32.9 measured a 320px table go
+      314 -> 363 from exactly this). <p> cannot contain a table; the others can.
+   2. `text-wrap` is a SHORTHAND over text-wrap-mode + text-wrap-style, so a
+      "reset" written as `text-wrap:initial` also resets the MODE — it overrides
+      white-space:nowrap. An earlier draft of this block carried such a reset for
+      table elements; the A/B that was meant to prove the block layout-neutral is
+      what caught it (forcing it on `*` made the dashboard's nowrap table cells
+      wrap and the page grow 916px at 768). No reset is needed once nothing
+      inheritable is set above a table, and none is declared here.
+
+   Headings inside table cells are still excluded explicitly, since a <th> may
+   legitimately hold one.
+   ========================================================================== */
+
+:where(h1, h2, h3, h4):not(td *):not(th *):not(td):not(th) {
+  text-wrap: balance;
+}
+
+:where(p):not(td *):not(th *) {
+  text-wrap: pretty;
+}
