@@ -181,6 +181,28 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-bar.neg{right:50%;background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red))}
 .fr-val{font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .fr-val.up{color:var(--ink-pos)} .fr-val.down{color:var(--ink-neg)}
+
+/* V33.9 — MONTH-OVER-MONTH DELTA. The board ranked the factors but said nothing
+   about which way each had moved, which is the one thing a monthly report is
+   for: the commentary underneath spends two paragraphs describing a rotation the
+   scoreboard itself did not show. Each row carries last month's figure in
+   data-prev and the chip below is DERIVED from it, so the arrow, the sign, the
+   colour and the magnitude can never disagree with the number above them — the
+   only thing to maintain each month is the one attribute. Third line of the
+   existing .fr-name flex column, so no grid column is added and the ≤640px
+   layout is untouched. */
+.fr-delta{font-size:11px;font-weight:700;letter-spacing:.01em;display:inline-flex;
+  align-items:center;gap:4px;width:fit-content;padding:1px 6px;border-radius:5px;
+  font-variant-numeric:tabular-nums;margin-top:1px}
+.fr-delta.up{color:#047857;background:var(--green-bg)}
+.fr-delta.down{color:#b91c1c;background:var(--red-bg)}
+.fr-delta.flat{color:var(--text3);background:rgba(120,140,180,.12)}
+.fr-delta i{font-style:normal;font-size:9px;line-height:1}
+[data-theme="dark"] .fr-delta.up{color:#6ee7b7;background:rgba(5,150,105,.18)}
+[data-theme="dark"] .fr-delta.down{color:#fca5a5;background:rgba(220,38,38,.20)}
+[data-theme="dark"] .fr-delta.flat{color:var(--text3);background:rgba(160,180,220,.14)}
+@media print{ .fr-delta{background:none !important;border:1px solid #999} }
+
 .fr-lead-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#047857;background:var(--green-bg);padding:2px 7px;border-radius:5px;margin-left:7px;vertical-align:middle}
 .fr-lag-tag{color:#b91c1c;background:var(--red-bg)}
 /* V21.9: scoreboard upgrade — JS-computed "vs Nifty 50" alpha chips, leader/laggard
@@ -501,6 +523,9 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
             • the hero month + subtitle
             • the "Data as of" date
             • the five FR:factor rows (value, bar width %, up/down class, lead/lag tag)
+            • each row's data-prev= (LAST month's figure — the delta chip under
+              the index name is derived from it, so this is the only thing to
+              change; move the outgoing value straight into it)
             • the commentary paragraphs
             • the "Sources / as-of" line
        3. Prepend a link to the just-archived month at the TOP of .fr-archive-list
@@ -524,31 +549,31 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
     <h2>The factor scoreboard</h2>
     <p class="lead">Ranked by trailing 1-year total return. Each factor is represented by its flagship NSE index (tracked via a low-cost index fund, Direct Plan). Nifty&nbsp;50 is shown as the broad-market baseline.</p>
     <div class="fr-board">
-      <!--FR:factor value--><div class="fr-row">
+      <!--FR:factor value--><div class="fr-row" data-prev="16.9">
         <div class="fr-rank">1</div>
         <div class="fr-name"><b>Value <span class="fr-lead-tag">Leader</span></b><span>Nifty500 Value 50</span></div>
         <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:50.0%"></span></div>
         <div class="fr-val up">+19.2%</div>
       </div><!--/FR:factor-->
-      <!--FR:factor momentum--><div class="fr-row">
+      <!--FR:factor momentum--><div class="fr-row" data-prev="1.3">
         <div class="fr-rank">2</div>
         <div class="fr-name"><b>Momentum</b><span>Nifty500 Momentum 50</span></div>
         <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:31.8%"></span></div>
         <div class="fr-val up">+12.2%</div>
       </div><!--/FR:factor-->
-      <!--FR:factor lowvol--><div class="fr-row">
+      <!--FR:factor lowvol--><div class="fr-row" data-prev="6.7">
         <div class="fr-rank">3</div>
         <div class="fr-name"><b>Low Volatility</b><span>Nifty500 Low Volatility 50</span></div>
         <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:7.6%"></span></div>
         <div class="fr-val up">+2.9%</div>
       </div><!--/FR:factor-->
-      <!--FR:factor quality--><div class="fr-row">
+      <!--FR:factor quality--><div class="fr-row" data-prev="3.4">
         <div class="fr-rank">4</div>
         <div class="fr-name"><b>Quality <span class="fr-lead-tag fr-lag-tag">Laggard</span></b><span>Nifty200 Quality 30</span></div>
         <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:5.5%"></span></div>
         <div class="fr-val up">+2.1%</div>
       </div><!--/FR:factor-->
-      <!--FR:baseline--><div class="fr-row">
+      <!--FR:baseline--><div class="fr-row" data-prev="-0.9">
         <!-- V27.1: the rank cell used to hold a bare "·", which read as a stray
              typo sitting in the 1·2·3·4 rank column. It is now an em-dash with
              an explicit label; .fr-rank-base is the marker the alpha-chip pass
@@ -579,6 +604,38 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
     }catch(e){}
   })();
   </script>
+
+
+<!-- V33.9 · derive each row's month-over-month move from data-prev. Fail-soft:
+     a row with no data-prev, or a value that will not parse, simply gets no
+     chip and is left exactly as authored. -->
+<script id="fr-delta-js">
+(function(){
+  try{
+    var MONTH='July';
+    document.querySelectorAll('.fr-board .fr-row[data-prev]').forEach(function(row){
+      var valEl=row.querySelector('.fr-val'), nameEl=row.querySelector('.fr-name');
+      if(!valEl||!nameEl) return;
+      if(nameEl.querySelector('.fr-delta')) return;
+      var now=parseFloat((valEl.textContent||'').replace(/[^0-9.\-]/g,'').replace(/^\./,'0.'));
+      if((valEl.textContent||'').indexOf('\u2212')===0||(valEl.textContent||'').indexOf('-')===0) now=-Math.abs(now);
+      var prev=parseFloat(row.getAttribute('data-prev'));
+      if(!isFinite(now)||!isFinite(prev)) return;
+      var d=Math.round((now-prev)*10)/10;
+      var cls=d>0.05?'up':(d<-0.05?'down':'flat');
+      var arrow=d>0.05?'\u25b2':(d<-0.05?'\u25bc':'\u2013');
+      var mag=Math.abs(d).toFixed(1);
+      var chip=document.createElement('span');
+      chip.className='fr-delta '+cls;
+      chip.innerHTML='<i aria-hidden="true">'+arrow+'</i>'+(cls==='flat'?'unchanged':mag+' pp')+
+                     ' <span style="font-weight:600;opacity:.75">vs '+MONTH+'</span>';
+      chip.setAttribute('aria-label',(cls==='up'?'up ':cls==='down'?'down ':'')+
+        (cls==='flat'?'unchanged':mag+' percentage points')+' versus '+MONTH);
+      nameEl.appendChild(chip);
+    });
+  }catch(e){}
+})();
+</script>
 
   <!-- ── COMMENTARY ── -->
   <section class="card fade-up">

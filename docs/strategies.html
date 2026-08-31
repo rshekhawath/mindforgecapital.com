@@ -1890,6 +1890,32 @@ html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
 @media (prefers-reduced-motion: reduce){ .ptx-bar-keep{ transition:none; } }
 @media print{
   .ptx-bar, .ptx-bar-keep{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  /* V33.9 — THE SAMPLE-PICKS GATE ON PAPER.
+     .sp-gate is an absolutely-positioned panel whose legibility depends entirely
+     on the white gradient behind it, and print-color-adjust defaults to
+     `economy`, so a printer is free to drop that gradient. Measured: it does.
+     What came out was the lock icon, "Unlock all 10 picks" and the CTA button
+     printed directly over two blurred table rows, with nothing between them.
+     The blurred rows are unreadable by design, so on paper they are pure noise
+     and pure ink. Print drops them and lets the gate flow normally underneath
+     the visible picks, which turns the teaser into what it should be on paper:
+     the picks a reader may see, then the offer.
+     The !important flags are not decoration either — mf-v338-gate-anchor sets
+     top / bottom / min-height as INLINE styles at runtime, and an inline style
+     beats a stylesheet rule without them. */
+  .sample-preview-table tbody tr.sp-blur{ display:none !important; }
+  .sp-gate{
+    position:static !important;
+    top:auto !important; bottom:auto !important; min-height:0 !important;
+    padding:14px 0 0 !important;
+    background:none !important;
+    text-align:left !important;
+    border-top:1px solid #ccc;
+  }
+  .sample-preview-table-wrap{ padding-bottom:0 !important; }
+  .sp-gate-icon{ display:none !important; }
+  .sp-gate .sidebar-btn{ border:1px solid #666 !important; color:#000 !important;
+    background:none !important; padding:6px 12px !important; }
 }
 </style>
 </head>
@@ -2451,9 +2477,14 @@ html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
         <tr class="cmp-live-row" data-live-wrap><td class="row-label">Live <span class="lv-sub">(since last rebalance)</span></td><td><span class="mf-live-num" data-live="ma:live">—</span></td><td class="col-feat"><span class="mf-live-num" data-live="lm:live">—</span></td><td><span class="mf-live-num" data-live="sm:live">—</span></td></tr>
         <tr><td class="row-label">Benchmark</td><td>Nifty 50</td><td class="col-feat">Nifty LargeMidcap 250</td><td>Nifty Smallcap 250</td></tr>
         <tr><td class="row-label">Benchmark CAGR · after tax</td><td><!--MFSTAT:ma:bench_cagr_posttax-->9.50%<!--/MFSTAT--></td><td class="col-feat"><!--MFSTAT:lm:bench_cagr_posttax-->12.14%<!--/MFSTAT--></td><td><!--MFSTAT:sm:bench_cagr_posttax-->13.41%<!--/MFSTAT--></td></tr>
-        <tr data-rank="high"><td class="row-label">Alpha <span style="font-weight:500;color:var(--text3);">(annual, after tax)</span></td><td class="low"><span class="v"><!--MFSTAT:ma:alpha_posttax-->+6.40%<!--/MFSTAT--></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:alpha_posttax-->+17.66%<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:sm:alpha_posttax-->+26.15%<!--/MFSTAT--></span></td></tr>
+        <tr data-rank="high"><td class="row-label">Alpha <span style="font-weight:500;color:var(--text3);">(annual, after tax)</span></td><td class="low"><span class="v"><!--MFSTAT:ma:alpha_posttax-->+6.40%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:alpha_posttax-->+17.66%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="best"><span class="v"><!--MFSTAT:sm:alpha_posttax-->+26.15%<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td></tr>
         <tr class="cmp-grp g-risk"><td colspan="4"><span class="cmp-grp-inner">Risk profile</span></td></tr>
-        <tr data-rank="high"><td class="row-label">Sharpe Ratio</td><td class="best"><span class="v"><!--MFSTAT:ma:sharpe-->0.99<!--/MFSTAT--></span></td><td class="best col-feat"><span class="v"><!--MFSTAT:lm:sharpe-->1.39<!--/MFSTAT--></span></td><td class="best"><span class="v"><!--MFSTAT:sm:sharpe-->1.52<!--/MFSTAT--></span></td></tr>
+        <tr data-rank="high"><td class="row-label">Sharpe Ratio</td><td class="best"><span class="v"><!--MFSTAT:ma:sharpe-->0.99<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="best col-feat"><span class="v"><!--MFSTAT:lm:sharpe-->1.39<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td><td class="best"><span class="v"><!--MFSTAT:sm:sharpe-->1.52<!--/MFSTAT--></span><span class="cmp-track"><span class="cmp-bar"></span></span></td></tr>
+        <!-- V33.9: Max Drawdown deliberately keeps NO bar. Every other bar in this
+     table means "longer is better"; drawdown is the one row where longer would
+     mean worse, and a table that flips the meaning of its own bars halfway down
+     is harder to read than one that leaves a row as figures. The row is still
+     ranked - best/mid/low tint and the value itself carry it. -->
         <tr data-rank="high"><td class="row-label">Max Drawdown</td><td class="best"><span class="v"><!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></span></td><td class="mid col-feat"><span class="v"><!--MFSTAT:lm:max_dd-->-25.8%<!--/MFSTAT--></span></td><td class="low"><span class="v"><!--MFSTAT:sm:max_dd-->-22.5%<!--/MFSTAT--></span></td></tr>
         <tr><td class="row-label">Risk Level</td><td><span class="risk-pill risk-low">Low</span></td><td class="col-feat"><span class="risk-pill risk-med">Medium</span></td><td><span class="risk-pill risk-high">High</span></td></tr>
         <tr class="cmp-grp g-price"><td colspan="4"><span class="cmp-grp-inner">Pricing &amp; access</span></td></tr>
@@ -3836,18 +3867,28 @@ html[data-theme="dark"] a.strat-hub-card[href="smallmicro.html"] > div:first-of-
     try{
       var table=document.querySelector('.cmp-card .compare-table');
       if(!table) return;
-      var bars=[].slice.call(table.querySelectorAll('.cmp-bar'));
-      if(!bars.length) return;
-      var vals=bars.map(function(bar){
-        var td=bar.closest ? bar.closest('td') : bar.parentNode.parentNode;
-        var v=td?td.querySelector('.v'):null;
-        var n=parseFloat((v?v.textContent:'').replace(/[^0-9.\-]/g,''));
-        return isFinite(n)?Math.abs(n):0;
+      /* V33.9: normalise PER ROW, not across the whole table. This was harmless
+         while exactly one row carried bars; the moment Alpha (tens) and Sharpe
+         (units) joined the CAGR row (tens), one shared maximum would have
+         squashed every Sharpe bar to the 10% floor and made the row say
+         "these three are identical", which is the opposite of true. */
+      var rows=[].slice.call(table.querySelectorAll('tr')).filter(function(tr){
+        return tr.querySelector('.cmp-bar');
       });
-      var max=Math.max.apply(null, vals.concat([1]));
-      bars.forEach(function(bar,i){
-        var w=Math.max(10, Math.round(vals[i]/max*100));   // % of the fixed-width track
-        bar.style.width='0%'; void bar.offsetWidth; bar.style.width=w+'%';
+      if(!rows.length) return;
+      rows.forEach(function(tr){
+        var bars=[].slice.call(tr.querySelectorAll('.cmp-bar'));
+        var vals=bars.map(function(bar){
+          var td=bar.closest ? bar.closest('td') : bar.parentNode.parentNode;
+          var v=td?td.querySelector('.v'):null;
+          var n=parseFloat((v?v.textContent:'').replace(/[^0-9.\-]/g,''));
+          return isFinite(n)?Math.abs(n):0;
+        });
+        var max=Math.max.apply(null, vals.concat([1e-9]));
+        bars.forEach(function(bar,i){
+          var w=Math.max(10, Math.round(vals[i]/max*100));  // % of the fixed-width track
+          bar.style.width='0%'; void bar.offsetWidth; bar.style.width=w+'%';
+        });
       });
       /* show the "swipe to compare" hint only when the table actually overflows,
          at any viewport — the fixed 760px breakpoint missed the ~760–805px band */

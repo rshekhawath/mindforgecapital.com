@@ -862,11 +862,21 @@ html[data-theme="dark"] .sess.is-clean .sess-track{background:rgba(131,170,255,0
 .alloc-row-other{cursor:default;}
 .alloc-row-other .alloc-name{color:var(--text3);}
 :root{--alloc-rule:rgba(12,24,49,0.16);}
+/* V33.9 — THE RULER COUNTED TO THREE AFTER THE CAP BECAME TWO.
+   These two hardcoded gradients put a division at 33.3% and 66.7%, i.e. they
+   drew every ruled bar as THREE equal slots. That was right when a sector could
+   hold three names: full bar = the cap = three slots, one per holding, and the
+   phone rule at line ~1497 still says in so many words that the bar "reads the
+   count off its three slots". The cap has been two since V33.1 and V33.8 made
+   the geometry follow it, so a full bar is now TWO holdings while the ruler
+   underneath it still offered three places to put them — a reader counting
+   slots got a different answer from the one the bar was drawing.
+   The stops are now generated from the same constant the scale is (SECTOR_CAP,
+   in renderAllocation), handed over as --alloc-ticks. A cap of N draws N-1
+   divisions, whatever N becomes next. */
 .alloc-bar-wrap.alloc-ruled::after{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
-  background:
-    linear-gradient(90deg,transparent calc(33.3333% - 0.5px),var(--alloc-rule) calc(33.3333% - 0.5px),var(--alloc-rule) calc(33.3333% + 0.5px),transparent calc(33.3333% + 0.5px)),
-    linear-gradient(90deg,transparent calc(66.6667% - 0.5px),var(--alloc-rule) calc(66.6667% - 0.5px),var(--alloc-rule) calc(66.6667% + 0.5px),transparent calc(66.6667% + 0.5px));
+  background:var(--alloc-ticks,none);
 }
 .alloc-bar-wrap.alloc-over::before{
   content:'';position:absolute;top:0;bottom:0;right:0;width:2px;z-index:3;
@@ -1495,8 +1505,10 @@ footer a:hover{color:var(--accent);}
   /* V28.0: on a phone the track is only ~125px wide and it is the thing this
      card exists for, so the name column keeps its original 100px rather than
      taking 27px from the bar for the count pill. The pill is hidden here: with
-     the cap ruler on, the bar already reads the count off its three slots, so
-     phone loses nothing the ruler does not already say. */
+     the cap ruler on, the bar already reads the count off its slots (V33.9: the
+     ruler now draws SECTOR_CAP-1 divisions, so two slots at today's cap of two,
+     not the three this note described), so phone loses nothing the ruler does
+     not already say. */
   .alloc-name{flex-basis:100px;font-size:12px;}
   .alloc-n{display:none;}
   /* from 481 to 768 the grid is already one column, so the track still measures
@@ -3861,32 +3873,26 @@ function _demoData(mode) {
   // no plan sells — back-date it 12 days so the demo shows a representative
   // 30-day monthly cycle, 12 days consumed.
   const sub0 = new Date(); sub0.setDate(sub0.getDate() - 12);
+  // V33.9: was 25 names at 4.00% with three per industry — the shape the books
+  // had before V33.1 concentrated them. A stale fixture is not cosmetic here:
+  // the allocation card only takes its `scaleIsCap` branch when the largest
+  // sector weight equals equalWeight x MAX_PER_SECTOR, so a 3-per-industry
+  // fixture meant demo mode never exercised the ruled-bar rendering or the
+  // "full bar = the 2-per-industry cap" caption that every real book now hits.
+  // Ten names at 10.00%, no more than two per industry — the live LargeMidcap
+  // shape. Deliberately well-known large caps rather than the real model picks:
+  // ?demo=1 needs no token, and the paid book must not leak through it.
   const stocks = [
-    {ticker:'INFY',       company_name:'Infosys',                          industry:'IT Services',                  recommended_price:1543.20, weight_pct:4.00},
-    {ticker:'TCS',        company_name:'Tata Consultancy Services',        industry:'IT Services',                  recommended_price:3812.55, weight_pct:4.00},
-    {ticker:'HDFCBANK',   company_name:'HDFC Bank',                        industry:'Banks',                        recommended_price:1672.90, weight_pct:4.00},
-    {ticker:'ICICIBANK',  company_name:'ICICI Bank',                       industry:'Banks',                        recommended_price:1198.40, weight_pct:4.00},
-    {ticker:'AXISBANK',   company_name:'Axis Bank',                        industry:'Banks',                        recommended_price:1124.10, weight_pct:4.00},
-    {ticker:'RELIANCE',   company_name:'Reliance Industries',              industry:'Oil & Gas',                    recommended_price:2945.85, weight_pct:4.00},
-    {ticker:'ONGC',       company_name:'Oil & Natural Gas Corporation',    industry:'Oil & Gas',                    recommended_price:268.90,  weight_pct:4.00},
-    {ticker:'BHARTIARTL', company_name:'Bharti Airtel',                    industry:'Telecom',                      recommended_price:1582.30, weight_pct:4.00},
-    {ticker:'MARUTI',     company_name:'Maruti Suzuki India',              industry:'Automobile',                   recommended_price:11890.00, weight_pct:4.00},
-    {ticker:'M&M',        company_name:'Mahindra & Mahindra',              industry:'Automobile',                   recommended_price:2902.15, weight_pct:4.00},
-    {ticker:'TATAMOTORS', company_name:'Tata Motors',                      industry:'Automobile',                   recommended_price:945.65,  weight_pct:4.00},
-    {ticker:'TITAN',      company_name:'Titan Company',                    industry:'Consumer Durables',            recommended_price:3540.20, weight_pct:4.00},
-    {ticker:'NESTLEIND',  company_name:'Nestle India',                     industry:'FMCG',                         recommended_price:2410.00, weight_pct:4.00},
-    {ticker:'HINDUNILVR', company_name:'Hindustan Unilever',               industry:'FMCG',                         recommended_price:2384.55, weight_pct:4.00},
-    {ticker:'ITC',        company_name:'ITC',                              industry:'FMCG',                         recommended_price:471.80,  weight_pct:4.00},
-    {ticker:'LT',         company_name:'Larsen & Toubro',                  industry:'Capital Goods',                recommended_price:3782.40, weight_pct:4.00},
-    {ticker:'SIEMENS',    company_name:'Siemens',                          industry:'Capital Goods',                recommended_price:6892.20, weight_pct:4.00},
-    {ticker:'ASIANPAINT', company_name:'Asian Paints',                     industry:'Consumer Durables',            recommended_price:2310.65, weight_pct:4.00},
-    {ticker:'SUNPHARMA',  company_name:'Sun Pharmaceutical Industries',    industry:'Pharma',                       recommended_price:1812.30, weight_pct:4.00},
-    {ticker:'DRREDDY',    company_name:"Dr. Reddy's Laboratories",         industry:'Pharma',                       recommended_price:1342.50, weight_pct:4.00},
-    {ticker:'CIPLA',      company_name:'Cipla',                            industry:'Pharma',                       recommended_price:1568.75, weight_pct:4.00},
-    {ticker:'POWERGRID',  company_name:'Power Grid Corporation',           industry:'Power',                        recommended_price:332.60,  weight_pct:4.00},
-    {ticker:'NTPC',       company_name:'NTPC',                             industry:'Power',                        recommended_price:362.10,  weight_pct:4.00},
-    {ticker:'JSWSTEEL',   company_name:'JSW Steel',                        industry:'Metals',                       recommended_price:945.20,  weight_pct:4.00},
-    {ticker:'TATASTEEL',  company_name:'Tata Steel',                       industry:'Metals',                       recommended_price:154.70,  weight_pct:4.00},
+    {ticker:'INFY',       company_name:'Infosys',                       industry:'IT Services',    recommended_price:1543.20,  weight_pct:10.00},
+    {ticker:'TCS',        company_name:'Tata Consultancy Services',     industry:'IT Services',    recommended_price:3812.55,  weight_pct:10.00},
+    {ticker:'HDFCBANK',   company_name:'HDFC Bank',                     industry:'Banks',          recommended_price:1672.90,  weight_pct:10.00},
+    {ticker:'ICICIBANK',  company_name:'ICICI Bank',                    industry:'Banks',          recommended_price:1198.40,  weight_pct:10.00},
+    {ticker:'MARUTI',     company_name:'Maruti Suzuki India',           industry:'Automobile',     recommended_price:11890.00, weight_pct:10.00},
+    {ticker:'M&M',        company_name:'Mahindra & Mahindra',           industry:'Automobile',     recommended_price:2902.15,  weight_pct:10.00},
+    {ticker:'RELIANCE',   company_name:'Reliance Industries',           industry:'Oil & Gas',      recommended_price:2945.85,  weight_pct:10.00},
+    {ticker:'BHARTIARTL', company_name:'Bharti Airtel',                 industry:'Telecom',        recommended_price:1582.30,  weight_pct:10.00},
+    {ticker:'SUNPHARMA',  company_name:'Sun Pharmaceutical Industries', industry:'Pharma',         recommended_price:1812.30,  weight_pct:10.00},
+    {ticker:'LT',         company_name:'Larsen & Toubro',               industry:'Capital Goods',  recommended_price:3782.40,  weight_pct:10.00},
   ];
   // Real API rows always carry a yahoo_ticker; the demo fixture omits it, so
   // backfill ".NS" suffixes here to keep the table/calculator on ₹ for the
@@ -3898,14 +3904,14 @@ function _demoData(mode) {
   // the "Why these 25" multiplicative-chain branch. Weights are a real run's.
   if (mode === '2') {
     const etfs = [
-      {ticker:'MON100',     company_name:'NASDAQ ETF',              weight_pct:28.57, recommended_price:305.18},
-      {ticker:'HDFCSML250', company_name:'Nifty SmallCap 250 ETF',  weight_pct:15.43, recommended_price:180.67},
-      {ticker:'JUNIORBEES', company_name:'Nifty Next\u00A050 ETF',       weight_pct:15.41, recommended_price:795.65},
-      {ticker:'MID150BEES', company_name:'Nifty Midcap\u00A0150 ETF',    weight_pct:14.50, recommended_price:239.48},
-      {ticker:'EBBETF0431', company_name:'Bharat Bond ETF',         weight_pct:11.87, recommended_price:1441.34},
-      {ticker:'GOLDBEES',   company_name:'Gold ETF',                weight_pct:8.12,  recommended_price:117.11},
-      {ticker:'SILVERBEES', company_name:'Silver ETF',              weight_pct:4.68,  recommended_price:206.51},
-      {ticker:'NIFTYBEES',  company_name:'Nifty\u00A050 ETF',            weight_pct:1.42,  recommended_price:277.42},
+      {ticker:'MON100',     company_name:'NASDAQ ETF',              weight_pct:29.92, recommended_price:305.18},
+      {ticker:'HDFCSML250', company_name:'Nifty SmallCap 250 ETF',  weight_pct:16.13, recommended_price:180.67},
+      {ticker:'JUNIORBEES', company_name:'Nifty Next\u00A050 ETF',       weight_pct:10.45, recommended_price:795.65},
+      {ticker:'MID150BEES', company_name:'Nifty Midcap\u00A0150 ETF',    weight_pct:12.47, recommended_price:239.48},
+      {ticker:'EBBETF0431', company_name:'Bharat Bond ETF',         weight_pct:8.28, recommended_price:1441.34},
+      {ticker:'GOLDBEES',   company_name:'Gold ETF',                weight_pct:17.36,  recommended_price:117.11},
+      {ticker:'SILVERBEES', company_name:'Silver ETF',              weight_pct:4.27,  recommended_price:206.51},
+      {ticker:'NIFTYBEES',  company_name:'Nifty\u00A050 ETF',            weight_pct:1.12,  recommended_price:277.42},
     ];
     etfs.forEach(s => { s.industry = 'ETF'; s.yahoo_ticker = s.ticker + '.NS'; });
     return {
@@ -5132,7 +5138,23 @@ function renderAllocation(stocks) {
   let modalW = 0, modalN = 0;
   Object.entries(perStockCounts).forEach(([w, n]) => { if (n > modalN) { modalN = n; modalW = Number(w); } });
   const equalWeighted = modalW > 0 && modalN >= stocks.length * 0.8 && !/multiasset/i.test(currentStrategy);
-  const capW = equalWeighted ? (modalW / total) * 100 * 2 : 0;
+  // The per-industry cap from the factor model (shared/config.py MAX_PER_SECTOR).
+  // It sets BOTH the bar's full-scale and the number of divisions drawn on it,
+  // so the two can never disagree again.
+  const SECTOR_CAP = 2;
+  const capW = equalWeighted ? (modalW / total) * 100 * SECTOR_CAP : 0;
+  const allocTicks = (function(){
+    if (SECTOR_CAP < 2) return 'none';
+    var g = [];
+    for (var i = 1; i < SECTOR_CAP; i++) {
+      var at = (100 * i / SECTOR_CAP).toFixed(4) + '%';
+      g.push('linear-gradient(90deg,transparent calc(' + at + ' - 0.5px),' +
+             'var(--alloc-rule) calc(' + at + ' - 0.5px),' +
+             'var(--alloc-rule) calc(' + at + ' + 0.5px),' +
+             'transparent calc(' + at + ' + 0.5px))');
+    }
+    return g.join(',');
+  })();
   const topPct = allRows[0].pct;
   // never let the scale be smaller than the largest bar — a clamped bar would lie
   const scale = (capW > 0 && capW >= topPct - 0.01) ? capW : topPct;
@@ -5169,7 +5191,7 @@ function renderAllocation(stocks) {
         <span class="alloc-nm-t">${escapeHtml(r.name)}</span>
         <span class="alloc-n">${r.n}</span>
       </div>
-      <div class="alloc-bar-wrap${scaleIsCap ? ' alloc-ruled' : ''}${overCap ? ' alloc-over' : ''}"><div class="alloc-bar" data-bar="${fillPct.toFixed(1)}%" style="background:linear-gradient(90deg,${r.color},${r.color}cc);"></div></div>
+      <div class="alloc-bar-wrap${scaleIsCap ? ' alloc-ruled' : ''}${overCap ? ' alloc-over' : ''}" style="--alloc-ticks:${allocTicks}"><div class="alloc-bar" data-bar="${fillPct.toFixed(1)}%" style="background:linear-gradient(90deg,${r.color},${r.color}cc);"></div></div>
       <div class="alloc-pct">${r.pct.toFixed(1)}%</div>
     </div>
   `;}).join('');
@@ -5183,7 +5205,7 @@ function renderAllocation(stocks) {
         <span class="alloc-nm-t">Other · ${restRows.length} sectors</span>
         <span class="alloc-n">${restN}</span>
       </div>
-      <div class="alloc-bar-wrap${scaleIsCap ? ' alloc-ruled' : ''}"><div class="alloc-bar" data-bar="${Math.min(100,(restPct/scale)*100).toFixed(1)}%" style="background:linear-gradient(90deg,#cbd5e1,#cbd5e1cc);"></div></div>
+      <div class="alloc-bar-wrap${scaleIsCap ? ' alloc-ruled' : ''}" style="--alloc-ticks:${allocTicks}"><div class="alloc-bar" data-bar="${Math.min(100,(restPct/scale)*100).toFixed(1)}%" style="background:linear-gradient(90deg,#cbd5e1,#cbd5e1cc);"></div></div>
       <div class="alloc-pct">${restPct.toFixed(1)}%</div>
     </div>`;
   }
