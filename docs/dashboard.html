@@ -4681,7 +4681,7 @@ function renderDashboard(sub, stocks) {
      overflows at none of them, so no card grows and the KPI row keeps its heights.
      "max 3 per industry" rather than "3 per industry" because the cap is a ceiling —
      most industries in the book hold one or two. */
-  else                                             industryCopy = 'sector-diversified\u00A0· max 3 per industry';
+  else                                             industryCopy = 'sector-diversified\u00A0· max 2 per industry';
   document.getElementById('stat-industries-sub').textContent = industryCopy;
 
   // V30.1 — the bottom slot on these two KPIs (see .stat-pips / .stat-ribbon).
@@ -5132,7 +5132,7 @@ function renderAllocation(stocks) {
   let modalW = 0, modalN = 0;
   Object.entries(perStockCounts).forEach(([w, n]) => { if (n > modalN) { modalN = n; modalW = Number(w); } });
   const equalWeighted = modalW > 0 && modalN >= stocks.length * 0.8 && !/multiasset/i.test(currentStrategy);
-  const capW = equalWeighted ? (modalW / total) * 100 * 3 : 0;
+  const capW = equalWeighted ? (modalW / total) * 100 * 2 : 0;
   const topPct = allRows[0].pct;
   // never let the scale be smaller than the largest bar — a clamped bar would lie
   const scale = (capW > 0 && capW >= topPct - 0.01) ? capW : topPct;
@@ -5199,7 +5199,7 @@ function renderAllocation(stocks) {
   if (dcLbl) dcLbl.textContent = aclasses ? 'Asset classes' : 'Sectors';
   document.getElementById('alloc-meta').textContent =
     allRows.length + ' ' + axisNoun + (allRows.length === 1 ? '' : (aclasses ? 'es' : 's')) + ' · ' + stocks.length + ' holdings\u00A0· ' +
-    (scaleIsCap ? 'full bar = the 3-per-industry cap (' + scale.toFixed(1) + '%)'
+    (scaleIsCap ? 'full bar = the 2-per-industry cap (' + scale.toFixed(1) + '%)'
                 : 'full bar = largest ' + axisNoun + ' (' + scale.toFixed(1) + '%)');
 
   // V6.8 L1: aggregate the remaining sectors into an "Other" slice so the
@@ -6782,7 +6782,7 @@ function renderWhy25() {
       '<b>Ranked, not picked.</b><span>Every candidate gets a multi-factor score built from price and volume history alone. No fundamentals, no analyst view, no discretionary override — the ranking decides the book.</span>'
     ];
     if (code !== 'ma') {
-      terms.push('<b>Capped at 3 per industry.</b><span>A sector that dominates the ranking still cannot dominate your portfolio. Diversification is enforced by the rules, not promised.</span>');
+      terms.push('<b>Capped at 2 per industry.</b><span>A sector that dominates the ranking still cannot dominate your portfolio. Diversification is enforced by the rules, not promised.</span>');
     }
     terms.push(sizing);
     terms.push('<b>Held for the full month.</b><span>The book is re-scored and rebalanced on the same monthly beat as the backtest — no intra-month trading, no reacting to headlines.</span>');

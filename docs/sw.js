@@ -482,7 +482,19 @@
 // Everything else this release is network-first HTML — the Integrity Score
 // table (its rows now carry a full aria-label), the per-stock company template
 // (the two financial columns are rebalanced) and the three auth pages.
-const CACHE = 'mfc-v74';
+// V33.8 -> mfc-v75. THIS ONE MUST MOVE for the PRECACHED DOCUMENT itself, not
+// for an asset it links: index.html is in ASSET_PATHS as the offline navigation
+// fallback, and this release rewrites its body text. The whole "25 stocks /
+// 3-per-industry" vocabulary is retired across the site — the two equity books
+// now hold 10 and 15 names capped at 2 per industry — and index.html carries
+// that copy in its hero pipeline heading, both strategy cards, the funnel rail
+// and the FAQ (plus its FAQPage JSON-LD twin). Every published figure moved too
+// (the fresh Aug-2026 backtest: SmallMicro 30.6% -> 39.6% post-tax, LargeMidcap
+// 24.0% -> 29.8%). A returning installed-app user opening offline would
+// otherwise be served a shell still promising 25 equal-weighted picks and last
+// month's CAGRs. login.html is unchanged this release but shares the cache, so
+// it is simply re-installed alongside.
+const CACHE = 'mfc-v75';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
