@@ -3392,6 +3392,34 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       @media (max-width:560px){ .vfy-card{ padding:16px 18px; } .vfy-cta{ width:100%; justify-content:center; } }
       @media (prefers-reduced-motion:reduce){ .vfy-cta,.vfy-arr{ transition:none; } .vfy-cta:hover{ transform:none; } }
       @media print{ .vfy-card{ display:none !important; } }
+
+      /* V34.2 — the Kite basket button inside how-to step 3. Borrows .vfy-cta's
+         idiom (same radius, same accent border, same dark-mode ink) rather than
+         inventing a fourth button shape on this page. Full width on a phone for
+         the same reason .vfy-cta is. */
+      .kbsk{ display:flex; align-items:center; gap:16px 22px; flex-wrap:wrap;
+        margin:16px 0 0; padding:14px 18px; border-radius:var(--r-sm);
+        background:var(--ink2); border:0.5px solid var(--border2); }
+      .kbsk-txt{ flex:1 1 320px; min-width:0; }
+      .kbsk-eyebrow{ font-size:10.5px; font-weight:800; letter-spacing:.08em;
+        text-transform:uppercase; color:var(--accent2); margin:0 0 3px; }
+      html[data-theme="dark"] .kbsk-eyebrow{ color:#9dbcff; }
+      .kbsk-cta{ display:inline-flex; align-items:center; gap:8px; min-height:44px;
+        padding:11px 16px; border-radius:var(--r-sm); cursor:pointer;
+        font-family:inherit; font-size:13.5px; font-weight:700; letter-spacing:-.01em;
+        color:var(--accent); background:var(--ink2); border:1px solid rgba(37,99,235,.38);
+        transition:background .2s,border-color .2s,transform .15s,box-shadow .2s; }
+      .kbsk-cta svg{ width:16px; height:16px; flex:0 0 auto; }
+      html[data-theme="dark"] .kbsk-cta{ color:#9dbcff; border-color:rgba(120,160,240,.42); }
+      .kbsk-cta:hover{ background:rgba(37,99,235,.06); border-color:rgba(37,99,235,.6);
+        transform:translateY(-1px); box-shadow:0 10px 22px -14px rgba(26,80,216,.55); }
+      html[data-theme="dark"] .kbsk-cta:hover{ background:rgba(120,160,240,.10); border-color:rgba(120,160,240,.66); }
+      .kbsk-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+      .kbsk-note{ font-size:11.5px; line-height:1.55; color:var(--text3); margin:0; max-width:70ch; }
+      .kbsk-note b{ color:var(--text2); font-weight:700; }
+      @media (max-width:560px){ .kbsk{ padding:13px 14px; } .kbsk-cta{ width:100%; justify-content:center; } }
+      @media (prefers-reduced-motion:reduce){ .kbsk-cta{ transition:none; } .kbsk-cta:hover{ transform:none; } }
+      @media print{ .kbsk{ display:none !important; } }
       </style>
       <div class="howto-card">
         <h3>
@@ -3451,6 +3479,28 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <div class="hs-live" hidden></div>
             </div>
           </div>
+        </div>
+
+        <!-- V34.2 — one-tap basket, Kite only. Deliberately OUTSIDE the step grid.
+             The four steps are equal-height grid items, so putting a 150px control
+             inside step 3 stretched all four: measured 178px cards with 22px of
+             slack becoming 365px cards with 209px of dead space in steps 1 and 2
+             and 187px in step 4 at 1440, and 244px at 1180. A full-width band
+             under the rail carries the same meaning, costs its siblings nothing,
+             and gives the note somewhere to breathe on a wide screen. -->
+        <div class="kbsk" id="kbsk" hidden>
+          <div class="kbsk-txt">
+            <div class="kbsk-eyebrow">Step 3, in one tap</div>
+            <p class="kbsk-note" id="kbsk-note"></p>
+          </div>
+          <button type="button" class="kbsk-cta" id="kbsk-btn" onclick="sendKiteBasket()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.55L21 8H6"/>
+              <circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>
+            </svg>
+            <span id="kbsk-label">Review basket on Kite</span>
+          </button>
         </div>
       </div>
 
@@ -5520,6 +5570,7 @@ function refreshSizeSummary() {
   // the one path that runs on EVERY capital change (refreshBoughtProgress
   // returns early while nothing is ticked, so it cannot be the only caller).
   refreshHowto();
+  refreshKiteBasket();  // V34.2 — capital sets the quantities the basket carries
   refreshSession();   // V28.6 — capital changes the amounts AND which picks are buyable
 }
 
@@ -6322,6 +6373,7 @@ function setBroker(key){
   // re-applies the filters, so only the chips change.
   applySort();
   refreshHowto();           // V28.8 — step 2 names the broker that is selected
+  refreshKiteBasket();      // V34.2 — the basket button is Kite-only
   showToast('Broker set to ' + BROKERS[key].name);
 }
 function brokerLink(s){
@@ -6770,6 +6822,7 @@ function refreshBoughtProgress() {
   }
   refreshSession(map);
   refreshHowto();
+  refreshKiteBasket();      // V34.2 — a tick removes that row from the basket
 }
 
 // V29.6 — "Why these 25": how the member's book was BUILT.
@@ -6851,6 +6904,144 @@ function renderWhy25() {
 // anything: currentCapital and the rendered per-stock figure, getBroker(), the
 // bought map, and nextRebalanceDate(). Nothing here may throw into a caller —
 // this card is instructions, and instructions must survive every data shape.
+/* ═══ V34.2 — SEND THE BOOK TO KITE AS A PRE-FILLED BASKET ════════════════════
+   ─────────────────────────────────────────────────────────────────────────────
+   WHY THIS IS A FORM POST AND NOT AN API CALL. Kite Connect's order API cannot
+   be reached from this page at all, for two independent reasons, and both are
+   permanent rather than things to work around:
+     · Zerodha's own docs: "The API endpoints are not cross site request enabled,
+       hence cannot be called directly from browsers." No CORS, no fetch.
+     · The order API needs an access_token minted by signing api_key +
+       request_token + api_secret. This site is static GitHub Pages with no
+       server, and the api_secret must never reach a browser.
+   Offsite order execution is the route Zerodha built for exactly this case: we
+   POST a JSON basket to Kite's own exchange-approved order screen, the member
+   logs in as themselves and confirms there. No token, no secret, no backend.
+
+   WHAT THIS DOES AND DOES NOT DO. It hands the member a filled-in order form.
+   It does not place an order, cannot place one, and never sees their Zerodha
+   credentials or funds — the confirm happens on kite.zerodha.com under their own
+   login. That distinction is the whole design: MindForge publishes a book, the
+   member executes it. Every row lands editable (readonly:false) so quantity,
+   order type and price stay theirs to change before they confirm.
+
+   THE api_key IS PUBLIC BY DESIGN. Publisher's own documentation puts it in page
+   markup (`data-kite="your_api_key"`). It identifies the app; it authorises
+   nothing on its own. The api_secret is NOT here and must never be — nothing in
+   this flow needs it.
+
+   QUANTITIES come from the same expression the Shares column prints, so what is
+   sent is what the table shows and a member reconciling the two cannot find a
+   discrepancy: floor(allocBudget(stock, stocksData, currentCapital) / price).
+   Rows already ticked are skipped, and so are rows that round to zero shares.
+
+   TEN AT A TIME. Kite Publisher caps a basket at 10 instruments; SmallMicro 500
+   holds 15. Rather than silently truncating, the button says which slice it is
+   sending and the tick-list drives the rest — place these, tick them, and the
+   button offers what is left. The tick-list stays the source of truth because
+   this flow deliberately does not register a redirect URL, so nothing comes back
+   to tell the page what actually filled.
+
+   MARKET, not LIMIT. An unfilled limit order leaves a book silently incomplete,
+   which is worse than slippage on names this liquid — and the member can change
+   the type on Kite's screen before confirming, which the note says out loud.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var KITE_API_KEY    = '9uef60sn0rffqb2r';                    // public; see above
+var KITE_BASKET_URL = 'https://kite.zerodha.com/connect/basket';
+var KITE_BASKET_MAX = 10;                                    // Publisher's cap
+
+/* Every un-placed row that rounds to at least one share, in table order. */
+function kiteBasketRows() {
+  var list = stocksData || [];
+  if (!list.length) return [];
+  var placed  = loadBought(currentStrategy) || {};
+  var capital = Number(currentCapital) || 0;
+  if (capital <= 0) return [];
+  var out = [];
+  list.forEach(function (s) {
+    if (placed[s.ticker]) return;                       // already placed by hand
+    var price = Number(s.recommended_price) || 0;
+    if (price <= 0) return;
+    var qty = Math.floor(allocBudget(s, list, capital) / price);
+    if (qty < 1) return;                                // too little capital
+    out.push({
+      variety:          'regular',
+      exchange:         'NSE',
+      tradingsymbol:    String(s.ticker || '').toUpperCase(),
+      transaction_type: 'BUY',
+      order_type:       'MARKET',
+      product:          'CNC',                          // delivery, not intraday
+      quantity:         qty,
+      readonly:         false,                          // the member stays in control
+      tag:              'MFC'
+    });
+  });
+  return out;
+}
+
+/* Build a throwaway form and submit it. Values are set through .value, never
+   through innerHTML — one tradingsymbol on the LargeMidcap book is `M&M`, and
+   the payload is JSON full of quotes. */
+function sendKiteBasket() {
+  var rows = kiteBasketRows().slice(0, KITE_BASKET_MAX);
+  if (!rows.length) { showToast('Nothing left to place'); return; }
+  var f = document.createElement('form');
+  f.method = 'post';
+  f.action = KITE_BASKET_URL;
+  f.target = '_blank';                     // keep the dashboard where it is
+  f.rel    = 'noopener';
+  f.style.display = 'none';
+  var k = document.createElement('input');
+  k.type = 'hidden'; k.name = 'api_key'; k.value = KITE_API_KEY;
+  var d = document.createElement('input');
+  d.type = 'hidden'; d.name = 'data';     d.value = JSON.stringify(rows);
+  f.appendChild(k); f.appendChild(d);
+  document.body.appendChild(f);
+  f.submit();
+  setTimeout(function () { try { f.remove(); } catch (e) {} }, 0);
+  showToast('Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite');
+}
+
+/* Show the button only where it can do something: Kite selected, capital
+   entered, and at least one row still to place. Every other broker keeps the
+   per-row deeplinks it has today — this basket screen is Kite's. */
+function refreshKiteBasket() {
+  try {
+    var wrap = document.getElementById('kbsk');
+    if (!wrap) return;
+    var rows  = (getBroker() === 'kite') ? kiteBasketRows() : [];
+    if (!rows.length) { wrap.hidden = true; return; }
+    var send  = Math.min(rows.length, KITE_BASKET_MAX);
+    var value = 0;
+    var list  = stocksData || [], capital = Number(currentCapital) || 0;
+    rows.slice(0, send).forEach(function (r) {
+      for (var i = 0; i < list.length; i++) {
+        if (String(list[i].ticker || '').toUpperCase() === r.tradingsymbol) {
+          value += Math.round(r.quantity * (Number(list[i].recommended_price) || 0));
+          break;
+        }
+      }
+    });
+    var label = document.getElementById('kbsk-label');
+    var note  = document.getElementById('kbsk-note');
+    if (label) {
+      label.textContent = 'Review ' + send + ' order' + (send === 1 ? '' : 's') +
+                          ' on Kite · ' + fmtMoney(value);
+    }
+    if (note) {
+      note.innerHTML =
+        (rows.length > send
+          ? '<b>' + send + ' of ' + rows.length + ' still to place.</b> Kite takes ten at a time — ' +
+            'place these, tick them off, and this button offers the rest. '
+          : '') +
+        'Opens Zerodha’s own order screen with the quantities pre-filled. ' +
+        'You sign in there and confirm; nothing is placed until you do, and you can ' +
+        'change quantity, order type or price on that screen first.';
+    }
+    wrap.hidden = false;
+  } catch (e) {}
+}
+
 function refreshHowto() {
   try {
     var steps = document.querySelectorAll('.howto-step[data-hs]');
