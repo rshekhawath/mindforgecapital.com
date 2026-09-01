@@ -508,7 +508,23 @@
 // mfc-dir.css did NOT change and deliberately stays at 3370; its 28 generated
 // pages did (they gain the "Recover Access" nav link every other page has), but
 // they are network-first HTML and none of them is precached.
-const CACHE = 'mfc-v76';
+// V34.5 -> mfc-v77. THIS ONE MUST MOVE for a PRECACHED DOCUMENT: login.html is
+// in ASSET_PATHS as the manifest start_url — the installed app's entry point —
+// and this release changes it. Its first field loses the `autofocus` attribute
+// (re-applied by script only where there is a real mouse, so an Android visitor
+// no longer has the keyboard opened for them and the <h1> scrolled away), the
+// email and one-time-code fields gain enterkeyhint, and both gain a keydown
+// binding so the phone keyboard's Go key activates the page's own button instead
+// of doing nothing. The precache is only rewritten when the cache NAME changes —
+// the service worker runs addAll on install, not on activation — so without this
+// bump an installed-app user would keep the old login shell indefinitely and
+// never get any of it. index.html is unchanged this release but shares the cache
+// and is simply re-installed alongside.
+// No shared asset moved, so the ?v tokens stay put: mfc-finish.css and
+// mfc-chrome.js at 3380, mfc-dir.css at 3370. signup.html, recover.html and
+// scores/company.html also changed but none of them is precached — they are
+// network-first HTML and need nothing here.
+const CACHE = 'mfc-v77';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
