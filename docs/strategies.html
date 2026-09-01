@@ -3356,8 +3356,16 @@ function openRegModal(strategyName, price, strategyId){
 @media (max-width:600px){
   .ps-card{ padding:20px 16px; }
   .ps-funds{ padding:18px 16px; }
-  .ps-tabs{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px; scrollbar-width:none; }
-  .ps-tabs::-webkit-scrollbar{ display:none; }
+  /* V34.0 — THE THIRD STRATEGY WAS OFF THE EDGE OF THE PHONE.
+     This block used to set `flex-wrap:nowrap; overflow-x:auto` here, trading the
+     ~52px a second row costs for a horizontal scroller. Measured at 390px: the
+     three pills need 470px against 358px of usable width, so SmallMicro 500 —
+     the book this very page badges "Top CAGR" — sat 115px past the right edge
+     with nothing but a 4px sliver of its dot showing. The strip carries no
+     scroll hint, and a tablist that silently drops a third of its tabs is a
+     worse trade than one more row. `.ps-tabs` already wraps at every other
+     width; the phone now does the same. */
+  .ps-tabs{ flex-wrap:wrap; }
   .ps-tab{ min-height:44px; }   /* comfortable touch target on phones */
   .ps-perf-cagr{ margin-left:0; width:100%; text-align:left; padding-top:6px; }
   .ps-perf-val{ font-size:22px; }

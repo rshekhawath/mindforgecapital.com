@@ -772,6 +772,26 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
   /* V25.0 — mobile sort bar; see the screener for the shared rationale */
   .mob-sort{display:flex;align-items:center;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:11px 14px 12px;margin:0;border-bottom:0.5px solid var(--border)}
   .mob-sort::-webkit-scrollbar{display:none}
+
+  /* V34.0 — THE SORT STRIP NEVER SAID IT COULD SCROLL.
+     Measured at 390px: /scores/ offers twelve sort chips and shows four, with
+     667px past the right edge; /screener/ shows four of eight. The strip already
+     carried a `linear-gradient` — but as a BACKGROUND, painted behind the chips,
+     where it tints the strip and cannot fade anything out. So two thirds of the
+     sort options were reachable only by a swipe nothing suggested.
+     A mask fades the actual content at whichever end has more of it, and the two
+     classes below are toggled from the scroll position so the cue disappears
+     once you reach an end rather than implying content that is not there.
+     Fail-soft: with no JS the strip keeps both cues, which is still truer than
+     none; browsers without mask-image simply see the strip as it was. */
+  .mob-sort{scroll-snap-type:x proximity;scroll-padding-left:14px}
+  .ms-chip{scroll-snap-align:start}
+  .mob-sort.ms-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);
+                         mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
+  .mob-sort.ms-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);
+                         mask-image:linear-gradient(90deg,transparent,#000 34px)}
+  .mob-sort.ms-l.ms-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent);
+                              mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent)}
   .ms-lbl{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);flex:0 0 auto;padding-right:2px}
   .ms-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;color:var(--text2);background:var(--ink);border:0.5px solid var(--border2);border-radius:999px;padding:8px 13px;min-height:34px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
   .ms-chip:active{transform:translateY(.5px)}
@@ -2395,5 +2415,40 @@ html[data-theme="dark"] .px52-mark{ border-color:var(--accent2); box-shadow:0 1p
 @media print{ .px52,.px52-mark{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 @media (prefers-reduced-motion: reduce){ .px52-mark{ transition:none; } }
 </style>
+
+<!-- V34.0 · tell the sort strip's edges apart from its ends. Fail-soft: any
+     failure leaves the strip exactly as authored. -->
+<script id="mfc-mobsort-edges">
+(function(){
+  try{
+    var el=document.getElementById('mobSort');
+    if(!el) return;
+    function sync(){
+      var max=el.scrollWidth-el.clientWidth;
+      if(max<8){ el.classList.remove('ms-l','ms-r'); return; }
+      el.classList.toggle('ms-l', el.scrollLeft>4);
+      el.classList.toggle('ms-r', el.scrollLeft<max-4);
+    }
+    // The chip that says which sort is APPLIED starts off-screen: the default is
+    // "Mkt Cap (Cr)", chip 9 of 11, roughly 700px past a 390px viewport. So the
+    // strip opened showing four unselected chips and no indication that anything
+    // was sorted at all. Centre the active chip instead — scrollLeft directly
+    // rather than scrollIntoView, which would also scroll the PAGE vertically.
+    function centreActive(){
+      var on=el.querySelector('.ms-chip.on');
+      if(!on) return;
+      var max=el.scrollWidth-el.clientWidth;
+      if(max<8) return;
+      var want=on.offsetLeft-(el.clientWidth-on.offsetWidth)/2;
+      el.scrollLeft=Math.max(0,Math.min(max,want));
+    }
+    function refresh(){ centreActive(); sync(); }
+    el.addEventListener('scroll', sync, {passive:true});
+    window.addEventListener('resize', sync, {passive:true});
+    if (typeof MutationObserver==='function') new MutationObserver(refresh).observe(el,{childList:true});
+    refresh();
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

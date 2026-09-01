@@ -1567,6 +1567,46 @@ h1, h2, h3, h4, th,
 .hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
   text-wrap: balance;
 }
+
+/* V34.0 — SAY THAT THESE SCROLL. Measured at 390px: the month-by-month calendar
+   runs 325px past the right edge and the two FII/DII tables 250px and 398px,
+   with no hint, no fade and no scrollbar (the bars are hidden by design). The
+   compare table on strategies.html has said "swipe to compare" since V18; these
+   said nothing, so a phone reader met a table that simply stopped mid-year.
+   RIGHT EDGE ONLY, deliberately: .tbl-scroll freezes its identity column
+   (Date / Participant) with position:sticky, and a left-edge fade would wash out
+   exactly the column that exists to stay readable while you scroll. 26px is
+   narrow enough that no figure is obscured, wide enough to read as "more".
+   The class is toggled from the scroll position, so the cue disappears once you
+   reach the end instead of implying content that is not there. */
+@media (max-width:600px){
+  .mfx-more-r{
+    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+            mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+  }
+}
 </style>
+
+<!-- V34.0 · mark any horizontal scroller that still has content to its right, so
+     the phone gets an edge cue. Fail-soft: any failure leaves the page as-is. -->
+<script id="mfc-scroll-cue">
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.mcal-scroll,.tbl-scroll'));
+    if(!els.length) return;
+    function sync(el){
+      var max=el.scrollWidth-el.clientWidth;
+      el.classList.toggle('mfx-more-r', max>8 && el.scrollLeft < max-4);
+    }
+    els.forEach(function(el){
+      var run=function(){ sync(el); };
+      el.addEventListener('scroll', run, {passive:true});
+      window.addEventListener('resize', run, {passive:true});
+      if(typeof MutationObserver==='function') new MutationObserver(run).observe(el,{childList:true,subtree:true});
+      run();
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

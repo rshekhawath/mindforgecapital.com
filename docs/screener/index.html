@@ -857,6 +857,26 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 @media(max-width:600px){
   .mob-sort{display:flex;align-items:center;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:11px 14px 12px;margin:0;border-bottom:0.5px solid var(--border,rgba(37,99,235,.1))}
   .mob-sort::-webkit-scrollbar{display:none}
+
+  /* V34.0 — THE SORT STRIP NEVER SAID IT COULD SCROLL.
+     Measured at 390px: /scores/ offers twelve sort chips and shows four, with
+     667px past the right edge; /screener/ shows four of eight. The strip already
+     carried a `linear-gradient` — but as a BACKGROUND, painted behind the chips,
+     where it tints the strip and cannot fade anything out. So two thirds of the
+     sort options were reachable only by a swipe nothing suggested.
+     A mask fades the actual content at whichever end has more of it, and the two
+     classes below are toggled from the scroll position so the cue disappears
+     once you reach an end rather than implying content that is not there.
+     Fail-soft: with no JS the strip keeps both cues, which is still truer than
+     none; browsers without mask-image simply see the strip as it was. */
+  .mob-sort{scroll-snap-type:x proximity;scroll-padding-left:14px}
+  .ms-chip{scroll-snap-align:start}
+  .mob-sort.ms-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);
+                         mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
+  .mob-sort.ms-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);
+                         mask-image:linear-gradient(90deg,transparent,#000 34px)}
+  .mob-sort.ms-l.ms-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent);
+                              mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent)}
   .ms-lbl{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);flex:0 0 auto;padding-right:2px}
   .ms-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;color:var(--text2);background:var(--ink,#f6f8fe);border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:999px;padding:8px 13px;min-height:34px;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
   .ms-chip:active{transform:translateY(.5px)}
@@ -1710,7 +1730,7 @@ async function loadInitialData(){
     try{ DIST=buildDistributions(d.results||[]); paintFilterDistributions(); }catch(e){ DIST=null; }
     applyURLFilters();   // V15.2: restore a shared screen from the URL before the first run
     distSyncAll();       // V33.0: a shared URL sets .value directly, firing no input event
-    if((d.cached_total||0)>0)runScreen();
+    if((d.cached_total||0)>0)runScreen({initial:true});   // V34.0: arrival, not a click — do not move the viewport
   }catch{}
 }
 
@@ -1746,7 +1766,13 @@ function applyURLFilters(){
   if(sp.has("sort_dir")){const s=document.getElementById("sort_dir");if(s)s.value=sp.get("sort_dir");}
   return any;
 }
-async function runScreen(){
+async function runScreen(opts){
+  /* V34.0 — `initial:true` marks the automatic run that fires as the page loads,
+     as opposed to the four user-initiated ones (Screen button, clearFilters,
+     loadPreset, post-fetch). Only the latter should move the viewport; see the
+     scroll guard further down. The click handler passes a MouseEvent here, which
+     has no `.initial`, so it reads as user-initiated exactly as it should. */
+  const initialRun = !!(opts && opts.initial === true);
   distSyncAll();                    // V33.0 — keep the range histograms honest
   const params=currentScreenParams();
   params.append("limit",500);
@@ -1778,7 +1804,18 @@ async function runScreen(){
     if(window.innerWidth<=1100){
       const sb=document.querySelector(".sidebar"); if(sb) sb.classList.add("filters-collapsed");
       const tg=document.getElementById("mobFiltersToggle"); if(tg) tg.innerHTML='<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M7 12h10M10 18h4"/></svg>&nbsp; Show Filters';
-      const tc=document.querySelector(".table-card"); if(tc) tc.scrollIntoView({behavior:"smooth",block:"start"});
+      /* V34.0 — THIS FIRED ON ARRIVAL, NOT ONLY ON A CLICK. The note above says
+         the scroll exists "so the click visibly does something", but runScreen()
+         also runs once automatically from loadInitialData(), so a phone visitor
+         who had clicked nothing was scrolled 759px down the moment the page
+         settled — past the heading, the intro and the whole filter panel, landing
+         mid-table with no idea what was above. Measured identically on the live
+         site, so this was not new. The sidebar still auto-collapses on arrival
+         (that is genuinely helpful on a narrow screen); only the viewport move is
+         now reserved for a run the reader actually asked for. */
+      if(!initialRun){
+        const tc=document.querySelector(".table-card"); if(tc) tc.scrollIntoView({behavior:"smooth",block:"start"});
+      }
     }
     if((d.cached_total||0)===0)showToast("No data loaded yet — use Fetch / Refresh Data","error");
   }catch{document.getElementById("tableBody").innerHTML=`<tr class="empty-row"><td colspan="${vis.length}"><div style="font-weight:600;color:var(--text2)">Couldn't load results — please refresh.</div></td></tr>`;showToast("Screen failed — please refresh.","error");}
@@ -2907,5 +2944,40 @@ h1, h2, h3, h4, th,
   text-wrap: balance;
 }
 </style>
+
+<!-- V34.0 · tell the sort strip's edges apart from its ends. Fail-soft: any
+     failure leaves the strip exactly as authored. -->
+<script id="mfc-mobsort-edges">
+(function(){
+  try{
+    var el=document.getElementById('mobSort');
+    if(!el) return;
+    function sync(){
+      var max=el.scrollWidth-el.clientWidth;
+      if(max<8){ el.classList.remove('ms-l','ms-r'); return; }
+      el.classList.toggle('ms-l', el.scrollLeft>4);
+      el.classList.toggle('ms-r', el.scrollLeft<max-4);
+    }
+    // The chip that says which sort is APPLIED starts off-screen: the default is
+    // "Mkt Cap (Cr)", chip 9 of 11, roughly 700px past a 390px viewport. So the
+    // strip opened showing four unselected chips and no indication that anything
+    // was sorted at all. Centre the active chip instead — scrollLeft directly
+    // rather than scrollIntoView, which would also scroll the PAGE vertically.
+    function centreActive(){
+      var on=el.querySelector('.ms-chip.on');
+      if(!on) return;
+      var max=el.scrollWidth-el.clientWidth;
+      if(max<8) return;
+      var want=on.offsetLeft-(el.clientWidth-on.offsetWidth)/2;
+      el.scrollLeft=Math.max(0,Math.min(max,want));
+    }
+    function refresh(){ centreActive(); sync(); }
+    el.addEventListener('scroll', sync, {passive:true});
+    window.addEventListener('resize', sync, {passive:true});
+    if (typeof MutationObserver==='function') new MutationObserver(refresh).observe(el,{childList:true});
+    refresh();
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
