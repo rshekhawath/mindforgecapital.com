@@ -1155,7 +1155,19 @@ html[data-theme="dark"] .pe-line{stroke:var(--accent3);}
     var area=line+"L"+X(pts.length-1).toFixed(1)+" "+(pT+ph).toFixed(1)+"L"+X(0).toFixed(1)+" "+(pT+ph).toFixed(1)+"Z";
     var baseY=Y(base), gid=up?"scgu":"scgd";
     var yl=[yMax,(yMax+yMin)/2,yMin].map(function(v){return '<text class="sc-axis" x="'+(W-pR+8)+'" y="'+(Y(v)+3).toFixed(1)+'">'+yfmt(v)+"</text>";}).join("");
-    var xl="",NL=Math.min(5,pts.length);
+    /* V34.5 — FIVE TIME LABELS DO NOT FIT ON A PHONE. NL was a flat 5 at every
+       width, so the x-axis drew the same five stamps into 256px of plot as into
+       1,270px. Measured gap between the tightest pair (label 1 is anchored
+       `start`, label 2 `middle`, so that pair always binds): -5px at 320 and -3px
+       at 360 — "10:46 am" and "11:50 am" overprinting each other on exactly the
+       two widths that carry the most Android traffic here. 0px at 375, +4 at 390,
+       +14 at 430, and hundreds on desktop.
+       Derive the count from the width that actually exists. A stamp measures
+       37-47px at this type size, so 62px per label leaves a comfortable gap at
+       the binding pair; that yields four labels up to ~415px and five above it,
+       and desktop is unchanged because the cap is still 5. */
+    var xl="",NL=Math.max(2,Math.min(5,Math.floor(pw/62)));
+    NL=Math.min(NL,pts.length);
     for(i=0;i<NL;i++){ var idx=Math.round(i/(NL-1)*(pts.length-1)),xx=X(idx); xl+='<text class="sc-axis" text-anchor="'+(i===0?"start":i===NL-1?"end":"middle")+'" x="'+xx.toFixed(1)+'" y="'+(H-5)+'">'+dfmt(pts[idx][0],range)+"</text>"; }
     plot.innerHTML='<svg viewBox="0 0 '+W+" "+H+'" preserveAspectRatio="none" role="img" aria-label="Price chart">'
       +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.20"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'

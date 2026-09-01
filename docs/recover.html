@@ -271,10 +271,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
     <div class="form-group">
       <label for="email-input">Email Address</label>
-      <input type="email" id="email-input" name="email" placeholder="you@example.com" autocomplete="email">
+      <input type="email" id="email-input" name="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="send">
       <div style="text-align:center;margin:10px 0;color:var(--text3);font-size:13px;font-weight:500;">— or —</div>
       <label for="phone-input">Phone Number</label>
-      <input type="tel" id="phone-input" name="phone" placeholder="+91 98765 43210" autocomplete="tel">
+      <input type="tel" id="phone-input" name="phone" placeholder="+91 98765 43210" autocomplete="tel" enterkeyhint="send">
     </div>
 
     <button class="btn" id="recover-btn" onclick="recoverAccess()">Send My Dashboard Link</button>
@@ -662,5 +662,43 @@ h1, h2, h3, h4, th,
   text-wrap: balance;
 }
 </style>
+<!-- ═══ V34.5 · THE MOBILE FORM PASS ═════════════════════════════════════════
+     Two things this form did to a phone, both measured on recover.html:
+
+     1. ENTER/GO DID NOTHING. These inputs are not inside a <form>, and nothing
+        bound the Enter key, so the phone keyboard's Go key was inert: type an
+        email, press Go, and the page just sat there — you had to dismiss the
+        keyboard, find the button and tap it. Verified with a real key event
+        (Input.dispatchKeyEvent needs text:'\r' or Chrome never synthesises the
+        activation) counting handler invocations: 0 actions fired.
+        Enter now CLICKS the page's own button rather than calling its handler
+        directly. That keeps one source of truth, and it inherits the button's
+        disabled state for free — signup's submit is disabled until the form is
+        valid, and a disabled button ignores a click, which is exactly right.
+
+     2. enterkeyhint LABELS THAT KEY. With Enter wired up, the key should say
+        what it does; without the hint every field showed a generic return arrow.
+
+     (This page never autofocused, so it needs no guard for that.) ═══════════ -->
+<script>
+(function(){
+  try{
+    var MAP = [
+      ['email-input','recover-btn'],
+      ['phone-input','recover-btn']
+    ];
+    MAP.forEach(function(pair){
+      var f = document.getElementById(pair[0]), b = document.getElementById(pair[1]);
+      if(!f || !b) return;
+      f.addEventListener('keydown', function(e){
+        if(e.key !== 'Enter' && e.keyCode !== 13) return;
+        if(e.isComposing) return;                 /* mid-IME, not a submit */
+        e.preventDefault();
+        b.click();
+      });
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
