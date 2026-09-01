@@ -1476,7 +1476,7 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
 <script src="../assets/mfc-offer.js?v=3350" defer></script>
-<script defer src="../assets/mfc-chrome.js?v=3380"></script>
+<script defer src="../assets/mfc-chrome.js?v=3390"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -1579,11 +1579,27 @@ h1, h2, h3, h4, th,
    narrow enough that no figure is obscured, wide enough to read as "more".
    The class is toggled from the scroll position, so the cue disappears once you
    reach the end instead of implying content that is not there. */
-@media (max-width:600px){
-  .mfx-more-r{
-    -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
-            mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
-  }
+/* V34.6 — THE FADE WAS GATED AT 600px; THE TABLE SCROLLS TO 800px.
+   V34.0 put this cue behind `@media (max-width:600px)` because the finding it
+   answered was measured on phones. The SCRIPT above has no such gate — it sets
+   .mfx-more-r wherever a scroller still has content to its right — so from 601px
+   up the class went on and nothing painted. Measured on .mcal-scroll, which has
+   no other edge cue at all (no scrollbar: they are hidden by design, and none of
+   the background-attachment edge shadows the tables carry):
+
+       600px -> 190px hidden, faded      601px -> 191px hidden, NOTHING
+       640px -> 152px hidden, NOTHING    700px ->  92px hidden, NOTHING
+       768px ->  24px hidden, NOTHING    834px -> fits, no scroll
+
+   That 601-800px band is a phone held sideways, a small tablet, and a split-
+   screen window — the reader met a table that stopped mid-year with no sign
+   there was more, exactly the defect V34.0 existed to remove.
+   The gate is simply wrong here and comes off: the class is applied ONLY when
+   something is actually hidden and removed at the end of the scroll, so the
+   rule is already self-limiting and needs no width to bound it. */
+.mfx-more-r{
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+          mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
 }
 </style>
 

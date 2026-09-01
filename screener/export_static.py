@@ -154,7 +154,7 @@ def _chg(v):
 # order rather than trusting one. The fallbacks stay as a last resort for the
 # case where none of the sources can be read at all.
 _ASSET_SOURCES = ("index.html", "login.html", "scores/index.html")
-_ASSET_FALLBACK = {"mfc-finish.css": "3380", "mfc-chrome.js": "3380"}
+_ASSET_FALLBACK = {"mfc-finish.css": "3380", "mfc-chrome.js": "3390"}
 
 
 def _asset_ver(name: str) -> str:

@@ -524,7 +524,24 @@
 // mfc-chrome.js at 3380, mfc-dir.css at 3370. signup.html, recover.html and
 // scores/company.html also changed but none of them is precached — they are
 // network-first HTML and need nothing here.
-const CACHE = 'mfc-v77';
+// V34.6 -> mfc-v78. index.html — the PRECACHED offline navigation fallback —
+// gains a <script src> for mfc-chrome.js, which it had never loaded. That file
+// carries this release's nav-drawer focus management, and the page was one of
+// exactly three where opening the mobile menu and pressing Tab walked out of the
+// drawer into the content behind it. addAll runs on INSTALL and not on
+// activation, so the precache is only rewritten when this NAME changes: left at
+// v77, an installed-app user opening offline would keep an index.html with no
+// such script tag indefinitely and never receive the fix. login.html is
+// unchanged this release but shares the cache and is re-installed alongside.
+// The cache-first ASSET is handled by its own token rather than by this name —
+// mfc-chrome.js goes 3380 -> 3390 on all 49 pages that now load it (46 before,
+// plus index, strategies and screener), and caches.match() keys on the full URL
+// including the query, so the new token is simply a miss and fetches fresh.
+// mfc-finish.css stays at 3380 and mfc-dir.css at 3370: neither file changed.
+// The other seven edited pages — calculator, strategies, smallmicro,
+// largemidcap, fii-dii, disclosures, screener — are network-first HTML and need
+// nothing here.
+const CACHE = 'mfc-v78';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

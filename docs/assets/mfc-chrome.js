@@ -172,11 +172,18 @@
     var links = D.querySelector('.nav-links.open');
     if (!links) return false;
     var btn = D.querySelector('.nav-hamburger');
+    /* V34.6 — read this BEFORE the class flips: once `.open` is gone the drawer
+       is display:none, its focused child is blurred by the browser, and there is
+       nothing left to ask. Only restore when focus was actually inside — the
+       outside-click path closes the drawer as well, and pulling focus back from
+       the control the visitor just tapped would be a second bug. */
+    var hadFocus = !!(D.activeElement && links.contains(D.activeElement));
     links.classList.remove('open');
     if (btn) {
       btn.classList.remove('open');
       btn.setAttribute('aria-expanded', 'false');
       btn.setAttribute('aria-label', 'Open menu');
+      if (hadFocus && typeof btn.focus === 'function') { try { btn.focus(); } catch (_) {} }
     }
     return true;
   }
@@ -296,6 +303,89 @@
     setTimeout(function () {
       if (btn.getAttribute('aria-expanded') === before) mfcOpenNav();
     }, 0);
+  }, true);
+
+  /* ══ V34.6 — THE DRAWER TOOK NO FOCUS, SO TAB WALKED STRAIGHT PAST IT ══
+     V28.0 gave the drawer Escape and a tap-outside; V34.1 sized it to the space
+     below it. What neither did is move FOCUS, and the markup makes that fatal:
+     on all 21 pages that carry it, `.nav-links` is written BEFORE
+     `.nav-hamburger` in the DOM. So the visitor who reaches the button, presses
+     Enter and gets a full-screen overlay is standing at a tab stop that comes
+     AFTER every one of the nine links inside it. The next Tab therefore leaves
+     the drawer entirely and lands on page content the drawer is covering.
+
+     Measured on fifteen surfaces at 390x844, opening with a real Enter
+     (keyDown carrying text:'\r' — Chrome synthesises the activation from the
+     text, not the key) and then one Tab:
+
+       home        -> a.btn-primary  "Get Started"        (hero, behind the drawer)
+       login       -> input          the email field      (behind the drawer)
+       signup      -> input          the email field      (behind the drawer)
+       dash1       -> div.meta-pill  "Strategy: ..."      (behind the drawer)
+       scanner     -> button.btn     "Columns"            (behind the drawer)
+       ...15 of 15, `firstTabInDrawer:false` on every one.
+
+     Typing into a field you cannot see is the worst of those: on a phone the
+     open drawer covers the login form completely. The nine links were reachable
+     only by Shift+Tab, which is not a discoverable interaction.
+
+     Three behaviours, the standard disclosure pattern:
+       1. opening moves focus to the first item in the drawer;
+       2. Tab cycles inside it — the links, then the hamburger (which reads
+          "Close menu" while open), then back to the first link;
+       3. closing returns focus to the hamburger, but ONLY when focus is still
+          inside the drawer — a tap on page content dismisses the drawer too,
+          and stealing focus back from whatever was just clicked would be a
+          second bug.
+
+     Gated on the hamburger being VISIBLE, not on a width: the drawer is only an
+     overlay while the button is shown, and a phone rotated to a tablet width
+     keeps a stale `.open` class that must NOT trap anything. Everything is
+     read live, so no state can go stale. */
+  var MFC_FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),' +
+                      'select:not([disabled]),textarea:not([disabled]),' +
+                      '[tabindex]:not([tabindex="-1"])';
+
+  function mfcNavBtn() {
+    var b = D.querySelector('.nav-hamburger');
+    return (b && b.getClientRects().length) ? b : null;      // shown => overlay mode
+  }
+  /* Links first, then the button: DOM order, and it puts "Close menu" at the
+     end of the cycle where a reader expects the way out. */
+  function mfcDrawerRing() {
+    var links = D.querySelector('.nav-links.open');
+    var btn = mfcNavBtn();
+    if (!links || !btn) return null;
+    var ring = Array.prototype.filter.call(
+      links.querySelectorAll(MFC_FOCUSABLE),
+      function (el) { return el.getClientRects().length; });
+    ring.push(btn);
+    return ring.length > 1 ? ring : null;
+  }
+  function mfcFocusFirstInDrawer() {
+    var ring = mfcDrawerRing();
+    if (!ring) return;
+    try { ring[0].focus(); } catch (_) {}
+  }
+  D.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab' && e.keyCode !== 9) return;
+    var ring = mfcDrawerRing();
+    if (!ring) return;
+    var i = ring.indexOf(D.activeElement);
+    var next;
+    if (i === -1) next = e.shiftKey ? ring[ring.length - 1] : ring[0];
+    else next = ring[(i + (e.shiftKey ? -1 : 1) + ring.length) % ring.length];
+    e.preventDefault();
+    try { next.focus(); } catch (_) {}
+  }, true);
+  /* Same two frames the sizer waits for — the page's own handler flips `.open`
+     inside its click listener, and a display:none drawer has nothing to focus. */
+  D.addEventListener('click', function (e) {
+    if (!(e.target.closest && e.target.closest('.nav-hamburger'))) return;
+    if (typeof requestAnimationFrame !== 'function') { mfcFocusFirstInDrawer(); return; }
+    requestAnimationFrame(function () {
+      requestAnimationFrame(mfcFocusFirstInDrawer);
+    });
   }, true);
 
   /* — V32.3: a region that scrolls must be reachable from the keyboard —

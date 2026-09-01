@@ -2610,6 +2610,21 @@ checkHealth();
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
    Higher-specificity `nav .nav-*` selectors win over each page's own nav CSS. */
+/* V34.6 — 3px OF HORIZONTAL SCROLL IN THE THREE PIXELS ABOVE THE BREAKPOINT.
+   The hamburger takes over at 1024 and trims nav's side padding to 16px with it.
+   At 1025 the full desktop nav comes back at 32px a side, and it does not fit:
+   .nav-inner's content box is 961px there while its flex row needs 996, so
+   #mfc-theme-toggle — the last item, flex:0 0 auto — ends at 1028 against a
+   1025px viewport and the document scrolls sideways. Measured every width from
+   1000 to 1120: 1025 (3px), 1026 (2px), 1027 (1px), clean either side, so the
+   desktop nav's real minimum is 1028 and the breakpoint sits three pixels below
+   it. Nothing else on the page overflows at any of those widths.
+   Giving the band the same 16px the compact nav already uses frees 32px, which
+   is ten times the shortfall; the ceiling is well clear of the last tight width
+   and no layout above it changes. */
+@media(min-width:1025px) and (max-width:1060px){
+  nav{padding:0 16px}
+}
 @media(max-width:1024px){
   nav{padding:0 16px}
   nav .nav-inner{height:56px;gap:12px}
@@ -3078,5 +3093,26 @@ h1, h2, h3, h4, th,
   }catch(e){}
 })();
 </script>
+<!-- V34.6 — THIS PAGE NOW LOADS THE SHARED CHROME SCRIPT, AND WHY IT DID NOT.
+     mfc-chrome.js has two IIFEs. The first injects a back-to-top and a scroll-
+     progress bar and returns immediately on any page that already ships both —
+     which this page does, so it was never loaded, and the comment inside it
+     still says so. The SECOND IIFE is the site's shared nav-drawer behaviour,
+     and skipping the file skipped that too: V28.0 answered it by copying
+     Escape and outside-click into this page's own nav IIFE, and V34.1 copied
+     the drawer sizing in after it. Two copies of the same logic, kept in step
+     by hand, is the seam this project keeps finding — and V34.6's focus
+     management would have been a third.
+     Measured before adding this tag: with the drawer open at 390x844 and at
+     768x1024, this page was one of exactly three where Tab still walked out of
+     the drawer into the page behind it (home, strategies, screener), and the
+     three were precisely the three with no <script src> for this file — they
+     only name it in comments. The other seventeen surfaces passed.
+     The first IIFE still no-ops here (this page has both controls, verified
+     after the change: no second back-to-top, no second progress bar), and every
+     handler in the second is written to coexist with a page's own — the open
+     fallback fires only when nothing else moved aria-expanded, and the drawer
+     sizing writes the same measured value this page already writes. -->
+<script defer src="../assets/mfc-chrome.js?v=3390"></script>
 </body>
 </html>

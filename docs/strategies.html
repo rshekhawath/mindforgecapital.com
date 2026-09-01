@@ -4298,6 +4298,14 @@ html[data-theme="dark"] .vcard-bt-alpha{ background:rgba(120,160,240,.12); borde
 <style id="mfc-v295-touch">
 @media (hover: none) and (pointer: coarse) {
   .mfcalc-controls select,.mfcalc-controls input[type=text]{font-size:16px;}
+  /* V34.6 — 41.0px at 320, 390, 430 and 768: three short of the 44 the rest of
+     the site uses, on the two pickers that drive the whole comparison. V29.5
+     had already given them 16px here so iOS does not zoom on focus; the height
+     was the half left over, and mfc-finish.css records it as deferred to a pass
+     that could re-measure the type scale. The scale is right — 16px text in
+     10px padding IS 41 — so the 3px comes from min-height on touch only, which
+     leaves every pointer device exactly as it renders today. */
+  .mfcalc-controls select,.mfcalc-controls input[type=text]{min-height:44px;}
 }
 </style>
 <script id="mf-v326-ptx-js">
@@ -4469,5 +4477,26 @@ h1, h2, h3, h4, th,
   }catch(e){}
 })();
 </script>
+<!-- V34.6 — THIS PAGE NOW LOADS THE SHARED CHROME SCRIPT, AND WHY IT DID NOT.
+     mfc-chrome.js has two IIFEs. The first injects a back-to-top and a scroll-
+     progress bar and returns immediately on any page that already ships both —
+     which this page does, so it was never loaded, and the comment inside it
+     still says so. The SECOND IIFE is the site's shared nav-drawer behaviour,
+     and skipping the file skipped that too: V28.0 answered it by copying
+     Escape and outside-click into this page's own nav IIFE, and V34.1 copied
+     the drawer sizing in after it. Two copies of the same logic, kept in step
+     by hand, is the seam this project keeps finding — and V34.6's focus
+     management would have been a third.
+     Measured before adding this tag: with the drawer open at 390x844 and at
+     768x1024, this page was one of exactly three where Tab still walked out of
+     the drawer into the page behind it (home, strategies, screener), and the
+     three were precisely the three with no <script src> for this file — they
+     only name it in comments. The other seventeen surfaces passed.
+     The first IIFE still no-ops here (this page has both controls, verified
+     after the change: no second back-to-top, no second progress bar), and every
+     handler in the second is written to coexist with a page's own — the open
+     fallback fires only when nothing else moved aria-expanded, and the drawer
+     sizing writes the same measured value this page already writes. -->
+<script defer src="assets/mfc-chrome.js?v=3390"></script>
 </body>
 </html>

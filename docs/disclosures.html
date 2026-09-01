@@ -408,11 +408,27 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        find.) Same class, same 26px mask and the same scroll-position toggle as
        the other three, so the four surfaces read identically. Right edge only,
        for the reason recorded there: the first column is the row label. */
-    @media (max-width:600px){
-      .disc-scroll.mfx-more-r{
-        -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
-                mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
-      }
+    /* V34.6 — THE FADE WAS GATED AT 600px; THE TABLE SCROLLS TO 800px.
+       V34.0 put this cue behind `@media (max-width:600px)` because the finding it
+       answered was measured on phones. The SCRIPT above has no such gate — it sets
+       .mfx-more-r wherever a scroller still has content to its right — so from 601px
+       up the class went on and nothing painted. Measured on .mcal-scroll, which has
+       no other edge cue at all (no scrollbar: they are hidden by design, and none of
+       the background-attachment edge shadows the tables carry):
+
+           600px -> 190px hidden, faded      601px -> 191px hidden, NOTHING
+           640px -> 152px hidden, NOTHING    700px ->  92px hidden, NOTHING
+           768px ->  24px hidden, NOTHING    834px -> fits, no scroll
+
+       That 601-800px band is a phone held sideways, a small tablet, and a split-
+       screen window — the reader met a table that stopped mid-year with no sign
+       there was more, exactly the defect V34.0 existed to remove.
+       The gate is simply wrong here and comes off: the class is applied ONLY when
+       something is actually hidden and removed at the end of the scroll, so the
+       rule is already self-limiting and needs no width to bound it. */
+    .disc-scroll.mfx-more-r{
+      -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+              mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
     }
   </style>
 
@@ -958,7 +974,7 @@ html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
   spy();
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=3380"></script>
+<script defer src="assets/mfc-chrome.js?v=3390"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
