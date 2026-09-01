@@ -1052,13 +1052,67 @@ footer .footer-col ul li a{
    100px on others (the offer bar pushes the nav down), and CSS cannot read it.
    Subtracting the larger value is correct everywhere — on a 56px page the
    drawer simply starts scrolling 44px earlier than it strictly must. dvh is
-   listed second so it wins where supported and vh covers everything else. */
+   listed second so it wins where supported and vh covers everything else.
+
+   V34.1 — 100px WAS NOT THE LARGER VALUE. The bound above was chosen as an
+   upper bound on the drawer's own top; measured, the drawer's top is 116px on
+   every width the offer bar renders at one line (the bar is 60px, not the 44
+   the constant assumed) and 142px at 568, where its copy wraps to two. So the
+   drawer's BOX has been running past the bottom of the screen by 16px at every
+   constrained width and by 42px at 568 — and because the box is what scrolls,
+   that overflow is not reachable by scrolling inside it. Measured consequences:
+   at 320x568 (the narrowest phone still sold, in PORTRAIT) the drawer ends 16px
+   below the fold; held sideways at 568x320 it ends 42px below, and "Get Started"
+   — the last item and the site's conversion link — keeps 15px of itself
+   permanently off-screen with the drawer already scrolled to its end.
+
+   The comment above is right that CSS cannot read the offset; script can, and
+   mfc-chrome.js now writes the drawer's measured top into --mfc-navdrawer-top
+   on open, on resize and on orientation change. The 100px literal stays as the
+   fallback, so a page where the script has not run yet — or at all — renders
+   exactly as it does today. `dvh` still covers the mobile URL bar. */
 html .nav-links.open{
-  max-height: calc(100vh - 100px);
-  max-height: calc(100dvh - 100px);
+  max-height: calc(100vh  - var(--mfc-navdrawer-top, 100px));
+  max-height: calc(100dvh - var(--mfc-navdrawer-top, 100px));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================================
+   V34.1 — THE STICKY CTA BAR COST A PHONE HELD SIDEWAYS 22% OF ITS SCREEN
+   ----------------------------------------------------------------------------
+   The bar is shown by `@media (max-width:768px)` on the five pages that carry
+   it (index, strategies and the three strategy pages) and is 72px tall. In
+   PORTRAIT that is 8.5% of an 844px viewport, which is what it was designed
+   against and a fair price for a permanent conversion path. Rotate the same
+   phone and the viewport is 320px tall, so the identical 72px bar plus the 57px
+   sticky nav leave a 191px reading window — measured 129px of 320, 40.3% of the
+   screen, on the homepage and all three strategy pages.
+
+   This site had NO height-based and NO orientation-based media query anywhere
+   before this release, so the short-viewport case had never been expressed.
+   The bar is the only piece of chrome here whose cost scales with the viewport
+   in the wrong direction, and both of its links — Strategies and Get started —
+   are in the nav drawer two taps away, so hiding it costs a landscape reader
+   nothing and gives back a third of what is left after the nav.
+
+   Scoped `(max-width:768px) and (max-height:480px)`: the width half means this
+   can only ever fire where the bar is actually shown, so a short-and-wide
+   desktop window is untouched; 480px sits above every phone-in-landscape
+   viewport (320-430) and far below iPad landscape (768), which keeps its bar.
+   `html` prefixes because mfc-finish.css is linked BEFORE each page's own
+   <style> block, where the `display:flex` that shows the bar lives.
+
+   The two floating controls are stacked ON the bar's height — .fab-wa sits at
+   88px and .back-to-top at 150px to clear it — so both come down with it, or
+   they would hover over 72px of nothing. 16 + 56 (the FAB) = 72, and 80 + 40
+   (the button) = 120, so the two still clear each other. */
+@media (max-width: 768px) and (max-height: 480px){
+  html .mobile-cta-bar{ display: none; }
+  html body{ padding-bottom: 0; }
+  html .fab-wa{ bottom: 16px; }
+  html .back-to-top{ bottom: 80px; }
 }
 
 /* ============================================================================

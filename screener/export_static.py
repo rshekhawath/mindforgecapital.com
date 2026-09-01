@@ -140,25 +140,43 @@ def _chg(v):
 # (mfc-dir.css deliberately keeps its literal: index.html does not link it, and
 # this generator is the ONLY writer of the 28 pages that do, so there is no
 # second maintainer for it to drift away from.)
-_ASSET_FALLBACK = {"mfc-finish.css": "3370", "mfc-chrome.js": "3370"}
+# V34.1 — READING FROM index.html CANNOT WORK FOR AN ASSET index.html DOES NOT
+# LINK. The V33.7 fix above closed the drift for mfc-finish.css, which index.html
+# does link, and left it wide open for mfc-chrome.js, which it does NOT: the page
+# only mentions that script in two comments ("This page doesn't load
+# mfc-chrome.js, so it registers inline"), the regex found no `?v=`, and every
+# generation silently took the hardcoded fallback. Caught in V34.1 by diffing a
+# generated page against disk after a bump: disk said 3380, the generator said
+# 3370, and the next data refresh would have reverted all 28 pages — the exact
+# failure V33.7 set out to end, one asset over.
+#
+# So read each asset from a page that actually REFERENCES it, trying several in
+# order rather than trusting one. The fallbacks stay as a last resort for the
+# case where none of the sources can be read at all.
+_ASSET_SOURCES = ("index.html", "login.html", "scores/index.html")
+_ASSET_FALLBACK = {"mfc-finish.css": "3380", "mfc-chrome.js": "3380"}
 
 
 def _asset_ver(name: str) -> str:
     """The ?v token the rest of the site is currently using for a shared asset.
 
-    Read from docs/index.html at generation time so these 28 generated pages can
-    never ask for an older build of a shared asset than the 21 hand-maintained
-    pages do. The fallback is only for the case where index.html cannot be read.
+    Read from a hand-maintained page at generation time so these 28 generated
+    pages can never ask for an older build of a shared asset than the 20
+    hand-maintained pages do. Several sources are tried in order because no
+    single page links every shared asset — index.html does not load
+    mfc-chrome.js at all, which is how that one drifted. The fallback is only
+    for the case where none of the sources can be read.
     """
     import re as _re
-    try:
-        idx = os.path.normpath(os.path.join(HERE, "..", "docs", "index.html"))
-        with open(idx, encoding="utf-8") as fh:
-            m = _re.search(_re.escape(name) + r"\?v=(\d+)", fh.read())
-        if m:
-            return m.group(1)
-    except Exception:
-        pass
+    for src in _ASSET_SOURCES:
+        try:
+            path = os.path.normpath(os.path.join(HERE, "..", "docs", src))
+            with open(path, encoding="utf-8") as fh:
+                m = _re.search(_re.escape(name) + r"\?v=(\d+)", fh.read())
+            if m:
+                return m.group(1)
+        except Exception:
+            continue
     return _ASSET_FALLBACK.get(name, "1")
 
 
@@ -288,6 +306,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <a href="/fii-dii/">FII/DII</a>
       <a href="/factor-report/">Factor Report</a>
       <a href="/calculator.html">Fee Calculator</a>
+      <a href="/recover.html">Recover Access</a>
       <a href="/login.html">Sign In</a>
       <a href="/signup.html" class="nav-cta">Get Started</a>
     </div>

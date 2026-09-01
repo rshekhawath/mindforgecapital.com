@@ -180,6 +180,55 @@
     }
     return true;
   }
+
+  /* — V34.1: SIZE THE DRAWER TO THE SPACE THAT IS ACTUALLY BELOW IT —
+     mfc-finish.css bounds the open drawer with `max-height: calc(100dvh -
+     var(--mfc-navdrawer-top, 100px))`. 100px was picked in V28.0 as an upper
+     bound on the drawer's own top, with a note that CSS cannot read the real
+     one. It is not an upper bound: the offer bar is 60px tall, not 44, so the
+     drawer starts at 116px on every width where that bar renders on one line
+     and at 142px at 568, where its copy wraps. The box therefore ended 16px
+     below the fold at 320x568 and 42px below at 568x320 — and a box that
+     overflows the viewport cannot be scrolled back into it, so the last item
+     ("Get Started") kept 15px of itself off-screen with the drawer already at
+     its end.
+
+     Script CAN read it. Measure the drawer's own top in viewport coordinates
+     and publish it; the literal in the CSS stays as the fallback, so nothing
+     moves if this never runs. Written on :root rather than the element so the
+     value survives the class toggle and one read serves both max-height rules.
+
+     Measured with the drawer OPEN — while it is display:none it has no box —
+     so the sequence is: let the page's own handler flip .open, then measure on
+     the next frame. Re-measured on resize and orientationchange because the
+     offer bar's height changes with width, and on scroll because the nav is
+     sticky and the drawer rides up with it as the bar leaves. */
+  function mfcSizeNavDrawer() {
+    try {
+      var links = D.querySelector('.nav-links.open');
+      if (!links) return;
+      var r = links.getBoundingClientRect();
+      if (!r.height && !r.width) return;                  // not laid out yet
+      var top = Math.max(0, Math.round(r.top));
+      D.documentElement.style.setProperty('--mfc-navdrawer-top', top + 'px');
+    } catch (_) {}
+  }
+  // The per-page IIFEs flip `.open` inside their own click handler, so a frame
+  // later the drawer is laid out and measurable. rAF twice: once for the class,
+  // once for the layout it causes.
+  function mfcSizeSoon() {
+    if (typeof requestAnimationFrame !== 'function') { mfcSizeNavDrawer(); return; }
+    requestAnimationFrame(function () { requestAnimationFrame(mfcSizeNavDrawer); });
+  }
+  D.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('.nav-hamburger')) mfcSizeSoon();
+  }, true);
+  var _ndT;
+  function mfcSizeDebounced() { clearTimeout(_ndT); _ndT = setTimeout(mfcSizeNavDrawer, 60); }
+  addEventListener('resize', mfcSizeDebounced);
+  addEventListener('orientationchange', mfcSizeDebounced);
+  addEventListener('scroll', mfcSizeDebounced, { passive: true });
+
   // capture phase for both: a page-level keydown handler that calls
   // stopPropagation (the dashboard has one) would otherwise swallow Escape
   // before it ever reached a bubble-phase listener here.

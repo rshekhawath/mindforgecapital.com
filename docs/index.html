@@ -3947,7 +3947,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3370">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3380">
 </head>
 <body>
 
@@ -6945,6 +6945,43 @@ function setDuration(durKey) {
     if (links.contains(e.target) || (e.target.closest && e.target.closest('.nav-hamburger'))) return;
     setHam(false);
   }, true);
+
+  /* V34.1 — SIZE THE DRAWER TO THE SPACE BELOW IT.
+     mfc-finish.css bounds the open drawer with
+     `max-height: calc(100dvh - var(--mfc-navdrawer-top, 100px))`. V28.0 chose
+     that 100px literal as an upper bound on the drawer's own top, noting CSS
+     could not read the real one. It is not an upper bound: the offer bar is
+     60px tall, so the drawer starts at 116px on almost every width and at 142px
+     at 568, where the bar's copy wraps to two lines. The box therefore ended
+     16px below the fold at 320x568 and 42px below at 568x320, and a box that
+     overflows the viewport cannot be scrolled back into it — "Get Started" kept
+     15px of itself off-screen with the drawer already at its end. Script can
+     read it; the literal stays as the fallback. Same measurement mfc-chrome.js
+     makes for the other 46 pages, duplicated here for the same reason the two
+     dismissal handlers above are: this page does not load that file. */
+  function mfcSizeDrawer(){
+    try{
+      if (!links.classList.contains('open')) return;
+      var r = links.getBoundingClientRect();
+      if (!r.height && !r.width) return;            /* not laid out yet */
+      document.documentElement.style.setProperty(
+        '--mfc-navdrawer-top', Math.max(0, Math.round(r.top)) + 'px');
+    }catch(_){}
+  }
+  /* two frames: one for the class the handler above just flipped, one for the
+     layout it causes. A synchronous read here measures a display:none box. */
+  function mfcSizeSoon(){
+    if (typeof requestAnimationFrame !== 'function') { mfcSizeDrawer(); return; }
+    requestAnimationFrame(function(){ requestAnimationFrame(mfcSizeDrawer); });
+  }
+  btn.addEventListener('click', mfcSizeSoon);
+  var _mfcSzT;
+  function mfcSizeDeb(){ clearTimeout(_mfcSzT); _mfcSzT = setTimeout(mfcSizeDrawer, 60); }
+  /* the offer bar's height changes with width, and the nav is sticky — so the
+     drawer's top moves on resize, on rotation and as the bar scrolls away. */
+  addEventListener('resize', mfcSizeDeb);
+  addEventListener('orientationchange', mfcSizeDeb);
+  addEventListener('scroll', mfcSizeDeb, { passive: true });
 })();
 </script>
 

@@ -332,7 +332,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3370">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3380">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://mindforgecapital.com/"},{"@type":"ListItem","position":2,"name":"Disclosures & Investor Charter","item":"https://mindforgecapital.com/disclosures.html"}]},{"@type":"WebPage","@id":"https://mindforgecapital.com/disclosures.html","url":"https://mindforgecapital.com/disclosures.html","name":"Disclosures & Investor Charter","description":"SEBI Research Analyst disclosures, Investor Charter, grievance redressal and complaints data.","inLanguage":"en-IN","isPartOf":{"@type":"WebSite","name":"MindForge Capital","url":"https://mindforgecapital.com/"},"publisher":{"@type":"Organization","name":"MindForge Capital","url":"https://mindforgecapital.com/","logo":"https://mindforgecapital.com/assets/LogoNav.png"}}]}</script>
@@ -395,6 +395,22 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .disc-do h3{ color:var(--ink-pos); } .disc-dont h3{ color:var(--ink-neg); }  /* V27.9: 3.45 / 4.42 on the page wash */
     html[data-theme="dark"] .disc-dont h3{ color:#f87171; }
     .disc-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    /* V34.1 — SAY THAT THIS ONE SCROLLS TOO. V34.0 gave the month calendar and
+       both FII/DII tables a right-edge cue and left this table out; a cue audit
+       of every horizontal scroller on the site at 19 viewports found it as the
+       only one still saying nothing. Measured: the registration table hides
+       111px of itself at 320px, 71 at 360, 56 at 375, 41 at 390 and 19 at 412 —
+       far enough that "Governing regulations" and the correspondence e-mail
+       stop mid-column, on the page a visitor reaches from a SEBI complaint
+       route. Same class, same 26px mask and the same scroll-position toggle as
+       the other three, so the four surfaces read identically. Right edge only,
+       for the reason recorded there: the first column is the row label. */
+    @media (max-width:600px){
+      .disc-scroll.mfx-more-r{
+        -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+                mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+      }
+    }
   </style>
 
   <div class="content">
@@ -939,7 +955,7 @@ html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
   spy();
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=3370"></script>
+<script defer src="assets/mfc-chrome.js?v=3380"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -1001,5 +1017,28 @@ html[data-theme="dark"] .lti-list a.active i{ color:var(--ink-link,#83aaff); }
 }
 </style>
 
+<!-- V34.1 · mark the registration table while it still has content to its right,
+     so the phone gets the same edge cue the other three scrollers already have.
+     Byte-identical to the V34.0 script on /fii-dii/ and the two strategy pages
+     apart from the selector. Fail-soft: any failure leaves the page as-is. -->
+<script id="mfc-scroll-cue">
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.disc-scroll'));
+    if(!els.length) return;
+    function sync(el){
+      var max=el.scrollWidth-el.clientWidth;
+      el.classList.toggle('mfx-more-r', max>8 && el.scrollLeft < max-4);
+    }
+    els.forEach(function(el){
+      var run=function(){ sync(el); };
+      el.addEventListener('scroll', run, {passive:true});
+      window.addEventListener('resize', run, {passive:true});
+      if(typeof MutationObserver==='function') new MutationObserver(run).observe(el,{childList:true,subtree:true});
+      run();
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

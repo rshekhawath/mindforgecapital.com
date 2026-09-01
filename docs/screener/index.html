@@ -763,6 +763,37 @@ tbody tr.rowlink{cursor:pointer}
   .content-title{font-size:20px}
 }
 
+/* V34.1 — ON A PHONE THE READER LANDED ON THREE BUTTONS, NOT ON THE PAGE.
+   `.app-layout` stacks at <=1100px and the sidebar is its FIRST child, so on a
+   phone the first thing below the nav is "Run Screen / Clear Filters / Show
+   Filters" — three controls for a screen nobody has set up yet — and the h1
+   "Stock Scanner", the result count and the paragraph explaining what the tool
+   does all sit underneath them. Measured at 390x844 the h1 lands at y=337; held
+   sideways at 568x320 it lands at 363 and is BELOW THE FOLD entirely, so the
+   whole first screen of /screener/ is a bare action bar. (Both widths measured
+   again on /screener/stocks/*, which link here as "full directory".)
+
+   V27.1 already looked at this row and fixed its LAYOUT for tablets; the order
+   was never the question then. The fix is order, not styling: at <=600px the
+   script below moves the <aside> to sit immediately after .content-header, so
+   the phone reads title -> what this is -> filters -> results, and moves it back
+   the moment the viewport grows. Nothing above 600px is touched, and the DOM is
+   identical at parse time, so crawlers see what they saw before.
+
+   Nested, the sidebar keeps the full-bleed rail it already is — it just starts
+   lower down the column. Cancel .main-content's 14px gutter with a negative
+   margin and put the sidebar's own 14px back inside it, so the band still runs
+   edge to edge (a white slab inset 14px from both sides reads as a stray card,
+   which is exactly how the first cut looked) while its buttons stay on the same
+   left edge as every other control in the column. It gains the top hairline it
+   never needed as the first child, so the band is closed at both ends instead of
+   appearing to start out of nothing. */
+.sidebar.mfx-inflow{
+  margin-left:-14px; margin-right:-14px;
+  padding-left:14px; padding-right:14px;
+  border-top:0.5px solid var(--border2);
+}
+
 /* V27.1 — TABLET ACTION ROW.
    Once the sidebar stacks (≤1100px) its first section sits between the nav and
    the results, and on a phone three full-bleed buttons are right. On an iPad
@@ -799,7 +830,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3370">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3380">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -2333,6 +2364,37 @@ document.getElementById("btnClearFilters")?.addEventListener("click",clearFilter
   });
 })();
 
+/* V34.1 — PHONE READING ORDER: heading before the action row. See the CSS note
+   on .sidebar.mfx-inflow for the measurements. The <aside> moves to sit right
+   after .content-header inside <main> (an aside is valid there), and moves back
+   to being .app-layout's first child above 600px — so a rotation or a resize
+   restores the tablet/desktop layout exactly. Fail-soft: any failure leaves the
+   page in its parsed order, which is today's behaviour. */
+(function(){
+  try{
+    var layout=document.querySelector(".app-layout"),
+        aside =document.querySelector(".app-layout > .sidebar"),
+        main  =document.querySelector(".app-layout > .main-content"),
+        head  =main && main.querySelector(":scope > .content-header");
+    if(!layout||!aside||!main||!head) return;
+    var mq=window.matchMedia("(max-width:600px)");
+    function place(){
+      if(mq.matches){
+        if(aside.parentElement===main) return;
+        head.insertAdjacentElement("afterend", aside);
+        aside.classList.add("mfx-inflow");
+      }else{
+        if(aside.parentElement===layout) return;
+        layout.insertBefore(aside, main);
+        aside.classList.remove("mfx-inflow");
+      }
+    }
+    place();
+    if(typeof mq.addEventListener==="function") mq.addEventListener("change", place);
+    else if(typeof mq.addListener==="function")  mq.addListener(place);
+  }catch(e){}
+})();
+
 // Mobile hamburger menu — matches mindforgecapital.com nav behavior.
 (function(){
   var btn=document.querySelector('.nav-hamburger');
@@ -2353,6 +2415,43 @@ document.getElementById("btnClearFilters")?.addEventListener("click",clearFilter
     if (links.contains(e.target) || (e.target.closest && e.target.closest('.nav-hamburger'))) return;
     setHam(false);
   }, true);
+
+  /* V34.1 — SIZE THE DRAWER TO THE SPACE BELOW IT.
+     mfc-finish.css bounds the open drawer with
+     `max-height: calc(100dvh - var(--mfc-navdrawer-top, 100px))`. V28.0 chose
+     that 100px literal as an upper bound on the drawer's own top, noting CSS
+     could not read the real one. It is not an upper bound: the offer bar is
+     60px tall, so the drawer starts at 116px on almost every width and at 142px
+     at 568, where the bar's copy wraps to two lines. The box therefore ended
+     16px below the fold at 320x568 and 42px below at 568x320, and a box that
+     overflows the viewport cannot be scrolled back into it — "Get Started" kept
+     15px of itself off-screen with the drawer already at its end. Script can
+     read it; the literal stays as the fallback. Same measurement mfc-chrome.js
+     makes for the other 46 pages, duplicated here for the same reason the two
+     dismissal handlers above are: this page does not load that file. */
+  function mfcSizeDrawer(){
+    try{
+      if (!links.classList.contains('open')) return;
+      var r = links.getBoundingClientRect();
+      if (!r.height && !r.width) return;            /* not laid out yet */
+      document.documentElement.style.setProperty(
+        '--mfc-navdrawer-top', Math.max(0, Math.round(r.top)) + 'px');
+    }catch(_){}
+  }
+  /* two frames: one for the class the handler above just flipped, one for the
+     layout it causes. A synchronous read here measures a display:none box. */
+  function mfcSizeSoon(){
+    if (typeof requestAnimationFrame !== 'function') { mfcSizeDrawer(); return; }
+    requestAnimationFrame(function(){ requestAnimationFrame(mfcSizeDrawer); });
+  }
+  btn.addEventListener('click', mfcSizeSoon);
+  var _mfcSzT;
+  function mfcSizeDeb(){ clearTimeout(_mfcSzT); _mfcSzT = setTimeout(mfcSizeDrawer, 60); }
+  /* the offer bar's height changes with width, and the nav is sticky — so the
+     drawer's top moves on resize, on rotation and as the bar scrolls away. */
+  addEventListener('resize', mfcSizeDeb);
+  addEventListener('orientationchange', mfcSizeDeb);
+  addEventListener('scroll', mfcSizeDeb, { passive: true });
 })();
 
 showSkeleton(10);

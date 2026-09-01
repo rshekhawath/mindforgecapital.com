@@ -494,7 +494,21 @@
 // otherwise be served a shell still promising 25 equal-weighted picks and last
 // month's CAGRs. login.html is unchanged this release but shares the cache, so
 // it is simply re-installed alongside.
-const CACHE = 'mfc-v75';
+// V34.1 -> mfc-v76. THIS ONE MUST MOVE on both counts at once. (1) The
+// PRECACHED DOCUMENT itself: index.html gains the drawer-sizing measurement in
+// its own nav IIFE (it does not load mfc-chrome.js), so an installed-app user
+// opening the offline shell would otherwise keep the drawer that runs past the
+// bottom of the screen. (2) Two cache-first ASSETS both go 3370 -> 3380 —
+// mfc-finish.css on all 50 pages (the drawer's max-height becomes a custom
+// property, and the sticky CTA bar gains its short-viewport rule) and
+// mfc-chrome.js on all 46 that load it (it publishes the measured drawer top).
+// Both precached documents link the stylesheet and login.html links the script,
+// and neither document carries a ?v of its own. login.html is otherwise
+// untouched but rides the bump because the precache is written whole.
+// mfc-dir.css did NOT change and deliberately stays at 3370; its 28 generated
+// pages did (they gain the "Recover Access" nav link every other page has), but
+// they are network-first HTML and none of them is precached.
+const CACHE = 'mfc-v76';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
