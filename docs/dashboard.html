@@ -3393,32 +3393,91 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       @media (prefers-reduced-motion:reduce){ .vfy-cta,.vfy-arr{ transition:none; } .vfy-cta:hover{ transform:none; } }
       @media print{ .vfy-card{ display:none !important; } }
 
-      /* V34.2 — the Kite basket button inside how-to step 3. Borrows .vfy-cta's
-         idiom (same radius, same accent border, same dark-mode ink) rather than
-         inventing a fourth button shape on this page. Full width on a phone for
-         the same reason .vfy-cta is. */
+      /* V34.4 — THE BAND NOW LOOKS LIKE THE ACTION IT IS. V34.2 gave it .vfy-cta's
+         outline idiom, which is right for a secondary link ("see the verified P&L")
+         and wrong for the one control on this page that does the member's actual
+         job. On a page of gradient meters, tinted stat cards and a coloured
+         sentiment gauge it read as a footnote. It now carries the same
+         accent-tinted wash and filled `--accent -> --accent2` CTA the site uses
+         for every primary action, plus a fact row so the member can see the SHAPE
+         of the basket — how many, how much, and that it is NSE delivery — before
+         they commit to a screen they have to log in to. Nothing here is decorative:
+         each figure is one the member would otherwise have to derive by reading
+         the table. */
       .kbsk{ display:flex; align-items:center; gap:16px 22px; flex-wrap:wrap;
-        margin:16px 0 0; padding:14px 18px; border-radius:var(--r-sm);
-        background:var(--ink2); border:0.5px solid var(--border2); }
-      .kbsk-txt{ flex:1 1 320px; min-width:0; }
-      .kbsk-eyebrow{ font-size:10.5px; font-weight:800; letter-spacing:.08em;
-        text-transform:uppercase; color:var(--accent2); margin:0 0 3px; }
+        margin:16px 0 0; padding:16px 18px; border-radius:var(--r);
+        background:
+          linear-gradient(135deg, rgba(37,99,235,.055) 0%, rgba(45,212,191,.045) 100%),
+          var(--ink2);
+        border:0.5px solid var(--border2);
+        box-shadow:0 10px 26px -20px rgba(26,80,216,.45); }
+      html[data-theme="dark"] .kbsk{
+        background:
+          linear-gradient(135deg, rgba(120,160,240,.10) 0%, rgba(45,212,191,.07) 100%),
+          var(--ink2); }
+      .kbsk-txt{ flex:1 1 300px; min-width:0; }
+      .kbsk-eyebrow{ display:inline-flex; align-items:center; gap:7px;
+        font-size:10.5px; font-weight:800; letter-spacing:.08em;
+        text-transform:uppercase; color:var(--accent2); margin:0 0 6px; }
+      /* the Kite roundel, in Kite's own brand blue — this action goes there and
+         nowhere else, and the mark says so faster than the words do */
+      .kbsk-eyebrow::before{ content:''; width:15px; height:15px; border-radius:4px;
+        flex:0 0 auto; background:#387ed1;
+        box-shadow:inset 0 0 0 2.5px rgba(255,255,255,.92); }
       html[data-theme="dark"] .kbsk-eyebrow{ color:#9dbcff; }
-      .kbsk-cta{ display:inline-flex; align-items:center; gap:8px; min-height:44px;
-        padding:11px 16px; border-radius:var(--r-sm); cursor:pointer;
-        font-family:inherit; font-size:13.5px; font-weight:700; letter-spacing:-.01em;
-        color:var(--accent); background:var(--ink2); border:1px solid rgba(37,99,235,.38);
-        transition:background .2s,border-color .2s,transform .15s,box-shadow .2s; }
-      .kbsk-cta svg{ width:16px; height:16px; flex:0 0 auto; }
-      html[data-theme="dark"] .kbsk-cta{ color:#9dbcff; border-color:rgba(120,160,240,.42); }
-      .kbsk-cta:hover{ background:rgba(37,99,235,.06); border-color:rgba(37,99,235,.6);
-        transform:translateY(-1px); box-shadow:0 10px 22px -14px rgba(26,80,216,.55); }
-      html[data-theme="dark"] .kbsk-cta:hover{ background:rgba(120,160,240,.10); border-color:rgba(120,160,240,.66); }
-      .kbsk-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+      html[data-theme="dark"] .kbsk-eyebrow::before{ box-shadow:inset 0 0 0 2.5px rgba(12,24,49,.92); }
+
+      /* the fact row — what is about to be sent, in three values */
+      .kbsk-facts{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px;
+        margin:0 0 6px; font-variant-numeric:tabular-nums; }
+      .kbsk-fact{ font-size:13px; font-weight:700; color:var(--white); letter-spacing:-.01em; }
+      .kbsk-fact span{ font-size:11px; font-weight:600; color:var(--text3);
+        letter-spacing:0; margin-left:3px; }
+      .kbsk-dot{ width:3px; height:3px; border-radius:50%; background:var(--text3);
+        opacity:.5; flex:0 0 auto; align-self:center; }
+
+      .kbsk-cta{ display:inline-flex; align-items:center; gap:9px; min-height:46px;
+        padding:12px 20px; border-radius:var(--r-sm); cursor:pointer;
+        font-family:inherit; font-size:14px; font-weight:700; letter-spacing:-.01em;
+        color:#fff; border:none; position:relative; overflow:hidden;
+        background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+        box-shadow:0 12px 26px -14px rgba(26,80,216,.75), 0 2px 6px rgba(12,24,49,.10);
+        transition:transform .16s cubic-bezier(.22,.8,.2,1), box-shadow .2s, filter .2s; }
+      .kbsk-cta svg{ width:17px; height:17px; flex:0 0 auto; }
+      .kbsk-cta:hover{ transform:translateY(-1px); filter:saturate(1.06) brightness(1.04);
+        box-shadow:0 16px 32px -14px rgba(26,80,216,.85), 0 3px 8px rgba(12,24,49,.12); }
+      .kbsk-cta:active{ transform:translateY(0); }
+      .kbsk-cta:focus-visible{ outline:2px solid var(--accent3); outline-offset:3px; }
+      /* the sheen the site puts on every primary CTA (.btn-primary/.nav-cta) —
+         one pass on hover, and nothing at all under reduced motion */
+      .kbsk-cta::before{ content:''; position:absolute; inset:0; pointer-events:none;
+        background:linear-gradient(100deg,transparent 38%,rgba(255,255,255,.22) 50%,transparent 62%);
+        background-size:220% 100%; background-position:135% 0; }
+      @media (prefers-reduced-motion:no-preference){
+        .kbsk-cta:hover::before{ animation:kbskSheen .85s ease-out 1; }
+        @keyframes kbskSheen{ from{background-position:135% 0;} to{background-position:-35% 0;} }
+      }
       .kbsk-note{ font-size:11.5px; line-height:1.55; color:var(--text3); margin:0; max-width:70ch; }
       .kbsk-note b{ color:var(--text2); font-weight:700; }
-      @media (max-width:560px){ .kbsk{ padding:13px 14px; } .kbsk-cta{ width:100%; justify-content:center; } }
-      @media (prefers-reduced-motion:reduce){ .kbsk-cta{ transition:none; } .kbsk-cta:hover{ transform:none; } }
+      @media (max-width:560px){
+        .kbsk{ padding:14px 14px; gap:12px; }
+        .kbsk-cta{ width:100%; justify-content:center; }
+        /* The three facts do not fit on one phone line, and a wrapped flex row
+           of `fact dot fact dot fact` leaves the dot stranded at the end of the
+           line it breaks after — measured at 390px, line one ended "at rec.
+           price ·". A separator that ends a line reads as a rendering fault, and
+           moving it to the next line only swaps that for a line that STARTS with
+           one. Drop the dots at this width instead: each fact carries its own
+           unit ("orders", "at rec. price", "delivery · CNC"), so the spacing
+           alone separates them without ambiguity. */
+        .kbsk-dot{ display:none; }
+        .kbsk-facts{ gap:2px 14px; }
+      }
+      @media (prefers-reduced-motion:reduce){
+        .kbsk-cta{ transition:none; }
+        .kbsk-cta:hover{ transform:none; filter:none; }
+        .kbsk-cta::before{ display:none; }
+      }
       @media print{ .kbsk{ display:none !important; } }
       </style>
       <div class="howto-card">
@@ -3491,6 +3550,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="kbsk" id="kbsk" hidden>
           <div class="kbsk-txt">
             <div class="kbsk-eyebrow">Step 3, in one tap</div>
+            <div class="kbsk-facts" id="kbsk-facts" aria-hidden="true"></div>
             <p class="kbsk-note" id="kbsk-note"></p>
           </div>
           <button type="button" class="kbsk-cta" id="kbsk-btn" onclick="sendKiteBasket()">
@@ -7038,6 +7098,48 @@ function sendKiteBasket() {
 /* Show the button only where it can do something: Kite selected, capital
    entered, and at least one row still to place. Every other broker keeps the
    per-row deeplinks it has today — this basket screen is Kite's. */
+/* ── V34.4 — COMING BACK FROM KITE ──────────────────────────────────────────
+   V34.3 set the app's Redirect URL to this page, so Kite now returns the member
+   here after the basket instead of stranding them on kite.zerodha.com. It
+   appends its own query to that return — `?status=success&request_token=…` —
+   and those were being left in the address bar. Two reasons to clear them:
+
+   · This site's rule since V29.8 is that no credential-shaped value lives in a
+     URL here, because a URL reaches the service-worker cache, the history entry
+     and the Referer header. A request_token is single-use and worth nothing
+     without the api_secret, which is not on this site at all — but the rule is
+     about the shape, not the exploitability, and keeping it is cheaper than
+     arguing the exception each time.
+   · The session itself is unaffected either way: readDashToken() is
+     cookie-primary, so a returning member resolves from the cookie and never
+     needed the query at all. Verified — arriving at a bare /dashboard.html with
+     the cookie set renders the real dashboard, not the "No Access Token" gate.
+
+   The return is also the one moment worth acknowledging, because nothing else
+   tells the member what just happened. `status=success` means the BASKET FLOW
+   completed, NOT that anything filled — Kite reports no fill state here and this
+   page has no way to know one — so the toast says exactly that and points at the
+   tick-list, which remains the record of what was actually placed. */
+function mfcHandleKiteReturn() {
+  try {
+    var q = new URLSearchParams(window.location.search);
+    if (!q.has('status') && !q.has('request_token')) return;
+    var status = q.get('status');
+    q.delete('status'); q.delete('request_token'); q.delete('action');
+    var qs = q.toString();
+    window.history.replaceState(null, '',
+      window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+    if (status === 'success') {
+      showToast('Back from Kite — tick off the orders you placed');
+    }
+  } catch (e) {}
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mfcHandleKiteReturn);
+} else {
+  mfcHandleKiteReturn();
+}
+
 function refreshKiteBasket() {
   try {
     var wrap = document.getElementById('kbsk');
@@ -7057,9 +7159,23 @@ function refreshKiteBasket() {
     });
     var label = document.getElementById('kbsk-label');
     var note  = document.getElementById('kbsk-note');
+    var facts = document.getElementById('kbsk-facts');
     if (label) {
-      label.textContent = 'Review ' + send + ' order' + (send === 1 ? '' : 's') +
-                          ' on Kite · ' + fmtMoney(value);
+      label.textContent = 'Review ' + send + ' order' + (send === 1 ? '' : 's') + ' on Kite';
+    }
+    /* V34.4 — the shape of the basket, before the member commits to a screen they
+       have to log in to. Three values, each one they would otherwise derive by
+       reading the table: how many orders, what they are worth at the recommended
+       prices, and that this is delivery rather than intraday. aria-hidden on the
+       container because the note beneath it and the button label already say all
+       of this in prose — a screen reader should not hear the figures twice. */
+    if (facts) {
+      facts.innerHTML =
+        '<span class="kbsk-fact">' + send + '<span>order' + (send === 1 ? '' : 's') + '</span></span>' +
+        '<i class="kbsk-dot"></i>' +
+        '<span class="kbsk-fact">' + escapeHtml(fmtMoney(value)) + '<span>at rec. price</span></span>' +
+        '<i class="kbsk-dot"></i>' +
+        '<span class="kbsk-fact">NSE<span>delivery · CNC</span></span>';
     }
     if (note) {
       note.innerHTML =
