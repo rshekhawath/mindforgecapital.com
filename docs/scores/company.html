@@ -1661,8 +1661,14 @@ function drawRadar(D){
      exactly 336x300, the branch below resolves to the authored cx/cy/R, and the
      drawing is byte-identical to what it has always been.  ══════════════════ */
   var LBL_FS=10.5, TICK_FS=8, LBL_GAP=17, PAD=3, N=P.length;
+  /* A degenerate measurement must fall back to the authored box WHOLE. An
+     earlier form of this read `Math.round(_bx.width)||336` and then applied the
+     60px guard, so a frame where the width measured 0 while the height already
+     measured 272 — a real state, caught mid-viewport-change on production —
+     produced a HYBRID 336x272 box that matched neither branch. It self-corrects
+     on the next resize, and it should never be constructed at all. */
   var _bx=svg.getBoundingClientRect();
-  var W=Math.round(_bx.width)||336, H=Math.round(_bx.height)||300;
+  var W=Math.round(_bx.width), H=Math.round(_bx.height);
   if(!(W>60&&H>60)){ W=336; H=300; }
   svg.setAttribute('viewBox','0 0 '+W+' '+H);
   svg.__mfcBox=W+'x'+H;
