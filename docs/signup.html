@@ -96,6 +96,60 @@ html[data-theme="dark"] .card-icon::after{
 }
 .card h1, .card h2{font-size:26px;color:var(--white);margin-bottom:6px;}
 .card .desc{font-size:15px;color:var(--text2);margin-bottom:32px;line-height:1.6;}
+/* ══════════════════════════════════════════════════════════════════════════
+   V34.8 — SIGN-UP PROGRESS
+   --------------------------------------------------------------------------
+   .step-indicator and its children are login.html's component, copied byte for
+   byte so the two halves of this funnel cannot drift apart visually. Only
+   .gg-* below is new. If a third surface ever needs this, it moves to
+   mfc-finish.css — two copies is the point at which that becomes worth a ?v
+   bump across 50 pages, and this is the second.
+   ══════════════════════════════════════════════════════════════════════════ */
+.step-indicator{display:flex;align-items:flex-start;gap:0;margin:0 0 18px;padding:0;list-style:none;}
+.step-item{position:relative;flex:1 1 0;display:flex;flex-direction:column;align-items:center;
+  gap:7px;min-width:0;font-size:11px;font-weight:700;letter-spacing:.03em;color:var(--text3);
+  text-transform:uppercase;}
+.step-item::before{content:'';position:absolute;top:6px;left:calc(-50% + 7px);right:calc(50% + 7px);
+  height:2px;border-radius:2px;background:var(--border2);}
+.step-item:first-child::before{display:none;}
+.step-item.done::before,.step-item.active::before{background:linear-gradient(90deg,var(--accent),var(--accent3));}
+.step-dot{width:13px;height:13px;border-radius:50%;background:var(--border2);
+  box-shadow:0 0 0 3px transparent;transition:background .25s ease,box-shadow .25s ease,transform .25s ease;}
+.step-item.done .step-dot{background:linear-gradient(135deg,var(--accent),var(--accent3));}
+.step-item.done .step-dot::after{content:'';display:block;width:100%;height:100%;
+  background:no-repeat center/8px 8px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");}
+.step-item.active .step-dot{background:linear-gradient(135deg,var(--accent),var(--accent3));
+  transform:scale(1.15);box-shadow:0 0 0 4px rgba(26,80,216,0.16);}
+.step-item.active{color:var(--white);}
+.step-item.done{color:var(--text2);}
+.step-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+@media (max-width:360px){ .step-item{font-size:10px;letter-spacing:.02em;} }
+@media (prefers-reduced-motion: reduce){ .step-dot{transition:none;} }
+
+/* -- the meter. The bar is the gradient the step dots cannot express: the dots
+      move three times, the bar moves on every field completed, which is what
+      makes the last stretch pull. -- */
+.gg-meter{margin:0 0 22px;padding:13px 15px;border-radius:12px;background:var(--ink3);
+  border:0.5px solid var(--border2);}
+.gg-bar{height:6px;border-radius:99px;background:rgba(37,99,235,.13);overflow:hidden;}
+.gg-bar > i{display:block;height:100%;width:0;border-radius:99px;
+  background:linear-gradient(90deg,var(--accent),#2dd4bf);
+  transition:width .55s cubic-bezier(.22,1,.36,1);}
+.gg-line{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:9px;}
+/* --ink-link (#0951c6), not --accent2 (#2563eb): measured 4.42:1 on this
+   panel's --ink3 wash at 13px/800, which is under the 4.5 AA floor for text
+   this size. The darker link ink on the same background measures 5.98:1. It is
+   the same substitution the rest of this site makes wherever an accent lands on
+   a tint rather than on white. */
+.gg-pct{font-size:13px;font-weight:800;color:var(--ink-link,#0951c6);font-variant-numeric:tabular-nums;}
+.gg-left{font-size:11.5px;font-weight:600;color:var(--text3);}
+.gg-note{font-size:12.5px;line-height:1.55;color:var(--text2);margin-top:7px;}
+.gg-note b{color:var(--white);font-weight:700;}
+.gg-note .gg-done{color:var(--data-strong);font-weight:700;}
+@media (prefers-reduced-motion: reduce){ .gg-bar > i{transition:none;} }
+@media print{ .gg-bar > i, .step-item.done .step-dot, .step-item.active .step-dot{
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;} }
+
 .form-group{margin-bottom:20px;}
 label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;}
 input[type=text],input[type=email],input[type=tel]{width:100%;padding:13px 16px;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink3);font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;}
@@ -363,8 +417,48 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <!-- STEP 1: Registration form -->
     <div id="step-form">
       <div class="brand-eyebrow"><span class="brand-dot"></span>MindForge Capital</div>
-      <h1>Get started</h1>
-      <p class="desc">Choose a strategy and register. We'll reach out on WhatsApp with payment details and activate your dashboard within 24 hours.</p>
+      <h1 id="reg-h1">Get started</h1>
+      <p class="desc" id="reg-desc">Choose a strategy and register. We'll reach out on WhatsApp with payment details and activate your dashboard within 24 hours.</p>
+
+      <!-- ══ V34.8 · YOU ARE ALREADY A THIRD OF THE WAY IN ═══════════════════
+           People finish what they have started far more reliably than they
+           start what they have not, and the strongest pull is the one nearest
+           the end. Picking a strategy IS a real step in this funnel — it is the
+           first field of the form and it decides the price — so a reader who
+           arrives from a pricing card with ?strategy= set has genuinely
+           completed it, and the meter opens at 33% saying so by name.
+           THE HONESTY CONDITION, and the reason this is not a dark pattern: a
+           reader who arrives WITHOUT the parameter is shown step 1 as the
+           CURRENT step at 0%, not as a completed one. Progress is only ever
+           claimed for work that was actually done. That is also why the pricing
+           cards had to gain `?strategy=` in the same release — otherwise the
+           33% state would have been unreachable and the component would have
+           been decoration.
+           The <ol> is login.html's step-indicator, reused rather than reinvented:
+           same classes, same done/active semantics, same aria-current, so the
+           two halves of this funnel look and read alike and there is one
+           component to maintain. The percentage line is role="status" so the
+           change is announced, not merely repainted. ═══════════════════════ -->
+      <ol class="step-indicator" id="reg-steps" aria-label="Sign-up progress">
+        <li class="step-item active" id="reg-step-1" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Strategy</span></li>
+        <li class="step-item" id="reg-step-2"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Your details</span></li>
+        <!-- "Access", not "Broker & access": the third label is the only one that
+             does not fit a third of a 390px card, and it ellipsised to
+             "BROKER & ACC…" on every phone width from 320 to 429. A label that
+             has to be truncated to fit is not a label. The full phrase still
+             appears in the note below the meter and on the success screen,
+             where there is room for it. -->
+        <li class="step-item" id="reg-step-3"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Access</span></li>
+      </ol>
+
+      <div class="gg-meter" id="gg-meter">
+        <div class="gg-bar" aria-hidden="true"><i id="gg-fill" style="width:0%"></i></div>
+        <div class="gg-line">
+          <span class="gg-pct" id="gg-pct">0% complete</span>
+          <span class="gg-left" id="gg-left">3 steps to go</span>
+        </div>
+        <p class="gg-note" id="gg-note" role="status">Pick a strategy below to get started.</p>
+      </div>
       <div class="trust-row" aria-label="Why subscribe">
         <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>SEBI-registered RA</span>
         <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>Activated in 24 hours</span>
@@ -803,6 +897,119 @@ function resetForm() {
     sel.value = map[s];
     onStrategyChange();
   }
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V34.8 — GOAL GRADIENT
+   --------------------------------------------------------------------------
+   Runs AFTER the pre-select above, so by the time it reads the <select> the URL
+   parameter has already been applied and step 1 reflects a real choice rather
+   than an empty field. Ordering is load-bearing; do not hoist this block.
+
+   The percentage is derived from the form's own state on every input event —
+   never incremented by hand — so it cannot claim progress a reader has not
+   made, and it goes back DOWN if they clear a field. Three anchors:
+       0%   nothing chosen
+       33%  strategy chosen               → step 1 done, step 2 current
+       67%  registration submitted        → step 2 done, step 3 current
+   Between 33 and 67 the bar moves with the four fields of step 2, which is the
+   gradient itself: the dots can only move three times, and the pull comes from
+   watching the distance to the next one shrink.
+   100% is deliberately never shown here. The last step finishes on WhatsApp and
+   in the dashboard, and a meter that reads "complete" while something is still
+   owed is the one version of this pattern that would be a lie.
+   Fail-soft throughout: if any node is missing the form behaves exactly as it
+   did before this block existed.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  var steps = [1,2,3].map(function(n){ return document.getElementById('reg-step-'+n); });
+  var fill  = document.getElementById('gg-fill'),
+      pctEl = document.getElementById('gg-pct'),
+      leftEl= document.getElementById('gg-left'),
+      noteEl= document.getElementById('gg-note'),
+      h1    = document.getElementById('reg-h1'),
+      descEl= document.getElementById('reg-desc'),
+      sel   = document.getElementById('reg-strategy');
+  if(!fill || !pctEl || !sel || steps.some(function(x){ return !x; })) return;
+
+  var submitted = false;
+
+  // The four things step 2 actually asks for. Each is a predicate over the live
+  // DOM, so "filled" always means the same thing the submit handler will mean.
+  function step2Parts(){
+    function val(id){ var e=document.getElementById(id); return e ? String(e.value||'').trim() : ''; }
+    var tnc = document.getElementById('reg-tnc');
+    return [
+      val('reg-name').length >= 2,
+      /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(val('reg-email')),
+      /^[0-9]{10}$/.test(val('reg-phone')),
+      !!(tnc && tnc.checked)
+    ];
+  }
+
+  function setStep(el, state){
+    el.classList.remove('done','active');
+    if(state) el.classList.add(state);
+    if(state === 'active') el.setAttribute('aria-current','step');
+    else el.removeAttribute('aria-current');
+  }
+
+  function paint(){
+    var chosen = !!sel.value;
+    var parts  = step2Parts(), got = parts.filter(Boolean).length;
+
+    var pct, note, left;
+    if(submitted){
+      setStep(steps[0],'done'); setStep(steps[1],'done'); setStep(steps[2],'active');
+      pct = 67;
+      left = '1 step to go';
+      note = '<span class="gg-done">Registration done.</span> Last step: we confirm on WhatsApp and your dashboard opens — usually within 24 hours.';
+    } else if(!chosen){
+      setStep(steps[0],'active'); setStep(steps[1],null); setStep(steps[2],null);
+      pct = 0;
+      left = '3 steps to go';
+      note = 'Pick a strategy below to get started.';
+    } else {
+      setStep(steps[0],'done'); setStep(steps[1],'active'); setStep(steps[2],null);
+      // 33% for the completed step, then a third of the remaining band per field.
+      pct = Math.round(33 + (34 * got / parts.length));
+      left = got >= parts.length ? 'Ready to submit' : ((parts.length - got) + ' field' + (parts.length-got===1?'':'s') + ' left');
+      var name = sel.value.replace(/^MindForge\s+/,'');
+      note = '<span class="gg-done">Step 1 done — ' + name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + ' selected.</span> ' +
+             (got >= parts.length
+               ? 'Everything below is filled in. Submit and we take it from there.'
+               : 'Your details are all that stand between you and step&nbsp;3.');
+    }
+
+    fill.style.width = pct + '%';
+    pctEl.textContent = pct + '% complete';
+    if(leftEl) leftEl.textContent = left;
+    if(noteEl) noteEl.innerHTML = note;
+
+    // The heading acknowledges the choice rather than restarting the funnel.
+    if(h1)     h1.textContent = (chosen && !submitted) ? 'You’re a third of the way there' : 'Get started';
+    if(descEl) descEl.textContent = (chosen && !submitted)
+      ? 'Your strategy is locked in. Two short steps left — your details, then we confirm on WhatsApp and open your dashboard within 24 hours.'
+      : 'Choose a strategy and register. We’ll reach out on WhatsApp with payment details and activate your dashboard within 24 hours.';
+  }
+
+  ['input','change'].forEach(function(evt){
+    document.getElementById('step-form').addEventListener(evt, paint, true);
+  });
+
+  /* The success view is step 3, and it is revealed by a direct style write
+     elsewhere in this file rather than by a function this block can wrap. An
+     attribute observer is the seam that does not require editing that path —
+     and it also catches the "start over" button putting the form back. */
+  var succ = document.getElementById('step-success');
+  if(succ && typeof MutationObserver === 'function'){
+    new MutationObserver(function(){
+      var now = succ.style.display !== 'none' && succ.style.display !== '';
+      if(now !== submitted){ submitted = now; paint(); }
+    }).observe(succ, {attributes:true, attributeFilter:['style']});
+  }
+
+  paint();
 })();
 </script>
 <script>

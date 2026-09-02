@@ -460,6 +460,98 @@ footer::before { content:""; position:absolute; top:-0.5px; left:0; right:0; hei
   .fc-kpis { grid-template-columns: 1fr; }
   .fc-inputwrap { width: 138px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   V34.8 — ALPHA SANDBOX
+   --------------------------------------------------------------------------
+   Four additions, each answering one thing the page could not previously do:
+     .fc-defaults  say out loud what was assumed for you, and let you undo it
+     .fc-chip      reach the four portfolio sizes a log slider cannot land on
+     .fc-split     break the headline loss into fees vs forgone compounding
+     .fc-yours     read the reader's own inputs back, and let them keep them
+   Colour comes from --data-bad, never a literal red: the dark palette on this
+   site flips --green but does NOT define --red, so a baked #dc2626 would sit
+   unchanged on a near-black card. Same reason the amber .neg state above uses
+   --ink-warn.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* -- the declared starting point -- */
+.fc-defaults{ display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 9px;
+  margin:14px 0 2px; padding:11px 13px; border-radius:11px;
+  background:rgba(37,99,235,.05); border:0.5px solid var(--border2); }
+.fc-def-tag{ font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--accent2); background:rgba(37,99,235,.10); border-radius:999px; padding:3px 8px; flex:0 0 auto; }
+.fc-def-body{ font-size:12px; line-height:1.5; color:var(--text2); flex:1 1 190px; min-width:0; }
+.fc-def-reset{ appearance:none; -webkit-appearance:none; border:0.5px solid var(--border2);
+  background:var(--ink2); color:var(--accent2); font:inherit; font-size:11.5px; font-weight:700;
+  border-radius:999px; padding:5px 11px; cursor:pointer; flex:0 0 auto;
+  transition:border-color .2s, background .2s, color .2s; }
+.fc-def-reset:hover{ border-color:var(--accent2); background:rgba(37,99,235,.08); }
+.fc-def-reset:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.fc-def-reset[hidden]{ display:none; }
+
+/* -- one-tap values -- */
+.fc-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.fc-chip{ appearance:none; -webkit-appearance:none; font:inherit; font-size:11.5px; font-weight:700;
+  color:var(--text2); background:var(--ink); border:0.5px solid var(--border2); border-radius:999px;
+  padding:6px 11px; cursor:pointer; line-height:1.15;
+  transition:background .18s, border-color .18s, color .18s; }
+.fc-chip:hover{ border-color:var(--accent2); color:var(--accent2); }
+.fc-chip.on{ background:linear-gradient(135deg,var(--accent),var(--accent2)); border-color:transparent; color:#fff; }
+.fc-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.fc-opt{ font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text3); margin-left:6px; }
+
+/* -- the loss state of the headline KPI --
+   `.hero.loss` scores (0,3,0) and so beats the `.hero` green above without
+   !important. `.neg` (the flat plan genuinely costing more) is untouched and
+   still wins where it applies, because render() never sets both. */
+.fc-kpi.hero.loss{ background:linear-gradient(135deg, rgba(220,38,38,.11), rgba(220,38,38,.035));
+  border-color:rgba(220,38,38,.30); }
+.fc-kpi.hero.loss .k-lbl{ color:var(--data-bad); }
+.fc-kpi.hero.loss .k-val{ color:var(--data-bad); }
+
+.fc-split{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px;
+  margin-top:12px; padding-top:11px; border-top:0.5px solid var(--border2); }
+.fc-split[hidden]{ display:none; }
+.fc-split-part{ display:inline-flex; align-items:baseline; gap:6px; font-size:11.5px; color:var(--text3); min-width:0; }
+.fc-split-part b{ font-size:13.5px; font-weight:800; color:var(--text2); font-variant-numeric:tabular-nums; }
+.fc-sp-dot{ width:8px; height:8px; border-radius:2px; flex:0 0 auto; align-self:center; }
+.fc-sp-dot.fees{ background:var(--data-bad); }
+.fc-sp-dot.comp{ background:var(--gold,#d97706); }
+.fc-split-plus{ font-size:13px; font-weight:800; color:var(--text3); }
+
+/* -- the reader's own scenario -- */
+.fc-yours{ margin-top:16px; padding-top:15px; border-top:0.5px solid var(--border); }
+.fc-yours-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.fc-yours-tag{ font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); }
+.fc-yours-tag.mine{ color:var(--accent2); }
+.fc-yours-share{ appearance:none; -webkit-appearance:none; font:inherit; font-size:11.5px; font-weight:700;
+  display:inline-flex; align-items:center; gap:6px; color:var(--accent2); background:none;
+  border:0.5px solid var(--border2); border-radius:999px; padding:6px 11px; cursor:pointer;
+  transition:border-color .2s, background .2s; }
+.fc-yours-share:hover{ border-color:var(--accent2); background:rgba(37,99,235,.07); }
+.fc-yours-share:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.fc-yours-share.done{ color:var(--data-strong); border-color:rgba(5,150,105,.4); background:rgba(5,150,105,.08); }
+.fc-yours-body{ font-size:12.5px; line-height:1.6; color:var(--text2); margin-top:8px; }
+.fc-yours-body b{ color:var(--white); font-weight:700; font-variant-numeric:tabular-nums; }
+
+/* Touch: the chips and the two pill buttons are the only new controls, and a
+   26px pill is not a target. Same (hover:none) and (pointer:coarse) gate the
+   rest of the site uses, so pointer devices keep their compact sizing. */
+@media (hover: none) and (pointer: coarse){
+  .fc-chip, .fc-def-reset, .fc-yours-share{ min-height:44px; padding-top:0; padding-bottom:0;
+    display:inline-flex; align-items:center; }
+  .fc-chip{ padding-left:15px; padding-right:15px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .fc-chip, .fc-def-reset, .fc-yours-share{ transition:none; }
+}
+/* A CSS background prints white without this, and these three carry meaning. */
+@media print{
+  .fc-sp-dot, .fc-chip.on, .fc-kpi.hero.loss{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .fc-yours-share, .fc-def-reset{ display:none !important; }
+}
 </style>
 
 <!-- MFC theme (V17.5 pattern): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. -->
@@ -579,9 +671,18 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <section class="calc-hero">
   <div class="calc-hero-bg"></div>
   <div class="container">
-    <span class="eyebrow fade-up"><span class="dot"></span>Interactive&nbsp;· your numbers</span>
-    <h1 class="fade-up">A 2% fee doesn't sound like much.<br>Over 10&nbsp;years, it quietly costs you <span class="hl">lakhs</span>.</h1>
-    <p class="lede fade-up">Percentage-based AUM fees scale with your corpus — the bigger you grow, the more they take. A flat monthly subscription doesn't. Move the sliders and watch the gap compound in real time.</p>
+    <span class="eyebrow fade-up"><span class="dot"></span>Alpha Sandbox&nbsp;· your numbers</span>
+    <!-- V34.8 · LOSS FRAME. The old headline said a 2% fee "costs you lakhs" —
+         true, vague, and unowned. The number below is the one this page's own
+         model produces at the defaults it now loads with (₹15,00,000 · 15% ·
+         10 years · 2% AUM · ₹999 flat), and it is WRITTEN BY THAT MODEL at
+         runtime rather than typed here: see #fc-hero-loss in the render path.
+         The static text is the fallback for a no-JS reader and is regenerated
+         from the same function, so the two can never drift — the failure mode
+         this project keeps finding is a hand-typed label beside a machine
+         number. -->
+    <h1 class="fade-up">A 2% fee doesn't sound like much.<br>On ₹15,00,000 it quietly takes <span class="hl" id="fc-hero-loss">₹7.33&nbsp;lakh</span> out of your next ten&nbsp;years.</h1>
+    <p class="lede fade-up">A percentage fee is charged on everything you have, every year — so it grows exactly as fast as you do, and it takes the compounding with it. A flat monthly subscription does not. The numbers below are already filled in with a realistic starting point; change any of them and the whole model follows.</p>
   </div>
 </section>
 
@@ -593,19 +694,63 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="fc-left card fade-up">
         <div class="card-pad fc-controls">
           <div class="card-title">Your numbers</div>
-          <p class="card-sub">Adjust any input — the results and chart update instantly.</p>
+          <!-- V34.8 · SMART DEFAULTS, STATED OUT LOUD. Every field below arrives
+               pre-filled, so the answer is on screen before anything is typed.
+               A default that is not DECLARED is a nudge the reader cannot audit,
+               so the strip says what was assumed and where each figure comes
+               from, and one control puts it all back. -->
+          <p class="card-sub">Pre-filled with a realistic starting point — the results on the right are already computed. Change anything you like; nothing here is fixed.</p>
+
+          <div class="fc-defaults" id="fc-defaults">
+            <span class="fc-def-tag">Starting point</span>
+            <span class="fc-def-body">₹15,00,000 at 15% for 10&nbsp;years, against a 2% AUM fee — the industry's typical regular-plan expense ratio — and our ₹999 flat plan.</span>
+            <button type="button" class="fc-def-reset" id="fc-reset" hidden>Reset to starting point</button>
+          </div>
 
           <div class="fc-field">
             <div class="fc-field-head">
               <label for="fc-invest-num">Initial investment</label>
-              <span class="fc-valpill" id="fc-invest-pill">₹10,00,000</span>
+              <span class="fc-valpill" id="fc-invest-pill">₹15,00,000</span>
             </div>
             <div class="fc-inputwrap has-pre">
               <span class="fc-pre">₹</span>
-              <input type="text" id="fc-invest-num" inputmode="numeric" value="10,00,000" aria-label="Initial investment in rupees">
+              <input type="text" id="fc-invest-num" inputmode="numeric" value="15,00,000" aria-label="Initial investment in rupees">
             </div>
-            <input type="range" class="fc-range" id="fc-invest-rng" min="0" max="1000" step="1" value="250" aria-label="Initial investment">
+            <input type="range" class="fc-range" id="fc-invest-rng" min="0" max="1000" step="1" value="294" aria-label="Initial investment">
             <div class="fc-scale"><span>₹1L</span><span>₹1Cr</span><span>₹100Cr</span></div>
+            <!-- The slider is logarithmic across ₹1L-₹100Cr, so the four sizes a
+                 reader actually recognises are hard to land on by dragging. These
+                 are the same values, one tap away. -->
+            <div class="fc-chips" role="group" aria-label="Common portfolio sizes">
+              <button type="button" class="fc-chip" data-cap="500000">₹5L</button>
+              <button type="button" class="fc-chip" data-cap="1500000">₹15L</button>
+              <button type="button" class="fc-chip" data-cap="5000000">₹50L</button>
+              <button type="button" class="fc-chip" data-cap="10000000">₹1Cr</button>
+            </div>
+          </div>
+
+          <!-- V34.8 · THE VARIABLE THE READER ADDS THEMSELVES. Default ₹0, on
+               purpose: the page's headline claim is the lump-sum comparison, and
+               a SIP switched on by default would quietly restate it. It is also
+               the one input most people have a real number for, so it is the
+               natural first thing to make the model your own. -->
+          <div class="fc-field">
+            <div class="fc-field-head">
+              <label for="fc-sip-num">Monthly SIP <span class="fc-opt">optional</span></label>
+              <span class="fc-valpill" id="fc-sip-pill">₹0</span>
+            </div>
+            <div class="fc-inputwrap has-pre">
+              <span class="fc-pre">₹</span>
+              <input type="text" id="fc-sip-num" inputmode="numeric" value="0" aria-label="Monthly SIP contribution in rupees">
+            </div>
+            <input type="range" class="fc-range" id="fc-sip-rng" min="0" max="200000" step="500" value="0" aria-label="Monthly SIP contribution">
+            <div class="fc-scale"><span>₹0</span><span>₹1,00,000</span><span>₹2,00,000</span></div>
+            <div class="fc-chips" role="group" aria-label="Common monthly SIP amounts">
+              <button type="button" class="fc-chip" data-sip="0">None</button>
+              <button type="button" class="fc-chip" data-sip="10000">₹10k</button>
+              <button type="button" class="fc-chip" data-sip="25000">₹25k</button>
+              <button type="button" class="fc-chip" data-sip="50000">₹50k</button>
+            </div>
           </div>
 
           <div class="fc-field">
@@ -665,12 +810,30 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <!-- RESULTS + CHART -->
       <div class="fc-right">
         <div class="card card-pad fade-up fc-res-card">
-          <div class="card-title" style="margin-bottom:16px;">After <span id="fc-yrs-echo">10</span> years, on ₹<span id="fc-cap-echo">10,00,000</span><span class="fc-basis">fees are the only difference modelled&nbsp;· before&nbsp;tax</span></div>
+          <div class="card-title" style="margin-bottom:16px;">After <span id="fc-yrs-echo">10</span> years, on ₹<span id="fc-cap-echo">15,00,000</span><span class="fc-basis" id="fc-basis">fees are the only difference modelled&nbsp;· before&nbsp;tax</span></div>
+          <!-- V34.8 · THE HEADLINE IS NOW THE LOSS, NOT THE SAVING.
+               Same arithmetic, opposite frame. "Saved ₹7.33L" reads as a bonus a
+               reader can decline; "₹7.33L never reaches you" names a sum that is
+               already leaving. The number is identical and the sign convention is
+               unchanged in the model — only the label, the colour and the
+               breakdown below it are new. The breakdown is the part that makes
+               the frame honest rather than merely louder: the gap is bigger than
+               the difference in fees, and the remainder is growth the drained
+               fees would themselves have earned. Both halves are computed, never
+               typed.
+               The favourable case is still reported honestly: on a small corpus
+               with a low AUM fee the flat plan can cost MORE, and the panel says
+               so in its own words (see render()). -->
           <div class="fc-kpis" aria-live="polite">
-            <div class="fc-kpi hero" id="fc-saved-kpi">
-              <div class="k-lbl" id="fc-saved-lbl">Wealth saved by switching</div>
+            <div class="fc-kpi hero loss" id="fc-saved-kpi">
+              <div class="k-lbl" id="fc-saved-lbl">Wealth lost to the percentage fee</div>
               <div class="k-val" id="fc-saved-val">—</div>
               <div class="k-meta" id="fc-saved-meta">—</div>
+              <div class="fc-split" id="fc-split" hidden>
+                <span class="fc-split-part"><i class="fc-sp-dot fees" aria-hidden="true"></i><b id="fc-split-fees">—</b><span>extra fees handed over</span></span>
+                <span class="fc-split-plus" aria-hidden="true">+</span>
+                <span class="fc-split-part"><i class="fc-sp-dot comp" aria-hidden="true"></i><b id="fc-split-comp">—</b><span>growth those fees never earned</span></span>
+              </div>
             </div>
             <div class="fc-kpi">
               <div class="k-lbl"><span class="swatch" id="sw-mf"></span>Traditional mutual fund</div>
@@ -687,6 +850,25 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <div class="fc-feestrip">
             <div class="fc-fee mf">Total AUM fees drained<b id="fc-mf-fees">—</b><span class="fc-feebar" aria-hidden="true"><i id="fc-feebar-mf"></i></span></div>
             <div class="fc-fee mfc">Total flat fees paid<span class="fc-feemult" id="fc-feemult" style="display:none;"></span><b id="fc-mfc-fees">—</b><span class="fc-feebar" aria-hidden="true"><i id="fc-feebar-mfc"></i></span></div>
+          </div>
+
+          <!-- V34.8 · THE SCENARIO IS THEIRS. A model somebody has adjusted is
+               worth more to them than the same model handed over finished, and
+               the cheapest way to say so is to READ THEIR INPUTS BACK as one
+               sentence they recognise, then let them keep it. The link encodes
+               every control in the query string and the page restores from it on
+               load, so what they built survives a refresh, a bookmark and a
+               send-to-yourself — which is what turns a slider session into
+               something they own rather than something they watched. -->
+          <div class="fc-yours" id="fc-yours">
+            <div class="fc-yours-head">
+              <span class="fc-yours-tag" id="fc-yours-tag">Starting point</span>
+              <button type="button" class="fc-yours-share" id="fc-share">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>
+                <span id="fc-share-txt">Copy this scenario</span>
+              </button>
+            </div>
+            <p class="fc-yours-body" id="fc-yours-body">—</p>
           </div>
         </div>
 
@@ -728,8 +910,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             <ul>
               <li><b>Traditional mutual fund (Scenario A):</b> the AUM fee is a percentage skimmed off the return every year, so the portfolio compounds at <code>return − AUM fee</code>. Because it's a percentage of your whole corpus, the rupee cost grows as you do.</li>
               <li><b>MindForge flat fee (Scenario B):</b> the portfolio compounds at the full <code>return</code>, then a fixed annual amount (<code>monthly fee × 12</code>) is deducted at the end of each year. The fee never scales with your corpus.</li>
+              <li><b>Monthly SIP (optional, both scenarios):</b> this engine compounds once a year, so a monthly contribution is modelled as <code>SIP × 12</code> added at the <em>end</em> of each year — an ordinary annuity, and the conservative reading. The identical amount is paid into both portfolios, and because the AUM fee is charged on each year's <em>opening</em> balance, a contribution made at year end is not charged a fee for that year either.</li>
             </ul>
-            "Wealth saved by switching" is simply the difference between the two final corpuses. On smaller portfolios with a low AUM fee, a flat fee can occasionally cost more — the calculator shows that honestly.
+            <p style="margin-top:10px;">The headline figure is the difference between the two final corpuses. It is shown as a <b>loss</b> rather than a saving because that is the direction the money actually moves: a percentage fee is levied every year on everything you hold, whether or not you do anything. It splits into two parts —</p>
+            <ul>
+              <li><b>Extra fees handed over</b> — total AUM fees minus total flat fees, in plain rupees.</li>
+              <li><b>Growth those fees never earned</b> — the remainder, derived by subtraction so the two halves always sum to the headline. Money taken out in year 2 cannot compound in years 3 to 10, and on a long horizon this is the larger half.</li>
+            </ul>
+            <p style="margin-top:10px;">On smaller portfolios with a low AUM fee a flat fee can genuinely cost more, and the panel says so in those words rather than hiding the case. Nothing here is a forecast: the return you type is applied identically to both scenarios, so the only thing this page ever compares is <em>fee structure</em>.</p>
           </div>
         </details>
       </div>
@@ -814,7 +1002,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     ret:   { num:'fc-return-num', rng:'fc-return-rng', pill:'fc-return-pill', min:0, max:50, step:0.5, kind:'pct' },
     years: { num:'fc-years-num',  rng:'fc-years-rng',  pill:'fc-years-pill',  min:1, max:40, step:1, kind:'yrs' },
     aum:   { num:'fc-aum-num',    rng:'fc-aum-rng',    pill:'fc-aum-pill',    min:0, max:5, step:0.05, kind:'pct' },
-    flat:  { num:'fc-flat-num',   rng:'fc-flat-rng',   pill:'fc-flat-pill',   min:499, max:24999, step:50, kind:'rupee' }
+    flat:  { num:'fc-flat-num',   rng:'fc-flat-rng',   pill:'fc-flat-pill',   min:499, max:24999, step:50, kind:'rupee' },
+    // V34.8 — LINEAR, unlike `invest`. A SIP's useful range is ₹0-₹2,00,000, two
+    // orders of magnitude rather than four, so a linear track puts ₹25,000
+    // roughly an eighth of the way along instead of burying the whole retail
+    // range in the first pixel. `min:0` is deliberate and is the default: the
+    // page's headline claim is the lump-sum comparison, and a SIP switched on
+    // for the reader would quietly restate it.
+    sip:   { num:'fc-sip-num',    rng:'fc-sip-rng',    pill:'fc-sip-pill',    min:0, max:200000, step:500, kind:'rupee' }
   };
 
   var el = {};
@@ -886,23 +1081,42 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   // ── core math ──
   function compute(v){
     var P = v.invest, r = v.ret/100, years = Math.round(v.years), aum = v.aum/100, annualFee = Math.round(v.flat)*12;
+    /* V34.8 — the SIP is added ONCE A YEAR, at the end of the year, for the same
+       reason the flat fee is deducted there: this model compounds annually, and
+       mixing a monthly contribution into a yearly engine would overstate the
+       first year's growth. It is therefore an ordinary annuity — the
+       conservative reading — and the method note says so in those words.
+       The AUM fee is charged on the OPENING balance, so a contribution made at
+       the end of a year is not charged a fee for that year either. Both
+       scenarios receive the identical contribution; the only thing that differs
+       between them remains the fee structure, which is the claim this page
+       makes and must keep making. */
+    var sipMonthly = Math.round(v.sip||0), sipAnnual = sipMonthly*12;
     var mfRate = r - aum;
     var labels = ['Now'], mfSeries = [P], mfcSeries = [P];
     var fundBal = P, mfcBal = P, aumFeesPaid = 0;
     for(var y=1; y<=years; y++){
       aumFeesPaid += fundBal * aum;      // fee skimmed on the corpus for the year
-      fundBal = fundBal * (1 + mfRate);
-      mfcBal = mfcBal * (1 + r) - annualFee;
+      fundBal = fundBal * (1 + mfRate) + sipAnnual;
+      mfcBal = mfcBal * (1 + r) - annualFee + sipAnnual;
       if(mfcBal < 0) mfcBal = 0;
       labels.push(y===1?'Yr 1':('Yr '+y));
       mfSeries.push(fundBal);
       mfcSeries.push(mfcBal);
     }
+    /* The gap is LARGER than the difference in fees, and the remainder is the
+       part worth naming: growth the drained fees would themselves have earned
+       had they stayed invested. Deriving it by subtraction rather than modelling
+       it separately is what guarantees the two halves always sum to the headline
+       — a second model would be free to disagree with the first. */
+    var gap = mfcBal - fundBal, feeDiff = aumFeesPaid - (annualFee*years);
     return {
       P:P, years:years, mfRate:mfRate, r:r, aum:aum, annualFee:annualFee,
+      sipMonthly:sipMonthly, sipAnnual:sipAnnual, contributed:P + sipAnnual*years,
       labels:labels, mfSeries:mfSeries, mfcSeries:mfcSeries,
       mfFinal:fundBal, mfcFinal:mfcBal,
-      saved: mfcBal - fundBal,
+      saved: gap,
+      feeDiff: feeDiff, forgoneGrowth: gap - feeDiff,
       aumFeesPaid: aumFeesPaid, flatFeesPaid: annualFee*years
     };
   }
@@ -1166,7 +1380,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
     // echoes
     document.getElementById('fc-yrs-echo').textContent = d.years;
-    document.getElementById('fc-cap-echo').textContent = grp(Math.round(d.P));
+    /* V34.8 — with a SIP running, "on ₹15,00,000" names a third of what actually
+       went in, so the echo carries the contribution too. The basis line beside it
+       gains a clause for the same reason: a reader has to be able to see that the
+       SIP is paid into BOTH scenarios, or the comparison looks rigged. */
+    document.getElementById('fc-cap-echo').textContent = grp(Math.round(d.P)) +
+      (d.sipMonthly > 0 ? ' + ₹' + grp(d.sipMonthly) + '/mo' : '');
+    var basisEl = document.getElementById('fc-basis');
+    if(basisEl) basisEl.textContent = d.sipMonthly > 0
+      ? 'same SIP paid into both\u00A0· fees are the only difference modelled\u00A0· before\u00A0tax'
+      : 'fees are the only difference modelled\u00A0· before\u00A0tax';
 
     // MF + MindForge finals
     document.getElementById('fc-mf-val').textContent = compactInr(d.mfFinal);
@@ -1200,24 +1423,55 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       }
     } catch(e){}
 
-    // hero saved
+    /* ── V34.8 · HEADLINE = THE LOSS ─────────────────────────────────────────
+       Identical arithmetic to the old "wealth saved" panel; what changed is
+       which end of the same subtraction is named. A reader who is told they
+       would SAVE ₹7.33L hears an optional bonus. A reader who is told ₹7.33L
+       of their own compounding does not reach them hears a sum already in
+       motion, and that is the truthful description of a fee charged annually
+       on everything they own.
+       Three states, and the third is why this stays honest:
+         loss  the % structure costs more  → red, broken into its two parts
+         even  within ±₹1 of a wash        → neutral, said plainly
+         neg   the FLAT plan costs more    → amber, and the panel says so */
     var kpi=document.getElementById('fc-saved-kpi'), lbl=document.getElementById('fc-saved-lbl'),
-        val=document.getElementById('fc-saved-val'), meta=document.getElementById('fc-saved-meta');
-    var saved=d.saved;
-    if(saved >= 0){
-      kpi.classList.remove('neg');
-      lbl.textContent='Wealth saved by switching';
-      val.textContent='+'+compactInr(saved);
+        val=document.getElementById('fc-saved-val'), meta=document.getElementById('fc-saved-meta'),
+        split=document.getElementById('fc-split');
+    var saved=d.saved, yrs=d.years+' year'+(d.years>1?'s':'');
+    if(saved > 1){
+      kpi.classList.add('loss'); kpi.classList.remove('neg');
+      lbl.textContent='Wealth lost to the percentage fee';
+      val.textContent='−'+compactInr(saved);
       var pctMore = d.mfFinal>0 ? (saved/d.mfFinal*100) : 0;
       meta.textContent = pctMore>=0.5
-        ? ('That’s '+pctMore.toFixed(pctMore<10?1:0)+'% more wealth on the same capital over '+d.years+' year'+(d.years>1?'s':'')+'.')
-        : ('Extra you keep over '+d.years+' year'+(d.years>1?'s':'')+' by avoiding the AUM drag.');
+        ? ('Over '+yrs+', '+pctMore.toFixed(pctMore<10?1:0)+'% of your final corpus goes to the fee structure — not to the market, and not to you.')
+        : ('That is what the AUM structure costs you over '+yrs+' on identical gross returns.');
+      if(split){
+        // Only shown when BOTH halves are meaningful; a decomposition where one
+        // side rounds to nothing explains less than the single number above it.
+        if(d.feeDiff > 1 && d.forgoneGrowth > 1){
+          document.getElementById('fc-split-fees').textContent = compactInr(d.feeDiff);
+          document.getElementById('fc-split-comp').textContent = compactInr(d.forgoneGrowth);
+          split.hidden = false;
+        } else { split.hidden = true; }
+      }
+    } else if(saved >= -1){
+      kpi.classList.remove('loss'); kpi.classList.remove('neg');
+      lbl.textContent='The two structures break even here';
+      val.textContent=compactInr(0);
+      meta.textContent='At this size, horizon and fee, a flat subscription and a '+(d.aum*100).toFixed(2).replace(/\.?0+$/,'')+'% AUM fee cost you the same. Above this size the flat fee pulls ahead.';
+      if(split) split.hidden = true;
     } else {
-      kpi.classList.add('neg');
+      kpi.classList.add('neg'); kpi.classList.remove('loss');
       lbl.textContent='Flat fee costs more here';
       val.textContent='−'+compactInr(Math.abs(saved));
       meta.textContent='At this size & fee, the % AUM fee is cheaper. Flat fees win as your corpus grows — try a longer horizon or bigger investment.';
+      if(split) split.hidden = true;
     }
+
+    // ── V34.8 · read their own scenario back to them, in one sentence ──
+    try{ paintYours(d, v); }catch(e){}
+    try{ paintChips(); }catch(e){}
 
     buildChart(d);
     chartNote(d);          // V29.4 — derived caption, both views
@@ -1319,6 +1573,174 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   });
 
   // initial paint
+  /* ══════════════════════════════════════════════════════════════════════
+     V34.8 — SMART DEFAULTS, ONE-TAP VALUES, AND A SCENARIO THE READER OWNS
+     ----------------------------------------------------------------------
+     DEFAULTS is the single source of truth for "what this page assumed for
+     you". The markup carries the same five numbers so a no-JS reader sees a
+     consistent page, and the reset button, the "Starting point" tag and the
+     homepage's anchor figure are all derived from THIS object rather than
+     from a second copy of it. A default nobody can name is a nudge nobody can
+     audit, which is the line this page tries not to cross.
+     ══════════════════════════════════════════════════════════════════════ */
+  var DEFAULTS = { invest:1500000, ret:15, years:10, aum:2, flat:999, sip:0 };
+  // The query-string keys, kept short because the whole scenario has to survive
+  // being pasted into a chat window.
+  var URLKEYS = { invest:'c', ret:'r', years:'y', aum:'a', flat:'f', sip:'s' };
+
+  function isDefaultState(v){
+    return Object.keys(DEFAULTS).every(function(k){
+      return Math.abs((v[k]||0) - DEFAULTS[k]) < 0.001;
+    });
+  }
+
+  function setVal(k, raw, doRender){
+    var c = CFG[k], val = snapAny(Number(raw), c);
+    setRng(k, val);
+    el[k].num.value = numText(val, c);
+    setPillAndEcho(k, c, val);
+    if(doRender !== false) render(true);
+    return val;
+  }
+
+  /* Chips reflect state rather than merely setting it: a chip that lights up
+     only when the slider actually sits on its value can never claim a size the
+     model is not using. Both groups are painted from the same read. */
+  function paintChips(){
+    var v = readAll();
+    document.querySelectorAll('.fc-chip').forEach(function(b){
+      var cap = b.getAttribute('data-cap'), sip = b.getAttribute('data-sip');
+      var on = cap !== null ? Math.abs(v.invest - Number(cap)) < 1
+             : sip !== null ? Math.abs(v.sip    - Number(sip)) < 1
+             : false;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  /* The scenario, in the reader's own numbers. Two jobs: it proves the model
+     used exactly what they set (nothing hidden, nothing rounded away), and it
+     gives the thing they built a name — "Your scenario" — that the default
+     state deliberately does not get. */
+  function paintYours(d, v){
+    var tag = document.getElementById('fc-yours-tag'),
+        body = document.getElementById('fc-yours-body'),
+        reset = document.getElementById('fc-reset');
+    if(!body) return;
+    var mine = !isDefaultState(v);
+    if(tag){
+      tag.textContent = mine ? 'Your scenario' : 'Starting point';
+      tag.classList.toggle('mine', mine);
+    }
+    if(reset) reset.hidden = !mine;
+    var sipBit = d.sipMonthly > 0
+      ? (' plus <b>₹' + grp(d.sipMonthly) + '</b> every month')
+      : '';
+    var totalIn = d.sipMonthly > 0
+      ? (' You put in <b>' + inr(d.contributed) + '</b> in total.')
+      : '';
+    var verdict;
+    if(d.saved > 1){
+      verdict = ' A ' + (d.aum*100).toFixed(2).replace(/\.?0+$/,'') + '% AUM fee takes <b>' +
+                compactInr(d.saved) + '</b> of that away; a flat ₹' + grp(Math.round(v.flat)) +
+                ' a month does not.';
+    } else if(d.saved >= -1){
+      verdict = ' At this size the two fee structures cost you the same.';
+    } else {
+      verdict = ' At this size the percentage fee is actually the cheaper of the two — the flat plan costs <b>' +
+                compactInr(Math.abs(d.saved)) + '</b> more.';
+    }
+    body.innerHTML = (mine ? 'You set ' : 'We started you at ') +
+      '<b>' + inr(d.P) + '</b>' + sipBit +
+      ', growing at <b>' + (d.r*100).toFixed(1).replace(/\.0$/,'') + '%</b> a year for <b>' +
+      d.years + ' year' + (d.years>1?'s':'') + '</b>.' + totalIn + verdict;
+  }
+
+  /* State in the URL. The point is not the link — it is that a model somebody
+     spent two minutes adjusting stops being a session and becomes a thing they
+     can keep, send, and come back to. Only values that DIFFER from the defaults
+     are written, so the canonical page URL stays clean and a shared link says
+     exactly what its sender changed. */
+  function scenarioURL(){
+    var v = readAll(), u = new URL(window.location.href);
+    u.search = ''; u.hash = '';
+    Object.keys(URLKEYS).forEach(function(k){
+      if(Math.abs((v[k]||0) - DEFAULTS[k]) >= 0.001) u.searchParams.set(URLKEYS[k], String(v[k]));
+    });
+    return u.toString();
+  }
+
+  function applyURLState(){
+    var p;
+    try { p = new URLSearchParams(window.location.search); } catch(e){ return false; }
+    var touched = false;
+    Object.keys(URLKEYS).forEach(function(k){
+      var raw = p.get(URLKEYS[k]);
+      if(raw === null || raw === '') return;
+      var n = Number(raw);
+      if(!isFinite(n)) return;                  // a junk param is ignored, never applied
+      setVal(k, n, false);                      // clamped and snapped by snapAny
+      touched = true;
+    });
+    return touched;
+  }
+
+  function wireOwnership(){
+    document.querySelectorAll('.fc-chip').forEach(function(b){
+      b.addEventListener('click', function(){
+        var cap = b.getAttribute('data-cap'), sip = b.getAttribute('data-sip');
+        if(cap !== null) setVal('invest', Number(cap));
+        else if(sip !== null) setVal('sip', Number(sip));
+      });
+    });
+    var reset = document.getElementById('fc-reset');
+    if(reset) reset.addEventListener('click', function(){
+      Object.keys(DEFAULTS).forEach(function(k){ setVal(k, DEFAULTS[k], false); });
+      render(true);
+      // Put the address bar back too, or a refresh would silently undo the reset.
+      try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
+    });
+    var share = document.getElementById('fc-share'), shareTxt = document.getElementById('fc-share-txt');
+    if(share) share.addEventListener('click', function(){
+      var url = scenarioURL();
+      // Keep the address bar in step whether or not the clipboard is available,
+      // so the reader always ends up with something they can copy by hand.
+      try{ history.replaceState(null,'',url); }catch(e){}
+      function ok(){
+        share.classList.add('done');
+        if(shareTxt) shareTxt.textContent = 'Link copied';
+        clearTimeout(share._t);
+        share._t = setTimeout(function(){
+          share.classList.remove('done');
+          if(shareTxt) shareTxt.textContent = 'Copy this scenario';
+        }, 2200);
+      }
+      function fallback(){
+        if(shareTxt) shareTxt.textContent = 'Link is in the address bar';
+        clearTimeout(share._t);
+        share._t = setTimeout(function(){ if(shareTxt) shareTxt.textContent = 'Copy this scenario'; }, 2600);
+      }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(ok).catch(fallback);
+      } else { fallback(); }
+    });
+  }
+
+  /* The hero's loss figure. Written by the model, not typed into the markup —
+     the recurring failure on this site is a hand-written label beside a
+     machine-written number, and this is the same sentence carrying both. It
+     always states the DEFAULT scenario regardless of what the sliders are set
+     to, because the headline is a claim about ₹15,00,000 and must stay true to
+     the number it names. */
+  function paintHeroLoss(){
+    var host = document.getElementById('fc-hero-loss');
+    if(!host) return;
+    var d = compute(DEFAULTS);
+    if(!(d.saved > 0)) return;                 // never assert a loss that isn't one
+    var lakh = d.saved/100000;
+    host.textContent = '₹' + (lakh>=100 ? (lakh/100).toFixed(2)+' crore' : lakh.toFixed(2)+' lakh');
+  }
+
   function init(){
     if(typeof Chart === 'undefined'){
       var w=document.getElementById('fc-chart');
@@ -1330,7 +1752,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       el[k].num.value = numText(val,c);
       setPillAndEcho(k,c,val);
     });
+    try{ applyURLState(); }catch(e){}
+    try{ wireOwnership(); }catch(e){}
+    try{ paintHeroLoss(); }catch(e){}
     render(false);
+    try{ paintChips(); }catch(e){}
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
   else init();

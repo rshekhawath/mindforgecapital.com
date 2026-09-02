@@ -556,7 +556,22 @@
 // The other four edited pages — scores/index, scores/company, screener/index and
 // signup — are network-first HTML and need nothing here beyond the token they
 // already carry.
-const CACHE = 'mfc-v79';
+// V34.8 -> mfc-v80. index.html is a PRECACHED DOCUMENT — the offline navigation
+// fallback — and this release rewrites a large part of it: a new free-tools
+// section ahead of the pricing, the pricing ladder reordered to descend from
+// ₹1,499, a fee-anchor panel above the cards, a ten-year cost line inside each
+// card, the first `?strategy=` links this site has ever shipped, and the
+// "Honest pricing" card reframed. addAll runs on INSTALL and not on activation,
+// so the precache is only rewritten when this NAME changes: left at v79 an
+// installed-app user opening offline would keep a shell with the old ascending
+// ladder, no free-tools section, and CTAs that cannot pre-select a strategy —
+// which is also the state that makes signup's 33% step unreachable.
+// login.html is unchanged this release but shares the cache and is simply
+// re-installed alongside.
+// No shared asset moved, so the ?v tokens stay put: mfc-finish.css and
+// mfc-chrome.js at 3400/3390, mfc-dir.css at 3370. calculator.html and
+// signup.html also changed and are network-first HTML — they need nothing here.
+const CACHE = 'mfc-v80';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
