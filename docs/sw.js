@@ -571,7 +571,18 @@
 // No shared asset moved, so the ?v tokens stay put: mfc-finish.css and
 // mfc-chrome.js at 3400/3390, mfc-dir.css at 3370. calculator.html and
 // signup.html also changed and are network-first HTML — they need nothing here.
-const CACHE = 'mfc-v80';
+// V34.9 -> mfc-v81. index.html is the PRECACHED offline navigation fallback and
+// changes again this release: the fee-anchor panel gains two proportional bars,
+// a count-up and the aurora hairline; the free-tools cards gain the page's own
+// reveal-stagger and the magnetic shine; the section rejoins the site's padding
+// ladder; and .strat-card's radius is unified at 18px. addAll runs on INSTALL
+// and not on activation, so left at v80 an installed-app user opening offline
+// would keep a shell with none of it.
+// No shared asset moved: mfc-finish.css stays at 3400, mfc-chrome.js at 3390,
+// mfc-dir.css at 3370. calculator.html, signup.html, dashboard.html and
+// screener/index.html also changed and are network-first HTML — they need
+// nothing here.
+const CACHE = 'mfc-v81';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

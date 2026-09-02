@@ -1993,7 +1993,18 @@ function paintFilterCoverage(){
     let note=grp.querySelector(".filter-cov");
     if(p==null||p>=THIN){if(note)note.remove();return;}
     if(!note){note=document.createElement("div");note.className="filter-cov";grp.appendChild(note);}
-    note.innerHTML=`<span class="fc-meter"><i style="width:${(p*100).toFixed(1)}%"></i></span>`
+    /* V34.9 — A NON-ZERO SHARE MUST ALWAYS PAINT.
+       This file's own print block already states the principle — "a coverage bar
+       with no fill states the opposite of what it means" — and then only enforced
+       it on paper. On screen the same bars are 26px and 34px wide, so a genuinely
+       small share rounds to nothing: measured at 1280 and 1440, coverages of 2.0%,
+       3.4%, 3.8%, 5.4% and 6.3% painted 0.52px, 0.88px, 0.98px, 1.39px and 1.63px
+       — a reader is told "only 2% of stocks report this" beside a bar that shows
+       zero. The floor is applied at the point the width is WRITTEN and only when
+       the value is non-zero, so a true 0% still reads as empty and the proportion
+       above the floor is untouched. */
+    const _minW = p>0 ? ';min-width:2px' : '';
+    note.innerHTML=`<span class="fc-meter"><i style="width:${(p*100).toFixed(1)}%${_minW}"></i></span>`
                   +`<span>only <b>${covFmt(p)}</b> of stocks report this</span>`;
   });
 }
@@ -2260,7 +2271,8 @@ function buildColPanel(){
   document.getElementById("colToggleGrid").innerHTML=cols.map(c=>{
     const p=c.key==="name"?1:covPct(c.key);
     const thin=(p!=null&&p<THIN);
-    const meter=p==null?"":`<span class="ct-meter${thin?" thin":""}" aria-hidden="true"><i style="width:${(p*100).toFixed(1)}%"></i></span>`
+    /* V34.9 — same floor as .fc-meter above, same reason. */
+    const meter=p==null?"":`<span class="ct-meter${thin?" thin":""}" aria-hidden="true"><i style="width:${(p*100).toFixed(1)}%${p>0?";min-width:2px":""}"></i></span>`
                           +`<span class="ct-pct${thin?" thin":""}">${covFmt(p)}</span>`;
     const tip=p==null?c.label
       :`${c.label} — reported by ${covFmt(p)} of the ${COVERAGE.__n.toLocaleString("en-IN")} tracked stocks`;

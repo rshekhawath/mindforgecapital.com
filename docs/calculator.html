@@ -513,6 +513,16 @@ footer::before { content:""; position:absolute; top:-0.5px; left:0; right:0; hei
 
 .fc-split{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px;
   margin-top:12px; padding-top:11px; border-top:0.5px solid var(--border2); }
+/* V34.9 — the split as one bar. flex-basis:100% so it always takes its own
+   line above the two legends, at every width, rather than wrapping between
+   them. Grows from 0 like every other bar on this site (V23.5). */
+.fc-sbar{ flex:0 0 100%; display:flex; height:8px; border-radius:99px; overflow:hidden;
+  background:rgba(220,38,38,.10); margin-bottom:3px; }
+.fc-sseg{ display:block; height:100%; width:0; transition:width .75s cubic-bezier(.22,1,.36,1); }
+.fc-sseg.fees{ background:var(--data-bad); }
+.fc-sseg.comp{ background:var(--gold,#d97706); }
+@media (prefers-reduced-motion: reduce){ .fc-sseg{ transition:none; } }
+@media print{ .fc-sbar, .fc-sseg{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .fc-split[hidden]{ display:none; }
 .fc-split-part{ display:inline-flex; align-items:baseline; gap:6px; font-size:11.5px; color:var(--text3); min-width:0; }
 .fc-split-part b{ font-size:13.5px; font-weight:800; color:var(--text2); font-variant-numeric:tabular-nums; }
@@ -830,6 +840,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
               <div class="k-val" id="fc-saved-val">—</div>
               <div class="k-meta" id="fc-saved-meta">—</div>
               <div class="fc-split" id="fc-split" hidden>
+                <!-- V34.9 · one bar, two segments, drawn to the headline.
+                     The two halves were legible but not COMPARABLE — which is
+                     larger, and by how much, took arithmetic. A single stacked
+                     bar answers it before the words are read, and it carries the
+                     release's most counter-intuitive fact: past about eight
+                     years the forgone COMPOUNDING overtakes the fees themselves.
+                     Segments are drawn from the same two numbers printed beside
+                     them, so the bar cannot drift from the figures. -->
+                <span class="fc-sbar" aria-hidden="true"><i class="fc-sseg fees" id="fc-sseg-fees"></i><i class="fc-sseg comp" id="fc-sseg-comp"></i></span>
                 <span class="fc-split-part"><i class="fc-sp-dot fees" aria-hidden="true"></i><b id="fc-split-fees">—</b><span>extra fees handed over</span></span>
                 <span class="fc-split-plus" aria-hidden="true">+</span>
                 <span class="fc-split-part"><i class="fc-sp-dot comp" aria-hidden="true"></i><b id="fc-split-comp">—</b><span>growth those fees never earned</span></span>
@@ -1453,6 +1472,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           document.getElementById('fc-split-fees').textContent = compactInr(d.feeDiff);
           document.getElementById('fc-split-comp').textContent = compactInr(d.forgoneGrowth);
           split.hidden = false;
+          /* V34.9 — segments from the SAME two numbers, as a share of their own
+             sum, so the bar is exactly the figures beside it and the two
+             widths always total 100%. */
+          var _sfe = document.getElementById('fc-sseg-fees'), _sco = document.getElementById('fc-sseg-comp');
+          var _tot = d.feeDiff + d.forgoneGrowth;
+          if(_sfe && _sco && _tot > 0){
+            var _pf = d.feeDiff/_tot*100;
+            _sfe.style.width = _pf.toFixed(2)+'%';
+            _sco.style.width = (100-_pf).toFixed(2)+'%';
+          }
         } else { split.hidden = true; }
       }
     } else if(saved >= -1){

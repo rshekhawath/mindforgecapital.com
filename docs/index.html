@@ -827,7 +827,17 @@ html[data-theme="dark"] .hv-tab.active {
 .strat-card {
   background: var(--ink2);
   border: 0.5px solid var(--border);
-  border-radius: 20px;
+  /* V34.9 — 18px, not 20px. This card was the only one on the page whose corner
+     changed with the viewport: 18px above 1101px (set inside the desktop DENSITY
+     block below, alongside its padding) and 20px everywhere else, while
+     .why-card, .trade-off, .fee-lad, .fee-anchor and .gift-card are 18px at
+     every width. The mismatch is most visible on a tablet, where the strategy
+     cards stack into one 460px column DIRECTLY under the 18px fee-anchor and
+     trade-off panels. Radius is not density, so it belongs here rather than in a
+     width-gated block; the desktop rule keeps its padding change and drops the
+     radius it had bundled in. Above 1101px nothing moves — that band was already
+     18px. */
+  border-radius: 18px;
   padding: 32px;
   display: flex; flex-direction: column;
   position: relative; overflow: hidden;
@@ -5042,13 +5052,25 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
      all four would have been the easy sentence and the false one.
      ═══════════════════════════════════════════════════════════════════════ -->
 <style id="mf-v348-gifts">
-.gifts{ padding:70px 0 20px; }
+/* V34.9 — this section was the one on the page that ignored the site's own
+   section ladder: 70/20 against a 64/64 house rule at desktop, and 46/12 on a
+   phone where every sibling steps to 32 (it was not in the V27.6 mobile-density
+   list). The top now matches its siblings exactly at every breakpoint. The
+   bottom is deliberately tighter and stays that way — this section exists to be
+   read immediately before the prices, and 128px of air between the giving and
+   the asking breaks the sequence the whole block is arranged to make. Reduced
+   on ONE axis, by a stated amount, rather than being off in both directions by
+   accident. */
+.gifts{ padding:64px 0 40px; }
 .gifts-header{ max-width:760px; }
 .gifts-header h2{ margin-top:6px; }
 .gifts-lede{ font-size:15px; color:var(--text2); font-weight:300; line-height:1.7; margin-top:14px; }
 .gift-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:30px; }
+/* radius 18, not 16: every other card on this page — .strat-card, .why-card,
+   .trade-off, .fee-lad, .fee-anchor — is 18px, and these four sat next to them
+   at 16. One value out of six is a mistake, not a variation. */
 .gift-card{ position:relative; display:flex; flex-direction:column; padding:22px 22px 20px;
-  border-radius:16px; background:var(--ink2); border:0.5px solid var(--border);
+  border-radius:18px; background:var(--ink2); border:0.5px solid var(--border);
   box-shadow:0 1px 2px rgba(15,23,42,.04), 0 18px 40px -30px rgba(26,80,216,.24);
   text-decoration:none; color:inherit; overflow:hidden;
   transition:transform .25s cubic-bezier(.22,.8,.2,1), border-color .25s, box-shadow .25s; }
@@ -5081,13 +5103,40 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
 .gift-terms span.gt{ display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--text2); }
 .gift-terms span.gt::before{ content:''; width:14px; height:14px; flex:0 0 auto;
   background:no-repeat center/14px 14px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23059669' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); }
+/* ── V34.9 · the two idioms these cards were missing ──
+   They already carry the guided edge (V14.8) and the hover lift. What they did
+   not have is the site's ENTRANCE — every other card grid here cascades rather
+   than appearing as a block — and the magnetic-light shine (V3.4) that every
+   .strat-card 400px below has.
+   THE CASCADE USES THIS PAGE'S OWN HOOK, not a second one. A first pass put
+   hardcoded transition-delays on :nth-child and it was wrong twice over: this
+   page already declares `.fade-up.reveal-stagger{transition-delay:var(--reveal-delay)}`
+   (used by the five .bf-stage steps at 80ms intervals), and revealFadeUps()
+   ALSO applies a setTimeout ladder of its own — so a CSS delay on top of it
+   staggers the same element twice, by different amounts depending on whether
+   the scroll handler or the IntersectionObserver got there first. The cards now
+   carry `reveal-stagger` and an inline --reveal-delay on the same 80ms ladder
+   the build-flow uses, which is the one mechanism this page actually has.
+   The shine is the same radial with the same two stops and the same .22s fade. */
+.gift-card .card-shine{
+  position:absolute; inset:0; pointer-events:none; border-radius:inherit; z-index:0;
+  background:radial-gradient(380px circle at var(--mx,50%) var(--my,50%),
+                             rgba(37,99,235,0.14), rgba(45,212,191,0.06) 35%, transparent 60%);
+  opacity:0; transition:opacity .22s ease; }
+.gift-card:hover .card-shine{ opacity:1; }
+/* the same stacking guard .strat-card uses, or the shine paints over the text */
+.gift-card > *:not(.card-shine){ position:relative; z-index:1; }
+
 @media (max-width:860px){ .gift-grid{ grid-template-columns:1fr; } }
-@media (max-width:768px){ .gifts{ padding:46px 0 12px; } }
+@media (max-width:768px){ .gifts{ padding:60px 0 36px; } }
 @media (prefers-reduced-motion: reduce){
   .gift-card, .gift-card::before{ transition:none; }
   .gift-card:hover{ transform:none; }
   .gift-card::before{ transform:scaleY(1); opacity:0; }
   .gift-card:hover::before, .gift-card:focus-visible::before{ opacity:1; }
+  /* no cascade and no shine, exactly as .strat-card resolves */
+  .gift-card.reveal-stagger{ transition-delay:0s !important; }
+  .gift-card .card-shine{ display:none; }
 }
 @media print{ .gift-tag, .gift-terms{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 </style>
@@ -5100,7 +5149,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
     </div>
 
     <div class="gift-grid">
-      <a class="gift-card fade-up" href="screener/">
+      <a class="gift-card fade-up reveal-stagger" href="screener/" style="--reveal-delay:0ms">
         <div class="gift-top"><span class="gift-tag">Free · no account</span></div>
         <div class="gift-name">Stock Scanner</div>
         <p class="gift-body">Filter the entire listed NSE universe on the fundamentals a factor model actually uses — valuation, profitability, growth and leverage — and open a full equity report on any name you find.</p>
@@ -5108,7 +5157,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
         <div class="gift-go">Open the Scanner →</div>
       </a>
 
-      <a class="gift-card fade-up" href="scores/">
+      <a class="gift-card fade-up reveal-stagger" href="scores/" style="--reveal-delay:80ms">
         <div class="gift-top"><span class="gift-tag">Free · no account</span></div>
         <div class="gift-name">Integrity Score</div>
         <p class="gift-body">Every listed NSE company graded 0–100 on Quality — profitability and balance-sheet health — and on Value, how cheaply it is priced. The same lenses the models rank on, published for stocks we do not hold.</p>
@@ -5116,7 +5165,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
         <div class="gift-go">Look up a company →</div>
       </a>
 
-      <a class="gift-card fade-up" href="fii-dii/">
+      <a class="gift-card fade-up reveal-stagger" href="fii-dii/" style="--reveal-delay:160ms">
         <div class="gift-top"><span class="gift-tag">Free · no account</span></div>
         <div class="gift-name">FII/DII activity &amp; the monthly Factor Report</div>
         <p class="gift-body">Daily foreign and domestic institutional flows, straight from the exchange, plus a monthly write-up of which factors actually paid in Indian equities and which did not — including the months ours did not.</p>
@@ -5124,7 +5173,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
         <div class="gift-go">See this month →</div>
       </a>
 
-      <a class="gift-card fade-up" href="multiasset.html">
+      <a class="gift-card fade-up reveal-stagger" href="multiasset.html" style="--reveal-delay:240ms">
         <div class="gift-top"><span class="gift-tag reg">Free · free account</span></div>
         <div class="gift-name">MindForge MultiAsset</div>
         <p class="gift-body">A complete model portfolio, not a sample of one: the full allocation across eight assets, rebalanced monthly, delivered the same way our paid books are. It is free permanently — the one thing it asks for is a free registration, because the picks are sent to you.</p>
@@ -5336,6 +5385,49 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
     /* The panel's tint is the message; without this it prints as an empty box. */
     @media print{ .fee-anchor, .fa-fig-hero{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 
+    /* ── V34.9 · the aurora hairline, in this panel's own key ──
+       The V30.7 idiom (a 1px gradient along the top edge, brightening on hover)
+       is on six dashboard panels and every strategy card. This panel is the one
+       new surface big enough to carry it, and it takes amber rather than blue
+       because the whole block is amber — the hairline is meant to read as the
+       same object's edge, not as a blue element sitting on an amber one. */
+    .fee-anchor{ position:relative; }
+    .fee-anchor::before{
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      border-radius:18px 18px 0 0;
+      background:linear-gradient(90deg, transparent 0%, rgba(217,119,6,.55) 50%, transparent 100%);
+      opacity:.75; pointer-events:none; z-index:2; transition:opacity .25s ease; }
+    .fee-anchor:hover::before{ opacity:1; }
+
+    /* ── V34.9 · the two totals on one scale ──
+       .fc-feebar's geometry from the calculator, in this panel's colours. The
+       fills start at width:0 and are grown from data-w on reveal; a bar painted
+       at its final width has a dead transition (V23.5). */
+    .fa-scale{ margin-top:16px; padding-top:15px; border-top:0.5px solid rgba(217,119,6,.22);
+      display:flex; flex-direction:column; gap:9px; }
+    .fa-srow{ display:grid; grid-template-columns:86px minmax(0,1fr) auto; align-items:center; gap:11px; }
+    .fa-sk{ font-size:11px; font-weight:700; color:var(--text3); white-space:nowrap; }
+    .fa-strack{ height:9px; border-radius:99px; background:rgba(217,119,6,.12); overflow:hidden; min-width:0; }
+    .fa-sfill{ display:block; height:100%; width:0; border-radius:99px;
+      transition:width 1.1s cubic-bezier(.22,1,.36,1); }
+    .fa-sfill.aum{ background:linear-gradient(90deg,#b45309,#d97706); }
+    .fa-sfill.flat{ background:linear-gradient(90deg,var(--accent),#2dd4bf); }
+    .fa-sv{ font-size:12px; font-weight:800; color:var(--text2); font-variant-numeric:tabular-nums;
+      white-space:nowrap; }
+    .fa-scaleN{ font-size:11px; color:var(--text3); margin-top:9px; }
+    @media (max-width:620px){
+      .fa-srow{ grid-template-columns:74px minmax(0,1fr) auto; gap:8px; }
+      .fa-sk{ font-size:10.5px; }
+      .fa-sv{ font-size:11.5px; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .fa-sfill{ transition:none; }
+      .fee-anchor::before{ transition:none; }
+    }
+    @media print{
+      .fa-sfill, .fa-strack, .fee-anchor::before{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
+
     /* -- the price in the anchor's own units, inside each card -- */
     .strat-tenyr{ font-size:11.5px; line-height:1.5; color:var(--text3); margin:8px 0 14px;
       min-height:17px; }
@@ -5391,6 +5483,30 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
           <div class="fa-sub">Larger than the fees themselves, because money taken in year&nbsp;2 cannot compound in years 3&nbsp;to&nbsp;10.</div>
         </div>
       </div>
+
+      <!-- V34.9 · THE SAME TWO SUMS, SIDE BY SIDE ON ONE SCALE.
+           The figures above are comparable only by doing the division in your
+           head — which is the exact gap V28.3's trade-off strip closed for risk
+           and return, one section down. Two bars drawn to a SHARED maximum make
+           it a glance instead. This is the calculator's own .fc-feebar idiom
+           (V22.0) brought onto the homepage rather than a new invention, and
+           both widths are written by the same script that writes the numbers, so
+           a bar can never disagree with the figure above it.
+           The bars grow from width:0 on reveal — the site's bar idiom since
+           V23.5; painting them at their final width kills the transition. -->
+      <div class="fa-scale" id="fa-scale" aria-hidden="true">
+        <div class="fa-srow">
+          <span class="fa-sk">2% AUM fee</span>
+          <span class="fa-strack"><i class="fa-sfill aum" id="fa-bar-aum" data-w="100"></i></span>
+          <span class="fa-sv" id="fa-bar-aum-v">₹5,52,592</span>
+        </div>
+        <div class="fa-srow">
+          <span class="fa-sk">₹999 flat</span>
+          <span class="fa-strack"><i class="fa-sfill flat" id="fa-bar-flat" data-w="22"></i></span>
+          <span class="fa-sv" id="fa-bar-flat-v">₹1,19,880</span>
+        </div>
+      </div>
+      <p class="fa-scaleN" id="fa-scaleN">Both totals over the same ten years, drawn to the same scale.</p>
       <!-- The methodological caveat travels WITH the number, not two screens
            below it in the footer. A figure this large, on a SEBI-registered
            research site, has to say what it is at the point it is read. -->
@@ -5428,6 +5544,70 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
         // written from this one calculation rather than from a second copy.
         var wg = document.getElementById('why-anchor-gap');
         if(wg) wg.textContent = inr(gap);
+
+        /* ── V34.9 · the two totals on one scale ──
+           Widths and labels both come from THIS calculation, so a bar can never
+           disagree with the figure it sits under. The AUM bar is the maximum by
+           construction (it is the larger of the two whenever the panel makes its
+           claim at all), so it is the 100% reference. */
+        var flatTotal = D.flat*12*D.years;
+        var bA = document.getElementById('fa-bar-aum'), bF = document.getElementById('fa-bar-flat');
+        var vA = document.getElementById('fa-bar-aum-v'), vF = document.getElementById('fa-bar-flat-v');
+        var mx = Math.max(aumFees, flatTotal, 1);
+        if(bA) bA.setAttribute('data-w', (aumFees/mx*100).toFixed(1));
+        if(bF) bF.setAttribute('data-w', (flatTotal/mx*100).toFixed(1));
+        if(vA) vA.textContent = inr(aumFees);
+        if(vF) vF.textContent = inr(flatTotal);
+
+        /* ── V34.9 · count the two headline sums up on reveal ──
+           The site's signature move for a headline figure, and the one thing
+           this panel did not do. mfc-countup.js cannot be reused: it explicitly
+           refuses anything that is not a bare number, and these are grouped
+           rupees. Rules kept from that engine — animate ONCE, on entering view,
+           never under reduced motion, and always LAND on the exact string the
+           model produced rather than on a rounded frame.
+           The bars are grown by the same observer: both are a reveal, and firing
+           them together is what makes the panel read as one object arriving. */
+        var ANCHOR = document.getElementById('feeAnchor');
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        function grow(){
+          [bA,bF].forEach(function(b){ if(b) b.style.width = (b.getAttribute('data-w')||0) + '%'; });
+        }
+        function countTo(el, target){
+          if(!el) return;
+          var finalText = inr(target);
+          if(reduce || !target){ el.textContent = finalText; return; }
+          var t0 = null, DUR = 1100;
+          function frame(ts){
+            if(t0 === null) t0 = ts;
+            var p = Math.min(1, (ts - t0)/DUR);
+            // the site's standard ease-out; the last frame is written exactly
+            var e = 1 - Math.pow(1 - p, 3);
+            el.textContent = p >= 1 ? finalText : inr(target*e);
+            if(p < 1) requestAnimationFrame(frame);
+          }
+          requestAnimationFrame(frame);
+        }
+        function play(){
+          countTo(f, aumFees); countTo(g, gap);
+          // one frame later, so the transition has a 0 to start from
+          requestAnimationFrame(function(){ requestAnimationFrame(grow); });
+        }
+        if(!ANCHOR || typeof IntersectionObserver !== 'function'){ grow(); }
+        else {
+          var fired = false;
+          var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(en){
+              if(!en.isIntersecting || fired) return;
+              fired = true; io.disconnect(); play();
+            });
+          }, {threshold:0.25});
+          io.observe(ANCHOR);
+          /* Fail-safe: if the panel is already past (a deep link, a restored
+             scroll position) the observer still fires on the first callback, but
+             if anything prevents it the bars must not stay at zero. */
+          setTimeout(function(){ if(!fired){ fired = true; try{ io.disconnect(); }catch(e){} play(); } }, 2500);
+        }
         /* Each plan's own ten-year total, written into its card so the price is
            read against the anchor rather than against the plan beside it. The
            monthly figure is taken from STRAT_MONTHLY — the same table
@@ -7637,7 +7817,10 @@ function setDuration(durKey) {
 // index.html — the .card-shine CSS is in place but no JS was injecting the span).
 (function() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  document.querySelectorAll('.strat-card').forEach(function(card) {
+  // V34.9 — .gift-card joins the selector rather than getting its own copy of
+  // this loop. Both carry the same .card-shine CSS and the same stacking guard,
+  // so one attacher is correct for both and there is one place to maintain.
+  document.querySelectorAll('.strat-card, .gift-card').forEach(function(card) {
     if (card.querySelector('.card-shine')) return;  // idempotent
     var shine = document.createElement('span');
     shine.className = 'card-shine';
@@ -7959,7 +8142,7 @@ section[id]{ scroll-margin-top: 80px; }
    narrower cards stay comfortable. Falls back to the existing 2-col / 1-col rules
    at <=1100px / <=640px. */
 @media (min-width:1101px){
-  .strat-grid > .strat-card{ padding:22px 18px; border-radius:18px; }
+  .strat-grid > .strat-card{ padding:22px 18px; }   /* radius is now the base value */
   .strat-grid .strat-name{ font-size:19px; }
   .strat-grid .strat-universe{ font-size:11.5px; }
   .strat-grid .strat-desc{ font-size:12.5px; line-height:1.55; }
@@ -9027,6 +9210,12 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
   .how, .build-flow, .strategies, .why-mf, .team, .faq{
     padding-top:32px; padding-bottom:32px;
   }
+  /* V34.9 — .gifts belongs in the list above; it is a section like the rest and
+     was the only one still at its own value on a phone. Listed separately, not
+     merged into the selector, purely so its tighter BOTTOM survives: the
+     give-then-ask adjacency is deliberate and is the one thing about this
+     section's spacing that is not the house rule. */
+  .gifts{ padding-top:32px; padding-bottom:20px; }
   .mp-section{ padding-top:4px; }
   .social-proof{ padding-top:14px; padding-bottom:14px; }
 

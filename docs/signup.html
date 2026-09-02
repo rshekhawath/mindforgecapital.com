@@ -146,7 +146,33 @@ html[data-theme="dark"] .card-icon::after{
 .gg-note{font-size:12.5px;line-height:1.55;color:var(--text2);margin-top:7px;}
 .gg-note b{color:var(--white);font-weight:700;}
 .gg-note .gg-done{color:var(--data-strong);font-weight:700;}
-@media (prefers-reduced-motion: reduce){ .gg-bar > i{transition:none;} }
+/* ── V34.9 · the moment a step completes ──
+   A goal gradient's whole force is the reward at each marker, and this meter
+   crossed one silently: the dot changed colour and that was all. `.just-done`
+   is set for one beat by the paint routine when a step transitions INTO done,
+   so the ring pulses once at the moment it is earned and never on a re-render.
+   Two rings, not a scale on the dot itself: the dot already carries the check
+   mark, and scaling it would fight the .active dot's own 1.15 transform. */
+@keyframes gg-earn{
+  0%   { box-shadow:0 0 0 0 rgba(5,150,105,.45), 0 0 0 0 rgba(5,150,105,.28); }
+  60%  { box-shadow:0 0 0 7px rgba(5,150,105,0), 0 0 0 13px rgba(5,150,105,0); }
+  100% { box-shadow:0 0 0 0 rgba(5,150,105,0), 0 0 0 0 rgba(5,150,105,0); }
+}
+.step-item.just-done .step-dot{ animation:gg-earn .85s cubic-bezier(.22,1,.36,1); }
+/* the fill catches the same beat, so the bar and the dot read as one event */
+@keyframes gg-sheen{ from{ transform:translateX(-100%); } to{ transform:translateX(260%); } }
+.gg-bar{ position:relative; }
+.gg-bar.just-moved > i::after{
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.42) 50%, transparent);
+  transform:skewX(-18deg); animation:gg-sheen .9s cubic-bezier(.22,1,.36,1); }
+.gg-bar > i{ position:relative; overflow:hidden; }
+
+@media (prefers-reduced-motion: reduce){
+  .gg-bar > i{transition:none;}
+  .step-item.just-done .step-dot{ animation:none; }
+  .gg-bar.just-moved > i::after{ animation:none; display:none; }
+}
 @media print{ .gg-bar > i, .step-item.done .step-dot, .step-item.active .step-dot{
   -webkit-print-color-adjust:exact;print-color-adjust:exact;} }
 
@@ -948,10 +974,21 @@ function resetForm() {
   }
 
   function setStep(el, state){
+    /* V34.9 — the pulse fires only on a real transition INTO done. paint() runs
+       on every keystroke, so keying off the end state alone would re-pulse the
+       completed step on each character typed. */
+    var wasDone = el.classList.contains('done');
     el.classList.remove('done','active');
     if(state) el.classList.add(state);
     if(state === 'active') el.setAttribute('aria-current','step');
     else el.removeAttribute('aria-current');
+    if(state === 'done' && !wasDone){
+      el.classList.remove('just-done');
+      void el.offsetWidth;                 // restart the animation
+      el.classList.add('just-done');
+      clearTimeout(el._ggT);
+      el._ggT = setTimeout(function(){ el.classList.remove('just-done'); }, 900);
+    }
   }
 
   function paint(){
@@ -981,7 +1018,19 @@ function resetForm() {
                : 'Your details are all that stand between you and step&nbsp;3.');
     }
 
+    var moved = fill.__ggPct !== undefined && fill.__ggPct !== pct;
+    fill.__ggPct = pct;
     fill.style.width = pct + '%';
+    if(moved){
+      var bar = fill.parentElement;
+      if(bar){
+        bar.classList.remove('just-moved');
+        void bar.offsetWidth;
+        bar.classList.add('just-moved');
+        clearTimeout(bar._ggT);
+        bar._ggT = setTimeout(function(){ bar.classList.remove('just-moved'); }, 950);
+      }
+    }
     pctEl.textContent = pct + '% complete';
     if(leftEl) leftEl.textContent = left;
     if(noteEl) noteEl.innerHTML = note;

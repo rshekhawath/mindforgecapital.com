@@ -731,6 +731,33 @@ html[data-theme="dark"] .clad-track{background:rgba(120,150,255,0.16);}
   .clad-note{font-size:11.5px;}
   .clad-row{grid-template-columns:112px 1fr 62px;gap:8px;}
   .clad-cap b{font-size:11.5px;}.clad-bps{font-size:11px;}}
+/* ── V34.9 · AT 320 THE ANNOTATION ATE THE DATA ────────────────────────────
+   Two FIXED columns and one `1fr` is fine until the row runs out of width, and
+   then the flexible column — which here is the BAR, the only part of the row
+   that is data — absorbs the entire shortfall. Measured track width, demo book:
+
+       320px ->  16px      360px ->  56px      375px ->  71px
+       390px ->  86px      430px -> 126px      768px -> 420px
+
+   At 320 that is 112 + 62 + 16 of gaps = 190 of a 206px row, leaving 16px for
+   the bar; the smallest live segment (5.4%) painted 0.86px, and even a full bar
+   would have read as a stub. The numbers were all correct and perfectly legible
+   — this is a chart that had stopped being a chart.
+   The fix is the one mfc-dir.css already makes for `.dir-item` at 480: below the
+   width where three columns fit, the row becomes two lines and the bar takes the
+   whole of the second. Nothing is hidden, nothing truncates, and the bar goes
+   from 16px to the full row. 420px is the threshold because 430 measures 126px
+   and holds; every width below it does not.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (max-width:420px){
+  .clad-row{grid-template-columns:1fr auto;grid-template-areas:"cap bps" "track track";
+    row-gap:7px;column-gap:8px;padding:6px 7px;}
+  .clad-cap{grid-area:cap;}
+  .clad-bps{grid-area:bps;align-self:center;}
+  .clad-track{grid-area:track;}
+  /* the rows now carry real height, so they need to breathe against each other */
+  .clad-rows{gap:4px;}
+}
 @media (prefers-reduced-motion:reduce){.clad-fill{transition:none;}}
 
 /* ── V28.6: the half-placed book ────────────────────────────────────────────
@@ -5155,7 +5182,16 @@ function renderPortfolioMap(stocks) {
   // Grow on reveal — the site's bar idiom. Painting the final width immediately
   // would leave a dead transition (the V23.5 bug), so apply a frame later.
   setTimeout(function(){
-    grid.querySelectorAll('.pmap-wtbar b[data-bar]').forEach(function(b){ b.style.width = b.dataset.bar; });
+    /* V34.9 — a non-zero weight must always paint. This track is
+       `flex:1 1 auto; min-width:14px` inside a tile, so it measures 40-52px at
+       every width and the MultiAsset book's smallest holding (3.7%) rendered
+       1.5-1.9px — a bar that reads as empty beside a tile that says 3.7%. The
+       floor is applied here rather than in CSS so a genuine 0.0% still reads as
+       empty, and the proportion above the floor is untouched. */
+    grid.querySelectorAll('.pmap-wtbar b[data-bar]').forEach(function(b){
+      b.style.width = b.dataset.bar;
+      if(parseFloat(b.dataset.bar) > 0) b.style.minWidth = '2px';
+    });
   }, 80);
 }
 
