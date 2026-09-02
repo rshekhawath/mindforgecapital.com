@@ -541,7 +541,22 @@
 // The other seven edited pages — calculator, strategies, smallmicro,
 // largemidcap, fii-dii, disclosures, screener — are network-first HTML and need
 // nothing here.
-const CACHE = 'mfc-v78';
+// V34.7 -> mfc-v79. Routine on its face and REQUIRED underneath: this release
+// moves mfc-finish.css 3380 -> 3400 on all 50 pages, and two of those pages —
+// login.html (the manifest start_url) and index.html (the offline navigation
+// fallback) — are PRECACHED DOCUMENTS. Their bytes therefore change, because the
+// ?v in their <link> changes, and addAll runs on INSTALL and not on activation:
+// left at v78 an installed-app user opening offline would keep a shell asking
+// for mfc-finish.css?v=3380 forever, which offline is a cache hit on the OLD
+// stylesheet and so never receives this release's overscroll containment.
+// The stylesheet itself is a cache-first ASSET and is handled by its own token
+// rather than by this name — caches.match() keys on the full URL including the
+// query, so ?v=3400 is simply a miss and fetches fresh.
+// mfc-chrome.js stays at 3390 and mfc-dir.css at 3370: neither file changed.
+// The other four edited pages — scores/index, scores/company, screener/index and
+// signup — are network-first HTML and need nothing here beyond the token they
+// already carry.
+const CACHE = 'mfc-v79';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

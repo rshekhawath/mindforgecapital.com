@@ -303,6 +303,27 @@ html[data-theme="dark"] .hp-seg-n{color:#0c1831}
 .hl-card{--mx:50%;--my:50%}
 .hl-card::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(240px circle at var(--mx) var(--my),rgba(45,212,191,.10) 0%,rgba(37,99,235,.06) 34%,transparent 62%);opacity:0;transition:opacity .3s ease}
 .hl-card:hover::after{opacity:1}
+/* V34.7 — ON A PHONE THIS CARD ACKNOWLEDGED NOTHING WHEN YOU TAPPED IT.
+   V31.9 turned the champion cards into real <a>s and set
+   `-webkit-tap-highlight-color:transparent` (three declarations up) so the link
+   kept looking like the box it replaced. That is right for the ink and wrong for
+   the feedback: it is the ONLY place on this site that opts out of the site-wide
+   tap tint in assets/mfc-finish.css, and every state this card does define —
+   the lifted shadow, the 3->5px accent rail, the spotlight wash — is behind
+   `:hover`, which a touch screen never delivers. So a tap produced no visual
+   response at all until the next page painted; on a slow connection that reads
+   as a dead card and invites a second tap.
+   `:active` under `(hover:none)` gives it back the same three states the mouse
+   gets, pressed rather than lifted, and reaches nothing on a desktop pointer. */
+@media (hover: none){
+  .hl-card:active{transform:translateY(1px) scale(.995);
+    box-shadow:0 1px 2px rgba(15,23,42,.04),0 6px 14px -10px rgba(26,80,216,.34)}
+  .hl-card:active::before{width:5px}
+  .hl-card:active::after{opacity:1}
+}
+@media (hover: none) and (prefers-reduced-motion: reduce){
+  .hl-card:active{transform:none}
+}
 /* V17.7: ring sweep-in — @property lets the conic angle tween; browsers without
    it just render the final angle instantly (progressive enhancement) */
 @property --hldeg{syntax:'<angle>';initial-value:0deg;inherits:false}
@@ -657,7 +678,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3380">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3400">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -786,6 +807,21 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
      none; browsers without mask-image simply see the strip as it was. */
   .mob-sort{scroll-snap-type:x proximity;scroll-padding-left:14px}
   .ms-chip{scroll-snap-align:start}
+  /* V34.7 — THE STRIP COULD NEVER GET BACK TO ITS OWN START.
+     The two lines above are V34.0's: chips are the snap targets and the strip
+     carries 14px of scroll-padding. The "Sort" label is NOT a chip, so the
+     leftmost snap position was the first chip's start minus that padding —
+     measured 40px on both pages, at every phone width. Consequences, both
+     measured by driving scrollLeft to 0 and reading it back:
+       · scrollLeft snapped to 40 and never to 0, so "Sort" sat at -26px,
+         entirely off the left edge, and could not be brought back;
+       · `ms-l` is toggled on `scrollLeft > 4`, so the LEFT fade was on
+         permanently — a cue for content that is not there, which is the exact
+         thing V34.0's own note says a fade must never do.
+     Making the label a snap target too gives the strip a snap position at
+     14 - 14 = 0. Verified after: 40 -> 0, label -26 -> +14, class
+     `ms-l ms-r` -> `ms-r`, and the right end still resolves to `ms-l` alone. */
+  .ms-lbl{scroll-snap-align:start}
   .mob-sort.ms-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);
                          mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
   .mob-sort.ms-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);

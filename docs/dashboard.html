@@ -1064,6 +1064,59 @@ td.shares .qty{color:var(--white);font-weight:700;}
   .tbl-search-wrap::after{ display: none !important; }
   .tbl-search{ padding-right: 12px; }
 }
+/* V34.7 — …AND ON ANY TOUCH DEVICE, AT ANY WIDTH. The chip advertises a
+   PHYSICAL-KEYBOARD shortcut, so it is noise on a tablet with no keyboard, and
+   it costs the field 26px of inner width it does not have to spare there: V29.5
+   later raised this input to 16px on touch (so iOS does not zoom the page on
+   focus) without revisiting the 38px of right padding the chip reserves. The two
+   rules only ever met between 721px and 768px — an iPad mini at 744, an iPad in
+   a narrow split view — where the field is still 260px wide, keeps the chip, and
+   renders a 196px placeholder into 186px of room: "Search ticker or company…"
+   clipped by 10px, at exactly the widths that read as a tablet.
+   The shortcut itself is untouched — its keydown handler never consulted this
+   rule — so a tablet with a keyboard attached still has "/", just not a chip
+   pointing at a key most readers of this width do not have. */
+@media (hover: none) and (pointer: coarse){
+  .tbl-search-wrap::after{ display: none !important; }
+  .tbl-search{ padding-right: 12px; }
+}
+/* V34.7 — THE ONE CONTROL ON THE PHONE LAYOUT THAT LINED UP WITH NOTHING.
+   `.tbl-search` is a hard 260px. `.table-actions` is `flex-wrap:wrap` and, at
+   <=768px, `justify-content:flex-end`. So on a phone the search box does not
+   fill its line and its LEFT edge is wherever the slack on that line happens to
+   leave it — measured, with the toolbar's own left edge at 15/16 every time:
+
+        390 -> 115      430 -> 30      600 -> 96
+        601 -> 96       700 -> 57      768 -> 125      1024 -> 32 (correct)
+
+   At 390 it is alone on its row and still only 260 of 360, so it sits 100px in
+   from a row whose neighbours all start at 15: the `.msort` select directly
+   above spans the full width (V29.5 gave it `flex:1 1 100%`) and every stock
+   card below starts at 15. Nothing is clipped and nothing overflows, which is
+   why every structural probe read this as clean — it is a defect only the eye
+   catches, and it moves every time the viewport does.
+
+   A grow-able flex item rather than `width:100%`: the field then fills whatever
+   its line actually has, so where it shares a line it grows into the slack
+   instead of forcing a break, and where it is alone it spans the row. Once it
+   absorbs the slack `justify-content` has none left to distribute, which is what
+   pins the left edge to 15 at every width. Scoped to 600px — the breakpoint
+   where `.table-wrap` gives way to `.stock-cards`, so the widths that still
+   render a table keep the right-aligned toolbar they were designed with.
+
+   The 252px floor is measured, not chosen: the placeholder "Search ticker or
+   company…" renders 196px wide at the 16px this field is given on touch (V29.5,
+   so iOS does not zoom on focus), and the field spends 36px + 12px of padding on
+   the magnifier and the gutter. 196 + 48 + 2 borders + 6 of slack = 252. A first
+   pass used a 240px basis and, at exactly 390 — the single most common phone
+   width there is — the field settled at 244 beside the market chip and clipped
+   its own placeholder by 2px. `min-width` states the requirement directly, so a
+   neighbour wraps rather than the field shrinking under its own text; `min()`
+   keeps that from overflowing a container narrower than the floor itself. */
+@media (max-width: 600px){
+  .tbl-search-wrap{ flex: 1 1 252px; min-width: min(252px, 100%); display: block; }
+  .tbl-search{ width: 100%; }
+}
 .tbl-search::placeholder{color:var(--text3);}
 .tbl-search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.10);}
 
@@ -2297,7 +2350,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3380">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3400">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */

@@ -830,7 +830,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3380">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3400">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -902,6 +902,21 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
      none; browsers without mask-image simply see the strip as it was. */
   .mob-sort{scroll-snap-type:x proximity;scroll-padding-left:14px}
   .ms-chip{scroll-snap-align:start}
+  /* V34.7 — THE STRIP COULD NEVER GET BACK TO ITS OWN START.
+     The two lines above are V34.0's: chips are the snap targets and the strip
+     carries 14px of scroll-padding. The "Sort" label is NOT a chip, so the
+     leftmost snap position was the first chip's start minus that padding —
+     measured 40px on both pages, at every phone width. Consequences, both
+     measured by driving scrollLeft to 0 and reading it back:
+       · scrollLeft snapped to 40 and never to 0, so "Sort" sat at -26px,
+         entirely off the left edge, and could not be brought back;
+       · `ms-l` is toggled on `scrollLeft > 4`, so the LEFT fade was on
+         permanently — a cue for content that is not there, which is the exact
+         thing V34.0's own note says a fade must never do.
+     Making the label a snap target too gives the strip a snap position at
+     14 - 14 = 0. Verified after: 40 -> 0, label -26 -> +14, class
+     `ms-l ms-r` -> `ms-r`, and the right end still resolves to `ms-l` alone. */
+  .ms-lbl{scroll-snap-align:start}
   .mob-sort.ms-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);
                          mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
   .mob-sort.ms-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);

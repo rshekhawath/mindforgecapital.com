@@ -2463,3 +2463,65 @@ html[data-theme="dark"] .cmp-row .v{ color: var(--ink-link); }
 :where(p):not(td *):not(th *) {
   text-wrap: pretty;
 }
+
+/* ============================================================================
+   V34.7 — A SIDEWAYS SWIPE THAT REACHED THE END OF A TABLE LEFT THE PAGE
+   ----------------------------------------------------------------------------
+   Every horizontal scroller on this site was measured at `overscroll-behavior-x:
+   auto`, which is the initial value and had simply never been set. On a phone
+   that is not a cosmetic default: when a swipe carries a scroller past its own
+   end, the gesture CHAINS to the ancestor chain and then to the browser, where a
+   horizontal overscroll is the back/forward navigation gesture in Chrome for
+   Android and, since 16, in mobile Safari. The reader flicks the FII/DII table
+   one column too far and lands on the page they came from.
+
+   The scrollers this covers, all confirmed to overflow at a real device width
+   (measured at 320-1180, portrait and landscape):
+
+     .table-wrap     dashboard picks table      418px hidden at 744  (+ admin)
+     .table-card     Integrity Score table      751px hidden at 744
+     .tbl-scroll     screener results, FII/DII  475px hidden at 320
+     .mcal-scroll    monthly calendar x2        403px hidden at 320
+     .compare-scroll strategy comparison        392px hidden at 320
+     .mob-sort       sort chip strips x2        737px hidden at 320
+     .disc-scroll    disclosures table          111px hidden at 320
+     .chart-wrap     FII/DII trend chart
+     .tabs           company page section tabs
+     .mfx-tablewrap  company page tables        (injected by mfc-company.js)
+     .mfx-nav        company page section rail  (injected by mfc-company.js)
+
+   `contain`, never `none`: `none` would also kill the rubber-band overscroll
+   ANIMATION inside the scroller, which is the feedback that tells a reader they
+   have reached the end. `contain` keeps the bounce and stops only the chaining,
+   which is exactly the half that is wrong here.
+
+   x only. The vertical axis is deliberately untouched: `overscroll-behavior-y`
+   on a page-level scroller is what disables pull-to-refresh, and none of these
+   is a vertical scroller anyway. The nav drawer already sets `contain` on both
+   axes at its own rule (V34.1), which is correct there because it IS a vertical
+   scroller laid over the page.
+
+   MEASURED AND DELIBERATELY NOT LISTED: `.legal-toc` (terms, disclosures) and
+   `.sidebar` (screener) also compute to `overflow-x:auto` — because setting one
+   axis to auto makes the other compute to auto too — but both measure
+   scrollWidth === clientWidth at 390, 768 and 1440. They are VERTICAL scrollers
+   with no horizontal overflow to chain from, so containing their x-axis would
+   assert a scroller that does not exist. 44 of the 49 containers a sweep of 16
+   pages x 3 widths finds are covered here; those five are the remainder.
+
+   `html` prefix because this file is linked BEFORE each page's own <style>, so
+   an equal-specificity class selector there would win.
+   ========================================================================== */
+html .table-wrap,
+html .table-card,
+html .tbl-scroll,
+html .mcal-scroll,
+html .compare-scroll,
+html .mob-sort,
+html .disc-scroll,
+html .chart-wrap,
+html .tabs,
+html .mfx-tablewrap,
+html .mfx-nav{
+  overscroll-behavior-x: contain;
+}

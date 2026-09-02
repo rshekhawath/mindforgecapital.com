@@ -326,7 +326,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3380">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3400">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
@@ -390,8 +390,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <label for="reg-phone">Mobile number</label>
         <div class="phone-row">
           <div class="phone-prefix">+91</div>
+          <!-- V34.7 — this was the ONE field on the form with no autocomplete, so a
+               phone offered to fill the name and the email and then stopped. And the
+               value has to be `tel-national`, not `tel`: the +91 lives in its own
+               .phone-prefix beside the field, the field takes ten national digits,
+               and the oninput below strips non-digits then slices to 10 — so a
+               `tel` autofill of "+91 98765 43210" would be stored as 9198765432,
+               a wrong number saved silently. enterkeyhint matches the two fields
+               above it, which both carry "next" (two <select>s follow). -->
           <input type="tel" id="reg-phone" name="phone" placeholder="98765 43210" maxlength="10"
             pattern="[0-9]{10}" inputmode="numeric" required
+            autocomplete="tel-national" enterkeyhint="next"
             title="Enter your 10-digit mobile number without spaces or dashes"
             oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
         </div>

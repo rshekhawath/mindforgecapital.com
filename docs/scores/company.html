@@ -554,7 +554,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3380">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3400">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock
@@ -852,7 +852,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       html[data-theme="dark"] .rl-dot{box-shadow:0 0 0 2px rgba(18,29,51,.8)}
       html[data-theme="dark"] .rl-bar{background:rgba(150,180,240,.14)}
       @media(prefers-reduced-motion:reduce){.radar-poly{animation:none;opacity:1;transform:none}.rl-fill{transition:none}}
-      @media(max-width:560px){.prw-body{gap:16px}.prw-legend{flex:1 1 100%;max-width:none}.pillar-radar{width:100%;height:272px}}
+      /* V34.7 — the radar is now solved to fit its box at 1:1 (see drawRadar),
+         so on a phone every horizontal pixel this card gives back becomes chart
+         radius. 22px of card padding was the second-widest on the page — the
+         KPI and ratio cards beside it run 14 — and trimming it to 14 here buys
+         16px of width, which the solver turns into radius: measured R 35 -> 43
+         at 320, 56 -> 64 at 360, 72 -> 80 at 390 and 93 -> 101 at 430, with the
+         labels staying at their declared 10.5px throughout. Scoped to the same
+         560px this card's other phone rules already use. */
+      @media(max-width:560px){.prw-body{gap:16px}.prw-legend{flex:1 1 100%;max-width:none}.pillar-radar{width:100%;height:272px}
+        .pillar-radar-wrap{padding:16px 14px}}
     </style>
     <div class="pillar-radar-wrap">
       <div class="prw-head">
@@ -1501,6 +1510,26 @@ function renderScorecard(){
       try{ repaintScoreInks(); }catch(e){}
     })
     .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  /* V34.7 — the radar is now drawn 1:1 into whatever box it is given, so a
+     rotation or a window resize changes the geometry it was solved for. Redraw
+     on a debounced resize, but ONLY when the measured box actually moved: the
+     polygon carries an entry animation, and replaying it on every resize frame
+     (or on a mobile URL-bar show/hide, which fires resize with the same width)
+     would read as a flicker. drawRadar stamps svg.__mfcBox for exactly this. */
+  (function(){
+    var rzT=null;
+    window.addEventListener("resize", function(){
+      clearTimeout(rzT);
+      rzT=setTimeout(function(){
+        try{
+          var sv=document.getElementById("pillarRadar"); if(!sv) return;
+          var b=sv.getBoundingClientRect();
+          if(sv.__mfcBox===Math.round(b.width)+"x"+Math.round(b.height)) return;
+          drawRadar(window.__mfcRadarData);
+        }catch(e){}
+      },170);
+    }, {passive:true});
+  })();
   // animate fills next frame
   requestAnimationFrame(()=>{
     PILLARS.forEach(([k,val])=>{
@@ -1604,7 +1633,72 @@ function drawRadar(D){
   /* Geometry grew with the card: this is the page's one "whole business at a
      glance" visual and it was drawing a 74px-radius pentagon inside a 1,214px
      card. R 74 -> 104, and the viewBox in the markup grew to match. */
-  var cx=168, cy=150, R=104, N=P.length;
+  /* ══ V34.7 — ON EVERY PHONE THIS CHART'S LABELS WERE SMALLER THAN IT SAYS ══
+     The viewBox is 336x300 and `@media(max-width:560px)` paints the SVG at
+     `width:100%;height:272px`, so on a phone the whole drawing is scaled by
+     min(paintedW/336, paintedH/300) and every font-size inside it is a lie.
+     Measured, painted px against the declared 10.5 / 8:
+
+         320 -> box 212x272  scale 0.631   pillar 6.63   ring tick 5.05
+         360 -> box 252x272  scale 0.750   pillar 7.88   ring tick 6.00
+         375 -> box 267x272  scale 0.795   pillar 8.34   ring tick 6.36
+         390 -> box 282x272  scale 0.839   pillar 8.81   ring tick 6.71
+         430 -> box 322x272  scale 0.907   pillar 9.52   ring tick 7.25
+         561+ -> box 336x300 scale 1.000   pillar 10.5   ring tick 8.00
+
+     Every phone width is under this site's own 10px floor, and 320 is not
+     legible at all — which means the responsive rule written to help small
+     screens is the thing that hurt them. This is the defect class recorded in
+     V33.3 for the FII/DII chart, and the fix is the same one: let the AVAILABLE
+     BOX be the viewBox and draw 1:1, so a user unit is a CSS pixel and a label
+     declared at 10.5 renders at 10.5.
+
+     The radius then has to be SOLVED rather than fixed, because the labels sit
+     outside the vertices and a narrow box has to pay for them. Each label's
+     extent is measured with getBBox() rather than assumed — the widths differ
+     with the platform font, and a hardcoded constant taken from one engine is
+     how a label ends up outside the box on another. Above 560px the box is
+     exactly 336x300, the branch below resolves to the authored cx/cy/R, and the
+     drawing is byte-identical to what it has always been.  ══════════════════ */
+  var LBL_FS=10.5, TICK_FS=8, LBL_GAP=17, PAD=3, N=P.length;
+  var _bx=svg.getBoundingClientRect();
+  var W=Math.round(_bx.width)||336, H=Math.round(_bx.height)||300;
+  if(!(W>60&&H>60)){ W=336; H=300; }
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.__mfcBox=W+'x'+H;
+  var cx=W/2, cy=H/2, R=104;
+  if(W!==336||H!==300){
+    /* measure the five axis labels at the size they will actually be drawn */
+    var NS='http://www.w3.org/2000/svg', lw=[];
+    for(var _i=0;_i<N;_i++){
+      var _t=document.createElementNS(NS,'text');
+      _t.setAttribute('font-size',LBL_FS); _t.setAttribute('font-weight','700');
+      _t.setAttribute('x','-9999'); _t.setAttribute('y','-9999');
+      _t.textContent=P[_i].label; svg.appendChild(_t);
+      var _w=0; try{ _w=_t.getBBox().width; }catch(e){ _w=0; }
+      svg.removeChild(_t);
+      lw.push(_w||P[_i].label.length*LBL_FS*0.58);
+    }
+    /* largest label ring radius L for which no glyph box leaves the viewBox;
+       ASC/DESC are the ink above and below the baseline the anchors sit on */
+    var ASC=LBL_FS*0.82, DESC=LBL_FS*0.26, Lmax=Infinity;
+    for(var i=0;i<N;i++){
+      var a=-Math.PI/2 + i*2*Math.PI/N, c=Math.cos(a), sn=Math.sin(a);
+      var dy=(i===0?-4:5), w=lw[i];
+      /* the anchor the draw loop picks: middle at the top vertex, else the side
+         the label leans away from */
+      var rIght = (Math.abs(c)<0.02) ? w/2 : (c>0 ? w : 0);
+      var lEft  = (Math.abs(c)<0.02) ? w/2 : (c>0 ? 0 : w);
+      if(c>0.02)  Lmax=Math.min(Lmax, (W-PAD-rIght-cx)/c);
+      if(c<-0.02) Lmax=Math.min(Lmax, (cx-PAD-lEft)/(-c));
+      if(sn<-0.02) Lmax=Math.min(Lmax, (cy+dy-ASC-PAD)/(-sn));
+      if(sn>0.02)  Lmax=Math.min(Lmax, (H-PAD-DESC-dy-cy)/sn);
+    }
+    /* the top label is middle-anchored straight up, so it alone is bounded by
+       the box height rather than by a spoke */
+    Lmax=Math.min(Lmax, cy+(-4)-ASC-PAD);
+    R=Math.max(30, Math.min(104, Lmax-LBL_GAP));
+  }
   function pt(i,r){ var a=-Math.PI/2 + i*2*Math.PI/N; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; }
   function poly(r){ return P.map(function(_,i){ return pt(i,r).map(function(v){return v.toFixed(1);}).join(','); }).join(' '); }
   var s=[];
@@ -1622,14 +1716,14 @@ function drawRadar(D){
      shape "reaching the second ring" had no value attached to it. */
   [50,100].forEach(function(g){
     var y=cy-R*g/100;
-    s.push('<text x="'+(cx+3)+'" y="'+(y-3).toFixed(1)+'" text-anchor="start" font-size="8" font-weight="600" fill="'+I.tick+'">'+g+'</text>');
+    s.push('<text x="'+(cx+3)+'" y="'+(y-3).toFixed(1)+'" text-anchor="start" font-size="'+TICK_FS+'" font-weight="600" fill="'+I.tick+'">'+g+'</text>');
   });
   // spokes + axis labels
   P.forEach(function(p,i){
-    var o=pt(i,R), lab=pt(i,R+17);
+    var o=pt(i,R), lab=pt(i,R+LBL_GAP);
     s.push('<line x1="'+cx+'" y1="'+cy+'" x2="'+o[0].toFixed(1)+'" y2="'+o[1].toFixed(1)+'" stroke="'+I.spoke+'" stroke-width="0.9"/>');
     var anchor = Math.abs(lab[0]-cx)<8 ? 'middle' : (lab[0]>cx?'start':'end');
-    s.push('<text x="'+lab[0].toFixed(1)+'" y="'+(lab[1]+(i===0?-4:5)).toFixed(1)+'" text-anchor="'+anchor+'" font-size="10.5" font-weight="700" fill="'+p.c+'">'+p.label+'</text>');
+    s.push('<text x="'+lab[0].toFixed(1)+'" y="'+(lab[1]+(i===0?-4:5)).toFixed(1)+'" text-anchor="'+anchor+'" font-size="'+LBL_FS+'" font-weight="700" fill="'+p.c+'">'+p.label+'</text>');
   });
   // data polygon (missing pillar → 0)
   var dpts=P.map(function(p,i){ var v=D[p.k]; return pt(i,R*((v==null?0:v)/100)).map(function(z){return z.toFixed(1);}).join(','); }).join(' ');
