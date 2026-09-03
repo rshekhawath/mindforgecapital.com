@@ -582,7 +582,18 @@
 // mfc-dir.css at 3370. calculator.html, signup.html, dashboard.html and
 // screener/index.html also changed and are network-first HTML — they need
 // nothing here.
-const CACHE = 'mfc-v81';
+// V35.0 -> mfc-v82. index.html is the PRECACHED offline navigation fallback and
+// its bytes change again this release — two internal comments that quoted the
+// SmallMicro card's meta as "25 stocks" now read "15 stocks" (the card itself
+// always rendered 15; the comments were stale and had propagated the count the
+// strategy pages were corrected for this release). No rendered pixel of the
+// offline shell moves, but the precache must match the served bytes, and addAll
+// runs on INSTALL not activation — so left at v81 an installed-app user would
+// keep the older copy. The release's real work — the strategy pages' holdings
+// count/cap corrected to 10 & 15 / cap 2, and the equal-weight pip strip added
+// to their hero tiles — is on network-first HTML and needs nothing here. No
+// shared asset moved.
+const CACHE = 'mfc-v82';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
