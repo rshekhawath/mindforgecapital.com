@@ -593,7 +593,16 @@
 // count/cap corrected to 10 & 15 / cap 2, and the equal-weight pip strip added
 // to their hero tiles — is on network-first HTML and needs nothing here. No
 // shared asset moved.
-const CACHE = 'mfc-v83';   // V35.1 — index.html's mfc-finish.css token moved (3400 -> 3410) and index.html is precached, so the shell is only rewritten when this name changes
+// V35.1 -> mfc-v83. index.html's mfc-finish.css token moved (3400 -> 3410).
+// V35.2 -> mfc-v84. BOTH precached documents change this release, and both change
+// visibly: index.html gains the "Pricing" nav item (a 10th link, on every page)
+// and login.html gains the standalone-launch redirect plus the resume-state
+// heading — i.e. the very file the installed app opens. Their shared
+// mfc-finish.css token also moves 3410 -> 3420 for the nav-fit band that keeps
+// ten links on one row between 1025 and 1099px. addAll() runs on INSTALL, not on
+// activation, so left at v83 an installed member would keep the old shell and,
+// worse, keep the login page WITHOUT the redirect this release exists to add.
+const CACHE = 'mfc-v84';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

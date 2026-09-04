@@ -202,6 +202,27 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   box-shadow:0 8px 18px -10px rgba(26,80,216,.6); transition:transform .18s ease, box-shadow .18s ease; }
 .err-strat-btn:hover{ transform:translateY(-1px); box-shadow:0 12px 22px -10px rgba(26,80,216,.7); }
 .err-strat-btn:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
+/* V35.2 — the retry action. Primary weight, 44px tall so it clears the touch
+   floor on the one screen a member reaches on a bad connection (i.e. on a phone). */
+#error-retry{ margin-top:22px; }
+.err-retry-btn{ font:inherit; font-size:14.5px; font-weight:700; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  min-height:44px; padding:0 22px; border-radius:12px; color:#fff; border:0;
+  /* Deliberately NOT var(--accent)->var(--accent2): in dark those resolve to
+     #2f5fe0 -> #5b8def, and white on the LIGHT stop measures 3.20:1 — under AA
+     for 14.5px/700, which is not large text. Fixed stops, checked at both ends:
+     white on #1a50d8 = 6.61:1, on #2f6ae0 = 4.93:1, in either theme. */
+  background:linear-gradient(135deg,#1a50d8,#2f6ae0);
+  box-shadow:0 10px 22px -10px rgba(26,80,216,.62); transition:transform .18s ease, box-shadow .18s ease; }
+.err-retry-btn svg{ width:17px; height:17px; flex:0 0 auto; }
+.err-retry-btn:hover{ transform:translateY(-1px); box-shadow:0 14px 26px -10px rgba(26,80,216,.72); }
+.err-retry-btn:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
+.err-retry-btn[disabled]{ cursor:progress; opacity:.75; transform:none; }
+.err-retry-btn[disabled] svg{ animation:spin .9s linear infinite; }
+@media (prefers-reduced-motion:reduce){
+  .err-retry-btn{ transition:none; }
+  .err-retry-btn[disabled] svg{ animation:none; }
+}
 
 .strat-menu{
   position:fixed; top:0; left:0; min-width:240px; max-width:calc(100vw - 24px);
@@ -413,6 +434,23 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .stat-card.tone-green .stat-val{color:var(--green);}
 .stat-card.tone-gold  .stat-val{color:var(--gold);}
 .stat-card.tone-red   .stat-val{color:var(--red);}
+/* V35.2 — RENEWAL URGENCY, RE-HOMED. .tone-gold / .tone-red above were applied by
+   the "Subscription · N days left" tile, which this release retired as a triplicate
+   of the cycle rail. The declarations are kept — they are one system with
+   .tone-green, which IS still applied — but the urgency they expressed now lands on
+   the rail, the single surface that states the countdown. Same two thresholds
+   (<=14 gold, <=7 red) and the same ramp as .sub-prog-fill.warn / .danger, so the
+   pill's dot, the pill's fill and the rail can never disagree about how close the
+   renewal is. */
+.cyc-card.is-soon::before{ background:linear-gradient(90deg,transparent,rgba(217,119,6,.55),transparent) !important; }
+.cyc-card.is-urgent::before{ background:linear-gradient(90deg,transparent,rgba(220,38,38,.55),transparent) !important; }
+.cyc-card.is-soon .cyc-badge.warn{ background:rgba(217,119,6,.13); border-color:rgba(217,119,6,.34); }
+.cyc-card.is-urgent .cyc-badge.warn{ background:rgba(220,38,38,.13); border-color:rgba(220,38,38,.34); }
+.cyc-actions{ margin-top:11px; }
+/* the .renew-cta inside is already display:none in print (a WhatsApp button is
+   nothing on paper) — hide its wrapper too so the rail does not print an empty
+   11px gap under its footnote. */
+@media print{ .cyc-actions{ display:none !important; } }
 /* V21.9: rebalance cycle micro-meter — how far through the monthly cycle we are,
    "charging up" toward the next model run. Same visual language as the status
    pill's .sub-prog-bar; fill animates via the shared [data-bar] width applier. */
@@ -1434,6 +1472,32 @@ footer a:hover{color:var(--accent);}
 }
 @keyframes dash-state-in{from{opacity:0;transform:translateY(16px) scale(.985);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){.state-box{animation:none;}}
+/* V35.2 — THE PANEL NEVER FLIPPED. The surface above is a hardcoded WHITE
+   gradient with no dark variant, while every piece of ink inside it does flip:
+   `.state-box h3` takes var(--white), which in dark is #eaf1ff, and
+   `.state-box p` takes var(--text2) = #b2c2de. So in dark mode this card
+   painted the dark theme's near-white heading onto a near-white panel.
+   Measured in PIXELS at 390x844 (the computed style cannot see it — both
+   sides report exactly the colours they were told to use):
+       "Connection Error"                         1.12 : 1
+       "Could not connect to the server…"         1.41 : 1
+       "Sign in again ->"                         4.09 : 1
+   This is not a corner case. .state-box is the LOADING screen as well as the
+   error screen, so every dark-mode member met it on every visit, and it is the
+   whole of what a member with an expired token, a mistyped link or a dropped
+   connection is left looking at. Same idiom the rest of the dark theme uses
+   for a card (see `html[data-theme="dark"] .ds-sent` in mfc-finish.css):
+   var(--ink2) with var(--border2). Re-measured after: 12.4:1 and 9.3:1. */
+html[data-theme="dark"] .state-box{
+  background:linear-gradient(180deg,rgba(30,44,74,0.96),var(--ink2));
+  border-color:var(--border2);
+  box-shadow:0 30px 70px -34px rgba(0,0,0,0.66), 0 10px 30px -20px rgba(0,0,0,0.46);
+}
+/* the top light-catch hairline reads as a grey scar on the dark surface at the
+   light theme's opacity — same stops, brand-tinted, at the dark card weight. */
+html[data-theme="dark"] .state-box::before{
+  background:linear-gradient(90deg,transparent,rgba(131,170,255,0.42),transparent);
+}
 .state-box .icon{
   font-size:0;width:66px;height:66px;border-radius:18px;
   background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(8,145,178,0.05));
@@ -1443,6 +1507,11 @@ footer a:hover{color:var(--accent);}
   box-shadow:0 12px 28px -14px rgba(37,99,235,0.42);
 }
 .state-box .icon svg{width:30px;height:30px;}
+/* V35.2 — `.state-box .icon` sets display:inline-flex, which out-specifies the UA
+   sheet's `[hidden]{display:none}`, so toggling the attribute alone left BOTH the
+   padlock and the signal glyph on screen at once. Same reason #error-retry needs
+   its own: it carries `margin-top` from an id rule. */
+.state-box .icon[hidden], #error-retry[hidden]{ display:none; }
 .state-box h3{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:8px;}
 .state-box p{color:var(--text2);font-size:15px;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 22px;}
@@ -2377,7 +2446,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3410">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3420">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -2442,11 +2511,30 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <!-- ERROR STATE -->
 <div id="state-error" class="container" style="display:none">
   <div class="state-box">
-    <div class="icon">
+    <div class="icon" id="error-icon-lock">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    </div>
+    <!-- V35.2 — a padlock is the wrong picture for a dropped connection: it tells a
+         member whose session is perfectly valid that they have been locked out, which
+         is exactly the misreading that sent them to "Sign in again". Swapped for a
+         signal glyph whenever the error is transient. -->
+    <div class="icon" id="error-icon-net" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a16 16 0 0 1 20 0"/><path d="M5 12.4a11 11 0 0 1 14 0"/><path d="M8.5 16a6 6 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/><path d="M3 3l18 18"/></svg>
     </div>
     <h3 id="error-title">Access Denied</h3>
     <p id="error-msg">This link is invalid or your subscription has expired.</p>
+    <!-- V35.2 — THE WAY FORWARD, not just the way out. A network blip surfaces here
+         as "Connection Error", and until now the only things offered were "Sign in
+         again" and "Recover dashboard access" — both of them the wrong action for a
+         member whose token is fine and whose train just went into a tunnel, and both
+         of them costing an OTP round-trip to undo. Shown only for transient errors;
+         an expired subscription still cannot be retried into working. -->
+    <div id="error-retry" hidden>
+      <button type="button" class="err-retry-btn" id="error-retry-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        <span id="error-retry-label">Try again</span>
+      </button>
+    </div>
     <!-- V29.0 — the way back. The switcher lives inside the dashboard, so an
          error screen used to be a dead end: the member's OTHER working
          strategies were still in the registry and completely unreachable
@@ -2471,6 +2559,22 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        landmark for another. Attribute only; no element, class or style moves. -->
   <div class="container" role="main">
 
+    <!-- ══════════════════════════════════════════════════════════════════════
+         V35.2 — READING ORDER: THE PICKS COME BEFORE THE EXPLANATION OF THEM.
+         Measured at 390x844 before this move: the first ticker began at scroll
+         5,167px — screen 6.1 of a 13.1-screen page — behind six full swipes of
+         context (sentiment, the 1:1 offer, "Why these N", the sector donut, the
+         portfolio map, position sizing), and "How to invest in 4 steps" sat at
+         screen 11.0, two screens from the bottom, where a first-time member
+         reaches it only after already needing it.
+         Nothing is deleted and nothing is hidden — the same cards, reordered so
+         the page answers the questions in the order a member asks them: what
+         changed, what do I hold, how much of each, what do I do — and only then
+         why these names, how they are spread, and what else is on offer.
+         A real DOM move, never CSS `order`: visual, reading and tab order have
+         to agree (WCAG 1.3.2 / 2.4.3). Checked first — nothing here is selected
+         by :nth-child, :first/:last-child or a sibling combinator, and no JS
+         walks these blocks by sibling. -->
     <!-- HERO -->
     <div class="dash-hero fade-up">
       <div class="section-label">Member Dashboard</div>
@@ -2484,10 +2588,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></span>
           Strategy: <strong id="strategy-name">—</strong>
         </div>
-        <div class="meta-pill">
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-          Rebalance: <strong id="rebalance-date">Monthly</strong>
-        </div>
+        <!-- V35.2 — the "Rebalance: 1 Oct (monthly)" pill was removed here. Between
+             this pill row, the KPI tiles below it and the cycle rail under those, the
+             SAME two dates — when access ends and when the next picks land — were each
+             stated three times inside the first two phone screens. The cycle rail is the
+             only one of the three that shows the relationship between them, which is the
+             fact a member actually needs, so it is now the single place both are said.
+             Nothing was deleted from the page: every figure these two tiles carried
+             (both dates, both day counts, position in each cycle, the renewal urgency
+             and the WhatsApp CTA) still renders — in the status pill and the rail. -->
         <!-- V15.3: data-freshness chip — reads the snapshot's own timestamp.
              V31.6: the tooltip used to promise a MECHANISM and a CLOCK — "auto-refreshed
              twice every market day at 3:45 PM and 11:59 PM IST". Those two times were the
@@ -2522,24 +2631,31 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="stat-sub" id="stat-industries-sub">sector-diversified</div>
         <div class="stat-ribbon" id="stat-ribbon" aria-hidden="true" style="display:none"></div>
       </div>
-      <div class="stat-card" id="stat-card-days">
-        <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
-        <div class="stat-label">Subscription</div>
-        <div class="stat-val" id="stat-days">—<span class="unit">days left</span></div>
-        <div class="stat-sub" id="stat-days-sub">renew anytime on WhatsApp</div>
-        <!-- V27.5: the twin of #reb-meter below. Both KPIs on this row are countdowns,
-             but only "Next rebalance" showed its position in the cycle — the reader had
-             to hold "18 days left" against an unstated cycle length to know whether that
-             was comfortable or urgent. Same .stat-meter idiom, and the percentage is the
-             SAME progPct the status pill already computes, so the two can never disagree. -->
-        <div class="stat-meter" id="sub-meter" style="display:none"><i id="sub-meter-fill" data-bar="0%"></i></div>
+      <!-- ══ V35.2 · THE TWO TILES THAT SAID SOMETHING NEW ═══════════════════════
+           These two slots used to hold "Subscription — 18 days left" and "Next
+           rebalance — 27 days". Both are said again, with more context, by the cycle
+           rail immediately below — and the rail's own V28.2 note already argued the
+           point: "the two countdowns directly above are the ones a member actually has
+           to reconcile … this puts both on ONE axis". The rail was added and the tiles
+           were kept, so the page ended up stating the same two dates three times before
+           a member had seen a single ticker.
+           What goes here instead is the thing the dashboard never answered: a member on
+           month three does not need the book re-listed, they need to know what MOVED.
+           Both tiles degrade honestly — with no previous cycle recorded on this device
+           they say so rather than guessing. ════════════════════════════════════════ -->
+      <div class="stat-card" id="stat-card-new">
+        <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="stat-label">New this cycle</div>
+        <div class="stat-val" id="stat-new">—</div>
+        <div class="stat-sub" id="stat-new-sub">compared with your last set</div>
+        <div class="stat-meter" id="new-meter" style="display:none"><i id="new-meter-fill" data-bar="0%"></i></div>
       </div>
-      <div class="stat-card">
-        <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
-        <div class="stat-label">Next rebalance</div>
-        <div class="stat-val" id="stat-next">—<span class="unit">days</span></div>
-        <div class="stat-sub" id="stat-next-sub">model regenerates monthly</div>
-        <div class="stat-meter" id="reb-meter" style="display:none"><i id="reb-meter-fill" data-bar="0%"></i></div>
+      <div class="stat-card" id="stat-card-orders">
+        <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.55L21 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg></div>
+        <div class="stat-label">Orders to place</div>
+        <div class="stat-val" id="stat-orders">—</div>
+        <div class="stat-sub" id="stat-orders-sub">this cycle</div>
+        <div class="stat-meter" id="ord-meter" style="display:none"><i id="ord-meter-fill" data-bar="0%"></i></div>
       </div>
     </div>
 
@@ -2575,6 +2691,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <span class="cyc-val" id="cyc-val-reb">—</span>
       </div>
       <div class="cyc-foot" id="cyc-foot"></div>
+      <!-- V35.2 — the renewal affordance the retired "Subscription" tile used to
+           carry. It is a .renew-cta, the same class (and therefore the same
+           44px coarse-pointer sizing from mfc-finish.css's a[class*="-cta"] block)
+           the status pill grows inside the last 14 days — NOT an inline link in
+           the sentence above, because this codebase decided in V31.9 that inline
+           links inside prose are left alone rather than padded out. Rendered only
+           when the pill is NOT showing one, so the page never carries two. -->
+      <div class="cyc-actions" id="cyc-actions" style="display:none"></div>
     </div>
     <style>
     .cyc-card{display:block;margin:0 0 22px;padding:16px 20px 15px;border-radius:16px;background:#fff;
@@ -2971,14 +3095,6 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     @media(prefers-reduced-motion:reduce){.oneonone-card::after{animation:none}}
     @media(max-width:640px){.oneonone-card{padding:16px}.oo-cta{width:100%;justify-content:center}}
     </style>
-    <div class="oneonone-card fade-up">
-      <div class="oo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
-      <div class="oo-text">
-        <div class="oo-title">1:1 Zoom call with Sagar Shekhawath<span class="oo-badge">SEBI RA</span></div>
-        <div class="oo-sub">A complimentary member benefit — book a one-on-one Zoom call to walk through your strategy, this cycle's picks and position sizing with our SEBI-Registered Research Analyst.</div>
-      </div>
-      <a id="oneonone-cta" class="oo-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20I%27d%20like%20to%20book%20my%201%3A1%20Zoom%20call%20with%20Sagar%20Shekhawath%20(SEBI%20RA).">Book your 1:1 Zoom call →</a>
-    </div>
 
     <!-- ── V29.6 · WHY THESE TWENTY-FIVE ───────────────────────────────────────
          The dashboard describes this month's book exhaustively — what is in it,
@@ -3068,47 +3184,61 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     @media (max-width:560px){ .why25{ padding:16px; } .why25-chain{ grid-template-columns:minmax(0,1fr); } }
     @media print{ .why25{ display:none; } }
     </style>
-    <div class="why25 fade-up" id="why25" style="display:none;">
-      <div class="why25-head">
-        <h2 id="why25-title">Why these 25</h2>
-        <span class="why25-sub" id="why25-sub">How this month's book was built</span>
-      </div>
-      <div id="why25-body"></div>
-      <!-- V29.6: the ten MFFAC weight markers that used to live here (every factor
-           name and its exact weight, for both equity books) are GONE. dashboard.html
-           is served as static HTML from the same public origin as the marketing
-           pages — the token gates the DATA, not the markup — so anyone could read
-           the model out of view-source. The card now explains how the book is
-           BUILT, which is what a member actually wants from it, and discloses
-           nothing a competitor could rebuild from. See also the strategies page's
-           "How MindForge backtests" module, which replaced the public twin. -->
-    </div>
 
-    <!-- SECTOR ALLOCATION -->
-    <div class="alloc-card fade-up" id="alloc-card" style="display:none;">
-      <div class="alloc-head">
-        <h2>Sector allocation</h2>
-        <div class="alloc-meta" id="alloc-meta">Top sectors by combined portfolio weight</div>
-      </div>
-      <div class="alloc-layout">
-        <div class="alloc-donut" id="alloc-donut" aria-hidden="true">
-          <svg viewBox="0 0 100 100" id="alloc-donut-svg" class="donut"></svg>
-          <div class="donut-center">
-            <div class="dc-num" id="donut-center-num">—</div>
-            <div class="dc-lbl">Sectors</div>
-          </div>
-        </div>
-        <div class="alloc-grid" id="alloc-grid"></div>
-      </div>
-    </div>
 
-    <!-- PORTFOLIO MAP (V17.3) — full holdings mosaic, coloured by sector -->
-    <div class="pmap-card fade-up" id="pmap-card" style="display:none;">
-      <div class="pmap-head">
-        <h2>Portfolio map</h2>
-        <div class="pmap-sub" id="pmap-sub">Your holdings at a glance</div>
+
+    <!-- ══ V35.2 · WHAT CHANGED THIS CYCLE ══════════════════════════════════════
+         Sits directly above position sizing and the picks, because it is the
+         question a returning member opens the page with. Hidden entirely until
+         there is a previous cycle recorded for this strategy on this device —
+         see the bookDiff() note; an unknown diff shows a one-line explanation,
+         never a guess. ═══════════════════════════════════════════════════════ -->
+    <style>
+    .chg-card{ background:var(--ink2); border:0.5px solid var(--border2); border-radius:var(--r,18px);
+      padding:22px 24px; margin-bottom:20px; position:relative; box-shadow:var(--shadow-sm); }
+    .chg-card::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,var(--accent),var(--teal)); border-radius:var(--r,18px) var(--r,18px) 0 0; }
+    .chg-head{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+    .chg-head h2{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+      font-size:17px; font-weight:800; color:var(--white); margin:0; letter-spacing:-.01em; }
+    .chg-sub{ font-size:12px; color:var(--text3); font-weight:600; }
+    .chg-line{ font-size:14px; color:var(--text2); line-height:1.65; margin:0 0 14px; }
+    .chg-line strong{ color:var(--white); font-weight:800; }
+    .chg-groups{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+    .chg-group{ border:0.5px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--ink); }
+    .chg-gk{ display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:.07em;
+      text-transform:uppercase; color:var(--text3); margin-bottom:9px; }
+    .chg-gk i{ font-style:normal; width:9px; height:9px; border-radius:3px; flex:0 0 auto; }
+    .chg-group.is-in  .chg-gk i{ background:var(--data-strong,#0f9d6e); }
+    .chg-group.is-out .chg-gk i{ background:var(--data-bad,#dc2626); }
+    .chg-group.is-hold .chg-gk i{ background:var(--text3); }
+    .chg-tks{ display:flex; flex-wrap:wrap; gap:6px; }
+    .chg-tk{ font-size:12px; font-weight:700; letter-spacing:.02em; padding:5px 9px; border-radius:7px;
+      background:rgba(37,99,235,.07); border:0.5px solid var(--border2); color:var(--text); white-space:nowrap; }
+    .chg-group.is-out .chg-tk{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text2); }
+    .chg-none{ font-size:12.5px; color:var(--text3); font-weight:600; }
+/* the per-row badge. Green ink on its own tint, measured in PIXELS on both
+   themes rather than computed against the page — an accent on a tinted panel is
+   not the same check as an accent on white (V34.8). At 9.5px/800 this is small
+   text and owes 4.5:1: light #0b6b4f on the composited tint reads 5.60:1, dark
+   #34d399 on its own reads 6.82:1. */
+.new-tag{ display:inline-block; margin-left:7px; vertical-align:middle;
+  font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  line-height:1; padding:4px 6px; border-radius:5px; white-space:nowrap;
+  color:#0b6b4f; background:rgba(15,157,110,.13); border:0.5px solid rgba(15,157,110,.30); }
+html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13); border-color:rgba(52,211,153,.30); }
+@media print{ .new-tag{ border-color:#0b6b4f; } }
+    html[data-theme="dark"] .chg-tk{ background:rgba(120,150,255,.10); }
+    @media (max-width:600px){ .chg-card{ padding:18px 16px; } .chg-groups{ grid-template-columns:minmax(0,1fr); } }
+    @media print{ .chg-card{ break-inside:avoid; } }
+    </style>
+    <div class="chg-card fade-up" id="chg-card" style="display:none;">
+      <div class="chg-head">
+        <h2 id="chg-title">What changed this cycle</h2>
+        <span class="chg-sub" id="chg-when"></span>
       </div>
-      <div class="pmap-grid" id="pmap-grid"></div>
+      <p class="chg-line" id="chg-line"></p>
+      <div class="chg-groups" id="chg-groups"></div>
     </div>
 
     <!-- POSITION SIZING -->
@@ -3342,6 +3472,102 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            desktop column and the phone card draw it from the same barPct. -->
       <p class="weight-cap" id="weightCap"></p>
 
+      <!-- V35.2 — moved up from the foot of the page: the four steps describe
+           what to do with the table directly above, and its live state ("0 of 10
+           placed", the capital entered) is read off that table and the sizing
+           card. It used to sit below the notification toggle, the verified-account
+           card and 1,000px of context. -->
+      <div class="howto-card">
+        <h3>
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></span>
+          How to invest in 4 steps
+          <span class="hs-rail-count" id="hs-rail-count"></span>
+        </h3>
+        <!-- V31.3 — the four steps have carried is-done / is-now since V28.8, but
+             only INSIDE each card: a tick here, a blue ring there, and nothing
+             that says how far through the month's job you are without reading all
+             four. This is that one line. Its state is not computed a second time —
+             refreshHowto() already decides `done` and `nowStep`, and the rail is
+             painted from those same two values in the same pass, so it cannot
+             drift from the cards the way a parallel calculation would.
+             aria-hidden: every node here restates a card that is already in the
+             accessibility tree two lines below, and the count beside the heading
+             carries the summary in words. -->
+        <div class="hs-rail" id="hs-rail" aria-hidden="true">
+          <span class="hs-node" data-node="1"><i></i></span>
+          <span class="hs-link" data-link="1"><i></i></span>
+          <span class="hs-node" data-node="2"><i></i></span>
+          <span class="hs-link" data-link="2"><i></i></span>
+          <span class="hs-node" data-node="3"><i></i></span>
+          <span class="hs-link" data-link="3"><i></i></span>
+          <span class="hs-node" data-node="4"><i></i></span>
+        </div>
+        <div class="howto-grid">
+          <div class="howto-step" data-hs="1">
+            <div class="num">1</div>
+            <div class="hs-body">
+              <h4>Set your capital</h4>
+              <p>Enter how much you want to invest at the top. The Allocation and Shares columns update instantly.</p>
+              <div class="hs-live" hidden></div>
+            </div>
+          </div>
+          <div class="howto-step" data-hs="2">
+            <div class="num">2</div>
+            <div class="hs-body">
+              <h4>Open your broker</h4>
+              <p id="howto-broker-text">Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.</p>
+              <div class="hs-live" hidden></div>
+            </div>
+          </div>
+          <div class="howto-step" data-hs="3">
+            <div class="num">3</div>
+            <div class="hs-body">
+              <h4>Place the orders</h4>
+              <p>Use the Shares column as your quantity for each ticker. Limit orders near rec. price are fine on liquid names.</p>
+              <div class="hs-live" hidden></div>
+            </div>
+          </div>
+          <div class="howto-step" data-hs="4">
+            <div class="num">4</div>
+            <div class="hs-body">
+              <h4>Hold for your cycle</h4>
+              <!-- V35.2 — this sentence pointed at a control that is not on the page for
+                   the plan most members are on. restoreNotifState() hides #notif-section
+                   whenever duration_months <= 1, because monthly subs do not receive
+                   rebalance pick emails at all — so "Turn on notifications above" was a
+                   dangling instruction for every monthly member, i.e. the entry plan and
+                   the first column of the pricing table. Written from the same reading
+                   that decides whether the toggle exists, so the two cannot disagree. -->
+              <p id="hs4-copy">Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it.</p>
+              <div class="hs-live" hidden></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- V34.2 — one-tap basket, Kite only. Deliberately OUTSIDE the step grid.
+             The four steps are equal-height grid items, so putting a 150px control
+             inside step 3 stretched all four: measured 178px cards with 22px of
+             slack becoming 365px cards with 209px of dead space in steps 1 and 2
+             and 187px in step 4 at 1440, and 244px at 1180. A full-width band
+             under the rail carries the same meaning, costs its siblings nothing,
+             and gives the note somewhere to breathe on a wide screen. -->
+        <div class="kbsk" id="kbsk" hidden>
+          <div class="kbsk-txt">
+            <div class="kbsk-eyebrow">Step 3, in one tap</div>
+            <div class="kbsk-facts" id="kbsk-facts" aria-hidden="true"></div>
+            <p class="kbsk-note" id="kbsk-note"></p>
+          </div>
+          <button type="button" class="kbsk-cta" id="kbsk-btn" onclick="sendKiteBasket()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.55L21 8H6"/>
+              <circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>
+            </svg>
+            <span id="kbsk-label">Review basket on Kite</span>
+          </button>
+        </div>
+      </div>
+
       <!-- REBALANCE NOTIFICATIONS -->
       <div id="notif-section" class="notif-card">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
@@ -3560,88 +3786,59 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       }
       @media print{ .kbsk{ display:none !important; } }
       </style>
-      <div class="howto-card">
-        <h3>
-          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12" y2="17"/></svg></span>
-          How to invest in 4 steps
-          <span class="hs-rail-count" id="hs-rail-count"></span>
-        </h3>
-        <!-- V31.3 — the four steps have carried is-done / is-now since V28.8, but
-             only INSIDE each card: a tick here, a blue ring there, and nothing
-             that says how far through the month's job you are without reading all
-             four. This is that one line. Its state is not computed a second time —
-             refreshHowto() already decides `done` and `nowStep`, and the rail is
-             painted from those same two values in the same pass, so it cannot
-             drift from the cards the way a parallel calculation would.
-             aria-hidden: every node here restates a card that is already in the
-             accessibility tree two lines below, and the count beside the heading
-             carries the summary in words. -->
-        <div class="hs-rail" id="hs-rail" aria-hidden="true">
-          <span class="hs-node" data-node="1"><i></i></span>
-          <span class="hs-link" data-link="1"><i></i></span>
-          <span class="hs-node" data-node="2"><i></i></span>
-          <span class="hs-link" data-link="2"><i></i></span>
-          <span class="hs-node" data-node="3"><i></i></span>
-          <span class="hs-link" data-link="3"><i></i></span>
-          <span class="hs-node" data-node="4"><i></i></span>
-        </div>
-        <div class="howto-grid">
-          <div class="howto-step" data-hs="1">
-            <div class="num">1</div>
-            <div class="hs-body">
-              <h4>Set your capital</h4>
-              <p>Enter how much you want to invest at the top. The Allocation and Shares columns update instantly.</p>
-              <div class="hs-live" hidden></div>
-            </div>
-          </div>
-          <div class="howto-step" data-hs="2">
-            <div class="num">2</div>
-            <div class="hs-body">
-              <h4>Open your broker</h4>
-              <p id="howto-broker-text">Zerodha, Groww, ICICI Direct — any broker works. Use the Copy tickers button to paste the list at once.</p>
-              <div class="hs-live" hidden></div>
-            </div>
-          </div>
-          <div class="howto-step" data-hs="3">
-            <div class="num">3</div>
-            <div class="hs-body">
-              <h4>Place the orders</h4>
-              <p>Use the Shares column as your quantity for each ticker. Limit orders near rec. price are fine on liquid names.</p>
-              <div class="hs-live" hidden></div>
-            </div>
-          </div>
-          <div class="howto-step" data-hs="4">
-            <div class="num">4</div>
-            <div class="hs-body">
-              <h4>Hold for your cycle</h4>
-              <p>Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it.</p>
-              <div class="hs-live" hidden></div>
-            </div>
-          </div>
-        </div>
 
-        <!-- V34.2 — one-tap basket, Kite only. Deliberately OUTSIDE the step grid.
-             The four steps are equal-height grid items, so putting a 150px control
-             inside step 3 stretched all four: measured 178px cards with 22px of
-             slack becoming 365px cards with 209px of dead space in steps 1 and 2
-             and 187px in step 4 at 1440, and 244px at 1180. A full-width band
-             under the rail carries the same meaning, costs its siblings nothing,
-             and gives the note somewhere to breathe on a wide screen. -->
-        <div class="kbsk" id="kbsk" hidden>
-          <div class="kbsk-txt">
-            <div class="kbsk-eyebrow">Step 3, in one tap</div>
-            <div class="kbsk-facts" id="kbsk-facts" aria-hidden="true"></div>
-            <p class="kbsk-note" id="kbsk-note"></p>
-          </div>
-          <button type="button" class="kbsk-cta" id="kbsk-btn" onclick="sendKiteBasket()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-              <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.55L21 8H6"/>
-              <circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>
-            </svg>
-            <span id="kbsk-label">Review basket on Kite</span>
-          </button>
+      <!-- V35.2 — the reassurance block, moved below the picks it reassures about.
+           Same four cards, same markup, same order among themselves. -->
+      <div class="why25 fade-up" id="why25" style="display:none;">
+        <div class="why25-head">
+          <h2 id="why25-title">Why these 25</h2>
+          <span class="why25-sub" id="why25-sub">How this month's book was built</span>
         </div>
+        <div id="why25-body"></div>
+        <!-- V29.6: the ten MFFAC weight markers that used to live here (every factor
+             name and its exact weight, for both equity books) are GONE. dashboard.html
+             is served as static HTML from the same public origin as the marketing
+             pages — the token gates the DATA, not the markup — so anyone could read
+             the model out of view-source. The card now explains how the book is
+             BUILT, which is what a member actually wants from it, and discloses
+             nothing a competitor could rebuild from. See also the strategies page's
+             "How MindForge backtests" module, which replaced the public twin. -->
+      </div>
+
+      <!-- SECTOR ALLOCATION -->
+      <div class="alloc-card fade-up" id="alloc-card" style="display:none;">
+        <div class="alloc-head">
+          <h2>Sector allocation</h2>
+          <div class="alloc-meta" id="alloc-meta">Top sectors by combined portfolio weight</div>
+        </div>
+        <div class="alloc-layout">
+          <div class="alloc-donut" id="alloc-donut" aria-hidden="true">
+            <svg viewBox="0 0 100 100" id="alloc-donut-svg" class="donut"></svg>
+            <div class="donut-center">
+              <div class="dc-num" id="donut-center-num">—</div>
+              <div class="dc-lbl">Sectors</div>
+            </div>
+          </div>
+          <div class="alloc-grid" id="alloc-grid"></div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO MAP (V17.3) — full holdings mosaic, coloured by sector -->
+      <div class="pmap-card fade-up" id="pmap-card" style="display:none;">
+        <div class="pmap-head">
+          <h2>Portfolio map</h2>
+          <div class="pmap-sub" id="pmap-sub">Your holdings at a glance</div>
+        </div>
+        <div class="pmap-grid" id="pmap-grid"></div>
+      </div>
+
+      <div class="oneonone-card fade-up">
+        <div class="oo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+        <div class="oo-text">
+          <div class="oo-title">1:1 Zoom call with Sagar Shekhawath<span class="oo-badge">SEBI RA</span></div>
+          <div class="oo-sub">A complimentary member benefit — book a one-on-one Zoom call to walk through your strategy, this cycle's picks and position sizing with our SEBI-Registered Research Analyst.</div>
+        </div>
+        <a id="oneonone-cta" class="oo-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20I%27d%20like%20to%20book%20my%201%3A1%20Zoom%20call%20with%20Sagar%20Shekhawath%20(SEBI%20RA).">Book your 1:1 Zoom call →</a>
       </div>
 
       <div class="disclaimer">
@@ -4188,7 +4385,7 @@ async function init() {
     loadLiveProfit();   // V14.3: live profit since rebalance (non-blocking)
     syncStrategiesFromServer(data.subscription.strategy || '');  // V29.6: fill the switcher (non-blocking, fail-soft)
   } catch(e) {
-    showError('Connection Error', 'Could not connect to the server. Please try again in a moment.');
+    showError('Connection Error', 'Could not connect to the server. Your subscription is unaffected — this is a network or server hiccup.', {retry:true});
   }
 }
 
@@ -4237,6 +4434,12 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   }
   var foot = document.getElementById('cyc-foot');
   if (foot) {
+    // V35.2 — the retired "Subscription" tile carried the words "Renew anytime on
+    // WhatsApp" at every day count, while the status pill only grows a renew BUTTON
+    // inside the last 14 days. Retiring the tile would have left a member with 20
+    // days left no renewal affordance at all, so the rail — now the page's only
+    // countdown — carries a persistent link. Same wa.me target and prefilled
+    // message the pill's CTA and the stat tile used.
     foot.innerHTML = covered
       ? 'Your access runs to <b>' + fmt(expiry) + '</b>, so the <b>' + fmt(nextReb) +
         '</b> rebalance is included' + (gap ? ' with <b>' + dayWord(gap) + '</b> to spare' : '') + '.'
@@ -4244,6 +4447,22 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
         ? 'Your access has ended — renew to receive the <b>' + fmt(nextReb) + '</b> picks.'
         : 'Your access ends <b>' + dayWord(gap) + '</b> before the <b>' + fmt(nextReb) +
           '</b> rebalance — renew to receive that set of picks.';
+  }
+  // V35.2 — see the #cyc-actions note in the markup. The status pill already grows
+  // a .renew-cta at <=14 days; this fills the gap above that so a member is never
+  // without a renewal route, and the two never both appear.
+  var acts = document.getElementById('cyc-actions');
+  if (acts){
+    if (daysLeft > 14){
+      var sub = window._currentSub || {};
+      acts.innerHTML = '<a class="renew-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=' +
+        encodeURIComponent('Hi MindForge Capital — I would like to renew my subscription. Strategy: ' +
+          (sub.strategy || '') + '. Email: ' + (sub.email || '') + '.') +
+        '"><svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43z"/></svg>Renew on WhatsApp</a>';
+      acts.style.display = '';
+    } else {
+      acts.innerHTML = ''; acts.style.display = 'none';
+    }
   }
 
   card.style.display = '';
@@ -4745,6 +4964,10 @@ function setupStrategySwitcher(activeStrategy){
 
 function renderDashboard(sub, stocks) {
   window._currentSub = sub;
+  // V35.2 — computed BEFORE renderTable() paints, because the rows carry a "new"
+  // badge read off it. renderBookChange() is called near the end of this function
+  // with the same object; bookDiff() itself must run exactly once per render.
+  window._bookDiff = bookDiff(sub, stocks);
   document.getElementById('state-loading').style.display = 'none';
   document.getElementById('state-dashboard').style.display = 'block';
 
@@ -4789,22 +5012,18 @@ function renderDashboard(sub, stocks) {
     encodeURIComponent('Hi MindForge Capital — I would like to renew my subscription. Strategy: ' + (sub.strategy||'') + '. Email: ' + (sub.email||'') + '.') +
     '"><svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true"><path d="M20.52 3.48A11.93 11.93 0 0 0 12.04 0C5.46 0 .12 5.34.12 11.92c0 2.1.55 4.15 1.6 5.95L0 24l6.27-1.64a11.9 11.9 0 0 0 5.77 1.47h.01c6.58 0 11.92-5.34 11.92-11.92 0-3.18-1.24-6.18-3.45-8.43z"/></svg>Renew on WhatsApp</a>';
 
-  const daysCard = document.getElementById('stat-card-days');
-  _animateCount(document.getElementById('stat-days'), daysLeft, {unitHtml: '<span class="unit">' + (daysLeft === 1 ? 'day left' : 'days left') + '</span>'});
-  let progClass = '', dotClass = 'dot-green';
-  daysCard.removeAttribute('data-urgent');
+  // V35.2 — the "Subscription · N days left" tile was retired (see the stats-row
+  // note), but the URGENCY it computed was never only its own: progClass and
+  // dotClass drive the status pill's dot and its progress fill, and the same
+  // reading now also tones the cycle rail, which is where the countdown lives.
+  let progClass = '', dotClass = 'dot-green', urgency = '';
   if (daysLeft <= 7) {
-    daysCard.classList.add('tone-red');
-    daysCard.setAttribute('data-urgent', 'true');
-    progClass = 'danger'; dotClass = 'dot-red';
-    document.getElementById('stat-days-sub').textContent = 'Renew soon — message us on WhatsApp';
+    progClass = 'danger'; dotClass = 'dot-red';  urgency = 'is-urgent';
   } else if (daysLeft <= 14) {
-    daysCard.classList.add('tone-gold');
-    progClass = 'warn'; dotClass = 'dot-gold';
-    document.getElementById('stat-days-sub').textContent = 'Renew anytime on WhatsApp';
-  } else {
-    document.getElementById('stat-days-sub').textContent = 'Renew anytime on WhatsApp';
+    progClass = 'warn';   dotClass = 'dot-gold'; urgency = 'is-soon';
   }
+  const cycCard = document.getElementById('cyc-card');
+  if (cycCard){ cycCard.classList.remove('is-urgent','is-soon'); if (urgency) cycCard.classList.add(urgency); }
 
   // Status pill — base text + inline progress bar + (optional) renew CTA
   document.getElementById('pill-status').innerHTML =
@@ -4816,40 +5035,12 @@ function renderDashboard(sub, stocks) {
       : '') +
     (daysLeft <= 14 ? renewBtn : '');
 
-  // V27.5: subscription cycle meter — the KPI twin of #reb-meter. Same progPct as
-  // the status pill above, same [data-bar] applier, and it inherits progClass so an
-  // expiring subscription tints gold/red here exactly as it does in the pill.
-  const subMeter = document.getElementById('sub-meter'), subFill = document.getElementById('sub-meter-fill');
-  if (subMeter && subFill) {
-    if (knowTerm) {
-      subFill.className = progClass;
-      subFill.setAttribute('data-bar', progPct.toFixed(0) + '%');
-      subMeter.title = daysLeft + ' of ' + cycleDays + ' days remaining in this billing cycle';
-      subMeter.style.display = '';
-    } else {
-      subMeter.style.display = 'none';       // V28.2: no start date → no position in the cycle
-    }
-  }
-
-  // Next rebalance
+  // V35.2 — #sub-meter and #reb-meter were the two retired tiles' micro-meters and
+  // went with them. Both quantities they showed survive: position in the billing
+  // term is still drawn by the status pill's .sub-prog fill from this same
+  // progPct, and position in the monthly cycle is what the rail below draws.
   const nextReb = nextRebalanceDate(now);
   const daysToReb = Math.max(0, daysBetween(now, nextReb));
-  _animateCount(document.getElementById('stat-next'), daysToReb, {unitHtml: '<span class="unit">' + (daysToReb === 1 ? 'day' : 'days') + '</span>'});
-  document.getElementById('stat-next-sub').textContent = 'on ' + nextReb.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
-  document.getElementById('rebalance-date').textContent = nextReb.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ' (monthly)';
-  // V21.9: cycle micro-meter — % of the monthly cycle elapsed (1st → 1st), so the
-  // KPI shows position in the cycle, not just the countdown. Width animates via
-  // the shared [data-bar] applier that runs after render.
-  const rebMeter = document.getElementById('reb-meter'), rebFill = document.getElementById('reb-meter-fill');
-  if (rebMeter && rebFill) {
-    const cycStart = new Date(nextReb.getFullYear(), nextReb.getMonth() - 1, 1);
-    const cycLen = Math.max(1, daysBetween(cycStart, nextReb));
-    const cycDone = Math.min(cycLen, Math.max(0, daysBetween(cycStart, now)));
-    const cycPct = Math.round(cycDone / cycLen * 100);
-    rebFill.setAttribute('data-bar', cycPct + '%');
-    rebMeter.title = cycPct + '% through this cycle — new picks in ' + daysToReb + ' day' + (daysToReb === 1 ? '' : 's');
-    rebMeter.style.display = '';
-  }
 
   // V28.2 — the cycle rail. Both countdowns on ONE axis (0 = today, full track =
   // whichever event lands later), so "does my access reach the next set of picks?"
@@ -4933,6 +5124,12 @@ function renderDashboard(sub, stocks) {
   // V15.5: restore the saved rebalance-notification preference (server flag wins,
   // localStorage fallback) so the toggle no longer resets to OFF on refresh.
   restoreNotifState();
+
+  // V35.2 — what changed since the last cycle. Computed once per render (bookDiff
+  // rolls the stored history forward as a side effect, so a second call in the
+  // same paint would report an empty diff) and published on window so the row
+  // renderer can badge the new names without recomputing it.
+  renderBookChange(window._bookDiff, stocks);
 
   // Reveal fade-up entrance
   requestAnimationFrame(() => {
@@ -6344,6 +6541,18 @@ function renderTable(stocks) {
   // V24.5: every book is NSE-listed, so price and allocation are always ₹.
   const fmtAmt = n => '₹' + fmtINR(n);
 
+  // V35.2 — mark the names that are new this cycle, on the row itself. The
+  // summary card above says how many; this says WHICH, at the point where a
+  // member is reading off quantities to place. Silent when there is no previous
+  // cycle on this device (window._bookDiff.known === false) — an unbadged row
+  // must never be readable as "held", so with an unknown diff nothing is badged
+  // at all. The badge is a <span>, not a title: there is no hover on a phone.
+  const _bd = window._bookDiff;
+  const newSet = {};
+  if (_bd && _bd.known) _bd.added.forEach(t => { newSet[t] = 1; });
+  const newTag = s => (newSet[s.ticker]
+    ? '<span class="new-tag" title="New in this cycle — not in your previous set">New</span>' : '');
+
   // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {
     const entry = Number(s.recommended_price) || 0;
@@ -6361,7 +6570,7 @@ function renderTable(stocks) {
     return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
       <td class="bought-col"><input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}></td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}</td>
+      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${newTag(s)}</td>
       <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
       <td class="price right"><span class="px-rec">₹${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
@@ -6395,7 +6604,7 @@ function renderTable(stocks) {
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
           <div class="sc-tkr-row">
-            <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}
+            <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}${newTag(s)}
           </div>
         </div>
         <div class="sc-num">${i+1}</div>
@@ -7673,14 +7882,32 @@ function _setNotifUI(on, email) {
     if (ok) ok.style.display = 'none';
   }
 }
+// V35.2 — step 4 of "How to invest" is the only place on the page that tells a
+// member what happens at the next rebalance, and it named a control that half the
+// membership cannot see. One writer, two readings, derived from the same test as
+// the toggle itself: with the toggle present it points at it; without, it says
+// plainly what a monthly member gets instead, and what the longer plans add.
+function _setHowToStep4(hasToggle){
+  var p = document.getElementById('hs4-copy');
+  if (!p) return;
+  p.textContent = hasToggle
+    ? "Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it."
+    : "Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it. Email alerts for each rebalance come with the 3-month plan and longer.";
+}
+
 // Called from renderDashboard() once we know the subscription. Server flag wins
 // when present; otherwise fall back to the locally-saved preference.
 function restoreNotifState() {
   var sub = window._currentSub || {};
   // Monthly subs (duration_months ≤ 1) never receive rebalance pick emails — hide the toggle.
   var sec = document.getElementById('notif-section');
-  if ((sub.duration_months || 1) <= 1) { if (sec) sec.style.display = 'none'; return; }
+  if ((sub.duration_months || 1) <= 1) {
+    if (sec) sec.style.display = 'none';
+    _setHowToStep4(false);
+    return;
+  }
   if (sec) sec.style.display = '';
+  _setHowToStep4(true);
   var serverDefined = typeof sub.notify !== 'undefined' && sub.notify !== null && sub.notify !== '';
   var pref = _loadNotifPref();
   var on = serverDefined ? (String(sub.notify).toLowerCase() === 'on') : !!(pref && pref.on);
@@ -7752,7 +7979,11 @@ function updateMarketStatus() {
   if (bar) bar.title = label + ' · ' + hours + ' · Mon–Fri';
 }
 
-function showError(title, msg) {
+// V35.2 — `opts.retry` marks an error the member can actually do something about.
+// It is opt-IN: "Access Denied" and "No Access Token" are settled answers and a
+// retry button on them would just loop, so they keep the dead end they have.
+function showError(title, msg, opts) {
+  opts = opts || {};
   document.getElementById('state-loading').style.display = 'none';
   // V29.0: an error must never leave the half-built dashboard on screen. init()
   // could reach renderDashboard (which sets this to block) and only THEN throw,
@@ -7762,7 +7993,41 @@ function showError(title, msg) {
   document.getElementById('state-error').style.display = 'block';
   document.getElementById('error-title').textContent = title;
   document.getElementById('error-msg').textContent = msg;
+  var retry = !!opts.retry;
+  var rBox = document.getElementById('error-retry');
+  var lock = document.getElementById('error-icon-lock');
+  var net  = document.getElementById('error-icon-net');
+  if (rBox) rBox.hidden = !retry;
+  if (lock) lock.hidden = retry;
+  if (net)  net.hidden  = !retry;
+  var btn = document.getElementById('error-retry-btn');
+  if (btn){
+    btn.disabled = false;
+    var lbl = document.getElementById('error-retry-label');
+    if (lbl) lbl.textContent = 'Try again';
+  }
   offerOtherStrategies();
+}
+
+// V35.2 — re-run the load in place. init() is idempotent (it either renders or
+// calls showError again), so this needs no page reload and costs no OTP.
+function retryDashboard(){
+  var btn = document.getElementById('error-retry-btn');
+  if (btn && btn.disabled) return;            // one flight at a time
+  if (btn){
+    btn.disabled = true;
+    var lbl = document.getElementById('error-retry-label');
+    if (lbl) lbl.textContent = 'Reconnecting…';
+  }
+  document.getElementById('state-error').style.display = 'none';
+  document.getElementById('state-loading').style.display = 'block';
+  // A retry that resolves in 40ms reads as a button that did nothing; hold the
+  // spinner briefly so the state change is legible either way.
+  setTimeout(function(){
+    Promise.resolve().then(init).catch(function(){
+      showError('Connection Error', 'Still could not reach the server. Please check your connection and try again.', {retry:true});
+    });
+  }, 450);
 }
 
 // V29.0 — the way back off the error screen. The strategy switcher is part of the
@@ -7855,6 +8120,187 @@ function parseRebalanceDate(sub){
   if (sub && sub.subscribed_at){ var d2 = new Date(sub.subscribed_at); if (!isNaN(d2.getTime())) return d2; }
   return null;
 }
+/* ═══════════════════════════════════════════════════════════════════════════
+   V35.2 — WHAT CHANGED SINCE LAST MONTH.
+   ---------------------------------------------------------------------------
+   The homepage sells this in as many words: "after that you are only trading
+   the difference between last month's holdings and this month's." The dashboard
+   never computed that difference. A member on month one gets the whole book and
+   is fine; every member after that has been diffing two lists by hand out of an
+   email, which is the single piece of arithmetic this product exists to remove.
+
+   WHY THIS IS DEVICE-LOCAL, AND WHY THAT IS STILL WORTH SHIPPING.
+   The backend returns one book — {subscription, stocks} for the CURRENT run and
+   nothing before it. Serving last month's holdings would mean a new Apps Script
+   endpoint and a redeploy, which is a manual step in a Google account. So the
+   comparison basis is kept on the device: each strategy's ticker set is recorded
+   under its run_id, and the moment the run_id changes the set we held becomes
+   the "previous" one. Consequences, stated rather than papered over:
+     · a member who opens the dashboard on a NEW device sees "first cycle
+       tracked here" until the next rebalance — never a wrong diff, just no diff;
+     · a member who skips a cycle entirely is compared against the last cycle
+       they actually opened, which is the honest answer to "what do I trade" for
+       THEM, and the module names the cycle it is comparing against;
+     · clearing site data resets it to the same honest unknown.
+   Every surface below is gated on `known`. Nothing guesses.
+
+   Keyed on run_id (e.g. 20260609_230735_SMC), which changes with every published
+   run — parseRebalanceDate() already reads it. Falls back to the rebalance date,
+   and tracks nothing at all when neither is available.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var BOOK_HIST_KEY = 'mfc_book_hist_v1';
+
+function _cycleKey(sub){
+  if (sub && sub.run_id) return String(sub.run_id);
+  var d = parseRebalanceDate(sub);
+  if (d && !isNaN(d.getTime())) return 'd' + d.toISOString().slice(0,10);
+  return null;
+}
+function _loadBookHist(){
+  try { var o = JSON.parse(localStorage.getItem(BOOK_HIST_KEY) || '{}');
+        return (o && typeof o === 'object') ? o : {}; } catch(e){ return {}; }
+}
+function _saveBookHist(o){ try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e){} }
+
+/* Returns {known, added[], removed[], held[], prevKey, prevWhen} and, as a side
+   effect, rolls the stored history forward. Deliberately called ONCE per render
+   from renderDashboard: calling it twice in one paint would roll cur->prev again
+   and report an empty diff. */
+function bookDiff(sub, stocks){
+  var out = { known:false, added:[], removed:[], held:[], prevKey:null, prevWhen:null };
+  var key = _cycleKey(sub);
+  var tickers = (stocks || []).map(function(s){ return String(s.ticker || ''); }).filter(Boolean);
+  if (!key || !tickers.length) return out;
+  var strat = String((sub && sub.strategy) || 'default');
+  var hist  = _loadBookHist();
+  var slot  = hist[strat] || {};
+
+  // ?demo — the fixture has to exercise this branch or the module is never seen
+  // in local testing. Seeds a plausible previous cycle instead of the real one.
+  if (isDemo && !slot.prev){
+    slot = { cur:{ key:key, tickers:tickers, when:new Date().toISOString() },
+             prev:{ key:'demo-prev', tickers:_demoPrevTickers(), when:new Date(Date.now()-31*864e5).toISOString() } };
+  } else if (!slot.cur){
+    slot.cur = { key:key, tickers:tickers, when:new Date().toISOString() };
+  } else if (slot.cur.key !== key){
+    slot.prev = slot.cur;                                  // the book rolled over
+    slot.cur  = { key:key, tickers:tickers, when:new Date().toISOString() };
+  } else {
+    slot.cur.tickers = tickers;                            // same cycle, re-read
+  }
+  hist[strat] = slot; _saveBookHist(hist);
+
+  if (!slot.prev || !slot.prev.tickers || !slot.prev.tickers.length) return out;
+  var prev = slot.prev.tickers, prevSet = {}, curSet = {};
+  prev.forEach(function(t){ prevSet[t] = 1; });
+  tickers.forEach(function(t){ curSet[t] = 1; });
+  out.known   = true;
+  out.prevKey = slot.prev.key;
+  out.prevWhen= slot.prev.when || null;
+  out.added   = tickers.filter(function(t){ return !prevSet[t]; });
+  out.held    = tickers.filter(function(t){ return  prevSet[t]; });
+  out.removed = prev.filter(function(t){ return !curSet[t]; });
+  return out;
+}
+
+/* The demo fixture's "last month". Per MODE, because ?demo=2 is the MultiAsset ETF
+   book and handing it the equity fixture would print a nonsense 8-in / 10-out cycle
+   — the exact stale-fixture failure V33.9 called out, where demo mode stops
+   exercising the branch it exists to exercise.
+     ?demo=1  two of the ten equity names swapped  -> 2 in / 2 out / 8 held
+     ?demo=2  the ETF sleeve is fixed and only its WEIGHTS rotate, which is what
+              MultiAsset actually does -> 0 in / 0 out / 8 held, i.e. the
+              "nothing to trade" branch, which nothing else here would reach. */
+function _demoPrevTickers(){
+  if (demoMode === '2') return ['MON100','HDFCSML250','JUNIORBEES','MID150BEES','EBBETF0431','GOLDBEES','SILVERBEES','NIFTYBEES'];
+  return ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','RELIANCE','BHARTIARTL','TITAN','WIPRO'];
+}
+
+/* ── the change module + the two KPI tiles it feeds ────────────────────────────
+   One writer for all three surfaces, so the tiles and the card can never state
+   different counts. Everything is gated on diff.known. */
+function renderBookChange(diff, stocks){
+  var card   = document.getElementById('chg-card');
+  var nVal   = document.getElementById('stat-new'),   nSub = document.getElementById('stat-new-sub');
+  var oVal   = document.getElementById('stat-orders'),oSub = document.getElementById('stat-orders-sub');
+  var nMeter = document.getElementById('new-meter'),  nFill= document.getElementById('new-meter-fill');
+  var oMeter = document.getElementById('ord-meter'),  oFill= document.getElementById('ord-meter-fill');
+  var total  = (stocks || []).length;
+
+  if (!diff || !diff.known){
+    // First cycle recorded on this device. Say that; do not imply a comparison.
+    if (card) card.style.display = 'none';
+    if (nVal) nVal.textContent = '—';
+    if (nSub) nSub.textContent = 'first cycle tracked on this device';
+    if (nMeter) nMeter.style.display = 'none';
+    // Orders is still answerable without a diff: with no previous book, the book
+    // IS the order list. That is exactly true for a member in their first cycle.
+    if (oVal) _animateCount(oVal, total, {});
+    if (oSub) oSub.textContent = total ? 'the full book — your first tracked cycle' : 'no picks published yet';
+    if (oMeter) oMeter.style.display = 'none';
+    return;
+  }
+
+  var nIn = diff.added.length, nOut = diff.removed.length, nHold = diff.held.length;
+  var orders = nIn + nOut;
+
+  if (nVal) _animateCount(nVal, nIn, {});
+  if (nSub) nSub.textContent = nHold + ' of ' + total + ' held from last cycle';
+  if (nMeter && nFill && total){
+    nFill.setAttribute('data-bar', Math.round(nIn / total * 100) + '%');
+    nMeter.style.display = '';
+  }
+  if (oVal) _animateCount(oVal, orders, {});
+  if (oSub) oSub.textContent = orders
+    ? (nIn + (nIn === 1 ? ' buy' : ' buys') + ' · ' + nOut + (nOut === 1 ? ' sell' : ' sells'))
+    : (isWeightedBook(stocks)
+        ? 'no names change — weights rotate'      // MultiAsset: same sleeve, new targets
+        : 'nothing to trade — the book is unchanged');
+  if (oMeter && oFill && total){
+    oFill.setAttribute('data-bar', Math.min(100, Math.round(orders / total * 100)) + '%');
+    oMeter.style.display = '';
+  }
+
+  if (!card) return;
+  var when = document.getElementById('chg-when');
+  if (when){
+    var w = diff.prevWhen ? new Date(diff.prevWhen) : null;
+    when.textContent = (w && !isNaN(w.getTime()))
+      ? ('vs the set you last opened on ' + w.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))
+      : 'vs your previous set';
+  }
+  var line = document.getElementById('chg-line');
+  if (line){
+    // "Nothing to trade" is only true of an EQUAL-WEIGHT book. MultiAsset holds the
+    // same eight ETFs every month and rotates their WEIGHTS, so an empty add/remove
+    // set there means rebalancing between the holdings, not sitting still — telling
+    // that member there is nothing to trade would be plainly false. Same
+    // isWeightedBook() reading the sizing card and the donut are drawn from.
+    var weighted = isWeightedBook(stocks);
+    line.innerHTML = orders === 0
+      ? (weighted
+          ? 'The model kept the <strong>same ' + total + '</strong> holdings and re-scored their weights. Nothing is bought or sold outright this cycle — you are <strong>rebalancing between them</strong>; the Allocation column below is the target.'
+          : 'The model re-scored the universe and arrived at the <strong>same ' + total + '</strong> names. <strong>Nothing to trade this cycle</strong> — hold what you have.')
+      : ('<strong>' + nOut + '</strong> ' + (nOut === 1 ? 'name leaves' : 'names leave') +
+         ' the book and <strong>' + nIn + '</strong> ' + (nIn === 1 ? 'joins' : 'join') + ' it; <strong>' + nHold +
+         '</strong> of your ' + total + ' carry over untouched. That is <strong>' + orders + '</strong> order' +
+         (orders === 1 ? '' : 's') + ' to place, not ' + total + '.');
+  }
+  var box = document.getElementById('chg-groups');
+  if (box){
+    var chips = function(list){
+      return list.length
+        ? '<div class="chg-tks">' + list.map(function(t){ return '<span class="chg-tk">' + escapeHtml(t) + '</span>'; }).join('') + '</div>'
+        : '<div class="chg-none">None this cycle</div>';
+    };
+    box.innerHTML =
+      '<div class="chg-group is-in"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + chips(diff.added)   + '</div>' +
+      '<div class="chg-group is-out"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + chips(diff.removed) + '</div>' +
+      '<div class="chg-group is-hold"><div class="chg-gk"><i></i>Hold · carried over (' + nHold + ')</div>' + chips(diff.held)   + '</div>';
+  }
+  card.style.display = '';
+}
+
 function _pxCacheKey(){ return 'mfc_livepx_' + (token || 'demo'); }
 function _todayKey(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
 function _loadCachedPx(){
@@ -10054,6 +10500,13 @@ html[data-theme="dark"] .meta-pill.has-switcher.nudge{ animation-name:stratNudge
       });
     });
   }
+  // V35.2 — bind the transient-error retry once, before the first init() can fail.
+  // Bound here rather than as an inline onclick so the handler exists even if the
+  // very first paint is the error state.
+  (function(){
+    var b = document.getElementById('error-retry-btn');
+    if (b) b.addEventListener('click', retryDashboard);
+  })();
   if(document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);
 })();
@@ -10924,6 +11377,14 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      not). Added here rather than in the V32.1 block in mfc-finish.css so this
      page's print policy stays in one place. */
   .sub-prog-bar, .sub-prog-fill,
+  /* V35.2 — the change module's two colour-carrying marks, judged against the
+     criterion this block sets rather than added by reflex. `.chg-gk i` is the
+     ONLY thing separating the buy group from the sell group once the page is
+     monochrome — the headings differ, but the dot is what makes the three
+     panels scan as three states; and `.new-tag` encodes a per-row state that
+     appears nowhere else on the printed row. Both are content. The card's own
+     top hairline and the ticker chips' washes are decoration and stay off. */
+  .chg-gk i, .new-tag,
   .pspread-t i{
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

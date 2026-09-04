@@ -678,7 +678,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3410">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3420">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -822,6 +822,25 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
      14 - 14 = 0. Verified after: 40 -> 0, label -26 -> +14, class
      `ms-l ms-r` -> `ms-r`, and the right end still resolves to `ms-l` alone. */
   .ms-lbl{scroll-snap-align:start}
+  /* V35.2 — THE LAST SORT CHIP SAT UNDER THE WHATSAPP FAB.
+     `.fab-wa` is position:fixed, 56x56, z-index 90, pinned to the bottom-right
+     corner. This strip is not sticky, so it only meets that corner at some
+     scroll offsets — but on the Scanner one of those offsets is scrollTop 0,
+     the page's own landing state. Hit-tested at 390x844: the chip resolving at
+     the FAB's centre returned the FAB's <circle>, not the chip.
+     Mid-strip that is survivable (a ~100px chip keeps its left half exposed).
+     The real casualty is the END of the strip: scrolled fully right, the last
+     chip's right edge lands in the FAB's column, and the short chips here
+     ("P/E", "P/B") are narrower than the FAB is wide — so the final sort option
+     could be completely swallowed, permanently, with no way to move it.
+     A trailing flex spacer wide enough to clear the corner gives the strip
+     somewhere to put the FAB, so every chip can be scrolled into the clear.
+     Deliberate trade-off, stated rather than hidden: the V34.0 right-edge fade
+     is driven by real scroll extent (`scrollLeft < max-4`), so it still switches
+     off exactly at the end — but for the last ~68px of travel it is fading a
+     spacer rather than a chip. A fade that dies a swipe early is a far smaller
+     lie than a control that cannot be tapped at all. */
+  .mob-sort::after{content:'';flex:0 0 68px;height:1px}
   .mob-sort.ms-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);
                          mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent)}
   .mob-sort.ms-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);
@@ -950,6 +969,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+      <a href="../index.html#pricing" style="color:var(--text2);">Pricing</a>
       <a href="../screener/">Scanner</a>
       <a href="index.html" class="active">Integrity Score</a>
       <a href="../fii-dii/">FII/DII</a>

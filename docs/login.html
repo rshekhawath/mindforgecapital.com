@@ -325,10 +325,51 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3410">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3420">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 </head>
 <body class="mfc-ambient">
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   V35.2 — THE INSTALLED APP OPENED ON A PAGE TITLED "SIGN IN".
+   --------------------------------------------------------------------------
+   manifest.json's start_url is /login.html, because that is the file the
+   service worker PRECACHES (dashboard.html is deliberately never cached — see
+   the sw.js fetch handler and the V29.8 note about tokens in cached URLs). So
+   the home-screen icon of an app whose entire purpose is the dashboard landed
+   on a lock icon, an <h1>Sign In</h1> and a three-step "Email -> Code ->
+   Dashboard" meter, with the one useful control ("Continue to your dashboard")
+   sitting ABOVE the heading that contradicted it. A signed-in member paid a tap
+   and a wrong first impression on every single launch.
+   Fixed here rather than by moving start_url, which would trade the offline
+   shell for it. Three guards, all load-bearing:
+     - a session must already exist on this device (cookie first, the dashboard's
+       primary store, then localStorage — the V21.2 reading);
+     - the app must be running STANDALONE, so a browser tab, a shared link or
+       someone deliberately clicking "Sign In" in the nav still gets the form;
+     - the device must not be known-offline, because dashboard.html is not in
+       the precache and replacing a cached page with a failed navigation is a
+       worse launch than the one being fixed.
+   ?from=switcher (V29.6) and ?switch=1 opt out — both mean "I want the form".
+   location.replace, not href: the launch page must not become a history entry
+   the back gesture can return to.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  try{
+    var q = new URLSearchParams(location.search);
+    if (q.get('from') === 'switcher' || q.get('switch') === '1') return;
+    var standalone = false;
+    try { standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch(e){}
+    if (!standalone) return;
+    if (navigator.onLine === false) return;
+    var has = false;
+    try { has = /(?:^|;\s*)mfc_dash_token=[^;]/.test(document.cookie); } catch(e){}
+    if (!has) { try { has = !!localStorage.getItem('mfc_dash_token'); } catch(e){} }
+    if (!has) return;
+    location.replace('dashboard.html');
+  }catch(e){}
+})();
+</script>
 <!-- MF-SCROLL-PROG -->
 <div class="mf-scroll-prog" id="mf-scroll-prog" role="progressbar" aria-label="Page scroll progress" aria-hidden="true"></div>
 
@@ -340,6 +381,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
+      <a href="index.html#pricing" style="color:var(--text2);">Pricing</a>
       <a href="screener/" style="color:var(--text2);">Scanner</a>
       <a href="scores/" style="color:var(--text2);">Integrity Score</a>
       <a href="fii-dii/" style="color:var(--text2);">FII/DII</a>
@@ -358,18 +400,25 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
     <!-- STEP 1: Email -->
     <div id="step-email">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2.5"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg></div>
+      <h1 id="signin-h1">Sign In</h1>
+      <p class="desc" id="signin-desc">Enter your subscription email. We'll send you a one-time code to access your dashboard.</p>
       <!-- V21.0: resume an existing session. Shown only when a dashboard token is
            already stored on this device (member is signed in), so returning to Sign In
-           from a nav link is a one-tap continue — never a fresh OTP login. -->
-      <div id="resume-session" style="display:none;margin-bottom:24px;">
+           from a nav link is a one-tap continue — never a fresh OTP login.
+           V35.2: MOVED below the heading it contradicts. It used to render ABOVE
+           <h1>Sign In</h1>, so a member who was already signed in read "Continue to
+           your dashboard" and then, underneath it, a lock icon, the words "Sign In"
+           and a three-step Email/Code/Dashboard meter describing a flow they were
+           not in. The button was right and every other pixel on the page argued
+           with it. The heading, the description and the meter are now written from
+           the same test that reveals this block. -->
+      <div id="resume-session" style="display:none;margin:22px 0 24px;">
         <a class="btn" id="resume-btn" href="dashboard.html" style="display:block;text-align:center;text-decoration:none;">Continue to your dashboard →</a>
         <div class="hint" style="text-align:center;margin-top:14px;">or sign in with a different email below</div>
         <hr class="divider">
       </div>
-      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2.5"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16.5" r="1.2" fill="currentColor"/></svg></div>
-      <h1>Sign In</h1>
-      <p class="desc">Enter your subscription email. We'll send you a one-time code to access your dashboard.</p>
-      <ol class="step-indicator" aria-label="Sign-in progress">
+      <ol class="step-indicator" id="signin-steps" aria-label="Sign-in progress">
         <li class="step-item active" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Email</span></li>
         <li class="step-item"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Code</span></li>
         <li class="step-item"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Dashboard</span></li>
@@ -681,6 +730,20 @@ document.addEventListener('keydown', function(e) {
   if (!has) return;
   var box = document.getElementById('resume-session');
   if (box) box.style.display = 'block';
+  // V35.2 — stop the page telling a signed-in member to sign in. Same reading
+  // that reveals the resume block rewrites the identity around it: the step meter
+  // describes an OTP flow this member is not in, and its sr-only "Step 1 of 3"
+  // twin has to go with it or a screen reader still announces the wrong flow.
+  var h = document.getElementById('signin-h1');
+  var d = document.getElementById('signin-desc');
+  var s = document.getElementById('signin-steps');
+  if (h) h.textContent = 'Welcome back';
+  if (d) d.textContent = "You're already signed in on this device — continue straight to your dashboard.";
+  if (s){
+    s.style.display = 'none';
+    var srp = s.nextElementSibling;
+    if (srp && srp.classList && srp.classList.contains('sr-only')) srp.style.display = 'none';
+  }
 })();
 </script>
 <script>
