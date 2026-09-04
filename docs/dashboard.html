@@ -2377,7 +2377,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3400">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3410">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -6298,14 +6298,37 @@ function renderTable(stocks) {
      same reason and said nothing — on desktop and on the phone cards alike.
      Wording is deliberately the same as strategies.html so the two surfaces
      explain the identical thing identically. */
+  // V32.7 — one reading of held-vs-model for the whole render pass
+  const HW = heldWeights(currentCapital);
   const wVals = stocks.map(s => Number(s.weight_pct) || 0).filter(w => w > 0);
   const wSpread = wVals.length ? Math.max(...wVals) - Math.min(...wVals) : 0;
   const capEl = document.getElementById('weightCap');
   if (capEl) {
-    capEl.textContent = !wVals.length ? ''
-      : wSpread < 0.05
-        ? 'Bar = model weight. Every holding carries the same weight in this book — the model ranks the names, it does not bet more on any one of them.'
-        : 'Bar = model weight, against the largest holding in this book. This strategy is weighted by composite score, so the sizes differ.';
+    /* V35.1 — this caption described a bar that no longer exists. V29.3 wrote it
+       for a fill of `weight / largest weight`; the column was later rebuilt as
+       the DRIFT GAUGE — `gaugeBar(hr)`, a segment growing either side of
+       `.wt-axis` whose length is |bps| against HELD_MAXBPS and whose class is
+       is-over / is-under. Everything else on the row had already been updated:
+       the header reads "Weight / vs model", the aria-label reads "you hold
+       10.03% against a 10.00% model weight (+3 bps over the model)", and the
+       phone card prints a "+3 bps" chip. Only the one visible sentence that
+       tells a member what the picture MEANS still said "Bar = model weight".
+       On an equal-weight book that made it actively wrong rather than merely
+       stale — it read "Every holding carries the same weight in this book"
+       directly under six bars of six different lengths (4.8 / 8.2 / 4.8 / 11.8
+       / 40 / 4.8 px on the demo book), so the sentence accused its own graphic
+       of being broken. The equal-weight / score-weighted split is still true of
+       the NUMBER, so it is kept and attributed to the number; the bar is now
+       described as what it measures, in the same words the sizing card above
+       uses so the two explain one thing identically. */
+    const gauged = !!HW.ok;   // exactly when gaugeBar() draws anything
+    capEl.innerHTML = !wVals.length ? ''
+      : (wSpread < 0.05
+          ? 'The <b>Weight</b> percentage is the model’s: every holding carries the same weight in this book — the model ranks the names, it does not bet more on any one of them. '
+          : 'The <b>Weight</b> percentage is the model’s: this strategy is weighted by composite score, so the sizes differ. ')
+        + (gauged
+            ? 'The gauge beside it is your gap to that weight — whole shares cannot be split, so each order lands a little over or under. Right of the centre line is over, left is under.'
+            : 'Enter your capital above and a gauge appears beside it showing how far each whole-share order lands from that weight.');
     capEl.style.display = wVals.length ? '' : 'none';
   }
   // V12.5: per-stock allocation is weight-proportional (see allocBudget()).
@@ -6320,8 +6343,6 @@ function renderTable(stocks) {
 
   // V24.5: every book is NSE-listed, so price and allocation are always ₹.
   const fmtAmt = n => '₹' + fmtINR(n);
-  // V32.7 — one reading of held-vs-model for the whole render pass
-  const HW = heldWeights(currentCapital);
 
   // Desktop table
   tbody.innerHTML = stocks.map((s,i) => {

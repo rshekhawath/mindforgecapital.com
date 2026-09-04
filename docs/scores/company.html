@@ -554,7 +554,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3400">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3410">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
    skip link since the Round-5 a11y pass; the four free tools and the per-stock
@@ -1848,7 +1848,14 @@ function renderPriceTrend(){
   function bar(label,sma){
     if(!cur||!sma)return`<div class="trend-line"><div class="tl-label">${label}</div><div class="trend-track"><div class="trend-mid"></div></div><div class="trend-val">—</div></div>`;
     const pct=(cur/sma-1)*100,clamped=Math.max(-25,Math.min(25,pct)),up=pct>=0,halfPct=Math.abs(clamped)/25*50;
-    const style=up?`left:50%;width:${halfPct}%;background:linear-gradient(90deg,rgba(5,150,105,.4),var(--green))`:`right:50%;width:${halfPct}%;background:linear-gradient(270deg,rgba(220,38,38,.35),var(--red))`;
+    /* V35.1 — a non-zero move must always paint at least one visible pixel.
+       The track is half the row per side, so a price sitting 0.06% off its SMA
+       resolves to 0.13% of the track: 0.7px at 1440 and less on a phone. The
+       row then reads "−0.1%" beside an empty track — the bar saying the
+       opposite of the number. Gated on non-zero, so a stock exactly ON its
+       SMA still paints nothing, which is the honest state. */
+    const floor=halfPct>0?"min-width:2px;":"";
+    const style=up?`left:50%;width:${halfPct}%;${floor}background:linear-gradient(90deg,rgba(5,150,105,.4),var(--green))`:`right:50%;width:${halfPct}%;${floor}background:linear-gradient(270deg,rgba(220,38,38,.35),var(--red))`;
     return`<div class="trend-line"><div class="tl-label">${label}</div><div class="trend-track"><div class="trend-mid"></div><div class="trend-bar" style="${style}"></div></div><div class="trend-val ${up?'pos-val':'neg-val'}">${up?"+":""}${pct.toFixed(1)}%</div></div>`;
   }
   function trendBadge(label,above){if(above==null)return`<span class="tbadge flat">${label}: N/A</span>`;return`<span class="tbadge ${above?"up":"down"}">${above?"▲":"▼"} ${above?"Above":"Below"} ${label}</span>`;}

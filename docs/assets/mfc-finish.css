@@ -1870,14 +1870,24 @@ html a[href^="mailto:"] { overflow-wrap: break-word; }
   /* — Stock Scanner — */
   html .filter-input, html .filter-select{ min-height: 44px; }
   html .ms-chip{ min-height: 44px; }
-  /* a sortable header cannot take padding without re-rowing the table */
+  /* a sortable header cannot take padding without re-rowing the table.
+     V35.1: the pad lives on ::before, NOT ::after. Both listers already own
+     `th.sorted::after` — it is the 2px gradient underline that marks which
+     column the table is sorted by — so growing that pseudo-element to 44px
+     did not add an invisible hit box, it inflated a VISIBLE indicator into a
+     44px accent slab covering the header's own label. On every touch device
+     from 601px up (iPads included) the sorted column's name was unreadable:
+     solid #1a50d8 -> #0891b2 where "Mkt Cap (Cr) v" should be, measured at
+     1.0:1 against the label under it. ::before is unused on these cells, so
+     the pad and the indicator stop sharing one box. */
   html #resultsTable thead th{ position: relative; }
-  html #resultsTable thead th::after{
+  html #resultsTable thead th::before{
     content: ''; position: absolute; left: 0; right: 0; top: 50%;
     height: 44px; transform: translateY(-50%); pointer-events: none;
+    background: none;                       /* never paints — it is a hit box */
   }
-  html #resultsTable thead th[role="button"]::after,
-  html #resultsTable thead th[tabindex]::after{ pointer-events: auto; }
+  html #resultsTable thead th[role="button"]::before,
+  html #resultsTable thead th[tabindex]::before{ pointer-events: auto; }
 
   /* — fee calculator — */
   html .fc-inputwrap input{ min-height: 44px; }
@@ -2524,4 +2534,44 @@ html .tabs,
 html .mfx-tablewrap,
 html .mfx-nav{
   overscroll-behavior-x: contain;
+}
+
+/* ============================================================================
+   V35.1 — THE SORTED COLUMN, TRACEABLE THROUGH THE TABLE
+   ----------------------------------------------------------------------------
+   Both listers put three signals on the sorted HEADER — accent ink, an opaque
+   directional arrow, a 2px gradient underline — and nothing at all in the body.
+   The Scanner paginates 30 rows of eight numeric columns and the Integrity
+   Score eleven; measured at 1440 the Scanner's table is 2,752px tall against a
+   3,789px document, so by the second screenful the header is off-screen and the
+   reader is looking at "8,28,180  16.6  7.5  54.6  2.84" with no way to tell
+   which of those the table is ordered by. V31.8 pinned the header for exactly
+   this reason, but only where the columns happen to fit (`.is-fit`); in the two
+   bands where the scroller is live, and on every page of the Integrity Score,
+   there is still nothing.
+
+   The fill is written by the RENDERER, not by `:nth-child` — the reader
+   controls the column set from the Columns panel, so a positional selector
+   would tint whatever column happened to land at that index. `vis`/`COLUMNS`
+   is the visible list the row is built from, so the class can only ever land on
+   the column that is actually sorted.
+
+   Deliberately weaker than the row hover (.04 against the hover's own .04 plus
+   its 3px inset rule): this is an orientation cue you read past, not a
+   selection. Guarded to >=601px because below that the table is a stack of
+   cards and every "column" is one line of every card — tinting one line in
+   fifteen cards is noise, not a column.
+   ========================================================================== */
+@media screen and (min-width: 601px){
+  html #resultsTable tbody td.col-sorted{
+    background-color: rgba(26, 80, 216, .045);
+  }
+  html[data-theme="dark"] #resultsTable tbody td.col-sorted{
+    background-color: rgba(147, 178, 255, .075);
+  }
+  /* The frozen identity column is `position:sticky` with an opaque background
+     so rows do not show through it when the table is scrolled sideways; it is
+     also `nosort` on both listers, so it can never carry this class. Stated
+     rather than relied on. */
+  html #resultsTable tbody td:first-child.col-sorted{ background-color: transparent; }
 }

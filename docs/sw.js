@@ -593,7 +593,7 @@
 // count/cap corrected to 10 & 15 / cap 2, and the equal-weight pip strip added
 // to their hero tiles — is on network-first HTML and needs nothing here. No
 // shared asset moved.
-const CACHE = 'mfc-v82';
+const CACHE = 'mfc-v83';   // V35.1 — index.html's mfc-finish.css token moved (3400 -> 3410) and index.html is precached, so the shell is only rewritten when this name changes
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

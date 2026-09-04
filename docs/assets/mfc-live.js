@@ -324,12 +324,26 @@
       ".lv-meter.live-ready{display:block;margin-top:12px;}" +
       ".lvm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;margin-top:6px;}" +
       ".lvm-key{font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text3,#475569);min-width:38px;}" +
-      ".lvm-track{position:relative;height:6px;border-radius:999px;background:var(--ink3,#e4eeff);overflow:hidden;min-width:0;}" +
+      /* V35.1 — DIVERGING, from a centre axis. These two bars grew from a shared
+         LEFT edge at |value| / max(|live|,|bench|), so sign lived only in the
+         model bar's colour and in the sentence underneath, and the benchmark
+         bar carried no sign at all. On the live book that read backwards: the
+         model at −2.63% drew the longest bar on the card while the index at
+         +0.40% drew a short grey stub, i.e. the picture said we were well ahead
+         of a benchmark we were 3.03 points BEHIND. Even between two negatives
+         it inverted — LargeMidcap's −2.33% painted twice the index's −1.11%.
+         Gains now grow RIGHT of the axis and losses LEFT, on one symmetric
+         scale, which is the idiom this codebase already uses twice (the factor
+         report's .fr-bar-wrap and the company page's .trend-track). */
+      ".lvm-track{position:relative;height:7px;border-radius:999px;background:var(--ink3,#e4eeff);overflow:hidden;min-width:0;}" +
+      ".lvm-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-0.5px;background:var(--lvm-zero,rgba(12,24,49,.30));z-index:1;}" +
       /* display:block is load-bearing — an inline fill silently discards width */
-      ".lvm-fill{display:block;height:100%;width:0;border-radius:999px;transition:width .85s cubic-bezier(.22,.8,.2,1);}" +
-      ".lvm-model{background:linear-gradient(90deg,var(--accent,#1a50d8),var(--teal,#0891b2));}" +
-      ".lvm-bench{background:var(--text3,#475569);opacity:.45;}" +
-      ".lvm-down .lvm-model{background:linear-gradient(90deg,#dc2626,#f87171);}" +
+      ".lvm-fill{display:block;position:absolute;top:0;bottom:0;height:100%;width:0;border-radius:999px;transition:width .85s cubic-bezier(.22,.8,.2,1);}" +
+      ".lvm-fill.is-pos{left:50%;}" +
+      ".lvm-fill.is-neg{right:50%;}" +
+      ".lvm-model.is-pos{background:linear-gradient(90deg,rgba(5,150,105,.55),var(--green,#059669));}" +
+      ".lvm-model.is-neg{background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red,#dc2626));}" +
+      ".lvm-bench{background:var(--text3,#475569);opacity:.5;}" +
       ".lvm-val{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text2,#1e3a5f);min-width:52px;text-align:right;}" +
       /* --data-* not --green: these are 10.5–11.5px, i.e. NORMAL text by WCAG,
          and --green (#059669) is only 3.8:1 on the card. The --data-* scale is
@@ -343,7 +357,12 @@
       ".lvm-gap.behind b{color:var(--data-bad,#dc2626);}" +
       /* only the two greys need a dark override — the inks ride the tokens */
       "html[data-theme=\"dark\"] .lvm-track{background:rgba(255,255,255,.09);}" +
-      "html[data-theme=\"dark\"] .lvm-bench{background:#94a3b8;opacity:.55;}" +
+      "html[data-theme=\"dark\"] .lvm-bench{background:#94a3b8;opacity:.6;}" +
+      /* the dark palette flips --green but NOT --red, so the negative fill is
+         hard-inked here rather than left on the token */
+      "html[data-theme=\"dark\"]{--lvm-zero:rgba(215,228,255,.34);}" +
+      "html[data-theme=\"dark\"] .lvm-model.is-pos{background:linear-gradient(90deg,rgba(52,211,153,.5),#34d399);}" +
+      "html[data-theme=\"dark\"] .lvm-model.is-neg{background:linear-gradient(270deg,rgba(248,113,113,.5),#f87171);}" +
       "@media (prefers-reduced-motion:reduce){.lvm-fill{transition:none;}}";
     document.head.appendChild(st);
   }
@@ -362,26 +381,42 @@
       var s = (data.strategies || {})[el.getAttribute("data-live-meter")];
       if (!s || s.live_pct == null || s.bench_pct == null) return;   // coverage guard published null
       var live = s.live_pct, bench = s.bench_pct;
+      /* Half the track per side, so the larger of the two magnitudes always
+         reaches its end and the pair stays directly comparable. */
       var scale = Math.max(Math.abs(live), Math.abs(bench), 0.01);
+      var half = function (v) { return Math.abs(v) / scale * 50; };
+      var side = function (v) { return v < 0 ? "is-neg" : "is-pos"; };
       var gap = live - bench, ahead = gap >= 0;
       var bn = s.bench_name || "the benchmark";
-      el.classList.toggle("lvm-down", live < 0);
+      /* The track is decorative: the signed number sits beside it and the gap
+         sentence states the verdict, so a reader on a screen reader loses
+         nothing by skipping it. */
       el.innerHTML =
         '<div class="lvm-row"><span class="lvm-key">Model</span>' +
-          '<span class="lvm-track"><i class="lvm-fill lvm-model"></i></span>' +
+          '<span class="lvm-track" aria-hidden="true"><i class="lvm-mid"></i>' +
+            '<i class="lvm-fill lvm-model ' + side(live) + '"></i></span>' +
           '<span class="lvm-val ' + cls(live) + '">' + fmtPct(live) + "</span></div>" +
         '<div class="lvm-row"><span class="lvm-key">Index</span>' +
-          '<span class="lvm-track"><i class="lvm-fill lvm-bench"></i></span>' +
-          '<span class="lvm-val">' + fmtPct(bench) + "</span></div>" +
+          '<span class="lvm-track" aria-hidden="true"><i class="lvm-mid"></i>' +
+            '<i class="lvm-fill lvm-bench ' + side(bench) + '"></i></span>' +
+          '<span class="lvm-val ' + cls(bench) + '">' + fmtPct(bench) + "</span></div>" +
         '<div class="lvm-gap' + (ahead ? "" : " behind") + '"><b>' +
           (ahead ? "+" : "−") + Math.abs(gap).toFixed(2) + " pts</b> " +
           (ahead ? "ahead of " : "behind ") + bn + " this cycle</div>";
-      pending.push([el.querySelector(".lvm-model"), Math.abs(live) / scale * 100]);
-      pending.push([el.querySelector(".lvm-bench"), Math.abs(bench) / scale * 100]);
+      /* V34.9's rule: a non-zero move must always paint at least one visible
+         pixel. A benchmark at +0.05% against a −5% model is 0.5% of the track —
+         under a pixel — and an empty half says "flat", which is a different
+         claim. Gated on non-zero, so a genuinely flat cycle still paints
+         nothing. */
+      pending.push([el.querySelector(".lvm-model"), half(live), live !== 0]);
+      pending.push([el.querySelector(".lvm-bench"), half(bench), bench !== 0]);
       el.classList.add("live-ready");
     });
     var grow = function () {
-      pending.forEach(function (p) { p[0].style.width = p[1].toFixed(1) + "%"; });
+      pending.forEach(function (p) {
+        p[0].style.width = p[1].toFixed(1) + "%";
+        if (p[2]) p[0].style.minWidth = "2px";
+      });
     };
     // rAF for the paint-at-zero frame, timeout as the frame-starved fallback
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(grow);
