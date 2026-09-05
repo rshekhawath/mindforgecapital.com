@@ -1298,6 +1298,46 @@ html[data-theme="dark"] .held-mark.is-rw.is-up{color:#34d399;background:rgba(52,
 html[data-theme="dark"] .held-mark.is-rw.is-dn{color:#fbbf24;background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.30);}
 tr.row-held td.company{opacity:.82;}
 tr.row-reweighted td.company{opacity:1;}
+
+/* ── V35.6 · THE TWO ROWS THAT NEED SOMETHING SHOULD LOOK LIKE IT ────────────
+   V35.4 made "held" a real state and gave it a settled tick. What it did not do
+   is make the DIFFERENCE visible at a glance: on a phone the picks list is ten
+   near-identical cards down a fifteen-screen page, and the two that actually
+   need an order are told apart only by a footer line you have to read. The
+   whole point of the cycle diff is that a returning member trades two names,
+   not ten — and the list still asked them to read all ten to find out which.
+   So the actionable rows get a leading accent rail and keep full contrast; the
+   carried-over ones stay legible but recede. Nothing is hidden, nothing moves,
+   and no figure changes — this is emphasis, not filtering. Only ever applied
+   when a previous cycle is known: in a first cycle every row IS actionable and
+   an accent on all ten would be noise. */
+tr.row-new td:first-child{ position:relative; }
+tr.row-new td:first-child::before{
+  content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+  border-radius:0 2px 2px 0;
+}
+.stock-card.row-new{
+  /* the base .stock-card has no positioning context of its own, and the rail is
+     absolutely positioned against it */
+  position:relative; overflow:hidden;
+  border-color:rgba(37,99,235,.34);
+  box-shadow:0 1px 2px rgba(15,23,42,.05), 0 12px 30px -20px rgba(26,80,216,.42);
+}
+html[data-theme="dark"] .stock-card.row-new{ border-color:rgba(120,160,240,.40); }
+.stock-card.row-new::before{
+  content:''; position:absolute; left:0; top:14px; bottom:14px; width:3px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));
+  border-radius:0 3px 3px 0;
+}
+.stock-card.row-held{ opacity:.94; }
+/* The rail is a state marker, so it has to survive a monochrome print the way
+   the change card's group dots do (V35.2's criterion: content, not decoration). */
+@media print{
+  tr.row-new td:first-child::before, .stock-card.row-new::before{
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+}
 .sc-held{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text3);}
 @media print{ .held-mark{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;} }
 
@@ -1893,6 +1933,10 @@ html[data-theme="dark"] .msort-sel{
 .sc-tkr-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 4px;margin-top:11px;}
 .sc-tkr-row .sc-ticker{margin-top:0;}
 .sc-tkr-row .broker-link{margin-left:0;}
+/* V35.6 — --accent2 on its own 10% wash measures 4.37:1 on the dark card, just
+   under AA for 11px. The dark override is the one this page already uses for
+   accent ink on dark surfaces. */
+html[data-theme="dark"] .sc-num{ color:#9dbcff; background:rgba(120,160,240,.14); }
 .sc-num{
   font-size:11px;color:var(--accent2);
   width:28px;height:28px;background:rgba(37,99,235,0.10);
@@ -3959,6 +4003,13 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       html[data-theme="dark"] .trk-key i{ background:linear-gradient(90deg,#34d399,#0f9d6b); }
       .trk-key i.is-tick{ width:2px; height:12px; border-radius:2px; background:var(--text3); }
       .trk-foot{ font-size:11px; color:var(--text3); line-height:1.6; margin:11px 0 0; max-width:70ch; }
+      /* V35.6 — this link was written with an inline color:var(--accent), which is
+         the LIGHT-theme brand blue and measures 3.07:1 on the dark card. Every
+         other link in these new cards already carries a dark override; this one
+         was the exception because it was set inline where no override can reach
+         it. Same pair .cc-note a uses. */
+      .trk-foot-lnk{ color:var(--accent); }
+      html[data-theme="dark"] .trk-foot-lnk{ color:#9dbcff; }
       @media (max-width:600px){
         .trk-card{ padding:18px 16px; }
         .trk-row{ grid-template-columns:62px minmax(0,1fr) 66px; gap:9px; }
@@ -6946,8 +6997,10 @@ function renderTable(stocks) {
     const held = isHeldRow(s.ticker);        // V35.4 — carried over from last cycle
     const movePP = held ? heldMovePP(s.ticker) : null;   // …and re-weighted, or not
     const isBought = !held && !!bought[s.ticker];
+    const isNew = !held && !!(window._bookDiff && window._bookDiff.known);
     const rowCls = [isBought ? 'row-bought' : '', held ? 'row-held' : '',
-                    movePP != null ? 'row-reweighted' : ''].filter(Boolean).join(' ');
+                    movePP != null ? 'row-reweighted' : '',
+                    isNew ? 'row-new' : ''].filter(Boolean).join(' ');
     // data-row carries the CANONICAL stocksData index (not the sorted position) so
     // filterStocks/applySectorFilter/updateAllocationCells — which look up
     // stocksData[data-row] — stay correct after a column sort reorders the rows.
@@ -6983,8 +7036,9 @@ function renderTable(stocks) {
     const held = isHeldRow(s.ticker);     // V35.4 — carried over from last cycle
     const movePP = held ? heldMovePP(s.ticker) : null;
     const isBought = !held && !!bought[s.ticker];
+    const isNew = !held && !!(window._bookDiff && window._bookDiff.known);
     const cardCls = 'stock-card' + (isBought ? ' row-bought' : '') + (held ? ' row-held' : '') +
-                    (movePP != null ? ' row-reweighted' : '');
+                    (movePP != null ? ' row-reweighted' : '') + (isNew ? ' row-new' : '');
     const ci = stocksData.indexOf(s);   // canonical index — keep filters/cell-updates correct after sort
     // V25.2: same stagger the desktop <tr> above gets, so the phone's holdings
     // cascade instead of popping. Capped lower (360ms) than the row's 600ms —
@@ -7003,7 +7057,15 @@ function renderTable(stocks) {
       <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">₹${entry.toFixed(2)}</span></div>
       <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></div>
       <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(amt)}</span></div>
-      <div class="sc-row"><span class="sc-key">Shares to buy</span><span class="sc-val sc-shares">${shares}</span></div>
+      <!-- V35.6 — "Shares to buy" was printed on every card, including the ones the
+           card itself footers with "Already held — carried over". A member reading
+           "Shares to buy 26" under that footer is being told to buy a position they
+           already own — the same contradiction V35.4 removed from the checkbox
+           column, still live one row above it. The desktop table says plainly
+           "Shares", which is right for every state; the phone needs the noun to
+           follow the row's own state, because the card has no column header to
+           lean on. Held -> the quantity you hold; re-weighted -> the target. -->
+      <div class="sc-row"><span class="sc-key">${held ? (movePP != null ? 'Target shares' : 'Shares held') : 'Shares to buy'}</span><span class="sc-val sc-shares">${shares}</span></div>
       <!-- V33.2 (NB: this comment is inside a template literal — no backticks) —
            the phone card said "Weight 4.0%" on all twenty-five cards, and
            the one thing that DID differ between them — the gauge showing this
@@ -10121,7 +10183,7 @@ function renderTrackRecord(){
       'measured from the published prices against ' + escapeHtml(last.benchName || 'the benchmark') +
       ' over the same window. The newest row is still moving; earlier rows are final. ' +
       'Model-portfolio figures before costs and tax, not audited client returns — ' +
-      '<a href="disclosures.html#backtest-methodology" target="_blank" rel="noopener" style="color:var(--accent);">how these are measured &rarr;</a>';
+      '<a class="trk-foot-lnk" href="disclosures.html#backtest-methodology" target="_blank" rel="noopener">how these are measured &rarr;</a>';
   }
   card.style.display = '';
 }

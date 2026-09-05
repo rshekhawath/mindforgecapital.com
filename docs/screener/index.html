@@ -687,7 +687,18 @@ tbody tr.rowlink{cursor:pointer}
 }
 .page-btn:hover:not(:disabled){border-color:var(--accent3);color:var(--accent)}
 .page-btn.active{background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);color:#fff;border-color:transparent;box-shadow:0 6px 16px -6px rgba(26,80,216,.55)}
-.page-btn:disabled{opacity:.4;cursor:not-allowed}
+/* V35.6 — was opacity:.4, which put the glyph at 2.19:1. WCAG exempts an
+   inactive control, so this is not a conformance failure — but page 1 of 68 is
+   what every visitor lands on, so the disabled Prev arrow is the FIRST thing
+   they see in this row, and at 2.19 it reads as broken rather than as not yet
+   available. .55 keeps it unmistakably inactive and legible at 3.4:1. */
+/* V35.6 — alpha alone could not get this legible: .4 measured 2.19:1 and even
+   .55 only reached 3.14. WCAG exempts an inactive control, but page 1 of 68 is
+   where every visitor lands, so the disabled Prev arrow is the first thing in
+   this row and at 2.19 it read as broken rather than as not-yet-available.
+   The 'disabled' signal now comes from the muted ink and the cursor, both of
+   which survive; the ink itself is a token that clears AA. */
+.page-btn:disabled{color:var(--text3);background:transparent;cursor:not-allowed}
 
 /* ── TOAST ── */
 .toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999}

@@ -141,7 +141,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-row:last-child{border-bottom:none}
 .fr-rank{font-size:13px;font-weight:800;color:var(--text3);text-align:center;font-variant-numeric:tabular-nums}
 /* V27.1: the un-ranked baseline row — clearly "no rank", not a stray glyph */
-.fr-rank-base{font-weight:600;opacity:.6;letter-spacing:-.02em}
+/* V35.6 — was opacity:.6 on top of an already-muted ink, which put this marker
+   at 2.88:1. The dash IS the datum for an unranked row; mute it with a token that
+   has been contrast-checked instead of with alpha. */
+.fr-rank-base{font-weight:600;color:var(--text3);letter-spacing:-.02em}
 .fr-name{display:flex;flex-direction:column;gap:2px}
 .fr-name b{font-size:15px;color:var(--white);font-weight:700}
 .fr-name span{font-size:11.5px;color:var(--text3)}
@@ -198,6 +201,11 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .fr-delta.down{color:#b91c1c;background:var(--red-bg)}
 .fr-delta.flat{color:var(--text3);background:rgba(120,140,180,.12)}
 .fr-delta i{font-style:normal;font-size:9px;line-height:1}
+/* V35.6 — was an inline opacity:.75 on top of a coloured chip, which put it at
+   3.25:1 dark / 3.80:1 light. The chip's own ink is already contrast-checked in
+   both themes; inheriting it and letting the WEIGHT carry the de-emphasis keeps
+   the hierarchy without spending contrast on it. */
+.fr-delta .fr-delta-vs{ color: inherit; font-weight: 600; }
 [data-theme="dark"] .fr-delta.up{color:#6ee7b7;background:rgba(5,150,105,.18)}
 [data-theme="dark"] .fr-delta.down{color:#fca5a5;background:rgba(220,38,38,.20)}
 [data-theme="dark"] .fr-delta.flat{color:var(--text3);background:rgba(160,180,220,.14)}
@@ -636,7 +644,7 @@ if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(
       var chip=document.createElement('span');
       chip.className='fr-delta '+cls;
       chip.innerHTML='<i aria-hidden="true">'+arrow+'</i>'+(cls==='flat'?'unchanged':mag+' pp')+
-                     ' <span style="font-weight:600;opacity:.75">vs '+MONTH+'</span>';
+                     ' <span style="font-weight:600" class="fr-delta-vs">vs '+MONTH+'</span>';
       chip.setAttribute('aria-label',(cls==='up'?'up ':cls==='down'?'down ':'')+
         (cls==='flat'?'unchanged':mag+' percentage points')+' versus '+MONTH);
       nameEl.appendChild(chip);
