@@ -1216,6 +1216,66 @@ tr.row-bought td:not(.bought-col){opacity:1;}
 tr.row-bought .weight-bar-wrap{opacity:.5;}
 tr.row-bought td.company{text-decoration:line-through;}
 
+/* ── V35.5 · STICKY ACTION BAR (phones) ──────────────────────────────────────
+   One height token, --mf-abar-h, published on :root when the bar is shown and
+   zeroed when it is not. The back-to-top FAB and the toast both add it to their
+   own offsets, so nothing is ever buried under the bar and there is exactly one
+   number to change — the alternative is three hard-coded bottoms that drift.
+   env(safe-area-inset-bottom) keeps it off the iOS home indicator. */
+:root{ --mf-abar-h:0px; }
+.mf-abar{
+  position:fixed; left:0; right:0; bottom:0; z-index:120;
+  display:none; align-items:center; gap:10px;
+  padding:9px 12px calc(9px + env(safe-area-inset-bottom,0px));
+  background:var(--ink2); border-top:0.5px solid var(--border2);
+  box-shadow:0 -10px 30px -18px rgba(15,23,42,.45);
+  /* The bar carries the page's own ground rather than a blur: a translucent bar
+     over the picks table put ticker glyphs behind the rupee figure at 390px. */
+}
+html[data-theme="dark"] .mf-abar{ box-shadow:0 -10px 30px -16px rgba(0,0,0,.6); }
+.mf-abar[hidden]{ display:none !important; }
+/* The capital control. NOT a second input — it shows the one value the page
+   already holds and routes to the field that owns it. */
+.mf-abar-cap{
+  display:flex; flex-direction:column; align-items:flex-start; gap:1px;
+  flex:0 0 auto; min-height:44px; justify-content:center;
+  padding:5px 10px; border-radius:10px; cursor:pointer;
+  background:rgba(37,99,235,.07); border:0.5px solid var(--border2);
+  font-family:inherit; text-align:left;
+}
+html[data-theme="dark"] .mf-abar-cap{ background:rgba(120,150,255,.10); }
+.mf-abar-cap:active{ transform:scale(.98); }
+.mf-abar-cap:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.mf-abar-cap-k{ font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); line-height:1; }
+.mf-abar-cap-v{ font-size:13px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; line-height:1.15; }
+.mf-abar-mid{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.mf-abar-n{ font-size:12.5px; font-weight:800; color:var(--text); line-height:1.2;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mf-abar-sub{ font-size:10.5px; color:var(--text3); line-height:1.25;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* The value sits INSIDE the button. A total in a caption beside the control is a
+   number the reader has to carry across a gap at the moment they commit. */
+.mf-abar-cta{
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1px; min-height:46px; padding:7px 15px; border-radius:12px; border:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; font-family:inherit; font-size:13px; font-weight:800; letter-spacing:.01em;
+  cursor:pointer; white-space:nowrap;
+  box-shadow:0 8px 20px -12px rgba(26,80,216,.75);
+}
+.mf-abar-cta:active{ transform:translateY(1px); }
+.mf-abar-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+.mf-abar-amt{ font-size:11px; font-weight:700; opacity:.92; font-variant-numeric:tabular-nums; }
+.mf-abar-amt:empty{ display:none; }
+/* Shown only where the gap it closes actually exists. Above 600px the table is a
+   table, the page is a third of the length and the Kite band is reachable. */
+@media (max-width:600px){ .mf-abar.is-on{ display:flex; } }
+/* Landscape phones give ~40% of the screen to chrome already (V34.1) — a 64px
+   bar there costs more than it returns. */
+@media (max-height:480px){ .mf-abar.is-on{ display:none; } }
+@media print{ .mf-abar{ display:none !important; } }
+@media (prefers-reduced-motion:reduce){ .mf-abar-cta:active,.mf-abar-cap:active{ transform:none; } }
+
 /* ── V35.4 · THE "ALREADY HELD" ROW ──────────────────────────────────────────
    A carried-over holding needs no order, so it gets a settled tick instead of an
    empty to-do box. Deliberately NOT a disabled checkbox: a disabled control still
@@ -1641,7 +1701,8 @@ html[data-theme="dark"] .state-box::before{
 
 /* TOAST */
 .toast{
-  position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+  /* V35.5 — clears the sticky action bar; --mf-abar-h is 0px when there is none. */
+  position:fixed;left:50%;bottom:calc(28px + var(--mf-abar-h, 0px));transform:translateX(-50%) translateY(20px);
   background:#0c1831;color:#fff;padding:12px 22px;border-radius:12px;
   font-size:13.5px;font-weight:600;letter-spacing:.01em;
   box-shadow:0 12px 40px rgba(12,24,49,0.32);
@@ -2234,7 +2295,10 @@ html[data-theme="dark"] tr.row-bought .broker-link{ color: var(--ink-link, #83aa
 @media (max-width: 768px) {
   /* V6.8 M3: move to right gutter on mobile so the 40px FAB doesn't cover
      the left edge of stock cards (was hiding "Rec. Price" / "Allocation"). */
-  .mf-fab-top { right: 16px; left: auto; bottom: 88px; width: 40px; height: 40px; }
+  /* V35.5 — + the action bar's own height, published as --mf-abar-h and 0px
+     whenever the bar is not showing, so this offset is correct in both states
+     without a second rule to keep in step. */
+  .mf-fab-top { right: 16px; left: auto; bottom: calc(88px + var(--mf-abar-h, 0px)); width: 40px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mf-fab-top { transition: opacity .2s; transform: none !important; }
@@ -4088,6 +4152,37 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       <div class="disclaimer">
         <strong>SEBI Disclaimer:</strong> MindForge Capital provides quantitative research and educational information only and is not a SEBI-registered investment advisor. Research is published under SEBI-registered Research Analyst Sagar Shekhawath. This is not personalised investment advice. Past performance does not guarantee future results. All investments carry risk, including total loss of capital in small/microcap names. Please consult a qualified financial advisor before making investment decisions. Trade at your own risk. <strong>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</strong> See our <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a> for grievance redressal, complaints data and analyst disclosures.
       </div>
+    </div>
+
+    <!-- ══ V35.5 · THE STICKY ACTION BAR ═══════════════════════════════════════
+         Measured at 390x844 before this: the page is 15.5 phone screens, the
+         capital box sits at screen 3.3 and the one button that places this
+         cycle's orders at screen 11.4 — 6,823px apart. A member checking a
+         quantity in the table is eight swipes from the amount they set and eight
+         from the control that acts on it, and the only sticky thing on the whole
+         dashboard was the buy-progress card.
+         So the two ends of the transaction travel with the reader: what they are
+         committing (the capital, tappable — it scrolls to and focuses the one
+         real input rather than duplicating it, because two inputs for one value
+         is a sync bug waiting to happen) and what pressing the button will do,
+         with the rupee figure IN the button rather than in a caption beside it.
+         It lives INSIDE #state-dashboard on purpose: that container starts
+         display:none, so the bar cannot appear over the loading or error screens
+         without a single line of extra guarding.
+         Phones only, and never when there is nothing to place. ═══════════════ -->
+    <div class="mf-abar" id="mf-abar" hidden>
+      <button type="button" class="mf-abar-cap" id="abar-cap" onclick="abarEditCapital()">
+        <span class="mf-abar-cap-k">Capital</span>
+        <span class="mf-abar-cap-v" id="abar-cap-v">—</span>
+      </button>
+      <div class="mf-abar-mid" id="abar-mid" aria-hidden="true">
+        <span class="mf-abar-n" id="abar-n"></span>
+        <span class="mf-abar-sub" id="abar-sub"></span>
+      </div>
+      <button type="button" class="mf-abar-cta" id="abar-cta">
+        <span id="abar-cta-label">Review orders</span>
+        <span class="mf-abar-amt" id="abar-amt"></span>
+      </button>
     </div>
   </div>
 
@@ -5993,6 +6088,19 @@ function fmtNum(v) {
 function fmtMoney(v) { return '₹' + fmtNum(v); }
 function shortMoney(v) { return shortLakhs(v); }
 
+/* V35.5 — shortLakhs rounds to ONE decimal and then strips a trailing .0, which
+   is right for a preset button (₹10L is exactly ten lakh) and wrong for a figure
+   the member is about to commit: ₹3,96,651 came out as "₹4L", reading as more
+   than it is at the one moment precision matters. Two decimals, trailing zeros
+   trimmed, so ₹3,96,651 is ₹3.97L and ₹10,00,000 is still ₹10L. */
+function preciseMoney(v){
+  v = Number(v) || 0;
+  var trim = function(n){ return n.toFixed(2).replace(/\.?0+$/, ''); };
+  if (v >= 10000000) return '₹' + trim(v / 10000000) + 'Cr';
+  if (v >= 100000)   return '₹' + trim(v / 100000)  + 'L';
+  return fmtMoney(Math.round(v));
+}
+
 // ── POSITION SIZING ──────────────────────────────────────────────────────
 /* V30.2 — THE CAPITAL THE PAGE USED WAS NOT THE CAPITAL THE FIELD SHOWED.
    setCapital() normalised its argument with `v|0`. A bitwise operator coerces
@@ -7082,6 +7190,113 @@ function toggleBought(cb) {
   syncBoughtAllHeader();
 }
 
+/* ── V35.5 · THE STICKY ACTION BAR ────────────────────────────────────────────
+   Driven from cycleOrders() and the same broker/basket reading refreshKiteBasket
+   uses, and called FROM the end of refreshKiteBasket — so the bar and the band it
+   mirrors are refreshed by one event, and a capital change, a tick or a broker
+   switch can never leave them saying different things.
+   Two cases, both real, nothing invented for a third:
+     · a basket exists  -> the Kite CTA, with the rupee value inside the button
+     · orders exist but cannot be basketed (a broker other than Kite, or a
+       weight-rotation month where nothing is bought or sold outright) -> a jump
+       to the picks, which is genuinely what that member does next
+   Nothing to do -> the bar does not exist. */
+function refreshActionBar(){
+  try {
+    var bar = document.getElementById('mf-abar');
+    if (!bar) return;
+    var hide = function(){
+      bar.hidden = true; bar.classList.remove('is-on');
+      document.documentElement.style.setProperty('--mf-abar-h', '0px');
+    };
+    if (typeof stocksData === 'undefined' || !(stocksData || []).length) return hide();
+
+    var orders  = cycleOrders();
+    var placed  = loadBought(currentStrategy) || {};
+    var pending = orders.all.filter(function(o){ return !placed[orderKey(o)]; });
+    // A weight-rotation month has no buys and no sells and plenty to do.
+    var nRw = (stocksData || []).filter(function(s){ return heldMovePP(s.ticker) != null; }).length;
+    if (!pending.length && !nRw) return hide();
+
+    var rows    = (typeof kiteBasketRows === 'function') ? kiteBasketRows() : [];
+    var canSend = rows.length > 0 && getBroker() === 'kite';
+    var send    = Math.min(rows.length, KITE_BASKET_MAX);
+
+    var capEl = document.getElementById('abar-cap-v');
+    if (capEl) capEl.textContent = currentCapital > 0 ? shortMoney(currentCapital) : '—';
+
+    var nEl = document.getElementById('abar-n'), sEl = document.getElementById('abar-sub');
+    if (pending.length){
+      var nB = pending.filter(function(o){ return o.side === 'BUY'; }).length;
+      var nS = pending.length - nB;
+      if (nEl) nEl.textContent = pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left';
+      if (sEl) sEl.textContent = [nB ? nB + ' to buy' : '', nS ? nS + ' to sell' : ''].filter(Boolean).join(' · ');
+    } else {
+      if (nEl) nEl.textContent = nRw + ' to re-weight';
+      if (sEl) sEl.textContent = 'no names change';
+    }
+
+    // The value in the button is the value of what THIS press will send — the
+    // first ten rows when Kite splits the basket, not the whole cycle.
+    var val = 0;
+    if (canSend){
+      var priceOf = {};
+      orders.all.forEach(function(o){ priceOf[o.side + ':' + o.ticker] = o.price || 0; });
+      rows.slice(0, send).forEach(function(r){
+        val += Math.round(r.quantity * (priceOf[r.transaction_type + ':' + r.tradingsymbol] || 0));
+      });
+    }
+    var lab = document.getElementById('abar-cta-label');
+    var amt = document.getElementById('abar-amt');
+    var cta = document.getElementById('abar-cta');
+    if (canSend){
+      if (lab) lab.textContent = 'Review ' + send + ' on Kite';
+      if (amt) amt.textContent = val > 0 ? preciseMoney(val) : '';
+      if (cta){ cta.onclick = sendKiteBasket;
+                cta.setAttribute('aria-label', 'Review ' + send + ' order' + (send === 1 ? '' : 's') +
+                  ' on Kite, worth ' + fmtMoney(val) + ' at the recommended prices'); }
+    } else {
+      if (lab) lab.textContent = 'Go to picks';
+      if (amt) amt.textContent = '';
+      if (cta){ cta.onclick = abarGoToPicks; cta.setAttribute('aria-label', 'Jump to your picks table'); }
+    }
+    bar.hidden = false; bar.classList.add('is-on');
+    /* Publish the real height so the FAB and the toast clear it. Measured
+       SYNCHRONOUSLY — the display flip above has already happened, so the box is
+       real by now, and rAF cannot be the only writer: it does not fire in every
+       environment this page is opened in (the built-in preview harness among
+       them), and a bar that never published its height silently buries the
+       back-to-top button under itself. rAF stays as a second pass for the case
+       where layout has genuinely not settled. */
+    var setH = function(){
+      var h = bar.getBoundingClientRect().height;
+      if (h > 0) document.documentElement.style.setProperty('--mf-abar-h', Math.round(h) + 'px');
+    };
+    setH();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(setH);
+  } catch(e){ /* the bar must never break the page it sits on */ }
+}
+/* Tapping the capital chip goes to the ONE input that owns the value. Duplicating
+   the field in the bar would mean two controls for one number, which is how they
+   end up disagreeing. */
+function abarEditCapital(){
+  var el = document.getElementById('size-input');
+  if (!el) return;
+  var prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  el.scrollIntoView({ block:'center' });
+  document.documentElement.style.scrollBehavior = prev;
+  try { el.focus({ preventScroll:true }); el.select(); } catch(e){ try{ el.focus(); }catch(e2){} }
+}
+function abarGoToPicks(){
+  var el = document.querySelector('.table-section');
+  if (!el) return;
+  var prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  el.scrollIntoView({ block:'start' });
+  document.documentElement.style.scrollBehavior = prev;
+}
+
 /* V35.3 — the tick for an order that has no row in the picks table. A departing
    holding is not in stocksData, so toggleBought's `closest('[data-ticker]')` walk
    has nothing to find; this reads the order key off the control itself. Both
@@ -7936,7 +8151,14 @@ function refreshKiteBasket() {
     var note  = document.getElementById('kbsk-note');
     var facts = document.getElementById('kbsk-facts');
     if (label) {
-      label.textContent = 'Review ' + send + ' order' + (send === 1 ? '' : 's') + ' on Kite';
+      /* V35.5 — the total goes IN the button. It was in the fact row beside it,
+         which is one glance away at the moment of commitment; a control that
+         says what it will do AND what it is worth removes the last "how much is
+         this again?" before a screen the member has to log in to. The fact row
+         keeps the breakdown, which is a different job. */
+      var tot = buyVal + sellVal;
+      label.textContent = 'Review ' + send + ' order' + (send === 1 ? '' : 's') +
+        (tot > 0 ? ' · ' + preciseMoney(tot) : '') + ' on Kite';
     }
     /* V34.4 — the shape of the basket, before the member commits to a screen they
        have to log in to. Three values, each one they would otherwise derive by
@@ -7965,7 +8187,22 @@ function refreshKiteBasket() {
         'change quantity, order type or price on that screen first.';
     }
     wrap.hidden = false;
-  } catch (e) {}
+  } catch (e) {
+  } finally {
+    /* V35.5 — ONE sync point. The sticky bar mirrors this band, so it refreshes
+       on the same event rather than keeping its own set of hooks: every path
+       that can change the basket (capital, a tick, a broker switch, a
+       re-render) already ends here, and two lists of call sites is how two
+       surfaces drift apart.
+       In `finally`, and that is the whole point. This function RETURNS EARLY
+       from inside the try whenever there is nothing to basket — a broker other
+       than Kite, or every order already ticked — and a plain call after the
+       try/catch is skipped by that return. Which is precisely the state the bar
+       most needs to hear about: it was left showing "Review 4 on Kite · ₹3.97L"
+       after the member had switched to Groww and after they had ticked
+       everything off. */
+    refreshActionBar();
+  }
 }
 
 function refreshHowto() {
@@ -13103,6 +13340,39 @@ html[data-theme="dark"] .pspread-scale .dn{ color:#f87171; }
        balance … evens the lines instead. Chrome caps it at a few lines, which
                  is precisely the label case and never the paragraph case.
      ========================================================================= -->
+<style id="mf-v355-gutter">
+/* ── V35.5 · ONE INNER GUTTER ON PHONES ──────────────────────────────────────
+   Measured at 390px: twelve stacked cards carried ten different paddings, with
+   the horizontal gutter running 14px, 16px, 18px, 22px, 26px, 28px. They were
+   each set independently, at three different breakpoints (560 / 600 / 640), over
+   several releases — so the content edge stepped in and out by up to 14px down
+   the page and the column never read as a column. Vertical padding is left
+   alone: a dense strip and a spacious card should breathe differently, and only
+   the HORIZONTAL value controls whether the edges line up.
+   18px because it is the median of what was there, and because the two widest
+   (28px on the how-to, 26px on sizing and allocation) were each spending 20px of
+   a 390px screen on air their neighbours did not.
+   Placed after every rule it overrides so it wins on order at equal specificity
+   — the V27.1 trap is a NARROWER media rule killed by a later WIDER one, and
+   this is the same 600px band the cards themselves use. */
+@media (max-width:600px){
+  .cyc-card, .chg-card, .size-card, .howto-card, .vfy-card, .trk-card,
+  .why25, .alloc-card, .pmap-card, .oneonone-card, .attrib-card, .profit-card,
+  .disclaimer{
+    padding-left:18px; padding-right:18px;
+  }
+  /* .sess is deliberately NOT in that list: it is a strip nested INSIDE the
+     table section, and a narrower gutter inside a wider card is correct nesting
+     rather than a broken edge. */
+
+  /* The action bar is fixed, so without this the last 65px of the document sits
+     under it — on this page that is the SEBI disclaimer and the footer, which
+     are the two things that must never be the ones covered. Only applied while
+     a bar is actually showing, because --mf-abar-h is 0px otherwise. */
+  body{ padding-bottom:var(--mf-abar-h, 0px); }
+}
+</style>
+
 <style id="mf-v329-linebreak">
 p, li, dd, figcaption, blockquote,
 .bf-desc, .flow-sub, .fc-disclaimer, .ps-cta-side, .strat-desc, .fr-note,
