@@ -2691,6 +2691,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <span class="cyc-val" id="cyc-val-reb">—</span>
       </div>
       <div class="cyc-foot" id="cyc-foot"></div>
+      <!-- V35.3 — see renderNewerSetNotice(). Rendered only when the member's own
+           run predates the latest published rebalance. -->
+      <div class="cyc-newer" id="cyc-newer" hidden></div>
       <!-- V35.2 — the renewal affordance the retired "Subscription" tile used to
            carry. It is a .renew-cta, the same class (and therefore the same
            44px coarse-pointer sizing from mfc-finish.css's a[class*="-cta"] block)
@@ -2718,6 +2721,23 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       transition:width .85s cubic-bezier(.22,1,.36,1)}
     .cyc-fill.is-exp{background:linear-gradient(90deg,#1a50d8,#2dd4bf)}
     .cyc-fill.is-reb{background:linear-gradient(90deg,#8fa3c4,#c3cee0)}
+/* ── V35.3 · A NEWER SET IS OUT ──────────────────────────────────────────────
+   Amber rather than the accent: this is a state to notice, not a feature to
+   admire, and the rail's own two bars already own the accent. Both inks are the
+   ones V26.7 established for this palette — the dark theme flips --green but not
+   --red, so semantic colours here are written literally on purpose. */
+    .cyc-newer{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;
+      margin-top:11px; padding:10px 13px; border-radius:11px; font-size:12.5px; line-height:1.55;
+      color:var(--text2); background:rgba(180,83,9,.07); border:0.5px solid rgba(180,83,9,.20); }
+    html[data-theme="dark"] .cyc-newer{ color:#cbd7e8; background:rgba(251,191,36,.09); border-color:rgba(251,191,36,.24); }
+    .cyc-newer b{ color:var(--ink-warn,#a64d08); font-weight:800; }
+    html[data-theme="dark"] .cyc-newer b{ color:#fbbf24; }
+    .cyc-newer .cn-cta{ font-weight:700; color:var(--accent); text-decoration:none;
+      border-bottom:1px solid rgba(37,99,235,.35); white-space:nowrap; }
+    html[data-theme="dark"] .cyc-newer .cn-cta{ color:#9dbcff; border-bottom-color:rgba(120,160,240,.45); }
+    .cyc-newer .cn-cta:hover{ border-bottom-color:currentColor; }
+    .cyc-newer .cn-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+    @media (pointer:coarse){ .cyc-newer .cn-cta{ display:inline-block; padding:11px 2px; } }
     .cyc-val{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;color:var(--text2)}
     .cyc-val b{font-weight:800;color:var(--white)}
     .cyc-foot{margin-top:11px;padding-top:11px;border-top:0.5px solid rgba(37,99,235,0.10);
@@ -3217,6 +3237,83 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       background:rgba(37,99,235,.07); border:0.5px solid var(--border2); color:var(--text); white-space:nowrap; }
     .chg-group.is-out .chg-tk{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text2); }
     .chg-none{ font-size:12.5px; color:var(--text3); font-weight:600; }
+/* ── V35.3 · THE SELLS BECAME SOMETHING A MEMBER CAN ACT ON ───────────────────
+   V35.2 named the departing holdings and stopped: three inert <span>s with a
+   strikethrough, zero interactive elements in the whole card. Every affordance on
+   the page — the tick-boxes, the basket, the progress bar, the CSV — walked
+   stocksData, and a name that left the book is not in stocksData, so the one
+   order with no home anywhere on the page was the one the member had never placed
+   before. A buy has the picks table; a sell had nothing.
+   Each departing name is now a row with the three things an order needs: a tick
+   that counts toward the same progress the buys do, the quantity the member
+   actually holds (read from the previous cycle's recorded position, never
+   guessed), and a deeplink to their own broker. Rows rather than chips because a
+   chip cannot carry a 44px tap target, a quantity and a link without wrapping
+   into an unreadable pile at 390px. */
+    .chg-sells{ display:grid; gap:6px; }
+    .chg-sell{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
+      gap:6px 11px; padding:7px 10px; border-radius:9px;
+      background:rgba(220,38,38,.05); border:0.5px solid rgba(220,38,38,.18); }
+    html[data-theme="dark"] .chg-sell{ background:rgba(248,113,113,.07); border-color:rgba(248,113,113,.22); }
+    .chg-sell.is-done{ background:rgba(15,23,42,.04); border-color:var(--border); opacity:.62; }
+    html[data-theme="dark"] .chg-sell.is-done{ background:rgba(255,255,255,.04); }
+    .chg-sell-cb{ width:17px; height:17px; margin:0; accent-color:var(--accent); cursor:pointer; flex:0 0 auto; }
+    /* the 44px coarse-pointer pad, on ::before — ::after on this codebase's cells
+       is where a VISIBLE indicator lives, and V35.1 was the release that found out
+       what happens when a pad and an indicator share one pseudo-element. */
+    @media (pointer:coarse){
+      .chg-sell-cb{ position:relative; }
+      .chg-sell-cb::before{ content:''; position:absolute; left:50%; top:50%;
+        width:44px; height:44px; transform:translate(-50%,-50%); }
+    }
+    .chg-sell-id{ min-width:0; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .chg-sell-t{ font-size:12.5px; font-weight:800; letter-spacing:.02em; color:var(--text);
+      overflow:hidden; text-overflow:ellipsis; }
+    .chg-sell.is-done .chg-sell-t{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text3); }
+    .chg-sell-q{ font-size:11.5px; font-weight:700; color:var(--text3); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .chg-sell-lnk{ font-size:11px; font-weight:700; letter-spacing:.01em; white-space:nowrap;
+      padding:4px 9px; border-radius:999px; text-decoration:none; color:var(--accent);
+      background:var(--accent-wash,rgba(37,99,235,.07)); border:0.5px solid rgba(37,99,235,.22);
+      transition:background .15s, border-color .15s; }
+    html[data-theme="dark"] .chg-sell-lnk{ color:#9dbcff; background:rgba(120,160,240,.10); border-color:rgba(120,160,240,.30); }
+    .chg-sell-lnk:hover{ background:rgba(37,99,235,.13); border-color:rgba(37,99,235,.42); }
+    .chg-sell-lnk:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+    /* 13px, not 11: measured at 601px the chip came out 41px tall — 11 + 11 on a
+       19px line box — which is under the 44px this codebase holds itself to and
+       is exactly the kind of near-miss a box-only check waves through. */
+    @media (pointer:coarse){ .chg-sell-lnk{ padding:13px 13px; } }
+    .chg-hint{ font-size:11.5px; color:var(--text3); line-height:1.55; margin-top:8px; }
+    @media (max-width:400px){
+      .chg-sell{ grid-template-columns:auto minmax(0,1fr); }
+      .chg-sell-lnk{ grid-column:2; justify-self:start; }
+    }
+    @media print{ .chg-sell-lnk{ display:none; } }
+/* ── V35.3 · WHAT THE TURNOVER COSTS ─────────────────────────────────────────
+   Every CAGR this site publishes is after 20% STCG — that basis was settled in
+   V32.6 and is stated in the disclosures. The dashboard reported a GROSS live
+   return and instructed a monthly turnover without ever saying what the turnover
+   costs, so a member reconciling against a contract note met a gap the page had
+   not prepared them for. V35.2 made it computable for the first time: the diff
+   knows which names leave and which join, and the recorded positions now carry
+   the price and quantity each one entered at. */
+    .chg-cost{ margin-top:16px; padding-top:15px; border-top:1px solid var(--border); }
+    .cc-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:11px; }
+    .cc-k{ font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+    .cc-chip{ font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; white-space:nowrap;
+      color:var(--text2); background:rgba(37,99,235,.07); border:0.5px solid var(--border2); }
+    html[data-theme="dark"] .cc-chip{ background:rgba(120,150,255,.10); }
+    .cc-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px 18px; }
+    .cc-cell{ min-width:0; }
+    .cc-lbl{ font-size:11px; font-weight:700; color:var(--text3); margin-bottom:3px; line-height:1.4; }
+    .cc-val{ font-size:19px; font-weight:800; letter-spacing:-.01em; color:var(--text);
+      font-variant-numeric:tabular-nums; line-height:1.2; }
+    .cc-val.is-nil{ color:var(--text3); }
+    .cc-sub{ font-size:11px; color:var(--text3); margin-top:3px; line-height:1.45; }
+    .cc-note{ font-size:11px; color:var(--text3); line-height:1.6; margin:12px 0 0; }
+    .cc-note a{ color:var(--accent); }
+    html[data-theme="dark"] .cc-note a{ color:#9dbcff; }
+    @media (max-width:600px){ .cc-grid{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); } .cc-val{ font-size:17px; } }
+    @media print{ .chg-cost{ break-inside:avoid; } }
 /* the per-row badge. Green ink on its own tint, measured in PIXELS on both
    themes rather than computed against the page — an accent on a tinted panel is
    not the same check as an accent on white (V34.8). At 9.5px/800 this is small
@@ -3239,6 +3336,15 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       </div>
       <p class="chg-line" id="chg-line"></p>
       <div class="chg-groups" id="chg-groups"></div>
+      <!-- V35.3 — WHAT THE TURNOVER ABOVE COSTS. See renderCycleCost(). -->
+      <div class="chg-cost" id="chg-cost" hidden>
+        <div class="cc-head">
+          <span class="cc-k">What this cycle costs</span>
+          <span class="cc-chip" id="cc-chip"></span>
+        </div>
+        <div class="cc-grid" id="cc-grid"></div>
+        <p class="cc-note" id="cc-note"></p>
+      </div>
     </div>
 
     <!-- POSITION SIZING -->
@@ -3523,7 +3629,14 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             <div class="num">3</div>
             <div class="hs-body">
               <h4>Place the orders</h4>
-              <p>Use the Shares column as your quantity for each ticker. Limit orders near rec. price are fine on liquid names.</p>
+              <!-- V35.3 — written by _setHowToStep3 from the same cycleOrders() the
+                   progress bar and the basket read. The static sentence described a
+                   first cycle only: "use the Shares column as your quantity for each
+                   ticker" is an instruction to buy the whole book, which for every
+                   member past month one is both the wrong list and roughly ten times
+                   the right amount of money. It also never mentioned selling, on a
+                   page that had just named the holdings to sell. -->
+              <p id="hs3-copy">Use the Shares column as your quantity for each ticker. Limit orders near rec. price are fine on liquid names.</p>
               <div class="hs-live" hidden></div>
             </div>
           </div>
@@ -3659,6 +3772,84 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           View the verified P&amp;L<span class="vfy-arr" aria-hidden="true">↗</span>
         </a>
       </div>
+
+      <!-- ══ V35.3 · THE LIVE TRACK RECORD ═════════════════════════════════════
+           Directly under the card that says this strategy trades in a real
+           account, because the obvious next question is "and how has it done?" —
+           and until now the page could only answer for the cycle in progress.
+           Every earlier month was computed, published to live-perf.json and then
+           overwritten by the next run. screener/live_perf.py now keeps them.
+           Aggregate only: a percentage per cycle and the index over the same
+           window. No tickers, no weights — the same rule live-perf.json follows.
+           See renderTrackRecord(). ═══════════════════════════════════════════ -->
+      <div class="trk-card fade-up" id="trk-card" style="display:none;">
+        <div class="trk-head">
+          <div>
+            <h3 id="trk-title">Every cycle so far</h3>
+            <div class="trk-sub" id="trk-sub"></div>
+          </div>
+          <span class="trk-badge" id="trk-badge"></span>
+        </div>
+        <div class="trk-rows" id="trk-rows"></div>
+        <p class="trk-foot" id="trk-foot"></p>
+      </div>
+      <style>
+      /* One divergent axis, gains right and losses left, on a single scale
+         shared by every row — the idiom V35.1 established for the Model/Index
+         meter after two same-direction bars from a shared left edge drew the
+         bigger LOSS as the bigger bar. The benchmark is a tick on that same axis
+         rather than a second bar, because the question these rows answer is
+         "which side of the index" and a tick reads as a threshold where a bar
+         reads as a quantity to compare by length. */
+      .trk-card{ margin-top:18px; padding:20px 22px; border-radius:var(--r);
+        background:var(--ink2); border:0.5px solid var(--border2); box-shadow:var(--shadow-sm); }
+      .trk-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px;
+        flex-wrap:wrap; margin-bottom:15px; }
+      .trk-head h3{ font-size:16px; font-weight:700; color:var(--text); margin:0 0 3px; line-height:1.25; }
+      .trk-sub{ font-size:12px; color:var(--text3); line-height:1.5; }
+      .trk-badge{ font-size:11px; font-weight:800; padding:4px 11px; border-radius:999px; white-space:nowrap;
+        color:var(--text2); background:rgba(37,99,235,.07); border:0.5px solid var(--border2); }
+      html[data-theme="dark"] .trk-badge{ background:rgba(120,150,255,.10); }
+      .trk-rows{ display:grid; gap:8px; max-width:760px; }
+      .trk-row{ display:grid; grid-template-columns:76px minmax(0,1fr) 78px; gap:12px; align-items:center; }
+      .trk-when{ font-size:11.5px; font-weight:700; color:var(--text3); white-space:nowrap; }
+      .trk-when i{ font-style:normal; font-weight:800; color:var(--accent); margin-left:4px; }
+      html[data-theme="dark"] .trk-when i{ color:#9dbcff; }
+      .trk-axis{ position:relative; height:16px; border-radius:4px; background:rgba(15,23,42,.045); }
+      html[data-theme="dark"] .trk-axis{ background:rgba(255,255,255,.05); }
+      /* the zero line */
+      .trk-axis::before{ content:''; position:absolute; left:50%; top:0; bottom:0; width:1px;
+        background:var(--border); transform:translateX(-.5px); }
+      .trk-bar{ position:absolute; top:4px; bottom:4px; border-radius:3px; width:0;
+        transition:width .8s cubic-bezier(.22,1,.36,1), left .8s cubic-bezier(.22,1,.36,1); }
+      .trk-bar.up  { background:linear-gradient(90deg,#10b981,#059669); }
+      .trk-bar.down{ background:linear-gradient(90deg,#dc2626,#f87171); }
+      html[data-theme="dark"] .trk-bar.up  { background:linear-gradient(90deg,#34d399,#0f9d6b); }
+      html[data-theme="dark"] .trk-bar.down{ background:linear-gradient(90deg,#f87171,#e14b4b); }
+      .trk-tick{ position:absolute; top:0; bottom:0; width:2px; border-radius:2px;
+        background:var(--text3); opacity:.85; }
+      .trk-val{ font-size:12.5px; font-weight:800; text-align:right; font-variant-numeric:tabular-nums; }
+      .trk-val.up  { color:var(--ink-pos,#047653); }
+      .trk-val.down{ color:var(--ink-neg,#c92020); }
+      .trk-val.flat{ color:var(--text3); }
+      html[data-theme="dark"] .trk-val.up  { color:#34d399; }
+      html[data-theme="dark"] .trk-val.down{ color:#f87171; }
+      .trk-key{ display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+        margin-top:13px; font-size:11px; color:var(--text3); }
+      .trk-key span{ display:inline-flex; align-items:center; gap:6px; }
+      .trk-key i{ font-style:normal; width:14px; height:8px; border-radius:2px; flex:0 0 auto;
+        background:linear-gradient(90deg,#10b981,#059669); }
+      html[data-theme="dark"] .trk-key i{ background:linear-gradient(90deg,#34d399,#0f9d6b); }
+      .trk-key i.is-tick{ width:2px; height:12px; border-radius:2px; background:var(--text3); }
+      .trk-foot{ font-size:11px; color:var(--text3); line-height:1.6; margin:11px 0 0; max-width:70ch; }
+      @media (max-width:600px){
+        .trk-card{ padding:18px 16px; }
+        .trk-row{ grid-template-columns:62px minmax(0,1fr) 66px; gap:9px; }
+        .trk-when{ font-size:11px; }
+      }
+      @media print{ .trk-card{ break-inside:avoid; } }
+      @media (prefers-reduced-motion:reduce){ .trk-bar{ transition:none; } }
+      </style>
       <style>
       /* Brand ink, not green: green on this page means the member's own live
          profit, and this card is not a figure. No gradient text (V30.0/V30.1). */
@@ -4322,6 +4513,10 @@ function _demoData(mode) {
     return {
       subscription: {
         name: 'Riya', email: 'riya@example.com', strategy: 'MindForge MultiAsset',
+        // V35.3 — a run_id matching live-perf.json's own rebalance_date, so ?demo=2
+        // exercises the NEGATIVE branch of renderNewerSetNotice (a member on the
+        // current book is told nothing) while ?demo=1 exercises the positive one.
+        run_id: '20260831_090000_MA',
         expires_at: exp.toISOString(), subscribed_at: sub0.toISOString(), status: 'active'
       },
       stocks: etfs
@@ -4331,6 +4526,12 @@ function _demoData(mode) {
   return {
     subscription: {
       name: 'Riya', email: 'riya@example.com', strategy: 'MindForge LargeMidcap\u00A0250',
+      // V35.3 \u2014 a run_id one cycle BEHIND live-perf.json's rebalance_date, which is
+      // the shape of a monthly subscriber who joined mid-month: pinned to the run
+      // captured at signup while a newer set has since published. It is the only
+      // way renderNewerSetNotice's positive branch is reachable in local testing,
+      // and it is also the state that branch exists for.
+      run_id: '20260731_090000_LM',
       expires_at: exp.toISOString(), subscribed_at: sub0.toISOString(), status: 'active'
     },
     stocks: stocks
@@ -4383,6 +4584,7 @@ async function init() {
     stocksData = data.stocks || [];
     renderDashboard(data.subscription, stocksData);
     loadLiveProfit();   // V14.3: live profit since rebalance (non-blocking)
+    startPricePolling();  // V35.3 — keep "live" live; see the note on PX_POLL_MS
     syncStrategiesFromServer(data.subscription.strategy || '');  // V29.6: fill the switcher (non-blocking, fail-soft)
   } catch(e) {
     showError('Connection Error', 'Could not connect to the server. Your subscription is unaffected — this is a network or server hiccup.', {retry:true});
@@ -4964,6 +5166,10 @@ function setupStrategySwitcher(activeStrategy){
 
 function renderDashboard(sub, stocks) {
   window._currentSub = sub;
+  // V35.3 — set here rather than only in loadLiveProfit. The newer-set notice
+  // needs it and must not depend on a price fetch that never runs in demo mode,
+  // never runs for an unpriced book, and races this render when it does.
+  window._rebalDate = parseRebalanceDate(sub);
   // V35.2 — computed BEFORE renderTable() paints, because the rows carry a "new"
   // badge read off it. renderBookChange() is called near the end of this function
   // with the same object; bookDiff() itself must run exactly once per render.
@@ -4980,6 +5186,12 @@ function renderDashboard(sub, stocks) {
   if (_exp) _exp.textContent = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
 
   currentStrategy = sub.strategy || '';
+  // V35.3 — the order checklist is cycle-scoped from this release. Adopt any
+  // pre-V35.3 map into the cycle it was written for, then drop keys older than
+  // the last two. Both need currentStrategy and window._bookDiff, and both must
+  // run before anything reads loadBought().
+  migrateBoughtKeys(currentStrategy);
+  pruneBoughtKeys(currentStrategy);
   document.getElementById('strategy-name').textContent = currentStrategy || '—';
   setupStrategySwitcher(currentStrategy);   // V21.3: turn the pill into a switcher when ≥2 strategies are known
 
@@ -5046,6 +5258,11 @@ function renderDashboard(sub, stocks) {
   // whichever event lands later), so "does my access reach the next set of picks?"
   // is read off the bar lengths instead of subtracted in the reader's head.
   renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb);
+  // V35.3 — deliberately NOT hung off the live-price path the benchmark row uses:
+  // that path never runs without prices (and never in demo), and whether a newer
+  // book exists has nothing to do with whether a quote came back.
+  loadBenchPerf().then(function(){ try { renderNewerSetNotice(); } catch(e){} });
+  loadTrackRecord().then(function(){ try { renderTrackRecord(); } catch(e){} });
 
   // Total stocks
   _animateCount(document.getElementById('stat-stocks'), stocks.length);
@@ -5918,6 +6135,11 @@ function refreshSizeSummary() {
   refreshHowto();
   refreshKiteBasket();  // V34.2 — capital sets the quantities the basket carries
   refreshSession();   // V28.6 — capital changes the amounts AND which picks are buyable
+  // V35.3 — this cycle's recorded quantities follow the capital box, so that when
+  // the book next rolls over the sells it hands the member are sized the way they
+  // actually bought. Writes qty only; see _recordCurQty.
+  _recordCurQty();
+  renderCycleCost();  // V35.3 — the cost of the turnover is a function of capital
 }
 
 // V28.4 — "what your capital actually buys".
@@ -6669,8 +6891,71 @@ function revealHoldingsBackstop() {
 }
 
 // ── MARK-AS-BOUGHT (persisted per strategy) ──────────────────────────────
+/* V35.3 — THE CHECKLIST IS PER CYCLE, NOT PER STRATEGY.
+   The key used to be the strategy alone, so ticks written in one cycle were still
+   set in the next and departed tickers accumulated in the map forever. It
+   answered "have I ever bought this ticker" when the page needs "have I placed
+   this cycle's trades", and it is the sole input to the basket filter, the
+   progress card and the how-to's step state.
+   On an equity book that partly masked itself — the carried-over names keep last
+   month's ticks, so the count lands near the right answer for the wrong reason.
+   On MultiAsset it failed outright: that book holds the same eight ETFs every
+   month and rotates their weights, so a member who ticked last cycle opened the
+   new one to "8 of 8 · All set", the celebratory glow, and no basket at all,
+   directly under a card telling them to rebalance between those same eight.
+   Keyed on the same _cycleKey() bookDiff uses, so the two can never disagree
+   about which cycle is current. The strategy stays in the key because the
+   switcher can move between books without a reload. */
 function boughtStorageKey(strategy) {
-  return 'mfc_bought_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
+  var base = 'mfc_bought_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
+  var key  = _cycleKey(window._currentSub);
+  return key ? (base + '__' + String(key).replace(/[^a-z0-9]+/gi,'_')) : base;
+}
+/* Two ticks can exist for one ticker across a member's history — bought in March,
+   sold in June — and within a cycle a name is either joining or leaving, never
+   both. Prefixing the sells keeps the BUY key a bare ticker, which is what the
+   table rows' data-ticker already writes, so nothing about the picks table changes. */
+function orderKey(o){ return (o && o.side === 'SELL' ? 'SELL:' : '') + (o ? o.ticker : ''); }
+
+/* A member is mid-cycle when this ships, with ticks under the old strategy-only
+   key. Dropping them would wipe the progress of everyone who had placed half
+   their orders, so the legacy map is adopted once and the old key removed.
+   WHICH cycle it belongs to is knowable rather than assumed: bookDiff reports
+   whether it just rolled the book forward on THIS load. If it did, the ticks
+   were written against the set the member last opened, so they land on prevKey
+   and the new cycle correctly starts empty. If it did not, the member is still
+   in the cycle they ticked, and the ticks land on the current key. */
+function migrateBoughtKeys(strategy){
+  try {
+    var legacy = 'mfc_bought_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
+    var raw = localStorage.getItem(legacy);
+    if (!raw) return;
+    var diff = window._bookDiff || {};
+    var base = legacy + '__';
+    var target = (diff.rolled && diff.prevKey)
+      ? base + String(diff.prevKey).replace(/[^a-z0-9]+/gi,'_')
+      : boughtStorageKey(strategy);
+    if (target !== legacy && !localStorage.getItem(target)) localStorage.setItem(target, raw);
+    localStorage.removeItem(legacy);
+  } catch(e){}
+}
+
+/* Cycle keys are cheap but they are not free, and a member with a long history on
+   one device would otherwise carry a key per month forever. Keep the current
+   cycle and the one before it; drop the rest. Runs once per render. */
+function pruneBoughtKeys(strategy){
+  try {
+    var base = 'mfc_bought_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_') + '__';
+    var keep = {};
+    keep[boughtStorageKey(strategy)] = 1;
+    var diff = window._bookDiff;
+    if (diff && diff.prevKey){
+      keep[base + String(diff.prevKey).replace(/[^a-z0-9]+/gi,'_')] = 1;
+    }
+    Object.keys(localStorage).forEach(function(k){
+      if (k.indexOf(base) === 0 && !keep[k]) localStorage.removeItem(k);
+    });
+  } catch(e){}
 }
 function loadBought(strategy) {
   try {
@@ -6698,6 +6983,22 @@ function toggleBought(cb) {
   });
   refreshBoughtProgress();
   syncBoughtAllHeader();
+}
+
+/* V35.3 — the tick for an order that has no row in the picks table. A departing
+   holding is not in stocksData, so toggleBought's `closest('[data-ticker]')` walk
+   has nothing to find; this reads the order key off the control itself. Both
+   handlers write the same map, so a sell counts toward the same progress a buy
+   does and the basket drops it the same way. */
+function toggleOrder(cb){
+  var key = cb.getAttribute('data-okey');
+  if (!key) return;
+  var map = loadBought(currentStrategy);
+  if (cb.checked) map[key] = true; else delete map[key];
+  saveBought(currentStrategy, map);
+  var host = cb.closest('.chg-sell');
+  if (host) host.classList.toggle('is-done', cb.checked);
+  refreshBoughtProgress();
 }
 
 // V5.2 #2: broker deeplinks per stock row. User can pick their preferred
@@ -7148,6 +7449,11 @@ function resetBought() {
   saveBought(currentStrategy, {});
   document.querySelectorAll('.bought-cb').forEach(cb => { cb.checked = false; });
   document.querySelectorAll('.row-bought').forEach(el => el.classList.remove('row-bought'));
+  // V35.3 — the sell tickets live in the change card, outside the picks table, so
+  // they carry their own class and their own struck-through state. Reset clears
+  // one map; it has to clear both renderings of it.
+  document.querySelectorAll('.chg-sell-cb').forEach(cb => { cb.checked = false; });
+  document.querySelectorAll('.chg-sell.is-done').forEach(el => el.classList.remove('is-done'));
   refreshBoughtProgress();
   /* V30.2 — `checked = false` does NOT clear `indeterminate`; the two are
      independent properties and the dash wins in the rendering. So after ticking
@@ -7175,16 +7481,28 @@ function resetBought() {
    two page-wide refreshers now run on EVERY path, including the one where this
    card has nothing to show and the one where the card is not in the DOM at all.
    refreshSession() already hides itself when nothing is placed, by design. ── */
+/* V35.3 — MEASURED AGAINST THIS CYCLE'S ORDERS, NOT AGAINST THE BOOK.
+   It used to count ticked tickers over book size, which is only the same thing in
+   a member's first cycle. Past that, the denominator counted eight holdings that
+   needed no order and the numerator could never include a sell, so the bar
+   reached "10 of 10 placed — All set" with two sell orders still outstanding and
+   declared the month's job finished. cycleOrders() is the same list the basket
+   and the CSV now read, so the four surfaces cannot report different totals. */
 function refreshBoughtProgress() {
   const map = loadBought(currentStrategy);
-  const tickers = new Set(stocksData.map(s => s.ticker));
-  const bought = Object.keys(map).filter(t => tickers.has(t)).length;
-  const total = stocksData.length;
+  const orders = cycleOrders();
+  const keys = orders.all.map(orderKey);
+  const bought = keys.filter(k => !!map[k]).length;
+  const total = keys.length;
   const pct = total ? (bought/total)*100 : 0;
   const card = document.getElementById('buy-prog-card');
   if (card) {
-    if (bought === 0) {
+    if (bought === 0 || total === 0) {
       card.style.display = 'none';
+      // V35.3 — drop the celebratory state on the way out. Reset hid the card but
+      // left is-complete set, so the next time it appeared it carried a green glow
+      // and a ✓ for one frame before the first repaint corrected it.
+      card.classList.remove('is-complete');
     } else {
       card.style.display = '';
       document.getElementById('bp-bought').textContent = bought;
@@ -7192,7 +7510,7 @@ function refreshBoughtProgress() {
       document.getElementById('buy-prog-fill').style.width = pct.toFixed(1) + '%';
       const remaining = total - bought;
       document.getElementById('bp-meta').textContent = remaining === 0
-        ? 'All set — hold these through your subscription cycle.'
+        ? 'All set — this cycle’s orders are placed.'
         : remaining + ' to go. Saved automatically in your browser.';
       // V12.2: celebratory state once every order is placed — a soft green glow +
       // a ✓ on the title. Toggled by class so it's reduced-motion safe via CSS.
@@ -7348,27 +7666,36 @@ var KITE_BASKET_URL = 'https://kite.zerodha.com/connect/basket';
 var KITE_BASKET_MAX = 10;                                    // Publisher's cap
 
 /* Every un-placed row that rounds to at least one share, in table order. */
+/* V35.3 — THE BASKET NOW SENDS THIS CYCLE'S ORDERS, NOT THE WHOLE BOOK.
+   It used to walk stocksData and emit a BUY for every untucked row. For a member
+   past their first cycle that is the wrong list twice over: it re-buys the names
+   they already hold, and it omits the ones the model dropped. On the demo book
+   the page said "4 orders to place, not 10" and the button beside it said
+   "Review 10 orders on Kite" and meant it — ₹9.84L of duplicate buys on a ₹10L
+   book, with the two real sells left unplaced.
+   Rows now come from cycleOrders(), which is `diff.added` + `diff.removed` when a
+   previous cycle is known and the whole book when it is not. SELLs are included:
+   Kite's basket takes transaction_type either way, and a sell with no recorded
+   quantity is skipped rather than guessed — the tick and the broker deeplink
+   still cover it in the change card. */
 function kiteBasketRows() {
-  var list = stocksData || [];
-  if (!list.length) return [];
+  var orders  = cycleOrders();
+  if (!orders.all.length) return [];
   var placed  = loadBought(currentStrategy) || {};
   var capital = Number(currentCapital) || 0;
   if (capital <= 0) return [];
   var out = [];
-  list.forEach(function (s) {
-    if (placed[s.ticker]) return;                       // already placed by hand
-    var price = Number(s.recommended_price) || 0;
-    if (price <= 0) return;
-    var qty = Math.floor(allocBudget(s, list, capital) / price);
-    if (qty < 1) return;                                // too little capital
+  orders.all.forEach(function (o) {
+    if (placed[orderKey(o)]) return;                    // already placed by hand
+    if (!(o.qty >= 1)) return;                          // too little capital, or an unsized sell
     out.push({
       variety:          'regular',
       exchange:         'NSE',
-      tradingsymbol:    String(s.ticker || '').toUpperCase(),
-      transaction_type: 'BUY',
+      tradingsymbol:    o.ticker,
+      transaction_type: o.side,
       order_type:       'MARKET',
       product:          'CNC',                          // delivery, not intraday
-      quantity:         qty,
+      quantity:         o.qty,
       readonly:         false,                          // the member stays in control
       tag:              'MFC'
     });
@@ -7466,15 +7793,20 @@ function refreshKiteBasket() {
     var rows  = (getBroker() === 'kite') ? kiteBasketRows() : [];
     if (!rows.length) { wrap.hidden = true; return; }
     var send  = Math.min(rows.length, KITE_BASKET_MAX);
-    var value = 0;
-    var list  = stocksData || [], capital = Number(currentCapital) || 0;
+    /* V35.3 — the value walk used to look each row up in stocksData, which is
+       fine while every row is a BUY and silently contributes ZERO for a SELL:
+       a departing holding is not in the current book. The band would then have
+       said "4 orders · ₹1,98,019" while ₹1,98,019 was two of those four. Prices
+       now come from cycleOrders(), which carries a price on both sides — the
+       published price for a buy, the recorded entry price for a sell — and the
+       two directions are reported separately, because netting money going out
+       against money coming back into one figure describes neither. */
+    var priceOf = {};
+    cycleOrders().all.forEach(function(o){ priceOf[o.side + ':' + o.ticker] = o.price || 0; });
+    var buyVal = 0, sellVal = 0;
     rows.slice(0, send).forEach(function (r) {
-      for (var i = 0; i < list.length; i++) {
-        if (String(list[i].ticker || '').toUpperCase() === r.tradingsymbol) {
-          value += Math.round(r.quantity * (Number(list[i].recommended_price) || 0));
-          break;
-        }
-      }
+      var v = Math.round(r.quantity * (priceOf[r.transaction_type + ':' + r.tradingsymbol] || 0));
+      if (r.transaction_type === 'SELL') sellVal += v; else buyVal += v;
     });
     var label = document.getElementById('kbsk-label');
     var note  = document.getElementById('kbsk-note');
@@ -7489,10 +7821,12 @@ function refreshKiteBasket() {
        container because the note beneath it and the button label already say all
        of this in prose — a screen reader should not hear the figures twice. */
     if (facts) {
+      var money = [];
+      if (buyVal  > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(buyVal))  + '<span>to buy</span></span>');
+      if (sellVal > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(sellVal)) + '<span>to sell</span></span>');
       facts.innerHTML =
         '<span class="kbsk-fact">' + send + '<span>order' + (send === 1 ? '' : 's') + '</span></span>' +
-        '<i class="kbsk-dot"></i>' +
-        '<span class="kbsk-fact">' + escapeHtml(fmtMoney(value)) + '<span>at rec. price</span></span>' +
+        (money.length ? '<i class="kbsk-dot"></i>' + money.join('<i class="kbsk-dot"></i>') : '') +
         '<i class="kbsk-dot"></i>' +
         '<span class="kbsk-fact">NSE<span>delivery · CNC</span></span>';
     }
@@ -7515,21 +7849,27 @@ function refreshHowto() {
     var steps = document.querySelectorAll('.howto-step[data-hs]');
     if (!steps.length) return;
 
-    var total   = (stocksData || []).length;
-    var map     = total ? loadBought(currentStrategy) : {};
-    var owned   = new Set((stocksData || []).map(function(s){ return s.ticker; }));
-    var placed  = Object.keys(map).filter(function(t){ return owned.has(t); }).length;
+    // V35.3 — the step counts THIS CYCLE's orders, the same list the progress bar,
+    // the basket and the CSV read. `total` was the book size, which for a
+    // returning member counts eight holdings that need no order and omits the
+    // sells entirely.
+    var orders  = cycleOrders();
+    var map     = orders.all.length ? loadBought(currentStrategy) : {};
+    var total   = orders.all.length;
+    var placed  = orders.all.filter(function(o){ return !!map[orderKey(o)]; }).length;
     var left    = Math.max(0, total - placed);
     var capital = Number(currentCapital) || 0;
+    var nSell   = orders.sells.length;
 
     // the rupees still to deploy — summed from the SAME rounded per-row amounts
-    // the Allocation column prints, for the reason refreshSizeSummary records
+    // the Allocation column prints, for the reason refreshSizeSummary records.
+    // Buys only: a sell returns money rather than deploying it, and netting the
+    // two into one figure would make "still to deploy" mean neither.
     var toDeploy = 0;
-    (stocksData || []).forEach(function(s){
-      if (map[s.ticker]) return;
-      var price = Number(s.recommended_price) || 0;
-      if (price <= 0) return;
-      toDeploy += Math.round(Math.floor(allocBudget(s, stocksData, capital) / price) * price);
+    orders.buys.forEach(function(o){
+      if (map[orderKey(o)]) return;
+      if (!(o.price > 0)) return;
+      toDeploy += Math.round(o.qty * o.price);
     });
 
     var perStockEl = document.getElementById('size-per-stock');
@@ -7552,12 +7892,12 @@ function refreshHowto() {
            : '',
       2: (brokerName && total)
            ? '<b>' + escapeHtml(brokerName) + '</b> selected' +
-             '<span class="hs-sep">·</span>' + total + ' ticker' + (total === 1 ? '' : 's') + ' ready to copy'
+             '<span class="hs-sep">·</span>' + total + ' order' + (total === 1 ? '' : 's') + ' ready to place'
            : '',
       3: total
            ? '<b>' + placed + ' of ' + total + '</b> placed' +
              (left ? '<span class="hs-sep">·</span>' + fmtMoney(toDeploy) + ' still to deploy'
-                   : '<span class="hs-sep">·</span>book complete')
+                   : '<span class="hs-sep">·</span>cycle complete')
            : '',
       4: (days !== null && rebLabel)
            ? '<b>' + days + ' day' + (days === 1 ? '' : 's') + '</b> to the ' + rebLabel + ' rebalance'
@@ -7565,6 +7905,7 @@ function refreshHowto() {
     };
     var done = { 1: capital > 0, 2: !!(brokerName && total), 3: total > 0 && left === 0, 4: false };
     var nowStep = capital <= 0 ? 1 : (now3 ? 3 : (total ? 4 : 0));
+    _setHowToStep3(orders);
 
     steps.forEach(function(step){
       var i = Number(step.getAttribute('data-hs'));
@@ -7784,7 +8125,22 @@ function visibleStocks() {
   });
   return out.length ? out : stocksData.slice();
 }
+/* V35.3 — copies THIS CYCLE'S ORDERS when there is a previous cycle to compare
+   against, and the whole book when there is not. Pasting ten tickers into a
+   broker for a two-order month is the same mistake the basket used to make, and
+   this is the button step 2 of the how-to points at. Each side is labelled, so
+   the paste cannot be read as a list of buys. */
 function copyAllTickers() {
+  const orders = cycleOrders();
+  if (orders.known && (orders.buys.length || orders.sells.length)) {
+    const parts = [];
+    if (orders.buys.length)  parts.push('BUY: '  + orders.buys.map(o => o.ticker).join(', '));
+    if (orders.sells.length) parts.push('SELL: ' + orders.sells.map(o => o.ticker).join(', '));
+    const n = orders.buys.length + orders.sells.length;
+    copyText(parts.join('\n')).then(() => showToast('Copied ' + n + ' order' + (n === 1 ? '' : 's')));
+    return;
+  }
+  if (orders.known) { showToast('No orders to place this cycle'); return; }
   const rows = visibleStocks();
   if (!rows.length) return;
   const list = rows.map(s => s.ticker).join(', ');
@@ -7799,15 +8155,24 @@ function exportCSV() {
   const rowsOut = visibleStocks();
   if (!rowsOut.length) return;
   const n = stocksData.length || 1;
-  // V12.5: allocation is weight-proportional (see allocBudget()).
-  // V24.5: every book is ₹, so the export is unconditionally INR-labelled.
-  const header = ['#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
+  /* V35.3 — AN ACTION COLUMN, BECAUSE A LIST WITHOUT ONE IS A LIST OF BUYS.
+     The export had no side, so a member feeding it to a broker's bulk-order
+     upload placed the whole book — the same defect as the basket sent, by a
+     different route. Every row now says BUY / SELL / HOLD, read from the same
+     window._bookDiff the change card is drawn from, and the departing holdings
+     are appended as SELL rows with the quantity actually held. With no previous
+     cycle recorded the diff is unknown, and there every row is honestly a BUY. */
+  const diff = window._bookDiff;
+  const known = !!(diff && diff.known);
+  const addSet = {}; if (known) diff.added.forEach(t => { addSet[t] = 1; });
+  const header = ['Action','#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
   const lines = [header.join(',')];
   rowsOut.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
     const amt = shares * price;
     const row = [
+      known ? (addSet[s.ticker] ? 'BUY' : 'HOLD') : 'BUY',
       i+1,
       JSON.stringify(s.company_name||''),
       JSON.stringify(s.ticker||''),
@@ -7819,6 +8184,22 @@ function exportCSV() {
     ];
     lines.push(row.join(','));
   });
+  /* The sells are not rows of the picks table, so they cannot come from
+     visibleStocks() — they are appended from the diff. A sector filter narrows
+     what you are LOOKING at; it does not narrow what you have to sell, and an
+     export that silently dropped a sell because a chip was active would be worse
+     than one that never carried them. */
+  if (known && diff.removed.length){
+    const pp = diff.prevPos || {};
+    diff.removed.forEach((t, j) => {
+      const p = pp[t] || {};
+      lines.push([
+        'SELL', rowsOut.length + j + 1,
+        JSON.stringify(p.n || t), JSON.stringify(t), JSON.stringify('—'),
+        (Number(p.rec)||0).toFixed(2), '0.00', '0.00', (Number(p.qty)||0)
+      ].join(','));
+    });
+  }
   const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -7887,12 +8268,54 @@ function _setNotifUI(on, email) {
 // membership cannot see. One writer, two readings, derived from the same test as
 // the toggle itself: with the toggle present it points at it; without, it says
 // plainly what a monthly member gets instead, and what the longer plans add.
-function _setHowToStep4(hasToggle){
+/* V35.3 — step 3 describes THIS cycle's orders. Three branches, one reading:
+   a first cycle (or a device with no history) genuinely does buy the whole book,
+   so that member keeps the original sentence; a returning member is told the two
+   things that are actually in front of them, sells included; and a weighted book
+   with no name changes is rebalancing to new targets rather than buying anything,
+   which is the one case where the Shares column is the instruction and there is
+   no order list at all. */
+function _setHowToStep3(orders){
+  var p = document.getElementById('hs3-copy');
+  if (!p) return;
+  var base = ' Limit orders near rec. price are fine on liquid names.';
+  if (!orders || !orders.known){
+    p.textContent = 'Use the Shares column as your quantity for each ticker.' + base;
+    return;
+  }
+  var nB = orders.buys.length, nS = orders.sells.length;
+  if (!nB && !nS){
+    p.textContent = isWeightedBook(stocksData)
+      ? 'No names change this cycle — bring each holding to the Allocation shown above and you are done.' + base
+      : 'Nothing to place this cycle. Hold what you already own.';
+    return;
+  }
+  var bits = [];
+  if (nS) bits.push('sell the ' + nS + (nS === 1 ? ' name' : ' names') + ' marked above');
+  if (nB) bits.push('buy the ' + nB + ' new ' + (nB === 1 ? 'one' : 'ones') + ' at the Shares quantity in the table');
+  p.textContent = 'Only ' + (nB + nS) + ' order' + (nB + nS === 1 ? '' : 's') + ' this cycle — ' +
+    bits.join(', then ') + '. Everything else you already hold, untouched.' + base;
+}
+
+/* V35.3 — "Your picks stay fixed for your subscription" was told to BOTH plans,
+   and it is false for the one that sees it in the hasToggle branch. The branch is
+   chosen by whether the notification toggle is shown, i.e. duration_months > 1 —
+   and apps_script.gs handleGetStocks serves exactly those subscribers
+   findLatestRunId(strategy), a NEW book every month, while a monthly sub is
+   pinned to the run_id captured at signup. So the sentence told 3/6/12-month
+   members that their list would not change (it changes on the 1st, silently) and
+   that they should renew to switch to next month's set (they already receive it).
+   Both branches are now written from duration_months directly rather than from a
+   control's visibility, so the copy cannot drift from the backend rule it
+   describes. */
+function _setHowToStep4(){
   var p = document.getElementById('hs4-copy');
   if (!p) return;
-  p.textContent = hasToggle
-    ? "Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it."
-    : "Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it. Email alerts for each rebalance come with the 3-month plan and longer.";
+  var sub = window._currentSub || {};
+  var months = Number(sub.duration_months) || 1;
+  p.textContent = months > 1
+    ? "Your book updates automatically on the 1st — the picks here are always the current set, for as long as your subscription runs. Turn on notifications above and we'll email you the moment a new set lands."
+    : "Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it. Automatic monthly updates and email alerts come with the 3-month plan and longer.";
 }
 
 // Called from renderDashboard() once we know the subscription. Server flag wins
@@ -7903,11 +8326,11 @@ function restoreNotifState() {
   var sec = document.getElementById('notif-section');
   if ((sub.duration_months || 1) <= 1) {
     if (sec) sec.style.display = 'none';
-    _setHowToStep4(false);
+    _setHowToStep4();
     return;
   }
   if (sec) sec.style.display = '';
-  _setHowToStep4(true);
+  _setHowToStep4();
   var serverDefined = typeof sub.notify !== 'undefined' && sub.notify !== null && sub.notify !== '';
   var pref = _loadNotifPref();
   var on = serverDefined ? (String(sub.notify).toLowerCase() === 'on') : !!(pref && pref.on);
@@ -8162,31 +8585,99 @@ function _loadBookHist(){
 }
 function _saveBookHist(o){ try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e){} }
 
-/* Returns {known, added[], removed[], held[], prevKey, prevWhen} and, as a side
-   effect, rolls the stored history forward. Deliberately called ONCE per render
-   from renderDashboard: calling it twice in one paint would roll cur->prev again
-   and report an empty diff. */
+/* V35.3 — WHAT A CYCLE RECORD HAS TO CARRY IF THE SELLS ARE TO BE ACTIONABLE.
+   V35.2 stored a ticker list, which is all a COUNT needs. An order needs more: to
+   put a departing name in a broker basket you need its quantity, and to say what
+   the sale realises you need the price it entered the book at. Neither is
+   recoverable later — the moment the run rolls over, that name is gone from the
+   payload and the site has no per-member holdings store to ask.
+   So each cycle now also records, per ticker, {y: yahoo symbol, rec: the
+   recommended price it was published at, qty: whole shares at the member's own
+   capital, n: display name}. `rec` and `y` are facts of the cycle and are written
+   once by bookDiff(); `qty` follows the capital box and is re-stamped by
+   _recordCurQty() — bookDiff runs at the top of renderDashboard, BEFORE
+   setupCapitalCalculator has restored currentCapital, so writing qty here would
+   record a book of zeros.
+   Records written before this release carry no `pos`. Everything that reads it is
+   gated on its presence, so an older device degrades to exactly V35.2's
+   behaviour — counts and chips, no sell basket — rather than to a wrong number. */
+function _bookPos(stocks, capital){
+  var pos = {};
+  (stocks || []).forEach(function(s){
+    var t = String(s.ticker || ''); if (!t) return;
+    var price = Number(s.recommended_price) || 0;
+    pos[t] = {
+      y:   s.yahoo_ticker || '',
+      rec: price,
+      qty: (price > 0 && capital > 0) ? Math.floor(allocBudget(s, stocks, capital) / price) : 0,
+      // The MODEL weight, not the member's. A weighted book (MultiAsset) keeps the
+      // same holdings and rotates their targets, so the only way to measure that
+      // cycle's turnover is w_new vs w_prev. Quantities cannot do it: they move
+      // when the member changes their capital, which is not a rebalance.
+      w:   Number(s.weight_pct) || 0,
+      n:   s.company_name || t
+    };
+  });
+  return pos;
+}
+/* Re-stamp the CURRENT cycle's quantities at the capital now in the box. Called
+   from refreshSizeSummary, i.e. on every capital change and once after the
+   calculator restores a saved amount. Touches qty only — never rolls the
+   history, never rewrites `rec`, and is a no-op if the slot predates this
+   release. */
+function _recordCurQty(){
+  try {
+    var sub = window._currentSub; if (!sub) return;
+    var key = _cycleKey(sub); if (!key) return;
+    var strat = String(sub.strategy || 'default');
+    var hist = _loadBookHist(), slot = hist[strat];
+    if (!slot || !slot.cur || slot.cur.key !== key || !slot.cur.pos) return;
+    var list = stocksData || [], cap = Number(currentCapital) || 0, dirty = false;
+    list.forEach(function(s){
+      var t = String(s.ticker || ''), p = slot.cur.pos[t];
+      if (!t || !p) return;
+      var price = Number(s.recommended_price) || 0;
+      var q = (price > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / price) : 0;
+      if (p.qty !== q){ p.qty = q; dirty = true; }
+    });
+    if (dirty) _saveBookHist(hist);
+  } catch(e){}
+}
+
+/* Returns {known, added[], removed[], held[], prevKey, prevWhen, prevPos} and, as
+   a side effect, rolls the stored history forward. Deliberately called ONCE per
+   render from renderDashboard: calling it twice in one paint would roll cur->prev
+   again and report an empty diff. */
 function bookDiff(sub, stocks){
-  var out = { known:false, added:[], removed:[], held:[], prevKey:null, prevWhen:null };
+  var out = { known:false, added:[], removed:[], held:[], prevKey:null, prevWhen:null, prevPos:null, rolled:false };
   var key = _cycleKey(sub);
   var tickers = (stocks || []).map(function(s){ return String(s.ticker || ''); }).filter(Boolean);
   if (!key || !tickers.length) return out;
   var strat = String((sub && sub.strategy) || 'default');
   var hist  = _loadBookHist();
   var slot  = hist[strat] || {};
+  var pos   = _bookPos(stocks, Number(currentCapital) || 0);
 
   // ?demo — the fixture has to exercise this branch or the module is never seen
   // in local testing. Seeds a plausible previous cycle instead of the real one.
   if (isDemo && !slot.prev){
-    slot = { cur:{ key:key, tickers:tickers, when:new Date().toISOString() },
-             prev:{ key:'demo-prev', tickers:_demoPrevTickers(), when:new Date(Date.now()-31*864e5).toISOString() } };
+    slot = { cur:{ key:key, tickers:tickers, pos:pos, when:new Date().toISOString() },
+             prev:{ key:'demo-prev', tickers:_demoPrevTickers(), pos:_demoPrevPos(),
+                    when:new Date(Date.now()-31*864e5).toISOString() } };
   } else if (!slot.cur){
-    slot.cur = { key:key, tickers:tickers, when:new Date().toISOString() };
+    slot.cur = { key:key, tickers:tickers, pos:pos, when:new Date().toISOString() };
   } else if (slot.cur.key !== key){
     slot.prev = slot.cur;                                  // the book rolled over
-    slot.cur  = { key:key, tickers:tickers, when:new Date().toISOString() };
+    slot.cur  = { key:key, tickers:tickers, pos:pos, when:new Date().toISOString() };
+    out.rolled = true;                                     // V35.3 — see migrateBoughtKeys
   } else {
     slot.cur.tickers = tickers;                            // same cycle, re-read
+    // Backfill `pos` for a slot written before V35.3, and refresh `rec`/`y` in case
+    // publish.py re-stamped the run. Existing quantities are preserved — the
+    // member's capital is not known to be restored at this point in the render.
+    var had = slot.cur.pos || {};
+    Object.keys(pos).forEach(function(t){ if (had[t] && had[t].qty) pos[t].qty = had[t].qty; });
+    slot.cur.pos = pos;
   }
   hist[strat] = slot; _saveBookHist(hist);
 
@@ -8197,9 +8688,62 @@ function bookDiff(sub, stocks){
   out.known   = true;
   out.prevKey = slot.prev.key;
   out.prevWhen= slot.prev.when || null;
+  out.prevPos = slot.prev.pos || null;
   out.added   = tickers.filter(function(t){ return !prevSet[t]; });
   out.held    = tickers.filter(function(t){ return  prevSet[t]; });
   out.removed = prev.filter(function(t){ return !curSet[t]; });
+  return out;
+}
+
+/* ── THE CYCLE'S ORDER LIST — ONE WRITER FOR EVERY SURFACE THAT ACTS ──────────
+   V35.2 gave the page a diff and told three surfaces about it: a card, two KPI
+   tiles and a row badge. Everything that ACTS on the book was left reading
+   stocksData, so the page described a four-order month beside a button that sent
+   ten buys — eight of them for positions the card above called "carried over
+   untouched", and none of them the two sells it had just named.
+   This is the single list every one of those surfaces now reads: the basket, the
+   tick-boxes, the progress bar, the how-to's live line, the CSV and the copy
+   button. A first cycle (or a device with no history) has no diff, and there the
+   book IS the order list — which is exactly true for that member — so `known`
+   false falls back to the whole book rather than to an empty basket.
+   Sell quantities come from the previous cycle's recorded position; a record
+   without one yields a sell the member can tick and open at their broker but
+   which cannot be basketed, because a basket row without a quantity is a
+   guess about how much of their money to move. */
+function cycleOrders(){
+  var out = { known:false, buys:[], sells:[], all:[], sellSized:0, sellUnsized:0 };
+  var list = stocksData || [];
+  if (!list.length) return out;
+  var cap  = Number(currentCapital) || 0;
+  var diff = window._bookDiff || null;
+  var byTicker = {};
+  list.forEach(function(s){ byTicker[String(s.ticker || '')] = s; });
+
+  var mkBuy = function(s){
+    var price = Number(s.recommended_price) || 0;
+    var qty   = (price > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / price) : 0;
+    return { side:'BUY', ticker:String(s.ticker || '').toUpperCase(), name:s.company_name || s.ticker,
+             y:s.yahoo_ticker || '', price:price, qty:qty, stock:s };
+  };
+
+  if (!diff || !diff.known){
+    out.buys = list.map(mkBuy);
+    out.all  = out.buys.slice();
+    return out;
+  }
+
+  out.known = true;
+  out.buys = diff.added.map(function(t){ return byTicker[t]; }).filter(Boolean).map(mkBuy);
+
+  var pp = diff.prevPos || {};
+  out.sells = diff.removed.map(function(t){
+    var p = pp[t] || {};
+    var qty = Number(p.qty) || 0;
+    if (qty > 0) out.sellSized++; else out.sellUnsized++;
+    return { side:'SELL', ticker:String(t).toUpperCase(), name:p.n || t,
+             y:p.y || '', price:Number(p.rec) || 0, qty:qty, stock:null };
+  });
+  out.all = out.buys.concat(out.sells);
   return out;
 }
 
@@ -8214,6 +8758,176 @@ function bookDiff(sub, stocks){
 function _demoPrevTickers(){
   if (demoMode === '2') return ['MON100','HDFCSML250','JUNIORBEES','MID150BEES','EBBETF0431','GOLDBEES','SILVERBEES','NIFTYBEES'];
   return ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','RELIANCE','BHARTIARTL','TITAN','WIPRO'];
+}
+/* V35.3 — the previous cycle's POSITIONS for the fixture, so ?demo exercises the
+   sell basket, the realised-gain arithmetic and the cost row rather than only the
+   counts. Prices are a month older than the current fixture's (that is the whole
+   point — a sell with no cost basis realises nothing), and quantities are the
+   ones a ₹10,00,000 book at 10% a name actually buys, so the demo's sell tickets
+   reconcile against its own Shares column the way a real cycle's do. */
+function _demoPrevPos(){
+  var mk = function(rows){
+    var o = {};
+    rows.forEach(function(r){ o[r[0]] = { y:r[0] + '.NS', rec:r[1], qty:r[2], w:r[3], n:r[4] }; });
+    return o;
+  };
+  // ?demo=2 carries LAST cycle's weights, deliberately different from the current
+  // fixture's. MultiAsset's whole cycle IS the weight rotation, so a fixture whose
+  // previous weights matched today's would show zero turnover and never exercise
+  // the rebalance leg of the cost row.
+  if (demoMode === '2') return mk([
+    ['MON100',     291.44,  514, 24.80, 'NASDAQ ETF'],
+    ['HDFCSML250', 176.12,  916, 13.05, 'Nifty SmallCap 250 ETF'],
+    ['JUNIORBEES', 812.30,  128, 12.90, 'Nifty Next 50 ETF'],
+    ['MID150BEES', 233.05,  535, 14.62, 'Nifty Midcap 150 ETF'],
+    ['EBBETF0431', 1432.10,  57, 11.44, 'Bharat Bond ETF'],
+    ['GOLDBEES',   112.68, 1540, 15.90, 'Gold ETF'],
+    ['SILVERBEES', 198.44,  215,  4.05, 'Silver ETF'],
+    ['NIFTYBEES',  274.90,   40,  3.24, 'Nifty 50 ETF']
+  ]);
+  return mk([
+    ['INFY',       1498.00,  66, 10.00, 'Infosys'],
+    ['TCS',        3755.00,  26, 10.00, 'Tata Consultancy Services'],
+    ['HDFCBANK',   1640.50,  60, 10.00, 'HDFC Bank'],
+    ['ICICIBANK',  1172.00,  85, 10.00, 'ICICI Bank'],
+    ['MARUTI',    11640.00,   8, 10.00, 'Maruti Suzuki India'],
+    ['M&M',        2848.00,  35, 10.00, 'Mahindra & Mahindra'],
+    ['RELIANCE',   2988.00,  33, 10.00, 'Reliance Industries'],
+    ['BHARTIARTL', 1540.00,  64, 10.00, 'Bharti Airtel'],
+    ['TITAN',      3402.00,  29, 10.00, 'Titan Company'],
+    ['WIPRO',       262.40, 381, 10.00, 'Wipro']
+  ]);
+}
+
+/* ── V35.3 · THE COST OF THE TURNOVER THE PAGE INSTRUCTS ──────────────────────
+   One-way trading cost per strategy, mirroring IP/shared/config.py so the
+   dashboard and the published backtest quote ONE assumption rather than two.
+   LargeMidcap 10 bps and SmallMicro 20 bps are that file's TRANSACTION_COST
+   values verbatim. MultiAsset's backtest models no trading cost at all — its
+   config block has no TRANSACTION_COST — so rather than borrowing a number the
+   backtest never used, its row is labelled as an assumption in its own right and
+   the note says so. Getting this wrong in the flattering direction is the failure
+   mode that matters, so where a strategy is unrecognised the higher figure is
+   used, never the lower. */
+var CYCLE_COST_BPS = {
+  lm: { bps: 10, src: 'modelled' },
+  sm: { bps: 20, src: 'modelled' },
+  ma: { bps: 10, src: 'assumed'  }
+};
+var STCG_RATE = 0.20;   // s.111A, the post-23-Jul-2024 regime; config.py TAX.STCG_RATE
+
+/* Three legs, because there are three ways money moves in a rebalance:
+     BUY      the names joining, at their published price x the member's shares
+     SELL     the names leaving, at the live price where we have one and the price
+              they entered at where we do not, x the shares actually held
+     REBALANCE  a weighted book keeps its holdings and rotates their targets. The
+              only honest measure of that is the WEIGHT change — half the sum of
+              |w_new - w_prev|, the standard one-way turnover figure — because
+              quantities also move when the member changes their capital, and a
+              change of capital is not a rebalance.
+   Every leg degrades to zero rather than to a guess: no recorded position means
+   no sell leg, no recorded weights means no rebalance leg, and the note says
+   which of them is missing. */
+function renderCycleCost(){
+  var box = document.getElementById('chg-cost');
+  if (!box) return;
+  var diff = window._bookDiff, list = stocksData || [];
+  var cap  = Number(currentCapital) || 0;
+  if (!diff || !diff.known || !list.length || cap <= 0){ box.hidden = true; return; }
+
+  var key  = _strategyPerfKey(currentStrategy || '');
+  var cost = CYCLE_COST_BPS[key] || { bps: 20, src: 'assumed' };
+  var px   = window._livePx || {};
+  var pp   = diff.prevPos || {};
+  var byTicker = {}; list.forEach(function(s){ byTicker[String(s.ticker || '')] = s; });
+
+  // BUY leg — the same expression the Shares column prints, so the two reconcile.
+  var buyVal = 0;
+  diff.added.forEach(function(t){
+    var s = byTicker[t]; if (!s) return;
+    var price = Number(s.recommended_price) || 0; if (price <= 0) return;
+    buyVal += Math.floor(allocBudget(s, list, cap) / price) * price;
+  });
+
+  /* SELL leg — and the realised short-term gain that comes with it.
+     A gain is only KNOWN when every departing holding has both a recorded cost
+     basis and a live price. Falling back to the entry price where a quote is
+     missing keeps the traded VALUE roughly right, but it makes that holding's
+     gain exactly zero — and a zero that means "we could not price this" must not
+     be printed beside the words "realised loss". Where any leg is unpriced the
+     tile says so instead. */
+  var sellVal = 0, gain = 0, gainKnown = true, sellSized = 0;
+  diff.removed.forEach(function(t){
+    var p = pp[t] || {}, qty = Number(p.qty) || 0, rec = Number(p.rec) || 0;
+    if (!(qty > 0) || !(rec > 0)){ gainKnown = false; return; }
+    sellSized++;
+    var q = px[p.y], live = (q && Number(q.price) > 0) ? Number(q.price) : 0;
+    if (!live){ gainKnown = false; live = rec; }
+    sellVal += qty * live;
+    gain    += qty * (live - rec);
+  });
+  if (diff.removed.length && !sellSized) gainKnown = false;
+  if (!diff.removed.length) gainKnown = true;   // nothing sold, nothing realised
+
+  // REBALANCE leg — held names whose model weight moved.
+  var rebFrac = 0, rebKnown = false, wDelta = 0, wSeen = 0;
+  diff.held.forEach(function(t){
+    var s = byTicker[t], p = pp[t];
+    if (!s || !p || typeof p.w !== 'number') return;
+    wSeen++;
+    wDelta += Math.abs((Number(s.weight_pct) || 0) - p.w);
+  });
+  if (wSeen && wSeen === diff.held.length){ rebKnown = true; rebFrac = wDelta / 200; }
+  var rebVal = rebKnown ? rebFrac * cap : 0;
+
+  var traded  = buyVal + sellVal + rebVal;
+  if (traded <= 0){ box.hidden = true; return; }
+  var charges = traded * (cost.bps / 10000);
+  var tax     = gain > 0 ? gain * STCG_RATE : 0;
+
+  var chip = document.getElementById('cc-chip');
+  // "% of your book turns over" would overstate it: this counts BOTH legs, so a
+  // 2-in-2-out month on a ten-name book reads 40% while only two holdings in ten
+  // actually change. What the figure measures is money changing hands.
+  if (chip) chip.textContent = (traded / cap * 100).toFixed(1) + '% of your capital changes hands';
+
+  var cell = function(lbl, val, sub, nil){
+    return '<div class="cc-cell"><div class="cc-lbl">' + lbl + '</div>' +
+      '<div class="cc-val' + (nil ? ' is-nil' : '') + '">' + val + '</div>' +
+      (sub ? '<div class="cc-sub">' + sub + '</div>' : '') + '</div>';
+  };
+  var grid = document.getElementById('cc-grid');
+  if (grid){
+    var legs = [];
+    if (buyVal  > 0) legs.push(fmtMoney(Math.round(buyVal))  + ' bought');
+    if (sellVal > 0) legs.push(fmtMoney(Math.round(sellVal)) + ' sold');
+    if (rebVal  > 0) legs.push(fmtMoney(Math.round(rebVal))  + ' rebalanced');
+    grid.innerHTML =
+      cell('Value traded', fmtMoney(Math.round(traded)), legs.join(' &middot; ')) +
+      cell('Estimated charges', '~' + fmtMoney(Math.round(charges)),
+           cost.bps + '&nbsp;bps a side, ' + (cost.src === 'modelled'
+             ? 'the figure the published backtest is net&nbsp;of'
+             : 'assumed for liquid&nbsp;ETFs')) +
+      (!gainKnown
+        ? cell('Short-term tax', '&mdash;',
+               diff.removed.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
+        : gain > 0.5
+          ? cell('Short-term tax', '~' + fmtMoney(Math.round(tax)),
+                 '20% on ' + fmtMoney(Math.round(gain)) + ' realised')
+          : gain < -0.5
+            ? cell('Short-term tax', fmtMoney(0),
+                   fmtMoney(Math.round(Math.abs(gain))) + ' realised loss — set it off against other short-term gains', true)
+            : cell('Short-term tax', fmtMoney(0), 'no gain realised this cycle', true));
+  }
+  var note = document.getElementById('cc-note');
+  if (note){
+    note.innerHTML = 'Estimates, at the capital you entered. Charges are a single ' + cost.bps +
+      '&nbsp;bps-a-side assumption; your broker’s plan, STT, stamp duty, exchange and SEBI fees and GST are not itemised. ' +
+      'Tax is the 20% short-term rate on gains realised by the sells above ' +
+      '— every book here rebalances monthly, so no gain is ever long term. ' +
+      '<a href="disclosures.html#backtest-methodology" target="_blank" rel="noopener">How the published figures treat cost and tax &rarr;</a>';
+  }
+  box.hidden = false;
 }
 
 /* ── the change module + the two KPI tiles it feeds ────────────────────────────
@@ -8293,23 +9007,85 @@ function renderBookChange(diff, stocks){
         ? '<div class="chg-tks">' + list.map(function(t){ return '<span class="chg-tk">' + escapeHtml(t) + '</span>'; }).join('') + '</div>'
         : '<div class="chg-none">None this cycle</div>';
     };
+    /* V35.3 — the departing names, as orders. Quantity comes from the previous
+       cycle's recorded position and is simply omitted when that record predates
+       V35.3, because "sell 0 shares" and "sell some unknown number" are different
+       statements and only one of them is true. The broker link is the member's own
+       choice (getBroker), same as every row in the picks table. */
+    var placed = loadBought(currentStrategy) || {};
+    var bk     = BROKERS[getBroker()] || BROKERS.kite;
+    var pp     = diff.prevPos || {};
+    var sells  = function(list){
+      if (!list.length) return '<div class="chg-none">None this cycle</div>';
+      return '<div class="chg-sells">' + list.map(function(t){
+        var p    = pp[t] || {};
+        var qty  = Number(p.qty) || 0;
+        var key  = 'SELL:' + String(t).toUpperCase();
+        var done = !!placed[key];
+        var url  = '';
+        try { url = bk.link({ ticker: t }) || ''; } catch(e){}
+        return '<div class="chg-sell' + (done ? ' is-done' : '') + '" data-okey="' + escapeHtml(key) + '">' +
+          '<input type="checkbox" class="chg-sell-cb"' + (done ? ' checked' : '') +
+            ' data-okey="' + escapeHtml(key) + '" onchange="toggleOrder(this)"' +
+            ' aria-label="Mark ' + escapeHtml(t) + ' as sold">' +
+          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+            (qty > 0 ? '<span class="chg-sell-q">' + qty + ' share' + (qty === 1 ? '' : 's') + ' held</span>' : '') +
+          '</span>' +
+          (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
+                 escapeHtml(bk.name) + ' &rarr;</a>' : '') +
+        '</div>';
+      }).join('') + '</div>' +
+      '<div class="chg-hint">Tick each one once the sell order is placed. Your buys are in the picks table below.</div>';
+    };
     box.innerHTML =
       '<div class="chg-group is-in"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + chips(diff.added)   + '</div>' +
-      '<div class="chg-group is-out"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + chips(diff.removed) + '</div>' +
+      '<div class="chg-group is-out"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + sells(diff.removed) + '</div>' +
       '<div class="chg-group is-hold"><div class="chg-gk"><i></i>Hold · carried over (' + nHold + ')</div>' + chips(diff.held)   + '</div>';
   }
+  renderCycleCost();   // V35.3 — what the turnover named above actually costs
   card.style.display = '';
 }
 
 function _pxCacheKey(){ return 'mfc_livepx_' + (token || 'demo'); }
 function _todayKey(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+/* ── V35.3 · "LIVE" NOW MEANS LIVE ───────────────────────────────────────────
+   The cache was bounded by CALENDAR DAY and nothing else. It wrote an `at`
+   timestamp and never read it, and there was no repoll — loadLiveProfit ran once
+   at load and again only when Refresh was pressed. So a member who opened the
+   dashboard at 09:20 and came back at 15:29 read the 09:20 prices under a pulsing
+   green "live" dot, beside a status bar saying NSE open, with the headline
+   stamped "As of 03:29 pm" because that line printed new Date() rather than the
+   time the prices were fetched. The stamp tracked the member's own typing:
+   renderProfitHeadline re-runs on every capital change.
+   Two bounds, because the right answer differs either side of the closing bell:
+   while the exchange is open a quote is stale in minutes, and once it has closed
+   the last traded price does not change again until tomorrow. */
+var PX_MAX_AGE_OPEN   = 5 * 60 * 1000;    // 5 minutes during market hours
+var PX_MAX_AGE_CLOSED = 12 * 60 * 60 * 1000; // the rest of the day once NSE has shut
+function _nseIsOpen(){
+  try {
+    var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    var d = local.getDay(); if (d < 1 || d > 5) return false;
+    var mins = local.getHours() * 60 + local.getMinutes();
+    return mins >= (9 * 60 + 15) && mins <= (15 * 60 + 30);
+  } catch(e){ return false; }
+}
+function _pxMaxAge(){ return _nseIsOpen() ? PX_MAX_AGE_OPEN : PX_MAX_AGE_CLOSED; }
 function _loadCachedPx(){
   try { var raw = localStorage.getItem(_pxCacheKey()); if (!raw) return null;
-        var o = JSON.parse(raw); if (o && o.day === _todayKey() && o.px) return o; } catch(e){}
+        var o = JSON.parse(raw);
+        if (!o || o.day !== _todayKey() || !o.px) return null;
+        var at = Number(o.at) || 0;
+        if (!at || (Date.now() - at) > _pxMaxAge()) return null;
+        return o; } catch(e){}
   return null;
 }
 function _saveCachedPx(px){
-  try { localStorage.setItem(_pxCacheKey(), JSON.stringify({ day: _todayKey(), at: Date.now(), px: px })); } catch(e){}
+  var at = Date.now();
+  try { localStorage.setItem(_pxCacheKey(), JSON.stringify({ day: _todayKey(), at: at, px: px })); } catch(e){}
+  // The headline's "As of" is written from this, not from the clock, so it stays
+  // true whether the prices were just fetched or read back out of the cache.
+  window._pxAt = at;
 }
 async function _fetchPricesBatch(yahoos){
   try {
@@ -8349,7 +9125,7 @@ async function _fetchPricesViaChart(yahoos){
 // "month-anchored" baseline — the close on the 1st trading day of the month — which
 // drifted from rec_price whenever publish.py re-stamped a pick mid-month, making the
 // summary % and the Top/Lagging chips contradict the per-row gains. Removed.)
-async function loadLiveProfit(force){
+async function loadLiveProfit(force, opts){
   var card = document.getElementById('profit-card');
   if (!card) return;
   if (isDemo){ card.style.display = 'none'; return; }   // demo rec-prices are placeholders
@@ -8360,23 +9136,71 @@ async function loadLiveProfit(force){
   if (!priced.length){ card.style.display = 'none'; return; }
 
   card.style.display = 'flex';
-  window._profitAnimated = false;   // V14.6: re-arm the count-up for this load
-  setProfitLoading(window._rebalDate);
+  // V35.3 — a background repoll must not blank a headline that is already on
+  // screen and re-run its count-up every 5 minutes. Only a first load or an
+  // explicit Refresh shows the skeleton.
+  var quiet = !!(opts && opts.quiet) && !!window._livePx;
+  if (!quiet){
+    window._profitAnimated = false;   // V14.6: re-arm the count-up for this load
+    setProfitLoading(window._rebalDate);
+  }
 
   var yahoos = priced.map(function(s){ return s.yahoo_ticker; }).filter(function(v,i,a){ return a.indexOf(v) === i; });
+  /* V35.3 — the departing holdings are priced too. They are not in stocksData, so
+     nothing had ever fetched them, and without a live price the cost card cannot
+     say what a sale realises and the sell tickets cannot show what they are worth.
+     Added to the same batch rather than a second request. */
+  try {
+    var d0 = window._bookDiff;
+    if (d0 && d0.known && d0.prevPos){
+      d0.removed.forEach(function(t){
+        var y = (d0.prevPos[t] || {}).y;
+        if (y && yahoos.indexOf(y) === -1) yahoos.push(y);
+      });
+    }
+  } catch(e){}
 
   var cached = force ? null : _loadCachedPx();
   var px = (cached && cached.px) ? cached.px : null;
+  if (px) window._pxAt = Number(cached.at) || Date.now();
   if (!px){
     px = await _fetchPricesBatch(yahoos);
     if (!px) px = await _fetchPricesViaChart(yahoos);
     if (px && Object.keys(px).length) _saveCachedPx(px);
   }
-  if (!px || !Object.keys(px).length){ setProfitUnavailable(); return; }
+  if (!px || !Object.keys(px).length){ if (!quiet) setProfitUnavailable(); return; }
   window._livePx = px;
 
   paintLivePrices();
   renderProfitHeadline();
+  renderCycleCost();   // the sale value and the realised gain move with the price
+}
+
+/* ── V35.3 · THE REPOLL FIVE COMMENTS ALREADY DESCRIBED ───────────────────────
+   paintLivePrices' per-element data-px-seen flag, the portfolio-map sync hook and
+   the attribution card were all written to be safe "on the 30s repoll". There was
+   no repoll. The defensive code was right; the timer was simply never built, and
+   its absence is what let a live number sit unchanged for a whole session.
+   Polls only while the tab is visible and the exchange is open — a hidden tab and
+   a closed market are both cases where a request buys nothing — and refetches
+   immediately when a member returns to the tab, which is when a stale number is
+   most likely to be read. */
+var PX_POLL_MS = 5 * 60 * 1000;
+function startPricePolling(){
+  if (window._mfPxTimer || isDemo) return;
+  window._mfPxTimer = setInterval(function(){
+    if (document.hidden || !_nseIsOpen()) return;
+    try { loadLiveProfit(true, { quiet:true }); } catch(e){}
+  }, PX_POLL_MS);
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden || isDemo) return;
+    // Returning to the tab: refetch only if what is on screen has actually aged
+    // past the bound, so tabbing back and forth does not hammer the endpoint.
+    var at = Number(window._pxAt) || 0;
+    if (!at || (Date.now() - at) > _pxMaxAge()){
+      try { loadLiveProfit(true, { quiet:true }); } catch(e){}
+    }
+  });
 }
 function setProfitLoading(rebal){
   var d = document.getElementById('pc-rebal-date');
@@ -8396,6 +9220,18 @@ function setProfitUnavailable(){
   // leave nothing behind that looks like live attribution.
   var ac = document.getElementById('attrib-card'); if (ac) ac.style.display = 'none';
 }
+/* V35.3 — "As of", from the price timestamp. Under a minute old it says so in
+   words, because a clock time on a number fetched seconds ago reads as older than
+   it is; past that it gives the time, which is what a member checking against
+   their broker needs. Falls back to the render clock only when nothing recorded a
+   fetch, which is the pre-existing behaviour and is never worse than it was. */
+function _asOfLabel(){
+  var at = Number(window._pxAt) || 0;
+  if (!at) return 'As of ' + new Date().toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  var age = Date.now() - at;
+  if (age < 60000) return 'Prices just now';
+  return 'Prices as of ' + new Date(at).toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
 function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null; }
 // V14.6: count the headline % up from 0 on first paint (a tactile premium touch,
 // matching the KPI count-ups). Only the FIRST render per load animates — capital
@@ -8408,7 +9244,7 @@ function _animatePct(el, target){
      re-rendering the headline mid-count-up with an all-negative price set — the
      card went into its is-down state and the attribution card read −5.15 pp
      while the headline still said "+2.31%". Reachable from Refresh (which
-     re-arms _profitAnimated) and from the 30s repoll. Cancel before writing. */
+     re-arms _profitAnimated) and from the V35.3 price repoll. Cancel before writing. */
   if (window._pctRAF) { cancelAnimationFrame(window._pctRAF); window._pctRAF = null; }
   if (window._profitAnimated || document.hidden ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches){
@@ -8437,7 +9273,7 @@ function paintLivePrices(){
     var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
     el.innerHTML = '₹' + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
     // V24.8: fade each price in the FIRST time it lands (the cells used to pop
-    // into existence). Marked per-element so the 30s repoll — and a sort/filter
+    // into existence). Marked per-element so the price repoll — and a sort/filter
     // re-render, which reuses painted cells — never re-flashes the table.
     if (!el.dataset.pxSeen) { el.dataset.pxSeen = '1'; el.classList.add('px-in'); }
   });
@@ -8483,7 +9319,12 @@ function renderProfitHeadline(){
   if (br) br.innerHTML =
     '<div class="pc-stat"><span class="pc-dot pc-up-dot"></span><b>' + up + '</b> up</div>' +
     '<div class="pc-stat"><span class="pc-dot pc-down-dot"></span><b>' + down + '</b> down</div>' +
-    '<div class="pc-asof">As of ' + new Date().toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) + '</div>';
+    // V35.3 — the time the PRICES were fetched, not the time this line was
+    // written. It printed new Date(), and renderProfitHeadline re-runs on every
+    // capital change, so the stamp followed the member's typing over prices that
+    // could be hours old. _pxAt is set by _saveCachedPx on a fetch and from the
+    // cache record on a read, so it is right down both paths.
+    '<div class="pc-asof">' + _asOfLabel() + '</div>';
   // V14.4: top / lagging performer chips
   var ld = document.getElementById('pc-leaders');
   if (ld) {
@@ -8667,6 +9508,175 @@ function _isoDay(d){
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
          '-' + String(d.getDate()).padStart(2, '0');
 }
+/* ── V35.3 · EVERY CYCLE SO FAR ───────────────────────────────────────────────
+   The dashboard could show one number and one benchmark comparison, both for the
+   cycle in progress, both wiped by the next publish. A member on month seven had
+   no record of months one to six — not the returns, not whether the strategy had
+   been ahead of its index more often than behind — and the most
+   credibility-bearing thing this service owns was invisible on the one page
+   members actually open.
+   docs/live-history.json now keeps what live-perf.json used to overwrite. It is a
+   static file on the same origin, fetched exactly the way live-perf.json already
+   is: no backend change, no Apps Script redeploy, and aggregate-only so a
+   forwarded page still leaks no picks.
+   Fail-soft throughout: no file, no strategy match, no cycles → the card never
+   appears and the page is exactly what it was. */
+var _trkTried = false;
+function loadTrackRecord(){
+  if (_trkTried) return Promise.resolve(window._trkData || null);
+  _trkTried = true;
+  try {
+    return fetch('live-history.json', { cache:'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ window._trkData = d; return d; })
+      .catch(function(){ return null; });
+  } catch(e){ return Promise.resolve(null); }
+}
+function renderTrackRecord(){
+  var card = document.getElementById('trk-card');
+  if (!card) return;
+  card.style.display = 'none';
+  var d = window._trkData;
+  if (!d || !d.cycles || !d.cycles.length) return;
+  var key = _strategyPerfKey(currentStrategy || ''); if (!key) return;
+
+  // Only cycles this strategy actually has a figure for. A null live_pct is the
+  // coverage guard in live_perf.py firing (fewer than 80% of the book priced) and
+  // it publishes null precisely so nothing downstream invents a number for it.
+  var rows = d.cycles.map(function(c){
+    var s = (c.strategies || {})[key];
+    if (!s || s.live_pct == null || !isFinite(s.live_pct)) return null;
+    return { when:c.rebalance_date, through:c.data_through, sealed:!!c.sealed,
+             live:Number(s.live_pct),
+             bench:(s.bench_pct != null && isFinite(s.bench_pct)) ? Number(s.bench_pct) : null,
+             benchName:s.bench_name || '' };
+  }).filter(Boolean);
+  if (!rows.length) return;
+
+  // ONE scale for every row, so a bar's length means the same thing down the
+  // column. 1.0 floors it: a set of near-flat cycles would otherwise be magnified
+  // into a dramatic-looking chart of nothing.
+  var scale = 1.0;
+  rows.forEach(function(r){
+    scale = Math.max(scale, Math.abs(r.live), r.bench == null ? 0 : Math.abs(r.bench));
+  });
+
+  var ahead = 0, judged = 0, sealed = 0;
+  rows.forEach(function(r){
+    if (r.sealed) sealed++;
+    if (r.bench == null) return;
+    judged++; if (r.live > r.bench) ahead++;
+  });
+
+  var fmtPct = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; };
+  var mon = function(iso){
+    var dt = new Date(iso + 'T00:00:00');
+    return isNaN(dt.getTime()) ? iso : dt.toLocaleDateString('en-IN', { month:'short', year:'2-digit' });
+  };
+
+  var box = document.getElementById('trk-rows');
+  if (box){
+    box.innerHTML = rows.map(function(r){
+      var cls  = r.live > 0.05 ? 'up' : (r.live < -0.05 ? 'down' : 'flat');
+      var half = Math.min(50, Math.abs(r.live) / scale * 50);
+      var left = r.live >= 0 ? 50 : (50 - half);
+      var tick = r.bench == null ? '' :
+        '<i class="trk-tick" style="left:' + (50 + Math.max(-50, Math.min(50, r.bench / scale * 50))).toFixed(2) + '%"></i>';
+      var aria = mon(r.when) + ' cycle: ' + fmtPct(r.live) +
+        (r.bench == null ? '' : ', against ' + fmtPct(r.bench) + ' for ' + r.benchName) +
+        (r.sealed ? '' : ' — cycle still in progress');
+      return '<div class="trk-row">' +
+        '<span class="trk-when">' + mon(r.when) + (r.sealed ? '' : '<i>live</i>') + '</span>' +
+        '<span class="trk-axis" role="img" aria-label="' + escapeHtml(aria) + '">' +
+          '<i class="trk-bar ' + (cls === 'flat' ? 'up' : cls) + '" data-left="' + left.toFixed(2) +
+            '" data-w="' + half.toFixed(2) + '" style="left:50%"></i>' + tick +
+        '</span>' +
+        '<span class="trk-val ' + cls + '">' + fmtPct(r.live) + '</span>' +
+      '</div>';
+    }).join('') +
+    '<div class="trk-key"><span><i></i>Your strategy</span>' +
+      (rows[0].benchName ? '<span><i class="is-tick"></i>' + escapeHtml(rows[0].benchName) + '</span>' : '') +
+    '</div>';
+    // Grow from the centre line — the site's bar idiom. Painting the final
+    // geometry immediately leaves a dead transition (V23.5).
+    setTimeout(function(){
+      box.querySelectorAll('.trk-bar').forEach(function(b){
+        b.style.left  = b.getAttribute('data-left') + '%';
+        b.style.width = b.getAttribute('data-w') + '%';
+      });
+    }, 60);
+  }
+
+  var sub = document.getElementById('trk-sub');
+  if (sub){
+    sub.textContent = rows.length === 1
+      ? 'The first cycle on record. This builds a row a month.'
+      : rows.length + ' cycles on record' + (sealed < rows.length ? ', the newest still running' : '');
+  }
+  var badge = document.getElementById('trk-badge');
+  if (badge){
+    if (judged >= 2){ badge.textContent = 'Ahead of the index in ' + ahead + ' of ' + judged; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
+  }
+  var foot = document.getElementById('trk-foot');
+  if (foot){
+    var last = rows[rows.length - 1];
+    foot.innerHTML = 'Each row is the weight-weighted movement of the model portfolio over that cycle, ' +
+      'measured from the published prices against ' + escapeHtml(last.benchName || 'the benchmark') +
+      ' over the same window. The newest row is still moving; earlier rows are final. ' +
+      'Model-portfolio figures before costs and tax, not audited client returns — ' +
+      '<a href="disclosures.html#backtest-methodology" target="_blank" rel="noopener" style="color:var(--accent);">how these are measured &rarr;</a>';
+  }
+  card.style.display = '';
+}
+
+/* ── V35.3 · THE PAGE ALREADY KNEW A NEWER BOOK EXISTED ──────────────────────
+   A monthly subscriber is pinned to the run captured at signup, so someone who
+   joined mid-August is still served the August book after September publishes.
+   That is correct by design and nothing on the page said it. Worse, the cycle
+   rail derives "New picks" from the CALENDAR — nextRebalanceDate() is simply the
+   1st of next month — so on 2 September it told that member their next picks
+   arrive 1 October, when a fresh set had existed since the previous day and
+   renewing would hand it to them immediately.
+   The fact was already in the page: live-perf.json carries `rebalance_date`, the
+   latest published rebalance, and renderBenchCompare fetches it and compares it
+   against the member's own run on every load — using the answer only to HIDE the
+   benchmark row. Hiding that row is right, the two windows genuinely differ;
+   discarding the knowledge was the miss.
+   Gated on the identical comparison, so the notice and the hidden row can never
+   disagree. It says a newer set exists and never a word about what is in it. */
+function renderNewerSetNotice(){
+  var el = document.getElementById('cyc-newer');
+  if (!el) return;
+  el.hidden = true; el.innerHTML = '';
+  var d = _benchPerf; if (!d || !d.rebalance_date) return;
+  /* THE GUARD THAT MATTERS. parseRebalanceDate falls back to subscribed_at when
+     the run_id is missing or is a `default_run_*` placeholder — and a signup date
+     is almost never equal to a rebalance date, so comparing against the fallback
+     would tell nearly every such member they were behind. Only a date read from a
+     real run_id is evidence about WHICH BOOK they hold. renderBenchCompare shares
+     the same _rebalDate but errs safe in the other direction: a wrong date there
+     hides a row, which costs nothing. */
+  var sub0 = window._currentSub || {};
+  if (!/^\d{8}/.test(String(sub0.run_id || ''))) return;
+  var mine = _isoDay(window._rebalDate);
+  if (!mine || mine === d.rebalance_date) return;
+  // Only ever forward: a member whose own run is NEWER than the published file
+  // (the file lags a publish) must not be told they are behind.
+  var latest = new Date(d.rebalance_date + 'T00:00:00');
+  if (isNaN(latest.getTime()) || !(latest > window._rebalDate)) return;
+
+  var sub = window._currentSub || {};
+  var when = latest.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+  el.innerHTML = '<span><b>A newer set published on ' + when + '.</b> ' +
+    'You are holding the previous cycle — the picks below are the ones your subscription covers.</span>' +
+    '<a class="cn-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=' +
+    encodeURIComponent('Hi MindForge Capital — I would like to move to the latest set of picks. Strategy: ' +
+      (sub.strategy || '') + '. Email: ' + (sub.email || '') + '.') +
+    '">Renew to switch to it &rarr;</a>';
+  el.hidden = false;
+}
+
 function renderBenchCompare(port){
   var el = document.getElementById('pc-bench');
   if (!el) return;
@@ -10715,7 +11725,7 @@ html[data-theme="dark"] .oneonone-card::after{
 /* ── V24.8: live-price cells fade in on FIRST paint ──────────────────────────
    The 50 .px-live cells popped into existence the moment prices landed, while
    every other value on this dashboard eases in. Gated by a per-element
-   data-px-seen flag set in paintLivePrices(), so the 30s repoll and any
+   data-px-seen flag set in paintLivePrices(), so the price repoll and any
    sort/filter re-render leave already-painted cells completely alone. */
 .px-live.px-in{ animation: mf248-px-in .42s cubic-bezier(.22,1,.36,1); }  /* no fill-mode:
    `both` would hold opacity:0 if the animation never ran, hiding a live price. */
@@ -11022,7 +12032,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   function mode(){ try { return localStorage.getItem(KEY) === 'weight' ? 'weight' : 'return'; } catch(e){ return 'return'; } }
 
   // Repaint every tile from the live price map. Called on first paint, on each
-  // 30s repoll and after any re-render of the map.
+  // price repoll and after any re-render of the map.
   function paint(){
     var card = document.getElementById('pmap-card'), grid = document.getElementById('pmap-grid');
     if (!card || !grid) return;
@@ -11385,6 +12395,13 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      appears nowhere else on the printed row. Both are content. The card's own
      top hairline and the ticker chips' washes are decoration and stay off. */
   .chg-gk i, .new-tag,
+  /* V35.3 — the track record's bar and its benchmark tick, judged against the
+     same criterion. The bar's LENGTH survives monochrome but its side of the
+     zero line is what says gain or loss, and the tick is the only mark on the
+     row that says where the index landed: printed white, a row becomes a bar of
+     some length next to a number, which is the picture without the verdict. The
+     card's ground and the axis wash are decoration and stay off. */
+  .trk-bar, .trk-tick, .trk-key i,
   .pspread-t i{
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -11662,7 +12679,7 @@ html[data-theme="dark"] .pspread-scale .dn{ color:#f87171; }
   }
 
   // ── hook the V25.5 painter, which already runs on first paint and every
-  //    30s repoll. One integration point, so the two can never diverge. ──────
+  //    price repoll. One integration point, so the two can never diverge. ─────
   function sync(){
     var card = document.getElementById('pmap-card'), grid = document.getElementById('pmap-grid');
     if (!card || !grid) return;

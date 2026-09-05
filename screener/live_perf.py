@@ -47,6 +47,9 @@ warnings.filterwarnings("ignore")
 ROOT = Path(__file__).resolve().parent.parent
 IP = ROOT / "IP"
 OUT = ROOT / "docs" / "live-perf.json"
+# V35.3 — the same figures, kept instead of overwritten. See append_history().
+HIST = ROOT / "docs" / "live-history.json"
+HIST_MAX = 36          # three years of monthly cycles; older ones drop off the front
 sys.path.insert(0, str(IP))
 
 from shared.benchmark import REAL_BENCHMARKS  # noqa: E402  (V23.8 real-index map)
@@ -178,6 +181,72 @@ def main() -> None:
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n")
     print(f"wrote {OUT.relative_to(ROOT)}")
+    append_history(out)
+
+
+def append_history(out: dict) -> None:
+    """Roll this run's figures into docs/live-history.json — the LIVE track record.
+
+    V35.3. Everything the member dashboard could say about performance was about
+    the cycle in progress: one number, one benchmark comparison, both wiped by the
+    next publish. A member on month seven had no record of months one to six, and
+    the most credibility-bearing thing this service owns was invisible on the one
+    page members actually open. The figures already existed and were already
+    computed on the same basis the dashboard's own headline uses (see the module
+    docstring) — they were simply overwritten every run.
+
+    Shape: one entry per rebalance_date, newest last.
+
+    THE CURRENT CYCLE IS PROVISIONAL AND IS REWRITTEN ON EVERY RUN — it is still
+    moving. Every earlier entry is SEALED and never touched again: a published
+    track record that silently restates itself is worth nothing. A sealed entry's
+    figure is therefore the last one measured before the next rebalance published,
+    and `data_through` on that entry says exactly which date that was, so the
+    window a number describes is always recoverable from the file itself.
+
+    Aggregate only — no tickers, no names, no weights, same rule as live-perf.json.
+    Members pay for the picks; the public gets the shape of the result.
+    """
+    try:
+        prev = json.loads(HIST.read_text()) if HIST.exists() else {}
+        cycles = prev.get("cycles") or []
+        if not isinstance(cycles, list):
+            cycles = []
+    except Exception as exc:                       # a corrupt file must not stop a publish
+        print(f"  !! live-history: could not read existing file ({exc}) — starting fresh")
+        cycles = []
+
+    rebal = out["rebalance_date"]
+    entry = {
+        "rebalance_date": rebal,
+        "data_through": out["data_through"],
+        "sealed": False,
+        "strategies": {
+            k: {"live_pct": v["live_pct"], "bench_pct": v["bench_pct"],
+                "bench_name": v["bench_name"], "n": v["n"]}
+            for k, v in out["strategies"].items()
+        },
+    }
+    # Replace the entry for this rebalance if we have written one before; a run
+    # never appends a second row for a cycle it has already recorded.
+    cycles = [c for c in cycles if c.get("rebalance_date") != rebal]
+    cycles.append(entry)
+    cycles.sort(key=lambda c: c.get("rebalance_date") or "")
+    for c in cycles:
+        c["sealed"] = (c.get("rebalance_date") or "") < rebal
+    cycles = cycles[-HIST_MAX:]
+
+    HIST.write_text(json.dumps({
+        "generated_utc": out["generated_utc"],
+        "basis": ("One entry per monthly rebalance. Each figure is the weight-weighted "
+                  "movement of the model portfolio over that cycle, against the same real "
+                  "index, on the same basis as live-perf.json. The newest entry is the "
+                  "cycle in progress and still moves; every earlier entry is final and is "
+                  "never rewritten. Model portfolio, not audited client returns."),
+        "cycles": cycles,
+    }, ensure_ascii=False, indent=1) + "\n")
+    sealed = sum(1 for c in cycles if c.get("sealed"))
+    print(f"wrote {HIST.relative_to(ROOT)} — {len(cycles)} cycle(s), {sealed} sealed")
 
 
 if __name__ == "__main__":
