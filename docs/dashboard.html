@@ -1190,9 +1190,20 @@ td.bought-col{width:42px;text-align:center;}
 .bought-cb{
   appearance:none;-webkit-appearance:none;
   width:20px;height:20px;border-radius:6px;cursor:pointer;
-  border:1.5px solid var(--border2);background:var(--ink2);
+  /* V35.9 — the UNCHECKED box was invisible. --border2 resolves to
+     rgba(37,99,235,.2), which over the near-white row is 1.33:1, on a white
+     fill: a white square on a white row with a border you cannot see. WCAG
+     1.4.11 covers "visual information required to identify user interface
+     components and states" at 3:1, and this is the control a member taps to
+     tick off each order they have placed — the most-used control on the page.
+     Brand blue cannot reach 3:1 at ANY alpha over white, so the resting edge is
+     the neutral hairline this release uses everywhere (measured 3.41:1 light,
+     4.46:1 dark). Hover and :checked keep their accent and green, so the state
+     colours are untouched — only the resting outline changes. */
+  border:1.5px solid rgba(15,23,42,.5);background:var(--ink2);
   position:relative;flex-shrink:0;transition:all .15s ease;vertical-align:middle;
 }
+html[data-theme="dark"] .bought-cb{border-color:rgba(255,255,255,.45);}
 .bought-cb:hover{border-color:var(--accent);}
 .bought-cb:checked{
   background:linear-gradient(135deg,var(--green),#10b981);border-color:transparent;
@@ -6215,7 +6226,7 @@ function saveCapital(strategy, v) {
    reconciliation that does not exist. ── */
 var VERIFIED_ACCOUNTS = [
   { re: /largemidcap/i, name: 'MindForge LargeMidcap\u00A0250',
-    url: 'https://console.zerodha.com/verified/10d5f408' },
+    url: 'https://console.zerodha.com/verified/ddd3611c' },
   { re: /smallmicro/i,  name: 'MindForge SmallMicro\u00A0500',
     url: 'https://console.zerodha.com/verified/9eafe0ef' }
 ];

@@ -611,7 +611,15 @@
 // conversion cards. addAll() runs on INSTALL, not activation. The other four
 // edited pages are network-first HTML and need nothing here; no shared asset
 // moved, so no ?v token changes with this release.
-const CACHE = 'mfc-v85';
+// V35.9 -> mfc-v86. index.html is a precached shell document and this release
+// replaces the LargeMidcap 250 "Verified live P&L" link on it. The previous
+// target (console.zerodha.com/verified/10d5f408) had EXPIRED and rendered "Data
+// doesnt exist" — verified by rendering it, because the page is a SPA and every
+// id returns an identical 6,440-byte JS shell to curl. That link is the site's
+// single strongest trust signal, so an installed member left on the v85 shell
+// would keep being sent to a dead page from the one CTA that says the record is
+// not ours to write. addAll() runs on INSTALL, not activation.
+const CACHE = 'mfc-v86';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
