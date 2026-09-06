@@ -602,7 +602,16 @@
 // ten links on one row between 1025 and 1099px. addAll() runs on INSTALL, not on
 // activation, so left at v83 an installed member would keep the old shell and,
 // worse, keep the login page WITHOUT the redirect this release exists to add.
-const CACHE = 'mfc-v84';
+// V35.8 -> mfc-v85. index.html is a precached shell document and this release
+// rewrites the three strategy-card sparklines from the published figures. They
+// were hand-authored beziers whose strategy-vs-benchmark gap was the exact
+// INVERSE of the published alpha — MultiAsset (+6.40%) drawn with the widest
+// lead and SmallMicro (+26.15%) the narrowest — so an installed member left on
+// the v84 shell would keep being shown the wrong one on the site's own
+// conversion cards. addAll() runs on INSTALL, not activation. The other four
+// edited pages are network-first HTML and need nothing here; no shared asset
+// moved, so no ?v token changes with this release.
+const CACHE = 'mfc-v85';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

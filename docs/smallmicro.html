@@ -2250,6 +2250,10 @@ html[data-theme="dark"] .sv-cta:hover{background:rgba(120,160,240,.10);border-co
         .mcal-sfill-dn{background:linear-gradient(90deg,#c92020,#e0575c)}
         html[data-theme="dark"] .mcal-sfill-dn{background:linear-gradient(90deg,#e05a5a,#f87171)}
         .mcal-sfoot{margin-top:7px;font-size:11px;color:var(--text3);font-variant-numeric:tabular-nums}
+        /* V35.8 — the row carries two different scales; this names them. Full
+           --text3 alpha, no opacity second-muting (the V35.6 anti-pattern). */
+        .mcal-snote{margin:11px 0 0;font-size:11px;line-height:1.55;color:var(--text3)}
+        @media(max-width:600px){.mcal-snote{font-size:10.5px}}
         .mcal-sr{display:none}
 
         /* the grid — wide content scrolls inside its own container, never the page */
@@ -2347,6 +2351,7 @@ html[data-theme="dark"] .sv-cta:hover{background:rgba(120,160,240,.10);border-co
       <div class="mcal-sfoot">Feb 2022</div>
     </div>
   </div>
+  <p class="mcal-snote">Left pair: share of all 61 months. Right pair: their own shared scale &mdash; the bigger move fills its track and the other draws its true fraction of it.</p>
   <div class="mcal-scroll" tabindex="0" role="group" aria-label="Monthly returns by calendar year, scrolls horizontally">
   <table class="mcal-grid"><caption class="sr-only">Simulated monthly returns of MindForge SmallMicro 500 by calendar year, with the calendar-year total and the gap to Nifty Smallcap 250.</caption>
     <thead><tr><th scope="col" class="mcal-yh">Year</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">May</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th><th scope="col" class="mcal-tot">Year</th><th scope="col" class="mcal-tot">vs index</th></tr></thead>
@@ -3320,6 +3325,20 @@ html[data-theme="dark"] .stat-card.highlight .sv.green{
       fill.style.width = pct.toFixed(1) + "%";
       r.setAttribute("data-pct", pct.toFixed(1));
     });
+    /* V35.8 — SAY WHAT A FULL BAR IS. `max` is the largest .ctx-val in the
+       table, so a full track is this strategy's own published figure and every
+       peer draws its true fraction of it. That was already true and nowhere
+       stated: a reader saw a peer at half a track with no way to know half of
+       what. Written from the same `max` the widths come from, and only once —
+       paint() runs again on re-entry and the guard stops it stuttering. */
+    var foot = box.querySelector(".ctx-cmp-foot");
+    if (foot && !foot.querySelector(".ctx-scale")) {
+      var sp = document.createElement("span");
+      sp.className = "ctx-scale";
+      sp.textContent = " Bars share one scale: a full bar is " + max.toFixed(1) +
+                       "%, the highest figure in the table.";
+      foot.appendChild(sp);
+    }
   }
   function all() { document.querySelectorAll(".ctx-cmp").forEach(paint); }
   function go() {

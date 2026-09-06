@@ -2069,6 +2069,9 @@ html[data-theme="dark"] .criteria-row .crit-pill:nth-child(5) .crit-icon { color
   color:var(--text2); font-variant-numeric:tabular-nums; }
 .cagr-cmp-row.is-strat .cagr-cmp-num{ color:var(--data-strong); }
 .cagr-cmp-foot{ margin-top:7px; font-size:10.5px; color:var(--text3); }
+/* V35.8 — the scale sentence appended to a bar foot. Inherits the foot's own
+   ink and size; no opacity, which is the V35.6 anti-pattern. */
+.cagr-cmp-foot .cmp-scale, .risk-cmp-foot .cmp-scale{ color:inherit; }
 .cagr-cmp-foot b{ color:var(--data-strong); font-weight:700; }
 html[data-theme="dark"] .cagr-cmp-track{ background:rgba(120,150,255,0.16); }
 html[data-theme="dark"] .cagr-cmp-fill.is-bench{ background:linear-gradient(90deg,#5b6b88,#8698b7); }
@@ -2132,6 +2135,12 @@ html[data-theme="dark"] .risk-cmp-track{ background:rgba(120,150,255,0.16); }
   stroke-linecap: round;
 }
 .spark-wrap .spark-fill { opacity: 0.16; }
+/* V35.8 — the note under a derived sparkline. --text3 at full alpha (7.58:1 on
+   the card): no `opacity` second muting, which is the V35.6 anti-pattern, and
+   the ink is already doing the de-emphasis. */
+.spark-wrap .spark-note{ margin-top:5px; font-size:10px; line-height:1.35;
+  color:var(--text3); letter-spacing:.01em; }
+@media (max-width: 380px){ .spark-wrap .spark-note{ font-size:9.5px; } }
 .spark-wrap.animate .spark-strat {
   animation: spark-draw 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -4095,7 +4104,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           </div>
           <div class="hv-foot">
             <span class="hv-alpha" id="hv-alpha"><!--MFSTAT:sm:alpha_posttax-->+26.15%<!--/MFSTAT--> annual alpha&nbsp;· backtest, after&nbsp;tax</span>
-            <span class="hv-period" id="hv-period">2021–2026&nbsp;· Backtest</span>
+            <span class="hv-period" id="hv-period">2021–2026&nbsp;· Backtest, compounded at the CAGR</span>
           </div>
         </div>
       </div>
@@ -5976,9 +5985,16 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
        not be restored — the hero disagreed with the strategy card, the footer
        links, the FAQ and the product itself, and only after you touched it. */
     var META = {
-      ma: { name: 'MultiAsset',  label: 'MultiAsset',      bench: 'Nifty\u00A050',              period: '2023–2026\u00A0· Backtest' },
-      lm: { name: 'LargeMidcap', label: 'LargeMidcap\u00A0250', bench: 'Nifty LargeMidcap\u00A0250', period: '2021–2026\u00A0· Backtest' },
-      sm: { name: 'SmallMicro',  label: 'SmallMicro\u00A0500',  bench: 'Nifty Smallcap\u00A0250',    period: '2021–2026\u00A0· Backtest' }
+      /* V35.8 — the period string now names the CONSTRUCTION as well as the window.
+         This curve is not the month-by-month path: build() compounds the published
+         CAGR over five equal steps, so it has no down months at all for a book whose
+         own published max fall is -22.5%. That is a legitimate way to draw "what this
+         rate does to money" and an illegitimate way to imply a track. shared/config.py
+         makes exactly this argument about a smooth benchmark ("a constant hurdle is
+         not a benchmark: it has no down months"); the same honesty is owed here. */
+      ma: { name: 'MultiAsset',  label: 'MultiAsset',      bench: 'Nifty\u00A050',              period: '2023–2026\u00A0· Backtest, compounded at the CAGR' },
+      lm: { name: 'LargeMidcap', label: 'LargeMidcap\u00A0250', bench: 'Nifty LargeMidcap\u00A0250', period: '2021–2026\u00A0· Backtest, compounded at the CAGR' },
+      sm: { name: 'SmallMicro',  label: 'SmallMicro\u00A0500',  bench: 'Nifty Smallcap\u00A0250',    period: '2021–2026\u00A0· Backtest, compounded at the CAGR' }
     };
     var COLORS = {
       ma: ['#0891b2', '#06b6d4'], lm: ['#1a50d8', '#2dd4bf'], sm: ['#d97706', '#f59e0b']
@@ -6037,17 +6053,70 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
       }
       return d;
     }
-    function build(cagr, bench) {
+    /* V35.8 — `g` lets a second, smaller box reuse this exact curve. Omitted, it
+       resolves to the hero's own geometry and the drawing is byte-identical to
+       what it has always been. `floor` is where the area path closes, which is
+       the viewBox bottom rather than the baseline on the small cards. */
+    function build(cagr, bench, g) {
+      var top = g ? g.top : TOP, bot = g ? g.bot : BOT,
+          left = g ? g.left : LEFT, right = g ? g.right : RIGHT,
+          floor = (g && g.floor != null) ? g.floor : bot;
       var sv = [], bv = [], i;
       for (i = 0; i <= N; i++) { sv.push(compound(cagr, i)); bv.push(compound(bench, i)); }
       var maxV = Math.max(sv[N], bv[N]), minV = 1;
-      function X(i) { return LEFT + (i / N) * (RIGHT - LEFT); }
-      function Y(v) { return BOT - ((v - minV) / (maxV - minV || 1)) * (BOT - TOP); }
+      function X(i) { return left + (i / N) * (right - left); }
+      function Y(v) { return bot - ((v - minV) / (maxV - minV || 1)) * (bot - top); }
       var sp = sv.map(function (v, i) { return { x: X(i), y: Y(v) }; });
       var bp = bv.map(function (v, i) { return { x: X(i), y: Y(v) }; });
       var line = smooth(sp);
-      return { line: line, fill: line + ' L ' + RIGHT.toFixed(2) + ' ' + BOT + ' L ' + LEFT.toFixed(2) + ' ' + BOT + ' Z', bench: smooth(bp), endS: sp[N], endB: bp[N] };
+      return { line: line, fill: line + ' L ' + right.toFixed(2) + ' ' + floor + ' L ' + left.toFixed(2) + ' ' + floor + ' Z', bench: smooth(bp), endS: sp[N], endB: bp[N] };
     }
+
+    /* ══ V35.8 — THE THREE CARD SPARKLINES WERE DRAWN BY HAND, AND BACKWARDS ══
+       Each strategy card carried a hand-authored bezier pair under a legend
+       reading "Strategy" / "Benchmark". They were never data, and the gap
+       between the two lines — the one thing a reader takes from a chart shaped
+       like that — was the exact INVERSE of the published alpha:
+
+           card          drawn gap    published alpha (backtest, after tax)
+           SmallMicro       14 u              +26.15%
+           LargeMidcap      16 u              +17.66%
+           MultiAsset       18 u               +6.40%
+
+       So the book with the weakest edge was drawn with the widest lead, on the
+       homepage's own conversion cards. The ending HEIGHTS happened to be in the
+       right order, which is probably why it survived: the shape looked sensible
+       and only the pair-wise gap was wrong.
+       They are now built by the same build() the hero uses, from the same
+       published figures the card already prints, so the ordering is correct by
+       construction rather than by hand — SmallMicro's bench line now lands 38
+       units below its strategy line against MultiAsset's 23. The authored paths
+       stay in the markup as the no-JS fallback; this only ever overwrites them
+       when both figures parsed. */
+    (function paintSparks() {
+      var SG = { top: 6, bot: 54, left: 0, right: 200, floor: 60 };
+      Array.prototype.forEach.call(document.querySelectorAll('.spark-wrap[data-spark]'), function (sw) {
+        var d = DATA[sw.getAttribute('data-spark')];
+        if (!d || !isFinite(d.cagr) || !isFinite(d.bench)) return;
+        var p = build(d.cagr, d.bench, SG);
+        var f = sw.querySelector('.spark-fill'), b = sw.querySelector('.spark-bench'),
+            s = sw.querySelector('.spark-strat'), dot = sw.querySelector('.spark-end-dot');
+        if (f) f.setAttribute('d', p.fill);
+        if (b) b.setAttribute('d', p.bench);
+        if (s) s.setAttribute('d', p.line);
+        if (dot) { dot.setAttribute('cx', p.endS.x.toFixed(2)); dot.setAttribute('cy', p.endS.y.toFixed(2)); }
+        /* The note is written HERE rather than into the markup so that it exists
+           exactly when the curve it describes does. With JS off the authored
+           fallback path is what renders, and calling that "compounded at the
+           CAGR" would be its own small lie. */
+        if (!sw.querySelector('.spark-note')) {
+          var note = document.createElement('div');
+          note.className = 'spark-note';
+          note.textContent = 'Compounded at the CAGR above · not the month-by-month path';
+          sw.appendChild(note);
+        }
+      });
+    })();
 
     var el = {
       cagr: document.getElementById('hv-cagr'), cagrLbl: document.getElementById('hv-cagr-lbl'),
@@ -9370,6 +9439,22 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
       r.pctB = (r.bench / max) * 100;
     });
 
+    /* V35.8 — SAY WHAT FULL WIDTH IS. The block comment above already records
+       that all three cards share ONE scale ("so the bars compare cards, not just
+       the pair inside a card") — that intent lived in the source and never
+       reached the reader. A MultiAsset card read on its own shows a bar at 40%
+       of its track with nothing anywhere saying 100% is 39.6%. Written from the
+       same `max` the widths come from, so the sentence cannot drift from the
+       drawing. */
+    rows.forEach(function(r){
+      var foot = r.el.querySelector('.cagr-cmp-foot');
+      if (!foot || foot.querySelector('.cmp-scale')) return;
+      var sp = document.createElement('span');
+      sp.className = 'cmp-scale';
+      sp.textContent = '\u00A0\u00B7 one scale across all three cards, full width ' + max.toFixed(1) + '%';
+      foot.appendChild(sp);
+    });
+
     // Grow on reveal — the site's bar idiom. Painting the final width immediately
     // would leave a dead transition, so the widths are applied a frame later.
     function fill(r){
@@ -9427,6 +9512,19 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
     rows.forEach(function(r){ worst = Math.max(worst, r.dd); });
     if (!(worst > 0)) return;
     rows.forEach(function(r){ r.pct = (r.dd / worst) * 100; });
+
+    /* V35.8 — same omission as the CAGR bars above, same fix, same source of
+       truth: `worst` is the deepest fall on the page and is what a full track
+       means, so the foot says so rather than leaving a 45%-full bar to mean
+       whatever the reader assumes. */
+    rows.forEach(function(r){
+      var foot = r.el.querySelector('.risk-cmp-foot');
+      if (!foot || foot.querySelector('.cmp-scale')) return;
+      var sp = document.createElement('span');
+      sp.className = 'cmp-scale';
+      sp.textContent = '\u00A0\u00B7 one scale, full width \u2212' + worst.toFixed(1) + '%';
+      foot.appendChild(sp);
+    });
 
     function fill(r){
       var f = r.el.querySelector('.risk-cmp-fill');

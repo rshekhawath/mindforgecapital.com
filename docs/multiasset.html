@@ -2979,6 +2979,20 @@ html[data-theme="dark"] .stat-card.highlight .sv.green{
       fill.style.width = pct.toFixed(1) + "%";
       r.setAttribute("data-pct", pct.toFixed(1));
     });
+    /* V35.8 — SAY WHAT A FULL BAR IS. `max` is the largest .ctx-val in the
+       table, so a full track is this strategy's own published figure and every
+       peer draws its true fraction of it. That was already true and nowhere
+       stated: a reader saw a peer at half a track with no way to know half of
+       what. Written from the same `max` the widths come from, and only once —
+       paint() runs again on re-entry and the guard stops it stuttering. */
+    var foot = box.querySelector(".ctx-cmp-foot");
+    if (foot && !foot.querySelector(".ctx-scale")) {
+      var sp = document.createElement("span");
+      sp.className = "ctx-scale";
+      sp.textContent = " Bars share one scale: a full bar is " + max.toFixed(1) +
+                       "%, the highest figure in the table.";
+      foot.appendChild(sp);
+    }
   }
   function all() { document.querySelectorAll(".ctx-cmp").forEach(paint); }
   function go() {
