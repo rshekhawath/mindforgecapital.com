@@ -100,6 +100,29 @@ footer::before {
 @media (max-width: 768px) {
   .fab-wa-bubble { display: none !important; }
 }
+/* ── V36.2: …AND THE GUARD ABOVE IS THE WRONG DIMENSION. V11.1 hid the bubble
+   because it "auto-pops and floats over content on phones" — correct reasoning,
+   scoped by WIDTH. A phone in LANDSCAPE is 844, 932 or 667px wide, so the guard
+   never fires there and the bubble auto-pops onto a 375-430px-tall screen. Same
+   for an iPad, which is 820 wide and coarse. Measured at rest (7s, past the
+   bubble's own ~6s timer), it covered:
+       844x390  17% of the homepage h1 · 29% of smallmicro's h1 · 23% of a sub
+       932x430  9/9, 9/9 and 8/9 hit-test points of three .hp-seg filter bands
+                on /scores/ — i.e. it did not merely sit near those controls, it
+                took every tap aimed at them (the bubble is pointer-events:auto
+                once .fwb-visible)
+       820x1180 46% of .vstrip-title on /strategies.html
+   This is V31.9's lesson one dimension over: a rule scoped by width when the
+   constraint is the DEVICE. The auto-popping invite is a mouse affordance — a
+   touch device gets the FAB and taps it deliberately — so the guard is now on
+   the pointer, which covers every orientation and every touch screen size.
+   A short DESKTOP window is deliberately not guarded: measured at 1280x600 with
+   a fine pointer it overlaps nothing, and a rule with no evidence behind it
+   reads as intent while matching nothing. The width rule above stays for a
+   narrow desktop window, which is V11.1's own case. ─────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  html .fab-wa-bubble { display: none !important; }
+}
 
 
 /* ============================================================================
@@ -2966,3 +2989,39 @@ html .mfx-nav{
      surfaces that print it on the same page. */
   html .ph-kpi-tile .ph-kpi-cycle.live-ready .lv-tag{ font-size:10px; }
 }
+
+/* ============================================================================
+   V36.2 — THE FOOTER WAS THE ONE SEAM THE V36.1 PHONE RHYTHM COULD NOT REACH.
+   ----------------------------------------------------------------------------
+   V36.1 put every section on the phone at 36/36. A `<footer>` is not a
+   `<section>`, so the homepage's kept `padding:56px 0 40px` — and measured at
+   390 that is the largest seam on the page sitting directly beneath the
+   smallest, with nothing choosing the difference. It is also an outlier against
+   the site's own footers, which is the sharper test:
+
+       /                    56/40      <- the outlier
+       strategies, smallmicro, scores, calculator,
+       login, fii-dii, disclosures, 404      22/22
+       screener             18/8
+
+   The homepage footer is legitimately BIGGER than the others (four stacked
+   columns rather than one compact row, 1,365px against ~350), but that is its
+   CONTENT, not its seam. The top edge goes to 36 so it matches every other seam
+   on the page it closes, and the bottom to 28. `.footer-inner`'s 48px bottom
+   margin goes to 28 for the same reason — it is the second-largest gap inside a
+   block whose own gap is already 28.
+
+   NOT TOUCHED, deliberately: the footer's link rows. Those `a`s carry
+   `padding:12px 0` for a 45px box, which is V31.9's touch-target work and is
+   most of the footer's height — 156px per column of three links is what a
+   tappable link costs, and trimming it to save pixels would trade a real
+   accessibility guarantee for a cosmetic one. Everything reclaimed here comes
+   from empty space only.  Scoped <=767px: desktop keeps its own proportions. */
+   A FIRST DRAFT OF THIS BLOCK PUT THE RULE HERE, IN THE SHARED SHEET, AS
+   `html footer{padding:36px/28px}`. Measured after: it moved the homepage the
+   right way (1,365 -> 1,313px) and moved the OTHER NINE FOOTERS THE WRONG WAY,
+   raising them from 22/22 to 36/28 — twenty pixels ADDED to nine pages, in a
+   release whose brief is to take spacing out. `footer{padding:56px 0 40px}`
+   exists on exactly one page, so it is corrected where it lives (index.html)
+   and this sheet touches nothing. Kept as a note because "normalise it in the
+   shared file" is the obvious move and it is the wrong one here. */

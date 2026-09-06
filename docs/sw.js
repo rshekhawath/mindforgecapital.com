@@ -635,7 +635,14 @@
 // (it was rendering at 1.00:1 against an empty day) and login.html carries the
 // corrected .mps-scale selector. addAll() runs on INSTALL, not activation, so
 // an installed member left on v87 would keep the old shell and both defects.
-const CACHE = 'mfc-v88';
+// V36.2 -> mfc-v89. mfc-finish.css is CACHE-FIRST and carries this release's
+// pointer-scoped guard for the auto-popping WhatsApp invite; its ?v moves
+// 3610 -> 3620 on all 50 pages, which busts the asset but not the two
+// PRECACHED documents, which have no query to bust. index.html changed in its
+// own right (the phone footer rhythm), and it is the offline navigation
+// fallback, so an installed member left on v88 would keep the old shell.
+// addAll() runs on INSTALL, not activation.
+const CACHE = 'mfc-v89';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
