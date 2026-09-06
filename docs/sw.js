@@ -625,7 +625,17 @@
 // busts the asset itself, but index.html and login.html are PRECACHED DOCUMENTS
 // and a precached document has no query to bust — an installed member would keep
 // a shell pointing at the old token. addAll() runs on INSTALL, not activation.
-const CACHE = 'mfc-v87';
+// V36.1 -> mfc-v88. Same two reasons as V36.0 and either alone would need it.
+// mfc-finish.css is CACHE-FIRST and carries this release's whole phone pass —
+// the heading ramp, the 36px section rhythm and the coarse-pointer animation
+// and backdrop-filter stand-down; its ?v moves 3430 -> 3610 on all 50 pages,
+// which busts the asset but NOT the two precached DOCUMENTS, which have no
+// query to bust. And both of those documents changed in their own right:
+// index.html carries the dark-theme fix for the month timeline's action cell
+// (it was rendering at 1.00:1 against an empty day) and login.html carries the
+// corrected .mps-scale selector. addAll() runs on INSTALL, not activation, so
+// an installed member left on v87 would keep the old shell and both defects.
+const CACHE = 'mfc-v88';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

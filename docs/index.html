@@ -3966,7 +3966,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3430">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3610">
 </head>
 <body>
 
@@ -6518,7 +6518,15 @@ html[data-theme="dark"] .mm-key i.k-idle{ background:rgba(120,150,255,.14); box-
 .mm-track{ display:grid; grid-template-columns:repeat(30,1fr); gap:2px; align-items:end; height:26px; }
 .mm-day{ height:11px; border-radius:2px; background:rgba(37,99,235,.13);
   transform-origin:bottom; transform:scaleY(0); transition:transform .5s cubic-bezier(.22,1,.36,1); }
-html[data-theme="dark"] .mm-day{ background:rgba(120,150,255,.14); }
+/* V36.1 — `background:` here is the SHORTHAND, and its specificity (0,2,1)
+   outranks `.mm-day.is-act` (0,2,0). So in DARK it reset that cell's
+   background-image to none and repainted it the same faint blue as an
+   empty day: the ONE cell carrying "this is the day you rebalance" was
+   rendering at 1.00:1 against a "nothing to do" cell, distinguishable only
+   by height. `.is-sig` escaped it by having its own dark override; `.is-act`
+   never got one. background-COLOR leaves the gradient to the state class,
+   which resolves per theme (3.07:1 top / 7.33:1 bottom on the dark card). */
+html[data-theme="dark"] .mm-day{ background-color:rgba(120,150,255,.14); }
 .mm-card.mm-in .mm-day{ transform:scaleY(1); }
 .mm-day.is-sig{ height:17px; background:rgba(37,99,235,.42); }
 html[data-theme="dark"] .mm-day.is-sig{ background:rgba(131,170,255,.48); }
@@ -8545,7 +8553,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 </style>
 <script src="assets/mfc-offer.js?v=3350" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=3410" defer></script>
+<script src="assets/mfc-live.js?v=3610" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -9380,7 +9388,14 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
      hero's primary control on a phone and measured 24px — half the target. */
   /* .mps-scale is the real class (not .mp-scale), and .badge-pop is beaten by a
      .strat-card-scoped rule — both needed the specificity to match. */
-  .mps-scale span, .ds-sent-scale span, .hv-live-badge{ font-size:10.5px; }
+  /* V36.1 — the child of both scales is an <i>, never a <span>: this rule was
+     copied to 19 pages and matched NOTHING on any of them, so "the last
+     sub-10px text" the comment above claims to fix has been rendering at
+     9.5px the whole time. A selector that matches nothing is invisible to
+     grep and reads as intent, which is why it survived. */
+  .mps-scale span, .mps-scale i,
+  .ds-sent-scale span, .ds-sent-scale i,
+  .hv-live-badge{ font-size:10.5px; }
   .strat-card .badge-pop, .strat-card.featured .badge-pop{ font-size:10.5px; }
   .hv-tab, .hv-tabs button{ min-height:44px; }
 

@@ -2675,3 +2675,294 @@ html .mfx-nav{
   }
   html .container{ padding-left:20px; padding-right:20px; }
 }
+
+/* ============================================================================
+   V36.1 — THE PHONE, MEASURED AND RE-CUT.
+   ----------------------------------------------------------------------------
+   V36.0 opened the phone layout up on the argument that Apple's phone layout is
+   calmer, not shorter. That was right about the GUTTER and wrong about the
+   amount: 48px of section padding on a 390x844 screen spends 11% of a viewport
+   on a single seam, and the homepage went to 18.7 screens. This pass keeps the
+   idea and re-cuts the numbers, and it fixes the thing V36.0 explicitly left
+   alone because it had not been measured — the type ramp.
+
+   THE TYPE RAMP WAS NOT A RAMP. Measured at 390px before this block, the
+   homepage rendered 29 distinct font sizes, and its SECTION HEADINGS — one
+   structural role — rendered at five different sizes:
+
+       .team h2            42px      "Built by practitioners, not theorists."
+       .mm-h2 .why-h2      30px      .faq h2  30px
+       .strat-prose h2     28px      (equal to its own page's h1)
+       .how h2  .strategies h2  .related-strats h2   26px
+       h2 (bare)           24px
+
+   Against an h1 of 27px. So on a phone a section heading was 1.55x the page
+   title, and the same role varied by 18px with nothing choosing between the
+   values — each was tuned for the DESKTOP band it was written in and simply
+   inherited down. Three lines of 42px type is ~180px, more than a fifth of the
+   screen, for one heading.
+
+   THE 42px HEADING ALREADY HAD A KNOWN VICTIM. V31.7 discovered that its longest
+   word, "practitioners,", measures 247.6px against a 247px column at 390px —
+   0.6px of overflow — and paid for that with a real layout concession: the
+   "Tap to read" hint on all four collapsible sections stands down below 431px
+   purely to buy the word room. That fix stays (it is a correct backstop) but the
+   knife edge it was balancing on is gone: at 22px the same word measures ~130px
+   against the same column, so the margin is 117px rather than 2.4px.
+
+   WHAT IS DELIBERATELY NOT LOWERED. Everything at or below 12px. Measured, the
+   bulk of this site's phone text is already 10-11.5px, which is its own floor —
+   lowering that would be shrinking the half that is already small. Going the
+   other way, six labels measured BELOW that floor (9-9.5px: .lv-tag, .lvm-key,
+   .vcard-live-tag, .ls-badge, .mcal-tag, .mps-verdict's state word) and they are
+   raised to it, for the same reason V35.7 raised the radar's 8px ring ticks.
+   Form controls keep 16px — under it, mobile Safari zooms on focus and never
+   zooms back.
+
+   `html` prefix throughout: this file is linked BEFORE each page's own <style>,
+   so an equal-specificity rule there wins on source order. Every selector below
+   was read off a live measurement of the rule that actually WON at 390px, not
+   guessed — a rule that matches nothing is invisible to grep and reads as
+   intent. The result is re-measured after this block lands.
+   ========================================================================== */
+@media (max-width:767px){
+
+  /* — the ladder: h1 25, section h2 22, sub-head 17 — */
+  html .hero h1,
+  html .hero-page h1,
+  html .page-hero h1,
+  html .calc-hero h1{ font-size:25px; line-height:1.18; letter-spacing:-0.022em; }
+
+  html section h2,
+  html .team h2, html .faq h2, html .how h2,
+  html .strategies h2, html .related-strats h2, html .strat-prose h2,
+  html .mm-h2, html .why-h2, html .mfcq-h, html .vstrip-title{
+    font-size:22px; line-height:1.22; letter-spacing:-0.018em;
+  }
+
+  html section h3, html .bt-section-title, html .mcal-title{ font-size:17px; }
+
+  /* — the big figures. 34/32/30/29/28/27/26 for the same job: one live or
+       backtested percentage sitting on a card. Capped at 26, which is where the
+       majority already sat, so most of these do not move at all. — */
+  html .hv-live-val,
+  html .sl-live-val,
+  html .sidebar-live .sl-live-val,
+  html .hub-live.live-ready .mf-live-num,
+  html .ph-kpi-tile .ph-kpi-cycle.live-ready .mf-live-num,
+  html .ptx-keep,
+  html .price-amt,
+  html .vcard-figure,
+  html .strat-metric-live .live-val,
+  html .stat-card.stat-live .live-val,
+  /* `.fc-kpi.hero .k-val` is (0,3,0); an `html .fc-kpi .k-val` at (0,2,1)
+     loses to it. The non-hero tiles are already clamp(20px,2.4vw,26px) and
+     resolve to 20px here, so only the hero figure needs the cap. */
+  html .fc-kpi.hero .k-val{ font-size:26px; letter-spacing:-0.02em; }
+
+  /* — the labels that had fallen through this site's own 10px floor. The
+       sixth, the sentiment scale's Bearish/Neutral/Bullish words, is fixed at
+       its own page rule instead: a `.mps-scale span` rule intended to raise it
+       had been copied to 19 pages and matched nothing, because the child is an
+       <i>. Correcting a dead rule is better than shadowing it from here.
+
+     Each selector below matches the specificity of the rule that actually WON
+     at 390px, measured rather than assumed: `.hub-live.live-ready .lv-tag` is
+     (0,3,0) and `.live-strip .ls-badge` is (0,2,0), so an `html .lv-tag` at
+     (0,1,1) loses to both and would have been a second dead rule. — */
+  html .lv-tag, html .lvm-key, html .vcard-live-tag,
+  html .ls-badge, html .mcal-tag,
+  html .vcard-bt-lbl, html .mcal-part,
+  html .hub-live.live-ready .lv-tag,
+  html .live-strip .ls-badge,
+  /* second pass: the fee calculator and the Integrity Score were not reached by
+     the first list because neither uses this site's .hero/.page-hero shell. */
+  html .fc-def-tag, html .fc-yours-tag,
+  html .hp-stat-lbl, html .qv-corner{ font-size:10px; }
+
+  /* — spacing. 48 -> 36 vertical, 20 -> 18 side. The :not() guard is V36.0's and
+       is kept verbatim: the hero (30/26) and the vproof strip (0/10) run flush
+       by design and a blanket rule opens a gap the design closes on purpose. — */
+  html section:not(.vproof-section):not(.hero):not([class*="flush"]){
+    padding-top:36px; padding-bottom:36px;
+  }
+  html .container{ padding-left:18px; padding-right:18px; }
+
+  /* — the two spacing outliers a section rule cannot reach: the strategy pages'
+       tab shell carried 56px of dead space under the last panel, and the
+       comparison block 40px of margin under a section that already has 36. — */
+  html .tabs-wrap{ padding-bottom:36px; }
+  html .compare-section{ margin-bottom:24px; }
+}
+
+/* ============================================================================
+   V36.1 — SNAPPY: WHAT A PHONE IS ASKED TO PAINT WHEN NOTHING IS HAPPENING.
+   ----------------------------------------------------------------------------
+   Measured at 390x844 across ten pages, three costs were being paid on every
+   frame of every scroll, none of them buying anything on a touch device:
+
+   1. NINE ALWAYS-RUNNING DECORATIVE ANIMATIONS, ~710,000px2 of continuously
+      repainting surface — more than TWICE the 329,160px2 of the screen itself:
+
+          mf-featured-glow   420,760px2   .strat-card.featured   (bigger than the viewport)
+          v14-float          250,764px2   .hv-card
+          v14-halo            18,463px2   .btn-primary
+          v14-side-halo        9,436px2   .sidebar-btn  x2
+          v126-flow            6,349px2   .proof-num    x9
+          hero-shift           5,355px2   .accent-text
+          hero-em-shimmer      3,846px2   .hero h1 em
+          icon-float           3,136px2   .card-icon
+          badge-pop-pulse      2,042px2   .badge-pop    x2
+
+      THE SPLIT IS BY MEANING, NOT BY COST. Every one of those nine is
+      decoration — a glow, a float, a gradient sweep. The seven that KEEP
+      running are the live-status marks (mfc-live-pulse, hv-live-pulse,
+      vcard-live-pulse, mp-pulse, qv-pulse, mf98-dotpulse, hv-fadein), all under
+      1,100px2 and most under 50, and each one is the thing telling a reader that
+      a figure is live rather than stale. A phone stops the decoration and keeps
+      the information. This is the same set every page's own
+      `prefers-reduced-motion` block already stands down, so the frozen states
+      are ones the site has been shipping and rendering correctly for releases.
+
+   2. EIGHT BACKDROP-FILTER LAYERS on the homepage alone. backdrop-filter is the
+      most expensive compositing property on a mobile GPU: each one forces its
+      own layer and re-samples everything beneath it on every frame. Two of the
+      ten genuinely overlay moving content and keep it — `nav` and
+      `.mobile-cta-bar`, which are fixed and have the page scrolling under them,
+      which is the only case a backdrop blur is FOR. The other eight are static
+      cards sitting on an opaque page, where the blur samples a background that
+      never changes and is indistinguishable from the flat tint underneath.
+
+   3. SIX `will-change:transform` PROMOTIONS on the tilt cards. The tilt is a
+      mousemove parallax: on a touch device the handler never fires, so the
+      promotion is a permanent GPU layer per card for an effect that cannot
+      happen — paid on exactly the device with the least memory to pay it.
+
+   Scoped `(hover:none) and (pointer:coarse)` rather than by width, because this
+   is about the INPUT, not the screen: V31.9's lesson was a 44px tap-target block
+   scoped `max-width:600px` that handed every iPad the mouse boxes. A large
+   touch screen has the same GPU budget and the same absent mousemove.
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+
+  html .strat-card.featured,
+  html .strat-card.featured::before,
+  html .strat-card.featured::after,
+  html .hv-card, html .hv-card::before, html .hv-card::after,
+  /* the halo is on the BUTTON, not a pseudo, and `.hero .btn-primary` is (0,2,0):
+     an `html .btn-primary` at (0,1,1) loses to it. Same for the gradient flow,
+     which is set by `.proof-item:last-child .proof-num` at (0,3,0) — and by a
+     bare `.section-label`, which the first draft of this list missed entirely. */
+  html .hero .btn-primary,
+  html .sidebar-btn, html .sidebar-btn::after,
+  html .section-label,
+  html .proof-item:last-child .proof-num,
+  html .proof-num,
+  html .accent-text,
+  html .hero h1 em,
+  html .card-icon,
+  html .badge-pop{ animation: none; }
+
+  /* the eight static blurs. nav and .mobile-cta-bar are deliberately absent:
+     they are fixed, content scrolls beneath them, and that is the one case the
+     effect is actually for. */
+  html .hero-label,
+  html .btn-ghost,
+  html .hv-card,
+  html .mp-card,
+  html .proof-bar,
+  html .vstrip,
+  html .vmini,
+  html .mf98-zoom-hint{ backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+  /* a layer promoted for a mousemove that cannot happen */
+  html .tilt-host,
+  html .strat-card,
+  html .why-card,
+  html .team-card,
+  html .hero h1 em,
+  html .hv-card{ will-change: auto; }
+}
+
+/* ============================================================================
+   V36.1 — THE 768px ORPHAN, AND THE TABLET'S OWN HEADING LADDER.
+   ----------------------------------------------------------------------------
+   Sweeping every declared breakpoint on BOTH sides (V31.8's rule) turned up a
+   band exactly one pixel wide that nobody designed — and that pixel is 768,
+   iPad portrait, the commonest tablet viewport there is. Measured on the
+   homepage:
+
+       width    h1    .team h2   .how h2   section pad   GUTTER
+        767     25       22         22         36          18     <- phone
+        768     44       42         30         60          16     <- nobody
+        769     44       42         42         64          32     <- tablet
+
+   The site's own mobile block is scoped `max-width:768px`, so 768 takes the
+   phone CONTAINER (16px) — while the hero h1's `clamp(30px,8vw,44px)` resolves
+   to 61px at that width and clamps to its DESKTOP maximum of 44. So 768 renders
+   the largest type on the site inside the narrowest side margin on the site:
+   tighter than the 18px a 320px phone gets, and half the 32px that 769 gets one
+   pixel to the right. Type steps up at 768; the gutter steps up at 769.
+
+   The fix moves the gutter's step to where the type's step already is. As a
+   `min-width:768px` rule it is a no-op at every width above 768 (the base
+   container is already 32px there) and touches nothing else — the phone keeps
+   its own 18px from the block above.
+
+   AND THE SAME DISORDER, ONE BAND UP. Between 768 and 1024 the four section
+   headings render 42 / 42 / 30 / 30 for one structural role, the same failure
+   the phone block above fixes at 22. Here the majority is 30 and there is real
+   room, so 30 is the value: it leaves h1:h2 at 1.47 at 768 and 1.71 at 1024,
+   and the only headings that move are the two 42s that were never chosen for
+   this band — they are the desktop value inherited down. */
+@media (min-width:768px){
+  html .container{ padding-left:32px; padding-right:32px; }
+}
+@media (min-width:768px) and (max-width:1024px){
+  html section h2,
+  html .team h2, html .faq h2, html .how h2,
+  html .strategies h2, html .related-strats h2, html .strat-prose h2,
+  html .mm-h2, html .why-h2{ font-size:30px; line-height:1.24; }
+}
+
+/* ============================================================================
+   V36.1 — THE PHONE LADDER, SECOND PASS: the shells the first list never reached.
+   ----------------------------------------------------------------------------
+   Re-measuring all 22 swept pages at 390px (rather than the four the first pass
+   was written from) left a tail: pages whose hero is not this site's .hero /
+   .page-hero / .calc-hero shell, so the h1 rule did not apply, and labels on
+   surfaces the first floor list did not enumerate.
+
+   WHAT IS DELIBERATELY LEFT ALONE, with the reason, so it is not re-litigated:
+
+   * `.ring-score` (42px) and `.alloc-donut .dc-num` (30px) — numbers centred
+     INSIDE a fixed-geometry graphic, a score ring and an allocation donut.
+     Resizing the label without re-cutting the graphic is how a centred number
+     stops being centred, and both are their surface's hero figure.
+   * `.nf-code` (80px "404") — on that page the numeral IS the graphic.
+   * The 8-9px arrow glyphs (`.exp-caret` ▸, `.arw` ▼, the factor report's ▲) —
+     icons, not words. The 10px floor is a READABILITY floor; a caret carries no
+     text, and enlarging it shifts the inline box it sits in.
+   * SVG <text> chart labels (5px "SIL" on the scatter, 9px "+7,986" on the
+     FII/DII axis) — these are in user units and render at size x the viewBox
+     ratio, so a CSS px value is the wrong instrument. V35.7 established that
+     this family is fixed by reasoning about the ratio, not by setting a number.
+   * The generated stock-directory h1 at 27px — 2px off the ladder, on pages
+     written by export_static.py, which is not worth a generator change.
+   ========================================================================== */
+@media (max-width:767px){
+  html .dash-hero h1{ font-size:25px; line-height:1.18; letter-spacing:-0.022em; }
+  /* .flow-net is clamp(34px,6vw,46px): 6vw is 23.4 at 390, so a phone gets the
+     clamp's MINIMUM — i.e. the one width where the fluid rule stops being
+     fluid is the width it was least designed for. */
+  html .pt-now, html .current-price, html .ls-ratio,
+  html .flow-net{ font-size:26px; letter-spacing:-0.02em; }
+  html .ms-lbl, html .fb-hint, html .kpi-label,
+  html .clad-you, html .mf-abar-cap-k,
+  html .gift-tag, html .new-tag,
+  /* the FOURTH .lv-tag rule. `.hub-live.live-ready .lv-tag` (0,3,0) was found in
+     the first pass; this KPI-tile variant is (0,4,0) and sets 9px rather than
+     9.5, which is why the first fix left "LIVE" visibly smaller on one of the two
+     surfaces that print it on the same page. */
+  html .ph-kpi-tile .ph-kpi-cycle.live-ready .lv-tag{ font-size:10px; }
+}

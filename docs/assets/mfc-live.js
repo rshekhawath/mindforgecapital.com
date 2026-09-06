@@ -343,7 +343,16 @@
       ".lvm-fill.is-neg{right:50%;}" +
       ".lvm-model.is-pos{background:linear-gradient(90deg,rgba(5,150,105,.55),var(--green,#059669));}" +
       ".lvm-model.is-neg{background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red,#dc2626));}" +
-      ".lvm-bench{background:var(--text3,#475569);opacity:.5;}" +
+      /* V36.1 — the benchmark bar is the half of this module the reader is
+         being asked to compare against, and it was muted with `opacity` on an
+         ink that was already doing the de-emphasis: 2.21:1 light and 2.79:1
+         dark against its OWN track, both under WCAG 1.4.11's 3:1. Same defect
+         V36.0 fixed on the peer-comparison bars one module over, and the same
+         value settles it — #6f85aa is one colour clearing 3:1 against both
+         tracks (3.20:1 on #e4eeff light, 3.48:1 on the dark composite), so it
+         needs no theme override and no alpha. The model fill keeps its
+         gradient, so the two are still told apart by hue as well as weight. */
+      ".lvm-bench{background:#6f85aa;}" +
       ".lvm-val{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text2,#1e3a5f);min-width:52px;text-align:right;}" +
       /* --data-* not --green: these are 10.5–11.5px, i.e. NORMAL text by WCAG,
          and --green (#059669) is only 3.8:1 on the card. The --data-* scale is
@@ -355,9 +364,9 @@
       ".lvm-gap{margin-top:8px;font-size:10.5px;line-height:1.45;color:var(--text3,#475569);}" +
       ".lvm-gap b{font-weight:800;color:var(--data-strong,#047857);}" +
       ".lvm-gap.behind b{color:var(--data-bad,#dc2626);}" +
-      /* only the two greys need a dark override — the inks ride the tokens */
+      /* only the track needs a dark override now — the bench bar is one value
+         for both themes (V36.1) and every ink rides a token */
       "html[data-theme=\"dark\"] .lvm-track{background:rgba(255,255,255,.09);}" +
-      "html[data-theme=\"dark\"] .lvm-bench{background:#94a3b8;opacity:.6;}" +
       /* the dark palette flips --green but NOT --red, so the negative fill is
          hard-inked here rather than left on the token */
       "html[data-theme=\"dark\"]{--lvm-zero:rgba(215,228,255,.34);}" +

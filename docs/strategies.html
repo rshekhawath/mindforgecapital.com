@@ -1799,7 +1799,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3430">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3610">
 <style id="mf-v326-ptx">
 /* ══════════════════════════════════════════════════════════════════════════
    V32.6 — AFTER-TAX BAND
@@ -3442,6 +3442,46 @@ function openRegModal(strategyName, price, strategyId){
 [data-theme="dark"] .ps-funds{ background:var(--ink2); border-color:var(--border2); }
 [data-theme="dark"] .ps-tab{ background:var(--ink2); border-color:var(--border2); }
 [data-theme="dark"] .ps-tab:hover{ background:rgba(120,160,240,.10); }
+
+/* ══ V36.1 — THE ACTIVE TAB WAS NOT ACTIVE IN DARK ═══════════════════════════
+   `[data-theme="dark"] .ps-tab` is (0,2,0) and lands AFTER `.ps-tab.active`,
+   also (0,2,0), so source order handed it the win — and because it uses the
+   `background` SHORTHAND it reset the active tab's gradient to none. The result:
+   active and inactive tabs painted the SAME rgb(18,29,51), a 1.00:1 separation,
+   with the selected state carried only by slightly brighter label text. This is
+   the strip that says which strategy's performance you are looking at.
+   Re-asserting the ramp at (0,3,0) restores 3.25:1 against an inactive tab. The
+   ramp is fixed hex and theme-independent by design — V33.4 chose #0e7490 as its
+   end stop precisely because white measures 5.36:1 there — so it needs no dark
+   variant, only permission to survive. */
+[data-theme="dark"] .ps-tab.active{
+  background:linear-gradient(135deg,#1a50d8 0%,#2563eb 50%,#0e7490 100%);
+  color:#fff; border-color:transparent;
+}
+
+/* ══ V36.1 — THE TWO RESULT CARDS VANISHED IN DARK ═══════════════════════════
+   Same shape, one file over: mfc-finish.css's `html[data-theme="dark"]
+   .mfc-result` is (0,2,1) and beats `.mfc-result-model` / `.mfc-result-delta`
+   at (0,1,0), so BOTH the tint and the semantic border-colour were replaced by
+   the neutral card surface. In dark the two cards were rgb(18,29,51) sitting on
+   rgb(18,29,51) — 1.00:1 against their own parent and identical to each other,
+   where in light one is blue-tinted and one green-tinted. These rules are in
+   THIS file, which loads after the shared sheet, so equal specificity is enough.
+   The values are re-inked too: the delta's #047857 is a LIGHT-palette green that
+   was never given a dark counterpart and measured 3.07:1 on the dark card —
+   passing large-text AA by 0.07 and only by accident, and identical in weight to
+   the model's blue, so the two figures no longer read apart. --accent3 and the
+   site's documented dark green take them to 7.33:1 and 8.74:1. */
+html[data-theme="dark"] .mfc-result-model{
+  background-image:linear-gradient(135deg,rgba(120,160,240,.12),rgba(45,212,191,.06));
+  border-color:rgba(120,160,240,.55);
+}
+html[data-theme="dark"] .mfc-result-delta{
+  background-image:linear-gradient(135deg,rgba(52,211,153,.14),rgba(45,212,191,.06));
+  border-color:rgba(52,211,153,.55);
+}
+html[data-theme="dark"] .mfc-result-model .mfc-result-val{ color:var(--accent3); }
+html[data-theme="dark"] .mfc-result-delta .mfc-result-val{ color:#34d399; }
 [data-theme="dark"] .ps-perf{ border-color:var(--border2); background:linear-gradient(135deg,rgba(70,120,245,.10),rgba(45,212,191,.06)); }
 [data-theme="dark"] .ps-funds-me td{ background:linear-gradient(135deg,rgba(70,120,245,.16),rgba(45,212,191,.08)); }
 /* V31.3 — the "backtested" chip rides --text3, which is right on the plain dark
@@ -3726,7 +3766,7 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 })();
 </script>
 <script src="assets/mfc-offer.js?v=3350" defer></script>
-<script src="assets/mfc-live.js?v=3410" defer></script>
+<script src="assets/mfc-live.js?v=3610" defer></script>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      V25.3 — REAL LIVE RETURN ON THE FOUR BACKTEST-ONLY SURFACES
@@ -3800,7 +3840,7 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 
 /* (A2) per-strategy ps-perf card — V26.1: "Live this cycle" is the focus.
    The live-chip becomes a prominent accent block with a big number; the backtest
-   CAGR figure demotes. Higher specificity than mfc-live.js?v=3410's injected demotion so
+   CAGR figure demotes. Higher specificity than mfc-live.js?v=3610's injected demotion so
    it wins. Fail-soft: no live → the chip stays hidden and the backtest&nbsp;CAGR is the
    primary, exactly as before. (V26.2 retired the last-month row/scoreboard, so the
    .ps-perf-cagr demotion below is now a harmless no-op — all panels use the CAGR
@@ -4231,7 +4271,14 @@ html[data-theme="dark"] .vcard-bt-alpha{ background:rgba(120,160,240,.12); borde
      hero's primary control on a phone and measured 24px — half the target. */
   /* .mps-scale is the real class (not .mp-scale), and .badge-pop is beaten by a
      .strat-card-scoped rule — both needed the specificity to match. */
-  .mps-scale span, .ds-sent-scale span, .hv-live-badge{ font-size:10.5px; }
+  /* V36.1 — the child of both scales is an <i>, never a <span>: this rule was
+     copied to 19 pages and matched NOTHING on any of them, so "the last
+     sub-10px text" the comment above claims to fix has been rendering at
+     9.5px the whole time. A selector that matches nothing is invisible to
+     grep and reads as intent, which is why it survived. */
+  .mps-scale span, .mps-scale i,
+  .ds-sent-scale span, .ds-sent-scale i,
+  .hv-live-badge{ font-size:10.5px; }
   .strat-card .badge-pop, .strat-card.featured .badge-pop{ font-size:10.5px; }
   .hv-tab, .hv-tabs button{ min-height:44px; }
 
