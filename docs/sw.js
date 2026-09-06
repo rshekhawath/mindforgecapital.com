@@ -619,7 +619,13 @@
 // single strongest trust signal, so an installed member left on the v85 shell
 // would keep being sent to a dead page from the one CTA that says the record is
 // not ours to write. addAll() runs on INSTALL, not activation.
-const CACHE = 'mfc-v86';
+// V36.0 -> mfc-v87. Two reasons, and either alone would need it. mfc-finish.css
+// is a CACHE-FIRST shared asset and this release rewrites the top bar and the
+// mobile section rhythm in it; its ?v moves 3420 -> 3430 on all 50 pages, which
+// busts the asset itself, but index.html and login.html are PRECACHED DOCUMENTS
+// and a precached document has no query to bust — an installed member would keep
+// a shell pointing at the old token. addAll() runs on INSTALL, not activation.
+const CACHE = 'mfc-v87';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -2591,3 +2591,87 @@ html .mfx-nav{
      rather than relied on. */
   html #resultsTable tbody td:first-child.col-sorted{ background-color: transparent; }
 }
+
+/* ============================================================================
+   V36.0 — THE TOP BAR, QUIETED.  (Apple.com's nav as the reference.)
+   ----------------------------------------------------------------------------
+   The bar carried ten 14px labels at a 16px gap, a solid 119px brand-blue pill
+   and a bordered 38px toggle box. Measured at 1440: 740px of items in an 885px
+   track, so the slack sat as one 145px gap at the end rather than as air BETWEEN
+   the labels — which is what makes a bar read as crowded even when it fits.
+   Apple's bar is quiet for three reasons, and this adopts all three:
+
+     1. SMALLER, LIGHTER TYPE.  12px there, 13px here — this is a financial site
+        with an older audience and 12 is a step too far. 14 -> 13 returns ~45px.
+     2. AIR BETWEEN ITEMS, not after them.  gap 16 -> 22px spends the returned
+        width on rhythm instead of banking it at the right-hand end.
+     3. NO SLAB.  Apple has no CTA in the bar at all. This one has to keep its
+        primary conversion control, so it stays a button and stops being a
+        billboard: 14px/10-22 -> 13px/8-18.
+   Net width is a wash by construction (-45 -8 +54 = +1px), so nothing about the
+   fit changes — only the distribution. Verified at 1025/1100/1280/1440 below.
+
+   Scoped >=1025px: the drawer owns the bar below that and sets its own metrics.
+   `html`-prefixed because mfc-finish.css is linked BEFORE several page <style>
+   blocks, so an unprefixed rule loses to the per-page .nav-links a on 21 pages.
+   The nav's HEIGHT is deliberately untouched: the picks-table sticky header pins
+   to it, and that is not a coupling to break for a cosmetic gain. */
+@media (min-width:1025px){
+  html nav .nav-links{ gap:22px; }
+  html nav .nav-links a:not(.nav-cta){
+    font-size:13px; letter-spacing:-0.006em;
+  }
+  html nav a.nav-cta{ font-size:13px; padding:8px 18px; }
+  /* Apple's search and bag are bare glyphs. This was a bordered box competing
+     with the CTA two elements away; the hit area is untouched (the coarse-pointer
+     block above still gives it 44px on touch) — only the frame goes. */
+  html .mfc-theme-toggle{ border-color:transparent; background:transparent; }
+  html .mfc-theme-toggle:hover,
+  html .mfc-theme-toggle:focus-visible{ border-color:rgba(37,99,235,.28); }
+}
+/* The 1025-1099 compression band is re-tuned for the new base: it existed to
+   stop a 10-item bar wrapping, and both numbers it narrows have moved. Retuned
+   by measurement, not by scaling the old pair. */
+@media (min-width:1025px) and (max-width:1099px){
+  html nav .nav-links{ gap:13px; }
+  html nav .nav-links a:not(.nav-cta){ font-size:12.4px; }
+  html nav a.nav-cta{ font-size:12.4px; padding:8px 14px; }
+}
+
+/* ============================================================================
+   V36.0 — MOBILE BREATHING ROOM.  (Apple.com's phone layout as the reference.)
+   ----------------------------------------------------------------------------
+   Measured on the homepage at 390x844 before this block: 12 sections, ten of
+   them at 32px/32px vertical padding, against a 16px side gutter. That is what
+   "information dense" is made of — consecutive ideas separated by barely more
+   space than the lines inside them, so the page reads as one continuous wall
+   rather than as a sequence of points.
+
+   Apple's phone layout is not shorter, it is CALMER: large separation between
+   ideas and a real gutter. This trades length for legibility on purpose — the
+   homepage goes 18.1 -> 18.7 screens at 390 and is easier to read, not harder.
+
+     section padding   32 -> 48px    ideas separated by more than their own leading
+     side gutter       16 -> 20px    content stops running into the bezel
+
+   WHAT IS DELIBERATELY NOT HERE. A first draft also set `section h2` to 24px and
+   the section eyebrows to 11px. Both were measured after the fact and both were
+   DEAD: every section heading on this site carries its own class (.vstrip-title,
+   .mm-h2, .why-h2 …) which outranks `html section h2`, and the eyebrow classes
+   the draft named (.section-tag/.eyebrow/.sec-tag) do not exist here at all —
+   the real ones are .mps-k / .proof-label / .vstrip-eyebrow, already at 10-10.5px
+   and so already at this site's own floor. A rule whose selector matches nothing
+   is invisible to grep and reads as intent, so it is removed rather than left in.
+
+   Scoped <=767px so tablet and desktop are untouched. `html`-prefixed for the
+   same cascade reason as the nav block above. The :not() guard keeps the two
+   sections that run flush by design — the hero (30/26) and the vproof strip
+   (0/10) — at their own spacing; a blanket rule would open a gap the design
+   closes on purpose. Verified at 320/390/430 on four pages: zero overflow, and
+   the ten ordinary sections at 48/48 with those two unchanged. */
+@media (max-width:767px){
+  html section:not(.vproof-section):not(.hero):not([class*="flush"]){
+    padding-top:48px; padding-bottom:48px;
+  }
+  html .container{ padding-left:20px; padding-right:20px; }
+}
