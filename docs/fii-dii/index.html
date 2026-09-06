@@ -450,6 +450,22 @@ html[data-theme="dark"] .cumu-key.dii i{background:#a78bfa} html[data-theme="dar
 .cumu-zero-tag{position:absolute;left:0;transform:translateY(-100%);
   font-size:10px;font-weight:600;color:var(--text3);background:var(--ink2);
   padding:0 3px;pointer-events:none}
+/* V35.7 — the chart said where zero was and never said how far it went, so the
+   DII line climbing to the top of the band named no value at all. These two tags
+   label the extremes the drawing actually reaches. They are HTML, positioned by
+   percentage, for the same reason the zero tag is: `preserveAspectRatio="none"`
+   stretches the viewBox non-uniformly, so any <text> inside it would be
+   distorted. Each carries the card background as a chip so it stays legible if
+   a series happens to run underneath it. */
+.cumu-scale-tag{position:absolute;font-size:10px;font-weight:600;
+  color:var(--text3);background:var(--ink2);padding:0 3px;pointer-events:none;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Each tag sits on the INSIDE of the band it names — hi just below its rule,
+   lo just below its rule in the bottom pad — so neither is placed where a
+   series runs. The low rule is the FII line's own floor, so a tag above it
+   would sit exactly on the line it exists to measure. */
+.cumu-scale-tag.hi{left:0}
+.cumu-scale-tag.lo{right:0}
 /* An explicit height, because `height:auto` on a 760x132 viewBox scales the
    whole drawing with the width — measured 187px tall at a 1180px panel and just
    54px on a 390px phone, which is not a chart any more. A fixed height plus a
@@ -458,6 +474,12 @@ html[data-theme="dark"] .cumu-key.dii i{background:#a78bfa} html[data-theme="dar
 .cumu-chart svg{display:block;width:100%;height:150px;overflow:visible}
 @media(max-width:600px){ .cumu-chart svg{height:118px} }
 .cumu-chart .cu-zero{stroke:var(--border2);stroke-width:1}
+/* V35.7 — the two extreme gridlines. Same ink as the zero rule (so they inherit
+   a contrast that is already accepted on this card) and dashed, so the reader
+   can still tell which rule is zero. non-scaling-stroke for the same reason the
+   zero line carries it: the viewBox is stretched. */
+.cumu-chart .cu-grid{stroke:var(--border2);stroke-width:1;stroke-dasharray:3 4;
+  vector-effect:non-scaling-stroke;opacity:1}
 /* `vector-effect:non-scaling-stroke` is what makes a stretched viewBox safe:
    without it a non-uniform scale draws the vertical parts of a line thicker
    than the horizontal ones. */
@@ -1127,6 +1149,19 @@ function renderCumulative(d){
   const line=k=>pts.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)} ${y(p[k]).toFixed(1)}`).join(" ");
   const last=pts[pts.length-1];
   const zeroY=y(0);
+  // V35.7 — the extremes of the vertical scale. `hi`/`lo` already bound every
+  // plotted point (they are computed from the same `all` array the scale is),
+  // so a rule drawn at each one names a value the chart genuinely reaches
+  // rather than a rounded tick it never touches.
+  const hiY=y(hi), loY=y(lo);
+  // A rule within 6 user units of the zero rule is not a second gridline, it is
+  // a thicker zero rule — and its label would sit on the zero label. Both are
+  // dropped in that case; when the series never leave one side of zero, the
+  // zero tag plus the remaining extreme still state the range.
+  const clearOfZero=(v,z)=>Math.abs(v-z)>6;
+  const gridRow=(v,z)=>clearOfZero(v,z)
+    ? `<line class="cu-grid" x1="${padL}" y1="${v.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${v.toFixed(1)}"/>`
+    : "";
 
   // A path animating from zero length needs its own length; measuring it in the
   // browser would need the node to exist first, so approximate generously —
@@ -1139,9 +1174,11 @@ function renderCumulative(d){
        on a phone as on a desktop. The only marks left are strokes, and they
        carry non-scaling-stroke, so a non-uniform scale cannot distort them; the
        end points are named by the HTML keys above rather than by dots that a
-       stretch would turn into ellipses. The one <text> is the zero label, which
-       sits at the left edge where the horizontal scale does not reach it. */
-    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative net flow over ${pts.length} sessions: FII ${cr0(last.f)} crore, DII ${cr0(last.i)} crore">
+       stretch would turn into ellipses. V35.7: there is no <text> in here at
+       all — the zero label and the two scale labels are HTML spans positioned
+       over the box by percentage, for exactly that reason. */
+    `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Cumulative net flow over ${pts.length} sessions: FII ${cr0(last.f)} crore, DII ${cr0(last.i)} crore. Vertical scale runs from ${cr0(lo)} to ${cr0(hi)} crore.">
+       ${gridRow(hiY, zeroY)}${gridRow(loY, zeroY)}
        <line class="cu-zero" x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${zeroY.toFixed(1)}"/>
        <path class="cu-line cu-fii" style="--len:${approx}" d="${line("f")}"/>
        <path class="cu-line cu-dii" style="--len:${approx}" d="${line("i")}"/>
@@ -1149,8 +1186,15 @@ function renderCumulative(d){
 
   // …and the label for it, placed at the same fraction of the box the line is
   // drawn at (zeroY / H), so the tag can never sit off the rule it names.
+  // V35.7: the two extremes are labelled the same way, and each is suppressed
+  // when its rule would land on top of the zero rule — a duplicate label at the
+  // same height reads as a second, contradictory zero.
   document.getElementById("cumuChart").insertAdjacentHTML("beforeend",
-    `<span class="cumu-zero-tag" style="top:${(zeroY / H * 100).toFixed(2)}%">0</span>`);
+    `<span class="cumu-zero-tag" style="top:${(zeroY / H * 100).toFixed(2)}%">0</span>`
+  + (clearOfZero(hiY, zeroY)
+      ? `<span class="cumu-scale-tag hi" style="top:${(hiY / H * 100).toFixed(2)}%">${cr0(hi)}</span>` : "")
+  + (clearOfZero(loY, zeroY)
+      ? `<span class="cumu-scale-tag lo" style="top:${(loY / H * 100).toFixed(2)}%">${cr0(lo)}</span>` : ""));
 
   document.getElementById("cumuKeys").innerHTML =
     `<span class="cumu-key fii"><i></i>FII ${cr0(last.f)}\u00A0cr</span>`

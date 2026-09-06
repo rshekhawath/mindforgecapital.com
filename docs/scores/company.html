@@ -1661,7 +1661,18 @@ function drawRadar(D){
      how a label ends up outside the box on another. Above 560px the box is
      exactly 336x300, the branch below resolves to the authored cx/cy/R, and the
      drawing is byte-identical to what it has always been.  ══════════════════ */
-  var LBL_FS=10.5, TICK_FS=8, LBL_GAP=17, PAD=3, N=P.length;
+  /* V35.7 — TICK_FS was 8. V34.7 fixed the SCALING (the box is the viewBox now,
+     so a unit is a CSS pixel at every width) but left the declared size, and 8px
+     was chosen back when it was being multiplied by 1.0 on desktop and 0.63 on a
+     320 phone. Now that it renders at exactly what it says, what it says is
+     under this page's own 10px floor — on every device rather than only on
+     phones. These four labels ARE the radar's scale: without them a vertex
+     halfway out means nothing. 10px, which is the floor and still visibly
+     subordinate to the 10.5/700 pillar labels beside them.
+     Room check: rings sit 26px apart at full R and the labels are anchored
+     start at cx+3, so a 10px "100" occupies cx+3..cx+20 against a top spoke at
+     cx — no new collision, and the pillar labels sit a further LBL_GAP out. */
+  var LBL_FS=10.5, TICK_FS=10, LBL_GAP=17, PAD=3, N=P.length;
   /* A degenerate measurement must fall back to the authored box WHOLE. An
      earlier form of this read `Math.round(_bx.width)||336` and then applied the
      60px guard, so a frame where the width measured 0 while the height already

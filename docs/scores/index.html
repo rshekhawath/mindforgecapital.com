@@ -466,7 +466,23 @@ html[data-theme="dark"] .hp-seg-n{color:#0c1831}
    Bulletproof like the site's reveal layer: the hidden/animated states live only
    under .qv-armed, a class JS adds ONLY when motion is allowed — so if JS fails or
    the reader prefers reduced motion, every dot stays fully visible and static. */
-.qv-axis-tick{font-size:3px;font-weight:700;fill:var(--text3);opacity:.7;letter-spacing:.02em}
+/* V35.7 — the two axis ticks moved out of the SVG and became HTML spans, for
+   the reason the corner labels on this same chart already are: the viewBox is
+   120 units painted anywhere from 328px on a phone to 640px on a desktop, so a
+   3px tick rendered at 8.2px on a phone and 16px on a desktop — smaller than
+   the caption on one and larger than the body text on the other. As HTML they
+   are one size everywhere.
+   They also carried `opacity:.7` over --text3 (#475569), which is the V35.6
+   anti-pattern exactly: alpha stacked on an ink that is already doing the
+   de-emphasis. That measured ~3.6:1 against the card. Undimmed the same ink is
+   7.58:1 and still reads as secondary, because the ink was already doing that
+   job. The pixel contrast probe could not see it — it walks the HTML namespace,
+   and this was an SVG <text>. */
+.qv-tick{position:absolute;font-size:10px;font-weight:700;color:var(--text3);
+  letter-spacing:.02em;pointer-events:none;line-height:1;
+  font-variant-numeric:tabular-nums}
+.qv-tick.x{top:90.8%;transform:translateX(-50%)}
+.qv-tick.y{left:0;width:11.667%;text-align:right;padding-right:4px;transform:translateY(-50%)}
 .qv-pulse{opacity:0}
 .qv-armed .qv-dots{opacity:0}
 .qv-armed.qv-in .qv-dots{animation:qv-bloom .9s cubic-bezier(.22,.8,.2,1) both;transform-box:fill-box;transform-origin:50% 92%}
@@ -1045,7 +1061,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     <div class="qv-head">
       <div>
         <div class="qv-title">Quality <span class="qv-x">×</span> Value landscape</div>
-        <div class="qv-sub">Every scored stock plotted by its two pillars. The sweet spot is the top-right — strong businesses that are still cheaply priced.</div>
+        <div class="qv-sub">Every scored stock plotted by its two pillars, each a 0&ndash;100 percentile against the whole universe. The sweet spot is the top-right &mdash; strong businesses that are still cheaply priced.</div>
       </div>
       <!-- Filled by renderQuadrant() from BANDS, so the key can never name a
            different set of colours than the cloud paints. See the .qv-key CSS. -->
@@ -1053,11 +1069,19 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     </div>
     <div class="qv-body">
       <div class="qv-chart-wrap">
-        <svg id="qvChart" viewBox="0 0 120 120" role="img" aria-label="Scatter plot of stocks by Quality and Value score"></svg>
+        <svg id="qvChart" viewBox="0 0 120 120" role="img" aria-label="Scatter plot of every scored stock by Quality score on the horizontal axis and Value score on the vertical axis. Both axes run from 0 to 100; the dashed crosshair marks 50 on each."></svg>
         <span class="qv-corner tr">★ Quality<br>+ Value</span>
         <span class="qv-corner tl">Cheaper,<br>weaker</span>
         <span class="qv-corner br">Quality,<br>pricier</span>
         <span class="qv-corner bl">Weaker,<br>pricier</span>
+        <!-- V35.7 — the midpoint ticks, as HTML so their size does not ride the
+             viewBox scale. aria-hidden because the svg's own label above now
+             states the 0-100 range; a screen reader hearing a bare "50 50"
+             learns nothing. The percentages are the plot box in wrap units:
+             x 14->114 and y 8->108 of a 120 box, so 50 lands at 53.333% across
+             and 48.333% down. -->
+        <span class="qv-tick x" style="left:53.333%" aria-hidden="true">50</span>
+        <span class="qv-tick y" style="top:48.333%" aria-hidden="true">50</span>
       </div>
       <div class="qv-caption"><span>Stronger <b>Quality</b> to the right →</span><span>↑ Better <b>Value</b> (cheaper) higher up</span><span>Dot size ∝ <b>Growth</b></span></div>
     </div>
@@ -1857,9 +1881,9 @@ function renderQuadrant(){
   s+=`<rect x="14" y="8" width="100" height="100" fill="none" stroke="rgba(37,99,235,0.16)" stroke-width="0.5" rx="2"/>`;
   s+=`<line x1="64" y1="8" x2="64" y2="108" stroke="rgba(37,99,235,0.16)" stroke-width="0.4" stroke-dasharray="2 2"/>`;
   s+=`<line x1="14" y1="58" x2="114" y2="58" stroke="rgba(37,99,235,0.16)" stroke-width="0.4" stroke-dasharray="2 2"/>`;
-  // median reference — the dashed crosshair marks the 50/50 midpoint of each 0–100 pillar
-  s+=`<text class="qv-axis-tick" x="64" y="113.4" text-anchor="middle">50</text>`;
-  s+=`<text class="qv-axis-tick" x="11" y="59.2" text-anchor="end">50</text>`;
+  // median reference — the dashed crosshair marks the 50/50 midpoint of each 0–100 pillar.
+  // V35.7: the two "50" ticks are written as HTML below, not as SVG <text>, so
+  // their size does not ride the viewBox scale. See .qv-tick.
   /* V31.1 — the cloud answers the band filter too. Which band a dot belongs to is
      read from BANDS with the SAME first-floor-cleared rule the counting loop in
      renderHero() uses, so a dot can never land in one band for the count and

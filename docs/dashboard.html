@@ -4002,6 +4002,16 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         background:linear-gradient(90deg,#10b981,#059669); }
       html[data-theme="dark"] .trk-key i{ background:linear-gradient(90deg,#34d399,#0f9d6b); }
       .trk-key i.is-tick{ width:2px; height:12px; border-radius:2px; background:var(--text3); }
+      /* V35.7 — the rows are a divergent bar chart drawn against ONE scale
+         (max |cycle| across every row, floored at 1.0) and nothing said what
+         that scale was, so a full-width bar meant 2% in a quiet quarter and 20%
+         after a violent one, with no way to tell the two apart. This states it.
+         It is pushed to the end of the key row rather than given its own line,
+         because it is a property of the chart the key already describes.
+         No swatch: it names the axis, it does not identify a series. */
+      .trk-key .trk-scale{ margin-left:auto; font-variant-numeric:tabular-nums;
+        white-space:nowrap; }
+      @media (max-width:460px){ .trk-key .trk-scale{ margin-left:0; flex-basis:100%; } }
       .trk-foot{ font-size:11px; color:var(--text3); line-height:1.6; margin:11px 0 0; max-width:70ch; }
       /* V35.6 — this link was written with an inline color:var(--accent), which is
          the LIGHT-theme brand blue and measures 3.07:1 on the dark card. Every
@@ -10154,6 +10164,11 @@ function renderTrackRecord(){
     }).join('') +
     '<div class="trk-key"><span><i></i>Your strategy</span>' +
       (rows[0].benchName ? '<span><i class="is-tick"></i>' + escapeHtml(rows[0].benchName) + '</span>' : '') +
+      // V35.7 — name the scale the bars are drawn against. `scale` is the widest
+      // absolute move on the chart (floored at 1.0), and a bar reaching the edge
+      // of its row IS that value, so this is the one number that makes a bar
+      // length readable rather than merely comparable to its neighbours.
+      '<span class="trk-scale">Row edge = &plusmn;' + scale.toFixed(2) + '%</span>' +
     '</div>';
     // Grow from the centre line — the site's bar idiom. Painting the final
     // geometry immediately leaves a dead transition (V23.5).
