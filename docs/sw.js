@@ -642,7 +642,15 @@
 // own right (the phone footer rhythm), and it is the offline navigation
 // fallback, so an installed member left on v88 would keep the old shell.
 // addAll() runs on INSTALL, not activation.
-const CACHE = 'mfc-v89';
+// V36.3 -> mfc-v90. mfc-finish.css is CACHE-FIRST and carries this release's
+// measure block — the 70ch cap on 28 blocks of small-type running prose across
+// twelve pages — plus the corrected V36.2 comment that was swallowing whatever
+// followed it in that file. Its ?v moves 3620 -> 3630 on all 50 pages, which
+// busts the ASSET but not the two PRECACHED documents: index.html and
+// login.html have no query to bust and both carry the new token, so an
+// installed member left on v89 would keep a shell asking for 3620 and would
+// never see any of it. addAll() runs on INSTALL, not activation.
+const CACHE = 'mfc-v90';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -3983,7 +3983,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3620">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3630">
 </head>
 <body>
 
@@ -4224,8 +4224,18 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   background:rgba(15,23,42,.20);transform:translateY(-.5px)}
 html[data-theme="dark"] .mpf-sp-strip::before{background:rgba(255,255,255,.26)}
 .mpf-sp-b{position:relative;flex:1 1 0;min-width:0}
+/* V36.3 — .42 was below the floor at which a mark can be seen at all: these
+   bars measured 1.91:1 light and 2.08:1 dark against their own card, under WCAG
+   1.4.11's 3:1, and their HEIGHT is the data — twenty sessions of net flow that
+   a reader is meant to read a shape from.
+   The opacity is kept rather than replaced by a second ink (the usual V35.6
+   remedy) because here it is not a muting device bolted onto a semantic colour:
+   .today uses the SAME classes and is told apart from the history by opacity
+   alone, so the mechanism is right and only the value was wrong. Bisected
+   against the probe in both themes: it clears 3:1 at .68 light and .62 dark, so
+   .70 takes both with a margin and still leaves a 30-point step to today. */
 .mpf-sp-b i{position:absolute;left:0;right:0;margin-inline:auto;max-width:9px;height:0;border-radius:1.5px;
-  opacity:.42;transition:height .7s cubic-bezier(.22,1,.36,1)}
+  opacity:.70;transition:height .7s cubic-bezier(.22,1,.36,1)}
 .mpf-sp-b.up i{bottom:50%;background:var(--data-strong)}
 .mpf-sp-b.dn i{top:50%;background:var(--data-bad)}
 .mpf-sp-b.today i{opacity:1}
@@ -4889,8 +4899,9 @@ html[data-theme="dark"] .spark-wrap{ background: linear-gradient(180deg, rgba(70
 .fun-key span{ display: inline-flex; align-items: center; gap: 6px; }
 .fun-key i{ display: inline-block; width: 16px; height: 9px; border-radius: 2px; }
 .fun-key i.k-in{ background: linear-gradient(90deg, var(--accent), var(--accent3)); }
-.fun-key i.k-out{ background: rgba(37,99,235,.20); }
-html[data-theme="dark"] .fun-key i.k-out{ background: rgba(131,170,255,.28); }
+/* V36.3 — see the note on .fun-gone below: the swatch and the bar it explains
+   are one decision and move together. */
+.fun-key i.k-out{ background: #6f85aa; }
 
 .fun-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 26px 34px; margin-top: 18px; }
 .fun-col{ min-width: 0; }
@@ -4909,8 +4920,19 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
    rather than an overlay band, for the reason the V28.5 window rail records. */
 .fun-track i{ position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; width: 0;
   transition: width .95s cubic-bezier(.22,1,.36,1); }
-.fun-gone{ background: rgba(37,99,235,.20); }
-html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
+/* V36.3 — THE PART THIS STEP REMOVED WAS THE PART YOU COULD NOT SEE.
+   This module is called "The narrowing" and the pale tail IS the narrowing: the
+   distance between .fun-in and .fun-gone is how many names the step dropped.
+   Measured against its own track it read 1.31:1 light and 1.73:1 dark, under
+   WCAG 1.4.11's 3:1 and well under what a reader can actually judge a length
+   by — so the one quantity the module exists to show was the faintest thing in
+   it, and the legend swatch that names it measured 1.33 / 1.75.
+   #6f85aa is the value V36.0 chose for the peer-comparison bars and V36.1 for
+   the live meter's benchmark fill, for the identical reason: it is ONE colour
+   clearing 3:1 against both themes' tracks, so it needs no dark override and
+   no alpha. The solid step keeps its blue-teal gradient, so the two halves are
+   still told apart by hue and weight as well as by length. */
+.fun-gone{ background: #6f85aa; }
 .fun-in{ background: linear-gradient(90deg, var(--accent), var(--accent3)); }
 .fun-step.is-held .fun-in{ background: linear-gradient(90deg, var(--accent3), var(--teal)); }
 .fun-val{ font-size: 12.5px; font-weight: 800; color: var(--white); text-align: right;
@@ -5296,8 +5318,7 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
     .to-wr-key{ font-size:10.5px; font-weight:700; color:var(--text3); display:inline-flex; align-items:center; gap:6px; }
     .to-wr-key i{ display:inline-block; width:16px; height:9px; border-radius:2px; }
     .to-wr-key i.k-sol{ background:linear-gradient(90deg,var(--accent),var(--accent3)); margin-left:8px; }
-    .to-wr-key i.k-pre{ background:rgba(37,99,235,.26); }
-    html[data-theme="dark"] .to-wr-key i.k-pre{ background:rgba(131,170,255,.30); }
+    .to-wr-key i.k-pre{ background:#6f85aa; }
     .to-wr-rows{ margin-top:12px; display:grid; gap:7px; }
     .to-wr-row{ display:grid; grid-template-columns:186px 1fr 72px; align-items:center; gap:10px; }
     .to-wr-nm{ font-size:12px; font-weight:700; color:var(--text2); line-height:1.25;
@@ -5316,10 +5337,16 @@ html[data-theme="dark"] .fun-gone{ background: rgba(131,170,255,.28); }
     /* the months this strategy covers that the SHORTEST window does not — same bar,
        drawn pale, so "which part is common" is read off the bar itself. An overlay
        band tinted onto a solid bar is invisible; two tones on one bar are not. */
+    /* V36.3 — same defect and same value as .fun-gone one section up. This rail
+       exists to show that MultiAsset's backtest window is SHORTER than the other
+       two, and the only thing carrying that is whether a row has this pale
+       prefix: MultiAsset's row has none. Measured against the bare track it was
+       1.43:1 light and 1.78:1 dark, i.e. "has a prefix" and "has nothing" were
+       nearly the same picture, on the one row the module is about. */
     .to-wr-pre{ position:absolute; top:0; bottom:0; border-radius:6px 0 0 6px;
-      background:rgba(37,99,235,.26); width:0;
+      background:#6f85aa; width:0;
       transition:width .95s cubic-bezier(.22,1,.36,1); }
-    html[data-theme="dark"] .to-wr-pre{ background:rgba(131,170,255,.30); }
+
     .to-wr-mo{ font-size:11px; font-weight:800; color:var(--text2);
       font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
     .to-wr-axis{ display:grid; grid-template-columns:186px 1fr 72px; gap:10px; margin-top:7px; }

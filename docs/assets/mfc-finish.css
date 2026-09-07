@@ -1659,6 +1659,15 @@ html a[href^="mailto:"] { overflow-wrap: break-word; }
   /* index.html — market-pulse split, sentiment needle, in/out keys, fee funnel */
   html .mpf-fill, html .mps-needle, html .k-in, html .k-out,
   html .fun-in, html .fun-gone,
+  /* V36.3 — the market-pulse SPARKLINE, which sits in the same card as
+     .mpf-fill above and was the one part of it this block never reached: twenty
+     daily bars whose HEIGHT is the net flow and whose side of the midline is
+     its sign, printing as an empty band inside a card that otherwise printed
+     correctly. Confirmed by rendering under media:"print" at an 816px page box,
+     where they resolved to `economy` while every sibling resolved to `exact`.
+     The midline goes with them — it is the zero axis the bars are read against,
+     and a divergent chart with no axis has no sign. */
+  html .mpf-sp-b i, html .mpf-sp-strip::before,
   /* strategies.html + the three strategy pages — live vs model, sector and
      allocation weights, and the head-to-head comparison bars */
   html .lvm-fill, html .sp-wt-fill, html .cmp-bar,
@@ -3016,7 +3025,8 @@ html .mfx-nav{
    most of the footer's height — 156px per column of three links is what a
    tappable link costs, and trimming it to save pixels would trade a real
    accessibility guarantee for a cosmetic one. Everything reclaimed here comes
-   from empty space only.  Scoped <=767px: desktop keeps its own proportions. */
+   from empty space only.  Scoped <=767px: desktop keeps its own proportions.
+
    A FIRST DRAFT OF THIS BLOCK PUT THE RULE HERE, IN THE SHARED SHEET, AS
    `html footer{padding:36px/28px}`. Measured after: it moved the homepage the
    right way (1,365 -> 1,313px) and moved the OTHER NINE FOOTERS THE WRONG WAY,
@@ -3025,3 +3035,124 @@ html .mfx-nav{
    exists on exactly one page, so it is corrected where it lives (index.html)
    and this sheet touches nothing. Kept as a note because "normalise it in the
    shared file" is the obvious move and it is the wrong one here. */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   V36.3 — THE MEASURE OF THE SMALL PRINT
+   ---------------------------------------------------------------------------
+   A dimension this site has never measured: how many CHARACTERS a line of
+   running prose holds. Every sweep so far has asked whether text overflows,
+   clips, contrasts or zooms — never whether a line is trackable back to the
+   start of the next one. Typographic practice puts a comfortable measure at
+   45–90 characters and WCAG 1.4.8 asks for 80 or fewer; measured at 1440 by
+   dividing each block's widest rendered line by its OWN average glyph advance
+   (not an em guess), the site's footnotes ran:
+
+       #weightCap        231 chars/line at 12px      #cc-note      227 at 11px
+       .why25-note       219 at 12px                 #fl-foot      185 at 12px
+       .ps-disc          185 at 11px                 .vstrip-foot  183 at 12px
+       .mcal-note        181 at 12px                 .ptx-foot     180 at 12px
+       .fa-foot / .mm-foot 176 at 12px               #chg-line     175 at 14px
+       .bt-caveat li     172 at 12px                 .bt-how-foot  174 at 12px
+       .bt-gross-note    164 at 13px                 .bt-note      164 at 13px
+       .mcal-snote       148 at 11px                 .disclaimer   147 / 141
+       .fr-meth p        145 at 13px                 .fr-meth li   135 at 13px
+
+   `.fr-meth li` at 135 is under the 140 line the rest of this list clears, and
+   is capped anyway: it is the bullet list directly beneath `.fr-meth p` in the
+   same box, and capping the paragraph while leaving its own list to run the
+   full width would replace one measure problem with a ragged one.
+
+   Small type and a long measure is the worst pairing there is: the smaller the
+   glyph, the shorter the line has to be for the eye to find the next one, and
+   these are the site's SMALLEST type on its WIDEST blocks. Several already
+   carry a max-width — 1040px, 880px, 820px — but every one of those numbers
+   was chosen for the layout, not for the type size, and 1040px of 11px text is
+   still 185 characters.
+
+   The remedy is the site's own, not a new idea: `.trk-foot`, `.kbsk-note`,
+   `.vfy-txt p`, `.ctx-cmp-sub`, `.bt-how-lede`, `.ptx-head`, `.rm-cov`,
+   `.nf-sub` and `.dir-lede` have carried a 62–74ch cap for releases, 70ch
+   being the mode. The blocks below are simply the ones that never got it, and
+   two of them prove the point without leaving the page: on the dashboard,
+   `.trk-foot` (70ch) and `.why25-note` (uncapped) sit a few hundred pixels
+   apart in the same column at nearly the same size.
+
+   `ch` and not px, because `ch` scales with the element's own font-size — one
+   value gives the 11px note a 423px line and the 14px note a 539px one, which
+   is the whole point. 70ch measures ~80 real characters here, since the
+   average advance is narrower than the "0" glyph `ch` is defined from.
+
+   `html` prefix because this file is linked BEFORE each page's own <style>, so
+   an equal-specificity class selector there would win (the same reason the
+   V35.2 overscroll block carries it). Three of these are ids, which outrank a
+   class either way and are matched as ids for that reason.
+
+   The two CENTRED blocks need NO extra rule and deliberately do not get one:
+   `.ps-disc` is already `margin:22px auto 0` and the FII/DII disclaimer already
+   `margin:36px auto 10px`, so narrowing them re-centres them on its own — an
+   added `margin-inline:auto` here would be a rule that changes nothing, which
+   is how a selector that matches nothing gets read as intent later. The rest
+   are left-aligned in left-aligned containers and stay exactly where they are;
+   only the line gets shorter.
+
+   THE PROBE HAD TO BE WIDENED ONCE, AND THAT IS HALF THE FINDING. Its first
+   version walked `p, li` — the elements prose is "supposed" to live in — and
+   reported the site clean after the block above landed. It was not: this
+   codebase writes most of its footnotes as a `<div>` (`#drift-note`,
+   `#clad-note`, `#cumuNote`, `#to-foot`, `.tl-desc`, `.sc-explain` …), and
+   five of those measure WORSE than anything the first pass found — the
+   dashboard's SEBI disclaimer at 206, `#drift-note` at 205, two FII/DII notes
+   at 202. A tag-name filter is an assumption about authoring style, not a
+   measurement, and it made a real defect invisible. The probe now takes any
+   element that contains text and no block-level child.
+
+   DELIBERATELY NOT CAPPED, both checked rather than assumed:
+
+   * `.oo-sub`, the 1:1-Zoom card's line, at 145. It is the text half of a row
+     whose other half is the booking button, so its width is the LAYOUT's
+     decision and not the type's — capping it to ~530px would open ~380px of
+     dead space between the sentence and the control it belongs to, trading a
+     measure problem for the V33.5 layout void. Every block that IS capped was
+     checked the same way and is a footnote stacked under a graphic with no
+     side-by-side sibling.
+   * `#mfxStripDesc` on the company page measures 201,
+   but it is `-webkit-line-clamp:2` — a two-line teaser behind a "more" button,
+   not prose anyone tracks line to line, and narrowing it would cut the teaser
+   roughly in half. `.mfx-desc` without the clamp IS running prose and is
+   capped. Nothing at or below ~135 characters is touched either: that tier is
+   the site-wide footer meta line, which is five short centred lines of legal
+   boilerplate, and a rule with no reader behind it is just churn.
+   ═══════════════════════════════════════════════════════════════════════════ */
+html #weightCap,
+html #cc-note,
+html #chg-line,
+html .why25-note,
+html #fl-foot,
+html .fa-foot,
+html .mm-foot,
+html .vstrip-foot,
+html .ptx-foot,
+html .bt-how-foot,
+html .bt-caveat li,
+html .mcal-note,
+html .mcal-snote,
+html .bt-note,
+html .bt-gross-note,
+html .fr-meth p,
+html .fr-meth li,
+html #to-foot,
+html #to-wr-foot,
+html #fun-foot,
+html .tl-desc,
+html #drift-note,
+html #clad-note,
+html #sess-note,
+html .table-section > .disclaimer,
+html #cumuNote,
+html .panel > .note,
+html .sc-explain,
+html .ps-disc,
+html footer > p.disclaimer,
+html .mfx-desc:not(.mfx-clamp){
+  max-width: 70ch;
+}

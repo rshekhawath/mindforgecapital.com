@@ -2590,7 +2590,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3620">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3630">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -3983,7 +3983,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         color:var(--text2); background:rgba(37,99,235,.07); border:0.5px solid var(--border2); }
       html[data-theme="dark"] .trk-badge{ background:rgba(120,150,255,.10); }
       .trk-rows{ display:grid; gap:8px; max-width:760px; }
-      .trk-row{ display:grid; grid-template-columns:76px minmax(0,1fr) 78px; gap:12px; align-items:center; }
+      .trk-row{ display:grid; grid-template-columns:76px minmax(0,1fr) 96px; gap:12px; align-items:center; }
       .trk-when{ font-size:11.5px; font-weight:700; color:var(--text3); white-space:nowrap; }
       .trk-when i{ font-style:normal; font-weight:800; color:var(--accent); margin-left:4px; }
       html[data-theme="dark"] .trk-when i{ color:#9dbcff; }
@@ -4006,6 +4006,22 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       .trk-val.flat{ color:var(--text3); }
       html[data-theme="dark"] .trk-val.up  { color:#34d399; }
       html[data-theme="dark"] .trk-val.down{ color:#f87171; }
+      /* V36.3 — the verdict line under each row's return. It sits INSIDE
+         .trk-val, which carries the row's up/down colour, so both the ink and
+         the weight are re-declared here: the gap's sign is a different fact
+         from the return's and must never inherit its colour. --data-strong /
+         --data-bad are the AA-safe grading pair the rest of this page uses and
+         are re-inked for dark by mfc-finish.css, so no theme override is
+         needed. `ahead` is the unclassed state, matching .lvm-gap.
+         It WRAPS rather than clips: a two-digit gap is a real month here, and
+         the self-test fixture's "−23.35 pts behind" is 17 characters and
+         overran an 84px column on a phone at `nowrap`. The NBSP written into
+         the string binds the figure to "pts" (V32.9), so the only place the
+         line can break is before the verdict word. */
+      .trk-gap{ display:block; font-style:normal; font-size:9.5px; font-weight:700;
+        line-height:1.35; margin-top:2px; letter-spacing:.005em;
+        font-variant-numeric:tabular-nums; color:var(--data-strong,#047454); }
+      .trk-gap.behind{ color:var(--data-bad,#c92020); }
       .trk-key{ display:flex; align-items:center; gap:16px; flex-wrap:wrap;
         margin-top:13px; font-size:11px; color:var(--text3); }
       .trk-key span{ display:inline-flex; align-items:center; gap:6px; }
@@ -4033,8 +4049,14 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       html[data-theme="dark"] .trk-foot-lnk{ color:#9dbcff; }
       @media (max-width:600px){
         .trk-card{ padding:18px 16px; }
-        .trk-row{ grid-template-columns:62px minmax(0,1fr) 66px; gap:9px; }
+        /* the value column carries two lines from V36.3, so it takes the room
+           the verdict needs — 66 -> 84 — and the month column gives back what
+           it can, 62 -> 56. Net cost to the axis is 10px: it measures 160px at
+           390 and 90px at 320, against 170 and 100 before, and the divergent
+           bar plus its tick still read at both (checked by eye at 320). */
+        .trk-row{ grid-template-columns:56px minmax(0,1fr) 84px; gap:8px; }
         .trk-when{ font-size:11px; }
+        .trk-gap{ font-size:9px; }
       }
       @media print{ .trk-card{ break-inside:avoid; } }
       @media (prefers-reduced-motion:reduce){ .trk-bar{ transition:none; } }
@@ -10161,6 +10183,28 @@ function renderTrackRecord(){
       var left = r.live >= 0 ? 50 : (50 - half);
       var tick = r.bench == null ? '' :
         '<i class="trk-tick" style="left:' + (50 + Math.max(-50, Math.min(50, r.bench / scale * 50))).toFixed(2) + '%"></i>';
+      /* V36.3 — the gap, in the eye as well as in the aria-label.
+         The tick already puts the benchmark on the axis and the legend names
+         it, but its VALUE was spoken to a screen reader ("against −1.20% for
+         Nifty LargeMidcap 250") and shown to nobody: a sighted member read
+         "−2.36%" beside an unlabelled mark and had to measure the tick by eye
+         to learn which side of the index they finished. The `Ahead of the index
+         in X of Y` badge cannot cover it either — it is gated at judged >= 2,
+         so on the first cycles, when the question is asked hardest, nothing on
+         screen answered it.
+         Wording, sign convention and inks are lifted verbatim from .lvm-gap in
+         mfc-live.js, which prints the same verdict for the same pair on the
+         public strategy pages — one idiom, two surfaces, so a member cannot
+         meet two phrasings of one fact. `gap >= 0` is ahead, matching it
+         exactly; the colour follows the GAP, never the row's own return, so a
+         losing cycle that still beat its index reads green on that line. */
+      var gapEl = '';
+      if (r.bench != null){
+        var g = r.live - r.bench, ah = g >= 0;
+        gapEl = '<i class="trk-gap' + (ah ? '' : ' behind') + '">' +
+                (ah ? '+' : '\u2212') + Math.abs(g).toFixed(2) + '\u00a0pts ' +
+                (ah ? 'ahead' : 'behind') + '</i>';
+      }
       var aria = mon(r.when) + ' cycle: ' + fmtPct(r.live) +
         (r.bench == null ? '' : ', against ' + fmtPct(r.bench) + ' for ' + r.benchName) +
         (r.sealed ? '' : ' — cycle still in progress');
@@ -10170,7 +10214,7 @@ function renderTrackRecord(){
           '<i class="trk-bar ' + (cls === 'flat' ? 'up' : cls) + '" data-left="' + left.toFixed(2) +
             '" data-w="' + half.toFixed(2) + '" style="left:50%"></i>' + tick +
         '</span>' +
-        '<span class="trk-val ' + cls + '">' + fmtPct(r.live) + '</span>' +
+        '<span class="trk-val ' + cls + '">' + fmtPct(r.live) + gapEl + '</span>' +
       '</div>';
     }).join('') +
     '<div class="trk-key"><span><i></i>Your strategy</span>' +
