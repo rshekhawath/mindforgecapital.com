@@ -6538,17 +6538,35 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 /* Each swatch+label is one inline-flex unit so a wrap never strands a swatch at
    the end of one line and its label at the start of the next. */
 .mm-key{ font-size:10.5px; font-weight:700; color:var(--text3); display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.mm-k{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+/* ── V36.4 · THE LEGEND AS A MINIATURE OF THE THING IT DECODES ─────────────
+   The timeline encodes its three states mostly by HEIGHT — .mm-track is
+   `align-items:end` and the cells stand 11px (nothing to do), 17px (we review)
+   and 26px (you place orders) out of a shared baseline. The legend decoded them
+   with three chips of one uniform size, so the single strongest channel in the
+   graphic was the one channel the key did not carry, and idle vs sig was left
+   resting on fill alone: measured 1.63:1 light and 2.18:1 dark against each
+   other, which is why the un-truncated probe reports i.k-sig at all.
+   The chip heights are simply HALF the cell heights, rounded — 6 / 9 / 13 — so
+   they are derived from the same numbers the graphic is drawn from rather than
+   picked, and they bottom-align the way the cells do. The tallest chip goes 12
+   -> 13px, so the legend row is a pixel taller and nothing reflows.
+   The two faint chips also both carry a definition edge now; V35.9 gave one to
+   k-idle for exactly this reason and k-sig, at 1.87:1 against the card, needed
+   the same. k-act is a solid gradient and needs no help. ──────────────────── */
+.mm-k{ display:inline-flex; align-items:flex-end; gap:6px; white-space:nowrap; }
 .mm-key i{ display:inline-block; width:10px; height:12px; border-radius:2px; flex-shrink:0; }
+.mm-key i.k-idle{ height:6px; }
+.mm-key i.k-sig { height:9px; }
+.mm-key i.k-act { height:13px; }
 .mm-key i.k-act{ background:linear-gradient(180deg,var(--accent),var(--accent3)); }
-.mm-key i.k-sig{ background:rgba(37,99,235,.42); }
+.mm-key i.k-sig{ background:rgba(37,99,235,.42); box-shadow:inset 0 0 0 1px rgba(15,23,42,.5); }
 /* V35.9 — the KEY swatch for the 'nothing to do' state measured 1.15:1: a
    legend whose job is to decode the timeline, with the step it decodes
    invisible. The pale FILL is deliberate and stays (see the exemption note
    for the cells themselves — being faint IS the message there); only the
    legend chip gains a definition edge, at the release's measured hairline. */
 .mm-key i.k-idle{ background:rgba(37,99,235,.10); box-shadow:inset 0 0 0 1px rgba(15,23,42,.5); }
-html[data-theme="dark"] .mm-key i.k-sig{ background:rgba(131,170,255,.48); }
+html[data-theme="dark"] .mm-key i.k-sig{ background:rgba(131,170,255,.48); box-shadow:inset 0 0 0 1px rgba(255,255,255,.45); }
 html[data-theme="dark"] .mm-key i.k-idle{ background:rgba(120,150,255,.14); box-shadow:inset 0 0 0 1px rgba(255,255,255,.45); }
 
 .mm-rows{ margin-top:16px; display:grid; gap:12px; }

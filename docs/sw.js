@@ -650,7 +650,14 @@
 // login.html have no query to bust and both carry the new token, so an
 // installed member left on v89 would keep a shell asking for 3620 and would
 // never see any of it. addAll() runs on INSTALL, not activation.
-const CACHE = 'mfc-v90';
+// V36.4 -> mfc-v91. NO shared asset moves this release, so there is no ?v to
+// bump — but index.html is a PRECACHED document and changed in its own right
+// (the month-timeline legend now carries the height ladder and the definition
+// edge). A precached document has no query to bust, and index.html is also the
+// offline navigation fallback, so an installed member left on v90 would keep
+// the old shell indefinitely. dashboard.html is network-first and needs
+// nothing. addAll() runs on INSTALL, not activation.
+const CACHE = 'mfc-v91';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

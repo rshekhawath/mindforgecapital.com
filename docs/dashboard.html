@@ -3368,7 +3368,51 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .chg-sub{ font-size:12px; color:var(--text3); font-weight:600; }
     .chg-line{ font-size:14px; color:var(--text2); line-height:1.65; margin:0 0 14px; }
     .chg-line strong{ color:var(--white); font-weight:800; }
-    .chg-groups{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+    /* ── V36.4 · AN EMPTY GROUP MUST NOT CLAIM AN EQUAL THIRD ──────────────
+       `repeat(auto-fit,minmax(240px,1fr))` gave Buy, Sell and Hold the same
+       width whatever was in them. On MultiAsset that is not an occasional
+       state, it is the DESIGN: the book holds the same eight ETFs every month
+       and only re-weights, so "Buy · new this cycle (0)" and "Sell · left the
+       book (0)" are empty EVERY cycle. Measured at 1440 the card is 1,267px
+       and each column took 413px — 826px of it holding two copies of the words
+       "None this cycle", while the Rebalance column, the only one with
+       anything in it, squeezed eight rows of ticker + "add to 29.9% from
+       24.8%" + a pp figure + a Kite button into the remaining 413.
+       Flex rather than grid because the sizing has to follow the CONTENT:
+       a populated group grows, an empty one takes only what its two words
+       need. The counts stay visible — "0 bought, 0 sold" IS the message on a
+       rotating book, and the prose above says so — this changes the
+       proportion, not what is shown.
+       LargeMidcap, where all three are usually populated, is unaffected: with
+       no .is-empty group every child keeps `flex:1 1 240px` and lands where
+       auto-fit put it. ────────────────────────────────────────────────────── */
+    /* align-items is left at its default `stretch`, deliberately. The measured
+       defect is WIDTH; collapsing the empty boxes in height too would be a
+       second change with no measurement behind it, and it would break the
+       equal-height row the three groups have always formed. Under
+       flex-direction:column below, stretch is also the only value that makes a
+       stacked child fill the phone's width — flex-start there shrank Buy to
+       209px inside a 526px container. */
+    .chg-groups{ display:flex; flex-wrap:wrap; gap:14px; }
+    .chg-groups > .chg-group{ flex:1 1 240px; min-width:0; }
+    /* 216 and not 208: at 208 the longer of the two headings — "Buy · new this
+       cycle (0)", 10.5px uppercase at .07em — wraps to two lines while "Sell ·
+       left the book (0)" sits on one, which is the V32.9 bad-break shape and
+       reads as a mistake beside its twin. Measured on the text node alone (the
+       .chg-gk box also holds the colour swatch, whose rect inflates a naive
+       line count by one): 208 -> 2 lines, 212 -> 1, so 216 takes it with a
+       little room and still leaves the Rebalance column 746px against 393. */
+    .chg-groups > .chg-group.is-empty{ flex:0 1 216px; }
+    /* The populated group needs a basis big enough to WRAP rather than be
+       squeezed once the two 216px boxes no longer leave it room. Measured at
+       820 (iPad portrait) the first draft gave it 262px for eight rows — worse
+       than the grid it replaced, which wrapped it to the full 706. 360px makes
+       216+216+360+28 = 820: under the 1,206 / 1,166 / 910 boxes at 1440/1280/1024
+       so all three stay on one line, over the 706 box at 820 so it takes its own.
+       Scoped to `.has-empty`, which the renderer sets only when some group is
+       empty — without it every group keeps `1 1 240px` and the all-populated
+       LargeMidcap case is byte-identical to the grid (393/393/393 at 1440). */
+    .chg-groups.has-empty > .chg-group:not(.is-empty){ flex:1 1 360px; }
     .chg-group{ border:0.5px solid var(--border); border-radius:12px; padding:12px 14px; background:var(--ink); }
     .chg-gk{ display:flex; align-items:center; gap:7px; font-size:10.5px; font-weight:800; letter-spacing:.07em;
       text-transform:uppercase; color:var(--text3); margin-bottom:9px; }
@@ -3498,7 +3542,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13); border-color:rgba(52,211,153,.30); }
 @media print{ .new-tag{ border-color:#0b6b4f; } }
     html[data-theme="dark"] .chg-tk{ background:rgba(120,150,255,.10); }
-    @media (max-width:600px){ .chg-card{ padding:18px 16px; } .chg-groups{ grid-template-columns:minmax(0,1fr); } }
+    /* the phone stacked because the grid fell to one column; with flex the same
+       stacking is stated directly. `flex:1 1 auto` on BOTH selectors is what
+       makes an empty group full-width again once it is stacked — a 216px basis
+       beside nothing to sit next to is just a narrow box in a column. */
+    @media (max-width:600px){ .chg-card{ padding:18px 16px; }
+      .chg-groups{ flex-direction:column; }
+      .chg-groups > .chg-group, .chg-groups > .chg-group.is-empty{ flex:1 1 auto; } }
     @media print{ .chg-card{ break-inside:avoid; } }
     </style>
     <div class="chg-card fade-up" id="chg-card" style="display:none;">
@@ -9637,10 +9687,14 @@ function renderBookChange(diff, stocks){
     }
     var holdLabel = moved.length ? 'Rebalance · weights moved (' + moved.length + ')'
                                  : 'Hold · carried over (' + nHold + ')';
+    var mtIn   = nIn  === 0 ? ' is-empty' : '';
+    var mtOut  = nOut === 0 ? ' is-empty' : '';
+    var mtHold = (moved.length === 0 && nHold === 0) ? ' is-empty' : '';
+    box.classList.toggle('has-empty', !!(mtIn || mtOut || mtHold));
     box.innerHTML =
-      '<div class="chg-group is-in"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + chips(diff.added)   + '</div>' +
-      '<div class="chg-group is-out"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + sells(diff.removed) + '</div>' +
-      '<div class="chg-group is-hold' + (moved.length ? ' is-rot' : '') + '"><div class="chg-gk"><i></i>' +
+      '<div class="chg-group is-in' + mtIn + '"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + chips(diff.added)   + '</div>' +
+      '<div class="chg-group is-out' + mtOut + '"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + sells(diff.removed) + '</div>' +
+      '<div class="chg-group is-hold' + (moved.length ? ' is-rot' : '') + mtHold + '"><div class="chg-gk"><i></i>' +
         holdLabel + '</div>' + holdBody + '</div>';
   }
   renderCycleCost();   // V35.3 — what the turnover named above actually costs
