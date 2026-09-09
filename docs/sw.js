@@ -668,7 +668,15 @@
 // an installed member left on v91 would keep a shell asking for 3640 with a v91
 // body and would never see any of it. dashboard.html is network-first and needs
 // nothing. addAll() runs on INSTALL, not activation.
-const CACHE = 'mfc-v92';
+// V36.6 — mfc-v93. index.html changed in its own right: the .proof-num count-up
+// block no longer hands the restoration of the six headline CAGR/benchmark
+// figures to an IntersectionObserver with no fallback, so a v92 shell served
+// from the cache would keep showing 0.0% / 0.00% wherever that observer does
+// not fire. index.html is precached AND the offline navigation fallback, so it
+// has no query string to bust and an installed member would sit on the old copy
+// indefinitely. (mfc-countup.js also changed and carries ?v=2460, but it is
+// not in ASSET_PATHS — the three strategy pages that load it are network-first.)
+const CACHE = 'mfc-v93';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

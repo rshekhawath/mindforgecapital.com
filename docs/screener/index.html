@@ -1509,10 +1509,11 @@ const PAGE_SIZE=30;
    NOT REPORT. ───────────────────────────────────────────────────────────────
    `chk()` in screener-data.js excludes a row whose value is null the moment a
    bound is set on that field — correct, and the only safe reading of a missing
-   number. But `roe` is populated for 325 of 2,126 snapshot rows (15.3%), so
-   every preset carrying a min_roe clause was silently screening the OTHER 85%
-   of the market out before its own criteria ran. Measured against the shipped
-   snapshot, as-shipped vs the same intent expressed on a field the data carries:
+   number. But `roe` was populated for only 325 of 2,126 snapshot rows (15.3%)
+   AT THE TIME THIS WAS WRITTEN, so every preset carrying a min_roe clause was
+   silently screening the OTHER 85% of the market out before its own criteria
+   ran. Measured against the snapshot shipped that day, as-shipped vs the same
+   intent expressed on a field the data carries:
 
        Value       34 -> 217     Growth      18 -> 208     Small Cap   33 -> 331
        Quality     21 -> 327     GARP        14 -> 123     Blue Chips  19 ->  36
@@ -1531,7 +1532,22 @@ const PAGE_SIZE=30;
    ROE filter, the ROE column and the High-ROE screen all still mean ROE.
    Sorting follows the same rule: `sortBy` coerces null to 0, so ranking by a
    15%-populated field ties 1,801 rows at the bottom — Momentum now ranks on
-   roce, High ROE still ranks on roe because that is its subject. ─────────── */
+   roce, High ROE still ranks on roe because that is its subject.
+
+   V36.6 — TREAT EVERY PERCENTAGE ABOVE AS A DATED MEASUREMENT, NOT A PROPERTY
+   OF THE DATA SOURCE. The 15.3% figure was real on the day, and it was already
+   the tail of an upstream regression nobody had spotted: roe stood at 91.5% on
+   2026-07-02, 35.2% on 2026-08-13 and 6.1% on 2026-09-08, because Yahoo's
+   quoteSummary `financialData` module had stopped returning returnOnEquity,
+   returnOnAssets, currentRatio, quickRatio, operatingCashflow, freeCashflow and
+   totalAssets for NSE listings. screener/server.py now derives all of them from
+   the annual statement frames it was already fetching, and they are back at
+   93-97%. The reasoning above still stands on its own merits — an intent-named
+   preset should rest on a well-covered field regardless of who reports what
+   this month — but the numbers do not. The `.filter-cov` notes and the Columns
+   panel are counted live off the loaded rows and move on their own; nothing on
+   this page hardcodes a coverage figure, which is why the page stayed honest
+   while this comment did not. ────────────────────────────────────────────── */
 const PRESETS={
   // Classic, widely-used equity screens. Each fills the sidebar filters + sort
   // and auto-runs. Keys map to the filter input ids (plus above_sma200/sort_*).

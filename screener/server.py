@@ -326,6 +326,65 @@ def cr(val, dp=0):
     except: return None
 
 
+# ── Statement-frame fallbacks (V36.6) ─────────────────────────────────────────
+# Yahoo's quoteSummary `financialData` module stopped returning returnOnEquity,
+# returnOnAssets, currentRatio, quickRatio, operatingCashflow, freeCashflow and
+# totalAssets for NSE listings during July 2026. Measured at the raw API, below
+# yfinance — 24 other keys in the same payload still arrive, so this is an
+# upstream change, not a client-version problem, and re-pinning yfinance does
+# not bring them back. Coverage in docs/screener/stocks-lite.json fell from
+# 82-94% to 3-6% over ten weeks as the cache turned over.
+#
+# The annual statement frames still carry every input needed to compute all of
+# them, and fetch_stock_info() already pulls all three frames for working
+# capital / cash cycle / interest coverage — so the fallbacks below add no
+# network requests. This is the same shape as `roce`, which is derived locally
+# and never moved.
+_FRAME_ALIASES = {
+    "total_assets":        ("Total Assets",),
+    "current_assets":      ("Current Assets", "Total Current Assets"),
+    "current_liabilities": ("Current Liabilities", "Total Current Liabilities"),
+    "inventory":           ("Inventory",),
+    "receivables":         ("Accounts Receivable", "Net Receivables", "Receivables"),
+    "payables":            ("Accounts Payable", "Payables",
+                            "Payables And Accrued Expenses"),
+    "equity":              ("Stockholders Equity", "Total Stockholder Equity",
+                            "Total Equity Gross Minority Interest"),
+    "op_cf":               ("Operating Cash Flow",
+                            "Total Cash From Operating Activities"),
+    "fcf":                 ("Free Cash Flow",),
+    "capex":               ("Capital Expenditure", "Capital Expenditure Reported"),
+    "ebit":                ("EBIT", "Operating Income"),
+    "interest_expense":    ("Interest Expense",),
+}
+
+def latest_col(frame):
+    """Newest column of a yfinance statement frame as a row Series, else None."""
+    try:
+        if frame is None or getattr(frame, "empty", True): return None
+        return frame.iloc[:, 0]
+    except Exception:
+        return None
+
+def fv(row, key):
+    """Look a logical field up in a statement row through its Yahoo aliases.
+
+    Yahoo renames statement line items between listings and over time, so every
+    read goes through an alias tuple rather than a single literal. NaN is a
+    normal value in these frames and must read as missing, not as 0.
+    """
+    if row is None: return None
+    for name in _FRAME_ALIASES.get(key, (key,)):
+        try: v = row.get(name)
+        except Exception: continue
+        if v is None: continue
+        try: f = float(v)
+        except Exception: continue
+        if f != f: continue                      # NaN
+        return f
+    return None
+
+
 # ── Core fetch ────────────────────────────────────────────────────────────────
 def fetch_stock_info(symbol):
     """
@@ -348,6 +407,14 @@ def fetch_stock_info(symbol):
         ticker = yf.Ticker(get_yf_symbol(symbol))
         i = ticker.info
 
+        # V36.6 — pull the three annual frames ONCE, up front, so the derived
+        # fallbacks below and the efficiency/coverage blocks further down all
+        # read the same rows. yfinance caches these per-Ticker, so this is the
+        # same number of requests the function has always made.
+        bs_row = latest_col(getattr(ticker, "balance_sheet", None))
+        cf_row = latest_col(getattr(ticker, "cashflow", None))
+        is_row = latest_col(getattr(ticker, "income_stmt", None))
+
         # ── Price & Market ──────────────────────────────────────────────
         price      = i.get("currentPrice") or i.get("regularMarketPrice")
         mktcap     = i.get("marketCap")
@@ -360,11 +427,17 @@ def fetch_stock_info(symbol):
         gp         = i.get("grossProfits")
         ebitda     = i.get("ebitda")
         net_inc    = i.get("netIncomeToCommon")
-        op_cf      = i.get("operatingCashflow")
-        fcf        = i.get("freeCashflow")
+        op_cf      = fv(cf_row, "op_cf") or i.get("operatingCashflow")
+        fcf        = fv(cf_row, "fcf")
+        if fcf is None:
+            _ocf, _capex = fv(cf_row, "op_cf"), fv(cf_row, "capex")
+            if _ocf is not None and _capex is not None:
+                fcf = _ocf - abs(_capex)         # Yahoo reports capex negative
+        if fcf is None:
+            fcf = i.get("freeCashflow")
         total_cash = i.get("totalCash")
         total_debt = i.get("totalDebt")
-        total_assets = i.get("totalAssets")
+        total_assets = fv(bs_row, "total_assets") or i.get("totalAssets")
 
         net_debt   = sr((total_debt or 0) - (total_cash or 0), 0)
 
@@ -403,8 +476,34 @@ def fetch_stock_info(symbol):
         cash_ps = sr(i.get("totalCashPerShare"), 2)
 
         # ── Returns ──────────────────────────────────────────────────────
-        roe = sp(i.get("returnOnEquity"))
-        roa = sp(i.get("returnOnAssets"))
+        # V36.6 — DERIVED FIRST, reported second, on purpose.
+        # Yahoo still answers returnOnEquity/returnOnAssets for ~6% of the
+        # universe (large banks, mostly) and nothing for the rest. Measured over
+        # the names that report both, its basis differs from the annual-frame
+        # basis by a median 3.9% on ROE and 11.5% on ROA, up to 30% and 36%
+        # (HDFCBANK: 13.84 reported vs 9.67 derived) — Yahoo blends a TTM
+        # numerator with a different equity base.
+        #
+        # scores-engine.js percentile-RANKS these fields against the rest of the
+        # universe, so a value's basis has to be the same for every row or a
+        # stock's rank partly reflects which source answered rather than how good
+        # the business is. Deriving all 2,126 the same way is what makes the pool
+        # comparable; the reported value is kept only as a hole-filler for a
+        # listing whose frames yield nothing, which measured at ~0 symbols.
+        roe = None
+        _eq = fv(bs_row, "equity")
+        if not _eq:
+            _eq = (bv or 0) * (shares_out or 0) or None
+        if net_inc and _eq and _eq > 0:
+            roe = sr(net_inc / _eq * 100, 2)
+        if roe is None:
+            roe = sp(i.get("returnOnEquity"))
+
+        roa = None
+        if net_inc and total_assets and total_assets > 0:
+            roa = sr(net_inc / total_assets * 100, 2)
+        if roa is None:
+            roa = sp(i.get("returnOnAssets"))
 
         # ROCE
         roce = None
@@ -424,17 +523,25 @@ def fetch_stock_info(symbol):
         # Interest coverage
         int_cov = None
         try:
-            inc_stmt = ticker.income_stmt
-            if not inc_stmt.empty:
-                latest = inc_stmt.iloc[:, 0]
-                ebit = latest.get("EBIT") or latest.get("Operating Income")
-                ie   = latest.get("Interest Expense")
-                if ebit and ie and ie != 0: int_cov = sr(abs(ebit / ie), 2)
+            ebit = fv(is_row, "ebit")
+            ie   = fv(is_row, "interest_expense")
+            if ebit and ie and ie != 0: int_cov = sr(abs(ebit / ie), 2)
         except: pass
 
         # ── Liquidity ────────────────────────────────────────────────────
-        curr_r  = sr(i.get("currentRatio"), 2)
-        quick_r = sr(i.get("quickRatio"), 2)
+        # Derived first for the same comparability reason as ROE/ROA above.
+        curr_r = quick_r = None
+        _ca = fv(bs_row, "current_assets")
+        _cl = fv(bs_row, "current_liabilities")
+        _inv = fv(bs_row, "inventory") or 0.0
+        if _ca is not None and _cl and _cl > 0:
+            curr_r  = sr(_ca / _cl, 2)
+            quick_r = sr((_ca - _inv) / _cl, 2)
+        # Banks and NBFCs publish no current/non-current split, so both stay
+        # None for them. That is the right answer, not a gap — it is why these
+        # two fields peaked at ~93% and never at 99%.
+        if curr_r  is None: curr_r  = sr(i.get("currentRatio"), 2)
+        if quick_r is None: quick_r = sr(i.get("quickRatio"), 2)
 
         # ── Efficiency ───────────────────────────────────────────────────
         asset_turn  = sr(revenue / total_assets, 2) if revenue and total_assets and total_assets > 0 else None
@@ -446,14 +553,13 @@ def fetch_stock_info(symbol):
         capex_rev   = None
 
         try:
-            bs = ticker.balance_sheet
-            if not bs.empty:
-                lb  = bs.iloc[:, 0]
-                inv = lb.get("Inventory")
-                ar  = lb.get("Accounts Receivable") or lb.get("Net Receivables")
-                ap  = lb.get("Accounts Payable")
-                ca  = lb.get("Current Assets")
-                cl  = lb.get("Current Liabilities")
+            lb = bs_row
+            if lb is not None:
+                inv = fv(lb, "inventory")
+                ar  = fv(lb, "receivables")
+                ap  = fv(lb, "payables")
+                ca  = fv(lb, "current_assets")
+                cl  = fv(lb, "current_liabilities")
                 wc_cr = sr((ca - cl) / 1e7, 2) if ca is not None and cl is not None else None
                 cogs  = (1 - (i.get("grossMargins") or 0)) * (revenue or 0)
                 if inv and cogs and cogs > 0: inv_turn = sr(cogs / inv, 2)
@@ -464,12 +570,9 @@ def fetch_stock_info(symbol):
         except: pass
 
         try:
-            cf = ticker.cashflow
-            if not cf.empty:
-                lc = cf.iloc[:, 0]
-                capex = lc.get("Capital Expenditure")
-                if capex and revenue and revenue > 0:
-                    capex_rev = sr(abs(capex) / revenue * 100, 2)
+            capex = fv(cf_row, "capex")
+            if capex and revenue and revenue > 0:
+                capex_rev = sr(abs(capex) / revenue * 100, 2)
         except: pass
 
         # ── Growth ───────────────────────────────────────────────────────

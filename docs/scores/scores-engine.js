@@ -229,22 +229,32 @@
        A pool IS the set of non-null values across the universe, so coverage is
        already sitting here and costs nothing to publish. It exists because a
        bare "—" on a factor row tells a reader nothing about WHY the number is
-       missing, and the answer differs enormously by factor:
+       missing. Reliance Industries showing "Return on Equity —" reads as a
+       broken page; "Rarely reported — only 7% of stocks have it" reads as what
+       it is. The Scanner has told readers this since V31.5 (`.filter-cov`); the
+       deepest data surface on the site never has. Computed off `fn()` where a
+       factor has one, so the two DERIVED momentum factors — which are 0% in the
+       raw snapshot because they are calculated at score time — are not
+       mislabelled as missing.
 
-           asset_turnover   0.0%   Yahoo never returns it for NSE listings
-           fcf_yield        4.1%
-           current_ratio    5.9%
-           roa              6.0%
-           roe              6.9%   <- five blank rows on Reliance alone
-           roce            97.7%   <- the same idea, reported by nearly everyone
+       V36.6 — THE NUMBERS THAT USED TO BE LISTED HERE WERE A BUG, NOT A SPEC.
+       This block used to carry a table of measured coverage with the gloss
+       "Yahoo never returns it for NSE listings" beside asset_turnover 0.0%,
+       current_ratio 5.9%, roa 6.0%, roe 6.9%. Every one of those figures was
+       correctly measured when written — and every one was the symptom of an
+       upstream regression that had started weeks earlier. The same fields sat
+       at 91-94% on 2026-07-02 and fell to 3-6% by 2026-09-08 as Yahoo's
+       quoteSummary `financialData` module stopped returning returnOnEquity,
+       returnOnAssets, currentRatio, quickRatio, operatingCashflow, freeCashflow
+       and totalAssets. screener/server.py now derives all seven from the annual
+       statement frames, and they are back at 93-97%.
 
-       Reliance Industries showing "Return on Equity —" reads as a broken page.
-       "Rarely reported — only 7% of stocks have it" reads as what it is. The
-       Scanner has told readers this since V31.5 (`.filter-cov`); the deepest
-       data surface on the site never has. Computed off `fn()` where a factor
-       has one, so the two DERIVED momentum factors — which are 0% in the raw
-       snapshot because they are calculated at score time — are not mislabelled
-       as missing. */
+       So: do not write measured coverage into a comment as though it were a
+       property of the data source. COVERAGE below is computed live from the
+       loaded snapshot on every page load and is the only figure that stays
+       true; runner/verify_published_numbers.py --coverage now fails the publish
+       if any field drops more than 5 points against the previous snapshot, so
+       a repeat of this cannot run for ten weeks unseen again. */
     COVERAGE = {};
     Object.keys(pools).forEach(function (k) {
       COVERAGE[k] = stocks.length ? pools[k].length / stocks.length : null;

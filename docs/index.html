@@ -7960,18 +7960,72 @@ function setDuration(durKey) {
     var parsed = parseFloat(raw);
     if (!isNaN(parsed) && isFinite(parsed)) el.setAttribute('data-count', parsed);
   });
-  // Reset to 0 so we never see a mid-flash
+  /* V36.6 — CAPTURE THE PUBLISHED STRING BEFORE ZEROING IT.
+     Everything below this line exists because the two lines above used to hand
+     the entire restoration of these figures to an IntersectionObserver with no
+     timeout and no fallback. The elements being zeroed are the three strategy
+     CAGRs and their three benchmarks — 39.6%, 29.8%, 15.9%, 13.41%, 12.14%,
+     9.50% — plus "3 QUANT STRATEGIES" and "5Y BACKTESTED TRACK RECORD". When
+     the observer does not fire, they sit at 0.0% / 0.00% indefinitely. On a
+     financial product page the failure mode is not hidden content: it is a
+     confidently displayed wrong number, and the wrong number is zero return.
+     (It has already cost one downstream bug — the hero-tab `valNum()` reader
+     around line 6050 exists purely to route around a pre-zeroed card.)
+
+     The original string is kept verbatim rather than re-rendered through fmt(),
+     so an <!--MFSTAT:…--> injected value can never come back with different
+     formatting than the publish pipeline wrote. */
   nums.forEach(function(el) {
+    el._origText = el.textContent;
     var prefix = el.getAttribute('data-prefix') || '';
     var suffix = el.getAttribute('data-suffix') || '';
     var decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
     el.textContent = fmt(0, prefix, suffix, decimals);
   });
+  function restore(el) {
+    if (el._counted) return; el._counted = true;
+    if (typeof el._origText === 'string') el.textContent = el._origText;
+  }
+  function inView(el) {
+    var r = el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < (window.innerHeight || 0);
+  }
   if ('IntersectionObserver' in window) {
+    var fired = 0;
     var io = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) { if (e.isIntersecting) animate(e.target); });
+      entries.forEach(function(e) { if (e.isIntersecting) { fired++; animate(e.target); } });
     }, { threshold: 0.3 });
     nums.forEach(function(n) { io.observe(n); });
+
+    /* Net 1 (2.5s) — the observer exists but has never reported an
+       intersection, so its callbacks are not arriving. Animate what geometry
+       says is on screen. `fired` is the evidence: an observer that reported one
+       real intersection is alive and must be left to do the rest, or this net
+       would steal the roll-up from every tile the reader has not reached yet. */
+    setTimeout(function() {
+      if (fired) return;
+      nums.forEach(function(el) { if (!el._counted && inView(el)) animate(el); });
+    }, 2500);
+
+    /* Net 2 (7s) — hard release, mirroring mfc-reveal.js. Restores the
+       published text with no animation, because if the observer is not working
+       then neither is the animation.
+
+       The condition is what keeps this from becoming its own bug. THE INVARIANT
+       IS "NOTHING THE READER CAN SEE MAY BE SHOWING ZERO" — not "everything
+       must be resolved by 7s". So:
+         · observer dead (fired === 0)  -> restore ALL of them; nothing is going
+           to happen later, and six 0.0% figures below the fold are still six
+           wrong numbers waiting to be scrolled to.
+         · observer alive               -> restore only what is ON SCREEN and
+           still zero. That covers an observer that answered for some elements
+           and then stopped, while leaving every below-fold tile its roll-up. */
+    setTimeout(function() {
+      nums.forEach(function(el) {
+        if (el._counted) return;
+        if (!fired || inView(el)) restore(el);
+      });
+    }, 7000);
   } else {
     nums.forEach(animate);
   }
