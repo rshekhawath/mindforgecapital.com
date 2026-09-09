@@ -34,7 +34,55 @@
   // V15.2: load the LITE bundle (full minus description/website, ~33% smaller) — the
   // scores list/scorecard never show those fields. The per-stock company page sets
   // window.MFC_USE_FULL=1 to load the full file instead (it needs the description).
-  var DATA_URL = (typeof window !== "undefined" && window.MFC_USE_FULL) ? "../screener/stocks.json" : "../screener/stocks-lite.json";
+  /* V36.6 — THE DETAIL PAGE NO LONGER DOWNLOADS THE WHOLE UNIVERSE TWICE OVER.
+     company.html set MFC_USE_FULL=1 to get stocks.json — 6.5 MB raw, 1.64 MB
+     over the wire — for exactly TWO fields: `description` and `website`, the
+     only two the lite bundle drops. Those 2,126 pages are the largest surface
+     Google lands strangers on and were the slowest on the site.
+
+     It now loads stocks-universe.json instead: every row, but only the 39
+     fields the scorer and the seven universe-backed company renderers actually
+     read, out of 96. Measured: 0.348 MB over the wire and 1.78 MB to parse,
+     against 1.644 MB and 6.51 MB — 79% and 73% less. The row SHAPE is
+     unchanged, so no renderer changed. The two prose fields arrive from
+     screener/prose/<SYM>.json, ~2 KB, merged over the row below.
+
+     Note this is the opposite trade from the columnar experiment the decoder
+     above documents: that one re-encoded data the page reads (and cost CPU);
+     this one removes data it never reads, so bytes AND parse time both fall. */
+  var USE_DETAIL = (typeof window !== "undefined" && window.MFC_USE_FULL);
+  var DATA_URL = USE_DETAIL ? "../screener/stocks-universe.json"
+                            : "../screener/stocks-lite.json";
+
+  /* The symbol this page is about, if any — read from the URL exactly the way
+     mfc-company.js does, so the two can never disagree about which stock the
+     page is showing. */
+  function detailSymbol() {
+    try {
+      var q = new URLSearchParams(location.search).get("symbol");
+      return q ? String(q).trim().toUpperCase() : "";
+    } catch (e) { return ""; }
+  }
+
+  /* Merge the per-symbol prose over the reduced row, in place, so anything
+     already holding a reference to that object (BY_SYM, STOCKS) sees it.
+     Fail-soft on purpose: a 404 or a parse error leaves the page rendering
+     every panel except the business description, which is what it did for
+     stocks with no description in the snapshot anyway. */
+  function hydrateProse(sym) {
+    if (!sym) return Promise.resolve(false);
+    return fetch("../screener/prose/" + encodeURIComponent(sym) + ".json")
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (p) {
+        if (!p || p.symbol !== sym) return false;
+        var row = BY_SYM[sym];
+        if (!row) return false;
+        if (p.description) row.description = p.description;
+        if (p.website) row.website = p.website;
+        return true;
+      })
+      .catch(function () { return false; });
+  }
 
   // ── Factor model ──────────────────────────────────────────────────────────
   // dir:   "high" = bigger is better · "low" = smaller is better
@@ -382,8 +430,22 @@
           data_through: (BUNDLE && BUNDLE.data_through) || "",
         };
         MFCScores.meta = META;
-        try { document.dispatchEvent(new CustomEvent("mfc:scores-ready", { detail: META })); } catch (e) {}
         return META;
+      })
+      /* V36.6 — on the DETAIL page only, fold the per-symbol prose in before
+         this promise resolves. company.html does `MFCScores.load().then(() => {
+         D = MFCScores.bySym(SYMBOL); ... renderAbout(); })`, and D is the SAME
+         object hydrateProse mutates, so chaining here is what guarantees the
+         business description is present the first time renderAbout runs rather
+         than a paint later. One ~2 KB request, fail-soft, and skipped entirely
+         on the list pages. */
+      .then(function (meta) {
+        if (!USE_DETAIL) return meta;
+        return hydrateProse(detailSymbol()).then(function () { return meta; });
+      })
+      .then(function (meta) {
+        try { document.dispatchEvent(new CustomEvent("mfc:scores-ready", { detail: meta })); } catch (e) {}
+        return meta;
       });
     return loadPromise;
   }

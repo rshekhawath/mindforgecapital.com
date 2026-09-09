@@ -568,6 +568,129 @@ def write_directory(stocks, out_dir, day):
     return written
 
 
+# ── V36.6 — THE REDUCED UNIVERSE FOR THE PER-STOCK PAGES ──────────────────────
+# docs/scores/company.html loaded the FULL 6.5 MB stocks.json — 1.64 MB over the
+# wire — and it did so for exactly TWO fields: `description` and `website`, the
+# only two the lite bundle drops. Everything else it needs is the 39 fields its
+# seven universe-backed renderers (fillCap, renderScale, renderPeers,
+# renderSectorContext, renderImplied, renderMarketPct, renderReRate) and the
+# scorer actually read, out of 96 in the row.
+#
+# Those 2,126 pages are the largest surface Google lands strangers on and the
+# slowest on the site. Measured on the 2026-09-09 snapshot:
+#
+#                                     raw        gzipped
+#     stocks.json (before)          6.510 MB     1.644 MB
+#     stocks-universe.json          1.780 MB     0.348 MB
+#     prose/<SYM>.json                4.2 KB       2.0 KB
+#     ------------------------------------------------------
+#     after                         1.784 MB     0.350 MB   -79% wire, -73% parse
+#
+# This is strictly better than the columnar reshape rejected above, and for the
+# opposite reason: it removes data the page never reads instead of re-encoding
+# data it does, so BOTH bytes and parse time fall and there is no rehydration
+# cost. The row shape is unchanged, so none of the seven renderers change.
+#
+# THE FACTOR KEYS ARE READ OUT OF scores-engine.js RATHER THAN LISTED HERE.
+# Adding a factor to that file must widen this bundle or the new factor silently
+# scores null for every stock on the company page while working fine on the list
+# page — a two-surfaces-disagree bug of exactly the kind this codebase keeps
+# finding. Same principle as _asset_ver(): read it from the source of truth.
+_ENGINE_JS = os.path.join(HERE, "..", "docs", "scores", "scores-engine.js")
+
+# Fields the seven company-page renderers read from the universe array, which
+# are NOT factor keys. Derived by walking each function body; re-derive if a
+# renderer starts reading something new.
+_COMPANY_FIELDS = (
+    "symbol", "name", "sector", "industry", "market_cap_cr",
+    "enterprise_value_cr", "revenue_cr", "net_profit_cr", "current_price",
+    "shares_outstanding", "float_pct", "employees", "eps", "pe_ratio",
+    "pb_ratio", "sma_50", "sma_200", "52w_from_high_pct",
+)
+
+# The two the LITE bundle drops and the detail page exists to show.
+_PROSE_FIELDS = ("description", "website")
+
+
+def _engine_factor_keys() -> set:
+    """Every `key: "..."` in scores-engine.js — the factors it percentile-ranks."""
+    try:
+        with open(_ENGINE_JS, encoding="utf-8") as fh:
+            js = fh.read()
+        import re as _re2   # module-level `re` is not imported here; _asset_ver
+                            # also imports it locally, so follow that pattern
+        keys = set(_re2.findall(r'key:\s*"([A-Za-z0-9_]+)"', js))
+        if keys:
+            return keys
+    except Exception as exc:
+        print(f"  !! could not read factor keys from scores-engine.js ({exc})")
+    return set()
+
+
+# Factor keys scores-engine.js DERIVES at score time rather than reading from
+# the snapshot (price vs its 50/200-day averages). They have no column behind
+# them by design, so they must not be reported as missing — a warning that fires
+# on every run is a warning nobody reads.
+_ENGINE_DERIVED = ("_p2s50", "_p2s200")
+
+
+def _universe_fields(rows: list) -> list:
+    """The field set the reduced universe must carry, in row order."""
+    want = (set(_COMPANY_FIELDS) | _engine_factor_keys()) - set(_ENGINE_DERIVED)
+    present = set()
+    for r in rows[:200]:
+        present |= set(r.keys())
+    missing = sorted(w for w in want if w not in present)
+    if missing:
+        # Loud, not silent: a factor key with no column behind it scores null
+        # for the whole universe and the page shows a dash with no explanation.
+        print(f"  !! reduced universe: {len(missing)} requested field(s) are not "
+              f"in the snapshot and will be absent: {', '.join(missing)}")
+    order = [k for k in rows[0].keys() if k in want] if rows else []
+    for k in sorted(want):
+        if k not in order and k in present:
+            order.append(k)
+    return order
+
+
+def _write_reduced_universe(bundle: dict, out_dir: str) -> None:
+    rows = bundle.get("stocks") or []
+    fields = _universe_fields(rows)
+    uni = {k: v for k, v in bundle.items() if k != "stocks"}
+    uni["universe_fields"] = fields
+    uni["stocks"] = [{k: s[k] for k in fields if k in s} for s in rows]
+    path = os.path.join(out_dir, "stocks-universe.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(uni, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+    # One tiny file per symbol carrying only what the reduced universe omits.
+    prose_dir = os.path.join(out_dir, "prose")
+    os.makedirs(prose_dir, exist_ok=True)
+    kept = set()
+    for s in rows:
+        sym = s.get("symbol")
+        if not sym:
+            continue
+        name = _safe_name(sym)
+        kept.add(name + ".json")
+        rec = {"symbol": sym}
+        for k in _PROSE_FIELDS:
+            if s.get(k):
+                rec[k] = s[k]
+        with open(os.path.join(prose_dir, name + ".json"), "w", encoding="utf-8") as f:
+            json.dump(rec, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+    # A delisted symbol must not leave a stale file behind for a URL that now 404s
+    # everywhere else on the site.
+    for stale in os.listdir(prose_dir):
+        if stale.endswith(".json") and stale not in kept:
+            try:
+                os.remove(os.path.join(prose_dir, stale))
+            except OSError:
+                pass
+    print(f"  Universe: {len(fields)} of {len(rows[0]) if rows else 0} fields "
+          f"({os.path.getsize(path)/1e6:.2f} MB) + {len(kept)} prose files")
+
+
 def main() -> int:
     if not os.path.exists(DB_PATH):
         print(f"ERROR: database not found at {DB_PATH}")
@@ -626,6 +749,10 @@ def main() -> int:
     # Compact separators keep the file small; gzip on the CDN shrinks it ~4x more.
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(bundle, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+    # V36.6 — the reduced universe + per-symbol prose that replace the full
+    # bundle on the 2,126 per-stock pages. See _write_reduced_universe().
+    _write_reduced_universe(bundle, OUT_DIR)
 
     # ── V15.2 (1): LITE bundle — full minus the two heavy free-text fields the list
     #    views never render (description alone is ~31% of the file). Both listers
