@@ -657,7 +657,18 @@
 // offline navigation fallback, so an installed member left on v90 would keep
 // the old shell indefinitely. dashboard.html is network-first and needs
 // nothing. addAll() runs on INSTALL, not activation.
-const CACHE = 'mfc-v91';
+// V36.5 -> mfc-v92. mfc-finish.css is CACHE-FIRST and carries this release's
+// --field-edge token and the site-wide resting-boundary rule for every text
+// input and select; its ?v moves 3630 -> 3640 on all 50 pages, which busts the
+// ASSET. It does not bust the two PRECACHED documents: index.html and
+// login.html have no query to bust, and BOTH changed in their own right this
+// release — index.html's "Why MindForge" row (the trimmed card and the two new
+// continuation links) and login.html's raised :hover edge — as well as both
+// carrying the new token. index.html is also the offline navigation fallback, so
+// an installed member left on v91 would keep a shell asking for 3640 with a v91
+// body and would never see any of it. dashboard.html is network-first and needs
+// nothing. addAll() runs on INSTALL, not activation.
+const CACHE = 'mfc-v92';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
