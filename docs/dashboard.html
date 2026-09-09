@@ -599,7 +599,14 @@ html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
 .size-input-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .size-input-shell{
   display:flex;align-items:center;background:var(--ink2);
-  border:1px solid var(--border2);border-radius:12px;overflow:hidden;
+  /* V36.5 — this is the ONE field on the site whose boundary is drawn by a
+     wrapper rather than by the control, so the site-wide `html input:not(:focus)`
+     rule in mfc-finish.css cannot reach it: the <input> inside is borderless and
+     transparent. Measured at 1.33:1 light / 2.20:1 dark against the card while
+     every other field on the page had just been taken past 3:1, which is the
+     worst outcome of a partial fix — one field left behind and no longer
+     obviously wrong beside its neighbours. Same token, same value. */
+  border:1px solid var(--field-edge);border-radius:12px;overflow:hidden;
   transition:border-color .2s ease,box-shadow .2s ease;
   box-shadow:var(--shadow-sm);
 }
@@ -2590,7 +2597,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3630">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3640">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -3470,6 +3477,46 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        19px line box — which is under the 44px this codebase holds itself to and
        is exactly the kind of near-miss a box-only check waves through. */
     @media (pointer:coarse){ .chg-sell-lnk{ padding:13px 13px; } }
+/* ── V36.5 · THE BUY GROUP BECAME SOMETHING A MEMBER CAN ACT ON ───────────────
+   V35.3 gave the SELLS a row because "a buy has the picks table; a sell had
+   nothing". V35.4 gave the ROTATING HOLDS one for the same reason. That left the
+   BUY group — the one group that always has an order to place — as three inert
+   <span>s, and the card's own hint sent the member 6,000px down the page to do
+   half the work the card had just described.
+   Measured at 1440 with the demo book: the Buy column stopped at 50px of content
+   inside a 190px row set by its Sell sibling, so a third of the card was empty
+   AND inert at the same time.
+   The tick is NOT a second source of truth: the row carries `data-ticker` and
+   calls toggleBought(), which is the picks table's own handler — one map, one
+   key (the bare ticker, exactly what orderKey() writes for a BUY), and its
+   existing `[data-ticker]` sync loop ticks the table row and this row together
+   in both directions. resetBought() already clears every `.bought-cb` and every
+   `.row-bought`, so it reaches this row without being told about it.
+   The size is read from the same allocBudget() -> floor(budget/price) the picks
+   table, the basket, the drift strip and the CSV all use, and it is REWRITTEN on
+   every capital change (refreshChgBuySizes, called from refreshSizeSummary) so
+   the two can never disagree. Below one share, or before a capital is entered,
+   the quantity is simply omitted — "buy 0 shares" and "buy some unknown number"
+   are different statements and only one of them is true (the V35.3 rule). */
+    .chg-buy{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
+      gap:6px 11px; padding:7px 10px; border-radius:9px;
+      background:rgba(5,150,105,.055); border:0.5px solid rgba(5,150,105,.20); }
+    html[data-theme="dark"] .chg-buy{ background:rgba(52,211,153,.07); border-color:rgba(52,211,153,.22); }
+    .chg-buy.row-bought{ background:rgba(15,23,42,.04); border-color:var(--border); opacity:.62; }
+    html[data-theme="dark"] .chg-buy.row-bought{ background:rgba(255,255,255,.04); }
+    .chg-buy.row-bought .chg-sell-t{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text3); }
+    /* No 44px pad is declared here on purpose. .chg-sell-cb needs one because it is
+       a plain styled checkbox; .bought-cb — the picks table's own control, reused
+       here so the two ticks are one control — already carries an unconditional
+       44x44 ::before from V23.7. Re-declaring it would take that pseudo-element
+       over at higher specificity and replace an identical pad with an identical
+       pad, which is the V35.1 shape: two rules owning one ::after, and the second
+       one silently winning. Measured in place below instead of assumed. */
+    @media (max-width:400px){
+      .chg-buy{ grid-template-columns:auto minmax(0,1fr); }
+      .chg-buy .chg-sell-lnk{ grid-column:2; justify-self:start; }
+    }
+    @media print{ .chg-buy .chg-sell-lnk{ display:none; } }
 /* V35.4 — the rebalance row. Same skeleton as the sell row so the three groups
    read as one system, with the tick swapped for a direction glyph: there is
    nothing to "place" here, so nothing to tick off. The pp figure carries the
@@ -4106,6 +4153,16 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
            bar plus its tick still read at both (checked by eye at 320). */
         .trk-row{ grid-template-columns:56px minmax(0,1fr) 84px; gap:8px; }
         .trk-when{ font-size:11px; }
+        /* V36.5 — the month column was sized for "Aug 26" and the newest row also
+           carries the `live` marker: 63.6px of nowrap text in a 56px track, so it
+           overran by 7.6px at 430, 390, 375 and 320, in both themes, and leaned on
+           the 8px grid gap to not touch the axis. It is the only row that carries
+           it (every earlier cycle is sealed), so the marker takes its own line
+           rather than the column taking width back off the axis the V36.3 note
+           already measured down to 160px at 390. The row is align-items:center, so
+           a two-line month cell leaves the bar and the value where they were. */
+        .trk-when{ white-space:normal; }
+        .trk-when i{ display:block; margin-left:0; margin-top:1px; line-height:1.25; }
         .trk-gap{ font-size:9px; }
       }
       @media print{ .trk-card{ break-inside:avoid; } }
@@ -4375,7 +4432,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         </svg>
       </a>
     </div>
-    <p><span class="sebi-line">SEBI-Registered Research Analyst&nbsp;· INH-XXXXXXXXXXX&nbsp;· Sagar Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;">Investments in the securities market are subject to market risks. Read all the related documents carefully before investing.</span><br>© 2026 MindForge Capital&nbsp;· <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="recover.html">Recover access</a></p>
+    <p><span class="sebi-line">SEBI-Registered Research Analyst&nbsp;· INH-XXXXXXXXXXX&nbsp;· Sagar Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;max-width:32em;">Investments in the securities market are subject to market risks. Read all the related documents carefully before investing.</span><br>© 2026 MindForge Capital&nbsp;· <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="recover.html">Recover access</a></p>
   </footer>
 </div>
 
@@ -6445,6 +6502,7 @@ function refreshSizeSummary() {
   // actually bought. Writes qty only; see _recordCurQty.
   _recordCurQty();
   renderCycleCost();  // V35.3 — the cost of the turnover is a function of capital
+  refreshChgBuySizes();  // V36.5 — and so are the buy rows in the change card
 }
 
 // V28.4 — "what your capital actually buys".
@@ -7452,6 +7510,37 @@ function abarGoToPicks(){
   document.documentElement.style.scrollBehavior = prev;
 }
 
+/* V36.5 — the buy row's size, in the ONE arithmetic the whole page shares:
+   allocBudget() -> floor(budget / recommended price). Returns '' rather than a
+   zero whenever the number would be a guess — no stock object, no price, no
+   capital entered, or a capital below one share — because "buy 0 shares" is a
+   statement the page must not make (the V35.3 rule the sell row already
+   follows). Never throws: it renders inside the change card. */
+function _buyQtyText(s){
+  try{
+    if (!s) return '';
+    var price = Number(s.recommended_price) || 0;
+    var cap   = Number(currentCapital) || 0;
+    if (price <= 0 || cap <= 0) return '';
+    var qty = Math.floor(allocBudget(s, stocksData, cap) / price);
+    if (!(qty > 0)) return '';
+    return qty + ' share' + (qty === 1 ? '' : 's') + ' \u00b7 ' + fmtMoney(Math.round(qty * price));
+  }catch(e){ return ''; }
+}
+/* The capital box moves every one of those quantities, so the buy rows are
+   rewritten by the same call that rewrites the picks table's Allocation column
+   (refreshSizeSummary). Without this the card would print the size that was
+   right at first paint and quietly disagree with the table under it — the
+   hand-label-beside-a-machine-number shape, one surface later. */
+function refreshChgBuySizes(){
+  try{
+    var byT = {};
+    (stocksData || []).forEach(function(s){ byT[String(s.ticker || '')] = s; });
+    document.querySelectorAll('[data-buyqty]').forEach(function(el){
+      el.textContent = _buyQtyText(byT[el.getAttribute('data-buyqty')]);
+    });
+  }catch(e){}
+}
 /* V35.3 — the tick for an order that has no row in the picks table. A departing
    holding is not in stocksData, so toggleBought's `closest('[data-ticker]')` walk
    has nothing to find; this reads the order key off the control itself. Both
@@ -9645,7 +9734,7 @@ function renderBookChange(diff, stocks){
                  escapeHtml(bk.name) + ' &rarr;</a>' : '') +
         '</div>';
       }).join('') + '</div>' +
-      '<div class="chg-hint">Tick each one once the sell order is placed. Your buys are in the picks table below.</div>';
+      '<div class="chg-hint">Tick each one once the sell order is placed.</div>';
     };
     /* V35.4 — ON A WEIGHT-ROTATING BOOK, "HOLD" IS NOT "DO NOTHING".
        MultiAsset keeps the same eight ETFs every month and re-scores their
@@ -9660,6 +9749,32 @@ function renderBookChange(diff, stocks){
        Rendered only when the weights actually moved: on an equal-weight book
        every delta is zero and the group stays a list of chips, because there
        "carried over" really does mean nothing to do. */
+    /* V36.5 — the buys, as orders. Same skeleton as the sell row, the picks
+       table's own tick, and the size read from the shared sizing arithmetic.
+       `byT` rather than a second scan: diff.added holds tickers, the price and
+       the model weight live on the stock object. */
+    var byT = {};
+    (stocks || []).forEach(function(s2){ byT[String(s2.ticker || '')] = s2; });
+    var buys = function(list){
+      if (!list.length) return '<div class="chg-none">None this cycle</div>';
+      return '<div class="chg-sells">' + list.map(function(t){
+        var s2   = byT[t];
+        var done = !!placed[t];
+        var url  = '';
+        try { url = bk.link({ ticker: t }) || ''; } catch(e){}
+        return '<div class="chg-buy' + (done ? ' row-bought' : '') + '" data-ticker="' + escapeHtml(t) + '">' +
+          '<input type="checkbox" class="bought-cb chg-sell-cb"' + (done ? ' checked' : '') +
+            ' onchange="toggleBought(this)"' +
+            ' aria-label="Mark ' + escapeHtml(t) + ' as bought">' +
+          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+            '<span class="chg-sell-q" data-buyqty="' + escapeHtml(t) + '">' + _buyQtyText(s2) + '</span>' +
+          '</span>' +
+          (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
+                 escapeHtml(bk.name) + ' &rarr;</a>' : '') +
+        '</div>';
+      }).join('') + '</div>' +
+      '<div class="chg-hint">Tick each one once the buy order is placed &mdash; the same tick as the picks table below.</div>';
+    };
     var rot = rotList.slice(), moved = movedList;
     var holdBody;
     if (moved.length){
@@ -9692,7 +9807,7 @@ function renderBookChange(diff, stocks){
     var mtHold = (moved.length === 0 && nHold === 0) ? ' is-empty' : '';
     box.classList.toggle('has-empty', !!(mtIn || mtOut || mtHold));
     box.innerHTML =
-      '<div class="chg-group is-in' + mtIn + '"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + chips(diff.added)   + '</div>' +
+      '<div class="chg-group is-in' + mtIn + '"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + buys(diff.added)    + '</div>' +
       '<div class="chg-group is-out' + mtOut + '"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + sells(diff.removed) + '</div>' +
       '<div class="chg-group is-hold' + (moved.length ? ' is-rot' : '') + mtHold + '"><div class="chg-gk"><i></i>' +
         holdLabel + '</div>' + holdBody + '</div>';

@@ -261,7 +261,7 @@ html[data-theme="dark"] .sidebar{background:linear-gradient(180deg,var(--ink2) 0
    re-find where they were. Same three declarations, same duration; the select
    also gains the hover it never had despite already carrying cursor:pointer,
    which was the other half of the mismatch. */
-.filter-select:hover{border-color:var(--border2);background:var(--ink2)}
+.filter-select:hover{border-color:var(--field-edge);background:var(--ink2)}
 .filter-select:focus{border-color:var(--accent3);background:var(--ink2);box-shadow:0 0 0 3px rgba(37,99,235,0.07)}
 .filter-select option{background:var(--ink2)}
 
@@ -678,7 +678,19 @@ tbody tr.rowlink{cursor:pointer}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── PAGINATION ── */
-.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:20px;border-top:0.5px solid var(--border)}
+/* V36.5 — THE NEXT-PAGE BUTTON WAS CUT IN HALF ON A PHONE. The row is a nowrap
+   flex line and V33.x gave every .page-btn a 44px min-width for touch, so seven
+   controls need 44*7 + 6*6 + 40 = 384px while the card offers 288 at 320px and
+   343 at 375. Flex could not shrink them (min-width) and justify-content:center
+   split the overflow across both ends, so BOTH arrows — prev and next, the only
+   two controls that move you through 17 pages — were clipped by the card edge.
+   Measured escape past the container's content box: 34.9px at 320, 7.4px at 375.
+   Wrapping is unconditional rather than behind a query: at any width where the
+   row fits it changes nothing, and it cannot be out-measured by a future page
+   count the way a breakpoint can. The narrow-width padding gives a 320px phone
+   one more button per line. */
+.pagination{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px 6px;padding:20px;border-top:0.5px solid var(--border)}
+@media (max-width:480px){ .pagination{ padding:16px 8px; } }
 .page-btn{
   background:var(--ink2);border:0.5px solid var(--border2);
   border-radius:8px;color:var(--text2);
@@ -841,7 +853,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3630">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3640">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}

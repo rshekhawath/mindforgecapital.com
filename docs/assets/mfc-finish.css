@@ -1670,7 +1670,10 @@ html a[href^="mailto:"] { overflow-wrap: break-word; }
   html .mpf-sp-b i, html .mpf-sp-strip::before,
   /* strategies.html + the three strategy pages — live vs model, sector and
      allocation weights, and the head-to-head comparison bars */
-  html .lvm-fill, html .sp-wt-fill, html .cmp-bar,
+  /* V36.5 — .sp-wt-fill swept. V32.8 removed the model-picks weight bar and left
+     its name here, noting it matched nothing and should go "the next time that
+     file changes for a real reason". This release is that reason. */
+  html .lvm-fill, html .cmp-bar,
   html .mf179-fill, html .mcal-sfill,
   /* calculator.html — the two fee bars under "drained" vs "paid"; they are
      <i> elements with ids and no class, so they are addressed via the track */
@@ -3155,4 +3158,68 @@ html .ps-disc,
 html footer > p.disclaimer,
 html .mfx-desc:not(.mfx-clamp){
   max-width: 70ch;
+}
+
+/* ══ V36.5 · THE FIELD BOUNDARY — 1.4.11, MEASURED AT 1.22:1 ═══════════════════
+   Every text input and every <select> on this site drew its resting boundary from
+   --border2 (or a literal of the same weight): rgba(37,99,235,.20) in light,
+   rgba(150,180,240,.27–.30) in dark. Composited against the field's own fill and
+   against the card behind it, that measures:
+
+     calculator   #fc-*-num        1.43 light   1.85 dark
+     strategies   #mfc-cap, both selects 1.22   1.85
+     scores       #globalSearch    1.33        2.20
+     login        #email-input     1.52        2.13
+     signup       5 controls       1.52        2.13
+     recover      2 controls       1.52        2.13
+     scanner/screener sidebar selects 1.31     1.85
+
+   WCAG 2.1 SC 1.4.11 asks 3:1 for the visual information needed to IDENTIFY a
+   user-interface component, and a text field's boundary is the canonical example
+   in the Understanding document. Nothing on the site cleared it — the whole
+   sign-up / sign-in / recovery funnel included. Earlier contrast passes could not
+   see this: they audited text ink, and the non-text pass skipped anything with a
+   child element and every <input> outright.
+
+   WHY A NEUTRAL AND NOT A DEEPER BLUE. The focus state on these fields is
+   rgba(37,99,235,.85). A resting edge strong enough to clear 3:1 in the same hue
+   lands at .75 — ten points off focus — so every field would read as focused and
+   the focus affordance would be the casualty of the fix. A neutral resting edge
+   that turns blue on focus keeps the two states a hue apart, which is the
+   stronger signal as well as the accessible one.
+
+   THE VALUES ARE THE ONES THIS CODEBASE ALREADY PROVED. V35.9 needed a hairline
+   that reads on both themes for the .mcal-swatch key and settled on
+   rgba(15,23,42,.5) / rgba(255,255,255,.45); composited over a field fill those
+   clear 3:1 against both the fill and the card in both themes. Same problem, same
+   answer, one value to maintain.
+
+   SCOPE. Resting state only — :focus, :focus-visible and :hover keep whatever the
+   page gives them, and the three funnel pages' hover value is raised alongside
+   this so hovering can never make an edge weaker than not hovering. `!important`
+   is deliberate and is the smaller evil: the rules being corrected live in 20+
+   hand-maintained pages at specificities up to (0,3,2)
+   (`html[data-theme="dark"] .mfcalc-controls input[type=text]`), and matching each
+   one by escalating a selector here is a list that silently rots the next time a
+   page is edited. It is confined to border-color on named control types, so it
+   cannot reach a card, a chip or a button.
+   Checkbox, radio, range, color and file inputs are excluded: they are UA-drawn
+   here and a border-color on them paints nothing. ── */
+:root{ --field-edge: rgba(15,23,42,.5); }
+html[data-theme="dark"]{ --field-edge: rgba(255,255,255,.45); }
+html input[type="text"]:not(:focus):not(:hover),
+html input[type="email"]:not(:focus):not(:hover),
+html input[type="tel"]:not(:focus):not(:hover),
+html input[type="search"]:not(:focus):not(:hover),
+html input[type="number"]:not(:focus):not(:hover),
+html input[type="password"]:not(:focus):not(:hover),
+html input[type="url"]:not(:focus):not(:hover),
+html input[type="date"]:not(:focus):not(:hover),
+html input:not([type]):not(:focus):not(:hover),
+html select:not(:focus):not(:hover),
+html textarea:not(:focus):not(:hover){
+  border-color: var(--field-edge) !important;
+}
+@media print{
+  html input, html select, html textarea{ border-color: #64748b !important; }
 }
