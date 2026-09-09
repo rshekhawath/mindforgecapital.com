@@ -180,6 +180,44 @@ def _asset_ver(name: str) -> str:
     return _ASSET_FALLBACK.get(name, "1")
 
 
+# ── V36.6 — COLUMNAR WAS BUILT, MEASURED, AND REJECTED. DO NOT RE-ATTEMPT IT
+#    WITHOUT RE-MEASURING THE CPU SIDE. ────────────────────────────────────────
+# The plan for this release proposed re-shaping these bundles into one array per
+# field — {"fields":[...],"data":{"symbol":[...],...}} — for "a 70% cut in bytes
+# AND in parse time". The bytes claim is true. The parse-time claim is exactly
+# backwards, and it is the half that decides the question.
+#
+# Built it, shipped it behind a decoder in both readers, and benchmarked the
+# whole path to usable rows on the 2026-09-08 snapshot (2,126 rows, 97 fields):
+#
+#                       wire (gzip)   raw     JSON.parse   rehydrate   CPU total
+#     row-per-object      0.757 MB   4.316 MB   24.8 ms       0 ms       24.8 ms
+#     columnar            0.419 MB   1.387 MB   18.7 ms      64.0 ms     82.7 ms
+#
+# Adding the percentile-pool pass the Integrity Score page pays either way
+# (69.8 ms for 30 factors over 2,126 rows), the totals are 94.6 ms against
+# 152.5 ms — columnar costs +57.9 ms of main-thread CPU, a 61% increase in the
+# work done before anything renders, to save 330 KB. On stocks.json the trade is
+# the same shape: -477 KB for a comparable penalty.
+#
+# The reason is simple in hindsight: the row objects both readers need are built
+# by C++ inside JSON.parse in the row shape, and by a JavaScript loop doing
+# ~206,000 property assignments in the columnar shape. Two rehydrators were
+# tried (column-major and row-major) and always-assign vs skip-nulls; all four
+# land between 50 and 78 ms. Round-tripping is exact — 203,895 key/value pairs
+# compared, 0 differences — so this is purely a performance question, and the
+# answer is no.
+#
+# WHAT IS ACTUALLY WORTH DOING, and is deferred rather than dismissed: the
+# per-stock company pages (2,126 of them, the largest surface Google lands
+# strangers on) download the full 6.44 MB universe to render ONE row. They need
+# that row plus the percentile pools. A precomputed screener/scored/<SYM>.json
+# alongside one small pools file takes that page from 6.66 MB to well under
+# 100 KB — a 60x cut, not 30% — and it removes the rehydration question instead
+# of trading against it. The build already emits per-symbol files under
+# screener/fin/ and screener/hist/, so the pattern exists.
+
+
 def _finish_ver() -> str:
     """Back-compat alias — mfc-finish.css's token."""
     return _asset_ver("mfc-finish.css")

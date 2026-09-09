@@ -31,18 +31,56 @@
     } catch (e) { return ""; }
   }
 
+  /* ── MFC_BUNDLE_DECODER (V36.6) ─────────────────────────────────────────────
+     One of TWO copies. The other is in docs/scores/scores-engine.js — grep
+     MFC_BUNDLE_DECODER to find both. These are the only two fetchers of the
+     stock bundles (mfc-company.js reads whichever data layer its page already
+     loaded), each is alone on its own page, and anything about the bundle's
+     SHAPE has to change in both at once. A shared file would add a script-order
+     dependency across four pages, which is the fragility this release is
+     reducing rather than adding to.
+
+     It exists as a named function because V36.6 tried to change that shape and
+     decided not to. One array per field — {"fields":[...],"data":{...}} — was
+     built, wired through here, and benchmarked end to end:
+
+                          wire (gzip)   raw      JSON.parse  rehydrate  CPU
+        row-per-object      0.757 MB   4.316 MB    24.8 ms      0 ms    24.8 ms
+        columnar            0.419 MB   1.387 MB    18.7 ms     64.0 ms  82.7 ms
+
+     Against the percentile-pool pass this page pays either way (69.8 ms), that
+     is 94.6 ms versus 152.5 ms: +57.9 ms of main-thread CPU, a 61% increase in
+     the work before first render, to save 330 KB. JSON.parse builds the row
+     objects in C++; a columnar bundle makes JavaScript do ~206,000 property
+     assignments instead. Round-tripping was exact (203,895 pairs, 0
+     differences) — it is purely a performance question and the answer was no.
+
+     So this stays a one-line accessor, and it is the single place to change if
+     the shape is ever revisited. See the long note in screener/export_static.py
+     before re-attempting it. */
+  function bundleRows(b) {
+    if (Array.isArray(b)) return b;
+    if (!b || typeof b !== "object") return [];
+    return b.stocks || [];
+  }
+
   function loadBundle() {
     if (bundlePromise) return bundlePromise;
-    // "no-cache" = always revalidate with the CDN (cheap 304 when unchanged),
-    // but always pick up a freshly-published snapshot. Avoids serving a stale
-    // or partially-written bundle from a previous deploy.
-    bundlePromise = origFetch(DATA_URL, { cache: "no-cache" })
+    // V36.6 — the explicit "no-cache" is GONE. It forced a revalidation
+    // round-trip on every single load of the Scanner. GitHub Pages already
+    // serves this file with `cache-control: max-age=600` and a strong ETag
+    // (verified against the live host), and the snapshot is republished once or
+    // twice a day — so the default policy gives a repeat visitor the file from
+    // cache with no network at all, and a conditional 304 after ten minutes.
+    // A ten-minute staleness window on a once-daily dataset costs nothing; a
+    // round trip before every render costs every visitor.
+    bundlePromise = origFetch(DATA_URL)
       .then(function (r) {
         if (!r.ok) throw new Error("stocks.json HTTP " + r.status);
         return r.json();
       })
       .then(function (b) {
-        var arr = Array.isArray(b) ? b : (b.stocks || []);
+        var arr = bundleRows(b);
         BUNDLE = Array.isArray(b)
           ? { stocks: arr, count: arr.length, sectors: [], generated_at: "", data_through: "" }
           : b;
