@@ -682,7 +682,13 @@
 // v93 shell would keep asking for ?v=3390 forever — index.html has no query to
 // bust and is the offline navigation fallback — so the page would render
 // correctly and simply never measure anything.
-const CACHE = 'mfc-v94';
+// V36.6d — mfc-v95. login.html is one of the 17 pages whose inline phone-rhythm
+// <style> became a <link> to assets/mfc-chrome.css. A v94 shell would still
+// carry the inline copy, which is harmless, but it would also never fetch the
+// shared stylesheet — so the next change to that block would not reach an
+// installed member at all. index.html is untouched by that extraction (it keeps
+// its own two larger variants) but shares this cache name.
+const CACHE = 'mfc-v95';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

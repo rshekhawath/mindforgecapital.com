@@ -1,0 +1,112 @@
+/*! ============================================================================
+    mfc-chrome.css — the phone-rhythm block that 17 pages carried a copy of.
+    ----------------------------------------------------------------------------
+    V36.6. Every rule below was BYTE-IDENTICAL in a dedicated <style> element on
+    17 of the 26 hand-maintained pages: 404, calculator, dashboard, disclosures,
+    both factor-report pages, fii-dii, largemidcap, login, multiasset, privacy,
+    recover, screener, signup, smallmicro, strategies and terms. 2,687 bytes x
+    17 = 45.7 KB of duplication, and a change to phone rhythm was a 17-page edit.
+    The release history says what that costs: twelve `Va` hotfixes, plus V35.0
+    ("the V33.8 fix never reached the two paid strategy pages") and V33.1 ("the
+    daily refresh had quietly reverted last release's stylesheet on the 28 pages
+    Google lands on").
+
+    WHAT WAS NOT EXTRACTED, AND WHY IT COULD NOT BE.
+    The plan for this release described a nav + design-token + skip-link +
+    reduced-motion block "byte-identical on 17-26 pages". Measured over every
+    top-level rule in every inline <style> on all 26 pages, that block does not
+    exist: ZERO rules are byte-identical on 21 or more pages, exactly ONE reaches
+    17 (this one), four reach 13 and eleven reach 10. `:root` really is declared
+    on 26 pages and `nav` on 21, but at the SELECTOR level — the rule bodies hold
+    different subsets of properties per page, so lifting them is a refactor with
+    cascade consequences on 26 pages, not a lift.
+
+    index.html and scores/index.html keep their own copies deliberately. Their
+    blocks are 3,746/5,608 and 3,904 bytes and are NOT supersets of this one:
+    similarity against it measures 0.027, 0.510 and 0.814. Merging them would be
+    the rewrite this release was told not to attempt. (index.html carrying TWO
+    such blocks is worth its own look later.)
+
+    LINKED WHERE THE <style> WAS — NEAR THE END OF EACH <body>. NOT IN <head>.
+    Those copies sat at the end of the body on purpose: it is the strongest
+    cascade position, and this block is a set of deliberately generic phone
+    overrides (section[class], h1, .card, p, .container) that has to beat each
+    page's own rules. A head link was tried first and MEASURED, not assumed: the
+    computed value of all ten properties declared here was captured for all 764
+    matching elements across the 17 pages at 600px, before and after. It found
+    exactly one real change — `.vfy-card` on the dashboard went from 16px of
+    phone padding to 18px, because from the head this block lost an
+    equal-specificity tie it used to win. One page, two pixels, and the whole
+    reason to run the comparison rather than eyeball it. Linking in place makes
+    the cascade identical by construction, and the re-run comes back clean.
+
+    If you add a rule here that a page's own styles are already setting, re-run
+    that comparison rather than trusting this note. The probe is a computed-style
+    snapshot at 600px over these selectors; ignore differences that are only a
+    reveal class (`fade-up` vs `fade-up in`) appearing at a different moment.
+
+    THE RELATIVE PATH IS NOT UNIFORM, AND GETTING IT WRONG IS NEARLY INVISIBLE.
+    Thirteen of these pages are at the site root and need `assets/…`; four are
+    one level down (factor-report x2, fii-dii, screener) and need `../assets/…`.
+    A first pass had the two cases inverted, and it 404ed on only the four
+    subdirectory pages — because `../assets/…` requested FROM THE ROOT normalises
+    straight back to `/assets/…` and returns 200. So thirteen pages worked by
+    accident, and any spot-check of the homepage or a strategy page would have
+    passed. What caught it was the full gate: 168 computed-value differences,
+    every one of them this block simply not applying. The check that names it
+    directly is to resolve each page's href against that page's own directory and
+    assert 200 — not to eyeball the hrefs, and not to open one page.
+    ========================================================================== */
+
+@media (max-width: 600px){
+  /* section rhythm — the largest single win on every long page */
+  section[class], div[class*="-section"], .page-hero{
+    padding-top:26px; padding-bottom:26px;
+  }
+  footer{ padding-top:22px; padding-bottom:22px; }
+
+  /* card interiors — the second-largest lever after section rhythm. Kept to
+     generic card names so a page that does not use them is unaffected. */
+  .card, [class$="-card"]{ padding-top:16px; padding-bottom:16px; }
+
+  /* heading scale — large display type costs whole wrapped lines on a phone */
+  h1{ font-size:27px; line-height:1.15; }
+  h2{ font-size:23px; line-height:1.2; }
+  h3{ font-size:16px; line-height:1.25; }
+
+  /* copy + gutters */
+  p{ line-height:1.58; }
+  .container{ padding-left:15px; padding-right:15px; }
+  /* ── V27.7 · phone polish pass 2 ────────────────────────────────────────
+     (a) 9px micro-badges lifted to 10.5px. They were the only text on the
+         property under the 10px floor, and on a phone they were genuinely
+         hard to read. Weight and letter-spacing keep the badge look.
+     (b) Tap targets. WCAG wants ~44px for a control; several buttons and
+         button-styled links measured 26-28px. Scoped to real controls —
+         inline text links inside prose are deliberately left alone, since
+         padding them out would wreck paragraph rhythm. ─────────────────── */
+  .lv-tag, .cmp-badge, .hv-live-badge{ font-size:10.5px; }
+  button, .btn, .btn-sm, a.nav-cta, a[class*="-cta"], .toggle-btn, .cap-chip,
+  a.strat-cta, .hero-cta, .fab-wa{
+    min-height:44px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  /* the accordion trigger already sets its own layout — don't centre its text */
+  .mcol-trigger{ justify-content:space-between; }
+  /* (c) the last sub-10px text and the hero's strategy tabs. The tabs are the
+     hero's primary control on a phone and measured 24px — half the target. */
+  /* .mps-scale is the real class (not .mp-scale), and .badge-pop is beaten by a
+     .strat-card-scoped rule — both needed the specificity to match. */
+  /* V36.1 — the child of both scales is an <i>, never a <span>: this rule was
+     copied to 19 pages and matched NOTHING on any of them, so "the last
+     sub-10px text" the comment above claims to fix has been rendering at
+     9.5px the whole time. A selector that matches nothing is invisible to
+     grep and reads as intent, which is why it survived. */
+  .mps-scale span, .mps-scale i,
+  .ds-sent-scale span, .ds-sent-scale i,
+  .hv-live-badge{ font-size:10.5px; }
+  .strat-card .badge-pop, .strat-card.featured .badge-pop{ font-size:10.5px; }
+  .hv-tab, .hv-tabs button{ min-height:44px; }
+
+
+}
