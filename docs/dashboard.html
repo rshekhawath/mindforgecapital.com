@@ -4300,7 +4300,16 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
            Same four cards, same markup, same order among themselves. -->
       <div class="why25 fade-up" id="why25" style="display:none;">
         <div class="why25-head">
-          <h2 id="why25-title">Why these 25</h2>
+          <!-- V36.6 — NO NUMBER IN THE STATIC MARKUP. This used to read "Why
+               these 25". The real books are TOP_N 10 (LargeMidcap), 15
+               (SmallMicro) and 8 (MultiAsset), so 25 was wrong for every
+               strategy on the site and had been since the concentration work —
+               a config edit in IP/shared/config.py cannot reach a literal in
+               docs/, and docs/ cannot read that config. renderWhy25() rewrites
+               this from the picks it actually received; this text is what shows
+               when the picks fail to load, which is precisely when the page
+               knows the least and should claim the least. -->
+          <h2 id="why25-title">Why these picks</h2>
           <span class="why25-sub" id="why25-sub">How this month's book was built</span>
         </div>
         <div id="why25-body"></div>
@@ -8167,7 +8176,13 @@ function renderWhy25() {
       '<p class="why25-note">The factors themselves and how they are weighted are MindForge’s intellectual property and are not published. <b>How</b> the simulation behind the published returns is constructed — and where it flatters us — is set out in full under ' +
       '<a href="disclosures.html#backtest-methodology" style="color:var(--accent2);font-weight:700;">Backtest methodology</a>.</p>';
 
-    document.getElementById('why25-title').textContent = 'Why these ' + (n || (code === 'ma' ? 8 : 25));
+    // V36.6 — say the count only when the count is known. The old fallback was
+    // `(n || (code === 'ma' ? 8 : 25))`, which printed 25 for both equity books
+    // whose real TOP_N are 10 and 15. A hand-written number beside a
+    // machine-rewritten one is this repo's most-repeated defect; the fix is to
+    // stop writing the number, not to correct it and wait for the next edit.
+    document.getElementById('why25-title').textContent =
+      'Why these ' + (n > 0 ? n : 'picks');
     card.style.display = '';
 
     // Draw the rails a frame after the card is displayable — a transition set on

@@ -594,7 +594,20 @@ def main() -> int:
     #    (Scanner + Integrity Score) load this; only the per-stock company page loads
     #    the full stocks.json (for its About tab). Every numeric field is retained,
     #    so filters / columns / scoring / inline reports work unchanged on lite.
-    LITE_DROP = ("description", "website")
+    # V36.6 — short_pct and short_ratio join the drop list. They are 0 of 2,126
+    # populated in every snapshot in git history (Yahoo does not report short
+    # interest for Indian listings at all), nothing in docs/ reads either one,
+    # and they were still being serialised as `null` on every row of a bundle
+    # the Scanner downloads to render 30.
+    #
+    # The other five fields MEMORY.md listed as permanently dead — total_assets,
+    # total_assets_cr, debt_to_assets, equity_multiplier, asset_turnover — are
+    # NOT dropped: they were dead only because server.py read totalAssets off
+    # `.info`, and V36.6 derives it from the balance-sheet frame instead. They
+    # measure 90-97% populated now. Re-check coverage before ever calling a
+    # field dead; "Yahoo never returns it" was true of four of these for one
+    # release and wrong for the next.
+    LITE_DROP = ("description", "website", "short_pct", "short_ratio")
     lite_bundle = {
         "generated_at": bundle["generated_at"],
         "data_through": latest_update,
