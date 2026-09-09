@@ -21,6 +21,38 @@
      flip under html[data-theme="dark"], so it's correct in both themes.
    • Contextual placement clears the floating WhatsApp button + mobile sticky CTA.
    • Respects prefers-reduced-motion (no width tween, instant scroll-to-top). */
+
+/* ── V36.6 — LOADER FOR THE FIRST-PARTY ANALYTICS MODULE ────────────────────
+   This IIFE is FIRST in the file on purpose, and it must stay first. The chrome
+   IIFE below returns early on two conditions — an already-injected style tag,
+   and a page that already has both a progress bar and a back-to-top — and index
+   and strategies.html hit the second one. Anything appended after that block
+   never runs on the pages that matter most, which is a mistake this codebase has
+   already made once (see the shared-asset reach note in the release history).
+
+   WHY THE LOADER LIVES HERE AT ALL. mfc-track.js needs to be on every page. A
+   <script> tag for it would be a 50-page edit, and a 50-page edit is exactly
+   the fragility that has produced twelve hotfix releases in this repo. All 50
+   pages already link THIS file, so one edit here reaches all of them — and
+   because mfc-track.js's own ?v token is written in exactly one place (below),
+   a future change to the tracker needs no page edits at all and cannot drift.
+
+   The src is resolved against document.currentScript rather than hardcoded,
+   because these 50 pages sit at four different depths (/, /scores/, /screener/,
+   /screener/stocks/) and a relative literal would 404 on three of them. */
+(function () {
+  try {
+    if (window.__mfcTrackLoaded) return;
+    var me = document.currentScript;
+    if (!me || !me.src) return;                     // nothing to resolve against
+    window.__mfcTrackLoaded = 1;
+    var s = document.createElement('script');
+    s.src = new URL('mfc-track.js?v=10', me.src).href;
+    s.defer = true;
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) { /* analytics must never break the chrome below */ }
+})();
+
 (function () {
   var D = document, W = window;
   if (D.getElementById('mfc-chrome-style')) return;                       // idempotent

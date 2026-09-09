@@ -870,6 +870,13 @@ async function handleSubmit() {
     })
   }).catch(function(err){ console.warn('Lead save failed (non-blocking):', err); });
 
+  // V36.6 — the one event mfc-track.js cannot infer from the DOM. `signup_start`
+  // is a first-input listener, but "completed" is only knowable at the point the
+  // lead is actually submitted, which is here. The strategy slug travels as the
+  // label; no name, email or phone is passed, and mfc-track.js could not send
+  // them if they were (it records event/pathname/label only).
+  try { if (window.mfcTrack) window.mfcTrack('signup_complete', strategy); } catch (e) {}
+
   // Build WhatsApp message
   var waText = encodeURIComponent(
     'Hi MindForge Capital! I would like to subscribe to ' + strategy +
@@ -1419,7 +1426,7 @@ html[data-theme="dark"] .card::after{
   .card::after{ animation:none; }
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=3390"></script>
+<script defer src="assets/mfc-chrome.js?v=3400"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

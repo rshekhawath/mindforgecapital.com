@@ -1374,6 +1374,83 @@ html[data-theme="dark"] .stock-card.row-new{ border-color:rgba(120,160,240,.40);
 .buy-prog-bar{flex:0 0 220px;background:rgba(5,150,105,0.10);border-radius:6px;height:10px;overflow:hidden;}
 @media (max-width:520px){.buy-prog-bar{flex-basis:100%;}}
 .buy-prog-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green),#10b981,#34d399);width:0;transition:width .55s cubic-bezier(.22,1,.36,1);box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
+/* ── V36.6 — YOUR POSITION card ─────────────────────────────────────────────
+   Built out of the same tokens as every other card here (--ink2 / --border2 /
+   --r / --shadow-sm / --text2 / --text3 / --white) rather than new colours, so
+   it flips with the dark theme and prints with the rest of the page. The gain
+   figures use --green / --red through the same .up/.down classes the picks
+   table already defines, so semantic colour stays in one place. */
+.mypos-card{
+  background:var(--ink2);
+  border:0.5px solid var(--border2);border-radius:var(--r);
+  padding:16px 20px;margin-bottom:18px;position:relative;z-index:1;
+  box-shadow:var(--shadow-sm);
+}
+.mypos-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.mypos-head h2{font-size:16px;font-weight:700;color:var(--white);margin:0;}
+.mypos-sub{font-size:11.5px;color:var(--text3);}
+/* Five columns on a phone need a scroller, and it must be the TABLE that
+   scrolls rather than the page — the same rule the picks table follows. */
+.mypos-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.mypos-tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:420px;}
+.mypos-tbl th{
+  text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+  text-transform:uppercase;color:var(--text3);padding:0 10px 6px 0;
+  border-bottom:0.5px solid var(--border2);white-space:nowrap;
+}
+.mypos-tbl th.r,.mypos-tbl td.r{text-align:right;}
+.mypos-tbl td{padding:7px 10px 7px 0;border-bottom:0.5px solid var(--border2);color:var(--text2);white-space:nowrap;}
+.mypos-tbl tr:last-child td{border-bottom:0;}
+.mypos-tbl .myp-tk{font-weight:700;color:var(--white);}
+/* The one editable field on the whole dashboard. 16px on purpose: anything
+   smaller makes mobile Safari zoom the page on focus and never zoom back. */
+.myp-px{
+  /* LONGHAND, NOT `font: 600 16px/1.2 inherit`. `inherit` is not a valid
+     font-family inside the font shorthand, so that declaration was dropped
+     whole and the field rendered at the UA default 13.33px — which is exactly
+     the case the site-wide 16px form rule exists to prevent: any control under
+     16px makes mobile Safari zoom the page on focus and never zoom back.
+     Measured before the fix: 13.3333px. */
+  width:92px;padding:5px 7px;text-align:right;
+  font-family:inherit;font-size:16px;font-weight:600;line-height:1.2;
+  color:var(--white);background:var(--ink);border:1px solid var(--field-edge, var(--border2));
+  border-radius:7px;-moz-appearance:textfield;
+}
+.myp-px::-webkit-outer-spin-button,.myp-px::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.myp-px:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+.mypos-foot{
+  display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;padding-top:11px;
+  border-top:0.5px solid var(--border2);
+}
+.mypos-tot{display:flex;flex-direction:column;gap:1px;}
+.mypos-tot span{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);}
+.mypos-tot strong{font-size:15px;font-weight:800;color:var(--white);}
+.mypos-note{margin:10px 0 0;font-size:11.5px;color:var(--text3);line-height:1.55;}
+.mypos-tbl .up,.mypos-tot .up{color:var(--green);}
+.mypos-tbl .down,.mypos-tot .down{color:var(--red);}
+@media (max-width:560px){ .mypos-card{padding:14px 16px;} .mypos-foot{gap:16px;} }
+/* Scoped by POINTER, not by width — the lesson of V31.9, where the 44px tap
+   targets were written under max-width:600px and every iPad therefore got the
+   mouse-sized boxes. Measured at 390px the field came out 31px tall, which is
+   under the 44px this codebase holds itself to. Padding rather than min-height
+   so the 16px text stays vertically centred. */
+@media (pointer:coarse){ .myp-px{ padding-top:12px; padding-bottom:12px; } }
+/* The table is wider than a phone (420px of columns in 321px of card), so it
+   scrolls inside its own container and the page never does. A scroller with
+   nothing at its edge reads as a finished table, so the right edge fades while
+   there is more to reach — the cue, not just the ability. */
+.mypos-scroll{position:relative;}
+.mypos-scroll.has-more{
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
+          mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 34px),transparent 100%);
+}
+@media print{
+  .myp-px{border:0;padding:0;width:auto;}
+  /* Print drops CSS backgrounds and masks; a masked edge would hide a column. */
+  .mypos-scroll.has-more{-webkit-mask-image:none;mask-image:none;overflow:visible;}
+  .mypos-tbl{min-width:0;}
+}
+
 /* V12.2: every order placed — soft green glow + a ✓ before the title */
 .buy-prog-card.is-complete{border-color:rgba(5,150,105,0.45);box-shadow:0 0 0 1px rgba(5,150,105,0.25),0 14px 32px -18px rgba(5,150,105,0.55);background:linear-gradient(135deg,rgba(5,150,105,0.12) 0%,var(--ink2) 75%);}
 .buy-prog-card.is-complete .bp-title::before{content:"✓ ";color:var(--green);font-weight:900;}
@@ -3782,6 +3859,46 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <button type="button" class="buy-prog-reset" onclick="resetBought()" title="Uncheck all">Reset</button>
       </div>
 
+      <!-- V36.6 — YOUR POSITION.
+           The dashboard could show the member what to buy, what it costs to
+           trade, and how the MODEL did against its benchmark. It could not
+           answer "how am I doing?" — there was no occurrence of cost basis,
+           entry price, average price or member P&L anywhere on the page. Every
+           month it greeted them with a fresh list and forgot the last one.
+
+           THE VOCABULARY IS DELIBERATELY ITS OWN. A backtest figure must say
+           "backtest" and only live-perf.json figures may wear a LIVE badge; a
+           member's own return is neither, and borrowing either badge would be
+           the first genuinely misleading number on this page. So it says "your"
+           throughout, states where the inputs came from, and never appears
+           beside the model's own performance figures.
+
+           It renders only once at least one order is ticked WITH a recorded
+           price, so a member on a pre-V36.6 tick sees nothing rather than a
+           card full of dashes. -->
+      <div class="mypos-card" id="mypos-card" style="display:none;">
+        <div class="mypos-head">
+          <h2>Your position</h2>
+          <span class="mypos-sub" id="mypos-sub">From the prices you entered</span>
+        </div>
+        <div class="mypos-scroll"><table class="mypos-tbl">
+          <thead><tr>
+            <th scope="col">Stock</th>
+            <th scope="col" class="r">Shares</th>
+            <th scope="col" class="r">Your price</th>
+            <th scope="col" class="r">Live</th>
+            <th scope="col" class="r">Your gain</th>
+          </tr></thead>
+          <tbody id="mypos-body"></tbody>
+        </table></div>
+        <div class="mypos-foot">
+          <div class="mypos-tot"><span>You invested</span><strong id="mypos-cost">—</strong></div>
+          <div class="mypos-tot"><span>Worth now</span><strong id="mypos-now">—</strong></div>
+          <div class="mypos-tot"><span>Your gain</span><strong id="mypos-pnl">—</strong></div>
+        </div>
+        <p class="mypos-note" id="mypos-note"></p>
+      </div>
+
       <!-- V28.6 — WHAT YOU ACTUALLY HOLD MID-SESSION.
            The page promises a "sector-diversified, capped at 3 per" book, and the
            sector card, the portfolio map and the industry chips all draw the
@@ -4792,6 +4909,17 @@ function sumWeights(list) {
   for (let i = 0; i < (list || []).length; i++) { const w = Number(list[i].weight_pct) || 0; if (w > 0) t += w; }
   return t;
 }
+/* V36.6 — THE SHARE COUNT, IN ONE PLACE.
+   `Math.floor(allocBudget(s, list, capital) / entry)` is written out inline in
+   six renderers. toggleBought() needs the same number to record what the member
+   bought, and a seventh copy of an arithmetic expression is how two surfaces end
+   up disagreeing about one fact. This is the canonical form from renderTable. */
+function sharesFor(stock) {
+  const entry = Number(stock && stock.recommended_price) || 0;
+  if (entry <= 0) return 0;
+  return Math.floor(allocBudget(stock, stocksData || [], currentCapital) / entry);
+}
+
 function allocBudget(stock, list, capital) {
   const n = (list && list.length) || 1;
   const totalW = sumWeights(list);
@@ -5550,6 +5678,14 @@ function renderDashboard(sub, stocks) {
   // run before anything reads loadBought().
   migrateBoughtKeys(currentStrategy);
   pruneBoughtKeys(currentStrategy);
+  // V36.6 — then reconcile against the server copy. Deliberately NOT awaited:
+  // the page renders from localStorage exactly as it always has, and re-renders
+  // only if the server actually knew something this device did not. A member
+  // offline, or on a deployment that has not been redeployed with the new
+  // endpoints yet, sees no change in behaviour at all.
+  progressSyncLoad(currentStrategy).then(function (changed) {
+    if (changed) applyBoughtToDom();
+  });
   document.getElementById('strategy-name').textContent = currentStrategy || '—';
   setupStrategySwitcher(currentStrategy);   // V21.3: turn the pill into a switcher when ≥2 strategies are known
 
@@ -7390,16 +7526,226 @@ function loadBought(strategy) {
     return raw ? JSON.parse(raw) : {};
   } catch (e) { return {}; }
 }
-function saveBought(strategy, map) {
-  try { localStorage.setItem(boughtStorageKey(strategy), JSON.stringify(map)); } catch (e) {}
+
+/* ── V36.6 — THE CHECKLIST NOW OUTLIVES THE BROWSER IT WAS TICKED IN ─────────
+   Until this release this map lived in localStorage and nowhere else. It is the
+   ONLY state the member creates themselves on the whole dashboard, and it was
+   the least durable thing on the page: it drove "Step 3 of 4", "0 of 4 placed",
+   the rupees-still-to-deploy figure and the part-placed concentration warning,
+   and a member who ticked two orders on their phone opened their laptop to none
+   of it. Clearing site data lost it. The installed PWA was a third store again.
+
+   The write path is unchanged in shape — localStorage first, synchronously, so
+   the UI never waits on a network and an offline member keeps working exactly as
+   before. The server is a second, durable copy behind a debounce.
+
+   WHY THE DELTA IS DERIVED HERE AND NOT AT THE CALL SITES. Eight places call
+   saveBought (row tick, order tick, select-all, reset, and four more), and every
+   one of them expresses a removal the same way: by handing over a map that no
+   longer has the key. Diffing against what was stored a moment ago recovers the
+   removal without touching any of them — which matters, because a sync that
+   knew about ticks but not unticks would let one device go on claiming an order
+   was placed after the member had said it was not. */
+const PROG_PENDING_KEY = 'mfc_prog_pending';   // removals not yet acknowledged
+let _progTimer = null, _progServerAt = '', _progSynced = false;
+
+function _progPendingAll() {
+  try { const o = JSON.parse(localStorage.getItem(PROG_PENDING_KEY) || '{}');
+        return (o && typeof o === 'object') ? o : {}; } catch (e) { return {}; }
 }
+function _progPendingAdd(key, tickers) {
+  if (!tickers.length) return;
+  try {
+    const all = _progPendingAll();
+    const cur = Array.isArray(all[key]) ? all[key] : [];
+    tickers.forEach(function (t) { if (cur.indexOf(t) === -1) cur.push(t); });
+    all[key] = cur.slice(-200);
+    localStorage.setItem(PROG_PENDING_KEY, JSON.stringify(all));
+  } catch (e) {}
+}
+function _progPendingClear(key, tickers) {
+  try {
+    const all = _progPendingAll();
+    if (!Array.isArray(all[key])) return;
+    all[key] = all[key].filter(function (t) { return tickers.indexOf(t) === -1; });
+    if (!all[key].length) delete all[key];
+    localStorage.setItem(PROG_PENDING_KEY, JSON.stringify(all));
+  } catch (e) {}
+}
+
+function saveBought(strategy, map) {
+  const key = boughtStorageKey(strategy);
+  let before = {};
+  try { before = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) {}
+  try { localStorage.setItem(key, JSON.stringify(map)); } catch (e) {}
+  // Anything that WAS ticked and now is not is a removal the server must see.
+  const removed = Object.keys(before).filter(function (k) { return !map[k]; });
+  if (removed.length) _progPendingAdd(key, removed);
+  _progPush(key, map);
+}
+
+/* Debounced so select-all — which writes the map once per row — sends one
+   request rather than fifteen. 1.2s is short enough that a member who ticks and
+   closes the tab is covered by the pagehide flush below. */
+function _progPush(key, map, immediate) {
+  if (isDemo || !token || !key) return;              // demo has no member to save for
+  if (_progTimer) { clearTimeout(_progTimer); _progTimer = null; }
+  const send = function () {
+    _progTimer = null;
+    const removed = (_progPendingAll()[key] || []).slice();
+    const body = JSON.stringify({
+      action: 'set_progress', token: token, cycle_key: key,
+      map: map || {}, removed: removed
+    });
+    const done = function () { if (removed.length) _progPendingClear(key, removed); };
+    try {
+      if (immediate && navigator.sendBeacon) {
+        // On the way out there is no time for a response, so the removals are
+        // NOT cleared here — they are idempotent, and re-sending them on the
+        // next load is cheaper than losing one.
+        navigator.sendBeacon(APPS_SCRIPT_URL, new Blob([body], { type: 'text/plain' }));
+        return;
+      }
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
+        body: body, keepalive: true
+      }).then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.status === 'ok') done(); })
+        .catch(function () { /* offline — localStorage already has it */ });
+    } catch (e) {}
+  };
+  if (immediate) send(); else _progTimer = setTimeout(send, 1200);
+}
+
+/* ── RECONCILE ON LOAD ───────────────────────────────────────────────────────
+   The server copy is the union of every device's saves, so it leads. The one
+   thing it cannot know about is a tick made on THIS device since the last
+   successful sync — so a local-only entry is kept when its own timestamp is
+   newer than the server's, and dropped otherwise, because "local has it and the
+   server does not" otherwise means it was removed on another device.
+
+   A pre-V36.6 map has entries of the literal `true` with no timestamp. Those
+   cannot win a comparison, which is correct: on the FIRST sync the server holds
+   nothing for the cycle, local is adopted wholesale and pushed up, and from
+   then on every entry carries a time. */
+function progressSyncLoad(strategy) {
+  if (isDemo || !token) return Promise.resolve(false);
+  const key = boughtStorageKey(strategy);
+  if (!key) return Promise.resolve(false);
+  return fetch(APPS_SCRIPT_URL + '?action=get_progress&token=' +
+               encodeURIComponent(token) + '&_=' + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || d.status !== 'ok' || !d.progress) return false;
+      _progServerAt = String(d.updated_at || '');
+      const server = d.progress[key];
+      const local = loadBought(strategy);
+      let merged;
+      if (!server || typeof server !== 'object') {
+        merged = local;                        // first device to sync this cycle
+      } else {
+        merged = {};
+        Object.keys(server).forEach(function (k) { merged[k] = server[k]; });
+        Object.keys(local).forEach(function (k) {
+          if (merged[k]) return;               // server already knows this one
+          const v = local[k];
+          const t = (v && typeof v === 'object' && v.t) ? String(v.t) : '';
+          if (t && _progServerAt && t > _progServerAt) merged[k] = v;
+        });
+      }
+      // Removals this device has not managed to push yet still apply.
+      (_progPendingAll()[key] || []).forEach(function (k) { delete merged[k]; });
+
+      const changed = JSON.stringify(merged) !== JSON.stringify(local);
+      if (changed) { try { localStorage.setItem(key, JSON.stringify(merged)); } catch (e) {} }
+      _progSynced = true;
+      // Push whatever this device knows that the server might not.
+      _progPush(key, merged);
+      return changed;
+    })
+    .catch(function () { return false; });     // offline: behave exactly as before
+}
+
+/* ── PAINT A MERGED MAP ONTO A PAGE THAT IS ALREADY RENDERED ─────────────────
+   Re-running renderTable() would work but would also reset whatever sort and
+   scroll position the member was looking at, and it needs arguments this
+   callback has no business reconstructing. So this mirrors exactly what
+   toggleBought() and toggleOrder() do to the DOM for a single row, applied to
+   every row — and then re-derives the four surfaces that read the checklist
+   rather than the DOM: the progress card, the how-to steps, the Kite basket and
+   the cycle-cost figures. Those four are the ones that would otherwise disagree
+   with the ticks now showing, which is the defect class this codebase keeps
+   finding (two surfaces, one fact). */
+function applyBoughtToDom() {
+  try {
+    const map = loadBought(currentStrategy);
+    document.querySelectorAll('[data-ticker]').forEach(function (el) {
+      const t = el.getAttribute('data-ticker');
+      if (!t) return;
+      const on = !!map[t];
+      el.classList.toggle('row-bought', on);
+      const cb = el.querySelector('.bought-cb');
+      if (cb) cb.checked = on;
+    });
+    document.querySelectorAll('[data-okey]').forEach(function (cb) {
+      const k = cb.getAttribute('data-okey');
+      if (!k) return;
+      const on = !!map[k];
+      cb.checked = on;
+      const host = cb.closest('.chg-sell');
+      if (host) host.classList.toggle('is-done', on);
+    });
+  } catch (e) {}
+  try { refreshBoughtProgress(); } catch (e) {}   // re-derives renderMyPosition too
+  try { refreshHowto(); } catch (e) {}
+  try { refreshKiteBasket(); } catch (e) {}
+  try { renderCycleCost(); } catch (e) {}
+}
+
+/* A tick made in the last second of a visit must not be lost. */
+window.addEventListener('pagehide', function () {
+  try {
+    if (isDemo || !token || !_progSynced) return;
+    const key = boughtStorageKey(currentStrategy);
+    if (_progTimer) _progPush(key, loadBought(currentStrategy), true);
+  } catch (e) {}
+});
+/* V36.6 — ONE PLACE THAT DECIDES WHAT A TICK RECORDS.
+   toggleBought and toggleBoughtAll are two doors onto the same map, and V35.4
+   already had to fix select-all corrupting it. If only one of them recorded a
+   basis, a member who used the header checkbox would get a Your Position card
+   that silently omitted every holding — the same map, two meanings. */
+function boughtValueFor(ticker, prev) {
+  var s = (stocksData || []).filter(function (x) { return x.ticker === ticker; })[0] || null;
+  return {
+    p: (prev && typeof prev === 'object' && Number(prev.p) > 0)
+         ? Number(prev.p)
+         : (s ? Number(s.recommended_price) || 0 : 0),
+    q: s ? Number(sharesFor(s)) || 0 : 0,
+    t: new Date().toISOString()
+  };
+}
+
 function toggleBought(cb) {
   // Find the closest tr or stock-card with data-ticker
   const host = cb.closest('[data-ticker]');
   if (!host) return;
   const ticker = host.dataset.ticker;
   const map = loadBought(currentStrategy);
-  if (cb.checked) map[ticker] = true; else delete map[ticker];
+  /* V36.6 — A TICK NOW RECORDS WHAT WAS BOUGHT, NOT JUST THAT IT WAS.
+     The value used to be the literal `true`, which is why this page could show
+     the member what to buy, what it costs to trade and how the MODEL did, and
+     still could not answer "how am I doing?" about the product they pay for.
+     One number was missing: the price they actually paid. It is prefilled from
+     the recommended price the row already shows and is editable in the Your
+     Position card, so a member who filled at a different price says so once.
+     Every existing reader tests this map for TRUTHINESS (`!!map[k]`,
+     `if (map[t])`, `!placed[key]`) and none compares it to `true`, and nothing
+     iterates it — checked across all fourteen call sites — so an object here is
+     invisible to them. A pre-V36.6 `true` keeps working and simply has no
+     basis until the member re-ticks. */
+  if (cb.checked) map[ticker] = boughtValueFor(ticker, map[ticker]);
+  else delete map[ticker];
   saveBought(currentStrategy, map);
 
   // Sync both desktop row + mobile card visual states
@@ -7999,7 +8345,9 @@ function toggleBoughtAll(headerCb) {
     // mid-session card reads that map to decide what is held: select-all was the
     // one gesture that could corrupt it in a single click.
     if (isHeldRow(ticker)) return;
-    if (headerCb.checked) map[ticker] = true; else delete map[ticker];
+    // V36.6 — records the same basis a single tick does. See boughtValueFor().
+    if (headerCb.checked) map[ticker] = boughtValueFor(ticker, map[ticker]);
+    else delete map[ticker];
     tr.classList.toggle('row-bought', headerCb.checked);
     document.querySelectorAll('[data-ticker="' + ticker.replace(/"/g,'\\"') + '"]').forEach(el => {
       el.classList.toggle('row-bought', headerCb.checked);
@@ -8081,6 +8429,7 @@ function resetBought() {
    declared the month's job finished. cycleOrders() is the same list the basket
    and the CSV now read, so the four surfaces cannot report different totals. */
 function refreshBoughtProgress() {
+  try { renderMyPosition(); } catch (e) {}
   const map = loadBought(currentStrategy);
   const orders = cycleOrders();
   const keys = orders.all.map(orderKey);
@@ -10062,7 +10411,148 @@ function paintLivePrices(){
     // re-render, which reuses painted cells — never re-flashes the table.
     if (!el.dataset.pxSeen) { el.dataset.pxSeen = '1'; el.classList.add('px-in'); }
   });
+  // V36.6 — the member's own P&L moves with the same prices these cells do, so
+  // it is re-derived here rather than on a timer of its own.
+  try { renderMyPosition(); } catch (e) {}
 }
+/* ══ V36.6 — YOUR POSITION ═══════════════════════════════════════════════════
+   The member's own return, from the member's own basis. This is the answer to
+   the question a ₹1,499/month subscriber could not previously ask this page:
+   not "how did the model do" (renderProfitHeadline, above, against
+   recommended_price) and not "how did MindForge's own account do" (the Zerodha
+   verified link), but "how am I doing".
+
+   FOUR RULES IT HAS TO KEEP.
+   1. It reports only what the member told it. A row with no recorded price is
+      skipped, never dashed or guessed at, and a cycle with no priced ticks
+      hides the card entirely.
+   2. It never borrows the site's other badges. Nothing here says "backtest" —
+      because it is not simulated — and nothing wears a LIVE badge, which on
+      this site means a figure from live-perf.json. It says "your".
+   3. The basis is the member's fill price, NOT recommended_price. Those differ,
+      which is the entire point: a member who bought a day late at a worse price
+      should see their own number, not the model's.
+   4. It is unrealised only, and says so. Realised P&L needs sell-side matching
+      across cycles and is not claimed here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function renderMyPosition(){
+  var card = document.getElementById('mypos-card');
+  if (!card) return;
+  try {
+    var map = loadBought(currentStrategy) || {};
+    var px  = window._livePx || {};
+    var rows = [], cost = 0, now = 0, priced = 0, unpriced = 0, noLive = 0;
+    // renderTable's fmtAmt is a const inside that function, so it is not in
+    // scope here. fmtINR() rounds and never signs, so a gain formats the sign
+    // itself and OUTSIDE the currency symbol: "−₹1,240", not "₹-1,240".
+    var amt  = function (n) { return '₹' + fmtINR(n); };
+    var sAmt = function (n) { return (n < 0 ? '\u2212' : '+') + '₹' + fmtINR(Math.abs(n)); };
+
+    (stocksData || []).forEach(function(s){
+      var v = map[s.ticker];
+      if (!v) return;
+      if (typeof v !== 'object' || !(Number(v.p) > 0)) { unpriced++; return; }
+      var q = Number(v.q) || 0;
+      if (q <= 0) { unpriced++; return; }
+      priced++;
+      var mine = Number(v.p);
+      var p = px[s.yahoo_ticker];
+      var live = (p && Number(p.price) > 0) ? Number(p.price) : null;
+      if (live == null) noLive++;
+      var c = mine * q;
+      cost += c;
+      if (live != null) now += live * q;
+      rows.push({ t: s.ticker, q: q, mine: mine, live: live,
+                  gain: (live != null ? (live - mine) * q : null),
+                  pct:  (live != null ? (live - mine) / mine * 100 : null) });
+    });
+
+    if (!rows.length) { card.style.display = 'none'; return; }
+    card.style.display = '';
+
+    document.getElementById('mypos-body').innerHTML = rows.map(function(r){
+      var cls = r.gain == null ? '' : (r.gain > 0 ? 'up' : (r.gain < 0 ? 'down' : ''));
+      var sign = (r.gain != null && r.gain > 0) ? '+' : '';   // for the % only
+      return '<tr>' +
+        '<td class="myp-tk">' + escapeHtml(r.t) + '</td>' +
+        '<td class="r">' + r.q + '</td>' +
+        '<td class="r"><input type="number" class="myp-px" inputmode="decimal" step="0.05" min="0"' +
+          ' value="' + r.mine.toFixed(2) + '"' +
+          ' aria-label="Price you paid for ' + escapeHtml(r.t) + ', per share"' +
+          ' data-myp="' + escapeHtml(r.t) + '" onchange="setFillPrice(this)"></td>' +
+        '<td class="r">' + (r.live != null ? '₹' + r.live.toFixed(2) : '—') + '</td>' +
+        '<td class="r ' + cls + '">' + (r.gain != null
+            ? sAmt(r.gain) + ' <span class="' + cls + '">' + sign + r.pct.toFixed(1) + '%</span>'
+            : '—') + '</td>' +
+      '</tr>';
+    }).join('');
+
+    var pnl = now - cost;
+    var pnlPct = cost > 0 ? (pnl / cost * 100) : 0;
+    var pcls = pnl > 0 ? 'up' : (pnl < 0 ? 'down' : '');
+    var psign = pnl > 0 ? '+' : '';
+    document.getElementById('mypos-cost').textContent = amt(cost);
+    // "Worth now" is only comparable to "You invested" when every row has a
+    // live price. When some do not, saying so is the honest move — a total that
+    // silently omits three holdings is the self-consistent wrong number this
+    // codebase has been bitten by before.
+    document.getElementById('mypos-now').textContent = noLive ? '—' : amt(now);
+    var pnlEl = document.getElementById('mypos-pnl');
+    pnlEl.className = '';
+    if (noLive) { pnlEl.textContent = '—'; }
+    else {
+      pnlEl.innerHTML = '<span class="' + pcls + '">' + sAmt(pnl) +
+                        ' (' + psign + pnlPct.toFixed(1) + '%)</span>';
+    }
+
+    var sub = priced + (priced === 1 ? ' holding' : ' holdings') + ' you have recorded';
+    document.getElementById('mypos-sub').textContent = sub;
+
+    var bits = ['Unrealised only, measured against the price YOU entered — not the recommended price, and not a MindForge performance figure. Correct any price above and this updates.'];
+    if (unpriced) bits.push(unpriced + (unpriced === 1 ? ' ticked order has' : ' ticked orders have') +
+      ' no price recorded yet, so ' + (unpriced === 1 ? 'it is' : 'they are') +
+      ' left out. Un-tick and re-tick to record one.');
+    if (noLive) bits.push('Live prices are missing for ' + noLive + ' of these, so the totals are withheld rather than computed from a partial set.');
+    document.getElementById('mypos-note').textContent = bits.join(' ');
+
+    // The fade is a statement about this table at this width, so it is set from
+    // the measurement rather than from a breakpoint, and it comes OFF once the
+    // reader has scrolled to the end.
+    var sc = card.querySelector('.mypos-scroll');
+    if (sc) {
+      var cue = function () {
+        var more = sc.scrollWidth - sc.clientWidth - sc.scrollLeft > 8;
+        sc.classList.toggle('has-more', more);
+      };
+      if (!sc.dataset.cueBound) {
+        sc.dataset.cueBound = '1';
+        sc.addEventListener('scroll', cue, { passive: true });
+        window.addEventListener('resize', cue, { passive: true });
+      }
+      cue();
+    }
+  } catch (e) { try { card.style.display = 'none'; } catch (e2) {} }
+}
+
+/* The member correcting a fill price. Writes through saveBought, so the change
+   reaches localStorage and the server copy by the same path a tick does. */
+function setFillPrice(inp){
+  try {
+    var t = inp.getAttribute('data-myp');
+    var v = Number(inp.value);
+    if (!t) return;
+    var map = loadBought(currentStrategy) || {};
+    var cur = map[t];
+    if (!cur || typeof cur !== 'object') return;
+    if (!(v > 0)) { inp.value = Number(cur.p || 0).toFixed(2); return; }  // refuse 0 / negative
+    cur.p = Math.round(v * 100) / 100;
+    cur.t = new Date().toISOString();
+    map[t] = cur;
+    saveBought(currentStrategy, map);
+    renderMyPosition();
+  } catch (e) {}
+}
+
 function renderProfitHeadline(){
   var px = window._livePx || {}; var stocks = stocksData || [];
   var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, n = 0, best = null, worst = null;
@@ -12980,7 +13470,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=3390"></script>
+<script defer src="assets/mfc-chrome.js?v=3400"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

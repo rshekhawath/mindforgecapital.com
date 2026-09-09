@@ -676,7 +676,13 @@
 // has no query string to bust and an installed member would sit on the old copy
 // indefinitely. (mfc-countup.js also changed and carries ?v=2460, but it is
 // not in ASSET_PATHS — the three strategy pages that load it are network-first.)
-const CACHE = 'mfc-v93';
+// V36.6b — mfc-v94. BOTH precached documents changed again in this release:
+// index.html and login.html now request mfc-chrome.js?v=3400, which is the file
+// that loads the new first-party analytics module. A member still holding the
+// v93 shell would keep asking for ?v=3390 forever — index.html has no query to
+// bust and is the offline navigation fallback — so the page would render
+// correctly and simply never measure anything.
+const CACHE = 'mfc-v94';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
