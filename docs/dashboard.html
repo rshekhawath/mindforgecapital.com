@@ -1278,6 +1278,9 @@ html[data-theme="dark"] .mf-abar-cap{ background:rgba(120,150,255,.10); }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mf-abar-sub{ font-size:10.5px; color:var(--text3); line-height:1.25;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* V37.1 — set by syncActionBar() when the real strings do not fit the real box.
+   See the comment there for why this is measured rather than a media query. */
+.mf-abar-mid-off{ display:none !important; }
 /* The value sits INSIDE the button. A total in a caption beside the control is a
    number the reader has to carry across a gap at the moment they commit. */
 .mf-abar-cta{
@@ -1979,8 +1982,12 @@ html[data-theme="dark"] .msort-sel{
 @media(min-width:601px){.stock-cards{display:none;}}
 .stock-card{
   background:var(--ink2);border:0.5px solid var(--border2);
-  border-radius:var(--r-sm);padding:16px;
-  display:flex;flex-direction:column;gap:10px;
+  border-radius:var(--r-sm);padding:15px 16px;
+  /* V37.1 — 10px -> 8px. The 10px rhythm was set when this card was eight flat
+     label:value rows that needed the separation to read as a list; the action
+     line and the comparison line now group themselves, so the extra 2px only
+     buys height on a surface a member scrolls twenty-five times. */
+  display:flex;flex-direction:column;gap:8px;
   box-shadow:0 2px 10px -3px rgba(15,23,42,0.07), 0 1px 2px rgba(15,23,42,0.04);
 }
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
@@ -2050,6 +2057,54 @@ html[data-theme="dark"] .sc-num{ color:#9dbcff; background:rgba(120,160,240,.14)
 .sc-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
 .sc-key{color:var(--text3);}
 .sc-val{color:var(--white);font-weight:600;font-variant-numeric:tabular-nums;}
+/* ── V37.1 — THE ACTION LINE ────────────────────────────────────────────────
+   The quantity and the allocation are the two figures a member carries off this
+   card and into a broker ticket; everything else on it is context for those two.
+   They lead at 22px/17px against the card's 13px body, on one row, with their
+   nouns small and beneath so the numbers align on a single optical line.
+   Deliberately NOT colour-coded: --accent2 used to tint the allocation, which
+   put brand blue on a number that is neither good nor bad news and competed
+   with the one thing on this card that IS a verdict — the live return. Colour
+   here means the same thing it means everywhere else on this page. */
+.sc-act{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
+  padding-top:2px;}
+.sc-act-qty,.sc-act-money{display:flex;flex-direction:column;min-width:0;}
+.sc-act-money{align-items:flex-end;text-align:right;}
+.sc-shares{font-size:22px;font-weight:800;color:var(--white);line-height:1.1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+.sc-act-amt{font-size:17px;font-weight:700;color:var(--white);line-height:1.15;
+  font-variant-numeric:tabular-nums;}
+.sc-act-unit,.sc-act-lbl{font-size:11px;font-weight:600;color:var(--text3);
+  letter-spacing:.02em;margin-top:2px;white-space:nowrap;}
+/* The comparison line. Recommended and live sit together because the only
+   reason the card carries both is the gap between them, and .px-live already
+   prints that gap as the coloured return at the end of the line. */
+.sc-cmp{display:flex;align-items:baseline;justify-content:space-between;
+  flex-wrap:wrap;gap:4px 6px;
+  font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;
+  padding-bottom:2px;border-bottom:0.5px solid var(--border2);}
+.sc-cmp b{font-weight:700;color:var(--white);}
+.sc-cmp .sc-val{font-weight:700;}
+/* Recommended left, live right — the same two-column split the action row above
+   uses, so every figure on this card lands in one of two optical columns
+   instead of the comparison line running loose across the middle. The separator
+   only earns its place when the two halves collapse onto one line on a narrow
+   card; between two justified columns it is noise, so it hides itself. */
+.sc-cmp-sep{color:var(--text3);opacity:.6;display:none;}
+@media (max-width:340px){
+  .sc-cmp{justify-content:flex-start;}
+  .sc-cmp-sep{display:inline;}
+}
+/* 320px is the narrowest phone this site supports and the action row is the
+   only place on the card where two figures compete for one line. Measured at
+   320: "105 shares to buy" + a 7-digit allocation clears it, but a 4-digit
+   quantity beside a 8-digit rupee figure does not, so the type steps down
+   rather than the row wrapping into an ambiguous two-line stack. */
+@media (max-width:360px){
+  .sc-shares{font-size:20px;}
+  .sc-act-amt{font-size:15.5px;}
+  .sc-act-unit,.sc-act-lbl{font-size:10.5px;}
+}
 .sc-bar-wrap{background:rgba(37,99,235,0.07);border-radius:4px;height:6px;overflow:hidden;margin-top:2px;}
 /* V32.7 — the phone's weight row uses the same gauge as the table, and the
    gauge is absolutely positioned from the centre line, so its track has to be
@@ -5108,7 +5163,7 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   if (!card) return;
   if (!isFinite(daysLeft) || !isFinite(daysToReb)) { card.style.display = 'none'; return; }
 
-  var fmt = function(d){ return d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}); };
+  var fmt = function(d){ return mfDate(d, {day:'numeric', month:'short'}); };
   var dayWord = function(n){ return n + ' day' + (n === 1 ? '' : 's'); };
   // Shared axis. Both bars are drawn against the SAME denominator, so a longer bar
   // always means a later date. Guard the degenerate both-zero case (bars would be
@@ -5676,7 +5731,7 @@ function renderDashboard(sub, stocks) {
   document.getElementById('hero-name').textContent = firstName(sub.name);
   // expiry-date span lives inside the pill that we re-render below — defensive
   const _exp = document.getElementById('expiry-date');
-  if (_exp) _exp.textContent = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+  if (_exp) _exp.textContent = mfDate(expiry, {day:'numeric',month:'short',year:'numeric'});
 
   currentStrategy = sub.strategy || '';
   // V35.3 — the order checklist is cycle-scoped from this release. Adopt any
@@ -5719,7 +5774,7 @@ function renderDashboard(sub, stocks) {
   const knowTerm = cycleDays !== null;
   const consumed = knowTerm ? Math.min(cycleDays, Math.max(0, cycleDays - daysLeft)) : 0;
   const progPct = knowTerm ? (consumed / cycleDays) * 100 : 0;
-  const expiryStr = expiry.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  const expiryStr = mfDate(expiry, {day:'numeric',month:'short',year:'numeric'});
   const renewBtn =
     '<a class="renew-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=' +
     encodeURIComponent('Hi MindForge Capital — I would like to renew my subscription. Strategy: ' + (sub.strategy||'') + '. Email: ' + (sub.email||'') + '.') +
@@ -6439,6 +6494,35 @@ function fmtNum(v) {
   return fmtINR(Math.round(Number(v) || 0));
 }
 function fmtMoney(v) { return '₹' + fmtNum(v); }
+/* ══ V37.1 — A DATE THIS PAGE WRITES MUST NOT BREAK IN HALF ═══════════════════
+   V37.0 fixed this for assets/mfc-live.js, which writes every LIVE date on the
+   public site, and recorded that dashboard.html had eleven more call sites of
+   the same shape that no public sweep could reach — they are all behind the
+   member gate. Swept here through ?demo= and two of them do break at 320px:
+   "vs the set you last opened on 10 Aug 2026" splits the date, and the capital
+   ladder's "±97 bps" splits the number from its unit.
+
+   The binding is DELIBERATELY NARROW. Replacing every space would make
+   "10 Sep, 3:56 pm" one unbreakable token, which turns a wrap into a horizontal
+   overflow on a 320px phone — trading this defect for a worse one. Only the
+   adjacencies that must never split are bound: digit-to-letter and
+   letter-to-digit. That covers day-month, month-year and "3:56 pm", and leaves
+   the comma a legal break.
+
+   NOT applied to the two `new Date(new Date().toLocaleString('en-US', …))`
+   call sites: those parse the string back into a Date for timezone arithmetic,
+   and a non-breaking space there would not parse. */
+function mfDate(d, opts) {
+  try { return _mfBindDate(d.toLocaleDateString('en-IN', opts)); } catch (e) { return ''; }
+}
+function mfDateTime(d, opts) {
+  try { return _mfBindDate(d.toLocaleString('en-IN', opts)); } catch (e) { return ''; }
+}
+function _mfBindDate(str) {
+  return String(str)
+    .replace(/(\d)\s+([A-Za-z])/g, '$1\u00a0$2')
+    .replace(/([A-Za-z])\s+(\d)/g, '$1\u00a0$2');
+}
 function shortMoney(v) { return shortLakhs(v); }
 
 /* V35.5 — shortLakhs rounds to ONE decimal and then strips a trailing .0, which
@@ -6784,13 +6868,13 @@ function refreshDrift() {
         : '6';
       return '<span class="drift-t ' + cls + peak + '" data-h="' + pct + '"' +
              ' title="' + nm(h.s) + ' — ' + h.actual.toFixed(2) + '% held vs ' +
-             h.target.toFixed(2) + '% model (' + (h.bps > 0 ? '+' : '') + h.bps + ' bps)">' +
+             h.target.toFixed(2) + '% model (' + (h.bps > 0 ? '+' : '') + h.bps + '\u00A0bps)">' +
              '<i></i></span>';
     }).join('');
 
     document.getElementById('drift-scale').innerHTML = maxAbs > 0
-      ? '<span>' + sgn(lo.bps) + ' bps\u00A0&middot; ' + nm(lo.s) + '</span>' +
-        '<span>' + sgn(hi.bps) + ' bps\u00A0&middot; ' + nm(hi.s) + '</span>'
+      ? '<span>' + sgn(lo.bps) + '\u00A0bps\u00A0&middot; ' + nm(lo.s) + '</span>' +
+        '<span>' + sgn(hi.bps) + '\u00A0bps\u00A0&middot; ' + nm(hi.s) + '</span>'
       : '';
 
     /* V30.3 — this said "your N BOUGHT picks", and `held` has nothing to do with
@@ -6805,10 +6889,10 @@ function refreshDrift() {
        says; the session panel keeps sole ownership of the word "placed". */
     document.getElementById('drift-lead').innerHTML = maxAbs > 0
       ? 'The <b>' + held.length + '</b> pick' + (held.length === 1 ? '' : 's') +
-        ' your capital sizes track model weight to within <b>' + maxAbs + ' bps</b>'
+        ' your capital sizes track model weight to within <b>' + maxAbs + '\u00A0bps</b>'
       : 'Every pick your capital sizes lands exactly on its model weight';
     document.getElementById('drift-chip').textContent =
-      maxAbs > 0 ? ('±' + maxAbs + ' bps') : 'Exact';
+      maxAbs > 0 ? ('±' + maxAbs + '\u00A0bps') : 'Exact';
 
     document.getElementById('drift-note').innerHTML = maxAbs > 0
       ? 'Whole shares cannot be split, so every order lands a little above or below '
@@ -6819,7 +6903,7 @@ function refreshDrift() {
         // capital ladder directly below now disproves on the same screen — whole
         // shares round in steps, so on the demo book ₹25L tracks to ±15 bps and
         // ₹50L to ±17. The ladder is the honest version of this sentence.
-        + ' bps</b>. Capital is the lever that moves these &mdash; the ladder below shows '
+        + '\u00A0bps</b>. Capital is the lever that moves these &mdash; the ladder below shows '
         + 'what each size would do. 1 bp = 0.01%.'
       : 'At this capital every order divides exactly into its model weight, so the book '
         + 'you place is the model to the rupee.';
@@ -6974,7 +7058,7 @@ function refreshCapitalLadder() {
       // V30.3: no measurable drift ⇒ no bar and no number. A row that buys fewer
       // than two whole shares has no spread between holdings to report, and
       // printing its 0 next to the shortest bar on the card said the opposite.
-      const bpsTxt = r.measurable ? ('±' + r.maxBps + ' bps') : '—';
+      const bpsTxt = r.measurable ? ('±' + r.maxBps + '\u00A0bps') : '—';
       const aria   = r.measurable
         ? (', widest weight gap ' + r.maxBps + ' basis points')
         : ', too few whole shares to measure a weight gap';
@@ -7010,7 +7094,7 @@ function refreshCapitalLadder() {
                  'no weight gap to measure' + (best ? ' &mdash; the sizes below can be compared.' : '.'));
     } else if (mine && best) {
       parts.push('Your <b>' + fmtMoney(mine.capital) + '</b> holds the book to <b>±' + mine.maxBps +
-                 ' bps</b> of the model' +
+                 '\u00A0bps</b> of the model' +
                  (best.capital === mine.capital
                    ? ' &mdash; the closest fit of any size drawn here.'
                    : '; the closest fit here is <b>' + fmtMoney(best.capital) + '</b> at <b>±' +
@@ -7021,7 +7105,7 @@ function refreshCapitalLadder() {
     if (best && biggest && biggest.maxBps > best.maxBps) {
       parts.push('More is not automatically closer &mdash; whole shares round in steps, so <b>' +
                  fmtMoney(biggest.capital) + '</b> lands at <b>±' + biggest.maxBps +
-                 ' bps</b>, wider than <b>' + fmtMoney(best.capital) + '</b>.');
+                 '\u00A0bps</b>, wider than <b>' + fmtMoney(best.capital) + '</b>.');
     }
     if (anyPartial) {
       parts.push('An amber row cannot place the whole book, and its gap is measured only across ' +
@@ -7122,7 +7206,7 @@ function heldLabel(s, hr, w) {
   if (!hr) return nm + ' \u2014 ' + (w ? w.toFixed(2) : '\u2014') + '% model weight';
   const sgn = (hr.bps > 0 ? '+' : '') + hr.bps;
   const gap = hr.bps === 0 ? 'exactly on the model weight'
-                           : sgn + ' bps ' + (hr.bps > 0 ? 'over' : 'under') + ' the model';
+                           : sgn + '\u00A0bps ' + (hr.bps > 0 ? 'over' : 'under') + ' the model';
   return nm + ' \u2014 you hold ' + hr.actual.toFixed(2) + '% against a ' +
          hr.target.toFixed(2) + '% model weight (' + gap + ')';
 }
@@ -7357,18 +7441,34 @@ function renderTable(stocks) {
         <div class="sc-num">${i+1}</div>
       </div>
       <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(s.industry||'—')}</span></div>
-      <div class="sc-row"><span class="sc-key">Rec. Price</span><span class="sc-val">₹${entry.toFixed(2)}</span></div>
-      <div class="sc-row"><span class="sc-key">Live / Return</span><span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></div>
-      <div class="sc-row"><span class="sc-key">Allocation</span><span class="sc-val sc-alloc" style="color:var(--accent2);">${fmtAmt(amt)}</span></div>
-      <!-- V35.6 — "Shares to buy" was printed on every card, including the ones the
-           card itself footers with "Already held — carried over". A member reading
-           "Shares to buy 26" under that footer is being told to buy a position they
-           already own — the same contradiction V35.4 removed from the checkbox
-           column, still live one row above it. The desktop table says plainly
-           "Shares", which is right for every state; the phone needs the noun to
-           follow the row's own state, because the card has no column header to
-           lean on. Held -> the quantity you hold; re-weighted -> the target. -->
-      <div class="sc-row"><span class="sc-key">${held ? (movePP != null ? 'Target shares' : 'Shares held') : 'Shares to buy'}</span><span class="sc-val sc-shares">${shares}</span></div>
+      <!-- V37.1 — THE ACTION LINE. This card carried five identical label:value
+           rows (Rec. Price / Live / Allocation / Shares / Weight), so the two
+           figures a member actually TYPES INTO THEIR BROKER — the quantity and
+           the money it costs — were the same 13px as the three that only
+           inform. Twenty-five of those cards is a long scroll to place one
+           month of orders. The quantity and the allocation now lead the card at
+           the size of a decision, and the three supporting figures fall in
+           behind them. .sc-shares and .sc-alloc keep their exact names and each
+           still holds ONLY its number, because updateAllocationCells() patches
+           both by textContent on every capital change.
+           V35.6's rule is unchanged and still lives here: the noun follows the
+           row's own state, because the card has no column header to lean on.
+           Held -> the quantity you hold; re-weighted -> the target. -->
+      <div class="sc-act">
+        <div class="sc-act-qty"><span class="sc-shares">${shares}</span><span class="sc-act-unit">${held ? (movePP != null ? 'shares · target' : 'shares held') : 'shares to buy'}</span></div>
+        <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${fmtAmt(amt)}</span><span class="sc-act-lbl">allocation</span></div>
+      </div>
+      <!-- V37.1 — recommended and live on ONE line, in that order, because the
+           only reason both are on this card is the distance between them, and
+           that distance is the return already printed at the end of the line.
+           Two stacked rows made the reader hold one number in their head to
+           compare it with the next. .px-live is untouched: same element, same
+           data-px / data-rec, same innerHTML from paintLivePrices(). -->
+      <div class="sc-cmp">
+        <span class="sc-cmp-rec">Rec <b>₹${entry.toFixed(2)}</b></span>
+        <span class="sc-cmp-sep" aria-hidden="true">·</span>
+        <span class="sc-cmp-live">Live <span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></span>
+      </div>
       <!-- V33.2 (NB: this comment is inside a template literal — no backticks) —
            the phone card said "Weight 4.0%" on all twenty-five cards, and
            the one thing that DID differ between them — the gauge showing this
@@ -7835,7 +7935,30 @@ function refreshActionBar(){
       if (amt) amt.textContent = '';
       if (cta){ cta.onclick = abarGoToPicks; cta.setAttribute('aria-label', 'Jump to your picks table'); }
     }
+    /* V37.1 — A TRUNCATED LABEL IS WORSE THAN NO LABEL.
+       The mid column is flex:1 on a row whose other two children are fixed, so
+       at narrow widths it gets whatever is left and ellipsises into nonsense:
+       measured at 320px it showed "4 order…" over "2 to …", and with a full
+       25-name book ("25 orders left" / "13 to buy · 12 to sell") it still
+       overflowed at 360px — the single commonest Android width. A CSS
+       breakpoint safe for the worst book would therefore have to hide the
+       column on phones where it fits perfectly well for a small one.
+       So the test is the real string against the real box, re-run on every
+       sync. Nothing is lost when it goes: the column is aria-hidden, and the
+       count it carries is already in the CTA beside it ("Review 4 on Kite").
+       Un-hide BEFORE measuring or the first hide latches forever — a hidden
+       column reports clientWidth 0 and would always look overflowed. */
     bar.hidden = false; bar.classList.add('is-on');
+    /* MEASURE AFTER THE BAR IS ON SCREEN, not before. A [hidden] bar gives its
+       children clientWidth 0 AND scrollWidth 0, so the overflow test reads
+       0 > 1 — false — and the column stayed visible and truncated at exactly the
+       widths this was written to catch. Caught by measuring the shipped page at
+       320px rather than trusting the branch: n overflowed 16px, s overflowed
+       27px, and the class was absent. Same family as every "read the state in
+       the same block that changed it" trap on this page. */
+    abarFitMid();
+    requestAnimationFrame(abarFitMid);
+    setTimeout(abarFitMid, 260);   // fail-visible: rAF does not fire on a hidden tab
     /* Publish the real height so the FAB and the toast clear it. Measured
        SYNCHRONOUSLY — the display flip above has already happened, so the box is
        real by now, and rAF cannot be the only writer: it does not fire in every
@@ -7854,6 +7977,35 @@ function refreshActionBar(){
 /* Tapping the capital chip goes to the ONE input that owns the value. Duplicating
    the field in the bar would mean two controls for one number, which is how they
    end up disagreeing. */
+/* V37.1 — see refreshActionBar() for why this is measured rather than a media
+   query. ONE-SHOT MEASUREMENT WAS NOT ENOUGH, and that is the part worth
+   recording: called once at the end of the sync it reported "fits" at 320px on
+   a page that was visibly truncated, because the first sync runs before the
+   layout the strings will actually be laid out in has settled. Re-running it
+   from the same call, a frame later, and on resize is what makes it true —
+   and resize is needed anyway, since the bar's width changes on rotation.
+   Order matters: un-hide first, THEN measure. A hidden column reports
+   clientWidth 0 and scrollWidth 0, so the test would read 0 > 1 (false) and a
+   column hidden once could never come back. */
+function abarFitMid(){
+  var mid = document.getElementById('abar-mid');
+  if (!mid) return;
+  var bar = document.getElementById('mf-abar');
+  if (!bar || bar.hidden) return;              // nothing to measure yet
+  mid.classList.remove('mf-abar-mid-off');
+  var n = document.getElementById('abar-n'), s = document.getElementById('abar-sub');
+  var tight = [n, s].some(function(el){ return el && el.scrollWidth > el.clientWidth + 1; });
+  if (tight) mid.classList.add('mf-abar-mid-off');
+}
+if (!window.__abarFitBound){
+  window.__abarFitBound = 1;
+  var _aft;
+  addEventListener('resize', function(){
+    clearTimeout(_aft); _aft = setTimeout(abarFitMid, 120);
+  }, {passive:true});
+  addEventListener('orientationchange', function(){ setTimeout(abarFitMid, 180); }, {passive:true});
+  try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(abarFitMid); } catch(e){}
+}
 function abarEditCapital(){
   var el = document.getElementById('size-input');
   if (!el) return;
@@ -8856,7 +9008,7 @@ function refreshHowto() {
     try {
       var now = new Date(), nx = nextRebalanceDate(now);
       days = Math.max(0, daysBetween(now, nx));
-      rebLabel = nx.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      rebLabel = mfDate(nx, { day: 'numeric', month: 'short' });
     } catch (e) {}
 
     // which step is the member actually on
@@ -10027,7 +10179,7 @@ function renderBookChange(diff, stocks){
   if (when){
     var w = diff.prevWhen ? new Date(diff.prevWhen) : null;
     when.textContent = (w && !isNaN(w.getTime()))
-      ? ('vs the set you last opened on ' + w.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))
+      ? ('vs the set you last opened on ' + mfDate(w, {day:'numeric',month:'short',year:'numeric'}))
       : 'vs your previous set';
   }
   var line = document.getElementById('chg-line');
@@ -10345,7 +10497,7 @@ function startPricePolling(){
 }
 function setProfitLoading(rebal){
   var d = document.getElementById('pc-rebal-date');
-  if (d) d.textContent = rebal ? ('· ' + rebal.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})) : '';
+  if (d) d.textContent = rebal ? ('· ' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'})) : '';
   var pct = document.getElementById('pc-pct'); if (pct){ pct.innerHTML = '<span class="skel-bar pc-skel-num" role="status" aria-label="Calculating your live profit since the rebalance"></span>'; pct.className = 'pc-pct pc-flat'; }
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Fetching live prices for your holdings…';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
@@ -10368,10 +10520,10 @@ function setProfitUnavailable(){
    fetch, which is the pre-existing behaviour and is never worse than it was. */
 function _asOfLabel(){
   var at = Number(window._pxAt) || 0;
-  if (!at) return 'As of ' + new Date().toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  if (!at) return 'As of ' + mfDateTime(new Date(), {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
   var age = Date.now() - at;
   if (age < 60000) return 'Prices just now';
-  return 'Prices as of ' + new Date(at).toLocaleString('en-IN', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return 'Prices as of ' + mfDateTime(new Date(at), {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null; }
 // V14.6: count the headline % up from 0 on first paint (a tactile premium touch,
@@ -10594,7 +10746,7 @@ function renderProfitHeadline(){
   var absStr = fmtMoney(Math.abs(Math.round(absGain)));
   var sub = document.getElementById('pc-sub');
   sub.innerHTML = 'Weighted return across ' + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
-    (rebal ? ' on <strong>' + rebal.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
+    (rebal ? ' on <strong>' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
     '. On your ' + fmtMoney(currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.';
   var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
   var br = document.getElementById('pc-breakdown');
@@ -10853,7 +11005,7 @@ function renderTrackRecord(){
   var fmtPct = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; };
   var mon = function(iso){
     var dt = new Date(iso + 'T00:00:00');
-    return isNaN(dt.getTime()) ? iso : dt.toLocaleDateString('en-IN', { month:'short', year:'2-digit' });
+    return isNaN(dt.getTime()) ? iso : mfDate(dt, { month:'short', year:'2-digit' });
   };
 
   var box = document.getElementById('trk-rows');
@@ -10976,7 +11128,7 @@ function renderNewerSetNotice(){
   if (isNaN(latest.getTime()) || !(latest > window._rebalDate)) return;
 
   var sub = window._currentSub || {};
-  var when = latest.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+  var when = mfDate(latest, { day:'numeric', month:'short' });
   el.innerHTML = '<span><b>A newer set published on ' + when + '.</b> ' +
     'You are holding the previous cycle — the picks below are the ones your subscription covers.</span>' +
     '<a class="cn-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=' +
@@ -11035,7 +11187,7 @@ function renderBenchCompare(port){
     var label;
     if(mins<60) label=mins+'m ago';
     else if(mins<60*24){ var h=Math.round(mins/60); label=h+'h ago'; }
-    else label=t.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    else label=mfDate(t, {day:'numeric',month:'short'});
     when.textContent='refreshed '+label;
     pill.style.display='';
   }).catch(function(){});
