@@ -345,7 +345,23 @@ html[data-theme="dark"] .strat-cta.cta-filled,
 html[data-theme="dark"] .nav-cta,
 html[data-theme="dark"] .oo-cta,
 html[data-theme="dark"] .sidebar-btn,
-html[data-theme="dark"] .nav-badge{
+html[data-theme="dark"] .nav-badge,
+/* V36.9 — THE FAMILY WAS THE DEFECT, NOT THE VALUE. The two below paint the
+   identical `linear-gradient(135deg,var(--accent),var(--accent2))` with white
+   text and were simply not on V30.0's list: `.fc-chip.on` predates it and was
+   missed, and `.mf-abar-cta` is the sticky action bar V35.5 added afterwards,
+   which reached for the same ramp the release above had already retired.
+   A named family cannot protect a surface built after it was written.
+   Measured under the GLYPHS with a pixel probe, not against the worst stop —
+   on a 135deg ramp the extreme corner often carries no text, which is why nine
+   other candidates in the same sweep cleared 5.0-6.4 and are untouched:
+     .fc-chip.on    dark  4.00:1 -> 5.07   (light was already 5.17, unchanged)
+     .mf-abar-cta   dark  4.40:1 -> 5.07   at 390px, where the bar lives
+                          4.00:1 -> 5.07   on #abar-amt, its widest-ramp child
+   `#kbsk-btn` sits in the same bar at 4.61-5.07 and is deliberately NOT here:
+   it already passes, and repainting it would flatten a ramp that is correct. */
+html[data-theme="dark"] .fc-chip.on,
+html[data-theme="dark"] .mf-abar-cta{
   background-image:linear-gradient(135deg,var(--accent) 0%,#3b6ae3 100%);
 }
 
@@ -2441,6 +2457,25 @@ html[data-theme="dark"] .cmp-row .v{ color: var(--ink-link); }
   /* the dashboard footer's four social buttons: 40x40 on a 50px pitch, so 44
      still leaves 6px between them */
   html .dash-foot-social a{ min-width: 44px; min-height: 44px; }
+
+  /* V36.9 — and the MAIN site footer's four, which are the same control at the
+     same 40x40 and did not get that fix. `.dash-foot-social` and
+     `.footer-social` are twin rules (same width, height, inline-flex, hover
+     lift) on two different surfaces, so fixing one read as fixing both.
+     Measured 40x40 on every phone AND every iPad, in both themes.
+     The PAD grows, not the box: `.footer-social` is `flex-wrap:nowrap` with an
+     8px gap, so widening the boxes to 44 would push a 4-icon row to 200px and
+     risk the 320px column, while the dashboard's row wraps and could afford it.
+     A 44px pad on a 48px pitch leaves 4px between neighbours, so this cannot
+     reproduce the V28.7 collision where two pads stole each other's taps. The
+     anchor is already `position:relative`, and its <svg> is a child, so the pad
+     sits under nothing that needs the pointer. */
+  html footer .footer-social a::before{
+    content: ''; position: absolute;
+    left: 50%; top: 50%;
+    width: 100%; min-width: 44px; height: 100%; min-height: 44px;
+    transform: translate(-50%, -50%);
+  }
 
   /* the copy-ticker chip is 44 tall since V33.4, but its width is its TEXT: a
      four-letter ticker measures 48 and "LT" measures 33 */

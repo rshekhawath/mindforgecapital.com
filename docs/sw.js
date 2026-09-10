@@ -688,7 +688,14 @@
 // shared stylesheet — so the next change to that block would not reach an
 // installed member at all. index.html is untouched by that extraction (it keeps
 // its own two larger variants) but shares this cache name.
-const CACHE = 'mfc-v95';
+// V36.9 — mfc-v96. mfc-finish.css moved 3640 -> 3650 (the dark CTA ramp that
+// V30.0's family never reached, and the main footer's 40px social taps), and
+// BOTH precached documents changed in their own right: index.html carries the
+// new token, and login.html carries it too. A precached document has no query
+// to bust and index.html is the offline navigation fallback, so an installed
+// member left on v95 would keep a v95 shell asking for ?v=3640 and would see
+// none of this release.
+const CACHE = 'mfc-v96';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
