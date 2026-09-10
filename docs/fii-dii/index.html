@@ -595,7 +595,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3650">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3660">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -924,7 +924,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     index levels are from public market data. This is a <b>research dashboard, not investment advice</b> or a buy/sell
     recommendation. Provisional cash numbers can be revised by the exchange. Refreshed every market day.
     <br><b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b>
-    SEBI-Registered Research Analyst&nbsp;· Sagar Shekhawath&nbsp;· INH-XXXXXXXXXXX&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
+    SEBI-Registered Research Analyst&nbsp;· INH-XXXXXXXXXXX&nbsp;· Sagar Shekhawath&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor Charter</a>.
   </p>
   </footer>
 
@@ -1206,11 +1206,13 @@ function renderCumulative(d){
   // The caption is the accessible reading of the shape, and it names the basis
   // the cash panel above already declares (provisional NSE figures).
   const verb=v=>v>=0?"net bought":"net sold";
+  // V37.0 — "₹1,30,645 cr" was breaking between the amount and its unit at every
+  // width from 768 up; bind them with a non-breaking space, as the typed copy does.
   document.getElementById("cumuNote").innerHTML =
     `Over these <b>${pts.length}</b> sessions FIIs have <b>${verb(last.f)}</b> `
-    + `<b>₹${grp(Math.abs(Math.round(last.f)))} cr</b> and DIIs have <b>${verb(last.i)}</b> `
-    + `<b>₹${grp(Math.abs(Math.round(last.i)))} cr</b> in the cash market · `
-    + `combined <b>₹${grp(Math.abs(Math.round(last.f+last.i)))} cr</b> of net `
+    + `<b>₹${grp(Math.abs(Math.round(last.f)))}&nbsp;cr</b> and DIIs have <b>${verb(last.i)}</b> `
+    + `<b>₹${grp(Math.abs(Math.round(last.i)))}&nbsp;cr</b> in the cash market · `
+    + `combined <b>₹${grp(Math.abs(Math.round(last.f+last.i)))}&nbsp;cr</b> of net `
     + `${last.f+last.i>=0?"inflow":"outflow"}. Provisional NSE figures, the same rows as the table below.`;
   box.style.display="";
 }

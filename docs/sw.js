@@ -695,7 +695,14 @@
 // to bust and index.html is the offline navigation fallback, so an installed
 // member left on v95 would keep a v95 shell asking for ?v=3640 and would see
 // none of this release.
-const CACHE = 'mfc-v96';
+// V37.0 — mfc-v97. index.html (the precached offline navigation fallback) changed
+// twice over: it carries mfc-live.js?v=3620, whose date formatter now binds a
+// date with non-breaking spaces so "31 Aug 2026" can no longer break into
+// "31 Aug" / "2026" in the hero's live line, and its SmallMicro card no longer
+// splits "15 stocks" across two lines. A precached document has no query to
+// bust, so an installed member left on v96 would keep a v96 shell asking for
+// ?v=3610 and would see neither.
+const CACHE = 'mfc-v97';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

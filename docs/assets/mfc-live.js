@@ -74,10 +74,23 @@
       } else { land(); }
     });
   }
+  /* V37.0 — A DATE THIS FUNCTION WRITES MUST NEVER BREAK ACROSS TWO LINES.
+     Every date on the site that a human typed is bound with &nbsp; ("Jul&nbsp;2026",
+     "backtest&nbsp;CAGR", "28&nbsp;Aug&nbsp;2026"); this one is written at runtime and
+     came out with plain U+0020, so the same sentence carried both conventions and
+     only the machine-written half broke. Measured across 24 pages x 11 viewports x
+     2 themes: "31 Aug 2026" split into "31 Aug" / "2026" on the homepage hero, the
+     strategies KPI foot and its fund strip, and "9 Sept 2026" split on all three
+     strategy pages at 320px — five surfaces, one formatter. Joining with U+00A0
+     here fixes every one of them and any future surface that declares data-live,
+     which is the point of formatting in one place. The day-month space is bound
+     too: "31" alone at the end of a line is the same defect one token earlier. */
+  var NB = "\u00a0";
   function fmtDate(iso) {
     try {
       var d = new Date(iso + "T00:00:00");
-      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+              .replace(/\s+/g, NB);
     } catch (e) { return iso; }
   }
 

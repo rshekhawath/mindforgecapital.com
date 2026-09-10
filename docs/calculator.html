@@ -587,7 +587,7 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();
 </script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3650">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3660">
 <!-- V25.6 — structured data: this page had none, so search engines had no
      machine-readable statement of what the tool is, that it is free, or where it
      sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
@@ -1779,7 +1779,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     var d = compute(DEFAULTS);
     if(!(d.saved > 0)) return;                 // never assert a loss that isn't one
     var lakh = d.saved/100000;
-    host.textContent = '₹' + (lakh>=100 ? (lakh/100).toFixed(2)+' crore' : lakh.toFixed(2)+' lakh');
+    /* V37.0 — bind the amount to its unit. The markup this overwrites already said
+       "₹7.33&nbsp;lakh"; this line handed back a plain space, so the headline broke
+       as "₹7.33" / "lakh" at 1280-1920 and ipad-1180. Machine number, hand label,
+       one sentence — the same seam, one token wide. */
+    host.textContent = '₹' + (lakh>=100 ? (lakh/100).toFixed(2)+'\u00a0crore' : lakh.toFixed(2)+'\u00a0lakh');
   }
 
   function init(){

@@ -853,7 +853,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3650">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3660">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1279,11 +1279,13 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
       </div>
       <!-- V28.0: the only checkbox in the sidebar was 16x16 with an 18px label
            beside it — the whole control sat under the 24px WCAG 2.2 SC 2.5.8
-           floor. The box grows to 18px and the label becomes a full-height
-           inline-flex target (26px), so the pair clears the floor without
-           changing the row's look. -->
+           floor. The label became a full-height inline-flex target (26px).
+           V37.0: the BOX itself is sized in #mfc-v295-touch (18px, 24px under a
+           coarse pointer) rather than here, because an inline style attribute
+           cannot be overridden by a media query. A sibling label[for] is a
+           second target for the same action, not a bigger box for this one. -->
       <div class="filter-group" style="display:flex;align-items:center;gap:8px;padding-top:4px;min-height:26px">
-        <input type="checkbox" id="above_sma200" style="width:18px;height:18px;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" id="above_sma200" style="cursor:pointer;flex-shrink:0">
         <label for="above_sma200" style="font-size:12px;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;min-height:26px">Above 200-day SMA</label>
       </div>
     </div>
@@ -1487,7 +1489,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 
 <footer class="scan-legal" style="max-width:1180px;margin:20px auto 0;padding:18px 20px 8px;border-top:0.5px solid var(--border2,rgba(37,99,235,0.2));font-size:12px;line-height:1.65;color:var(--text3,#475569);text-align:center;">
   Stock data is sourced from public filings for research and education only — <b>not investment advice</b> or a buy/sell recommendation. <b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b><br>
-  SEBI-Registered Research Analyst&nbsp;· Sagar Shekhawath&nbsp;· INH-XXXXXXXXXXX&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a>
+  SEBI-Registered Research Analyst&nbsp;· INH-XXXXXXXXXXX&nbsp;· Sagar Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor Charter</a>
   <!-- V25.7: a real, crawlable entry point to the A–Z directory. The company
        links on this page are built inside a JS template literal in a paginated
        table, so before this line nothing in the served HTML pointed a crawler at
@@ -2941,9 +2943,23 @@ checkHealth();
      larger (login's 22px OTP boxes) still wins.
      ========================================================================= -->
 <style id="mfc-v295-touch">
+/* V37.0 — this size used to be an inline style attribute on the input, which no
+   media query can override without !important; it is a rule now so the coarse
+   block below can simply win on cascade order. */
+#above_sma200{width:18px;height:18px;}
 @media (hover: none) and (pointer: coarse) {
   .filter-input,.filter-select{font-size:16px;}
   .nav-search input{font-size:16px;}
+  /* V37.0 — the sidebar's one checkbox was still 18px on a touch screen.
+     V28.0 raised it from 16px to 18px and gave the label beside it a 26px
+     inline-flex box, on the reasoning that "the pair clears the 24px floor".
+     The pair does; the box does not, and the box is what a finger aims at.
+     Measured by hit-test (not by reading the element's own rect) it owns
+     18.4 x 18.4px on iPad landscape at 1180 — the one width where the filter
+     sidebar is on screen AND the pointer is coarse, which is why nine earlier
+     sweeps at phone widths never saw it. 24px clears SC 2.5.8 with the row's
+     existing 26px min-height, so nothing around it moves. */
+  #above_sma200{width:24px;height:24px;}
 }
 </style>
 <!-- ============================================================================

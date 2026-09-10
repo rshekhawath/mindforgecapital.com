@@ -370,7 +370,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
 <footer class="dir-foot">
   Stock data is sourced from public filings for research and education only — <b>not investment advice</b> or a buy/sell recommendation. <b>Investments in the securities market are subject to market risks; read all the related documents carefully before investing.</b><br>
-  SEBI-Registered Research Analyst · Sagar Shekhawath · INH-XXXXXXXXXXX · <a href="/disclosures.html">Disclosures &amp; Investor Charter</a><br>
+  SEBI-Registered Research Analyst · INH-XXXXXXXXXXX · Sagar Shekhawath · <a href="/disclosures.html">Disclosures &amp; Investor Charter</a><br>
   <span style="color:var(--text3)">Directory regenerated {day}.</span>
 </footer>
 
