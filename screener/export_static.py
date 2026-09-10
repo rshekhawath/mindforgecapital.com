@@ -606,6 +606,10 @@ _COMPANY_FIELDS = (
     "enterprise_value_cr", "revenue_cr", "net_profit_cr", "current_price",
     "shares_outstanding", "float_pct", "employees", "eps", "pe_ratio",
     "pb_ratio", "sma_50", "sma_200", "52w_from_high_pct",
+    # V36.7 — provenance: set only for a listing whose statements are reported
+    # in a different currency from its quote (INFY, HCLTECH). The company page
+    # says so rather than printing a translated figure silently.
+    "financial_currency",
 )
 
 # The two the LITE bundle drops and the detail page exists to show.
@@ -637,8 +641,14 @@ _ENGINE_DERIVED = ("_p2s50", "_p2s200")
 def _universe_fields(rows: list) -> list:
     """The field set the reduced universe must carry, in row order."""
     want = (set(_COMPANY_FIELDS) | _engine_factor_keys()) - set(_ENGINE_DERIVED)
+    # V36.7 — scan EVERY row, not a sample. This read rows[:200] and dropped
+    # `financial_currency` from the bundle because only 2 of 2,126 rows carry
+    # it: the field is set only for a listing whose statements are reported in
+    # a foreign currency, and the rest of the snapshot came from a cache
+    # populated before the field existed. A sample cannot see a rare field, and
+    # rare is exactly when provenance matters. 2,126 key-set unions is free.
     present = set()
-    for r in rows[:200]:
+    for r in rows:
         present |= set(r.keys())
     missing = sorted(w for w in want if w not in present)
     if missing:

@@ -355,8 +355,50 @@ _FRAME_ALIASES = {
     "fcf":                 ("Free Cash Flow",),
     "capex":               ("Capital Expenditure", "Capital Expenditure Reported"),
     "ebit":                ("EBIT", "Operating Income"),
+    "revenue":             ("Total Revenue", "Operating Revenue"),
+    "net_income":          ("Net Income Common Stockholders", "Net Income"),
+    "gross_profit":        ("Gross Profit",),
+    "ebitda":              ("EBITDA", "Normalized EBITDA"),
     "interest_expense":    ("Interest Expense",),
 }
+
+# ── Reporting-currency mismatch (V36.7) ───────────────────────────────────────
+# Yahoo returns TWO currencies per listing and this codebase only ever read one.
+# `currency` is what the SHARE trades in; `financialCurrency` is what the
+# STATEMENTS are reported in, and for a handful of NSE listings they differ:
+#
+#     INFY.NS     currency INR   financialCurrency USD
+#     HCLTECH.NS  currency INR   financialCurrency USD
+#
+# Both are Indian IT majors that report in dollars. Nothing was "100x too
+# small": Infosys's revenue really is 20,299,000,000 — of US DOLLARS — and the
+# site rendered it as Rs 2,030 Cr. Sampled across 20 large caps, only these two
+# mismatch; the other five names a market-cap/revenue ratio test flags
+# (BAJAJHLDNG, TATAINVEST, AUBANK, CUPID, INDIAMART) all report in INR and their
+# high ratios are legitimate. So `financialCurrency` is the detector and a ratio
+# heuristic is not — it was 5 false positives out of 7.
+_FX_CACHE = {}
+
+def fx_rate(frm, to):
+    """Spot rate frm->to, fetched once per process. None if unavailable."""
+    frm, to = (frm or "").upper(), (to or "").upper()
+    if not frm or not to:
+        return None
+    if frm == to:
+        return 1.0
+    key = frm + to
+    if key in _FX_CACHE:
+        return _FX_CACHE[key]
+    rate = None
+    try:
+        h = yf.Ticker(f"{key}=X").history(period="5d")
+        if not h.empty:
+            rate = float(h["Close"].dropna().iloc[-1])
+    except Exception:
+        rate = None
+    _FX_CACHE[key] = rate
+    return rate
+
 
 def latest_col(frame):
     """Newest column of a yfinance statement frame as a row Series, else None."""
@@ -415,6 +457,50 @@ def fetch_stock_info(symbol):
         cf_row = latest_col(getattr(ticker, "cashflow", None))
         is_row = latest_col(getattr(ticker, "income_stmt", None))
 
+        # ── Reporting currency (V36.7) ──────────────────────────────────
+        # See the note on fx_rate(). For the ~2 listings whose statements are in
+        # a different currency from the quote, every ABSOLUTE money figure has
+        # to be brought into the quote currency before it is stored, or the site
+        # prints dollars with a rupee sign. RATIOS are unaffected either way —
+        # ROE, the margins and the current ratio all divide two figures that
+        # share a currency — which is why this went unnoticed for so long: every
+        # derived metric for these two names was, and remains, correct.
+        quote_ccy = str(i.get("currency") or "").upper()
+        fin_ccy   = str(i.get("financialCurrency") or "").upper()
+        info_fx = frame_fx = 1.0
+        fx_used = None
+        if quote_ccy and fin_ccy and quote_ccy != fin_ccy:
+            # WHICH SOURCE IS IN WHICH CURRENCY IS NOT CONSISTENT, so it is
+            # measured rather than assumed. INFY reports BOTH .info and the
+            # frames in USD; HCLTECH reports .info in USD and its frames in INR
+            # already. A blanket "financialCurrency governs everything" rule
+            # would double-convert HCLTECH by ~88x.
+            _ir = i.get("totalRevenue")
+            _fr = fv(is_row, "revenue")
+            _frame_in_quote = bool(_ir and _fr and (_fr / _ir) > 10)
+            _rate = fx_rate(fin_ccy, quote_ccy)
+            if _rate:
+                fx_used = _rate
+                info_fx = _rate
+                # A frame already in the quote currency is EXACT and is left
+                # alone — better than converting at spot, because the statement
+                # was translated at its own period's rate (HCLTECH's frame
+                # implies 88.1 against a 95.1 spot).
+                frame_fx = 1.0 if _frame_in_quote else _rate
+
+        def _im(key):
+            """A money figure from .info, expressed in the QUOTE currency."""
+            v = i.get(key)
+            try:
+                return float(v) * info_fx if v is not None else None
+            except (TypeError, ValueError):
+                return None
+
+        def fvq(row, key):
+            """A money figure from a statement frame, in the QUOTE currency."""
+            v = fv(row, key)
+            return None if v is None else v * frame_fx
+
         # ── Price & Market ──────────────────────────────────────────────
         price      = i.get("currentPrice") or i.get("regularMarketPrice")
         mktcap     = i.get("marketCap")
@@ -423,21 +509,38 @@ def fetch_stock_info(symbol):
         float_sh   = i.get("floatShares")
 
         # ── Income ─────────────────────────────────────────────────────
-        revenue    = i.get("totalRevenue")
-        gp         = i.get("grossProfits")
-        ebitda     = i.get("ebitda")
-        net_inc    = i.get("netIncomeToCommon")
-        op_cf      = fv(cf_row, "op_cf") or i.get("operatingCashflow")
-        fcf        = fv(cf_row, "fcf")
+        # V36.7 — under a currency mismatch the FRAME is preferred wherever it
+        # has the line, because frame_fx is either 1.0 (the frame is already in
+        # the quote currency, so the figure is EXACT and carries the statement's
+        # own translation rate) or the same spot rate _im uses. So preferring it
+        # is never worse and is usually better: HCLTECH's frame gives
+        # Rs 1,30,144 Cr directly, against Rs 1,40,449 Cr from converting .info
+        # at today's spot — a 7.9% difference, and the frame is the right one.
+        # With no mismatch (2,124 of 2,126 listings) both scales are 1.0 and
+        # this is exactly the previous behaviour with .info as the fallback.
+        _prefer_frame = fx_used is not None
+        def _money(info_key, frame_key):
+            if _prefer_frame:
+                fval = fvq(is_row, frame_key)
+                if fval is not None:
+                    return fval
+            return _im(info_key)
+
+        revenue    = _money("totalRevenue",      "revenue")
+        gp         = _money("grossProfits",      "gross_profit")
+        ebitda     = _money("ebitda",            "ebitda")
+        net_inc    = _money("netIncomeToCommon", "net_income")
+        op_cf      = fvq(cf_row, "op_cf") or _im("operatingCashflow")
+        fcf        = fvq(cf_row, "fcf")
         if fcf is None:
-            _ocf, _capex = fv(cf_row, "op_cf"), fv(cf_row, "capex")
+            _ocf, _capex = fvq(cf_row, "op_cf"), fvq(cf_row, "capex")
             if _ocf is not None and _capex is not None:
                 fcf = _ocf - abs(_capex)         # Yahoo reports capex negative
         if fcf is None:
-            fcf = i.get("freeCashflow")
-        total_cash = i.get("totalCash")
-        total_debt = i.get("totalDebt")
-        total_assets = fv(bs_row, "total_assets") or i.get("totalAssets")
+            fcf = _im("freeCashflow")
+        total_cash = _im("totalCash")
+        total_debt = _im("totalDebt")
+        total_assets = fvq(bs_row, "total_assets") or _im("totalAssets")
 
         net_debt   = sr((total_debt or 0) - (total_cash or 0), 0)
 
@@ -453,9 +556,22 @@ def fetch_stock_info(symbol):
         pef = sr(i.get("forwardPE"), 2)
         pb  = sr(i.get("priceToBook"), 2)
         ps  = sr(i.get("priceToSalesTrailing12Months"), 2)
+        # V36.7 — Yahoo precomputes these three by dividing a QUOTE-currency
+        # numerator (price, enterprise value) by a REPORTING-currency
+        # denominator (sales, EBITDA). For a listing where those differ they
+        # come back inflated by exactly the exchange rate: Infosys read
+        # ps_ratio 206.5 and ev_ebitda 934.7 against TCS's 2.9 and 10.9. The
+        # inputs are all in the quote currency by this point, so they are
+        # recomputed — and ONLY for the mismatching listings, so the other
+        # 2,124 keep the figures Yahoo publishes. Verified on TCS: recomputing
+        # reproduces 2.90 and 2.84 exactly.
         peg = sr(i.get("pegRatio"), 2)
         ev_ebitda = sr(i.get("enterpriseToEbitda"), 2)
         ev_rev    = sr(i.get("enterpriseToRevenue"), 2)
+        if fx_used is not None:
+            if mktcap and revenue and revenue > 0: ps = sr(mktcap / revenue, 2)
+            if ev and revenue and revenue > 0:     ev_rev = sr(ev / revenue, 2)
+            if ev and ebitda and ebitda > 0:       ev_ebitda = sr(ev / ebitda, 2)
         ev_gp     = sr(ev / gp, 2) if ev and gp and gp > 0 else None
 
         # Price-to-FCF
@@ -472,8 +588,25 @@ def fetch_stock_info(symbol):
         eps     = sr(i.get("trailingEps"), 2)
         eps_fwd = sr(i.get("forwardEps"), 2)
         bv      = sr(i.get("bookValue"), 2)
-        rev_ps  = sr(i.get("revenuePerShare"), 2)
-        cash_ps = sr(i.get("totalCashPerShare"), 2)
+        # V36.7 — these two ARE statement-derived despite being per-share, so
+        # they follow the reporting currency. Yahoo's other per-share fields
+        # (bookValue, trailingEps, forwardEps) are in the QUOTE currency, which
+        # is why the split has to be per-field rather than "per-share = quote":
+        # Infosys returned bookValue 224.42 (rupees) alongside revenuePerShare
+        # 4.96 (dollars). Verified after conversion: 4.96 x 95.095 = Rs 471.7
+        # against revenue/shares = Rs 473.
+        rev_ps  = sr(_im("revenuePerShare"), 2)
+        cash_ps = sr(_im("totalCashPerShare"), 2)
+        # ...but under a mismatch, DERIVE them from the aggregates this row
+        # actually publishes, rather than converting Yahoo's per-share figure
+        # separately. Converting independently left HCLTECH 7.9% inconsistent
+        # with itself: revenue_cr came from the frame (translated at the
+        # statement's own ~88.1 rate) while revenue_per_share was converted at
+        # today's 95.095 spot, so revenue_per_share x shares did not reconcile
+        # with revenue_cr. Two published fields on one row must agree.
+        if fx_used is not None and shares_out:
+            if revenue:    rev_ps  = sr(revenue / shares_out, 2)
+            if total_cash: cash_ps = sr(total_cash / shares_out, 2)
 
         # ── Returns ──────────────────────────────────────────────────────
         # V36.6 — DERIVED FIRST, reported second, on purpose.
@@ -491,7 +624,7 @@ def fetch_stock_info(symbol):
         # comparable; the reported value is kept only as a hole-filler for a
         # listing whose frames yield nothing, which measured at ~0 symbols.
         roe = None
-        _eq = fv(bs_row, "equity")
+        _eq = fvq(bs_row, "equity")
         if not _eq:
             _eq = (bv or 0) * (shares_out or 0) or None
         if net_inc and _eq and _eq > 0:
@@ -523,17 +656,17 @@ def fetch_stock_info(symbol):
         # Interest coverage
         int_cov = None
         try:
-            ebit = fv(is_row, "ebit")
-            ie   = fv(is_row, "interest_expense")
+            ebit = fvq(is_row, "ebit")
+            ie   = fvq(is_row, "interest_expense")
             if ebit and ie and ie != 0: int_cov = sr(abs(ebit / ie), 2)
         except: pass
 
         # ── Liquidity ────────────────────────────────────────────────────
         # Derived first for the same comparability reason as ROE/ROA above.
         curr_r = quick_r = None
-        _ca = fv(bs_row, "current_assets")
-        _cl = fv(bs_row, "current_liabilities")
-        _inv = fv(bs_row, "inventory") or 0.0
+        _ca = fvq(bs_row, "current_assets")
+        _cl = fvq(bs_row, "current_liabilities")
+        _inv = fvq(bs_row, "inventory") or 0.0
         if _ca is not None and _cl and _cl > 0:
             curr_r  = sr(_ca / _cl, 2)
             quick_r = sr((_ca - _inv) / _cl, 2)
@@ -555,11 +688,11 @@ def fetch_stock_info(symbol):
         try:
             lb = bs_row
             if lb is not None:
-                inv = fv(lb, "inventory")
-                ar  = fv(lb, "receivables")
-                ap  = fv(lb, "payables")
-                ca  = fv(lb, "current_assets")
-                cl  = fv(lb, "current_liabilities")
+                inv = fvq(lb, "inventory")
+                ar  = fvq(lb, "receivables")
+                ap  = fvq(lb, "payables")
+                ca  = fvq(lb, "current_assets")
+                cl  = fvq(lb, "current_liabilities")
                 wc_cr = sr((ca - cl) / 1e7, 2) if ca is not None and cl is not None else None
                 cogs  = (1 - (i.get("grossMargins") or 0)) * (revenue or 0)
                 if inv and cogs and cogs > 0: inv_turn = sr(cogs / inv, 2)
@@ -570,7 +703,7 @@ def fetch_stock_info(symbol):
         except: pass
 
         try:
-            capex = fv(cf_row, "capex")
+            capex = fvq(cf_row, "capex")
             if capex and revenue and revenue > 0:
                 capex_rev = sr(abs(capex) / revenue * 100, 2)
         except: pass
@@ -620,6 +753,12 @@ def fetch_stock_info(symbol):
         data = {
             # Identity
             "symbol":    symbol,
+            # V36.7 — provenance for the currency normalisation. Null for the
+            # ~2,124 listings that quote and report in the same currency; set
+            # for the handful that do not, so a reader — or the next audit —
+            # can see that a figure was translated, and at what rate.
+            "financial_currency": (fin_ccy or None) if fin_ccy and fin_ccy != quote_ccy else None,
+            "fx_to_quote":        sr(fx_used, 4) if fx_used else None,
             "name":      i.get("longName") or i.get("shortName", symbol),
             "sector":    i.get("sector", "N/A"),
             "industry":  i.get("industry", "N/A"),

@@ -600,6 +600,15 @@
       ["Listed on", esc(exch) + (D.symbol ? " · " + esc(D.symbol) : "")],
       ["Reporting currency", esc(D.currency || "INR")],
       ["Website", D.website ? '<a href="' + esc(D.website) + '" target="_blank" rel="noopener">' + esc(D.website.replace(/^https?:\/\//, "")) + "</a>" : "—"],
+      /* V36.7 — a translated figure has to say it was translated. Two NSE
+         listings (Infosys, HCL Technologies) report their statements in US
+         dollars while trading in rupees; server.py now converts the absolute
+         money figures into rupees, preferring the statement's own translation
+         where it exists. Ratios — ROE, the margins, the current ratio — divide
+         two same-currency figures and were never affected. This row appears
+         only for the handful of listings where it is true. */
+      ...(D.financial_currency ? [["Reports in",
+        esc(D.financial_currency) + ' — revenue, profit and balance-sheet figures on this page are converted to ₹ at the reporting date. Ratios are unaffected.']] : []),
     ];
 
     // V25.5 — each group of cards is wrapped in a titled section so the report
