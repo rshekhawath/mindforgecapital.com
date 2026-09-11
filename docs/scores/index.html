@@ -1449,10 +1449,35 @@ function scCTA(d){
    never lead a column: 52w_high and 52w_low are present on 2,123 of 2,126 rows
    (99.9%) and every single price sits INSIDE its own range, so the mark never
    pins to an end. The three rows without it keep the plain figure. */
+/* V37.2 — THE ONE PRICE ON THIS SITE THAT DID NOT SAY WHAT IT DID TODAY.
+   day_change is in the same stocks-lite.json row this cell already reads (98%
+   populated), and every other surface that prints a price renders it: the
+   Scanner has a "Day %" column, the 28 generated A-Z directory pages have
+   carried price + change since V29.2, the company page leads with it, and the
+   homepage market-pulse cell uses the same arrow. This table — the Integrity
+   Score list, built from the identical snapshot — showed "₹1,274" and stopped,
+   so the same figure meant "today" on four surfaces and "some day" here.
+   It rides on the PRICE LINE rather than a new row: this is a 30-row table and
+   an extra line per row would add ~30 lines of height to the page for a number
+   that belongs beside the one it modifies.
+   The ±0.049 flat band and the three-way class are not invented here — they are
+   the convention screener/index.html's fmtChange(), export_static.py's _chg()
+   and the market-pulse cell already share. A dead-flat day is not an up day. */
+function pxChgHtml(v){
+  if(!scNum(v)) return "";
+  const flat=Math.abs(v)<=0.049;
+  const cls=flat?"is-flat":v>0?"is-up":"is-dn";
+  const arrow=flat?"":(v>0?"▲":"▼");
+  const sign=v>0?"+":(v<0?"−":"");
+  return `<span class="px-chg ${cls}">`
+    + (arrow?`<span class="px-chg-a" aria-hidden="true">${arrow}</span>`:"")
+    + `${sign}${Math.abs(v).toFixed(2)}%</span>`;
+}
 function priceCell52(d){
   const px=d.current_price;
   if(!scNum(px)) return `<span class="na">—</span>`;
-  const val=`<span class="num">₹${Number(px).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>`;
+  const chg=pxChgHtml(d.day_change);
+  const val=`<span class="px-line"><span class="num">₹${Number(px).toLocaleString("en-IN",{maximumFractionDigits:2})}</span>${chg}</span>`;
   const lo=d["52w_low"], hi=d["52w_high"];
   if(!scNum(lo)||!scNum(hi)||!(hi>lo)) return val;
   const pct=Math.max(0,Math.min(100,(px-lo)/(hi-lo)*100));
@@ -1516,7 +1541,7 @@ const COLUMNS=[
   {key:"_m",            label:"Momentum",     render:d=>scoreCell(d._m)},
   {key:"_e",            label:"Efficiency",   render:d=>scoreCell(d._e)},
   {key:"_overall",      label:"Integrity",    render:d=>overallCell(d)},
-  {key:"current_price", label:"Price (₹)",    title:"Last close, with the 52-week range beneath it. The dot marks where today's price sits between the 52-week low (left) and high (right).", render:d=>priceCell52(d)},
+  {key:"current_price", label:"Price (₹)",    title:"Last close and its move against the previous close, with the 52-week range beneath it. The dot marks where today's price sits between the 52-week low (left) and high (right).", render:d=>priceCell52(d)},
   {key:"_iv",           label:"Intrinsic Value", cardLabel:"Intrinsic", title:"Graham intrinsic value √(22.5 × EPS × Book Value); % shows upside vs the current price (positive = trading below fair value). Sort to surface the most undervalued names.", render:d=>intrinsicCell(d)},
   {key:"market_cap_cr", label:"Mkt Cap (Cr)", cardLabel:"Mkt Cap ₹Cr", render:d=>d.market_cap_cr?`<span class="num">${Number(d.market_cap_cr).toLocaleString("en-IN",{maximumFractionDigits:0})}</span>`:`<span class="na">—</span>`},
   {key:"roe",           label:"ROE %",        render:d=>fmtTone(d.roe,1,"q")},
@@ -2492,6 +2517,17 @@ h1, h2, h3, h4, th,
    V29.4: the mark is a circle whose centre rides the track edge at 0% and
    100%, so the track is not allowed to clip it. */
 .px-wrap{display:inline-flex;flex-direction:column;align-items:flex-end;gap:5px;overflow:visible}
+/* V37.2 — price and its day move share one line so the cell keeps its height
+   across a 30-row table; the 52-week rail stays beneath, unchanged. The arrow is
+   aria-hidden — the signed number already reads out, and "▲ +1.20%" announces as
+   "up pointing triangle plus one point two zero percent" (the same reasoning
+   export_static.py records for the directory cards). */
+.px-line{display:inline-flex;align-items:baseline;gap:7px;white-space:nowrap}
+.px-chg{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.px-chg-a{font-size:8px;margin-right:1px;vertical-align:1px}
+.px-chg.is-up{color:var(--data-strong)}
+.px-chg.is-dn{color:var(--data-bad)}
+.px-chg.is-flat{color:var(--text3)}
 .px52{
   position:relative;width:62px;height:4px;border-radius:2px;overflow:visible;
   background:linear-gradient(90deg,rgba(5,150,105,.30),rgba(37,99,235,.16) 50%,rgba(217,119,6,.32));

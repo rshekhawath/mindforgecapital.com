@@ -3253,6 +3253,24 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        to the same --data-* pair everything else on this card uses. */
     .ret.up{color:var(--data-strong)}.ret.down{color:var(--data-bad)}.ret.flat{color:var(--text3)}
     .sc-val.px-live .ret{margin-left:7px}
+    /* V37.2 — the day's move. Written by paintLivePrices into the SAME .px-live
+       element that the desktop cell and the phone card share, so the two layouts
+       are a CSS decision rather than two code paths.
+       Desktop: its own line under the live price, because td.price .px-live is
+       white-space:nowrap and a third figure on that line would push the column.
+       Phone: inline after the return, where the card's comparison row has the
+       width for it. The "1D" tag is the quiet half — it is a label, not a
+       figure — so it sits at 9.5px in --text3 while the number keeps the same
+       up/down inks every other change on this page uses. */
+    .px-day{ display:inline-flex; align-items:baseline; gap:4px; margin-left:7px;
+             font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .px-day i{ font-style:normal; font-size:9.5px; font-weight:800; letter-spacing:.06em;
+               color:var(--text3); text-transform:uppercase; }
+    .px-day b{ font-size:11px; font-weight:700; }
+    /* The picks table's price column is right-aligned, so the day line has to end
+       on the same edge as the two figures above it — a flex row defaults to
+       flex-start and stranded "1D +0.42%" against the left of the cell. */
+    td.price .px-day{ display:flex; justify-content:flex-end; margin-left:0; margin-top:2px; }
     </style>
     <div class="profit-card fade-up" id="profit-card" style="display:none;">
       <div class="pc-left">
@@ -3570,6 +3588,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .chg-tk{ font-size:12px; font-weight:700; letter-spacing:.02em; padding:5px 9px; border-radius:7px;
       background:rgba(37,99,235,.07); border:0.5px solid var(--border2); color:var(--text); white-space:nowrap; }
     .chg-group.is-out .chg-tk{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text2); }
+    /* V37.2 — the return rides inside the chip. inline-flex so the ticker and its
+       number share one baseline and the chip keeps its nowrap; the number is the
+       only coloured thing, at the same weight the ticker carries so neither reads
+       as the caption of the other. A chip whose price has not landed shows the
+       writer's own dash, so the row never changes height when prices arrive. */
+    .chg-tk{ display:inline-flex; align-items:baseline; gap:6px; }
+    .chg-tk-px{ font-size:11px; font-weight:700; font-variant-numeric:tabular-nums;
+      color:var(--text3); }
+    .chg-tk-px .ret{ font-weight:700; }
     .chg-none{ font-size:12.5px; color:var(--text3); font-weight:600; }
 /* ── V35.3 · THE SELLS BECAME SOMETHING A MEMBER CAN ACT ON ───────────────────
    V35.2 named the departing holdings and stopped: three inert <span>s with a
@@ -10224,10 +10251,33 @@ function renderBookChange(diff, stocks){
   }
   var box = document.getElementById('chg-groups');
   if (box){
+    /* V37.2 — THE BIGGEST GROUP ON THIS CARD CARRIED NO INFORMATION.
+       "Hold · carried over" is most of the book — 8 of 10 in a typical equity
+       cycle — and it rendered as a wall of bare tickers. The two groups beside it
+       each answer a question (what to buy, what to sell); this one answered
+       "these ones", which the member could already see in the table below.
+       The question it should answer is the only one a carried-over name raises:
+       is it working? That number already exists per row — the move since the
+       model recommended it — so each chip now carries it.
+       Painted by paintLivePrices() through data-px-mode="ret" rather than
+       formatted here, so these chips move with the 5-minute repoll instead of
+       freezing at whatever the first load happened to show. Before prices land
+       they read as a dash, exactly like the table's own cells. */
+    var byT = {};
+    (stocks || []).forEach(function(s2){ byT[String(s2.ticker || '')] = s2; });
     var chips = function(list){
-      return list.length
-        ? '<div class="chg-tks">' + list.map(function(t){ return '<span class="chg-tk">' + escapeHtml(t) + '</span>'; }).join('') + '</div>'
-        : '<div class="chg-none">None this cycle</div>';
+      if (!list.length) return '<div class="chg-none">None this cycle</div>';
+      return '<div class="chg-tks">' + list.map(function(t){
+        var s2 = byT[t] || {};
+        var rec = Number(s2.recommended_price) || 0;
+        var y   = s2.yahoo_ticker || '';
+        return '<span class="chg-tk">' + escapeHtml(t) +
+          (rec > 0 && y
+            ? '<span class="px-live chg-tk-px" data-px-mode="ret" data-px="' + escapeHtml(y) +
+              '" data-rec="' + rec + '"></span>'
+            : '') +
+        '</span>';
+      }).join('') + '</div>';
     };
     /* V35.3 — the departing names, as orders. Quantity comes from the previous
        cycle's recorded position and is simply omitted when that record predates
@@ -10276,8 +10326,6 @@ function renderBookChange(diff, stocks){
        table's own tick, and the size read from the shared sizing arithmetic.
        `byT` rather than a second scan: diff.added holds tickers, the price and
        the model weight live on the stock object. */
-    var byT = {};
-    (stocks || []).forEach(function(s2){ byT[String(s2.ticker || '')] = s2; });
     var buys = function(list){
       if (!list.length) return '<div class="chg-none">None this cycle</div>';
       return '<div class="chg-sells">' + list.map(function(t){
@@ -10335,6 +10383,10 @@ function renderBookChange(diff, stocks){
       '<div class="chg-group is-hold' + (moved.length ? ' is-rot' : '') + mtHold + '"><div class="chg-gk"><i></i>' +
         holdLabel + '</div>' + holdBody + '</div>';
   }
+  /* The hold chips above are .px-live elements created AFTER the last paint, so
+     they would sit empty until the next 5-minute poll. Same guard renderTable
+     ends with, for the same reason. */
+  if (window._livePx) { try { paintLivePrices(); } catch(e){} }
   renderCycleCost();   // V35.3 — what the turnover named above actually costs
   card.style.display = '';
 }
@@ -10564,7 +10616,52 @@ function paintLivePrices(){
     if (!p || !rec){ el.innerHTML = '—'; return; }
     var live = p.price; var r = _retPct(rec, live);
     var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
-    el.innerHTML = '₹' + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
+    /* V37.2 — THE DAY'S MOVE, WHICH THIS PAGE HAS BEEN FETCHING AND NEVER SHOWING.
+       Every price poll already returns prev_close — the Apps Script sends it on
+       both the `prices` and the `chart` action, and _fetchPricesBatch has been
+       mapping it to p.prev since it was written. Nothing rendered it. So the
+       dashboard held the one number every broker app leads with (Kite's
+       "LTP 2,311.65 (0.69%)") and showed the member none of it, at zero extra
+       request cost.
+
+       IT IS A SEPARATE FACT FROM THE RETURN BESIDE IT and is labelled so. The
+       .ret figure is the move since the model RECOMMENDED the name, which can be
+       months; 1D is today. Conflating the two would be the derived-verdict error
+       — two percentages next to each other that mean different things — so the
+       day move carries its own "1D" label and its own muted styling, and the
+       since-recommendation return keeps the prominence.
+
+       PERCENT ONLY, never rupees. A day move in rupees is a property of a
+       POSITION, and most rows here are "shares to buy" — a rupee figure on a
+       name the member does not hold yet is the same error V35.4 removed from the
+       tick column. The percentage is a property of the stock and is true for
+       every row. (Rupee P&L on what they actually hold already has a home: the
+       "Your position" card, which is fed from their own recorded fills.)
+
+       One writer, two surfaces: this function paints both the desktop table cell
+       and the phone card, so the markup lands in both and CSS decides how each
+       one flows. */
+    /* V37.2 — data-px-mode="ret" renders ONLY the return. The "Hold · carried
+       over" chips want the verdict, not the price and not the day move: they sit
+       three-to-a-row in a narrow column and a full price line would not fit. They
+       go through this writer rather than formatting their own number so they
+       repaint on the 5-minute repoll like every other live figure on the page —
+       a chip that formatted its own value once would be the stale-number bug
+       V35.3 spent a release removing. */
+    if (el.getAttribute('data-px-mode') === 'ret'){
+      el.innerHTML = '<span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
+      if (!el.dataset.pxSeen) { el.dataset.pxSeen = '1'; el.classList.add('px-in'); }
+      return;
+    }
+    var dayHtml = '';
+    if (p.prev != null && Number(p.prev) > 0){
+      var d = (live - p.prev) / p.prev * 100;
+      var dcls = d > 0.05 ? 'up' : (d < -0.05 ? 'down' : 'flat');
+      var dsign = d > 0 ? '+' : '';
+      dayHtml = ' <span class="px-day"><i>1D</i><b class="ret ' + dcls + '">' +
+                dsign + d.toFixed(2) + '%</b></span>';
+    }
+    el.innerHTML = '₹' + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>' + dayHtml;
     // V24.8: fade each price in the FIRST time it lands (the cells used to pop
     // into existence). Marked per-element so the price repoll — and a sort/filter
     // re-render, which reuses painted cells — never re-flashes the table.
