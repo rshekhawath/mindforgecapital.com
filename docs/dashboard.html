@@ -583,7 +583,17 @@ html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
   transition:box-shadow .25s ease, border-color .25s ease;
   display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;
 }
-@media (max-width:760px){.size-card{grid-template-columns:1fr;gap:16px;}}
+/* V37.3 — was 760. Measured at 768/820/834/900: `grid-template-columns:1fr auto`
+   gives the RIGHT column its natural 427px (the capital field plus four presets,
+   45px tall) and leaves the left one 265px — too narrow for its own content, so
+   the three capital figures that sit on ONE line at 1024+ stack into three, the
+   left column grows to 239px and the right one keeps ~190px of nothing under it.
+   V33.5 top-aligned that surplus so the control was at least reachable; it did
+   not remove it, because the cause is the column WIDTH, not its alignment.
+   Both columns need ~935px together (427 + 430 + 24 gap + 52 padding). Below
+   that the card is one column, which is what it already did under 760 — the
+   breakpoint was simply 175px short of where the two columns stop fitting. */
+@media (max-width:940px){.size-card{grid-template-columns:1fr;gap:16px;}}
 /* V33.5 — between 761 and 920 this card is still two columns, but the left one
    has wrapped from one line to five (heading + intro + the three capital
    figures + the deployed meter) while the right one is still a single 45px row
@@ -593,7 +603,10 @@ html[data-theme="dark"] .pmap-wtbar{ background:rgba(255,255,255,.12); }
    middle of nowhere. Top-align it there and the card reads down the page.
    Desktop is untouched: at 1024+ the two columns are within 40px of each other
    and centring is what balances them. */
-@media (min-width:761px) and (max-width:920px){.size-card{align-items:start;}}
+/* V33.5's top-align is now dead weight in that band — 761-940 is a single
+   column, where align-items does nothing — but it is kept for 941-1023, where
+   two columns are back and still ~40px apart in height. */
+@media (min-width:941px) and (max-width:1023px){.size-card{align-items:start;}}
 .size-card .size-head h2,.size-card .size-head h3{font-size:16px;color:var(--white);font-weight:700;margin-bottom:4px;line-height:1.25;}
 .size-card .size-meta{font-size:12.5px;color:var(--text3);}
 .size-input-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
@@ -960,6 +973,16 @@ html[data-theme="dark"] .alloc-n{background:rgba(6,12,26,0.42);color:var(--text)
 /* ── Subscription progress + renew CTA ── */
 .sub-prog{display:inline-flex;align-items:center;gap:6px;margin-left:8px;}
 .sub-prog-bar{width:64px;height:5px;background:rgba(37,99,235,0.10);border-radius:3px;overflow:hidden;}
+/* V37.3 — on a phone the pill wraps and this 64px track lands alone on the
+   second line with 249px of empty pill beside it (measured at 390). The track
+   is a meter, not a chip: letting it take the line it is already on turns a
+   stranded stub into a progress bar the width of the sentence above it. Same
+   600px breakpoint, and the same reasoning V34.7 used for the search field —
+   a grow-able item leaves no slack for the layout to strand. */
+@media (max-width:600px){
+  #pill-status .sub-prog{flex:1 1 100%;margin-left:0;margin-top:2px;}
+  #pill-status .sub-prog-bar{flex:1 1 auto;width:auto;}
+}
 /* V23.7: display:block is load-bearing — this fill is a <span>, so it defaulted
    to display:inline, where width/height simply do not apply to a non-replaced
    element. The [data-bar] applier was setting width:NN% all along and the
@@ -1195,6 +1218,30 @@ td.shares .qty{color:var(--white);font-weight:700;}
 @media (max-width: 600px){
   .tbl-search-wrap{ flex: 1 1 252px; min-width: min(252px, 100%); display: block; }
   .tbl-search{ width: 100%; }
+}
+/* ── V37.3 · THE REST OF THAT TOOLBAR ────────────────────────────────────────
+   V34.7 pinned the SEARCH field's left edge and left the other six controls on
+   the same `flex-wrap` + `justify-content:flex-end` row, where the same slack
+   lands as a hole instead. Measured at 390: five lines, the widest hole 254px —
+   "NSE closed · Kite" pushed to the right of an otherwise empty line, then
+   "Copy tickers · Export CSV · Print" filling one, then "Refresh" alone against
+   the right edge. Nothing overflows and nothing clips; it simply reads as
+   broken, and where the hole falls changes with every phone width (at 320 it is
+   95px and lands under a different pair).
+   A two-column GRID at the same 600px breakpoint the rest of this phone layout
+   uses. Auto-placement then does the work with no DOM change: the sort control
+   and the search field span both columns, and the remaining six pair off into
+   three full rows — [market · broker] [copy · export] [print · refresh]. Every
+   line is full by construction, so there is no slack left to distribute and no
+   justify-content to get wrong, and each control is half a phone wide rather
+   than as wide as its own label. */
+@media (max-width: 600px){
+  .table-actions{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; }
+  .table-actions > .msort,
+  .table-actions > .tbl-search-wrap,
+  .table-actions > .tbl-search{ grid-column: 1 / -1; width: auto; min-width: 0; }
+  .table-actions > .market-bar{ justify-content: center; }
+  .table-actions > .tbl-btn{ width: 100%; justify-content: center; }
 }
 .tbl-search::placeholder{color:var(--text3);}
 .tbl-search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.10);}
@@ -2477,9 +2524,32 @@ html[data-theme="dark"] tr.row-bought .broker-link{ color: var(--ink-link, #83aa
 }
 @media (prefers-reduced-motion: reduce) { .mf-scroll-prog { transition: none; } }
 
-/* MF-SCROLLTOP v3.4 */
+/* MF-SCROLLTOP v3.4
+   ── V37.3 · THE BUTTON THAT SAT ON THE NUMBERS ─────────────────────────────
+   Measured at 22 widths from 320 to 1920: this button overlapped the content
+   column at NINETEEN of them, by 13–42px. It is a fixed overlay, so unlike the
+   action bar it is never scrolled past — whatever sits under it at a given
+   scroll position cannot be read at all. Caught on a 390px phone covering the
+   allocation figure "₹99,685" on a stock card and the "25%" beside Banks in the
+   buy-progress card; and in landscape (844x390), where the `max-width:768px`
+   rule that V6.8 added to move it clear of the LEFT edge stops applying, it
+   went back to left:24px and covered the left edge of the stat cards instead.
+   One rule, two halves:
+   • HORIZONTAL — anchor it to the CONTENT COLUMN, not the window. The container
+     is max-width:1320 with 32px padding, so its right edge is at
+     50vw + 628px; parking the button 8px outside that is `right: 50vw - 712px`,
+     floored at 14px so it never leaves the viewport. Above ~1424px it rides the
+     gutter beside the cards instead of drifting to the window corner.
+   • BELOW THAT WIDTH THERE IS NO GUTTER, in either orientation, at any size a
+     phone or tablet has. So it stops being persistent: shown while the page is
+     moving, faded out 1.4s after scrolling stops. A member READING is never
+     looking at a number through a button, and a member who wants the top of the
+     page has just flicked — which is the gesture that brings it back.
+   Keyboard is unaffected: .is-idle yields to :focus, so tabbing to it shows it.
+   ──────────────────────────────────────────────────────────────────────────── */
 .mf-fab-top {
-  position: fixed; left: 24px; bottom: 24px; z-index: 91;
+  position: fixed; left: auto; right: max(14px, calc(50vw - 712px));
+  bottom: calc(24px + var(--mf-abar-h, 0px)); z-index: 91;
   width: 44px; height: 44px; border-radius: 50%;
   background: linear-gradient(135deg, #1a50d8 0%, #2563eb 55%, #0891b2 100%);
   border: none; cursor: pointer;
@@ -2493,13 +2563,18 @@ html[data-theme="dark"] tr.row-bought .broker-link{ color: var(--ink-link, #83aa
 .mf-fab-top:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 36px -8px rgba(37,99,235,0.55), 0 6px 14px rgba(0,0,0,0.12); }
 .mf-fab-top:focus-visible { outline: 2px solid rgba(37,99,235,0.55); outline-offset: 3px; }
 .mf-fab-top svg { width: 20px; height: 20px; }
+/* V37.3 — the transient half. Scoped to every viewport that cannot give the
+   button a gutter (measured: the content column is still under it at 1366 and
+   clear at 1440). .is-idle is set by the scroll handler 1.4s after the last
+   scroll event and cleared on the next one. */
+@media (max-width: 1399px) {
+  .mf-fab-top.visible.is-idle { opacity: 0; pointer-events: none; }
+  .mf-fab-top.visible.is-idle:focus { opacity: 1; pointer-events: auto; }
+}
 @media (max-width: 768px) {
-  /* V6.8 M3: move to right gutter on mobile so the 40px FAB doesn't cover
-     the left edge of stock cards (was hiding "Rec. Price" / "Allocation"). */
-  /* V35.5 — + the action bar's own height, published as --mf-abar-h and 0px
-     whenever the bar is not showing, so this offset is correct in both states
-     without a second rule to keep in step. */
-  .mf-fab-top { right: 16px; left: auto; bottom: calc(88px + var(--mf-abar-h, 0px)); width: 40px; height: 40px; }
+  /* V6.8 M3 / V35.5 — the phone size. The bottom offset now comes from the base
+     rule, which already adds --mf-abar-h; only the diameter changes here. */
+  .mf-fab-top { bottom: calc(88px + var(--mf-abar-h, 0px)); width: 40px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .mf-fab-top { transition: opacity .2s; transform: none !important; }
@@ -3214,6 +3289,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .pc-stat b{font-variant-numeric:tabular-nums;min-width:20px;text-align:right}
     .pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
     .pc-up-dot{background:#059669}.pc-down-dot{background:#dc2626}
+    /* V37.3 — the flat bucket. Muted on purpose: it is the absence of a move, so
+       it takes the neutral the rest of the page gives a flat figure (--text3's
+       measured neutral, 3.33:1 on both cards) rather than a third signal colour. */
+    .pc-flat-dot{background:#768191}
     .pc-asof{font-size:11px;color:var(--text3);margin-top:2px}
     /* V14.4: top / lagging performer chips */
     .pc-leaders{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
@@ -3894,7 +3973,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               <option value="num">Conviction rank</option>
               <option value="company">Company</option>
               <option value="ticker">Ticker</option>
-              <option value="industry">Industry</option>
+              <option value="industry" id="msort-group">Industry</option>
               <option value="price">Rec. price</option>
               <option value="alloc">Allocation</option>
               <option value="shares">Shares</option>
@@ -4028,7 +4107,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               <th scope="col" style="width:48px;" class="sortable" data-sort="num" role="button" tabindex="0" aria-sort="none">#</th>
               <th scope="col" class="sortable" data-sort="company" role="button" tabindex="0" aria-sort="none">Company</th>
               <th scope="col" class="sortable" data-sort="ticker" role="button" tabindex="0" aria-sort="none">Ticker</th>
-              <th scope="col" class="sortable" data-sort="industry" role="button" tabindex="0" aria-sort="none">Industry</th>
+              <th scope="col" class="sortable" data-sort="industry" role="button" tabindex="0" aria-sort="none" id="th-group">Industry</th>
               <th scope="col" class="right sortable" data-sort="price" role="button" tabindex="0" aria-sort="none">Rec. Price</th>
               <th scope="col" class="right sortable" data-sort="alloc" role="button" tabindex="0" aria-sort="none">Allocation</th>
               <th scope="col" class="right sortable" data-sort="shares" role="button" tabindex="0" aria-sort="none">Shares</th>
@@ -4286,7 +4365,10 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         color:var(--text2); background:rgba(37,99,235,.07); border:0.5px solid var(--border2); }
       html[data-theme="dark"] .trk-badge{ background:rgba(120,150,255,.10); }
       .trk-rows{ display:grid; gap:8px; max-width:760px; }
-      .trk-row{ display:grid; grid-template-columns:76px minmax(0,1fr) 96px; gap:12px; align-items:center; }
+      /* V37.3 — 76 -> 80 for the apostrophe the year now carries (see mon()).
+         Measured after at 601/768/834/1024/1280/1440: no overflow, and the axis
+         keeps 484px at 834 against 488 before. */
+      .trk-row{ display:grid; grid-template-columns:80px minmax(0,1fr) 96px; gap:12px; align-items:center; }
       .trk-when{ font-size:11.5px; font-weight:700; color:var(--text3); white-space:nowrap; }
       .trk-when i{ font-style:normal; font-weight:800; color:var(--accent); margin-left:4px; }
       html[data-theme="dark"] .trk-when i{ color:#9dbcff; }
@@ -4357,7 +4439,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
            it can, 62 -> 56. Net cost to the axis is 10px: it measures 160px at
            390 and 90px at 320, against 170 and 100 before, and the divergent
            bar plus its tick still read at both (checked by eye at 320). */
-        .trk-row{ grid-template-columns:56px minmax(0,1fr) 84px; gap:8px; }
+        .trk-row{ grid-template-columns:60px minmax(0,1fr) 84px; gap:8px; }
         .trk-when{ font-size:11px; }
         /* V36.5 — the month column was sized for "Aug 26" and the newest row also
            carries the `live` marker: 63.6px of nowrap text in a 56px track, so it
@@ -5872,6 +5954,14 @@ function renderDashboard(sub, stocks) {
   ).filter(Boolean));
   const indLabelEl = document.getElementById('stat-industries-label');
   if (indLabelEl) indLabelEl.textContent = byAsset ? 'Asset Classes' : 'Industries';
+  /* V37.3 — the picks table's own column header and the phone sort menu make the
+     SAME decision and were making it with a hardcoded word. One writer, here,
+     beside the KPI label, so the three can never disagree. */
+  const _axis = byAsset ? 'Asset class' : 'Industry';
+  const thGroup = document.getElementById('th-group');   // text-only cell
+  if (thGroup) thGroup.textContent = _axis;
+  const msGroup = document.getElementById('msort-group');
+  if (msGroup) msGroup.textContent = _axis;
   _animateCount(document.getElementById('stat-industries'), groupSet.size);
   let industryCopy;
   if (!groupSet.size)                              industryCopy = '—';
@@ -6521,6 +6611,22 @@ function fmtNum(v) {
   return fmtINR(Math.round(Number(v) || 0));
 }
 function fmtMoney(v) { return '₹' + fmtNum(v); }
+/* V37.3 — A PRICE IS A RUPEE FIGURE AND WAS THE ONLY ONE PRINTED UNGROUPED.
+   Four call sites wrote `'₹' + n.toFixed(2)`, so the picks table put
+   ₹11890.00 in the Rec. Price column immediately beside ₹95,120 in
+   Allocation — two rupee figures on one row, one grouped and one not — and the
+   phone card repeated it as "Rec ₹1543.20". Every other price surface on this
+   site (the Scanner, the 28 A-Z pages, /scores/ and the company page) already
+   groups with toLocaleString('en-IN'); the dashboard was the exception.
+   The two decimals STAY. Those surfaces use maximumFractionDigits:2, which
+   renders 1543.20 as "1,543.2" — right for a screen you read, wrong for the
+   number a member types into a broker, where a truncated paisa reads as a
+   different price. So the grouping changes and the precision does not. */
+function fmtPrice(v){
+  var n = Number(v) || 0;
+  try { return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 }); }
+  catch(e){ return '₹' + n.toFixed(2); }
+}
 /* ══ V37.1 — A DATE THIS PAGE WRITES MUST NOT BREAK IN HALF ═══════════════════
    V37.0 fixed this for assets/mfc-live.js, which writes every LIVE date on the
    public site, and recorded that dashboard.html had eleven more call sites of
@@ -7384,7 +7490,23 @@ function renderTable(stocks) {
   // the canonical `stocksData` (not the possibly-sorted `stocks` arg) so a column
   // sort never reshuffles the colours (see buildSectorColorMap).
   const secColors = buildSectorColorMap(stocksData);
-  const indDot = s => { const k = (s.industry || '').trim(); return k ? `<span class="ind-dot" style="background:${secColors[k] || '#cbd5e1'}"></span>` : ''; };
+  /* V37.3 — THE FOURTH SURFACE V30.3 MISSED.
+     That release made groupKeyOf() the one grouping key for this page and
+     converted the chips, the "Industries" KPI, the allocation card, the donut,
+     the portfolio map and the part-placed session panel. The picks table and the
+     phone cards were not converted, so a MultiAsset member read eight rows of the
+     literal string "ETF" under a header that said "Industry" — directly below a
+     chip row offering Equity 5 / Debt 1 / Gold 1 / Silver 1 and an allocation
+     card drawn in those same four bands. The column was the only one on the row
+     that told them nothing, and the split the strategy is NAMED for was the thing
+     it was failing to tell them.
+     groupKeyOf() returns `industry` verbatim on an equity book, so the sector
+     books are byte-identical to before. groupColorOf() is the same resolver the
+     donut and the map already use, which also retires the `#cbd5e1` fallback here
+     — 1.30:1 on the white card, the exact dot V31.1 called "a dot nobody could
+     see if it ever rendered". */
+  const groupName = s => (groupKeyOf(s) || '').trim();
+  const indDot = s => { const k = groupName(s); return k ? `<span class="ind-dot" style="background:${groupColorOf(k, secColors)}"></span>` : ''; };
 
   // V24.5: every book is NSE-listed, so price and allocation are always ₹.
   const fmtAmt = n => '₹' + fmtINR(n);
@@ -7426,8 +7548,8 @@ function renderTable(stocks) {
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
       <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${newTag(s)}</td>
       <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}</td>
-      <td><span class="industry-badge" title="${escapeHtml(s.industry||'')}">${indDot(s)}${escapeHtml(s.industry||'—')}</span></td>
-      <td class="price right"><span class="px-rec">₹${entry.toFixed(2)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
+      <td><span class="industry-badge" title="${escapeHtml(groupName(s))}">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></td>
+      <td class="price right"><span class="px-rec">${fmtPrice(entry)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
       <td class="alloc-amt right">${fmtAmt(amt)}</td>
       <td class="shares right"><span class="qty">${shares}</span></td>
       <td class="right">
@@ -7467,7 +7589,7 @@ function renderTable(stocks) {
         </div>
         <div class="sc-num">${i+1}</div>
       </div>
-      <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(s.industry||'—')}</span></div>
+      <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></div>
       <!-- V37.1 — THE ACTION LINE. This card carried five identical label:value
            rows (Rec. Price / Live / Allocation / Shares / Weight), so the two
            figures a member actually TYPES INTO THEIR BROKER — the quantity and
@@ -7492,7 +7614,7 @@ function renderTable(stocks) {
            compare it with the next. .px-live is untouched: same element, same
            data-px / data-rec, same innerHTML from paintLivePrices(). -->
       <div class="sc-cmp">
-        <span class="sc-cmp-rec">Rec <b>₹${entry.toFixed(2)}</b></span>
+        <span class="sc-cmp-rec">Rec <b>${fmtPrice(entry)}</b></span>
         <span class="sc-cmp-sep" aria-hidden="true">·</span>
         <span class="sc-cmp-live">Live <span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></span>
       </div>
@@ -8371,7 +8493,10 @@ function applySort(){
     num:      function(s, i){ return i; },
     company:  function(s){ return (s.company_name || s.ticker || '').toLowerCase(); },
     ticker:   function(s){ return (s.ticker || '').toLowerCase(); },
-    industry: function(s){ return (s.industry || '').toLowerCase(); },
+    /* V37.3 — sorted on the literal "ETF" for every MultiAsset row, so the
+       column's own sort control was a no-op on the one book where the axis
+       actually varies. Same key the cell now prints. */
+    industry: function(s){ return String(groupKeyOf(s) || '').toLowerCase(); },
     price:    function(s){ return Number(s.recommended_price) || 0; },
     alloc:    function(s){
       var p = Number(s.recommended_price) || 0;
@@ -8646,6 +8771,7 @@ function refreshBoughtProgress() {
   }
   refreshSession(map);
   refreshHowto();
+  try { renderHeroJob(); } catch (e) {}   // V37.3 — the hero line counts what is left
   refreshKiteBasket();      // V34.2 — a tick removes that row from the basket
 }
 
@@ -10129,6 +10255,99 @@ function renderCycleCost(){
   box.hidden = false;
 }
 
+/* ══ V37.3 · THE FIRST SENTENCE ON THE PAGE WAS THE ONE FACT NOTHING DERIVED ══
+   `#dash-subtitle` has read "Here are this cycle's picks for your strategy.
+   Place them in your broker and you're done for the month." since this page
+   shipped. It carries an id and nothing has ever written to it.
+   For a member in their first cycle that is exactly right. For everybody else it
+   is the page contradicting itself in its most-read line: the KPI tile two
+   inches below says "Orders to place 4 · 2 buys · 2 sells" and the change card
+   says "That is 4 orders to place, not 10", while the sentence above both still
+   says place THEM — all ten, including the eight the member already owns and
+   must not touch. Same seam as every other hand-written label beside a machine
+   number on this site, and this one is in the position a member reads first.
+   Every input is already computed by the two callers, so nothing new is derived
+   and nothing can disagree: renderBookChange() owns the diff and the counts,
+   refreshBoughtProgress() owns how many of them are ticked. With no diff on
+   record the original sentence is restored verbatim — an unknown previous book
+   must not be reported as "nothing to do". ═══════════════════════════════════ */
+var HERO_SUB_DEFAULT = "Here are this cycle\u2019s picks for your strategy. Place them in your broker and you\u2019re done for the month.";
+function renderHeroJob(){
+  var el = document.getElementById('dash-subtitle');
+  if (!el) return;
+  var diff  = window._bookDiff;
+  var total = (stocksData || []).length;
+  if (!diff || !diff.known || !total){ el.textContent = HERO_SUB_DEFAULT; return; }
+
+  var nIn = diff.added.length, nOut = diff.removed.length, nHold = diff.held.length;
+  var orders = nIn + nOut;
+  var plural = function(n, one, many){ return n + '\u00a0' + (n === 1 ? one : many); };
+
+  /* A weighted book can have zero name changes and still be a full rebalance —
+     the same case the Orders tile handles with "weights to adjust". Counting the
+     re-scored holdings here rather than re-deriving them keeps the two in step. */
+  var nMoved = 0;
+  try {
+    var pp = diff.prevPos || {};
+    diff.held.forEach(function(t){
+      var p = pp[t], st = (stocksData || []).filter(function(x){ return x.ticker === t; })[0];
+      if (!st || !p || typeof p.w !== 'number') return;
+      if (Math.abs((Number(st.weight_pct) || 0) - p.w) >= 0.05) nMoved++;
+    });
+  } catch(e){}
+
+  if (!orders){
+    if (!nMoved){
+      el.textContent = 'Nothing to place this cycle. All ' + total +
+        ' holdings carry over unchanged — you are already done for the month.';
+    } else if (nMoved === 1){
+      el.textContent = 'No names change this cycle — one holding needs its weight adjusted, ' +
+        'and the other ' + (total - 1) + ' carry over untouched.';
+    } else {
+      el.textContent = 'No names change this cycle — ' + nMoved + '\u00a0holdings need their weights adjusted' +
+        (nMoved < total ? ', and the other ' + (total - nMoved) + ' carry over untouched.' : ' to this cycle\u2019s targets.');
+    }
+    return;
+  }
+
+  /* How much of the job is already done, from the same map the progress bar
+     reads — and split by SIDE, because the headline count and the two legs have
+     to be on one basis. A first pass counted the remaining orders in the lead
+     and the cycle's totals in the legs, which after two ticks read "3 orders to
+     place — 2 to buy and 2 to sell": the exact defect this whole line exists to
+     close, reintroduced one sentence later. */
+  var leftIn = nIn, leftOut = nOut;
+  try {
+    var map = loadBought(currentStrategy) || {};
+    var oc  = cycleOrders();
+    leftIn  = oc.buys.filter(function(o){  return !map[orderKey(o)]; }).length;
+    leftOut = oc.sells.filter(function(o){ return !map[orderKey(o)]; }).length;
+  } catch(e){}
+  var left = leftIn + leftOut;
+
+  if (!left){
+    el.textContent = 'All ' + plural(orders, 'order', 'orders') + ' placed. You are done for the month — ' +
+                     'your ' + total + ' holdings now match this cycle\u2019s book.';
+    return;
+  }
+
+  /* Name the side whenever there is only one left. "2 orders to place" and
+     "2 sell orders to place" cost the same line and the second one says which
+     screen to open — the buy legs and the sell legs are different jobs. */
+  var lead;
+  if (leftIn && leftOut){
+    lead = plural(left, 'order', 'orders') + ' to place this cycle \u2014 ' +
+           leftIn + '\u00a0to buy and ' + leftOut + '\u00a0to sell';
+  } else if (leftIn){
+    lead = plural(leftIn, 'buy order', 'buy orders') + ' to place this cycle';
+  } else {
+    lead = plural(leftOut, 'sell order', 'sell orders') + ' to place this cycle';
+  }
+  el.textContent = lead + '. ' +
+    (nHold ? 'The other ' + nHold + ' of your ' + total + ' carry over untouched.'
+           : 'Everything else is already in place.');
+}
+
 /* ── the change module + the two KPI tiles it feeds ────────────────────────────
    One writer for all three surfaces, so the tiles and the card can never state
    different counts. Everything is gated on diff.known. */
@@ -10151,6 +10370,7 @@ function renderBookChange(diff, stocks){
     if (oVal) _animateCount(oVal, total, {});
     if (oSub) oSub.textContent = total ? 'the full book — your first tracked cycle' : 'no picks published yet';
     if (oMeter) oMeter.style.display = 'none';
+    renderHeroJob();
     return;
   }
 
@@ -10388,6 +10608,7 @@ function renderBookChange(diff, stocks){
      ends with, for the same reason. */
   if (window._livePx) { try { paintLivePrices(); } catch(e){} }
   renderCycleCost();   // V35.3 — what the turnover named above actually costs
+  renderHeroJob();     // V37.3 — and what the hero line has to say about it
   card.style.display = '';
 }
 
@@ -10661,7 +10882,7 @@ function paintLivePrices(){
       dayHtml = ' <span class="px-day"><i>1D</i><b class="ret ' + dcls + '">' +
                 dsign + d.toFixed(2) + '%</b></span>';
     }
-    el.innerHTML = '₹' + live.toFixed(2) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>' + dayHtml;
+    el.innerHTML = fmtPrice(live) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>' + dayHtml;
     // V24.8: fade each price in the FIRST time it lands (the cells used to pop
     // into existence). Marked per-element so the price repoll — and a sort/filter
     // re-render, which reuses painted cells — never re-flashes the table.
@@ -10736,7 +10957,7 @@ function renderMyPosition(){
           ' value="' + r.mine.toFixed(2) + '"' +
           ' aria-label="Price you paid for ' + escapeHtml(r.t) + ', per share"' +
           ' data-myp="' + escapeHtml(r.t) + '" onchange="setFillPrice(this)"></td>' +
-        '<td class="r">' + (r.live != null ? '₹' + r.live.toFixed(2) : '—') + '</td>' +
+        '<td class="r">' + (r.live != null ? fmtPrice(r.live) : '—') + '</td>' +
         '<td class="r ' + cls + '">' + (r.gain != null
             ? sAmt(r.gain) + ' <span class="' + cls + '">' + sign + r.pct.toFixed(1) + '%</span>'
             : '—') + '</td>' +
@@ -10811,7 +11032,7 @@ function setFillPrice(inp){
 
 function renderProfitHeadline(){
   var px = window._livePx || {}; var stocks = stocksData || [];
-  var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, n = 0, best = null, worst = null;
+  var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, flat = 0, n = 0, best = null, worst = null;
   var contrib = [];   // V28.3 — {t, r, wr} per holding; wr/wSum is its pp of the headline
   stocks.forEach(function(s){
     var rec = Number(s.recommended_price) || 0; var p = px[s.yahoo_ticker];
@@ -10823,7 +11044,15 @@ function renderProfitHeadline(){
     var w = Number(s.weight_pct) || 0;
     wSum += w; wRet += w * r; n++;
     contrib.push({ t: s.ticker, r: r, wr: w * r });
-    if (r > 0.05) up++; else if (r < -0.05) down++;
+    /* V37.3 — the third class. This counted two and printed two, so a holding
+       inside the ±0.05 flat band was silently dropped: the card read "Weighted
+       return across 10 holdings" beside "6 up · 3 down", and the tenth was
+       nowhere. The band itself is right and is the site-wide convention (see
+       screener/index.html::fmtChange and export_static.py::_chg — a dead-flat
+       day is not an up day); what was missing was the bucket it sorts into.
+       The flat row is rendered only when it is non-empty, so the usual card is
+       unchanged and the arithmetic now closes whenever it would not have. */
+    if (r > 0.05) up++; else if (r < -0.05) down++; else flat++;
     if (!best || r > best.r) best = { t: s.ticker, r: r };
     if (!worst || r < worst.r) worst = { t: s.ticker, r: r };
     var shares = Math.floor(allocBudget(s, stocks, currentCapital) / rec);
@@ -10850,6 +11079,7 @@ function renderProfitHeadline(){
   if (br) br.innerHTML =
     '<div class="pc-stat"><span class="pc-dot pc-up-dot"></span><b>' + up + '</b> up</div>' +
     '<div class="pc-stat"><span class="pc-dot pc-down-dot"></span><b>' + down + '</b> down</div>' +
+    (flat ? '<div class="pc-stat"><span class="pc-dot pc-flat-dot"></span><b>' + flat + '</b> flat</div>' : '') +
     // V35.3 — the time the PRICES were fetched, not the time this line was
     // written. It printed new Date(), and renderProfitHeadline re-runs on every
     // capital change, so the stamp followed the member's typing over prices that
@@ -11100,9 +11330,20 @@ function renderTrackRecord(){
   });
 
   var fmtPct = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%'; };
+  /* V37.3 — "Aug 26" is a MONTH-YEAR on a page that writes day-month everywhere
+     else ("31 Aug", "29 Sept 2026", "vs the set you last opened on 11 Aug 2026"),
+     so the one cell that meant August 2026 read as the 26th of August.
+     The elided form fixes it for the width of one glyph. A four-digit year was
+     measured first and rejected: "Sept 2026" plus the inline `live` marker needs
+     92px against the 76 this column has, and taking 16px off a 90px axis at 320
+     is a worse trade than the ambiguity. An apostrophe before the digits can
+     only be a year. Bound with a non-breaking space explicitly — _mfBindDate's
+     letter-to-digit rule cannot see across the apostrophe. */
   var mon = function(iso){
     var dt = new Date(iso + 'T00:00:00');
-    return isNaN(dt.getTime()) ? iso : mfDate(dt, { month:'short', year:'2-digit' });
+    if (isNaN(dt.getTime())) return iso;
+    return mfDate(dt, { month:'short', year:'2-digit' })
+             .replace(/[\s\u00a0](\d{2})$/, '\u00a0\u2019$1');
   };
 
   var box = document.getElementById('trk-rows');
@@ -11319,13 +11560,32 @@ init();
 (function() {
   var btn = document.getElementById('mf-fab-top');
   if (!btn) return;
-  var raf = null;
+  var raf = null, idleT = null;
+  /* V37.3 — see the .mf-fab-top block. Below 1400px the button has no gutter to
+     sit in, so it must not sit on the content while the member is reading it:
+     any scroll wakes it, and 1.4s of stillness puts it back to sleep. The class
+     is set unconditionally and the media query decides whether it means
+     anything, so there is one behaviour and one breakpoint, not two. */
+  function wake() {
+    btn.classList.remove('is-idle');
+    if (idleT) clearTimeout(idleT);
+    idleT = setTimeout(function(){
+      if (document.activeElement !== btn) btn.classList.add('is-idle');
+    }, 1400);
+  }
   function toggle() {
     if (window.scrollY > 320) btn.classList.add('visible'); else btn.classList.remove('visible');
     raf = null;
   }
-  function onScroll() { if (!raf) raf = requestAnimationFrame(toggle); }
+  function onScroll() { if (!raf) raf = requestAnimationFrame(toggle); wake(); }
   toggle();
+  /* Arm the timer once at init too: a load that RESTORES a scroll position past
+     320px (a back-navigation, or a link into the page) makes the button visible
+     without ever firing a scroll event, and it would then sit on the content for
+     as long as the member read. */
+  wake();
+  btn.addEventListener('focus', function(){ btn.classList.remove('is-idle'); if (idleT) clearTimeout(idleT); });
+  btn.addEventListener('blur', wake);
   window.addEventListener('scroll', onScroll, {passive: true});
   btn.addEventListener('click', function() {
     var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
