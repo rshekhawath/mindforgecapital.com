@@ -184,7 +184,20 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .meta-pill.has-switcher:hover .strat-caret{ background:linear-gradient(135deg,var(--accent2),var(--accent3)); }
 .meta-pill.has-switcher.open .strat-caret{ transform:rotate(180deg); }
 @keyframes stratNudge{ 0%,100%{ box-shadow:0 0 0 0 rgba(37,99,235,0); } 40%{ box-shadow:0 0 0 6px rgba(37,99,235,0.15); } }
-.meta-pill.has-switcher.nudge{ animation:stratNudge 1.7s ease 2; }
+/* V37.4 — THE NUDGE WAS REPLACING THE ENTRANCE, NOT ADDING TO IT.
+   `.meta-row .meta-pill` carries `animation: mf102-rise .5s ... backwards`
+   (the hero's staggered entrance). Putting a second `animation` on the pill
+   OVERRODE that one while the nudge ran — and when setupStrategySwitcher()
+   removes `.nudge` 3.8s later, the property reverts to `mf102-rise`, which
+   is a CHANGED animation-name and therefore RESTARTS. Measured: the strategy
+   pill's computed opacity goes 1 -> 0 -> 1 almost four seconds after load, so
+   the one pill the nudge exists to draw attention to blinks out and re-enters
+   on its own, on every member's first switch-capable visit.
+   The ring moves to a pseudo-element, so the pill's own `animation` property
+   is never written to and there is nothing to revert. .meta-pill is already
+   position:relative (the switcher menu anchors to it). */
+.meta-pill.has-switcher.nudge::after{ content:''; position:absolute; inset:0;
+  border-radius:inherit; pointer-events:none; animation:stratNudge 1.7s ease 2; }
 /* V29.0: the switch now probes the target token before committing, so there is a
    real (if short) wait between the click and the reload. Say so, and lock the
    control while it is in flight. */
@@ -275,7 +288,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   padding:6px 10px 4px; }
 @media (prefers-reduced-motion: reduce){
   .strat-caret, .strat-menu{ transition:none; }
-  .meta-pill.has-switcher.nudge{ animation:none; }
+  .meta-pill.has-switcher.nudge::after{ animation:none; }
 }
 .dot-green{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 0 3px rgba(5,150,105,.18);animation:nav-pulse 2.6s ease-in-out infinite;}
 .dot-gold{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;box-shadow:0 0 0 3px rgba(217,119,6,.18);}
@@ -1085,7 +1098,10 @@ html[data-theme="dark"] .table-wrap{
     linear-gradient(270deg, rgba(150,180,240,.20), transparent) 100% 0 / 24px 100% no-repeat scroll,
     var(--ink2);
 }
-@media (max-width:1080px){
+/* V37.4 — was max-width:1080px, which is now a band where the table is not on
+   screen at all. The only widths left where it can still scroll sideways are
+   1200-1265 (above that, V30.0's sticky header sets overflow:clip). */
+@media (min-width:1200px) and (max-width:1265px){
   .table-wrap{scrollbar-width:thin;}
   .table-wrap::-webkit-scrollbar{height:6px;}
   .table-wrap::-webkit-scrollbar-thumb{background:rgba(37,99,235,0.22);border-radius:6px;}
@@ -1202,9 +1218,10 @@ td.shares .qty{color:var(--white);font-weight:700;}
    its line actually has, so where it shares a line it grows into the slack
    instead of forcing a break, and where it is alone it spans the row. Once it
    absorbs the slack `justify-content` has none left to distribute, which is what
-   pins the left edge to 15 at every width. Scoped to 600px — the breakpoint
-   where `.table-wrap` gives way to `.stock-cards`, so the widths that still
-   render a table keep the right-aligned toolbar they were designed with.
+   pins the left edge to 15 at every width. Scoped to 600px — the phone band.
+   (V37.4 moved the table/card swap itself to 1199px, but this rule is about the
+   TOOLBAR's own wrapping on a phone-width row, not about which view is below
+   it, so its breakpoint is unchanged and deliberately independent.)
 
    The 252px floor is measured, not chosen: the placeholder "Search ticker or
    company…" renders 196px wide at the 16px this field is given on touch (V29.5,
@@ -1977,10 +1994,12 @@ html[data-theme="dark"] .state-box::before{
   .table-actions{width:100%;justify-content:flex-end;}
 }
 
-/* V29.5 — the phone's sort control. Hidden by default and shown at exactly the
-   breakpoint where `.table-wrap` — and with it every `th.sortable` the desktop
-   sorts from — leaves the layout, so the two are never both present and never
-   both absent. Sizes come from .tbl-btn so it reads as part of the same toolbar;
+/* V29.5 — the sort control for every width that has no table. Hidden by default
+   and shown at exactly the breakpoint where `.table-wrap` — and with it every
+   `th.sortable` the desktop sorts from — leaves the layout, so the two are never
+   both present and never both absent. (V37.4 moved that breakpoint from 600px to
+   1199px; this control came with it, which is why an iPad can still re-order the
+   picks.) Sizes come from .tbl-btn so it reads as part of the same toolbar;
    the select is 16px because anything smaller makes iOS zoom the page on focus
    (see the V29.5 block near </body>). */
 .msort{display:none;align-items:center;gap:6px;flex:1 1 100%;min-width:0;}
@@ -2020,13 +2039,58 @@ html[data-theme="dark"] .msort-sel{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a9c9' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
-/* MOBILE CARD VIEW for portfolio */
-@media(max-width:600px){
+/* ── V37.4 · THE CARD VIEW IS NOW EVERY WIDTH THE TABLE DOES NOT FIT ────────
+   The picks table has a content width of ~1,128px on a ten-name book (more on a
+   twenty-five-name one). Measured across widths with the demo book:
+
+       1440 / 1280 / 1200   fits, nothing hidden
+       1180                 14px hidden
+       1100                 94px hidden
+       1025                 170px hidden   <- Weight gone
+        820                 374px hidden   <- Allocation, Shares AND Weight gone
+        768                 426px hidden
+
+   So from 601px to ~1199px the member was shown a table whose last three
+   columns — including the two figures they type into their broker, the
+   allocation and the share count — were parked off the right edge behind a
+   24px background-attachment fade. V31.8 froze the identity columns and V29.2
+   drew that fade, and both help someone who is ALREADY scrolling sideways;
+   neither makes anyone start. On an iPad, which is the second-most common way
+   this page is opened, three of the eight columns were effectively not on the
+   page.
+
+   The fix is not a better cue. The card list built for phones already renders
+   every one of those figures — shares, allocation, rec + live price, weight vs
+   model with its gauge and gap, the held/re-weighted marker, the Kite link and
+   the order tick — from the same renderTable() pass. It was simply gated to
+   600px. It now shows wherever the table cannot fit, as a responsive grid, so
+   an iPad gets two complete cards side by side instead of half a table.
+
+   `min(330px,100%)` rather than a bare 330px: `auto-fill` with a hard minimum
+   lays every track out AT that minimum, so a 284px content box at 320px wide
+   would have overflowed by 46px (the V29.2 auto-fill trap, again).
+
+   `screen` on both queries on purpose. Print is ~816px and would otherwise
+   have swapped to cards; print sets `.table-wrap{overflow-x:visible}` so the
+   table prints in full there and has always been the right thing on paper. */
+@media screen and (max-width:1199px){
   .table-wrap{display:none;}
-  .stock-cards{display:flex !important;flex-direction:column;gap:10px;}
+  .stock-cards{display:grid !important;
+    grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));
+    gap:10px;align-items:start;}
+  /* the only sort control in this band — the <th>s left with the table */
   .msort{display:flex;}
 }
-@media(min-width:601px){.stock-cards{display:none;}}
+/* On a phone `.msort` spans the row (V29.5's `flex:1 1 100%`) because the whole
+   toolbar is a two-column grid there. A tablet has room for it inline, and
+   leaving it full-width pushed the remaining six controls onto a line that
+   ended 450px short of the right edge — the ragged-line half of the same
+   problem V37.3 fixed on phones. Sized to its content, both lines fill. */
+@media screen and (min-width:601px) and (max-width:1199px){
+  .msort{ flex:0 1 auto; }
+  .msort-sel{ min-width:170px; }
+}
+@media print, screen and (min-width:1200px){ .stock-cards{display:none !important;} }
 .stock-card{
   background:var(--ink2);border:0.5px solid var(--border2);
   border-radius:var(--r-sm);padding:15px 16px;
@@ -3958,10 +4022,12 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
                sortByKey() → applySort() → renderTable(sorted) already re-renders
                the PHONE CARDS from the same sorted array — the capability is
                whole. But every trigger for it is a click handler bound to
-               `th.sortable`, and below 600px `.table-wrap` is display:none, so
-               there is no <th> in the layout to click. On a phone the member
-               got 25 cards in conviction order and no way to reorder them,
-               while the identical page on a laptop offered all eight keys.
+               `th.sortable`, and below the card breakpoint `.table-wrap` is
+               display:none, so there is no <th> in the layout to click. On a
+               phone the member got 25 cards in conviction order and no way to
+               reorder them, while the identical page on a laptop offered all
+               eight keys. (V37.4 widened that band from 600px to 1199px, so this
+               control is now also the iPad's only way to sort.)
                This is the missing door, not a second implementation: it calls
                the same sortByKey(), inherits its per-strategy localStorage
                persistence, and is kept in sync by reflectSortAffordance(),
@@ -4111,7 +4177,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               <th scope="col" class="right sortable" data-sort="price" role="button" tabindex="0" aria-sort="none">Rec. Price</th>
               <th scope="col" class="right sortable" data-sort="alloc" role="button" tabindex="0" aria-sort="none">Allocation</th>
               <th scope="col" class="right sortable" data-sort="shares" role="button" tabindex="0" aria-sort="none">Shares</th>
-              <th scope="col" class="right sortable" data-sort="weight" style="width:170px;" role="button" tabindex="0" aria-sort="none" title="Model weight, and how far your capital lands from it after whole-share rounding">Weight <span class="th-sub">vs model</span></th>
+              <th scope="col" class="right sortable th-stacked" data-sort="weight" style="width:170px;" role="button" tabindex="0" aria-sort="none" title="Model weight, and how far your capital lands from it after whole-share rounding">Weight <span class="th-sub">vs model</span></th>
             </tr>
           </thead>
           <tbody id="stocks-tbody">
@@ -10836,7 +10902,21 @@ function paintLivePrices(){
     var p = px[y];
     if (!p || !rec){ el.innerHTML = '—'; return; }
     var live = p.price; var r = _retPct(rec, live);
-    var cls = r > 0.05 ? 'up' : (r < -0.05 ? 'down' : 'flat'); var sign = r > 0 ? '+' : '';
+    /* V37.4 — THE SIGN AND THE CLASS WERE DECIDED BY DIFFERENT RULES.
+       The class used a ±0.05 flat band; the sign used `r > 0`. So any return
+       between 0 and +0.05 was classed `flat` and printed `+0.0%` — a plus sign
+       on a figure the page had just declared to be no move — and any return
+       between −0.05 and 0 printed `-0.0%`, because `(-0.04).toFixed(1)` is
+       "-0.0". Measured live: a row up 0.04% read "+0.0%" and a row down 0.04%
+       read "-0.0%", both in the flat ink, three strings for one statement and
+       one of them a signed zero.
+       The band decides everything now: inside it the figure IS zero and carries
+       no sign, outside it the sign follows the direction. Same fix applied to
+       the 1D figure below, which had the identical split. */
+    var flat = !(r > 0.05) && !(r < -0.05);
+    var cls  = flat ? 'flat' : (r > 0 ? 'up' : 'down');
+    var sign = (!flat && r > 0) ? '+' : '';
+    var rTxt = flat ? (0).toFixed(1) : r.toFixed(1);
     /* V37.2 — THE DAY'S MOVE, WHICH THIS PAGE HAS BEEN FETCHING AND NEVER SHOWING.
        Every price poll already returns prev_close — the Apps Script sends it on
        both the `prices` and the `chart` action, and _fetchPricesBatch has been
@@ -10870,19 +10950,27 @@ function paintLivePrices(){
        a chip that formatted its own value once would be the stale-number bug
        V35.3 spent a release removing. */
     if (el.getAttribute('data-px-mode') === 'ret'){
-      el.innerHTML = '<span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>';
+      el.innerHTML = '<span class="ret ' + cls + '">' + sign + rTxt + '%</span>';
       if (!el.dataset.pxSeen) { el.dataset.pxSeen = '1'; el.classList.add('px-in'); }
       return;
     }
     var dayHtml = '';
     if (p.prev != null && Number(p.prev) > 0){
       var d = (live - p.prev) / p.prev * 100;
-      var dcls = d > 0.05 ? 'up' : (d < -0.05 ? 'down' : 'flat');
-      var dsign = d > 0 ? '+' : '';
+      /* The 1D figure prints at TWO decimals, so unlike the return above it can
+         still show a real value inside the flat band — −0.04% is a number, not a
+         rounded-off zero, and blanking it would throw away the only precision
+         this line has. Only the sign is conditioned, and only on what is
+         actually printed: `(-0.002).toFixed(2)` is "-0.00", which is the same
+         signed zero, one decimal further down. */
+      var dcls  = d > 0.05 ? 'up' : (d < -0.05 ? 'down' : 'flat');
+      var dTxt  = d.toFixed(2);
+      if (parseFloat(dTxt) === 0) dTxt = (0).toFixed(2);
+      var dsign = (d > 0 && parseFloat(dTxt) !== 0) ? '+' : '';
       dayHtml = ' <span class="px-day"><i>1D</i><b class="ret ' + dcls + '">' +
-                dsign + d.toFixed(2) + '%</b></span>';
+                dsign + dTxt + '%</b></span>';
     }
-    el.innerHTML = fmtPrice(live) + ' <span class="ret ' + cls + '">' + sign + r.toFixed(1) + '%</span>' + dayHtml;
+    el.innerHTML = fmtPrice(live) + ' <span class="ret ' + cls + '">' + sign + rTxt + '%</span>' + dayHtml;
     // V24.8: fade each price in the FIRST time it lands (the cells used to pop
     // into existence). Marked per-element so the price repoll — and a sort/filter
     // re-render, which reuses painted cells — never re-flashes the table.
@@ -11210,7 +11298,19 @@ function renderAttribution(rows, wSum, port){
   if (hidden > 0){
     var rest = ups.slice(shownUp.length).concat(downs.slice(shownDown.length)).map(function(x){ return x.c; });
     var lo = Math.min.apply(null, rest), hi = Math.max.apply(null, rest);
-    base += ' The ' + hidden + ' not listed each contributed between ' + fmtPP(lo) + ' and ' + fmtPP(hi) + ' pp.';
+    /* V37.4 — this sentence had one shape for three cases and got two of them
+       wrong. Measured on a ten-name book with four holdings down, which is an
+       ordinary month: "The 1 not listed each contributed between −0.01 and
+       −0.01 pp." — "each" of one, and a range whose ends are the same number.
+       The range is only a range when the two ENDS DIFFER ONCE FORMATTED; the
+       raw floats almost never tie, so the comparison has to be made on the
+       strings the reader actually sees, not on the values behind them. */
+    var loS = fmtPP(lo), hiS = fmtPP(hi);
+    base += (hidden === 1)
+      ? ' The one not listed contributed ' + loS + ' pp.'
+      : (loS === hiS)
+        ? ' The ' + hidden + ' not listed each contributed ' + loS + ' pp.'
+        : ' The ' + hidden + ' not listed each contributed between ' + loS + ' and ' + hiS + ' pp.';
   }
   foot.textContent = base;
 
@@ -12037,6 +12137,26 @@ th.sortable::after{
   transition: opacity .2s var(--v17-ease);
 }
 th.sortable:hover::after{ opacity: .65; }
+/* V37.4 — THE ONE HEADER WHOSE CARET LANDED ON A THIRD LINE.
+   Weight is the only sortable header with a sub-label, and `.th-sub` is
+   `display:block`. An inline `::after` that follows a block-level child is
+   wrapped in an anonymous block of its own, so the caret fell BELOW "vs model"
+   — three stacked lines, the affordance detached from the word it belongs to,
+   on the widest and most-used surface of the page. Every other header renders
+   it inline, right after the label.
+   A float does NOT fix it — a float cannot rise above a block that precedes it
+   in flow, so it lands on the third line too (measured). Taking the caret out of
+   flow entirely does: pinned to the cell's own first line, at the 18px padding
+   the header already uses, it reads as `Weight ↕` over `vs model`, which is the
+   same label-then-affordance order the other seven headers have.
+   `th.sortable` is already position:relative. Scoped to this header only — on a
+   left-aligned header this would park the caret at the far edge of the column,
+   which is a different look. */
+th.sortable.th-stacked::after{
+  position: absolute; right: 18px; top: 14px; margin-left: 0; line-height: 1.4;
+}
+/* the label needs room for the caret it no longer sits beside */
+th.sortable.th-stacked{ padding-right: 32px; }
 th.sortable.sort-asc::after{  content: '↑'; opacity: 1; color: var(--accent); }
 th.sortable.sort-desc::after{ content: '↓'; opacity: 1; color: var(--accent); }
 th.sortable:hover{ color: var(--accent); }
@@ -13130,7 +13250,7 @@ html[data-theme="dark"] .meta-pill.has-switcher{
 html[data-theme="dark"] .meta-pill.has-switcher:hover{ border-color:rgba(120,160,240,0.58) !important; box-shadow:0 8px 22px -12px rgba(0,0,0,0.6); }
 html[data-theme="dark"] .strat-caret{ background:linear-gradient(135deg,var(--accent2),var(--accent3)); box-shadow:0 2px 8px -2px rgba(0,0,0,0.5); }
 html[data-theme="dark"] .meta-pill.has-switcher:hover .strat-caret{ background:linear-gradient(135deg,var(--accent3),var(--accent2)); }
-html[data-theme="dark"] .meta-pill.has-switcher.nudge{ animation-name:stratNudgeDark; }
+html[data-theme="dark"] .meta-pill.has-switcher.nudge::after{ animation-name:stratNudgeDark; }
 @keyframes stratNudgeDark{ 0%,100%{ box-shadow:0 0 0 0 rgba(120,160,240,0); } 40%{ box-shadow:0 0 0 6px rgba(120,160,240,0.22); } }
 </style>
 <script id="mf-v138-nav-scroll-dash">
@@ -14537,7 +14657,7 @@ html[data-theme="dark"] .pspread-scale .dn{ color:#f87171; }
        covers. Each one is asserted in the release notes, not assumed.
      ========================================================================= -->
 <style id="mf-v318-freeze-picks">
-@media screen and (min-width:601px) and (max-width:1265px){
+@media screen and (min-width:1200px) and (max-width:1265px){
   .table-wrap thead th:nth-child(-n+3),
   .table-wrap tbody tr:not(.skel-row) > td:nth-child(-n+3){
     position:sticky; z-index:4; background-color:var(--ink2);
@@ -14665,6 +14785,36 @@ h1, h2, h3, h4, th,
 .hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
   text-wrap: balance;
 }
+</style>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     V37.4 · THE ATTRIBUTE THAT WAS BEING OVERRULED
+     `[hidden]` is a UA rule — `[hidden]{display:none}` — and it loses to any
+     author rule that sets a display. This page has twelve classes that both
+     carry a display AND get `hidden` toggled on them in JS, and only ONE of
+     them (.msort-dir, V31.7) had ever noticed. Two were live defects:
+
+     • `#cyc-newer` — the "a newer set has published" notice inside Your cycle.
+       It is `hidden` for every member who is ON the current rebalance, which is
+       most of them, and `.cyc-newer{display:flex}` painted it anyway: an empty
+       1214x22 amber-tinted, amber-bordered box in the middle of the card.
+     • `#kbsk` — the one-tap Kite basket. refreshKiteBasket() sets
+       `wrap.hidden = true` when there is nothing to send: a hold-only cycle, or
+       a member whose broker is not Zerodha. The band kept painting, keeping
+       whatever figures were in it from the last time there WAS a basket, with a
+       focusable, clickable "Review basket on Kite" button on the end of it.
+       Measured: pick Groww on the LargeMidcap book and the band still read
+       "4 orders · Rs.1,98,019 to buy" under a Kite button.
+
+     One rule instead of twelve, because the next element to be hidden should
+     inherit the fix rather than the bug. Blast radius measured before shipping:
+     across both books x desktop/iPad/phone, applying this rule removes exactly
+     #cyc-newer and #kbsk and nothing else — every element that is legitimately
+     on screen stays on screen (.mf-abar, the one other fixed overlay that
+     toggles `hidden`, clears the attribute itself when it shows).
+     ════════════════════════════════════════════════════════════════════════ -->
+<style id="mf-v374-hidden-guard">
+[hidden]{ display:none !important; }
 </style>
 </body>
 </html>
