@@ -702,7 +702,13 @@
 // splits "15 stocks" across two lines. A precached document has no query to
 // bust, so an installed member left on v96 would keep a v96 shell asking for
 // ?v=3610 and would see neither.
-const CACHE = 'mfc-v97';
+// V37.5 — mfc-v98. index.html (precached, and the offline navigation fallback)
+// changed in its own right: the "Ten minutes on the 1st" section gained a link to
+// the bannered sample dashboard, and its no-JS "Orders in month one" fallback now
+// reads 15 (the largest book since V33.1) instead of 25. A precached document has
+// no query to bust, so an installed visitor left on v97 would keep the old shell.
+// dashboard.html changed far more, but it is network-first and owes no bump.
+const CACHE = 'mfc-v98';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

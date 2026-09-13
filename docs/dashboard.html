@@ -1252,14 +1252,11 @@ td.shares .qty{color:var(--white);font-weight:700;}
    line is full by construction, so there is no slack left to distribute and no
    justify-content to get wrong, and each control is half a phone wide rather
    than as wide as its own label. */
-@media (max-width: 600px){
-  .table-actions{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch; }
-  .table-actions > .msort,
-  .table-actions > .tbl-search-wrap,
-  .table-actions > .tbl-search{ grid-column: 1 / -1; width: auto; min-width: 0; }
-  .table-actions > .market-bar{ justify-content: center; }
-  .table-actions > .tbl-btn{ width: 100%; justify-content: center; }
-}
+/* V37.5 — SUPERSEDED. The two-column grid this block described is replaced by
+   the three-row flex layout in <style id="mf-v375-picks">, and the market
+   status it centred has left the toolbar for the title block. The rules are
+   removed rather than overridden so no dead `.table-actions > .market-bar`
+   selector is left behind to mislead the next reader (V28.5's dead-rule seam). */
 .tbl-search::placeholder{color:var(--text3);}
 .tbl-search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(37,99,235,.10);}
 
@@ -1738,6 +1735,26 @@ footer a:hover{color:var(--accent);}
 .notif-switch:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
 .notif-knob{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .25s cubic-bezier(.22,1,.36,1);box-shadow:0 1px 4px rgba(0,0,0,.15);display:block;}
 .notif-switch.on .notif-knob{transform:translateX(20px);}
+/* V37.5 — THE SWITCH THAT TURNED INTO A SQUARE ON EVERY PHONE AND iPAD.
+   mfc-finish.css (hover:none + pointer:coarse) and mfc-chrome.css (<=600px)
+   both give every `button` a 44px min-height — the right rule for a text
+   button, and the wrong one for this: the switch is a real <button> since
+   V30.3, declares height:24px, and has no min-height of its own, so the touch
+   rule won. Measured: 44x24 on a desktop, 44x44 on an iPad and a phone — a
+   blue rounded SQUARE with the knob stranded in its top corner, which reads as
+   a broken checkbox rather than a switch.
+   The box keeps its proportions; the 44px lives on a transparent ::before pad
+   instead, which is this page's convention for enlarging a hit area without
+   changing what is drawn (::after is reserved for visible indicators, V35.1).
+   On a touch screen the pill also grows to the 52x32 a thumb expects. */
+.notif-switch{ min-height:0; min-width:0; }
+.notif-switch::before{ content:''; position:absolute; left:50%; top:50%;
+  width:max(100%,52px); height:44px; transform:translate(-50%,-50%); }
+@media (pointer:coarse){
+  .notif-switch{ width:52px; height:32px; border-radius:16px; }
+  .notif-knob{ top:3px; left:3px; width:26px; height:26px; }
+  .notif-switch.on .notif-knob{ transform:translateX(20px); }
+}
 
 /* LOADING / ERROR */
 /* V16.4: the gate / loading / error states ("No Access Token", "Access Denied",
@@ -3004,6 +3021,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
          to agree (WCAG 1.3.2 / 2.4.3). Checked first — nothing here is selected
          by :nth-child, :first/:last-child or a sibling combinator, and no JS
          walks these blocks by sibling. -->
+    <!-- V37.5 — SAMPLE BANNER. ?demo is now linked from the homepage so a prospect
+         can see the dashboard before subscribing, and that page greets "Riya" and
+         lists well-known large caps at placeholder prices. Without a label it
+         reads as a member's real book — and, on a SEBI RA's site, as a list of
+         recommendations. Shown only under ?demo; never in a member session. -->
+    <aside class="demo-banner" id="demo-banner" hidden aria-label="Sample dashboard">
+      <span class="demo-banner-tag">Sample</span>
+      <span class="demo-banner-txt"><b>This is a sample dashboard.</b> The member, stocks and prices are placeholders that show how the dashboard works — they are not MindForge's picks.</span>
+      <a class="demo-banner-cta" href="/strategies.html">See the strategies <span aria-hidden="true">→</span></a>
+    </aside>
     <!-- HERO -->
     <div class="dash-hero fade-up">
       <div class="section-label">Member Dashboard</div>
@@ -3131,6 +3158,18 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            links inside prose are left alone rather than padded out. Rendered only
            when the pill is NOT showing one, so the page never carries two. -->
       <div class="cyc-actions" id="cyc-actions" style="display:none"></div>
+      <!-- V37.5 — the two dates this card counts down to, into the member's own
+           calendar. A monthly strategy is only as good as the member remembering
+           the 1st; nothing on the page reached them once the tab was closed except
+           the rebalance email, which 1-month members never get. See addCycleToCalendar(). -->
+      <div class="cyc-cal" id="cyc-cal" hidden>
+        <span class="cyc-cal-k">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+          Remind me
+        </span>
+        <a class="cyc-cal-btn" id="cyc-cal-g" target="_blank" rel="noopener noreferrer" href="#">Google Calendar</a>
+        <button type="button" class="cyc-cal-btn" id="cyc-cal-ics" onclick="addCycleToCalendar()">Apple / Outlook (.ics)</button>
+      </div>
     </div>
     <style>
     .cyc-card{display:block;margin:0 0 22px;padding:16px 20px 15px;border-radius:16px;background:#fff;
@@ -3155,6 +3194,20 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
    admire, and the rail's own two bars already own the accent. Both inks are the
    ones V26.7 established for this palette — the dark theme flips --green but not
    --red, so semantic colours here are written literally on purpose. */
+    .cyc-cal{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; margin-top:12px;
+      padding-top:11px; border-top:0.5px solid rgba(37,99,235,.10); }
+    .cyc-cal-k{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800;
+      letter-spacing:.07em; text-transform:uppercase; color:var(--text3); margin-right:4px; }
+    .cyc-cal-k svg{ width:14px; height:14px; }
+    .cyc-cal-btn{ font:inherit; font-size:12.5px; font-weight:700; display:inline-flex; align-items:center;
+      min-height:36px; padding:0 12px; border-radius:9px; cursor:pointer; text-decoration:none;
+      color:var(--accent); background:rgba(37,99,235,.05); border:0.5px solid rgba(37,99,235,.28); }
+    .cyc-cal-btn:hover{ background:rgba(37,99,235,.10); border-color:rgba(37,99,235,.45); }
+    .cyc-cal-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+    html[data-theme="dark"] .cyc-cal{ border-top-color:rgba(120,160,240,.14); }
+    html[data-theme="dark"] .cyc-cal-btn{ color:#9dbcff; background:rgba(120,160,240,.08); border-color:rgba(120,160,240,.30); }
+    @media (pointer:coarse){ .cyc-cal-btn{ min-height:44px; } }
+    @media print{ .cyc-cal{ display:none !important; } }
     .cyc-newer{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;
       margin-top:11px; padding:10px 13px; border-radius:11px; font-size:12.5px; line-height:1.55;
       color:var(--text2); background:rgba(180,83,9,.07); border:0.5px solid rgba(180,83,9,.20); }
@@ -4009,12 +4062,21 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
 
     <!-- TABLE -->
     <div class="table-section fade-up">
-      <!-- V5.2 #20: sector filter chips populated by renderTable() -->
-      <div class="sector-chips" id="sector-chips" role="toolbar" aria-label="Filter picks by sector"></div>
       <div class="table-header">
         <div class="left">
           <h2>Stock picks</h2>
-          <div class="last-update">Last updated: <span id="last-update-time">—</span></div>
+          <!-- V37.5 — the market status is a STATUS, not a control, and it sat in
+               the toolbar dressed as a button — on a phone it took a full grid
+               cell beside the broker picker. It now reads with the timestamp it
+               qualifies: "Updated 3:43 pm · NSE closed". Same ids, so
+               updateMarketStatus() writes it exactly as before. -->
+          <div class="tbl-meta">
+            <div class="last-update">Last updated: <span id="last-update-time">—</span></div>
+            <div class="market-bar" id="market-status" title="Market hours — auto-detected from your strategy">
+              <span id="market-dot" class="dot-green"></span>
+              <span id="market-label">Checking market…</span>
+            </div>
+          </div>
         </div>
         <div class="table-actions">
           <!-- V29.5 — SORTING THE PICKS ON THE DEVICE MEMBERS PLACE ORDERS FROM.
@@ -4054,10 +4116,6 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             </button>
           </div>
           <input type="search" class="tbl-search" id="tbl-search" placeholder="Search ticker or company…" oninput="filterStocks(this.value)" aria-label="Search stocks">
-          <div class="market-bar" id="market-status" title="Market hours — auto-detected from your strategy">
-            <span id="market-dot" class="dot-green"></span>
-            <span id="market-label">Checking market…</span>
-          </div>
           <!-- V5.2 #2: broker preference picker — saved in localStorage -->
           <select class="tbl-btn broker-picker" id="broker-picker" onchange="setBroker(this.value)" title="Choose your broker for one-click order links" aria-label="Broker">
             <option value="kite">Kite</option>
@@ -4066,22 +4124,30 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           </select>
           <button class="tbl-btn" id="btn-copy-tickers" onclick="copyAllTickers()" title="Copy all tickers for your broker">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-            Copy tickers
+            <span class="tb-l">Copy<span class="tb-long"> tickers</span></span>
           </button>
           <button class="tbl-btn" id="btn-export-csv" onclick="exportCSV()" title="Download as CSV">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export CSV
+            <span class="tb-l"><span class="tb-long">Export </span>CSV</span>
           </button>
           <button class="tbl-btn" id="btn-print" onclick="window.print()" title="Print this page">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print
+            <span class="tb-l">Print</span>
           </button>
           <button class="tbl-btn" id="btn-refresh" onclick="refreshDashboard()" title="Refresh data from server">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-            Refresh
+            <span class="tb-l">Refresh</span>
           </button>
         </div>
       </div>
+
+      <!-- V5.2 #20: sector filter chips populated by renderTable().
+           V37.5 — moved from ABOVE the section title to directly under the
+           toolbar. Above the title they read as the tail of the capital card
+           before them (the screenshot that reported this showed nine rows of
+           chips and no heading on screen at all), and a filter belongs next to
+           the list it filters. On a phone they are one swipeable row. -->
+      <div class="sector-chips" id="sector-chips" role="toolbar" aria-label="Filter picks by sector"></div>
 
       <!-- Buy progress (visible only once user marks a stock) -->
       <div class="buy-prog-card" id="buy-prog-card" style="display:none;">
@@ -4288,6 +4354,9 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <div class="kbsk-txt">
             <div class="kbsk-eyebrow">Step 3, in one tap</div>
             <div class="kbsk-facts" id="kbsk-facts" aria-hidden="true"></div>
+            <!-- V37.5 — one row per Kite basket when the cycle needs more than one.
+                 Rendered by refreshKiteBasket(); see kiteBasketPlan(). -->
+            <ol class="kbsk-list" id="kbsk-list" hidden></ol>
             <p class="kbsk-note" id="kbsk-note"></p>
           </div>
           <button type="button" class="kbsk-cta" id="kbsk-btn" onclick="sendKiteBasket()">
@@ -4300,6 +4369,79 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           </button>
         </div>
       </div>
+
+      <!-- ══ V37.5 · ADJUST YOUR BOOK ═══════════════════════════════════════════
+           The picks table answers one question: "I have this much capital and no
+           positions — what do I buy?" Two situations every member hits sooner or
+           later are outside that question, and the page had no answer for either:
+             · ADDING MONEY. A salary month, a bonus, a monthly top-up. The table
+               re-sizes the WHOLE book when the capital changes, so the member had
+               to work out the difference per name by hand — fifteen subtractions,
+               in whole shares, at today's prices.
+             · BEING OUT OF STEP. Joined mid-cycle, skipped a month, a partial
+               fill, a bonus issue or split, or holdings from before MindForge.
+               Every order surface on this page assumes last cycle was executed
+               exactly; a member whose account says otherwise had nothing to
+               reconcile against.
+           Both are plain arithmetic on the model's own weights and the member's own
+           numbers, run here in the browser — nothing is sent anywhere, and the
+           orders go out through the same Kite basket form (or the list is copied
+           for any other broker). Rendered by adjRefresh(). -->
+      <section class="adj-card" id="adj-card" aria-labelledby="adj-title" hidden>
+        <div class="adj-head">
+          <div>
+            <h2 id="adj-title">Adjust your book</h2>
+            <p class="adj-lead">For the two jobs the picks table can't do on its own.</p>
+          </div>
+        </div>
+        <div class="adj-tabs" role="tablist" aria-label="Adjust your book">
+          <button type="button" class="adj-tab" role="tab" id="adj-tab-add" aria-controls="adj-panel-add" aria-selected="true" tabindex="0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            <span><b>Add money</b><small>Split new cash across the picks</small></span>
+          </button>
+          <button type="button" class="adj-tab" role="tab" id="adj-tab-sync" aria-controls="adj-panel-sync" aria-selected="false" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><polyline points="21 4 21 9 16 9"/><polyline points="3 20 3 15 8 15"/></svg>
+            <span><b>Match my holdings</b><small>Reconcile your broker with the model</small></span>
+          </button>
+        </div>
+
+        <div class="adj-panel" role="tabpanel" id="adj-panel-add" aria-labelledby="adj-tab-add">
+          <p class="adj-desc">Putting more money into this strategy? Enter the amount. It is split across the picks at their model weights, in whole shares, at today's prices — and any cash left over by the rounding buys extra shares of the most underweight picks.</p>
+          <div class="adj-row">
+            <label class="adj-lbl" for="adj-add-amt">Amount to add</label>
+            <div class="adj-field">
+              <span class="adj-cur" aria-hidden="true">₹</span>
+              <input type="text" id="adj-add-amt" class="adj-input" inputmode="numeric" autocomplete="off" placeholder="50,000" aria-describedby="adj-add-hint">
+            </div>
+            <div class="adj-chips" id="adj-add-chips">
+              <button type="button" class="adj-chip" data-amt="25000">₹25K</button>
+              <button type="button" class="adj-chip" data-amt="50000">₹50K</button>
+              <button type="button" class="adj-chip" data-amt="100000">₹1L</button>
+              <button type="button" class="adj-chip" data-amt="200000">₹2L</button>
+            </div>
+          </div>
+          <p class="adj-hint" id="adj-add-hint"></p>
+          <div class="adj-out" id="adj-add-out" aria-live="polite"></div>
+        </div>
+
+        <div class="adj-panel" role="tabpanel" id="adj-panel-sync" aria-labelledby="adj-tab-sync" hidden>
+          <p class="adj-desc">Joined mid-cycle, missed a month, had a partial fill or a bonus issue? Paste what your broker says you hold. This works out exactly what to buy and sell so the account matches the model at your capital.</p>
+          <label class="adj-lbl" for="adj-sync-in">Your holdings</label>
+          <textarea id="adj-sync-in" class="adj-text" rows="6" spellcheck="false" autocomplete="off" aria-describedby="adj-sync-help"
+            placeholder="Paste a holdings CSV (Kite, Console, Groww, Upstox…) or one per line:&#10;SHILPAMED 105&#10;WELCORP 163"></textarea>
+          <p class="adj-hint" id="adj-sync-help">Kite: <b>Holdings → download CSV</b>, open it and paste, or upload the file. Only a symbol and a quantity column are read; nothing leaves this page.</p>
+          <div class="adj-sync-bar">
+            <button type="button" class="adj-btn adj-btn-primary" id="adj-sync-go">Work out my orders</button>
+            <label class="adj-btn adj-file">
+              <input type="file" id="adj-sync-file" accept=".csv,.txt,.tsv,text/csv,text/plain">
+              Upload CSV
+            </label>
+            <label class="adj-check"><input type="checkbox" id="adj-sync-others"> Also sell holdings that aren't in this strategy</label>
+          </div>
+          <div class="adj-out" id="adj-sync-out" aria-live="polite"></div>
+        </div>
+        <p class="adj-foot">Arithmetic on the model's published weights and the numbers you enter — not a separate recommendation. Orders open on your broker's own screen; nothing is placed until you confirm there.</p>
+      </section>
 
       <!-- REBALANCE NOTIFICATIONS -->
       <div id="notif-section" class="notif-card">
@@ -4337,6 +4479,10 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             style="flex:1;min-width:200px;padding:10px 14px;border:0.5px solid var(--border2);border-radius:8px;font-size:16px;background:var(--ink);color:var(--white);outline:none;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">
           <button onclick="saveNotifPref()" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;">Save</button>
         </div>
+        <!-- V37.5 — the field measured 42px on a touch screen (10px padding on 16px
+             type), two short of the 44px every other control on this page holds. -->
+        <style>#notif-email-input{ min-height:44px; min-width:0 !important; }
+          @media (max-width:420px){ #notif-email-row input{ flex:1 1 100% !important; } #notif-email-row button{ flex:1 1 100%; min-height:44px; } }</style>
         <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:#059669;">✓ You'll be emailed when next month's picks are published.</div>
       </div>
 
@@ -4626,6 +4772,59 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         .kbsk-cta:hover::before{ animation:kbskSheen .85s ease-out 1; }
         @keyframes kbskSheen{ from{background-position:135% 0;} to{background-position:-35% 0;} }
       }
+      /* V37.5 — the basket list. A numbered row per basket: what it holds, what
+         it is worth, where it stands, and its own button. Exactly one button is
+         primary — the next basket — so the eye has one place to go. */
+      .kbsk-list{ list-style:none; margin:10px 0 10px; padding:0; display:grid; gap:8px; }
+      .kbsk-b{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
+        gap:4px 12px; padding:10px 12px; border-radius:12px;
+        background:var(--ink2); border:0.5px solid var(--border2); }
+      .kbsk-b.is-next{ border-color:rgba(37,99,235,.45); box-shadow:0 8px 20px -16px rgba(26,80,216,.6); }
+      .kbsk-b.is-sent, .kbsk-b.is-stale{ background:rgba(15,23,42,.025); }
+      html[data-theme="dark"] .kbsk-b.is-sent, html[data-theme="dark"] .kbsk-b.is-stale{ background:rgba(255,255,255,.03); }
+      .kbsk-b-n{ width:28px; height:28px; border-radius:50%; display:inline-flex; align-items:center;
+        justify-content:center; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
+        color:var(--accent); background:var(--accent-wash,rgba(37,99,235,.08)); }
+      .kbsk-b.is-next .kbsk-b-n{ color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+      .kbsk-b.is-sent .kbsk-b-n{ color:var(--data-strong,#047857); background:rgba(5,150,105,.10); }
+      html[data-theme="dark"] .kbsk-b-n{ color:#9dbcff; background:rgba(120,160,240,.12); }
+      html[data-theme="dark"] .kbsk-b.is-next .kbsk-b-n{ color:#fff; }
+      html[data-theme="dark"] .kbsk-b.is-sent .kbsk-b-n{ color:#6ee7b7; background:rgba(52,211,153,.12); }
+      .kbsk-b-main{ min-width:0; display:grid; gap:1px; }
+      .kbsk-b-head{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px;
+        font-size:13px; font-weight:700; color:var(--white); }
+      .kbsk-b-sub{ font-size:12px; color:var(--text2); font-variant-numeric:tabular-nums; }
+      .kbsk-b-sub b{ color:var(--white); font-weight:700; }
+      /* what is IN the basket, in full — an ellipsis hid the second half of the
+         list (and every quantity past it) on exactly the device most baskets are
+         sent from, with the rest only in a hover title a phone cannot show */
+      .kbsk-b-names{ font-size:11px; line-height:1.45; color:var(--text3); letter-spacing:.01em;
+        overflow-wrap:anywhere; }
+      .kbsk-b-state{ font-size:10.5px; font-weight:800; letter-spacing:.02em; padding:2px 8px;
+        border-radius:999px; white-space:nowrap; }
+      .kbsk-b-state.is-next{ color:var(--accent); background:rgba(37,99,235,.09); }
+      .kbsk-b-state.is-sent{ color:var(--ink-pos,#047653); background:rgba(5,150,105,.10); }
+      .kbsk-b-state.is-stale{ color:var(--ink-warn,#a64d08); background:rgba(180,83,9,.10); }
+      html[data-theme="dark"] .kbsk-b-state.is-next{ color:#9dbcff; background:rgba(120,160,240,.14); }
+      html[data-theme="dark"] .kbsk-b-state.is-sent{ color:#6ee7b7; background:rgba(52,211,153,.12); }
+      html[data-theme="dark"] .kbsk-b-state.is-stale{ color:#fbbf24; background:rgba(251,191,36,.12); }
+      .kbsk-b-btn{ font:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;
+        min-height:44px; padding:0 14px; border-radius:10px;
+        color:var(--accent); background:var(--ink2); border:1px solid rgba(37,99,235,.35);
+        transition:background .15s, border-color .15s, transform .15s; }
+      .kbsk-b-btn:hover{ background:rgba(37,99,235,.06); border-color:rgba(37,99,235,.55); }
+      .kbsk-b-btn.is-primary{ color:#fff; border-color:transparent;
+        background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+        box-shadow:0 10px 22px -14px rgba(26,80,216,.8); }
+      .kbsk-b-btn.is-primary:hover{ transform:translateY(-1px); filter:brightness(1.04); }
+      .kbsk-b-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+      html[data-theme="dark"] .kbsk-b-btn{ color:#9dbcff; border-color:rgba(120,160,240,.35); }
+      html[data-theme="dark"] .kbsk-b-btn.is-primary{ color:#fff; }
+      @media (max-width:420px){
+        .kbsk-b{ grid-template-columns:auto minmax(0,1fr); }
+        .kbsk-b-btn{ grid-column:1 / -1; width:100%; }
+      }
+      @media (prefers-reduced-motion:reduce){ .kbsk-b-btn{ transition:none; } .kbsk-b-btn.is-primary:hover{ transform:none; } }
       .kbsk-note{ font-size:11.5px; line-height:1.55; color:var(--text3); margin:0; max-width:70ch; }
       .kbsk-note b{ color:var(--text2); font-weight:700; }
       @media (max-width:560px){
@@ -5175,6 +5374,26 @@ function isWeightedBook(list) {
   return cnt > 1 && mn > 0 && (mx / mn) > 1.15;
 }
 
+/* V37.5 — THE PRESETS NEVER MATCHED A REAL SUBSCRIPTION.
+   These keys carry a non-breaking space ("SmallMicro\u00A0500"), which is how
+   the page prints the names so they never break across a line. The backend
+   does not: apps_script.gs, signup.html, admin.html and publish.py all write
+   "MindForge SmallMicro 500" with an ordinary space, and that is the string
+   handleGetStocks returns. So `CAPITAL_PRESETS[strategy]` missed for every
+   SmallMicro 500 and LargeMidcap 250 member and fell through to _default: a
+   SmallMicro member was started at ₹5,00,000 (not the ₹15,00,000 the book is
+   sized for) with preset chips of ₹1L / ₹5L / ₹15L / ₹25L. Demo mode could
+   never show it — the fixture's names use the same non-breaking space as these
+   keys. Looked up by a whitespace-normalised name now, on both sides. */
+function _stratNorm(n){ return String(n == null ? '' : n).replace(/\s+/g, ' ').trim().toLowerCase(); }
+function capitalPresetsFor(strategy){
+  var want = _stratNorm(strategy);
+  var keys = Object.keys(CAPITAL_PRESETS);
+  for (var i = 0; i < keys.length; i++){
+    if (keys[i] !== '_default' && _stratNorm(keys[i]) === want) return CAPITAL_PRESETS[keys[i]];
+  }
+  return CAPITAL_PRESETS._default;
+}
 // Per-strategy recommended capital presets (paise-free integers)
 const CAPITAL_PRESETS = {
   'MindForge MultiAsset':      { recommended: 100000,  options: [100000, 250000, 500000, 1000000] },
@@ -5263,6 +5482,7 @@ function _demoData(mode) {
 
 async function init() {
   if (isDemo) {
+    try { var db = document.getElementById('demo-banner'); if (db) db.hidden = false; } catch (e) {}
     const d = _demoData(demoMode);
     stocksData = d.stocks;
     renderDashboard(d.subscription, d.stocks);
@@ -5390,6 +5610,22 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
     }
   }
 
+  // V37.5 — calendar reminders for the next rebalance and the access end date.
+  try {
+    window._cycDates = { reb: nextReb, exp: expiry };
+    var cal = document.getElementById('cyc-cal'), g = document.getElementById('cyc-cal-g');
+    if (cal && g && nextReb && !isNaN(nextReb.getTime())){
+      var ev = _cycCalEvents();
+      var reb = ev[0];
+      g.href = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+        '&text=' + encodeURIComponent(reb.title) +
+        '&dates=' + reb.d0 + '/' + reb.d1 +
+        '&details=' + encodeURIComponent(reb.desc);
+      g.setAttribute('aria-label', 'Add the ' + fmt(nextReb) + ' rebalance to Google Calendar (opens in a new tab)');
+      cal.hidden = false;
+    }
+  } catch (e) {}
+
   card.style.display = '';
   // Grow on reveal — the site's bar idiom. Painting the final width immediately
   // leaves a dead transition, so apply the widths a frame later.
@@ -5399,6 +5635,59 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
     if (fExp) fExp.style.width = (daysLeft / axis * 100).toFixed(1) + '%';
     if (fReb) fReb.style.width = (daysToReb / axis * 100).toFixed(1) + '%';
   }, 60);
+}
+
+/* V37.5 — the events behind "Remind me". All-day, in the member's local date
+   (the dates on this card are already local), and carrying NO token or other
+   session value: the link back is the bare dashboard URL, which resolves from
+   the cookie session (V29.8 — no credential-shaped value in a URL, and a
+   calendar entry is a URL that gets synced to other devices and shared). */
+function _cycYmd(d){
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+function _cycCalEvents(){
+  var dd = window._cycDates || {}, sub = window._currentSub || {};
+  var strat = String(sub.strategy || 'MindForge').replace(/\s+/g, ' ');
+  var url = 'https://mindforgecapital.com/dashboard.html';
+  var out = [];
+  var mk = function(date, title, desc, uidTag){
+    if (!date || isNaN(date.getTime())) return;
+    var next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    out.push({ title:title, desc:desc, d0:_cycYmd(date), d1:_cycYmd(next),
+               uid:'mfc-' + uidTag + '-' + _cycYmd(date) + '-' + strat.replace(/[^a-z0-9]+/gi, '').toLowerCase() + '@mindforgecapital.com' });
+  };
+  mk(dd.reb, strat + ': new picks published',
+     'Your next set of picks is published today. Open your dashboard to see what changed and place the orders: ' + url, 'rebalance');
+  mk(dd.exp, strat + ': subscription access ends',
+     'Your MindForge access ends today. Renew to keep receiving new picks: ' + url, 'expiry');
+  return out;
+}
+function addCycleToCalendar(){
+  try {
+    var ev = _cycCalEvents();
+    if (!ev.length) return;
+    var esc = function(t){ return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); };
+    var now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//MindForge Capital//Member dashboard//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    ev.forEach(function(e){
+      lines.push('BEGIN:VEVENT', 'UID:' + e.uid, 'DTSTAMP:' + now,
+        'DTSTART;VALUE=DATE:' + e.d0, 'DTEND;VALUE=DATE:' + e.d1,
+        'SUMMARY:' + esc(e.title), 'DESCRIPTION:' + esc(e.desc), 'URL:https://mindforgecapital.com/dashboard.html',
+        'TRANSP:TRANSPARENT',
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(e.title), 'TRIGGER:PT9H', 'END:VALARM',
+        'END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+    // RFC 5545 §3.1: content lines longer than 75 octets are folded (CRLF + one space).
+    var fold = function(l){ var o = [], first = true; while (l.length > (first ? 73 : 72)){ var n = first ? 73 : 72; o.push(l.slice(0, n)); l = l.slice(n); first = false; } o.push(l); return o.join('\r\n '); };
+    var blob = new Blob([lines.map(fold).join('\r\n') + '\r\n'], { type:'text/calendar;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mindforge-reminders-' + ev[0].d0 + '.ics';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    showToast('Calendar file ready — open it to add ' + ev.length + ' reminder' + (ev.length === 1 ? '' : 's'));
+  } catch (e) {}
 }
 
 // V28.2 — how long is THIS member's billing term? MindForge sells monthly,
@@ -6815,7 +7104,7 @@ function renderVerified(strategy) {
 function setupCapitalCalculator(stocks, strategy) {
   if (!stocks || !stocks.length) return;
   const card = document.getElementById('size-card');
-  const presets = (CAPITAL_PRESETS[strategy] || CAPITAL_PRESETS._default);
+  const presets = capitalPresetsFor(strategy);
   // Use saved capital if present; otherwise recommended preset
   const saved = loadSavedCapital(strategy);
   // V30.2: normalise on the way IN as well — a stored value written by an older
@@ -6873,6 +7162,7 @@ function setCapital(v, btn, fromInput) {
   if (window._livePx) renderProfitHeadline();
   // Persist
   if (currentStrategy) saveCapital(currentStrategy, currentCapital);
+  try { if (window.adjRefresh) window.adjRefresh(); } catch (e) {}   // V37.5 — targets move with the capital
 }
 
 function refreshSizeSummary() {
@@ -7645,62 +7935,61 @@ function renderTable(stocks) {
     // V25.2: same stagger the desktop <tr> above gets, so the phone's holdings
     // cascade instead of popping. Capped lower (360ms) than the row's 600ms —
     // cards are ~5x taller, so anything past the first few lands off-screen.
+    /* V37.5 — THE CARD, REBUILT FOR THE SCREEN IT IS READ ON.
+       Reported on a 390px phone with the SmallMicro book: a card was 318px tall,
+       so a member saw two and a bit per screen and scrolled fifteen of them to
+       place one month of orders. Four of its seven rows were layout, not
+       information — the ticker and broker link on a line of their own (44px of
+       touch height), an industry pill on another, a "Weight / vs model" row
+       that restated a column header, and the tick on a fourth.
+       The same facts now sit in four rows, ~200px:
+         1  rank · company (linked) over its industry · the copy-ticker chip
+         2  THE ACTION ROW — quantity | weight vs model | allocation
+         3  recommended and live price, with today's move
+         4  the order tick and the broker link, the two controls used most
+       Hooks kept exactly (see project memory "phone portfolio card"):
+       .sc-shares and .sc-alloc hold ONLY their numbers (updateAllocationCells
+       writes them by textContent); .px-live keeps data-px/data-rec for
+       paintLivePrices(); .weight-bar-wrap stays inside .stock-card[data-row] so
+       the capital-change repaint finds it; .bought-cb drives the counter.
+       Touch geometry: the company link (44px pad on coarse pointers) and the
+       ticker chip (44px min-height) sit in DIFFERENT GRID COLUMNS of row 1, so
+       their pads cannot overlap — V28.7's collision was two pads on consecutive
+       LINES. The tick and the broker link share row 4, separated horizontally.
+       The industry line under the name is plain text, so the company link's pad
+       may cover it without taking a tap from anything. */
+    const hwR = HWM.read(s, amt);
+    const wLbl = heldLabel(s, hwR, w);
     return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" style="animation-delay:${Math.min(i*45, 360)}ms;">
       <div class="sc-header">
+        <div class="sc-num">${i+1}</div>
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
-          <div class="sc-tkr-row">
-            <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}${newTag(s)}
-          </div>
+          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${newTag(s)}</div>
         </div>
-        <div class="sc-num">${i+1}</div>
+        <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>
       </div>
-      <div class="sc-meta"><span class="industry-badge">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></div>
-      <!-- V37.1 — THE ACTION LINE. This card carried five identical label:value
-           rows (Rec. Price / Live / Allocation / Shares / Weight), so the two
-           figures a member actually TYPES INTO THEIR BROKER — the quantity and
-           the money it costs — were the same 13px as the three that only
-           inform. Twenty-five of those cards is a long scroll to place one
-           month of orders. The quantity and the allocation now lead the card at
-           the size of a decision, and the three supporting figures fall in
-           behind them. .sc-shares and .sc-alloc keep their exact names and each
-           still holds ONLY its number, because updateAllocationCells() patches
-           both by textContent on every capital change.
-           V35.6's rule is unchanged and still lives here: the noun follows the
-           row's own state, because the card has no column header to lean on.
-           Held -> the quantity you hold; re-weighted -> the target. -->
       <div class="sc-act">
         <div class="sc-act-qty"><span class="sc-shares">${shares}</span><span class="sc-act-unit">${held ? (movePP != null ? 'shares · target' : 'shares held') : 'shares to buy'}</span></div>
+        <div class="sc-act-wt sc-row-wt">
+          <span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}${gapTag(hwR)}</span>
+          <div class="sc-bar-wrap weight-bar-wrap" role="img" title="${wLbl}" aria-label="${wLbl}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(hwR)}</div>
+          <span class="sc-act-lbl">weight vs model</span>
+        </div>
         <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${fmtAmt(amt)}</span><span class="sc-act-lbl">allocation</span></div>
       </div>
-      <!-- V37.1 — recommended and live on ONE line, in that order, because the
-           only reason both are on this card is the distance between them, and
-           that distance is the return already printed at the end of the line.
-           Two stacked rows made the reader hold one number in their head to
-           compare it with the next. .px-live is untouched: same element, same
-           data-px / data-rec, same innerHTML from paintLivePrices(). -->
       <div class="sc-cmp">
         <span class="sc-cmp-rec">Rec <b>${fmtPrice(entry)}</b></span>
         <span class="sc-cmp-sep" aria-hidden="true">·</span>
         <span class="sc-cmp-live">Live <span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></span>
       </div>
-      <!-- V33.2 (NB: this comment is inside a template literal — no backticks) —
-           the phone card said "Weight 4.0%" on all twenty-five cards, and
-           the one thing that DID differ between them — the gauge showing this
-           holding's gap to its model weight — was explained only by a "title".
-           A title is a hover affordance and there is no hover on the device this
-           card exists for, which is the argument V28.6 made about the clipped
-           sector names. The desktop table headers that row "Weight / vs model";
-           the phone now says the same, and prints the gap the gauge draws, so
-           the row carries something that varies instead of restating a number
-           the card above it already shares with every other card. -->
-      <div class="sc-row sc-row-wt"><span class="sc-key">Weight<span class="sc-key-sub">vs model</span></span><div class="sc-wt"><div class="sc-bar-wrap weight-bar-wrap" role="img" title="${heldLabel(s, HWM.read(s, amt), w)}" aria-label="${heldLabel(s, HWM.read(s, amt), w)}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(HWM.read(s, amt))}</div><span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}${gapTag(HWM.read(s, amt))}</span></div></div>
-      <div class="sc-bought-row">
-        ${held
+      <div class="sc-foot">
+        <div class="sc-bought-row">${held
           ? `<span class="sc-held">${heldMark(s, movePP)}${movePP != null
                ? `Re-weighted &mdash; adjust to ${fmtAmt(amt)}`
-               : 'Already held &mdash; carried over'}</span>`
-          : `<label><input type="checkbox" class="bought-cb" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>`}
+               : 'Held &mdash; carried over'}</span>`
+          : `<label><input type="checkbox" class="bought-cb" aria-label="Order placed: ${escapeHtml(s.ticker)}" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>`}</div>
+        ${brokerLink(s)}
       </div>
     </div>`;
   }).join('');
@@ -7710,6 +7999,7 @@ function renderTable(stocks) {
   // V14.3: re-apply live prices/returns after any re-render (sort, filter, capital).
   if (window._livePx) paintLivePrices();
   revealHoldingsBackstop();
+  try { if (window.adjRefresh) window.adjRefresh(); } catch (e) {}   // V37.5 — the planner reads this book
 }
 
 /* V25.2 — fail-visible backstop for the holdings stagger entrance.
@@ -8108,9 +8398,15 @@ function refreshActionBar(){
     var nRw = (stocksData || []).filter(function(s){ return heldMovePP(s.ticker) != null; }).length;
     if (!pending.length && !nRw) return hide();
 
-    var rows    = (typeof kiteBasketRows === 'function') ? kiteBasketRows() : [];
-    var canSend = rows.length > 0 && getBroker() === 'kite';
-    var send    = Math.min(rows.length, KITE_BASKET_MAX);
+    /* V37.5 — the bar reads the same basket PLAN the band draws. `send` is the
+       NEXT basket, not "the first ten of whatever is open": after basket 1 has
+       been opened on Kite the bar moves on to basket 2 instead of offering the
+       same ten names again. */
+    var plan    = (typeof kiteBasketPlan === 'function') ? kiteBasketPlan() : { openN:0, live:[], total:0, next:null };
+    var isKite  = getBroker() === 'kite';
+    var nextB   = plan.next;
+    var canSend = isKite && !!nextB;
+    var send    = nextB ? nextB.open.length : 0;
 
     var capEl = document.getElementById('abar-cap-v');
     if (capEl) capEl.textContent = currentCapital > 0 ? shortMoney(currentCapital) : '—';
@@ -8120,31 +8416,35 @@ function refreshActionBar(){
       var nB = pending.filter(function(o){ return o.side === 'BUY'; }).length;
       var nS = pending.length - nB;
       if (nEl) nEl.textContent = pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left';
-      if (sEl) sEl.textContent = [nB ? nB + ' to buy' : '', nS ? nS + ' to sell' : ''].filter(Boolean).join(' · ');
+      var subBits = [nB ? nB + ' to buy' : '', nS ? nS + ' to sell' : ''];
+      // Several baskets: say which one the button is about to open. With one
+      // basket (or another broker) the split is the more useful fact.
+      if (isKite && plan.total > 1) subBits = [nextB ? 'basket ' + nextB.pos + ' of ' + plan.total + ' next' : 'all ' + plan.total + ' baskets sent'];
+      if (sEl) sEl.textContent = subBits.filter(Boolean).join(' · ');
     } else {
       if (nEl) nEl.textContent = nRw + ' to re-weight';
       if (sEl) sEl.textContent = 'no names change';
     }
 
     // The value in the button is the value of what THIS press will send — the
-    // first ten rows when Kite splits the basket, not the whole cycle.
-    var val = 0;
-    if (canSend){
-      var priceOf = {};
-      orders.all.forEach(function(o){ priceOf[o.side + ':' + o.ticker] = o.price || 0; });
-      rows.slice(0, send).forEach(function(r){
-        val += Math.round(r.quantity * (priceOf[r.transaction_type + ':' + r.tradingsymbol] || 0));
-      });
-    }
+    // next basket when Kite needs several, not the whole cycle.
+    var val = nextB ? (nextB.buyVal + nextB.sellVal) : 0;
     var lab = document.getElementById('abar-cta-label');
     var amt = document.getElementById('abar-amt');
     var cta = document.getElementById('abar-cta');
     if (canSend){
-      if (lab) lab.textContent = 'Review ' + send + ' on Kite';
-      if (amt) amt.textContent = val > 0 ? preciseMoney(val) : '';
-      if (cta){ cta.onclick = sendKiteBasket;
-                cta.setAttribute('aria-label', 'Review ' + send + ' order' + (send === 1 ? '' : 's') +
+      var many = plan.total > 1;
+      if (lab) lab.textContent = many ? 'Basket ' + nextB.pos + ' of ' + plan.total + ' on Kite' : 'Review ' + send + ' on Kite';
+      if (amt) amt.textContent = val > 0 ? (many ? send + ' orders · ' : '') + preciseMoney(val) : '';
+      if (cta){ cta.onclick = function(){ sendKiteBasket(nextB.pos); };
+                cta.setAttribute('aria-label', (many ? 'Basket ' + nextB.pos + ' of ' + plan.total + ': review ' : 'Review ') +
+                  send + ' order' + (send === 1 ? '' : 's') +
                   ' on Kite, worth ' + fmtMoney(val) + ' at the recommended prices'); }
+    } else if (isKite && plan.openN){
+      // Every basket opened, orders not yet ticked: the next job is the tick-list.
+      if (lab) lab.textContent = 'Tick what filled';
+      if (amt) amt.textContent = '';
+      if (cta){ cta.onclick = abarGoToPicks; cta.setAttribute('aria-label', 'All Kite baskets sent. Jump to your picks to tick what filled'); }
     } else {
       if (lab) lab.textContent = 'Go to picks';
       if (amt) amt.textContent = '';
@@ -8958,11 +9258,12 @@ function renderWhy25() {
    Rows already ticked are skipped, and so are rows that round to zero shares.
 
    TEN AT A TIME. Kite Publisher caps a basket at 10 instruments; SmallMicro 500
-   holds 15. Rather than silently truncating, the button says which slice it is
-   sending and the tick-list drives the rest — place these, tick them, and the
-   button offers what is left. The tick-list stays the source of truth because
-   this flow deliberately does not register a redirect URL, so nothing comes back
-   to tell the page what actually filled.
+   holds 15. V37.5 replaced "send the first ten and wait for ticks" with a PLAN of
+   baskets (kiteBasketPlan) — every basket and its value shown up front, and a
+   per-device sent record that moves the button on to the next basket. See the
+   V37.5 block above kiteBasketPlan() for why the old flow read as the dashboard
+   investing two-thirds of the member's capital. The tick-list stays the record
+   of what FILLED: Kite reports no fill state back to this page.
 
    MARKET, not LIMIT. An unfilled limit order leaves a book silently incomplete,
    which is worse than slippage on names this liquid — and the member can change
@@ -8990,41 +9291,113 @@ var KITE_API_KEY    = '9uef60sn0rffqb2r';                    // public; see abov
 var KITE_BASKET_URL = 'https://kite.zerodha.com/connect/basket';
 var KITE_BASKET_MAX = 10;                                    // Publisher's cap
 
-/* Every un-placed row that rounds to at least one share, in table order. */
-/* V35.3 — THE BASKET NOW SENDS THIS CYCLE'S ORDERS, NOT THE WHOLE BOOK.
-   It used to walk stocksData and emit a BUY for every untucked row. For a member
-   past their first cycle that is the wrong list twice over: it re-buys the names
-   they already hold, and it omits the ones the model dropped. On the demo book
-   the page said "4 orders to place, not 10" and the button beside it said
-   "Review 10 orders on Kite" and meant it — ₹9.84L of duplicate buys on a ₹10L
-   book, with the two real sells left unplaced.
-   Rows now come from cycleOrders(), which is `diff.added` + `diff.removed` when a
-   previous cycle is known and the whole book when it is not. SELLs are included:
-   Kite's basket takes transaction_type either way, and a sell with no recorded
-   quantity is skipped rather than guessed — the tick and the broker deeplink
-   still cover it in the change card. */
-function kiteBasketRows() {
-  var orders  = cycleOrders();
-  if (!orders.all.length) return [];
-  var placed  = loadBought(currentStrategy) || {};
-  var capital = Number(currentCapital) || 0;
-  if (capital <= 0) return [];
-  var out = [];
-  orders.all.forEach(function (o) {
-    if (placed[orderKey(o)]) return;                    // already placed by hand
-    if (!(o.qty >= 1)) return;                          // too little capital, or an unsized sell
-    out.push({
-      variety:          'regular',
-      exchange:         'NSE',
-      tradingsymbol:    o.ticker,
-      transaction_type: o.side,
-      order_type:       'MARKET',
-      product:          'CNC',                          // delivery, not intraday
-      quantity:         o.qty,
-      readonly:         false,                          // the member stays in control
-      tag:              'MFC'
+/* ── V37.5 · A CYCLE THAT NEEDS MORE THAN ONE BASKET ───────────────────────────
+   REPORTED: SmallMicro 500, ₹15,00,000 of capital, and the button read
+   "Review 10 on Kite · ₹9.91L" beside "15 orders left · 15 to buy". A member
+   reads that as the dashboard investing two-thirds of their money, and they
+   were right to: press it, confirm on Kite, and five of the fifteen names —
+   ₹4.97L — were never in any basket they were shown.
+   Kite Publisher's own documentation caps a basket at ten ("maximum 10"), so the
+   limit is real and cannot be raised from here. What was wrong was hiding it.
+   The V34.2 design sent the first ten and relied on the member ticking all ten
+   before the button would offer the rest — so a member who confirmed on Kite and
+   came back WITHOUT ticking was offered the SAME ten again, which is a duplicate
+   basket one tap away.
+
+   The cycle is now a PLAN of baskets:
+   · a STABLE partition of the cycle's sized orders, in the order cycleOrders()
+     returns them (sells first, V35.4) — basket 1 is always the same names, so
+     "basket 2 of 2" means something the member can hold on to;
+   · each basket's value and order count shown up front, so the whole capital
+     is visibly accounted for before anything is sent;
+   · a SENT record (per strategy and cycle, this device) that advances the
+     primary action to the next basket as soon as one is opened on Kite.
+     Sending is not placing — Kite reports no fills to this page, so the tick
+     list is still the record of what filled — but it is enough to stop the
+     same basket being offered twice and to say which one is next.
+   Every basket can still be re-sent on purpose ("Send again"), because a member
+   who closed Kite without confirming needs exactly that. */
+var KB_SENT_PREFIX = 'mfc_kbsent_';
+function _kbSentStoreKey(){
+  var base = KB_SENT_PREFIX + String(currentStrategy || 'default').replace(/[^a-z0-9]+/gi,'_');
+  var ck = _cycleKey(window._currentSub);
+  return ck ? base + '__' + String(ck).replace(/[^a-z0-9]+/gi,'_') : base;
+}
+function _kbSentLoad(){
+  try { var o = JSON.parse(localStorage.getItem(_kbSentStoreKey()) || '{}');
+        return (o && typeof o === 'object') ? o : {}; } catch (e) { return {}; }
+}
+function _kbSentMark(orders){
+  try {
+    var m = _kbSentLoad(), now = Date.now();
+    orders.forEach(function (o) { m[orderKey(o)] = { t: now, q: o.qty }; });
+    localStorage.setItem(_kbSentStoreKey(), JSON.stringify(m));
+  } catch (e) {}
+}
+
+/* One order -> one Kite basket row. The only place that shape is written. */
+function _kbRow(o){
+  return {
+    variety:          'regular',
+    exchange:         'NSE',
+    tradingsymbol:    o.ticker,
+    transaction_type: o.side,
+    order_type:       'MARKET',
+    product:          'CNC',                          // delivery, not intraday
+    quantity:         o.qty,
+    readonly:         false,                          // the member stays in control
+    tag:              'MFC'
+  };
+}
+
+/* The whole cycle as baskets of at most KITE_BASKET_MAX. `open` is what a press
+   would send now (sized and not yet ticked); `state` is what the band draws:
+     placed — every order in it is ticked
+     sent   — every open order in it has been opened on Kite from this device
+     stale  — sent, but the capital changed since, so the quantities differ
+     ready  — at least one open order has never been sent */
+function kiteBasketPlan(){
+  var orders = cycleOrders();
+  var plan = { baskets: [], live: [], total: 0, openN: 0, buyVal: 0, sellVal: 0, next: null, unsized: 0 };
+  if (!orders.all.length || !(Number(currentCapital) > 0)) return plan;
+  var placed = loadBought(currentStrategy) || {};
+  var sent   = _kbSentLoad();
+  var elig   = orders.all.filter(function (o) { return o.qty >= 1; });
+  plan.unsized = orders.all.length - elig.length;
+  for (var i = 0; i < elig.length; i += KITE_BASKET_MAX){
+    var chunk = elig.slice(i, i + KITE_BASKET_MAX);
+    var b = { n: plan.baskets.length + 1, orders: chunk, open: [], buyVal: 0, sellVal: 0,
+              sentN: 0, staleN: 0, state: 'ready' };
+    chunk.forEach(function (o) {
+      if (placed[orderKey(o)]) return;
+      b.open.push(o);
+      var v = Math.round(o.qty * (o.price || 0));
+      if (o.side === 'SELL') b.sellVal += v; else b.buyVal += v;
+      var rec = sent[orderKey(o)];
+      if (rec) { b.sentN++; if (rec.q != null && Number(rec.q) !== o.qty) b.staleN++; }
     });
-  });
+    if (!b.open.length) b.state = 'placed';
+    else if (b.sentN === b.open.length) b.state = b.staleN ? 'stale' : 'sent';
+    plan.openN   += b.open.length;
+    plan.buyVal  += b.buyVal;
+    plan.sellVal += b.sellVal;
+    plan.baskets.push(b);
+  }
+  // Baskets with nothing left to place drop out of the numbering the member sees:
+  // "basket 2 of 2" must describe what is still to do, not history.
+  plan.live  = plan.baskets.filter(function (b) { return b.open.length; });
+  plan.live.forEach(function (b, k) { b.pos = k + 1; });
+  plan.total = plan.live.length;
+  plan.next  = plan.live.filter(function (b) { return b.state === 'ready' || b.state === 'stale'; })[0] || null;
+  return plan;
+}
+
+/* Every un-placed row that rounds to at least one share, in plan order. Kept for
+   the callers that only need "is there anything to send" and the count. */
+function kiteBasketRows() {
+  var plan = kiteBasketPlan();
+  var out = [];
+  plan.live.forEach(function (b) { b.open.forEach(function (o) { out.push(_kbRow(o)); }); });
   return out;
 }
 
@@ -9056,14 +9429,29 @@ function kiteBasketForm() {
   document.body.appendChild(f);
   return f;
 }
-function sendKiteBasket() {
-  var rows = kiteBasketRows().slice(0, KITE_BASKET_MAX);
-  if (!rows.length) { showToast('Nothing left to place'); return; }
+/* Send basket `pos` (1-based, in the live numbering), or the next one that has
+   not been opened yet. */
+function sendKiteBasket(pos) {
+  var plan = kiteBasketPlan();
+  var b = (pos != null) ? plan.live[pos - 1] : (plan.next || null);
+  if (!b || !b.open.length) {
+    showToast(plan.openN ? 'Every basket has been opened on Kite — tick what filled' : 'Nothing left to place');
+    return;
+  }
+  var rows = b.open.slice(0, KITE_BASKET_MAX).map(_kbRow);   // <= 10 by construction
   var f = kiteBasketForm();
   document.getElementById('kbsk-key').value  = KITE_API_KEY;
   document.getElementById('kbsk-data').value = JSON.stringify(rows);
   f.submit();
-  showToast('Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite');
+  _kbSentMark(b.open);
+  var msg = 'Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite';
+  if (plan.total > 1) {
+    var after = kiteBasketPlan().next;
+    msg = 'Basket ' + b.pos + ' of ' + plan.total + ' opened on Kite' +
+          (after ? ' — confirm it there, then send basket ' + after.pos : ' — all baskets sent');
+  }
+  showToast(msg);
+  try { refreshKiteBasket(); } catch (e) {}
 }
 
 /* Show the button only where it can do something: Kite selected, capital
@@ -9115,62 +9503,104 @@ function refreshKiteBasket() {
   try {
     var wrap = document.getElementById('kbsk');
     if (!wrap) return;
-    var rows  = (getBroker() === 'kite') ? kiteBasketRows() : [];
-    if (!rows.length) { wrap.hidden = true; return; }
-    var send  = Math.min(rows.length, KITE_BASKET_MAX);
-    /* V35.3 — the value walk used to look each row up in stocksData, which is
-       fine while every row is a BUY and silently contributes ZERO for a SELL:
-       a departing holding is not in the current book. The band would then have
-       said "4 orders · ₹1,98,019" while ₹1,98,019 was two of those four. Prices
-       now come from cycleOrders(), which carries a price on both sides — the
-       published price for a buy, the recorded entry price for a sell — and the
-       two directions are reported separately, because netting money going out
-       against money coming back into one figure describes neither. */
-    var priceOf = {};
-    cycleOrders().all.forEach(function(o){ priceOf[o.side + ':' + o.ticker] = o.price || 0; });
-    var buyVal = 0, sellVal = 0;
-    rows.slice(0, send).forEach(function (r) {
-      var v = Math.round(r.quantity * (priceOf[r.transaction_type + ':' + r.tradingsymbol] || 0));
-      if (r.transaction_type === 'SELL') sellVal += v; else buyVal += v;
-    });
+    if (getBroker() !== 'kite') { wrap.hidden = true; return; }
+    var plan = kiteBasketPlan();
+    if (!plan.openN) { wrap.hidden = true; return; }
+
     var label = document.getElementById('kbsk-label');
     var note  = document.getElementById('kbsk-note');
     var facts = document.getElementById('kbsk-facts');
-    if (label) {
-      /* V35.5 — the total goes IN the button. It was in the fact row beside it,
-         which is one glance away at the moment of commitment; a control that
-         says what it will do AND what it is worth removes the last "how much is
-         this again?" before a screen the member has to log in to. The fact row
-         keeps the breakdown, which is a different job. */
-      var tot = buyVal + sellVal;
-      label.textContent = 'Review ' + send + ' order' + (send === 1 ? '' : 's') +
-        (tot > 0 ? ' · ' + preciseMoney(tot) : '') + ' on Kite';
-    }
-    /* V34.4 — the shape of the basket, before the member commits to a screen they
-       have to log in to. Three values, each one they would otherwise derive by
-       reading the table: how many orders, what they are worth at the recommended
-       prices, and that this is delivery rather than intraday. aria-hidden on the
-       container because the note beneath it and the button label already say all
-       of this in prose — a screen reader should not hear the figures twice. */
+    var list  = document.getElementById('kbsk-list');
+    var btn   = document.getElementById('kbsk-btn');
+    var eyebrow = wrap.querySelector('.kbsk-eyebrow');
+    var multi = plan.total > 1;
+
+    /* The facts describe the WHOLE cycle — every open order and every rupee of
+       it — in both modes. V35.3 split buys from sells (money going out and
+       money coming back are not one figure); V37.5 stops the fact row counting
+       only the first basket, which is how a ₹15L book came to be introduced as
+       "10 orders · ₹9,91,xxx". */
     if (facts) {
       var money = [];
-      if (buyVal  > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(buyVal))  + '<span>to buy</span></span>');
-      if (sellVal > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(sellVal)) + '<span>to sell</span></span>');
+      if (plan.buyVal  > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.buyVal))  + '<span>to buy</span></span>');
+      if (plan.sellVal > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.sellVal)) + '<span>to sell</span></span>');
       facts.innerHTML =
-        '<span class="kbsk-fact">' + send + '<span>order' + (send === 1 ? '' : 's') + '</span></span>' +
+        '<span class="kbsk-fact">' + plan.openN + '<span>order' + (plan.openN === 1 ? '' : 's') + '</span></span>' +
         (money.length ? '<i class="kbsk-dot"></i>' + money.join('<i class="kbsk-dot"></i>') : '') +
+        (multi ? '<i class="kbsk-dot"></i><span class="kbsk-fact">' + plan.total + '<span>Kite baskets</span></span>' : '') +
         '<i class="kbsk-dot"></i>' +
         '<span class="kbsk-fact">NSE<span>delivery · CNC</span></span>';
     }
-    if (note) {
-      note.innerHTML =
-        (rows.length > send
-          ? '<b>' + send + ' of ' + rows.length + ' still to place.</b> Kite takes ten at a time — ' +
-            'place these, tick them off, and this button offers the rest. '
-          : '') +
-        'Opens Zerodha’s own order screen with the quantities pre-filled. ' +
-        'You sign in there and confirm; nothing is placed until you do, and you can ' +
-        'change quantity, order type or price on that screen first.';
+    if (eyebrow) eyebrow.textContent = multi ? 'Step 3, in ' + plan.total + ' taps' : 'Step 3, in one tap';
+
+    if (!multi) {
+      /* ONE BASKET — the V34.2–V35.5 band, unchanged in shape: the total in the
+         button, the facts above it. It still reads the plan, so a re-send after
+         a return from Kite is marked as such rather than looking brand new. */
+      var b = plan.live[0];
+      if (list) { list.hidden = true; list.innerHTML = ''; }
+      if (btn) btn.hidden = false;
+      if (label) {
+        var tot = b.buyVal + b.sellVal;
+        label.textContent = (b.state === 'sent' ? 'Send again · ' : 'Review ' + b.open.length + ' order' + (b.open.length === 1 ? '' : 's') + ' · ') +
+          (tot > 0 ? preciseMoney(tot) : '') + ' on Kite';
+      }
+      if (btn) btn.onclick = function () { sendKiteBasket(1); };
+      if (note) {
+        note.innerHTML =
+          (b.state === 'sent'
+            ? '<b>Opened on Kite from this device.</b> Tick each order once it fills; send again only if you closed Kite without confirming. '
+            : b.state === 'stale'
+              ? '<b>Your capital changed after this basket was sent</b>, so the quantities are different now — check what you confirmed on Kite before sending again. '
+              : '') +
+          'Opens Zerodha’s own order screen with the quantities pre-filled. ' +
+          'You sign in there and confirm; nothing is placed until you do, and you can ' +
+          'change quantity, order type or price on that screen first.';
+      }
+    } else {
+      /* SEVERAL BASKETS — the list IS the action. One row per basket with its
+         own count, value and state, and exactly one primary button: the next
+         basket not yet opened. A separate primary CTA above the list would be a
+         second control doing the same thing, so it steps aside. */
+      if (btn) btn.hidden = true;
+      if (list) {
+        var nextPos = plan.next ? plan.next.pos : 0;
+        list.innerHTML = plan.live.map(function (b) {
+          var tot = b.buyVal + b.sellVal;
+          var isNext = b.pos === nextPos;
+          var names = b.open.map(function (o) { return (o.side === 'SELL' ? 'sell ' : '') + o.ticker; });
+          var stateHtml =
+            b.state === 'sent'  ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' :
+            b.state === 'stale' ? '<span class="kbsk-b-state is-stale">Capital changed since sent</span>' :
+            isNext              ? '<span class="kbsk-b-state is-next">Next</span>' : '';
+          var btnLabel = (b.state === 'sent' || b.state === 'stale') ? 'Send again' : 'Review on Kite';
+          return '<li class="kbsk-b' + (isNext ? ' is-next' : '') + ' is-' + b.state + '">' +
+                   '<span class="kbsk-b-n" aria-hidden="true">' + b.pos + '</span>' +
+                   '<span class="kbsk-b-main">' +
+                     '<span class="kbsk-b-head">Basket ' + b.pos + ' of ' + plan.total + stateHtml + '</span>' +
+                     '<span class="kbsk-b-sub"><b>' + b.open.length + '</b> order' + (b.open.length === 1 ? '' : 's') +
+                       ' · <b>' + escapeHtml(fmtMoney(tot)) + '</b></span>' +
+                     '<span class="kbsk-b-names" title="' + escapeHtml(names.join(', ')) + '">' + escapeHtml(names.join(' · ')) + '</span>' +
+                   '</span>' +
+                   '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" ' +
+                     'onclick="sendKiteBasket(' + b.pos + ')" ' +
+                     'aria-label="' + escapeHtml(btnLabel + ': basket ' + b.pos + ' of ' + plan.total + ', ' +
+                       b.open.length + ' order' + (b.open.length === 1 ? '' : 's') + ', ' + fmtMoney(tot)) + '">' +
+                     escapeHtml(btnLabel) + '</button>' +
+                 '</li>';
+        }).join('');
+        list.hidden = false;
+      }
+      if (note) {
+        note.innerHTML =
+          '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' +
+          (plan.next
+            ? 'Send basket ' + plan.next.pos + ', confirm it on Kite, then come back for ' +
+              (plan.next.pos < plan.total ? 'the next one. ' : 'any you closed without confirming. ')
+            : 'Every basket has been opened on Kite from this device — tick each order once it fills. ') +
+          'Each opens Zerodha’s own order screen with the quantities pre-filled; nothing is placed until you confirm there, ' +
+          'and you can change quantity, order type or price first.';
+      }
     }
     wrap.hidden = false;
   } catch (e) {
@@ -10979,6 +11409,7 @@ function paintLivePrices(){
   // V36.6 — the member's own P&L moves with the same prices these cells do, so
   // it is re-derived here rather than on a timer of its own.
   try { renderMyPosition(); } catch (e) {}
+  try { if (window.adjRefresh) window.adjRefresh(); } catch (e) {}   // V37.5 — sized at live prices
 }
 /* ══ V36.6 — YOUR POSITION ═══════════════════════════════════════════════════
    The member's own return, from the member's own basis. This is the answer to
@@ -14786,6 +15217,765 @@ h1, h2, h3, h4, th,
   text-wrap: balance;
 }
 </style>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     V37.5 · THE PICKS LIST, REBUILT FOR THE SCREEN IT IS READ ON
+     Reported from a 390px phone on the SmallMicro book, and measured there:
+       · the sector chips wrapped to NINE rows (430px) — "Automobile and Auto
+         Components" and "Fast Moving Consumer Goods" each take a line alone —
+         and sat ABOVE the section title, so the first screen of the list showed
+         chips and no heading at all;
+       · the toolbar under the title took five rows (270px): Sort, Search, then
+         three pairs, one of which was the market status dressed as a button;
+       · each card was 318px, two and a bit per screen, fifteen to scroll.
+     The first card now starts about a screen earlier and each card is ~40% shorter,
+     with nothing removed: every figure, control and state is still on the card.
+     ════════════════════════════════════════════════════════════════════════ -->
+<style id="mf-v375-picks">
+/* ── the title block: timestamp and market status on one line ─────────────── */
+.tbl-meta{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; }
+.tbl-meta .market-bar{ background:none; border:0; box-shadow:none; padding:0; border-radius:0;
+  font-size:12px; gap:6px; min-height:0; }
+.tbl-meta .market-bar::before{ content:'·'; color:var(--text3); opacity:.7; margin-right:2px; }
+.tbl-meta #market-dot{ width:7px; height:7px; }
+
+/* ── the four tool buttons: one label, two lengths ─────────────────────────── */
+.tbl-btn .tb-l{ white-space:nowrap; }
+
+@media screen and (max-width:600px){
+  /* THE TOOLBAR — three rows, every one full by construction (V37.3's rule).
+     search / sort + broker / the four tools. A flex line is broken with an
+     ORDERED pseudo-element: `::before` is a flex item, so `order:3;
+     flex-basis:100%` forces the tools onto their own row without a wrapper in
+     the markup. */
+  .table-header{ margin-bottom:10px; gap:10px; }
+  .table-header .left h2{ font-size:20px; margin-bottom:2px; }
+  .table-actions{ display:flex !important; flex-wrap:wrap; gap:8px; width:100%; }
+  .table-actions::before{ content:''; order:3; flex:0 0 100%; height:0; }
+  .table-actions > .tbl-search-wrap,
+  .table-actions > .tbl-search{ order:1; flex:1 1 100%; width:auto; min-width:0; }
+  .table-actions > .msort{ order:2; flex:1 1 0; min-width:0; }
+  .table-actions > .broker-picker{ order:2; flex:0 0 auto; min-width:96px; }
+  .table-actions > .tbl-btn:not(.broker-picker){ order:4; flex:1 1 0; min-width:0;
+    flex-direction:column; gap:3px; padding:6px 4px; min-height:50px;
+    font-size:11px; justify-content:center; }
+  .table-actions > .tbl-btn:not(.broker-picker) svg{ width:16px; height:16px; }
+  .tbl-btn .tb-long{ display:none; }
+  /* the sort control gives its visible caption to the select at this size; the
+     <label for> still names it for assistive tech */
+  .msort-lbl{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .msort{ position:relative; }
+  .msort-sel{ width:100%; padding-left:34px;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4v16'/%3E%3Cpath d='M4 17l3 3 3-3'/%3E%3Cpath d='M17 20V4'/%3E%3Cpath d='M14 7l3-3 3 3'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat:no-repeat, no-repeat;
+    background-position:left 12px center, right 10px center; }
+  html[data-theme="dark"] .msort-sel{
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a9c9' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 4v16'/%3E%3Cpath d='M4 17l3 3 3-3'/%3E%3Cpath d='M17 20V4'/%3E%3Cpath d='M14 7l3-3 3 3'/%3E%3C/svg%3E"),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a9c9' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); }
+
+  /* THE CHIPS — one swipeable row. V34.0's rule for a strip that scrolls is
+     that the end with more content must SAY so; the mask fades only the edge
+     that has chips past it, and flips as the member swipes (the .at-start /
+     .at-end classes are set by the scroll listener below). The row bleeds to
+     the section's own edges so a chip is never cut by the page gutter. */
+  .sector-chips{ flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
+    scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+    gap:6px; margin:0 0 12px; padding:2px 0 4px;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 28px,#000 calc(100% - 28px),transparent 100%);
+            mask-image:linear-gradient(90deg,transparent 0,#000 28px,#000 calc(100% - 28px),transparent 100%); }
+  .sector-chips::-webkit-scrollbar{ display:none; }
+  .sector-chips.at-start{ -webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);
+            mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%); }
+  .sector-chips.at-end{ -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 28px,#000 100%);
+            mask-image:linear-gradient(90deg,transparent 0,#000 28px,#000 100%); }
+  .sector-chips.at-start.at-end{ -webkit-mask-image:none; mask-image:none; }
+  .sector-chips .chip{ flex:0 0 auto; scroll-snap-align:start; white-space:nowrap; }
+}
+
+/* ── THE CARD ─────────────────────────────────────────────────────────────── */
+.stock-card{ padding:12px 14px; gap:9px; position:relative; }
+/* Two or three cards to a row from 601px up: one row, one height. With
+   align-items:start the pair beside a two-line company name ended 26-40px
+   short and the tick rows sat at different heights across the row; stretched,
+   the footer takes up the slack so both ticks line up. */
+@media screen and (min-width:601px) and (max-width:1199px){
+  .stock-cards{ align-items:stretch !important; }
+  .stock-card .sc-foot{ margin-top:auto; }
+}
+.sc-header{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
+  gap:10px; min-height:44px; }
+.sc-header .sc-num{ width:26px; height:26px; font-size:11px; align-self:start; margin-top:1px; }
+.sc-name-wrap{ min-width:0; }
+.sc-company{ font-size:15px; font-weight:700; line-height:1.25; overflow-wrap:anywhere; }
+.sc-sub{ display:flex; align-items:center; flex-wrap:wrap; gap:3px 8px; margin-top:3px;
+  font-size:11.5px; font-weight:600; color:var(--text3); line-height:1.3; }
+.sc-ind{ display:inline-flex; align-items:center; gap:6px; min-width:0; }
+.sc-ind .ind-dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+.sc-sub .new-tag{ margin-left:0; }
+.sc-header .sc-ticker{ margin-top:0; align-self:center; justify-self:end;
+  padding:6px 9px; border-radius:9px; font-size:11.5px; white-space:nowrap;
+  background:rgba(37,99,235,.07); border:0.5px solid rgba(37,99,235,.22); }
+.sc-header .sc-ticker:hover{ background:rgba(37,99,235,.12); }
+html[data-theme="dark"] .sc-header .sc-ticker{ color:#9dbcff; background:rgba(120,160,240,.10); border-color:rgba(120,160,240,.28); }
+
+/* the action row: quantity | weight vs model | allocation */
+.sc-act{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:end; gap:10px; padding:2px 0 0; }
+.sc-act-money{ justify-self:end; }
+.sc-act-wt{ display:flex; flex-direction:column; align-items:center; text-align:center; min-width:0; }
+.sc-act-wt .sc-val{ display:flex; align-items:baseline; gap:5px; font-size:14px; font-weight:700;
+  line-height:1.15; color:var(--white); }
+.sc-act-wt .sc-bar-wrap{ position:relative; overflow:visible; width:56px; height:5px;
+  flex:none; margin:5px 0 0; }
+.sc-act-wt .sc-act-lbl{ margin-top:4px; }
+
+/* recommended and live, then a hairline, then the two controls */
+.sc-cmp{ border-bottom:0; padding-bottom:0; }
+.sc-foot{ display:flex; align-items:center; justify-content:space-between; gap:6px 12px;
+  flex-wrap:wrap; margin-top:1px; padding-top:6px; border-top:0.5px solid var(--border2); }
+.sc-foot .sc-bought-row{ border-top:0; padding-top:0; margin-top:0; min-width:0; flex:1 1 auto; }
+.sc-foot .sc-bought-row label{ min-height:44px; }
+.sc-foot .sc-held{ min-height:44px; line-height:1.35; }
+.sc-foot .broker-link{ flex:0 0 auto; margin-left:auto; min-height:36px;
+  display:inline-flex; align-items:center; padding:4px 12px; border-radius:9px; font-size:12px; }
+@media (pointer:coarse){ .sc-foot .broker-link{ min-height:44px; padding:0 14px; } }
+
+@media (max-width:360px){
+  .sc-act{ gap:6px; }
+  .sc-act-wt .sc-val{ font-size:13px; }
+  .sc-act-wt .sc-act-lbl{ letter-spacing:0; }
+}
+@media print{
+  .sc-foot .broker-link{ display:none; }
+}
+</style>
+<script id="mf-v375-chips-js">
+/* V37.5 — the chip row's edge state, for the mask above. Cheap, passive, and it
+   re-reads after every renderTable() (the chips are rebuilt there) through a
+   MutationObserver rather than a new call site in a function with twelve. */
+(function(){
+  try{
+    var el = document.getElementById('sector-chips');
+    if (!el) return;
+    var sync = function(){
+      var max = el.scrollWidth - el.clientWidth;
+      el.classList.toggle('at-start', el.scrollLeft <= 2);
+      el.classList.toggle('at-end', el.scrollLeft >= max - 2);
+    };
+    el.addEventListener('scroll', function(){ window.requestAnimationFrame(sync); }, { passive:true });
+    window.addEventListener('resize', sync, { passive:true });
+    if ('MutationObserver' in window) new MutationObserver(sync).observe(el, { childList:true });
+    /* keep the active chip in view when a filter is applied from elsewhere
+       (the allocation card's sector rows filter this list too) — but ONLY when
+       the active chip actually changes. Reacting to every class mutation in the
+       subtree included the row's own .at-start/.at-end toggles, which sync()
+       writes on every scroll: a swipe flipped a class, the class flip scrolled
+       the row back to the active chip, and the row could never be scrolled.
+       Measured: scrollLeft set to 120 read back 0 a frame later, every time. */
+    var lastActive = null;
+    if ('MutationObserver' in window) new MutationObserver(function(muts){
+      var chipChanged = muts.some(function(m){ return m.target !== el; });
+      var a = el.querySelector('.chip.active');
+      if (!chipChanged || a === lastActive) return;
+      lastActive = a;
+      if (a && el.scrollWidth > el.clientWidth){
+        var l = a.offsetLeft - 24, r = a.offsetLeft + a.offsetWidth + 24;
+        if (l < el.scrollLeft || r > el.scrollLeft + el.clientWidth) el.scrollLeft = Math.max(0, l);
+      }
+      sync();
+    }).observe(el, { subtree:true, attributes:true, attributeFilter:['class'] });
+    sync();
+  }catch(e){}
+})();
+</script>
+
+<style id="mf-v375-demo">
+.demo-banner{ display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; margin:18px 0 0;
+  padding:12px 16px; border-radius:14px; font-size:13px; line-height:1.5; color:var(--text2);
+  background:rgba(180,83,9,.07); border:0.5px solid rgba(180,83,9,.26); }
+.demo-banner-tag{ font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  color:#fff; background:#b45309; padding:4px 9px; border-radius:6px; }
+.demo-banner-txt{ flex:1 1 320px; min-width:0; }
+.demo-banner-txt b{ color:var(--white); }
+.demo-banner-cta{ font-weight:700; color:var(--accent); text-decoration:none; white-space:nowrap;
+  min-height:44px; display:inline-flex; align-items:center; gap:5px; }
+.demo-banner-cta:hover{ text-decoration:underline; }
+html[data-theme="dark"] .demo-banner{ background:rgba(251,191,36,.08); border-color:rgba(251,191,36,.26); }
+html[data-theme="dark"] .demo-banner-tag{ color:#1b1302; background:#fbbf24; }
+html[data-theme="dark"] .demo-banner-cta{ color:#9dbcff; }
+</style>
+<style id="mf-v375-adjust">
+.adj-card{ margin-top:28px; background:var(--ink2); border:0.5px solid var(--border2);
+  border-radius:var(--r); padding:24px 28px; box-shadow:var(--shadow-sm); }
+.adj-head h2{ font-size:18px; font-weight:700; color:var(--white); margin:0 0 3px; letter-spacing:-.01em; }
+.adj-lead{ margin:0; font-size:13px; color:var(--text2); }
+.adj-tabs{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0 14px; }
+.adj-tab{ display:flex; align-items:center; gap:12px; text-align:left; cursor:pointer;
+  font:inherit; color:var(--text2); padding:12px 14px; min-height:60px; border-radius:12px;
+  background:var(--ink2); border:1px solid var(--border2); transition:border-color .15s, background .15s, box-shadow .15s; }
+.adj-tab svg{ width:22px; height:22px; flex:0 0 auto; color:var(--accent); }
+.adj-tab span{ display:grid; gap:1px; min-width:0; }
+.adj-tab b{ font-size:14px; font-weight:700; color:var(--white); }
+.adj-tab small{ font-size:11.5px; color:var(--text3); line-height:1.35; }
+.adj-tab:hover{ border-color:rgba(37,99,235,.45); }
+.adj-tab[aria-selected="true"]{ border-color:var(--accent); background:rgba(37,99,235,.05);
+  box-shadow:0 0 0 3px rgba(37,99,235,.10); }
+html[data-theme="dark"] .adj-tab svg{ color:#9dbcff; }
+html[data-theme="dark"] .adj-tab[aria-selected="true"]{ background:rgba(120,160,240,.08); border-color:#6f97f0; }
+.adj-tab:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.adj-desc{ font-size:13px; line-height:1.6; color:var(--text2); margin:0 0 12px; max-width:70ch; }
+.adj-row{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
+.adj-lbl{ display:block; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--text3); margin:0 0 6px; flex:0 0 100%; }
+.adj-field{ position:relative; flex:0 1 220px; min-width:160px; }
+.adj-cur{ position:absolute; left:12px; top:50%; transform:translateY(-50%); font-weight:700; color:var(--text3); }
+.adj-input{ width:100%; min-height:44px; padding:10px 12px 10px 28px; font-size:16px; font-weight:700;
+  font-variant-numeric:tabular-nums; color:var(--white); background:var(--ink); border-radius:10px;
+  border:1px solid var(--field-edge, rgba(15,23,42,.42)); outline:none; font-family:inherit; }
+.adj-input:focus, .adj-text:focus{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+.adj-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.adj-chip{ font:inherit; font-size:13px; font-weight:700; min-height:44px; padding:0 14px; border-radius:10px;
+  cursor:pointer; color:var(--text2); background:var(--ink2); border:1px solid var(--border2); }
+.adj-chip:hover{ border-color:var(--accent); color:var(--accent); }
+.adj-chip.is-on{ color:#fff; background:var(--accent); border-color:var(--accent); }
+.adj-hint{ font-size:12px; color:var(--text3); margin:8px 0 0; line-height:1.55; }
+.adj-hint b{ color:var(--text2); }
+.adj-text{ width:100%; box-sizing:border-box; min-height:132px; resize:vertical; padding:12px 14px;
+  font:500 14px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--white);
+  background:var(--ink); border-radius:10px; border:1px solid var(--field-edge, rgba(15,23,42,.42)); outline:none; }
+@media (pointer:coarse){ .adj-text{ font-size:16px; } }
+.adj-sync-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:12px; }
+.adj-btn{ font:inherit; font-size:13.5px; font-weight:700; min-height:44px; padding:0 16px; border-radius:10px;
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  color:var(--accent); background:var(--ink2); border:1px solid rgba(37,99,235,.35); }
+.adj-btn:hover{ border-color:var(--accent); background:rgba(37,99,235,.05); }
+.adj-btn-primary{ color:#fff; border-color:transparent; background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 10px 22px -14px rgba(26,80,216,.8); }
+.adj-btn-primary:hover{ background:linear-gradient(135deg,var(--accent),var(--accent2)); filter:brightness(1.05); }
+html[data-theme="dark"] .adj-btn{ color:#9dbcff; border-color:rgba(120,160,240,.35); }
+html[data-theme="dark"] .adj-btn-primary{ color:#fff; }
+.adj-btn:focus-visible, .adj-chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.adj-file{ position:relative; overflow:hidden; }
+.adj-file input{ position:absolute; inset:0; opacity:0; cursor:pointer; font-size:0; }
+.adj-file:focus-within{ outline:2px solid var(--accent); outline-offset:2px; }
+.adj-check{ display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--text2);
+  min-height:44px; cursor:pointer; }
+.adj-check input{ width:18px; height:18px; accent-color:var(--accent); }
+.adj-out:empty{ display:none; }
+.adj-out{ margin-top:16px; }
+.adj-sum{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; padding:12px 14px; border-radius:12px;
+  background:rgba(37,99,235,.045); border:0.5px solid rgba(37,99,235,.18); }
+html[data-theme="dark"] .adj-sum{ background:rgba(120,160,240,.07); border-color:rgba(120,160,240,.22); }
+.adj-sum-f{ font-size:13px; color:var(--text2); font-variant-numeric:tabular-nums; }
+.adj-sum-f b{ font-size:16px; color:var(--white); font-weight:800; margin-right:3px; }
+.adj-sum-note{ flex:0 0 100%; font-size:12px; color:var(--text3); margin-top:2px; }
+.adj-tbl-wrap{ margin-top:12px; border:0.5px solid var(--border2); border-radius:12px; overflow:hidden; }
+.adj-tbl{ width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; min-width:0; }
+.adj-tbl th{ text-align:left; font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--text3); padding:9px 12px; background:rgba(15,23,42,.03); border-bottom:0.5px solid var(--border2); white-space:nowrap; }
+html[data-theme="dark"] .adj-tbl th{ background:rgba(255,255,255,.03); }
+.adj-tbl td{ padding:9px 12px; border-bottom:0.5px solid var(--border); color:var(--text2); vertical-align:middle; }
+.adj-tbl tr:last-child td{ border-bottom:0; }
+.adj-tbl .r{ text-align:right; }
+.adj-tk{ font-weight:800; color:var(--white); letter-spacing:.02em; }
+.adj-side{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.05em; padding:3px 7px; border-radius:6px; }
+.adj-side.buy{ color:#0b6b4f; background:rgba(15,157,110,.12); }
+.adj-side.sell{ color:#b42318; background:rgba(220,38,38,.10); }
+.adj-side.ok{ color:var(--text3); background:rgba(15,23,42,.05); }
+html[data-theme="dark"] .adj-side.buy{ color:#34d399; background:rgba(52,211,153,.13); }
+html[data-theme="dark"] .adj-side.sell{ color:#fca5a5; background:rgba(248,113,113,.13); }
+html[data-theme="dark"] .adj-side.ok{ background:rgba(255,255,255,.06); }
+.adj-q{ font-weight:800; color:var(--white); }
+.adj-grp td{ background:rgba(15,23,42,.02); font-size:10.5px; font-weight:800; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--text3); padding:7px 12px; }
+html[data-theme="dark"] .adj-grp td{ background:rgba(255,255,255,.02); }
+.adj-muted{ color:var(--text3); font-size:12px; }
+.adj-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.adj-baskets{ list-style:none; margin:12px 0 0; padding:0; display:grid; gap:8px; }
+.adj-warn{ margin-top:10px; font-size:12px; line-height:1.55; color:var(--ink-warn,#a64d08);
+  background:rgba(180,83,9,.07); border:0.5px solid rgba(180,83,9,.22); border-radius:10px; padding:9px 12px; }
+html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08); border-color:rgba(251,191,36,.24); }
+.adj-foot{ margin:16px 0 0; font-size:11.5px; color:var(--text3); line-height:1.55; max-width:70ch; }
+@media (max-width:600px){
+  .adj-card{ padding:18px 16px; }
+  .adj-tabs{ grid-template-columns:1fr; gap:8px; }
+  .adj-field{ flex:1 1 100%; }
+  .adj-chips{ flex:1 1 100%; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .adj-chip{ padding:0 6px; }
+  .adj-tbl th, .adj-tbl td{ padding:8px 6px; }
+  .adj-tbl th:first-child, .adj-tbl td:first-child{ padding-left:10px; }
+  .adj-tbl th:last-child, .adj-tbl td:last-child{ padding-right:10px; }
+  .adj-tk{ letter-spacing:0; font-size:12.5px; }
+  .adj-side{ padding:3px 5px; letter-spacing:.03em; }
+  .adj-sync-bar .adj-btn{ flex:1 1 auto; }
+  .adj-check{ flex:1 1 100%; }
+  /* the summary above already carries the rupee totals; on a phone the per-row
+     value column is what pushed the order column into a two-line wrap */
+  .adj-tbl .adj-v{ display:none; }
+}
+.adj-tbl .adj-o{ white-space:nowrap; }
+.adj-ht{ white-space:nowrap; color:var(--text3); }
+.adj-ht b{ color:var(--white); font-weight:700; }
+.adj-arr{ color:var(--text3); }
+.adj-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+@media (min-width:900px){ .adj-sum, .adj-tbl-wrap, .adj-baskets{ max-width:820px; } }
+/* A phone narrower than 400px cannot give four columns their widths without
+   pushing the order — the one column that matters — off the edge (measured at
+   320: "BUY" visible, the quantity gone). Each row becomes a wrapping line
+   instead: symbol, then held -> target, then the order, which drops to its own
+   line only when it has to. */
+@media (max-width:400px){
+  .adj-tbl-wrap{ overflow:visible !important; }
+  .adj-tbl thead{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .adj-tbl, .adj-tbl tbody{ display:block; }
+  .adj-tbl tr{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:8px 10px;
+    border-bottom:0.5px solid var(--border); }
+  .adj-tbl tr:last-child{ border-bottom:0; }
+  .adj-tbl td, .adj-tbl th, .adj-tbl td:first-child, .adj-tbl td:last-child{ display:block; padding:0; border:0; }
+  .adj-tbl td:first-child{ flex:1 1 auto; }
+  .adj-tbl .adj-ht::before{ content:'held '; font-size:11px; color:var(--text3); }
+  .adj-tbl td.adj-v{ display:none; }
+  .adj-tbl tr.adj-grp{ padding:6px 10px; }
+  .adj-tbl tr.adj-grp td{ background:none; padding:0; }
+  .adj-tbl tr.adj-grp{ background:rgba(15,23,42,.02); }
+  html[data-theme="dark"] .adj-tbl tr.adj-grp{ background:rgba(255,255,255,.02); }
+}
+@media print{ .adj-card{ display:none !important; } }
+</style>
+<script id="mf-v375-adjust-js">
+(function(){
+  'use strict';
+  var card = document.getElementById('adj-card');
+  if (!card) return;
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { tab:'add', addAmt:0, syncText:'', syncRan:false, sentAdj:{} };
+
+  function stocks(){ try { return (typeof stocksData !== 'undefined' && stocksData) ? stocksData : []; } catch(e){ return []; } }
+  function money(v){ try { return fmtMoney(Math.round(v)); } catch(e){ return '₹' + Math.round(v); } }
+  function esc(v){ try { return escapeHtml(String(v)); } catch(e){ return String(v).replace(/[&<>"]/g,''); } }
+  function parseAmt(v){ var n = Number(String(v||'').replace(/[^0-9.]/g,'')); return isFinite(n) ? Math.floor(n) : 0; }
+  function priceOf(s){
+    var px = window._livePx || null;
+    var y = s && s.yahoo_ticker;
+    if (px && y && px[y] && Number(px[y].price) > 0) return { v:Number(px[y].price), live:true };
+    var rec = Number(s && s.recommended_price) || 0;
+    return { v:rec, live:false };
+  }
+  /* The one normaliser both sides of every match go through: broker exports
+     write NSE:INFY, INFY-EQ, INFY.NS or "infy". Only exchange SERIES suffixes are
+     stripped — BAJAJ-AUTO and M&M are real symbols and survive intact. */
+  function normSym(t){
+    return String(t == null ? '' : t).trim().replace(/^["']|["']$/g,'').toUpperCase()
+      .replace(/^(NSE|BSE|NSE_EQ|BSE_EQ)\s*[:|]\s*/,'')
+      .replace(/\.(NS|BO|NSE|BSE)$/,'')
+      .replace(/-(EQ|BE|BZ|SM|ST|BL|IL|GB|GS|N[0-9]|T[0-9])$/,'');
+  }
+  function num(v){ var n = Number(String(v == null ? '' : v).replace(/[,\s₹"]/g,'')); return isFinite(n) ? n : NaN; }
+  function csvSplit(line, d){
+    var out = [], cur = '', q = false;
+    for (var i = 0; i < line.length; i++){
+      var ch = line[i];
+      if (ch === '"'){ if (q && line[i+1] === '"'){ cur += '"'; i++; } else q = !q; }
+      else if (ch === d && !q){ out.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out.map(function(x){ return x.trim(); });
+  }
+  function findCol(h, res){
+    for (var r = 0; r < res.length; r++) for (var i = 0; i < h.length; i++) if (res[r].test(h[i])) return i;
+    return -1;
+  }
+
+  /* HOLDINGS PARSER. A header row with a symbol-like and a quantity-like column
+     is read as a table (Kite "Instrument, Qty.", Console "Symbol … Quantity
+     Available", generic "Symbol, Quantity"); anything else is read line by line
+     as "SYMBOL QTY" in either order. Repeated symbols are summed (a T1 row and a
+     settled row are one holding). Lines that cannot be read are returned, not
+     guessed at. */
+  function parseHoldings(text){
+    var res = { rows:{}, px:{}, bad:[], count:0, table:false };
+    var lines = String(text || '').replace(/^﻿/,'').replace(/\r/g,'').split('\n')
+      .map(function(l){ return l.trim(); }).filter(function(l){ return l.length; });
+    if (!lines.length) return res;
+    var d = lines[0].indexOf('\t') > -1 ? '\t' : (lines[0].indexOf(',') > -1 ? ',' : (lines[0].indexOf(';') > -1 ? ';' : null));
+    var symCol = -1, qtyCol = -1, ltpCol = -1, valCol = -1, start = 0;
+    if (d){
+      var h = csvSplit(lines[0], d).map(function(x){ return x.toLowerCase().replace(/\s+/g,' '); });
+      symCol = findCol(h, [/^(symbol|instrument|tradingsymbol|trading symbol|ticker|scrip|scrip code|scrip name|stock symbol|nse symbol|security|security name|stock|stock name|company)$/]);
+      qtyCol = findCol(h, [/^quantity available$/, /^(qty\.?|quantity|net qty\.?|total qty\.?|holding qty\.?|holdings|shares|units|available qty\.?|qty available|free qty\.?|balance qty\.?)$/]);
+      ltpCol = findCol(h, [/^(ltp|last price|last traded price|current price|cmp|market price|close price|previous closing price)$/]);
+      valCol = findCol(h, [/^(cur\.? val\.?|current value|present value|market value|value)$/]);
+      if (symCol > -1 && qtyCol > -1){ res.table = true; start = 1; }
+    }
+    for (var i = start; i < lines.length; i++){
+      var l = lines[i], sym = '', q = NaN, ltp = NaN;
+      if (res.table){
+        var c = csvSplit(l, d);
+        sym = c[symCol]; q = num(c[qtyCol]);
+        if (ltpCol > -1) ltp = num(c[ltpCol]);
+        if (!(ltp > 0) && valCol > -1 && q > 0){ var val = num(c[valCol]); if (val > 0) ltp = val / q; }
+      } else {
+        var m = l.match(/^([A-Za-z][A-Za-z0-9&._:\-]*)[\s,;:=\t]+(?:x\s*|×\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)\s*$/) ||
+                l.match(/^([0-9][0-9,]*(?:\.[0-9]+)?)[\s,;:=\t]+(?:x\s*|×\s*)?([A-Za-z][A-Za-z0-9&._:\-]*)\s*$/);
+        if (m){
+          if (/^[0-9]/.test(m[1])){ q = num(m[1]); sym = m[2]; } else { sym = m[1]; q = num(m[2]); }
+        }
+      }
+      var k = normSym(sym);
+      if (!k || !(q > 0) || Math.abs(q - Math.round(q)) > 1e-6){
+        if (!(res.table && /^(total|grand total)/i.test(l))) res.bad.push(l.slice(0, 60));
+        continue;
+      }
+      res.rows[k] = (res.rows[k] || 0) + Math.round(q);
+      if (ltp > 0) res.px[k] = ltp;
+    }
+    res.count = Object.keys(res.rows).length;
+    return res;
+  }
+
+  /* ── ADD MONEY ─────────────────────────────────────────────────────────── */
+  function planAdd(amount){
+    var list = stocks(), out = { orders:[], zero:[], spent:0, cash:0, live:0, n:list.length };
+    if (!list.length || !(amount > 0)) return out;
+    var rows = list.map(function(s){
+      var p = priceOf(s), budget = allocBudget(s, list, amount);
+      var qty = p.v > 0 ? Math.floor(budget / p.v) : 0;
+      if (p.live) out.live++;
+      return { s:s, px:p.v, budget:budget, qty:qty };
+    });
+    var cash = amount - rows.reduce(function(a, r){ return a + r.qty * r.px; }, 0);
+    /* The rounding residue, spent on the picks furthest BELOW their weight — one
+       share at a time, re-ranked after every share, and never on a pick that the
+       share would carry more than one share past its budget. */
+    for (var guard = 0; guard < 400; guard++){
+      var best = null, bestGap = 0;
+      rows.forEach(function(r){
+        if (!(r.px > 0) || r.px > cash + 1e-6) return;
+        if ((r.qty + 1) * r.px > r.budget + r.px / 2) return;   // never more than half a share past its weight
+        var gap = (r.budget - r.qty * r.px) / (r.budget || 1);
+        // equal shortfall -> the cheaper share, so a small top-up funds more names
+        if (!best || gap > bestGap + 1e-9 || (Math.abs(gap - bestGap) <= 1e-9 && r.px < best.px)){ best = r; bestGap = gap; }
+      });
+      if (!best) break;
+      best.qty++; cash -= best.px;
+    }
+    rows.forEach(function(r){
+      if (r.qty > 0) out.orders.push({ side:'BUY', ticker:String(r.s.ticker), qty:r.qty, price:r.px, name:r.s.company_name });
+      else if (r.px > 0) out.zero.push({ ticker:String(r.s.ticker), px:r.px });
+    });
+    out.spent = rows.reduce(function(a, r){ return a + r.qty * r.px; }, 0);
+    out.cash = Math.max(0, amount - out.spent);
+    out.minFull = list.reduce(function(m, s){
+      var p = priceOf(s).v, share = allocBudget(s, list, 1);
+      return (p > 0 && share > 0) ? Math.max(m, Math.ceil(p / share)) : m;
+    }, 0);
+    return out;
+  }
+
+  /* ── MATCH MY HOLDINGS ─────────────────────────────────────────────────── */
+  /* Some exports (Groww's, most bank-demat statements) name the COMPANY, not the
+     NSE symbol. A company name is matched to a pick by its normalised name, so
+     "Shilpa Medicare Limited" finds SHILPAMED — rather than falling into "not in
+     this strategy" and turning a correct account into fifteen duplicate buys. */
+  function normName(n){
+    return String(n == null ? '' : n).toLowerCase().replace(/&/g, ' and ')
+      .replace(/[^a-z0-9 ]+/g, ' ')
+      .replace(/\b(limited|ltd|pvt|private|company|co|corporation|corp|inc|the)\b/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+  }
+  function resolveRows(parsed){
+    var list = stocks(), byName = {}, bySym = {}, rows = {}, px = {}, matched = 0;
+    list.forEach(function(s){ bySym[normSym(s.ticker)] = normSym(s.ticker); var nn = normName(s.company_name); if (nn) byName[nn] = normSym(s.ticker); });
+    Object.keys(parsed.rows).forEach(function(k){
+      var key = bySym[k] || byName[normName(k)] || k;
+      if (bySym[k] || byName[normName(k)]) matched++;
+      rows[key] = (rows[key] || 0) + parsed.rows[k];
+      if (parsed.px[k]) px[key] = parsed.px[k];
+    });
+    return { rows:rows, px:px, matched:matched, count:Object.keys(parsed.rows).length };
+  }
+  function planSync(parsedIn, includeOthers){
+    var list = stocks(), cap = Number(currentCapital) || 0;
+    var parsed = resolveRows(parsedIn);
+    var out = { model:[], left:[], other:[], orders:[], buyVal:0, sellVal:0, unpriced:0, onTarget:0, cap:cap,
+                matched:parsed.matched, count:parsed.count };
+    if (!list.length) return out;
+    var modelSet = {};
+    list.forEach(function(s){
+      var k = normSym(s.ticker); modelSet[k] = 1;
+      var p = priceOf(s);
+      var target = (p.v > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / p.v) : 0;
+      var held = parsed.rows[k] || 0;
+      var d = target - held;
+      var row = { ticker:String(s.ticker), held:held, target:target, delta:d, px:p.v };
+      out.model.push(row);
+      if (d > 0){ out.orders.push({ side:'BUY', ticker:row.ticker, qty:d, price:p.v }); out.buyVal += d * p.v; }
+      else if (d < 0){ out.orders.push({ side:'SELL', ticker:row.ticker, qty:-d, price:p.v }); out.sellVal += -d * p.v; }
+      else out.onTarget++;
+    });
+    var diff = window._bookDiff || null, leftSet = {}, prevPos = (diff && diff.prevPos) || {};
+    if (diff && diff.known) (diff.removed || []).forEach(function(t){ leftSet[normSym(t)] = t; });
+    Object.keys(parsed.rows).forEach(function(k){
+      if (modelSet[k]) return;
+      var held = parsed.rows[k], px = parsed.px[k] || 0;
+      if (!px && leftSet[k]){
+        var pp = prevPos[leftSet[k]] || {}, live = window._livePx || {};
+        px = (pp.y && live[pp.y] && Number(live[pp.y].price) > 0) ? Number(live[pp.y].price) : (Number(pp.rec) || 0);
+      }
+      var row = { ticker:k, held:held, px:px };
+      if (leftSet[k]){
+        out.left.push(row);
+        out.orders.unshift({ side:'SELL', ticker:k, qty:held, price:px });
+        if (px > 0) out.sellVal += held * px; else out.unpriced++;
+      } else {
+        out.other.push(row);
+        if (includeOthers){
+          out.orders.unshift({ side:'SELL', ticker:k, qty:held, price:px });
+          if (px > 0) out.sellVal += held * px; else out.unpriced++;
+        }
+      }
+    });
+    // sells first — the V35.4 rule: sale proceeds fund the buys
+    out.orders.sort(function(a, b){ return (a.side === b.side) ? 0 : (a.side === 'SELL' ? -1 : 1); });
+    return out;
+  }
+
+  /* ── shared order-list output ──────────────────────────────────────────── */
+  function orderLines(orders){
+    var w = orders.reduce(function(m, o){ return Math.max(m, o.ticker.length); }, 6);
+    return orders.map(function(o){
+      var t = o.ticker + new Array(Math.max(1, w - o.ticker.length + 2)).join(' ');
+      return (o.side === 'BUY' ? 'BUY  ' : 'SELL ') + t + o.qty;
+    }).join('\n');
+  }
+  function csvOf(orders){
+    return ['Action,Symbol,Quantity,Price (INR),Value (INR)'].concat(orders.map(function(o){
+      return [o.side, JSON.stringify(o.ticker), o.qty, (o.price || 0).toFixed(2), Math.round(o.qty * (o.price || 0))].join(',');
+    })).join('\n');
+  }
+  function download(name, text, type){
+    try {
+      var blob = new Blob([text], { type:type });
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = name; a.rel = 'noopener';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 1500);
+    } catch(e){}
+  }
+  function basketsHtml(key, orders){
+    var send = orders.filter(function(o){ return o.qty >= 1; });
+    if (!send.length || getBroker() !== 'kite') return '';
+    var chunks = [];
+    for (var i = 0; i < send.length; i += KITE_BASKET_MAX) chunks.push(send.slice(i, i + KITE_BASKET_MAX));
+    var total = chunks.length;
+    var nextIdx = -1;
+    chunks.forEach(function(c, i){ if (nextIdx < 0 && !state.sentAdj[key + ':' + i]) nextIdx = i; });
+    return '<ol class="adj-baskets">' + chunks.map(function(c, i){
+      var val = c.reduce(function(a, o){ return a + o.qty * (o.price || 0); }, 0);
+      var sent = !!state.sentAdj[key + ':' + i], isNext = i === nextIdx;
+      var lbl = sent ? 'Send again' : 'Review on Kite';
+      return '<li class="kbsk-b' + (isNext ? ' is-next' : '') + (sent ? ' is-sent' : ' is-ready') + '">' +
+        '<span class="kbsk-b-n" aria-hidden="true">' + (i + 1) + '</span>' +
+        '<span class="kbsk-b-main"><span class="kbsk-b-head">' + (total > 1 ? 'Basket ' + (i + 1) + ' of ' + total : 'Kite basket') +
+          (sent ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' : (isNext && total > 1 ? '<span class="kbsk-b-state is-next">Next</span>' : '')) + '</span>' +
+          '<span class="kbsk-b-sub"><b>' + c.length + '</b> order' + (c.length === 1 ? '' : 's') + ' · <b>' + esc(money(val)) + '</b></span>' +
+          '<span class="kbsk-b-names">' + esc(c.map(function(o){ return (o.side === 'SELL' ? 'sell ' : '') + o.ticker + ' ×' + o.qty; }).join(' · ')) + '</span></span>' +
+        '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" data-adj-send="' + key + ':' + i + '" ' +
+          'aria-label="' + esc(lbl + (total > 1 ? ': basket ' + (i + 1) + ' of ' + total : '') + ', ' + c.length + ' orders, ' + money(val)) + '">' + lbl + '</button>' +
+      '</li>';
+    }).join('') + '</ol>';
+  }
+  function sendAdj(key, idx, orders){
+    var send = orders.filter(function(o){ return o.qty >= 1; });
+    var chunk = send.slice(idx * KITE_BASKET_MAX, (idx + 1) * KITE_BASKET_MAX);
+    if (!chunk.length) return;
+    var rows = chunk.map(function(o){
+      return { variety:'regular', exchange:'NSE', tradingsymbol:o.ticker, transaction_type:o.side,
+               order_type:'MARKET', product:'CNC', quantity:o.qty, readonly:false, tag:'MFC' };
+    });
+    var f = kiteBasketForm();
+    $('kbsk-key').value = KITE_API_KEY;
+    $('kbsk-data').value = JSON.stringify(rows);
+    f.submit();
+    state.sentAdj[key + ':' + idx] = 1;
+    showToast('Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite');
+    render();
+  }
+
+  /* ── render ────────────────────────────────────────────────────────────── */
+  var lastAdd = null, lastSync = null;
+  function renderAdd(){
+    var box = $('adj-add-out'), hint = $('adj-add-hint');
+    var amt = state.addAmt;
+    document.querySelectorAll('#adj-add-chips .adj-chip').forEach(function(b){ b.classList.toggle('is-on', Number(b.dataset.amt) === amt); });
+    if (!(amt > 0)){ box.innerHTML = ''; hint.textContent = ''; lastAdd = null; return; }
+    var p = planAdd(amt); lastAdd = p;
+    var basis = p.live === p.n ? 'live prices' : (p.live ? 'live prices where available, recommended prices otherwise' : 'recommended prices (live prices have not loaded)');
+    hint.textContent = 'Sized at ' + basis + '.';
+    if (!p.orders.length){
+      box.innerHTML = '<div class="adj-warn">' + esc(money(amt)) + ' is not enough for one share of any pick at its weight. ' +
+        (p.minFull ? 'About <b>' + esc(money(p.minFull)) + '</b> buys at least one share of every pick.' : '') + '</div>';
+      return;
+    }
+    var rowsH = p.orders.map(function(o){
+      return '<tr><td><span class="adj-tk">' + esc(o.ticker) + '</span></td><td><span class="adj-side buy">BUY</span></td>' +
+             '<td class="r"><span class="adj-q">' + o.qty + '</span></td><td class="r adj-v">' + esc(money(o.qty * o.price)) + '</td></tr>';
+    }).join('');
+    box.innerHTML =
+      '<div class="adj-sum">' +
+        '<span class="adj-sum-f"><b>' + p.orders.length + '</b>order' + (p.orders.length === 1 ? '' : 's') + '</span>' +
+        '<span class="adj-sum-f"><b>' + esc(money(p.spent)) + '</b>invested</span>' +
+        '<span class="adj-sum-f"><b>' + esc(money(p.cash)) + '</b>stays in cash</span>' +
+        (p.zero.length ? '<span class="adj-sum-note">' + p.zero.length + ' of ' + p.n + ' picks get no share at this amount (' +
+          esc(p.zero.slice(0, 4).map(function(z){ return z.ticker; }).join(', ') + (p.zero.length > 4 ? '…' : '')) + '). ' +
+          (p.minFull ? 'About ' + esc(money(p.minFull)) + ' buys at least one share of every pick.' : '') + '</span>' : '') +
+      '</div>' +
+      '<div class="adj-tbl-wrap"><table class="adj-tbl"><thead><tr><th scope="col">Pick</th><th scope="col">Order</th><th scope="col" class="r">Shares</th><th scope="col" class="r adj-v">Est. value</th></tr></thead><tbody>' + rowsH + '</tbody></table></div>' +
+      basketsHtml('add', p.orders) +
+      '<div class="adj-acts">' +
+        '<button type="button" class="adj-btn" data-adj-copy="add">Copy order list</button>' +
+        '<button type="button" class="adj-btn" data-adj-csv="add">Download CSV</button>' +
+        '<button type="button" class="adj-btn" data-adj-apply="add">Use ' + esc(money((Number(currentCapital) || 0) + amt)) + ' as my capital</button>' +
+      '</div>';
+  }
+  function renderSync(){
+    var box = $('adj-sync-out');
+    if (!state.syncRan){ box.innerHTML = ''; lastSync = null; return; }
+    var parsed = parseHoldings(state.syncText);
+    if (!parsed.count){
+      box.innerHTML = '<div class="adj-warn">No holdings could be read. Paste a CSV with a Symbol and a Quantity column, or one holding per line, like <b>SHILPAMED 105</b>.' +
+        (parsed.bad.length ? ' Unread: ' + esc(parsed.bad.slice(0, 3).join(' | ')) : '') + '</div>';
+      lastSync = null; return;
+    }
+    var p = planSync(parsed, $('adj-sync-others').checked); lastSync = p;
+    /* The guard against a wrong paste. If the account shares NOTHING with this
+       strategy, the arithmetic below is "buy the whole book" — correct for an
+       empty account, and a costly duplicate for a member who pasted the wrong
+       file or a different strategy's account. Say so before the orders. */
+    var mismatch = p.count >= 3 && p.matched === 0;
+    var tr = function(side, cls, tk, held, target, qty, val){
+      return '<tr><td><span class="adj-tk">' + esc(tk) + '</span></td>' +
+             '<td class="r adj-ht">' + held + '<span class="adj-arr" aria-hidden="true"> → </span><span class="adj-sr">, target </span>' + (target == null ? '—' : '<b>' + target + '</b>') + '</td>' +
+             '<td class="adj-o"><span class="adj-side ' + cls + '">' + side + '</span>' + (qty ? ' <span class="adj-q">' + qty + '</span>' : '') + '</td>' +
+             '<td class="r adj-v">' + (val == null ? '<span class="adj-muted">—</span>' : esc(money(val))) + '</td></tr>';
+    };
+    var body = '<tr class="adj-grp"><td colspan="4">In this strategy · ' + p.model.length + '</td></tr>' +
+      p.model.map(function(r){
+        return r.delta > 0 ? tr('BUY', 'buy', r.ticker, r.held, r.target, r.delta, r.delta * r.px)
+             : r.delta < 0 ? tr('SELL', 'sell', r.ticker, r.held, r.target, -r.delta, -r.delta * r.px)
+             : tr('ON TARGET', 'ok', r.ticker, r.held, r.target, 0, null);
+      }).join('');
+    if (p.left.length) body += '<tr class="adj-grp"><td colspan="4">Left the model this cycle · ' + p.left.length + '</td></tr>' +
+      p.left.map(function(r){ return tr('SELL', 'sell', r.ticker, r.held, 0, r.held, r.px ? r.held * r.px : null); }).join('');
+    if (p.other.length) body += '<tr class="adj-grp"><td colspan="4">Not in this strategy · ' + p.other.length + '</td></tr>' +
+      p.other.map(function(r){
+        return $('adj-sync-others').checked ? tr('SELL', 'sell', r.ticker, r.held, null, r.held, r.px ? r.held * r.px : null)
+                                             : tr('KEEP', 'ok', r.ticker, r.held, null, 0, null);
+      }).join('');
+    var nB = p.orders.filter(function(o){ return o.side === 'BUY'; }).length, nS = p.orders.length - nB;
+    box.innerHTML =
+      (mismatch ? '<div class="adj-warn"><b>None of the ' + p.count + ' holdings you pasted are in this strategy.</b> ' +
+        'If this account already follows it, check that the file uses NSE symbols (or company names) and that it is the right account — ' +
+        'otherwise the orders below would buy the whole book again.</div>' : '') +
+      '<div class="adj-sum">' +
+        '<span class="adj-sum-f"><b>' + p.orders.length + '</b>order' + (p.orders.length === 1 ? '' : 's') + (p.orders.length ? ' (' + nB + ' buy · ' + nS + ' sell)' : '') + '</span>' +
+        (p.buyVal ? '<span class="adj-sum-f"><b>' + esc(money(p.buyVal)) + '</b>to buy</span>' : '') +
+        (p.sellVal ? '<span class="adj-sum-f"><b>' + esc(money(p.sellVal)) + '</b>to sell</span>' : '') +
+        '<span class="adj-sum-f"><b>' + p.onTarget + '</b>already on target</span>' +
+        '<span class="adj-sum-note">Targets are sized to your capital of ' + esc(money(p.cap)) + ' at today’s prices, so they can differ by a share or two from the Shares column, which uses the recommended price.' +
+          (parsed.bad.length ? ' ' + parsed.bad.length + ' line' + (parsed.bad.length === 1 ? '' : 's') + ' could not be read and were skipped.' : '') +
+          (p.unpriced ? ' ' + p.unpriced + ' sell' + (p.unpriced === 1 ? ' has' : 's have') + ' no price in your paste, so the value above leaves ' + (p.unpriced === 1 ? 'it' : 'them') + ' out.' : '') + '</span>' +
+      '</div>' +
+      '<div class="adj-tbl-wrap" style="overflow-x:auto"><table class="adj-tbl"><thead><tr><th scope="col">Symbol</th><th scope="col" class="r">Held → target</th><th scope="col">Order</th><th scope="col" class="r adj-v">Est. value</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+      (p.orders.length ? basketsHtml('sync', p.orders) +
+        '<div class="adj-acts"><button type="button" class="adj-btn" data-adj-copy="sync">Copy order list</button>' +
+        '<button type="button" class="adj-btn" data-adj-csv="sync">Download CSV</button></div>'
+        : '<div class="adj-sum" style="margin-top:12px"><span class="adj-sum-f">Your account already matches the model at this capital. Nothing to place.</span></div>');
+  }
+  function render(){
+    var list = stocks();
+    card.hidden = !list.length;
+    if (!list.length) return;
+    renderAdd(); renderSync();
+  }
+  window.adjRefresh = function(){ try { render(); } catch(e){} };
+
+  /* ── wiring ────────────────────────────────────────────────────────────── */
+  function setTab(t, focus){
+    state.tab = t;
+    ['add','sync'].forEach(function(k){
+      var tab = $('adj-tab-' + k), pan = $('adj-panel-' + k), on = k === t;
+      tab.setAttribute('aria-selected', on ? 'true' : 'false'); tab.tabIndex = on ? 0 : -1;
+      pan.hidden = !on;
+      if (on && focus) tab.focus();
+    });
+  }
+  $('adj-tab-add').addEventListener('click', function(){ setTab('add'); });
+  $('adj-tab-sync').addEventListener('click', function(){ setTab('sync'); });
+  card.querySelector('.adj-tabs').addEventListener('keydown', function(e){
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+    e.preventDefault();
+    setTab(state.tab === 'add' ? 'sync' : 'add', true);
+  });
+  var amtIn = $('adj-add-amt'), tmr = null;
+  amtIn.addEventListener('input', function(){
+    var n = parseAmt(amtIn.value);
+    state.addAmt = Math.min(n, 1e9);
+    clearTimeout(tmr); tmr = setTimeout(renderAdd, 180);
+  });
+  amtIn.addEventListener('blur', function(){ if (state.addAmt > 0) try { amtIn.value = fmtNum(state.addAmt); } catch(e){} });
+  amtIn.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); renderAdd(); } });
+  $('adj-add-chips').addEventListener('click', function(e){
+    var b = e.target.closest('.adj-chip'); if (!b) return;
+    state.addAmt = Number(b.dataset.amt) || 0;
+    try { amtIn.value = fmtNum(state.addAmt); } catch(e2){ amtIn.value = state.addAmt; }
+    renderAdd();
+  });
+  $('adj-sync-go').addEventListener('click', function(){
+    state.syncText = $('adj-sync-in').value; state.syncRan = true; renderSync();
+    var out = $('adj-sync-out'); if (out && out.firstChild) try { out.scrollIntoView({ block:'nearest' }); } catch(e){}
+  });
+  $('adj-sync-others').addEventListener('change', function(){ if (state.syncRan) renderSync(); });
+  $('adj-sync-file').addEventListener('change', function(){
+    var f = this.files && this.files[0]; if (!f) return;
+    if (f.size > 2 * 1024 * 1024){ showToast('That file is too large to be a holdings export'); return; }
+    var r = new FileReader();
+    r.onload = function(){ $('adj-sync-in').value = String(r.result || ''); state.syncText = $('adj-sync-in').value; state.syncRan = true; renderSync(); };
+    r.readAsText(f);
+    this.value = '';
+  });
+  card.addEventListener('click', function(e){
+    var t = e.target.closest('[data-adj-send],[data-adj-copy],[data-adj-csv],[data-adj-apply]');
+    if (!t) return;
+    var which = t.getAttribute('data-adj-copy') || t.getAttribute('data-adj-csv') || t.getAttribute('data-adj-apply') ||
+                (t.getAttribute('data-adj-send') || '').split(':')[0];
+    var plan = which === 'add' ? lastAdd : lastSync;
+    if (!plan || !plan.orders || !plan.orders.length) return;
+    var strat = String((typeof currentStrategy !== 'undefined' && currentStrategy) || 'MindForge');
+    var stamp = new Date().toISOString().slice(0, 10);
+    if (t.hasAttribute('data-adj-send')){
+      sendAdj(which, Number(t.getAttribute('data-adj-send').split(':')[1]) || 0, plan.orders);
+    } else if (t.hasAttribute('data-adj-copy')){
+      var head = strat + (which === 'add' ? ' · add ' + money(state.addAmt) : ' · match holdings') + ' · ' + stamp;
+      copyText(head + '\n' + orderLines(plan.orders)).then(function(){ showToast('Copied ' + plan.orders.length + ' order' + (plan.orders.length === 1 ? '' : 's')); });
+    } else if (t.hasAttribute('data-adj-csv')){
+      download('mindforge-' + (which === 'add' ? 'add-money' : 'match-holdings') + '-' + stamp + '.csv', csvOf(plan.orders), 'text/csv;charset=utf-8;');
+    } else if (t.hasAttribute('data-adj-apply')){
+      var next = (Number(currentCapital) || 0) + state.addAmt;
+      try { setCapital(next); showToast('Capital set to ' + money(next)); } catch(e2){}
+      render();
+    }
+  });
+  /* This script runs after the dashboard's own init() has already rendered the
+     book, so the render hooks inside renderTable / paintLivePrices may have fired
+     before window.adjRefresh existed. Draw once now. */
+  render();
+})();
+</script>
 
 <!-- ════════════════════════════════════════════════════════════════════════
      V37.4 · THE ATTRIBUTE THAT WAS BEING OVERRULED
