@@ -1494,11 +1494,16 @@ html[data-theme="dark"] .stock-card.row-new{ border-color:rgba(120,160,240,.40);
   border-top:0.5px solid var(--border2);
 }
 .mypos-tot{display:flex;flex-direction:column;gap:1px;}
-.mypos-tot span{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);}
-.mypos-tot strong{font-size:15px;font-weight:800;color:var(--white);}
+/* V37.6 — `>`: the unscoped `.mypos-tot span` also matched the <span> the gain
+   figure is written into, so the one number this card exists for printed at
+   10.5px uppercase beside two 15px totals. */
+.mypos-tot > span{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);}
+.mypos-tot strong{font-size:15px;font-weight:800;color:var(--white);font-variant-numeric:tabular-nums;}
 .mypos-note{margin:10px 0 0;font-size:11.5px;color:var(--text3);line-height:1.55;}
-.mypos-tbl .up,.mypos-tot .up{color:var(--green);}
-.mypos-tbl .down,.mypos-tot .down{color:var(--red);}
+/* V37.6 — --green (#059669) is 3.77:1 on the white card at 12.5px; the grading
+   pair every other figure on this page uses, which flips for dark itself. */
+.mypos-tbl .up,.mypos-tot .up{color:var(--data-strong,#047454);}
+.mypos-tbl .down,.mypos-tot .down{color:var(--data-bad,#c92020);}
 @media (max-width:560px){ .mypos-card{padding:14px 16px;} .mypos-foot{gap:16px;} }
 /* Scoped by POINTER, not by width — the lesson of V31.9, where the 44px tap
    targets were written under max-width:600px and every iPad therefore got the
@@ -2991,7 +2996,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div id="error-strats-list" class="err-strats-list"></div>
     </div>
     <br>
-    <p style="font-size:13px;color:var(--text3);"><a href="login.html" style="color:var(--accent);text-decoration:underline;">Sign in again →</a> &nbsp;·&nbsp; Lost your link? <a href="recover.html" style="color:var(--accent);text-decoration:underline;">Recover dashboard access →</a></p>
+    <p style="font-size:13px;color:var(--text3);"><a href="login.html" class="state-lnk">Sign in again →</a> &nbsp;·&nbsp; Lost your link? <a href="recover.html" class="state-lnk">Recover dashboard access →</a></p>
   </div>
 </div>
 
@@ -3434,6 +3439,41 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     html[data-theme="dark"] .pc-bench .pcb-gap.behind{background:rgba(248,113,113,.14);}
     html[data-theme="dark"] .pc-bench .pcb-gap.level{background:rgba(131,170,255,.12);}
     @media(max-width:640px){.pc-bench{font-size:12px;gap:7px}}
+    /* V37.6 — THE DAY'S MOVE FOR THE WHOLE BOOK. Every row has printed its own
+       "1D" since V37.2 and nothing added them up, so the one question a member
+       who opens this page daily actually asks — how did my portfolio do today? —
+       was fifteen numbers to weigh in their head. Same weight-weighted sum the
+       headline uses, over each holding's previous close instead of its rec price,
+       from the price payload the page already polls. Percent only (the V37.2
+       rule): the rupee figure belongs to the member's own recorded fills. */
+    .pc-today{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:11px;font-size:12.5px;color:var(--text2);}
+    .pc-today .pct-k{font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);
+      padding:2px 7px;border-radius:5px;background:rgba(15,23,42,.05);border:0.5px solid var(--border);}
+    .pc-today .pct-v{font-weight:800;font-variant-numeric:tabular-nums;}
+    .pc-today .pct-v.up{color:var(--data-strong,#047454);}
+    .pc-today .pct-v.down{color:var(--data-bad,#c92020);}
+    .pc-today .pct-br{color:var(--text3);font-variant-numeric:tabular-nums;}
+    html[data-theme="dark"] .pc-today .pct-k{background:rgba(255,255,255,.06);}
+    @media(max-width:640px){.pc-today{font-size:12px;gap:7px}}
+    /* V37.6 — the card is display:none under ?demo, so no sweep had ever rendered
+       it, and five of its inks were light-theme literals: "10 up · 5 down" measured
+       1.54:1 on the dark card, the Top/Lagging chips painted as silver pills
+       (1.46:1 for their returns) and the sentence under the headline 2.3:1. The
+       headline green was 2.92:1 against its own tint on a phone, under the 3:1
+       large text owes. Tokens where a token exists; the two headline inks are the
+       deepest steps of the same hues. */
+    .pc-label{color:var(--text3)}
+    .pc-sub{color:var(--text3)}
+    .pc-stat{color:var(--text2)}
+    .pc-pct{color:#047857}
+    .pc-chip .pc-chip-lbl{color:var(--text3)}
+    html[data-theme="dark"] .pc-pct{color:#34d399}
+    html[data-theme="dark"] .profit-card.is-down .pc-pct{color:#f87171}
+    html[data-theme="dark"] .pc-pct.pc-flat{color:var(--text3)}
+    html[data-theme="dark"] .pc-chip{color:var(--text);background:rgba(255,255,255,.05);border-color:rgba(150,180,240,.22)}
+    html[data-theme="dark"] .pc-chip .pc-chip-ret.up{color:#34d399}
+    html[data-theme="dark"] .pc-chip .pc-chip-ret.down{color:#f87171}
+    html[data-theme="dark"] .pc-sub strong{color:var(--text)}
     /* V26.3: the live-profit headline loading state now reuses the skeleton-shimmer
        idiom (same .skel-bar as the picks-table skel rows loading beside it) instead
        of plain "Calculating…" text — a consistent, polished loading moment. */
@@ -3441,7 +3481,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     @media(max-width:640px){.pc-skel-num{height:30px;width:112px}.pc-pct{font-size:32px}.profit-card{padding:18px}.pc-right{flex-direction:row;flex-wrap:wrap;gap:14px}}
     /* per-row live price + return (inside the Rec. Price cell / mobile card) */
     td.price .px-rec{display:block;font-weight:600}
-    td.price .px-live{display:block;font-size:12px;font-weight:600;color:#64748b;margin-top:3px;white-space:nowrap}
+    /* V37.6 — was #64748b, a light-theme literal: 3.53:1 under the live price on the
+       dark table. The token is the same neutral in light and flips for dark. */
+    td.price .px-live{display:block;font-size:12px;font-weight:600;color:var(--text3);margin-top:3px;white-space:nowrap}
     .px-live .ret{font-weight:700}
     /* V29.1 — the per-row live return, same seam as the live module: #059669 is
        3.77:1 on the white table at 12px. These only paint once live prices land,
@@ -3473,6 +3515,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span>Live profit since rebalance <span id="pc-rebal-date"></span></div>
         <div class="pc-main"><span class="pc-pct" id="pc-pct">—</span></div>
         <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
+        <div class="pc-today" id="pc-today" hidden></div>
         <div class="pc-bench" id="pc-bench" style="display:none;"></div>
         <div class="pc-leaders" id="pc-leaders"></div>
       </div>
@@ -3589,6 +3632,16 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </div>
       </div>
       <div class="at-net" id="at-net"></div>
+      <!-- V37.6 — the same contributions, summed by industry (or asset class on
+           MultiAsset). Rendered by renderAttribution(); hidden when the book has
+           only one group, where the second view would repeat the first. -->
+      <div class="at-lhead" id="at-lhead" hidden>
+        <span class="at-lh-k" id="at-lh-k">Ranked by contribution</span>
+        <div class="pmap-tog at-tog" id="at-tog" role="group" aria-label="Rank the contributions by">
+          <button type="button" data-at="hold" aria-pressed="true">Holding</button>
+          <button type="button" data-at="grp" aria-pressed="false" id="at-tog-grp">Industry</button>
+        </div>
+      </div>
       <div class="at-rows" id="at-rows"></div>
       <div class="at-foot" id="at-foot">Contribution = the holding's model weight &times; its move since the rebalance, in percentage points of the headline above. All contributions sum to that headline exactly.</div>
     </div>
@@ -3984,9 +4037,9 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <h2>Position sizing</h2>
         <div class="size-meta">Enter your capital — we'll size each pick by its model weight so you can place orders straight from the table.</div>
         <div class="size-summary">
-          <span>Per stock: <strong id="size-per-stock">—</strong></span>
-          <span>Total allocated: <strong id="size-total-alloc">—</strong></span>
-          <span>Cash residue: <strong id="size-residue">—</strong></span>
+          <span class="ss-cell"><span class="ss-k">Per stock</span><span class="ss-c">: </span><strong id="size-per-stock">—</strong></span>
+          <span class="ss-cell"><span class="ss-k">Total allocated</span><span class="ss-c">: </span><strong id="size-total-alloc">—</strong></span>
+          <span class="ss-cell"><span class="ss-k">Cash residue</span><span class="ss-c">: </span><strong id="size-residue">—</strong></span>
         </div>
         <div class="size-deploy" id="size-deploy" style="display:none;">
           <span class="size-deploy-track" aria-hidden="true"><i id="size-deploy-fill" data-bar="0%"></i></span>
@@ -4181,15 +4234,15 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <h2>Your position</h2>
           <span class="mypos-sub" id="mypos-sub">From the prices you entered</span>
         </div>
-        <div class="mypos-scroll"><table class="mypos-tbl">
-          <thead><tr>
-            <th scope="col">Stock</th>
-            <th scope="col" class="r">Shares</th>
-            <th scope="col" class="r">Your price</th>
-            <th scope="col" class="r">Live</th>
-            <th scope="col" class="r">Your gain</th>
+        <div class="mypos-scroll"><table class="mypos-tbl" role="table">
+          <thead role="rowgroup"><tr role="row">
+            <th scope="col" role="columnheader">Stock</th>
+            <th scope="col" role="columnheader" class="r">Shares</th>
+            <th scope="col" role="columnheader" class="r">Your price</th>
+            <th scope="col" role="columnheader" class="r">Live</th>
+            <th scope="col" role="columnheader" class="r">Your gain</th>
           </tr></thead>
-          <tbody id="mypos-body"></tbody>
+          <tbody id="mypos-body" role="rowgroup"></tbody>
         </table></div>
         <div class="mypos-foot">
           <div class="mypos-tot"><span>You invested</span><strong id="mypos-cost">—</strong></div>
@@ -4337,7 +4390,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
                    dangling instruction for every monthly member, i.e. the entry plan and
                    the first column of the pricing table. Written from the same reading
                    that decides whether the toggle exists, so the two cannot disagree. -->
-              <p id="hs4-copy">Your picks stay fixed for your subscription. Turn on notifications above and we'll email you when next month's set is published — renew to switch to it.</p>
+              <p id="hs4-copy">Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it.</p>
               <div class="hs-live" hidden></div>
             </div>
           </div>
@@ -4483,7 +4536,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
              type), two short of the 44px every other control on this page holds. -->
         <style>#notif-email-input{ min-height:44px; min-width:0 !important; }
           @media (max-width:420px){ #notif-email-row input{ flex:1 1 100% !important; } #notif-email-row button{ flex:1 1 100%; min-height:44px; } }</style>
-        <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:#059669;">✓ You'll be emailed when next month's picks are published.</div>
+        <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:var(--data-strong,#047454);">✓ You'll be emailed when next month's picks are published.</div>
       </div>
 
       <!-- HOW TO INVEST -->
@@ -4625,6 +4678,10 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       .trk-key i{ font-style:normal; width:14px; height:8px; border-radius:2px; flex:0 0 auto;
         background:linear-gradient(90deg,#10b981,#059669); }
       html[data-theme="dark"] .trk-key i{ background:linear-gradient(90deg,#34d399,#0f9d6b); }
+      .trk-key i.is-down{ background:linear-gradient(90deg,#dc2626,#f87171); }
+      .trk-key i.is-split{ background:linear-gradient(90deg,#dc2626 0 50%,#10b981 50% 100%); }
+      html[data-theme="dark"] .trk-key i.is-down{ background:linear-gradient(90deg,#f87171,#e14b4b); }
+      html[data-theme="dark"] .trk-key i.is-split{ background:linear-gradient(90deg,#f87171 0 50%,#34d399 50% 100%); }
       .trk-key i.is-tick{ width:2px; height:12px; border-radius:2px; background:var(--text3); }
       /* V35.7 — the rows are a divergent bar chart drawn against ONE scale
          (max |cycle| across every row, floored at 1.0) and nothing said what
@@ -5712,6 +5769,10 @@ function _animateCount(el, target, opts) {
   opts = opts || {};
   const unitHtml = opts.unitHtml || '';
   const target_n = Number(target) || 0;
+  // V37.6 — a count can be re-written before its 950ms tween ends (the Orders
+  // tile moves with every tick), and the belt-and-braces timeout below would then
+  // put the OLD target back. Each call owns the element until the next one.
+  const tok = {}; el._acTok = tok;
   // Short-circuit when animation can't or shouldn't run:
   //  - prefers-reduced-motion
   //  - target is 0 (nothing satisfying about 0→0)
@@ -5728,6 +5789,7 @@ function _animateCount(el, target, opts) {
   const dur = 950;
   const start = performance.now();
   function step(now) {
+    if (el._acTok !== tok) return;
     const t = Math.min(1, (now - start) / dur);
     const eased = 1 - Math.pow(1 - t, 3);
     const v = Math.round(target_n * eased);
@@ -5737,7 +5799,7 @@ function _animateCount(el, target, opts) {
   requestAnimationFrame(step);
   // Belt-and-braces: if rAF never fires (background tab promoted mid-animation
   // and then re-hidden, etc.) guarantee the final value lands.
-  setTimeout(function() { el.innerHTML = target_n + unitHtml; }, dur + 250);
+  setTimeout(function() { if (el._acTok === tok) el.innerHTML = target_n + unitHtml; }, dur + 250);
 }
 
 // ── V21.3: STRATEGY SWITCHER ────────────────────────────────────────────────
@@ -9138,6 +9200,7 @@ function refreshBoughtProgress() {
   refreshSession(map);
   refreshHowto();
   try { renderHeroJob(); } catch (e) {}   // V37.3 — the hero line counts what is left
+  try { refreshOrdersTile(false); } catch (e) {}   // V37.6 — and so does the Orders tile
   refreshKiteBasket();      // V34.2 — a tick removes that row from the basket
 }
 
@@ -9835,17 +9898,21 @@ function refreshSession(map) {
       document.querySelectorAll('#sess-bars .sess-b-fl').forEach(el => { el.style.width = el.dataset.w; });
     }, 120);
 
+    /* V37.6 — `left` counts model picks not yet in the book, i.e. BUYS. It was
+       worded "orders", one card below a progress bar that counts the cycle's
+       sells as well — "3 to go" over "1 order still to place" on the same screen. */
     const left = plannedN - placedN;
+    const leftWord = left === 1 ? ' buy order' : ' buy orders';
     const more = inds.length > SHOWN ? ' (showing the top ' + SHOWN + ' of ' + inds.length + ')' : '';
     const spread = '<b>' + inds.length + '</b> of <b>' + nFull + '</b> ' + axisWords;
     document.getElementById('sess-note').innerHTML = hot
       ? ('Right now the book you actually hold is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) +
          ', across ' + spread + ' &mdash; the finished model caps any one ' + axisWord + ' at <b>' + capPct.toFixed(1) +
-         '%</b> (dashed line)' + more + '. Placing the remaining <b>' + left + '</b> order' + (left === 1 ? '' : 's') +
+         '%</b> (dashed line)' + more + '. Placing the remaining <b>' + left + '</b>' + leftWord +
          ' brings it back; spreading them across ' + axisWords + ' as you go keeps it closer on the way.')
       : ('Your part-placed book is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) + ' at its heaviest, across ' +
          spread + ' &mdash; close to the finished model’s <b>' + capPct.toFixed(1) + '%</b> ceiling' + more +
-         '. <b>' + left + '</b> order' + (left === 1 ? '' : 's') + ' still to place.');
+         '. <b>' + left + '</b>' + leftWord + ' still to place.');
     box.style.display = '';
   } catch (e) { /* a mid-session read must never break the table */ }
 }
@@ -10116,8 +10183,17 @@ function _setHowToStep4(){
   if (!p) return;
   var sub = window._currentSub || {};
   var months = Number(sub.duration_months) || 1;
+  /* V37.6 — "above" had been false since V35.2 moved this card up the page: the
+     notification toggle sits BELOW it, past the Adjust-your-book planner. The
+     direction is read from the document rather than typed, so the next reorder
+     cannot strand the sentence again. */
+  var where = 'below';
+  try {
+    var ns = document.getElementById('notif-section');
+    if (ns && (p.compareDocumentPosition(ns) & Node.DOCUMENT_POSITION_PRECEDING)) where = 'above';
+  } catch (e) {}
   p.textContent = months > 1
-    ? "Your book updates automatically on the 1st — the picks here are always the current set, for as long as your subscription runs. Turn on notifications above and we'll email you the moment a new set lands."
+    ? "Your book updates automatically on the 1st — the picks here are always the current set, for as long as your subscription runs. Turn on rebalance notifications " + where + " and we'll email you the moment a new set lands."
     : "Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it. Automatic monthly updates and email alerts come with the 3-month plan and longer.";
 }
 
@@ -10844,6 +10920,53 @@ function renderHeroJob(){
            : 'Everything else is already in place.');
 }
 
+/* ── V37.6 · THE ORDERS TILE COUNTS WHAT IS LEFT ──────────────────────────────
+   "Orders to place · 6" sat beside a hero line reading "3 orders to place" and a
+   progress card reading "3 of 6 placed · 3 to go": the tile printed the cycle's
+   TOTAL under a label that means the remainder, and it never moved when a member
+   ticked an order. It now reads the same tick map, through the same
+   cycleOrders()/orderKey() pair, as the hero line and the progress bar, and its
+   meter is the share placed rather than a second copy of the turnover the "New
+   this cycle" tile beside it already draws. Returns false when the cycle has no
+   orders at all, so the caller keeps its rotation / nothing-to-trade wording. */
+function refreshOrdersTile(animate){
+  var oVal = document.getElementById('stat-orders'), oSub = document.getElementById('stat-orders-sub');
+  var oMeter = document.getElementById('ord-meter'), oFill = document.getElementById('ord-meter-fill');
+  if (!oVal || !oSub) return false;
+  var oc = cycleOrders(), n = oc.all.length;
+  if (!n) return false;
+  var map = loadBought(currentStrategy) || {};
+  var leftIn  = oc.buys.filter(function(o){ return !map[orderKey(o)]; }).length;
+  var leftOut = oc.sells.filter(function(o){ return !map[orderKey(o)]; }).length;
+  var left = leftIn + leftOut, placed = n - left;
+  var sides = function(b, s){
+    return [b ? b + (b === 1 ? ' buy' : ' buys') : '', s ? s + (s === 1 ? ' sell' : ' sells') : '']
+      .filter(Boolean).join(' · ');
+  };
+  if (animate) _animateCount(oVal, left, {});
+  else if (String(oVal.textContent) !== String(left)) { oVal._acTok = null; oVal.textContent = left; }
+
+  var first = !oc.known;
+  if (!placed){
+    oSub.textContent = first ? 'the full book — your first tracked cycle'
+                             : sides(oc.buys.length, oc.sells.length);
+  } else if (left){
+    oSub.textContent = 'left of ' + n + ' · ' + (first ? placed + ' placed' : sides(leftIn, leftOut));
+  } else {
+    oSub.textContent = 'all ' + n + ' placed — done for this cycle';
+  }
+  if (oMeter && oFill){
+    var w = Math.round(placed / n * 100) + '%';
+    oFill.setAttribute('data-bar', w);
+    if (oFill.style.width) oFill.style.width = w;   // the shared applier has already run
+    oMeter.style.display = '';
+    oMeter.classList.toggle('is-done', !left);
+  }
+  var card = document.getElementById('stat-card-orders');
+  if (card) card.title = placed + ' of ' + n + ' order' + (n === 1 ? '' : 's') + ' placed this cycle';
+  return true;
+}
+
 /* ── the change module + the two KPI tiles it feeds ────────────────────────────
    One writer for all three surfaces, so the tiles and the card can never state
    different counts. Everything is gated on diff.known. */
@@ -10863,9 +10986,11 @@ function renderBookChange(diff, stocks){
     if (nMeter) nMeter.style.display = 'none';
     // Orders is still answerable without a diff: with no previous book, the book
     // IS the order list. That is exactly true for a member in their first cycle.
-    if (oVal) _animateCount(oVal, total, {});
-    if (oSub) oSub.textContent = total ? 'the full book — your first tracked cycle' : 'no picks published yet';
-    if (oMeter) oMeter.style.display = 'none';
+    if (!refreshOrdersTile(true)){
+      if (oVal) _animateCount(oVal, total, {});
+      if (oSub) oSub.textContent = total ? 'the full book — your first tracked cycle' : 'no picks published yet';
+      if (oMeter) oMeter.style.display = 'none';
+    }
     renderHeroJob();
     return;
   }
@@ -10900,21 +11025,25 @@ function renderBookChange(diff, stocks){
   // V35.4 — with no names changing but weights re-scored, the work is the
   // rebalance, so the tile counts that instead of printing a contradictory zero.
   var tileN = orders || nMoved;
-  if (oVal) _animateCount(oVal, tileN, {});
-  if (oSub) oSub.textContent = orders
-    ? (nIn + (nIn === 1 ? ' buy' : ' buys') + ' · ' + nOut + (nOut === 1 ? ' sell' : ' sells'))
-    : (nMoved
-        ? 'weights to adjust — no names change'   // MultiAsset: same sleeve, new targets
-        : isWeightedBook(stocks)
-          // A weighted book whose previous WEIGHTS were never recorded (a device
-          // whose history predates V35.3) cannot know whether they moved. It must
-          // not fall through to "nothing to trade", which is the one thing that is
-          // never true of MultiAsset.
-          ? 'no names change — weights rotate'
-          : 'nothing to trade — the book is unchanged');
-  if (oMeter && oFill && total){
-    oFill.setAttribute('data-bar', Math.min(100, Math.round(tileN / total * 100)) + '%');
-    oMeter.style.display = '';
+  // V37.6 — a cycle with orders is counted by refreshOrdersTile(), which reads
+  // the tick map; the rotation and no-trade wordings below are unchanged.
+  if (!(orders && refreshOrdersTile(true))){
+    if (oVal) _animateCount(oVal, tileN, {});
+    if (oSub) oSub.textContent = orders
+      ? (nIn + (nIn === 1 ? ' buy' : ' buys') + ' · ' + nOut + (nOut === 1 ? ' sell' : ' sells'))
+      : (nMoved
+          ? 'weights to adjust — no names change'   // MultiAsset: same sleeve, new targets
+          : isWeightedBook(stocks)
+            // A weighted book whose previous WEIGHTS were never recorded (a device
+            // whose history predates V35.3) cannot know whether they moved. It must
+            // not fall through to "nothing to trade", which is the one thing that is
+            // never true of MultiAsset.
+            ? 'no names change — weights rotate'
+            : 'nothing to trade — the book is unchanged');
+    if (oMeter && oFill && total){
+      oFill.setAttribute('data-bar', Math.min(100, Math.round(tileN / total * 100)) + '%');
+      oMeter.style.display = '';
+    }
   }
 
   if (!card) return;
@@ -11271,6 +11400,7 @@ function setProfitLoading(rebal){
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Fetching live prices for your holdings…';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
   var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
+  var tdy = document.getElementById('pc-today'); if (tdy) tdy.hidden = true;
   var card = document.getElementById('profit-card'); if (card) card.classList.remove('is-down');
 }
 function setProfitUnavailable(){
@@ -11278,6 +11408,7 @@ function setProfitUnavailable(){
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Live prices are temporarily unavailable — tap Refresh to try again.';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
   var ld = document.getElementById('pc-leaders'); if (ld) ld.innerHTML = '';
+  var tdy = document.getElementById('pc-today'); if (tdy) tdy.hidden = true;
   // V28.3: the attribution card decomposes a headline that no longer exists —
   // leave nothing behind that looks like live attribution.
   var ac = document.getElementById('attrib-card'); if (ac) ac.style.display = 'none';
@@ -11469,15 +11600,17 @@ function renderMyPosition(){
     document.getElementById('mypos-body').innerHTML = rows.map(function(r){
       var cls = r.gain == null ? '' : (r.gain > 0 ? 'up' : (r.gain < 0 ? 'down' : ''));
       var sign = (r.gain != null && r.gain > 0) ? '+' : '';   // for the % only
-      return '<tr>' +
-        '<td class="myp-tk">' + escapeHtml(r.t) + '</td>' +
-        '<td class="r">' + r.q + '</td>' +
-        '<td class="r"><input type="number" class="myp-px" inputmode="decimal" step="0.05" min="0"' +
+      // V37.6 — each cell names its column (class + data-k), so the phone layout
+      // below can label and place it without counting columns.
+      return '<tr role="row">' +
+        '<td role="cell" class="myp-tk">' + escapeHtml(r.t) + '</td>' +
+        '<td role="cell" class="r myp-q" data-k="Shares">' + r.q + '</td>' +
+        '<td role="cell" class="r myp-paid" data-k="Your price"><input type="number" class="myp-px" inputmode="decimal" step="0.05" min="0"' +
           ' value="' + r.mine.toFixed(2) + '"' +
           ' aria-label="Price you paid for ' + escapeHtml(r.t) + ', per share"' +
           ' data-myp="' + escapeHtml(r.t) + '" onchange="setFillPrice(this)"></td>' +
-        '<td class="r">' + (r.live != null ? fmtPrice(r.live) : '—') + '</td>' +
-        '<td class="r ' + cls + '">' + (r.gain != null
+        '<td role="cell" class="r myp-live" data-k="Live">' + (r.live != null ? fmtPrice(r.live) : '—') + '</td>' +
+        '<td role="cell" class="r myp-gain ' + cls + '">' + (r.gain != null
             ? sAmt(r.gain) + ' <span class="' + cls + '">' + sign + r.pct.toFixed(1) + '%</span>'
             : '—') + '</td>' +
       '</tr>';
@@ -11553,6 +11686,7 @@ function renderProfitHeadline(){
   var px = window._livePx || {}; var stocks = stocksData || [];
   var wSum = 0, wRet = 0, absGain = 0, up = 0, down = 0, flat = 0, n = 0, best = null, worst = null;
   var contrib = [];   // V28.3 — {t, r, wr} per holding; wr/wSum is its pp of the headline
+  var day = { w: 0, wr: 0, n: 0, up: 0, down: 0 };   // V37.6 — the book's 1D move
   stocks.forEach(function(s){
     var rec = Number(s.recommended_price) || 0; var p = px[s.yahoo_ticker];
     if (!rec || !p) return;
@@ -11562,6 +11696,14 @@ function renderProfitHeadline(){
     var r = _retPct(rec, p.price); if (r == null) return;
     var w = Number(s.weight_pct) || 0;
     wSum += w; wRet += w * r; n++;
+    // Same expression and the same ±0.05 flat band paintLivePrices uses for the
+    // row's own 1D figure, so the total is the weighted sum of what the rows print.
+    var pv = Number(p.prev) || 0;
+    if (pv > 0 && Number(p.price) > 0){
+      var dr = (Number(p.price) - pv) / pv * 100;
+      day.w += w; day.wr += w * dr; day.n++;
+      if (dr > 0.05) day.up++; else if (dr < -0.05) day.down++;
+    }
     contrib.push({ t: s.ticker, r: r, wr: w * r });
     /* V37.3 — the third class. This counted two and printed two, so a holding
        inside the ±0.05 flat band was silently dropped: the card read "Weighted
@@ -11617,11 +11759,41 @@ function renderProfitHeadline(){
     }
     ld.innerHTML = (n >= 2 && best && worst && best.t !== worst.t) ? (chip('Top', best) + chip('Lagging', worst)) : '';
   }
+  try { renderTodayMove(day, n); } catch (e) { var tdy = document.getElementById('pc-today'); if (tdy) tdy.hidden = true; }
   // V28.3: attribution card. Same wRet/wSum the headline came from, so it is a
   // decomposition of that number and not a second opinion about it.
   try { renderAttribution(contrib, wSum, port); } catch (e) { var ac = document.getElementById('attrib-card'); if (ac) ac.style.display = 'none'; }
   // V27.9: benchmark row. Non-blocking — the headline never waits on it.
   loadBenchPerf().then(function(){ try { renderBenchCompare(port); } catch (e) {} });
+}
+
+/* V37.6 — the book's day move, on the line under the since-rebalance headline.
+   Two decimals and the ±0.05 band, exactly as each row's own 1D figure, so the
+   total reads as the sum of what the table prints. Withheld — not computed from
+   a partial set — when fewer than four in five priced holdings carry a previous
+   close: a book total that quietly leaves names out is the self-consistent wrong
+   number this card has always refused to print. */
+function renderTodayMove(day, nPriced){
+  var el = document.getElementById('pc-today');
+  if (!el) return;
+  if (!day || !(day.w > 0) || day.n < 2 || day.n < Math.ceil(nPriced * 0.8)){
+    el.hidden = true; el.innerHTML = ''; el.removeAttribute('aria-label'); return;
+  }
+  var v = day.wr / day.w;
+  var num = parseFloat(v.toFixed(2));
+  var cls = v > 0.05 ? 'up' : (v < -0.05 ? 'down' : '');
+  var txt = (num > 0 ? '+' : num < 0 ? '−' : '') + Math.abs(num).toFixed(2) + '%';
+  // NSE closed means prev_close is the session before the last traded one, so
+  // the move is that session's, whatever the calendar says.
+  var when = _nseIsOpen() ? 'today' : 'on the last session';
+  var flat = day.n - day.up - day.down;
+  var br = day.up + ' up · ' + day.down + ' down' + (flat ? ' · ' + flat + ' flat' : '') +
+           (day.n < nPriced ? ' · ' + day.n + ' of ' + nPriced + ' priced' : '');
+  el.innerHTML = '<span class="pct-k" aria-hidden="true">1D</span>' +
+    '<span><b class="pct-v ' + cls + '">' + txt + '</b> ' + when + '</span>' +
+    '<span class="pct-br">' + br + '</span>';
+  el.setAttribute('aria-label', 'Your book moved ' + txt + ' ' + when + ': ' + br + '.');
+  el.hidden = false;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -11695,61 +11867,144 @@ function renderAttribution(rows, wSum, port){
                ' cost you <b>' + Math.abs(drag).toFixed(2) + ' pp</b>.' : '.');
   }
 
-  // ── the ladder. Widest bar = largest absolute contribution.
-  var LIFT_N = 5, DRAG_N = 3;
-  var ups = pp.filter(function(x){ return x.c > 0; });
-  var downs = pp.filter(function(x){ return x.c < 0; }).reverse();   // worst first
-  var shownUp = ups.slice(0, LIFT_N), shownDown = downs.slice(0, DRAG_N);
-  var maxAbs = Math.max.apply(null, pp.map(function(x){ return Math.abs(x.c); }).concat([0.0001]));
-
-  var rowHTML = function(x){
-    var cls = x.c >= 0 ? 'up' : 'down';
-    var w = (Math.abs(x.c) / maxAbs) * 100;
-    return '<div class="at-row" title="' + escapeHtml(x.t) + ' · ' + (x.r > 0 ? '+' : '') + x.r.toFixed(1) +
-           '% since the rebalance\u00A0· ' + fmtPP(x.c) + ' pp of the headline">' +
-           '<span class="at-tick">' + escapeHtml(x.t) + '</span>' +
-           '<span class="at-track"><i class="at-fill ' + cls + '" data-bar="' + w.toFixed(1) + '%"></i></span>' +
-           '<span class="at-pp ' + cls + '">' + fmtPP(x.c) + '</span></div>';
-  };
-  var html = shownUp.map(rowHTML).join('');
-  if (shownDown.length){
-    // V30.2: the divider separates lift from drag, so it needs something above
-    // it. On the all-down cycle above it was the first thing in the ladder —
-    // "holding it back" captioning nothing.
-    if (shownUp.length) html += '<div class="at-gap" aria-hidden="true">holding it back</div>';
-    html += shownDown.map(rowHTML).join('');
-  }
-  document.getElementById('at-rows').innerHTML = html;
-
-  // ── say what was dropped, and the range it spans. Never a silent cap.
-  var hidden = (ups.length - shownUp.length) + (downs.length - shownDown.length);
-  var foot = document.getElementById('at-foot');
-  var base = 'Contribution = the holding’s model weight × its move since the rebalance, in percentage points of the headline above. All ' +
-             pp.length + ' contributions sum to that headline exactly.';
-  if (hidden > 0){
-    var rest = ups.slice(shownUp.length).concat(downs.slice(shownDown.length)).map(function(x){ return x.c; });
-    var lo = Math.min.apply(null, rest), hi = Math.max.apply(null, rest);
-    /* V37.4 — this sentence had one shape for three cases and got two of them
-       wrong. Measured on a ten-name book with four holdings down, which is an
-       ordinary month: "The 1 not listed each contributed between −0.01 and
-       −0.01 pp." — "each" of one, and a range whose ends are the same number.
-       The range is only a range when the two ENDS DIFFER ONCE FORMATTED; the
-       raw floats almost never tie, so the comparison has to be made on the
-       strings the reader actually sees, not on the values behind them. */
-    var loS = fmtPP(lo), hiS = fmtPP(hi);
-    base += (hidden === 1)
-      ? ' The one not listed contributed ' + loS + ' pp.'
-      : (loS === hiS)
-        ? ' The ' + hidden + ' not listed each contributed ' + loS + ' pp.'
-        : ' The ' + hidden + ' not listed each contributed between ' + loS + ' and ' + hiS + ' pp.';
-  }
-  foot.textContent = base;
-
-  document.getElementById('at-sub').textContent =
-    pp.length + ' priced holding' + (pp.length === 1 ? '' : 's') + ' · net ' + fmtPP(port) + '%';
-
+  // ── the ladder. Held on window so the Holding / Industry toggle can redraw
+  //    it without re-deriving a single contribution (V37.6).
+  window._atState = { pp: pp, port: port };
+  _atRenderLadder();
   card.style.display = '';
+}
+
+/* V37.6 — WHERE THE NUMBER CAME FROM, BY INDUSTRY.
+   The ladder answers "which holdings"; a member's next question is "which part
+   of the market", and on a two-per-industry book the answer is not visible from
+   fifteen rows sorted by size — two Capital Goods names can sit at ranks 2 and 11.
+   Each group's figure is the plain SUM of its holdings' contributions, so the
+   groups still add up to the headline exactly, the same promise the holdings view
+   makes. Grouped by groupKeyOf(), the key the chips, the allocation card and the
+   donut already use, so a MultiAsset book reads by asset class here too, and each
+   group wears the colour it wears everywhere else on the page. */
+function _atRenderLadder(){
+  var st = window._atState; if (!st || !st.pp) return;
+  var pp = st.pp, port = st.port;
+  var card = document.getElementById('attrib-card');
+  var fmtPP = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2); };
+  var list = stocksData || [];
+  var byT = {}; list.forEach(function(s){ byT[String(s.ticker)] = s; });
+
+  // groups — built first so the toggle can stand down on a one-group book
+  var gmap = {}, groups = [];
+  pp.forEach(function(x){
+    var s = byT[String(x.t)]; if (!s) return;
+    var k = groupKeyOf(s);
+    if (!gmap[k]){ gmap[k] = { t: k, c: 0, n: 0 }; groups.push(gmap[k]); }
+    gmap[k].c += x.c; gmap[k].n++;
+  });
+  var aclass = isAssetClassBook(list);
+  var gWord = aclass ? 'asset class' : 'industry', gWords = aclass ? 'asset classes' : 'industries';
+  var head = document.getElementById('at-lhead'), tog = document.getElementById('at-tog');
+  var canGroup = groups.length >= 2 && groups.length < pp.length;
+  var mode = 'hold';
+  try { if (localStorage.getItem('mfc_attrib_view') === 'grp') mode = 'grp'; } catch (e) {}
+  if (!canGroup) mode = 'hold';
+  if (head){
+    head.hidden = !canGroup;
+    var gb = document.getElementById('at-tog-grp');
+    if (gb) gb.textContent = aclass ? 'Asset class' : 'Industry';
+    if (tog){
+      tog.querySelectorAll('button[data-at]').forEach(function(b){ b.setAttribute('aria-pressed', String(b.getAttribute('data-at') === mode)); });
+      if (!tog.dataset.bound){
+        tog.dataset.bound = '1';
+        tog.addEventListener('click', function(ev){
+          var b = ev.target && ev.target.closest ? ev.target.closest('button[data-at]') : null;
+          if (!b) return;
+          try { localStorage.setItem('mfc_attrib_view', b.getAttribute('data-at')); } catch (e) {}
+          _atRenderLadder();
+        });
+      }
+    }
+  }
+
+  var rowsEl = document.getElementById('at-rows'), foot = document.getElementById('at-foot');
+  var html = '', base = '';
+  if (mode === 'grp'){
+    var colorMap = buildSectorColorMap(list);
+    var gUp = groups.filter(function(g){ return g.c > 0; }).sort(function(a, b){ return b.c - a.c; });
+    var gDn = groups.filter(function(g){ return g.c <= 0; }).sort(function(a, b){ return a.c - b.c; });
+    var gMax = Math.max.apply(null, groups.map(function(g){ return Math.abs(g.c); }).concat([0.0001]));
+    var gRow = function(g){
+      var cls = g.c >= 0 ? 'up' : 'down';
+      var w = (Math.abs(g.c) / gMax) * 100;
+      return '<div class="at-row at-grow" title="' + escapeHtml(g.t) + ' · ' + g.n + ' holding' + (g.n === 1 ? '' : 's') +
+             ' · ' + fmtPP(g.c) + ' pp of the headline">' +
+             '<span class="at-tick at-grp"><i class="at-dot" style="background:' + groupColorOf(g.t, colorMap) + '"></i>' +
+               '<span class="at-grp-nm">' + escapeHtml(g.t) + '</span><em class="at-grp-n">' + g.n + '</em></span>' +
+             '<span class="at-track"><i class="at-fill ' + cls + '" data-bar="' + w.toFixed(1) + '%"></i></span>' +
+             '<span class="at-pp ' + cls + '">' + fmtPP(g.c) + '</span></div>';
+    };
+    html = gUp.map(gRow).join('');
+    if (gDn.length){
+      if (gUp.length) html += '<div class="at-gap" aria-hidden="true">holding it back</div>';
+      html += gDn.map(gRow).join('');
+    }
+    base = 'Each ' + gWord + '’s figure is the sum of its holdings’ contributions — weight × move since the rebalance, in percentage points of the headline. All ' +
+           groups.length + ' ' + gWords + ' sum to that headline exactly; the number beside each name is how many holdings it has.';
+  } else {
+    // ── Widest bar = largest absolute contribution.
+    var LIFT_N = 5, DRAG_N = 3;
+    var ups = pp.filter(function(x){ return x.c > 0; });
+    var downs = pp.filter(function(x){ return x.c < 0; }).reverse();   // worst first
+    var shownUp = ups.slice(0, LIFT_N), shownDown = downs.slice(0, DRAG_N);
+    var maxAbs = Math.max.apply(null, pp.map(function(x){ return Math.abs(x.c); }).concat([0.0001]));
+
+    var rowHTML = function(x){
+      var cls = x.c >= 0 ? 'up' : 'down';
+      var w = (Math.abs(x.c) / maxAbs) * 100;
+      return '<div class="at-row" title="' + escapeHtml(x.t) + ' · ' + (x.r > 0 ? '+' : '') + x.r.toFixed(1) +
+             '% since the rebalance · ' + fmtPP(x.c) + ' pp of the headline">' +
+             '<span class="at-tick">' + escapeHtml(x.t) + '</span>' +
+             '<span class="at-track"><i class="at-fill ' + cls + '" data-bar="' + w.toFixed(1) + '%"></i></span>' +
+             '<span class="at-pp ' + cls + '">' + fmtPP(x.c) + '</span></div>';
+    };
+    html = shownUp.map(rowHTML).join('');
+    if (shownDown.length){
+      // V30.2: the divider separates lift from drag, so it needs something above
+      // it. On the all-down cycle above it was the first thing in the ladder —
+      // "holding it back" captioning nothing.
+      if (shownUp.length) html += '<div class="at-gap" aria-hidden="true">holding it back</div>';
+      html += shownDown.map(rowHTML).join('');
+    }
+
+    // ── say what was dropped, and the range it spans. Never a silent cap.
+    var hidden = (ups.length - shownUp.length) + (downs.length - shownDown.length);
+    base = 'Contribution = the holding’s model weight × its move since the rebalance, in percentage points of the headline above. All ' +
+           pp.length + ' contributions sum to that headline exactly.';
+    if (hidden > 0){
+      var rest = ups.slice(shownUp.length).concat(downs.slice(shownDown.length)).map(function(x){ return x.c; });
+      var lo = Math.min.apply(null, rest), hi = Math.max.apply(null, rest);
+      /* V37.4 — this sentence had one shape for three cases and got two of them
+         wrong. Measured on a ten-name book with four holdings down, which is an
+         ordinary month: "The 1 not listed each contributed between −0.01 and
+         −0.01 pp." — "each" of one, and a range whose ends are the same number.
+         The range is only a range when the two ENDS DIFFER ONCE FORMATTED; the
+         raw floats almost never tie, so the comparison has to be made on the
+         strings the reader actually sees, not on the values behind them. */
+      var loS = fmtPP(lo), hiS = fmtPP(hi);
+      base += (hidden === 1)
+        ? ' The one not listed contributed ' + loS + ' pp.'
+        : (loS === hiS)
+          ? ' The ' + hidden + ' not listed each contributed ' + loS + ' pp.'
+          : ' The ' + hidden + ' not listed each contributed between ' + loS + ' and ' + hiS + ' pp.';
+    }
+  }
+  if (rowsEl) rowsEl.innerHTML = html;
+  if (foot) foot.textContent = base;
+
+  document.getElementById('at-sub').textContent = (mode === 'grp'
+      ? groups.length + ' ' + (groups.length === 1 ? gWord : gWords)
+      : pp.length + ' priced holding' + (pp.length === 1 ? '' : 's')) + ' · net ' + fmtPP(port) + '%';
+
   // shared [data-bar] applier: paint from 0 so every bar GROWS (site idiom)
+  if (!card) return;
   requestAnimationFrame(function(){
     card.querySelectorAll('[data-bar]').forEach(function(b){ b.style.width = b.dataset.bar; });
   });
@@ -11778,16 +12033,24 @@ function renderAttribution(rows, wSum, port){
        nothing instead of guessing a benchmark.
    Fail-soft throughout: no fetch, no data, no match → the card is exactly what
    it was before. ══════════════════════════════════════════════════════════ */
-var _benchPerf = null, _benchPerfTried = false;
+/* V37.6 — the flag is now the PROMISE. It was a boolean set on the first call,
+   and every later call returned Promise.resolve(_benchPerf) — which is null for
+   as long as the first request is still in the air. renderDashboard makes the
+   first call; renderProfitHeadline makes the second the moment prices land. When
+   prices came back first — the price cache, which answers without a request for
+   five minutes while NSE is open and all evening after the bell — the benchmark
+   row read null, drew nothing, and was never asked again until the member
+   happened to change their capital. Every caller now waits on the same fetch. */
+var _benchPerf = null, _benchPerfP = null;
 function loadBenchPerf(){
-  if (_benchPerfTried) return Promise.resolve(_benchPerf);
-  _benchPerfTried = true;
+  if (_benchPerfP) return _benchPerfP;
   try {
-    return fetch('live-perf.json', { cache: 'no-store' })
+    _benchPerfP = fetch('live-perf.json', { cache: 'no-store' })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ _benchPerf = d; return d; })
       .catch(function(){ return null; });
-  } catch (e) { return Promise.resolve(null); }
+  } catch (e) { _benchPerfP = Promise.resolve(null); }
+  return _benchPerfP;
 }
 function _strategyPerfKey(name){
   if (/multiasset/i.test(name))  return 'ma';
@@ -11813,16 +12076,16 @@ function _isoDay(d){
    forwarded page still leaks no picks.
    Fail-soft throughout: no file, no strategy match, no cycles → the card never
    appears and the page is exactly what it was. */
-var _trkTried = false;
+var _trkP = null;   // V37.6 — the promise, not a flag: see loadBenchPerf
 function loadTrackRecord(){
-  if (_trkTried) return Promise.resolve(window._trkData || null);
-  _trkTried = true;
+  if (_trkP) return _trkP;
   try {
-    return fetch('live-history.json', { cache:'no-store' })
+    _trkP = fetch('live-history.json', { cache:'no-store' })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ window._trkData = d; return d; })
       .catch(function(){ return null; });
-  } catch(e){ return Promise.resolve(null); }
+  } catch(e){ _trkP = Promise.resolve(null); }
+  return _trkP;
 }
 function renderTrackRecord(){
   var card = document.getElementById('trk-card');
@@ -11835,10 +12098,10 @@ function renderTrackRecord(){
   // Only cycles this strategy actually has a figure for. A null live_pct is the
   // coverage guard in live_perf.py firing (fewer than 80% of the book priced) and
   // it publishes null precisely so nothing downstream invents a number for it.
-  var rows = d.cycles.map(function(c){
+  var rows = d.cycles.map(function(c, ix){
     var s = (c.strategies || {})[key];
     if (!s || s.live_pct == null || !isFinite(s.live_pct)) return null;
-    return { when:c.rebalance_date, through:c.data_through, sealed:!!c.sealed,
+    return { ix:ix, when:c.rebalance_date, through:c.data_through, sealed:!!c.sealed,
              live:Number(s.live_pct),
              bench:(s.bench_pct != null && isFinite(s.bench_pct)) ? Number(s.bench_pct) : null,
              benchName:s.bench_name || '' };
@@ -11919,7 +12182,12 @@ function renderTrackRecord(){
         '<span class="trk-val ' + cls + '">' + fmtPct(r.live) + gapEl + '</span>' +
       '</div>';
     }).join('') +
-    '<div class="trk-key"><span><i></i>Your strategy</span>' +
+    // V37.6 — the swatch was always the gain gradient, so a book whose only row
+    // is a red loss bar was keyed by a green swatch that matched nothing drawn.
+    '<div class="trk-key"><span><i class="' + (function(){
+      var anyUp = rows.some(function(r){ return r.live >= 0; }), anyDn = rows.some(function(r){ return r.live < 0; });
+      return anyUp && anyDn ? 'is-split' : (anyDn ? 'is-down' : '');
+    })() + '"></i>Your strategy</span>' +
       (rows[0].benchName ? '<span><i class="is-tick"></i>' + escapeHtml(rows[0].benchName) + '</span>' : '') +
       // V35.7 — name the scale the bars are drawn against. `scale` is the widest
       // absolute move on the chart (floored at 1.0), and a bar reaching the edge
@@ -11942,6 +12210,22 @@ function renderTrackRecord(){
     sub.textContent = rows.length === 1
       ? 'The first cycle on record. This builds a row a month.'
       : rows.length + ' cycles on record' + (sealed < rows.length ? ', the newest still running' : '');
+    /* V37.6 — what the rows add up to. Each cycle rebalances into the next book,
+       so the cycles chain multiplicatively, and that is only true when they are
+       CONSECUTIVE: a null month skipped by the coverage guard would compound
+       across a gap and state a return for a period nobody measured. So it
+       renders only when every row is the entry after the one before it, and the
+       benchmark half only when every row carries one. */
+    var chain = rows.length >= 2 && rows.every(function(r, i){ return !i || r.ix === rows[i - 1].ix + 1; });
+    if (chain){
+      var cm = 1, cb = 1, hasB = true;
+      rows.forEach(function(r){
+        cm *= 1 + r.live / 100;
+        if (r.bench == null) hasB = false; else cb *= 1 + r.bench / 100;
+      });
+      sub.textContent += ' · compounded ' + fmtPct((cm - 1) * 100) +
+        (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (rows[rows.length - 1].benchName || 'the index') : '');
+    }
   }
   var badge = document.getElementById('trk-badge');
   if (badge){
@@ -15976,6 +16260,171 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
   render();
 })();
 </script>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     V37.6 · THE SURFACES DEMO MODE NEVER RENDERS, AND THE NAMES REAL BOOKS USE
+     Swept with a stubbed backend on the real token path — live prices, a
+     previous cycle, recorded fills — because ?demo hides the profit card, the
+     attribution card and "Your position", and its fixture sectors ("Banks",
+     "IT Services") are a third the length of the NSE sector names the real
+     books carry ("Automobile and Auto Components", "Fast Moving Consumer
+     Goods"). Every rule below answers a measurement from that sweep.
+     ═════════════════════════════════════════════════════════════════ -->
+<style id="mf-v376-dash">
+/* ── attribution: the Holding / Industry switch and the grouped rows ───────── */
+.at-lhead{ display:flex; align-items:center; justify-content:space-between; gap:8px 12px; flex-wrap:wrap;
+  margin-top:16px; max-width:var(--at-measure,820px); }
+.at-lh-k{ font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+.at-lhead:not([hidden]) + .at-rows{ margin-top:10px; }
+.at-row.at-grow{ grid-template-columns:minmax(150px,220px) minmax(0,1fr) 74px; }
+.at-tick.at-grp{ display:flex; align-items:center; gap:7px; white-space:normal; overflow:visible;
+  text-overflow:clip; line-height:1.25; }
+.at-dot{ width:8px; height:8px; border-radius:50%; flex:0 0 auto; }
+.at-grp-nm{ min-width:0; }
+.at-grp-n{ flex:0 0 auto; font-style:normal; font-size:10.5px; font-weight:700; color:var(--text2);
+  min-width:18px; padding:0 6px; border-radius:999px; text-align:center; background:rgba(15,23,42,.06); }
+html[data-theme="dark"] .at-grp-n{ background:rgba(255,255,255,.08); }
+/* phone: the name takes its own line and the bar the full width under it. A
+   122px name column split "Telecommunication" mid-word (body is break-word, the
+   last-resort rule for a word wider than its box), and no width that fits it
+   leaves the 320px bar anything to draw with. */
+@media (max-width:600px){
+  .at-row.at-grow{ grid-template-columns:minmax(0,1fr) 58px; grid-template-areas:"nm nm" "tr pp"; row-gap:5px; }
+  .at-row.at-grow .at-tick{ grid-area:nm; }
+  .at-row.at-grow .at-track{ grid-area:tr; }
+  .at-row.at-grow .at-pp{ grid-area:pp; }
+  .at-lhead .at-tog{ margin-left:0; }
+}
+
+/* ── the Orders tile: its meter is progress now, and finished reads finished ── */
+.stat-meter.is-done i{ background:linear-gradient(90deg,#059669,#34d399); }
+
+/* ── Your position, as cards on a phone ─────────────────────────────────────
+   420px of columns in a 321px card put LIVE half off the edge and YOUR GAIN —
+   the figure the card exists for — entirely behind a sideways scroll. Each row
+   becomes the ticker and its gain on one line, then shares / your price / live
+   as three labelled cells, so nothing is off-screen and nothing scrolls. */
+@media (max-width:600px){
+  .mypos-scroll{ overflow:visible; }
+  .mypos-scroll.has-more{ -webkit-mask-image:none; mask-image:none; }
+  .mypos-tbl{ display:block; min-width:0; font-size:12.5px; }
+  .mypos-tbl thead{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .mypos-tbl tbody{ display:block; }
+  .mypos-tbl tr{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; column-gap:12px; row-gap:6px;
+    align-items:end; padding:11px 0; border-bottom:0.5px solid var(--border2); }
+  .mypos-tbl tr:last-child{ border-bottom:0; }
+  .mypos-tbl td{ display:block; padding:0; border-bottom:0; white-space:nowrap; min-width:0; }
+  .mypos-tbl td.myp-tk{ grid-column:1 / 3; grid-row:1; align-self:center; font-size:13px; }
+  .mypos-tbl td.myp-gain{ grid-column:3; grid-row:1; align-self:center; text-align:right; font-weight:800; }
+  .mypos-tbl td.myp-q{ grid-column:1; grid-row:2; text-align:left; }
+  .mypos-tbl td.myp-paid{ grid-column:2; grid-row:2; text-align:left; }
+  .mypos-tbl td.myp-live{ grid-column:3; grid-row:2; text-align:right; }
+  .mypos-tbl td[data-k]::before{ content:attr(data-k); display:block; margin-bottom:3px;
+    font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); }
+  .mypos-tbl .myp-px{ width:100%; max-width:120px; text-align:left; }
+}
+
+/* ── labels that must not need truncating ──────────────────────────────────
+   Measured with the real sector names: the allocation legend cut "Automobile
+   and Auto Components" and "Fast Moving Consumer Goods" at nine of fourteen
+   widths, the part-placed bars cut them at every width, and the picks table's
+   industry pill at every width that shows the table. The legend's own phone
+   rule (V28.6) already wraps a long name to a second line; that is now the rule
+   everywhere, because an ellipsis on a coarse pointer has no tooltip to fall
+   back on. The pill keeps its width — the table's fit at 1200px is measured —
+   and grows a line instead; a 10px radius is still a full pill on one line. */
+.alloc-name{ white-space:normal; overflow:visible; text-overflow:clip; align-items:flex-start; min-width:0; }
+.alloc-nm-t{ white-space:normal; overflow:visible; text-overflow:clip; line-height:1.28; }
+.alloc-name .alloc-swatch{ margin-top:4px; }
+.sess-b-nm{ white-space:normal; overflow:visible; text-overflow:clip; line-height:1.25; }
+td .industry-badge{ white-space:normal; overflow:visible; text-overflow:clip; border-radius:10px; line-height:1.3; }
+/* On a phone a wrapping name cannot live in a 100px column at all: its longest
+   single word ("Telecommunication") is wider than the column, so it either breaks
+   mid-word or pushes that one row's bar out of line with the rest. The legend row
+   becomes two lines — name, count and share, then the bar at full width — which
+   is also the longest the bar has ever been on a phone. Rows stay 44px+ tall
+   under the V27.9 coarse padding. */
+@media (max-width:480px){
+  .alloc-row{ display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"nm pct" "bar bar";
+    column-gap:10px; row-gap:7px; }
+  .alloc-row .alloc-name{ grid-area:nm; align-items:center; }
+  .alloc-row .alloc-name .alloc-swatch{ margin-top:0; }
+  .alloc-row .alloc-n{ display:inline-block; }
+  .alloc-row .alloc-bar-wrap{ grid-area:bar; min-width:0; }
+  .alloc-row .alloc-pct{ grid-area:pct; }
+}
+@media (max-width:560px){ .sess-b{ grid-template-columns:124px 1fr 42px; } }
+
+/* ── What changed: an empty group takes its words' height, not the Rebalance
+   column's. On MultiAsset "Buy (0)" and "Sell (0)" stretched to 470px boxes
+   holding "None this cycle" beside eight rebalance rows. Two columns only — the
+   stacked phone layout needs stretch to fill its width (V36.4). ── */
+@media (min-width:601px){
+  .chg-groups.has-empty > .chg-group.is-empty{ align-self:flex-start; }
+}
+/* the Kite link stays on the row down to 360px: at 390 it had dropped below the
+   ticker and doubled every buy and sell row to 96px. Below 360 the V35.3 wrap
+   still applies, where the ticker genuinely needs the width. */
+@media (min-width:360px) and (max-width:400px){
+  .chg-buy, .chg-sell{ grid-template-columns:auto minmax(0,1fr) auto; }
+  .chg-buy .chg-sell-lnk, .chg-sell-lnk{ grid-column:auto; justify-self:end; }
+}
+/* a placed row was opacity .62 over an already-muted ink: 2.8:1 in light and
+   3.2:1 in dark (the V35.6 opacity-muting anti-pattern). The neutral surface,
+   the tick and the strikethrough already say "done"; the words stay readable. */
+.chg-sell.is-done, .chg-buy.row-bought{ opacity:1; }
+
+/* ── Position sizing on a phone: three figures as three labelled cells ──────
+   They wrapped to three lines 24px apart (the flex gap is also the row gap),
+   so the three numbers a member checks together read as three separate facts. */
+@media (max-width:600px){
+  .size-summary{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:10px 12px; }
+  .size-summary .ss-cell{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .size-summary .ss-k{ font-size:11px; font-weight:700; color:var(--text3); white-space:nowrap; }
+  .size-summary .ss-c{ display:none; }
+  .size-summary strong{ font-size:14px; }
+}
+
+/* ── inks, each measured in pixels on the surface it sits on ──────────────── */
+/* portfolio map, return view: --green on its own band tint was 2.95:1 (+4-10%)
+   and 2.6:1 on the deepest band; --red 2.3:1 on its deepest. These clear 4.5:1
+   on every band in both themes. */
+html:not([data-theme="dark"]) .pmap-grid.mf255-ret .rt-up1 .pmap-ret,
+html:not([data-theme="dark"]) .pmap-grid.mf255-ret .rt-up2 .pmap-ret,
+html:not([data-theme="dark"]) .pmap-grid.mf255-ret .rt-up3 .pmap-ret{ color:#065f46; }
+html:not([data-theme="dark"]) .pmap-grid.mf255-ret .rt-dn1 .pmap-ret,
+html:not([data-theme="dark"]) .pmap-grid.mf255-ret .rt-dn2 .pmap-ret,
+html:not([data-theme="dark"]) .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#991b1b; }
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-up1 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-up2 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-up3 .pmap-ret{ color:#6ee7b7; }
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn1 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn2 .pmap-ret,
+html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#fca5a5; }
+/* the card ticker chip: --accent2 on its own 7% wash, 4.23:1 at 11.5px */
+html:not([data-theme="dark"]) .sc-header .sc-ticker{ color:var(--ink-link,#0951c6); }
+/* the Kite basket button: V36.9 left it off the dark-ramp repaint because it
+   measured 4.61-5.07 at 390, where it is full width. At 820 it is sized to its
+   label, so the words sit over the light end of the ramp: 3.92:1 — and 4.34:1 on
+   the per-basket button a two-basket cycle shows. Same repaint mfc-finish.css
+   gives .mf-abar-cta, one step down the ramp. */
+html[data-theme="dark"] .kbsk-cta,
+html[data-theme="dark"] .kbsk-b-btn.is-primary{ background-image:linear-gradient(135deg,var(--accent) 0%,#3b6ae3 100%); }
+/* the error screen's two links were written inline as var(--accent), the light
+   brand blue, which is 3.0:1 on the dark panel V35.2 gave this screen */
+.state-lnk{ color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+html[data-theme="dark"] .state-lnk{ color:#9dbcff; }
+/* "Renew to switch to it": the underline was a border-bottom, so the 44px
+   coarse-pointer padding carried it 11px below the words */
+.cyc-newer .cn-cta{ border-bottom:0; text-decoration:underline; text-decoration-thickness:1px;
+  text-underline-offset:3px; text-decoration-color:rgba(37,99,235,.40); }
+html[data-theme="dark"] .cyc-newer .cn-cta{ text-decoration-color:rgba(120,160,240,.50); }
+.cyc-newer .cn-cta:hover{ text-decoration-color:currentColor; }
+
+@media print{
+  .at-lhead{ display:none !important; }
+}
+</style>
 
 <!-- ════════════════════════════════════════════════════════════════════════
      V37.4 · THE ATTRIBUTE THAT WAS BEING OVERRULED
