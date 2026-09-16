@@ -17,10 +17,51 @@ Usage
     python3 refresh_data.py            # full universe (~35-60 min)
     python3 refresh_data.py 100        # first N symbols only (smoke test)
 """
-import sys, time
+import csv, io, sys, time
+
+import requests
 
 import server            # Flask app object is created but never run
 import export_static
+
+NSE_ARCHIVE = "https://archives.nseindia.com/content/equities/"
+NSE_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"}
+
+
+def check_nse_renames(universe) -> None:
+    """Name every universe symbol NSE has renamed. Warns only; never blocks."""
+    try:
+        listed_csv = requests.get(NSE_ARCHIVE + "EQUITY_L.csv", headers=NSE_HEADERS, timeout=20)
+        change_csv = requests.get(NSE_ARCHIVE + "symbolchange.csv", headers=NSE_HEADERS, timeout=20)
+        listed_csv.raise_for_status(); change_csv.raise_for_status()
+        listed = {r[0].strip() for r in csv.reader(io.StringIO(listed_csv.text)) if r}
+        renames = {}
+        for r in csv.reader(io.StringIO(change_csv.content.decode("latin-1"))):
+            if len(r) >= 4:
+                old, new, when = (x.strip() for x in r[-3:])
+                renames[old] = (new, when)
+    except Exception as e:
+        print(f"  (NSE symbol-change check skipped: {e})")
+        return
+    if len(listed) < 1000:
+        print(f"  (NSE symbol-change check skipped: EQUITY_L.csv had only {len(listed)} rows)")
+        return
+    found = 0
+    for sym in universe:
+        if sym in listed or sym not in renames:
+            continue
+        new, when = renames[sym]
+        for _ in range(5):                      # follow A -> B -> C chains
+            if new in listed or new not in renames:
+                break
+            new, when = renames[new]
+        if new in listed:
+            found += 1
+            print(f"  ⚠ NSE renamed {sym} -> {new} on {when}: Yahoo's {sym}.NS price is "
+                  f"frozen. Replace it in NSE_EQUITY_UNIVERSE (screener/server.py).")
+    if not found:
+        print("  NSE symbol-change check: no universe symbol has been renamed.")
 
 
 def main() -> int:
@@ -50,8 +91,12 @@ def main() -> int:
                 ok += 1
             else:
                 err += 1
-        except Exception:
+                if err <= 20:
+                    print(f"  ! {sym}: {(d or {}).get('error', 'no data')}", flush=True)
+        except Exception as e:
             err += 1
+            if err <= 20:
+                print(f"  ! {sym}: {e}", flush=True)
         if n % 50 == 0 or n == total:
             el = time.time() - t0
             rate = n / el if el else 0
@@ -61,6 +106,7 @@ def main() -> int:
         time.sleep(0.3)   # same pacing as the Flask bulk fetch
 
     print(f"\nFetch done: {ok} ok, {err} failed of {total}.")
+    check_nse_renames(symbols)
 
     # V29.7 — say plainly when the run fetched nothing. Yahoo answers HTTP 429
     # once an IP has been hammered (this Mac hits it after back-to-back runs), and

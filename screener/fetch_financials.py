@@ -235,6 +235,7 @@ def main():
     symbols, explicit, force = _resolve_symbols(sys.argv[1:])
     os.makedirs(OUT_DIR, exist_ok=True)
     total, ok, skip, err = len(symbols), 0, 0, 0
+    short = []
     t0 = time.time()
     for n, sym in enumerate(symbols, 1):
         out = os.path.join(OUT_DIR, _safe_name(sym) + ".json")
@@ -248,15 +249,19 @@ def main():
                         json.dump(data, f, separators=(",", ":"), allow_nan=False)
                     ok += 1
                 else:
-                    err += 1  # not enough data — leave any prior file untouched
+                    short.append(sym)  # under 2 years of statements — expected for recent listings
             except Exception as e:
                 err += 1
                 print(f"  ! {sym}: {e}", flush=True)
             time.sleep(0.4)  # gentle Yahoo pacing (statements = a few calls per symbol)
         if n % 25 == 0 or n == total:
             el = time.time() - t0
-            print(f"[{n}/{total}] ok={ok} skip={skip} err={err} elapsed={el/60:.1f}m", flush=True)
-    print(f"\nFinancials done: {ok} written, {skip} fresh-skipped, {err} no-data/failed of {total}.")
+            print(f"[{n}/{total}] ok={ok} skip={skip} short={len(short)} err={err} "
+                  f"elapsed={el/60:.1f}m", flush=True)
+    print(f"\nFinancials done: {ok} written, {skip} fresh-skipped, {err} failed of {total}.")
+    if short:
+        print(f"  {len(short)} not written, fewer than 2 years of statements on Yahoo "
+              f"(recent listings; the page hides the module): {', '.join(short)}")
     print(f"Output: {os.path.abspath(OUT_DIR)}")
     return 0
 

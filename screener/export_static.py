@@ -769,6 +769,13 @@ def main() -> int:
 
     os.makedirs(OUT_DIR, exist_ok=True)
 
+    # V37.9 — publish the UNIVERSE, not the whole cache. stock_cache keeps a row
+    # for every symbol ever fetched, so a renamed or dropped listing (TATAMOTORS
+    # after its demerger, GUJGASLTD after NSE renamed it) stayed on the site as a
+    # blank or frozen-price company page indefinitely.
+    from server import NIFTY_UNIVERSE
+    universe = set(NIFTY_UNIVERSE)
+
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
         "SELECT data, updated_at FROM stock_cache ORDER BY symbol"
@@ -777,6 +784,7 @@ def main() -> int:
 
     stocks, sectors = [], set()
     skipped = 0
+    dropped = []
     latest_update = ""
 
     for data_json, updated_at in rows:
@@ -787,6 +795,9 @@ def main() -> int:
             continue
         if not d or "error" in d or not d.get("symbol"):
             skipped += 1
+            continue
+        if d["symbol"] not in universe:
+            dropped.append(d["symbol"])
             continue
         # Fix the dividend-yield scaling: the cached value is the true yield x100
         # (yfinance fraction x 10000), so e.g. TCS shows 564 instead of 5.64%.
@@ -887,6 +898,17 @@ def main() -> int:
             json.dump(pts, f, separators=(",", ":"), allow_nan=False)
         hwritten += 1
 
+    # Pruned by universe membership, never by "not exported this run": history
+    # cannot be re-fetched, and a cold or rate-limited cache must not erase it.
+    keep = {_safe_name(s) + ".json" for s in universe}
+    hpruned = []
+    for sub in ("hist", "fin"):
+        sub_dir = os.path.join(OUT_DIR, sub)
+        for name in (os.listdir(sub_dir) if os.path.isdir(sub_dir) else ()):
+            if name.endswith(".json") and name not in keep:
+                os.remove(os.path.join(sub_dir, name))
+                hpruned.append(f"{sub}/{name}")
+
     # ── V15.2 (4): SEO sitemap of every stock's per-company pages. Referenced from
     #    robots.txt alongside the static sitemap.xml.
     #    V25.6: this used to emit ONLY the Integrity-Score URL, which left the OTHER
@@ -933,6 +955,10 @@ def main() -> int:
     lite_mb = os.path.getsize(lite_path) / 1e6
     print(f"✓ Exported {len(stocks)} stocks ({len(sectors)} sectors), "
           f"skipped {skipped}.")
+    if dropped:
+        print(f"  Not published (cached, no longer in the universe): {', '.join(dropped)}")
+    if hpruned:
+        print(f"  Removed {len(hpruned)} leftover file(s): {', '.join(hpruned)}")
     print(f"  Data through: {latest_update or '(unknown)'}")
     print(f"  Wrote {OUT_PATH}  ({size_mb:.2f} MB)")
     print(f"  Wrote {lite_path}  ({lite_mb:.2f} MB, -{(1-lite_mb/size_mb)*100:.0f}%)")
