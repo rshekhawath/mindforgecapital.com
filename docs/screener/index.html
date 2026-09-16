@@ -786,6 +786,24 @@ tbody tr.rowlink{cursor:pointer}
   .content-title{font-size:20px}
 }
 
+/* V37.8 — THE GAP THE 1100PX BREAKPOINT ABOVE DOES NOT COVER. That block's own
+   comment cites "iPad-landscape visitors" as the reason it stacks the sidebar
+   at <=1100px — true for a classic 1024px iPad, but a current iPad Air or iPad
+   Pro 11" in landscape is 1180-1194px, ABOVE that breakpoint. There the
+   two-column layout survives (correctly — there is room for it), but
+   `.table-card` stays at its base `overflow:hidden` with no min-width
+   safety net, while `#resultsTable` (no `table-layout:fixed`) still wants its
+   natural ~1171px of column width. Measured the exact gap by bisection: zero
+   overflow at <=1100 (stacked+scrollable) and at >=1200 (room to spare), but
+   19-98px of the table silently clipped — no scrollbar, no visual cue — at
+   every width from 1101 to 1199, "Div Yield %" and its numbers cut off past
+   the card's right edge. Same fix as the block above, scoped to just this
+   band so the sidebar/title rules meant for a narrow stacked layout do not
+   also fire on what is still a comfortable two-column desktop width. */
+@media(min-width:1101px) and (max-width:1199px){
+  .table-card{overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+
 /* V34.1 — ON A PHONE THE READER LANDED ON THREE BUTTONS, NOT ON THE PAGE.
    `.app-layout` stacks at <=1100px and the sidebar is its FIRST child, so on a
    phone the first thing below the nav is "Run Screen / Clear Filters / Show
@@ -2692,7 +2710,7 @@ checkHealth();
   }
 })();
 </script>
-<script src="../assets/mfc-offer.js?v=3370" defer></script>
+<script src="../assets/mfc-offer.js?v=3380" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
