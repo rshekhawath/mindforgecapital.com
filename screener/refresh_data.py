@@ -14,7 +14,7 @@ survives a flaky run.
 
 Usage
 -----
-    python3 refresh_data.py            # full universe (~35-60 min)
+    python3 refresh_data.py            # full universe (~80-95 min)
     python3 refresh_data.py 100        # first N symbols only (smoke test)
 """
 import csv, io, sys, time
