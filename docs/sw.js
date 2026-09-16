@@ -708,7 +708,14 @@
 // reads 15 (the largest book since V33.1) instead of 25. A precached document has
 // no query to bust, so an installed visitor left on v97 would keep the old shell.
 // dashboard.html changed far more, but it is network-first and owes no bump.
-const CACHE = 'mfc-v98';
+// V37.7 — mfc-v99. BOTH precached documents changed: every page's nav dropped
+// the Pricing tab and renamed "Fee Calculator" to "Calculators" (login.html
+// included), both reference mfc-offer.js?v=3370, whose "Get started" link is
+// now root-absolute (it 404'd from every subdirectory page), and index.html
+// also lost the duplicate broker-verified strip and got the rebuilt footer
+// credential block. A precached document has no query to bust, so an installed
+// visitor left on v98 would keep the old nav and the old footer.
+const CACHE = 'mfc-v99';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

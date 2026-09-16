@@ -1,0 +1,396 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   mfc-calc.css — V37.7
+   The shared surface for /calculators/*: the page base (tokens, nav, footer)
+   and the calculator UI itself.
+
+   WHY THIS IS A SHARED FILE when every other page on this site carries its own
+   inline base: these seven pages are the same page seven times over — the same
+   nav, the same input column, the same result panel, the same chart. V36.6
+   measured the site's inline CSS and found almost no identical rules ACROSS
+   pages, which is why it was left in place; here the rules are identical by
+   construction, so one file is the honest form. It is linked BEFORE
+   mfc-finish.css on every calculator page, so the shared dark palette and the
+   site-wide field / tap-target rules still win where they are meant to.
+
+   Tokens are the site's: this file defines the LIGHT values exactly as the tool
+   pages do, and mfc-finish.css flips them for dark. Semantic inks
+   (--ink-pos / --ink-neg / --data-*) come from that file and are AA-measured
+   there, so nothing here hardcodes a light-theme colour on a themed surface.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
+  --white:#0c1831;
+  --accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;
+  --gold:#d97706;--teal:#0891b2;--green:#059669;--red:#dc2626;
+  --text:#0c1831;--text2:#1e3a5f;--text3:#475569;
+  --border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);
+  --r:16px;--r-sm:10px;--r-lg:22px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
+}
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html{ scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+body{
+  background:var(--ink); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;
+  font-size:15px; line-height:1.65; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:radial-gradient(ellipse 900px 600px at 72% -10%,rgba(37,99,235,0.08) 0%,transparent 60%),
+             radial-gradient(ellipse 520px 420px at 4% 22%,rgba(45,212,191,0.05) 0%,transparent 60%);
+}
+h1,h2,h3,h4{ font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;
+  font-weight:700; letter-spacing:-.02em; line-height:1.15; color:var(--white); }
+a{ color:inherit; text-decoration:none; }
+.wrap{ max-width:1180px; margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+@media (max-width:600px){ .wrap{ padding:0 18px; } }
+
+/* ── NAV (identical to the tool pages, so the masthead does not move between them) ──
+   V37.7: `body > nav`, never a bare `nav` — these pages have a SECOND <nav>, the
+   footer's link list, and the element selector gave it the whole masthead
+   treatment (sticky, z-index 200, frosted band, border, shadow, 32px inset): the
+   V33.7 element-selector capture that once turned the A-Z rail into a masthead. */
+body > nav{ position:sticky; top:0; z-index:200; background:rgba(240,245,255,0.96);
+  backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  border-bottom:0.5px solid var(--border2); box-shadow:0 1px 16px rgba(37,99,235,0.05); padding:0 32px; }
+.nav-inner{ max-width:1400px; margin:0 auto; display:flex; align-items:center; height:64px; gap:26px; }
+.logo{ display:flex; align-items:center; flex-shrink:0; }
+.logo img{ height:44px; width:auto; display:block; }
+@media(max-width:768px){ .logo img{ height:36px; } }
+.nav-links{ display:flex; gap:26px; align-items:center; margin-left:auto; }
+.nav-links a{ font-size:14px; font-weight:400; color:var(--text2); transition:color .2s; white-space:nowrap;
+  display:inline-flex; align-items:center; height:40px; line-height:1; position:relative; }
+.nav-links a:hover,.nav-links a.active{ color:var(--white); }
+.nav-links a:not(.nav-cta)::after{ content:''; position:absolute; left:0; right:0; bottom:6px; height:2px;
+  border-radius:2px; background:linear-gradient(90deg,var(--accent),#2dd4bf);
+  transform:scaleX(0); transform-origin:center; transition:transform .3s cubic-bezier(.2,.8,.2,1); }
+.nav-links a:not(.nav-cta).active::after,.nav-links a:not(.nav-cta):hover::after{ transform:scaleX(1); }
+.nav-links a.nav-cta,.nav-links a.nav-cta:hover{ color:#fff; }
+.nav-hamburger{ display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer;
+  padding:8px; margin-left:auto; z-index:300; }
+.nav-hamburger span{ display:block; width:22px; height:2px; background:var(--white); border-radius:2px; transition:all .3s; }
+.nav-hamburger.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2){ opacity:0; }
+.nav-hamburger.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+/* V37.7: 1024, not 900 — the tab set needs 1060px, so between 901 and 1024 the
+   desktop nav pushed the whole document wide and every page scrolled sideways.
+   This matches the house rule the tool pages use (hamburger <=1024). */
+@media(max-width:1024px){
+  body > nav{ padding:0 16px; }
+  .nav-inner{ gap:12px; height:56px; }
+  .nav-hamburger{ display:flex; }
+  .nav-links{ display:none; position:fixed; top:56px; left:0; right:0; margin-left:0;
+    background:rgba(240,245,255,0.98); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border-bottom:0.5px solid var(--border2); flex-direction:column; align-items:stretch;
+    padding:14px 18px 20px; gap:0; max-height:calc(100vh - 56px); overflow-y:auto; }
+  .nav-links.open{ display:flex; }
+  .nav-links a{ font-size:16px; padding:12px 2px; height:auto; border-radius:0; border-bottom:0.5px solid var(--border); }
+  .nav-links a:not(.nav-cta)::after{ display:none; }
+  .nav-links a.nav-cta{ margin-top:16px; text-align:center; justify-content:center; padding:15px 28px;
+    font-size:15px; border-bottom:none; border-radius:var(--r-sm); }
+}
+.nav-cta{ background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%); background-size:170% 170%;
+  color:#fff; font-size:14px; font-weight:600; padding:10px 22px; border-radius:var(--r-sm);
+  transition:transform .25s cubic-bezier(.22,.8,.2,1), box-shadow .25s, background-position .5s; }
+.nav-cta:hover{ transform:translateY(-2px); background-position:100% 0;
+  box-shadow:0 10px 22px -8px rgba(26,80,216,.7), 0 0 0 4px rgba(45,212,191,.10); }
+.skip-link{ position:absolute; top:-100px; left:16px; background:var(--accent); color:#fff;
+  padding:14px 22px; font-size:14px; font-weight:600; text-decoration:none; z-index:1000;
+  border-radius:0 0 10px 10px; box-shadow:0 8px 20px -8px rgba(26,80,216,0.55); transition:top .2s ease; }
+.skip-link:focus{ top:0; outline:none; }
+
+/* ── HERO ───────────────────────────────────────────────────────────────── */
+.chero{ padding:40px 0 20px; }
+.chero-crumb{ font-size:12px; color:var(--text3); margin-bottom:14px; }
+.chero-crumb a{ color:var(--ink-link,#0951c6); font-weight:600; }
+.chero-crumb a:hover{ text-decoration:underline; }
+.chero-badge{ display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:800;
+  letter-spacing:.07em; text-transform:uppercase; color:var(--ink-info,#056177);
+  background:rgba(8,145,178,.08); border:0.5px solid rgba(8,145,178,.22); border-radius:20px;
+  padding:5px 12px; margin-bottom:14px; }
+html[data-theme="dark"] .chero-badge{ background:rgba(40,188,216,.12); border-color:rgba(40,188,216,.28); }
+.chero h1{ font-size:clamp(28px,4.4vw,42px); font-weight:800; letter-spacing:-.03em; margin-bottom:12px; }
+.chero h1 .grad{ background:linear-gradient(120deg,#1a50d8,#0891b2 60%,#2dd4bf);
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+html[data-theme="dark"] .chero h1 .grad{ background:linear-gradient(120deg,#5b8def,#28bcd8 60%,#2dd4bf);
+  -webkit-background-clip:text; background-clip:text; }
+.chero-sub{ font-size:15.5px; color:var(--text2); max-width:70ch; line-height:1.7; }
+.chero-sub b{ color:var(--white); font-weight:700; }
+
+/* ── THE CALCULATOR ─────────────────────────────────────────────────────── */
+.calc{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:20px; align-items:start; margin:22px 0 8px; }
+@media (max-width:980px){ .calc{ grid-template-columns:1fr; } }
+.cpanel{ background:var(--ink2); border:0.5px solid var(--border2); border-radius:var(--r);
+  padding:22px 24px; box-shadow:var(--shadow-sm); position:relative; z-index:1; }
+@media (max-width:600px){ .cpanel{ padding:18px; } }
+.cpanel-k{ font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--text3); margin-bottom:4px; }
+.cpanel-sub{ font-size:12.5px; color:var(--text3); line-height:1.6; margin-bottom:16px; max-width:56ch; }
+
+/* modes (EMI: home / car / personal) */
+.cmodes{ display:inline-flex; padding:3px; gap:3px; border-radius:999px; background:var(--ink3);
+  border:0.5px solid var(--border2); margin-bottom:16px; flex-wrap:wrap; }
+.cmodes button{ -webkit-appearance:none; appearance:none; border:0; cursor:pointer; font:inherit;
+  font-size:12.5px; font-weight:700; padding:7px 14px; border-radius:999px; background:transparent;
+  color:var(--text3); transition:color .18s, background .18s, box-shadow .18s; }
+.cmodes button:hover{ color:var(--text); }
+.cmodes button[aria-pressed="true"]{ color:var(--white); background:var(--ink2);
+  box-shadow:0 1px 2px rgba(15,23,42,.06), 0 4px 12px -8px rgba(26,80,216,.5); }
+.cmodes button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* one input row: label + live value, number field, slider */
+.cf{ padding:13px 0; border-top:0.5px solid var(--border); }
+.cf:first-of-type{ border-top:0; padding-top:4px; }
+.cf-top{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:9px; }
+.cf-lbl{ font-size:13.5px; font-weight:600; color:var(--text2); }
+.cf-lbl .cf-hint{ display:block; font-size:11.5px; font-weight:500; color:var(--text3); margin-top:2px; }
+.cf-shell{ display:inline-flex; align-items:center; background:var(--ink2);
+  border:1px solid var(--field-edge,var(--border2)); border-radius:10px; overflow:hidden;
+  transition:border-color .2s ease, box-shadow .2s ease; }
+.cf-shell:focus-within{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(37,99,235,.10); }
+.cf-pre{ padding:8px 10px; background:rgba(37,99,235,0.06); color:var(--accent2); font-weight:700;
+  font-size:13px; border-right:0.5px solid var(--border2); }
+/* 148px, not 118: the widest value any field here accepts is "20,00,00,000" —
+   twelve characters of 16px tabular bold, which measures ~118px and was being
+   clipped by a box sized for a five-figure amount. 16px is the floor, not a
+   choice: anything smaller makes mobile Safari zoom on focus and never zoom back. */
+.cf-in{ border:0; outline:none; background:transparent; color:var(--white);
+  font-family:inherit; font-size:16px; font-weight:700; padding:8px 11px; width:148px; max-width:100%;
+  font-variant-numeric:tabular-nums; text-align:right; -moz-appearance:textfield; }
+.cf-top{ flex-wrap:wrap; }
+.cf-shell{ max-width:100%; }
+@media (max-width:420px){ .cf-in{ width:130px; } }
+.cf-in::-webkit-outer-spin-button,.cf-in::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.cf-suf{ padding:8px 10px 8px 0; color:var(--text3); font-size:13px; font-weight:600; }
+.cf-rng{ -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:3px; margin-top:12px;
+  background:linear-gradient(90deg,var(--accent) var(--fill,40%), rgba(37,99,235,.14) var(--fill,40%));
+  cursor:pointer; }
+html[data-theme="dark"] .cf-rng{ background:linear-gradient(90deg,var(--accent2) var(--fill,40%), rgba(120,150,255,.20) var(--fill,40%)); }
+.cf-rng::-webkit-slider-thumb{ -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+  background:#fff; border:2px solid var(--accent); box-shadow:0 2px 6px rgba(15,23,42,.22); cursor:pointer; }
+.cf-rng::-moz-range-thumb{ width:20px; height:20px; border-radius:50%; background:#fff;
+  border:2px solid var(--accent); box-shadow:0 2px 6px rgba(15,23,42,.22); cursor:pointer; border-radius:50%; }
+.cf-rng:focus-visible{ outline:2px solid var(--accent); outline-offset:4px; }
+.cf-ends{ display:flex; justify-content:space-between; font-size:10.5px; color:var(--text3);
+  font-variant-numeric:tabular-nums; margin-top:5px; }
+/* the thumb is 20px; a 44px row needs the padding on the ROW, not the control —
+   growing the input itself would square off the shell (V37.5) */
+@media (pointer:coarse){
+  .cf-in{ padding-top:12px; padding-bottom:12px; }
+  .cf-rng{ margin-top:16px; margin-bottom:8px; }
+  .cmodes button{ padding-top:12px; padding-bottom:12px; }
+  /* V37.7 breadcrumb hit area. The links are 12px/15px tall, and "Home" is only
+     34.6px wide — well under a thumb. Padding (not a ::after pad) so the two
+     links' boxes ABUT instead of overlapping: the measured gap between them is
+     12.1px, so 6px a side exactly fills it and every pixel belongs to one link
+     (the ::after route is what collided in V28.7). The negative block margin
+     keeps the 44px box from growing the line, and it bleeds only into the hero's
+     40px top padding and the h1 below, neither of which is clickable. */
+  .chero-crumb a{ display:inline-block; padding:14.5px 6px; margin:-14.5px 0; }
+}
+.cf-err{ display:none; margin-top:7px; font-size:12px; font-weight:600; color:var(--ink-neg,#b51a1a); }
+.cf.is-bad .cf-err{ display:block; }
+.cf.is-bad .cf-shell{ border-color:var(--ink-neg,#b51a1a); }
+
+/* ── RESULTS ────────────────────────────────────────────────────────────── */
+.cout{ background:linear-gradient(140deg,rgba(37,99,235,.055),rgba(8,145,178,.03) 62%,transparent), var(--ink2);
+  border:0.5px solid var(--border2); }
+html[data-theme="dark"] .cout{ background:linear-gradient(140deg,rgba(120,160,240,.10),rgba(45,212,191,.05) 62%,transparent), var(--ink2); }
+.co-k{ font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+.co-fig{ font-size:clamp(30px,5.4vw,44px); font-weight:800; letter-spacing:-.025em; line-height:1.05;
+  color:var(--white); font-variant-numeric:tabular-nums; margin:6px 0 4px; }
+.co-fig.is-pos{ color:var(--ink-pos,#046b4c); }
+.co-fig.is-neg{ color:var(--ink-neg,#b51a1a); }
+.co-cap{ font-size:13px; color:var(--text2); line-height:1.6; max-width:52ch; }
+.co-cap b{ color:var(--white); font-weight:700; }
+.co-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(122px,1fr)); gap:12px 16px; margin-top:18px; }
+.co-stat{ min-width:0; }
+.co-stat .k{ font-size:11px; font-weight:700; color:var(--text3); line-height:1.35; }
+.co-stat .v{ font-size:19px; font-weight:800; color:var(--white); font-variant-numeric:tabular-nums;
+  letter-spacing:-.01em; line-height:1.25; margin-top:2px; }
+.co-stat .s{ font-size:11px; color:var(--text3); margin-top:1px; }
+.co-stat .v.pos{ color:var(--ink-pos,#046b4c); }
+.co-stat .v.neg{ color:var(--ink-neg,#b51a1a); }
+
+/* invested vs returns, one track */
+.co-split{ margin-top:20px; }
+.co-bar{ display:flex; height:22px; border-radius:7px; overflow:hidden; background:rgba(15,23,42,.05);
+  border:0.5px solid var(--border); }
+html[data-theme="dark"] .co-bar{ background:rgba(255,255,255,.06); }
+.co-seg{ height:100%; width:0; transition:width .8s cubic-bezier(.22,1,.36,1); }
+.co-seg.is-a{ background:linear-gradient(90deg,#2563eb,#3b82f6); }
+.co-seg.is-b{ background:linear-gradient(90deg,#059669,#10b981); }
+html[data-theme="dark"] .co-seg.is-a{ background:linear-gradient(90deg,#3b6ae3,#5b8def); }
+html[data-theme="dark"] .co-seg.is-b{ background:linear-gradient(90deg,#0f9d6b,#34d399); }
+.co-keys{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:9px; font-size:12px; color:var(--text2); }
+.co-keys i{ font-style:normal; display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+.co-keys .ka i{ background:#2563eb; } .co-keys .kb i{ background:#059669; }
+html[data-theme="dark"] .co-keys .ka i{ background:#5b8def; } html[data-theme="dark"] .co-keys .kb i{ background:#34d399; }
+.co-keys b{ font-variant-numeric:tabular-nums; color:var(--white); font-weight:800; }
+/* A COST is not growth. The second series is green where it is return and amber
+   where it is interest paid — the same two registers the rest of the site uses
+   (--ink-pos for a gain, --ink-warn for a charge), so an EMI page never paints
+   the interest it costs you in the colour of a gain. */
+.co-split.is-cost .co-seg.is-b{ background:linear-gradient(90deg,#b45309,#f59e0b); }
+html[data-theme="dark"] .co-split.is-cost .co-seg.is-b{ background:linear-gradient(90deg,#d97706,#fbbf24); }
+.co-split.is-cost .co-keys .kb i,
+.co-keys.is-cost .kb i{ background:#b45309; }
+html[data-theme="dark"] .co-split.is-cost .co-keys .kb i,
+html[data-theme="dark"] .co-keys.is-cost .kb i{ background:#d97706; }
+.cbars.is-cost .cb-b{ background:#b45309; }
+html[data-theme="dark"] .cbars.is-cost .cb-b{ background:#d97706; }
+
+/* the year-by-year chart: inline SVG, no library */
+.co-chart{ margin-top:20px; }
+.co-chart-h{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+.co-chart-h .t{ font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+.co-chart-h .n{ font-size:11.5px; color:var(--text3); }
+/* The year chart is HTML, not SVG, on purpose: an SVG scaled from a viewBox
+   silently scales its labels with it (V33.3), and these columns need a real
+   10px tick at every width. Each column is a stack — invested at the bottom,
+   returns on top — sized as a share of the tallest year. */
+.cbars{ display:flex; align-items:flex-end; gap:3px; height:132px; margin-top:4px; }
+@media (max-width:600px){ .cbars{ height:112px; gap:2px; } }
+.cb{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:stretch; height:100%; }
+.cb-stack{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
+.cb-a,.cb-b{ display:block; width:100%; }
+/* the same two inks as the split bar above: one panel, one colour language */
+.cb-a{ background:#2563eb; border-radius:0 0 2px 2px; }
+.cb-b{ background:#059669; border-radius:2px 2px 0 0; }
+html[data-theme="dark"] .cb-a{ background:#3b6ae3; }
+html[data-theme="dark"] .cb-b{ background:#0f9d6b; }
+/* V37.7: overflow must stay VISIBLE. A 320px column is ~10px wide, so a clipped
+   two-digit year ("10".."20") lost half its second digit while the single-digit
+   ticks beside it looked fine. The tick is centred and only every 2nd-Nth column
+   carries one, so it spills over an EMPTY neighbour and nothing collides; the
+   column is min-width:0 flex, so painting outside it cannot widen the chart. */
+.cb-x{ font-size:10px; color:var(--text3); text-align:center; margin-top:5px; min-height:14px;
+  font-variant-numeric:tabular-nums; white-space:nowrap; overflow:visible; }
+
+.co-note{ margin-top:16px; padding-top:14px; border-top:0.5px solid var(--border);
+  font-size:11.5px; color:var(--text3); line-height:1.65; max-width:70ch; }
+.co-note a{ color:var(--ink-link,#0951c6); font-weight:600; }
+.co-note a:hover{ text-decoration:underline; }
+
+/* ── PROSE, FAQ, RELATED, CTA ───────────────────────────────────────────── */
+.cprose{ margin:34px 0 0; }
+.cprose h2{ font-size:22px; margin:30px 0 10px; }
+.cprose h3{ font-size:16px; margin:20px 0 6px; }
+.cprose p, .cprose li{ font-size:14.5px; color:var(--text2); line-height:1.75; max-width:70ch; }
+.cprose p + p{ margin-top:12px; }
+.cprose ul,.cprose ol{ margin:10px 0 0 20px; }
+.cprose li{ margin-bottom:7px; }
+.cprose b{ color:var(--white); }
+.cprose a{ color:var(--ink-link,#0951c6); font-weight:600; }
+.cprose a:hover{ text-decoration:underline; }
+.cformula{ display:inline-block; margin:10px 0 2px; padding:11px 15px; border-radius:10px;
+  background:var(--ink3); border:0.5px solid var(--border2); font-size:13.5px; color:var(--text);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; overflow-x:auto; max-width:100%; }
+.cfaq{ margin-top:14px; border-top:0.5px solid var(--border); }
+.cfaq details{ border-bottom:0.5px solid var(--border); }
+.cfaq summary{ cursor:pointer; list-style:none; padding:15px 34px 15px 0; position:relative;
+  font-size:14.5px; font-weight:700; color:var(--white); }
+.cfaq summary::-webkit-details-marker{ display:none; }
+.cfaq summary::after{ content:'+'; position:absolute; right:6px; top:50%; transform:translateY(-50%);
+  font-size:20px; font-weight:400; color:var(--accent2); line-height:1; }
+.cfaq details[open] summary::after{ content:'−'; }
+.cfaq summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+.cfaq .a{ padding:0 0 16px; font-size:14px; color:var(--text2); line-height:1.75; max-width:70ch; }
+.cfaq .a a{ color:var(--ink-link,#0951c6); font-weight:600; }
+
+.crel{ margin:34px 0 0; }
+.crel h2{ font-size:18px; margin-bottom:12px; }
+.crel-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr)); gap:12px; }
+.crel-card{ display:block; background:var(--ink2); border:0.5px solid var(--border2); border-radius:14px;
+  padding:14px 16px; box-shadow:var(--shadow-sm); transition:transform .2s cubic-bezier(.22,.8,.2,1), box-shadow .2s, border-color .2s; }
+.crel-card:hover{ transform:translateY(-2px); border-color:rgba(37,99,235,.38);
+  box-shadow:0 14px 30px -18px rgba(26,80,216,.45), var(--shadow-sm); }
+.crel-card:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+.crel-card .n{ font-size:14.5px; font-weight:700; color:var(--white); display:flex; align-items:center; gap:7px; }
+.crel-card .n .ar{ color:var(--accent2); font-weight:800; }
+.crel-card .d{ font-size:12.5px; color:var(--text3); line-height:1.55; margin-top:4px; }
+.crel-card.is-feat{ border-color:rgba(37,99,235,.40); background:linear-gradient(140deg,rgba(37,99,235,.07),transparent 70%), var(--ink2); }
+
+.ccta{ margin:36px 0 10px; padding:26px 28px; border-radius:var(--r);
+  background:linear-gradient(135deg,rgba(26,80,216,.09),rgba(8,145,178,.05) 70%,transparent), var(--ink2);
+  border:0.5px solid rgba(37,99,235,.26); box-shadow:var(--shadow-sm);
+  display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+html[data-theme="dark"] .ccta{ background:linear-gradient(135deg,rgba(120,160,240,.12),rgba(45,212,191,.05) 70%,transparent), var(--ink2);
+  border-color:rgba(120,160,240,.30); }
+.ccta-t{ font-size:18px; font-weight:800; color:var(--white); letter-spacing:-.01em; }
+.ccta-s{ font-size:13.5px; color:var(--text2); line-height:1.65; margin-top:5px; max-width:62ch; }
+.ccta-btn{ flex:0 0 auto; display:inline-flex; align-items:center; gap:8px; padding:13px 22px;
+  border-radius:var(--r-sm); font-size:14.5px; font-weight:700; color:#fff;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  box-shadow:0 10px 24px -14px rgba(26,80,216,.8); transition:transform .2s cubic-bezier(.22,.8,.2,1), box-shadow .2s; }
+html[data-theme="dark"] .ccta-btn{ background-image:linear-gradient(135deg,var(--accent) 0%,#3b6ae3 100%); }
+.ccta-btn:hover{ transform:translateY(-2px); box-shadow:0 16px 30px -14px rgba(26,80,216,.9); }
+.ccta-btn:focus-visible{ outline:2px solid var(--accent3); outline-offset:3px; }
+
+/* ── FOOTER ─────────────────────────────────────────────────────────────── */
+footer.cfoot{ margin-top:46px; border-top:0.5px solid var(--border); background:var(--ink2); }
+html[data-theme="dark"] footer.cfoot{ background:var(--ink2); }
+.cfoot-in{ max-width:1180px; margin:0 auto; padding:26px 28px 34px; position:relative; z-index:1; }
+@media (max-width:600px){ .cfoot-in{ padding:22px 18px 30px; } }
+.cfoot-nav{ display:flex; flex-wrap:wrap; gap:8px 20px; font-size:13px; margin-bottom:16px; }
+/* mfc-finish.css paints the dark masthead with bare-`nav` selectors up to (0,2,3)
+   (`html[data-theme="dark"] body.scrolled nav`) and loads AFTER this file, so the
+   footer list needs (0,3,2) to stay a plain row of links in dark mode too. */
+footer.cfoot .cfoot-in > nav.cfoot-nav{ background:none; border-bottom:0; box-shadow:none;
+  -webkit-backdrop-filter:none; backdrop-filter:none; }
+.cfoot-nav a{ color:var(--text2); }
+.cfoot-nav a:hover{ color:var(--white); text-decoration:underline; }
+.cfoot-legal{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px 34px; align-items:start;
+  border-top:0.5px solid var(--border); padding-top:18px; }
+@media (max-width:860px){ .cfoot-legal{ grid-template-columns:1fr; } }
+.cfoot-cred{ grid-column:1 / -1; }
+.sebi-line{ display:inline-block; font-size:11px; letter-spacing:.06em; color:var(--text3); font-weight:600;
+  text-transform:uppercase; padding:5px 11px; background:rgba(37,99,235,.06);
+  border:1px solid rgba(37,99,235,.16); border-radius:12px; line-height:1.8; }
+.sebi-line a{ color:inherit; text-decoration:underline; }
+.cfoot-legal p{ font-size:12px; color:var(--text3); line-height:1.7; max-width:46ch; }
+.cfoot-legal p.dis{ font-size:11.5px; max-width:52ch; }
+/* no opacity: the line is already --text3, and alpha on a muted ink is the V35.6
+   anti-pattern (it left this at 4.54:1 in dark, one rounding from failing) */
+.cfoot-copy{ display:block; margin-top:7px; }
+
+/* ── FLOATING WHATSAPP BUTTON ─────────────────────────────────────────────────
+   V37.7: the base rule every FAB page declares for itself (copied from the tool
+   pages, FII/DII and Scores). mfc-finish.css only ADJUSTS a .fab-wa — phone
+   offsets, print, reduced motion — so without this the <a> was a static inline
+   box and its unsized SVG filled the content width: a 1,280px WhatsApp logo
+   below the footer at 1280, 1,447px at 1440, on all seven calculator pages. */
+.fab-wa{position:fixed;bottom:24px;right:24px;z-index:90;width:56px;height:56px;border-radius:50%;background:transparent;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 32px -10px rgba(37,211,102,0.55),0 4px 10px rgba(0,0,0,0.10);transition:transform 0.2s ease,box-shadow 0.2s ease;opacity:0;transform:translateY(8px) scale(0.9);animation:fab-in 0.5s ease-out 0.8s forwards;text-decoration:none}
+.fab-wa:hover{transform:translateY(-2px) scale(1.05);box-shadow:0 16px 40px -8px rgba(37,211,102,0.65),0 6px 14px rgba(0,0,0,0.12)}
+.fab-wa:focus-visible{outline:2px solid rgba(37,211,102,0.85);outline-offset:3px}
+.fab-wa::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid rgba(37,211,102,0.45);animation:fab-pulse 2.4s ease-out infinite}
+@keyframes fab-in{to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fab-pulse{0%{transform:scale(1);opacity:0.6}80%{transform:scale(1.5);opacity:0}100%{transform:scale(1.5);opacity:0}}
+.fab-wa svg{width:100%;height:100%;display:block;position:relative;z-index:1}
+@media (prefers-reduced-motion: reduce){ .fab-wa{ animation:none; opacity:1; transform:none; } }
+
+/* Footer clearance for the floating pair. With a FAB on the page, mfc-chrome.js
+   lifts back-to-top to 90px (desktop) / 162px (phone) and leaves the page to
+   reserve its own bottom room — this one never did, so at full scroll the last
+   disclaimer sat under the buttons: measured 121px of it at 320-430 and 56px at
+   861, where the two-column legal grid pushes it into the right-hand corner.
+   Re-measured once the FAB left the flow (it had been adding 44px of its own):
+   back-to-top's top edge is 206px up on phones and 134px up from 769px, so the
+   last line needs 216px / 144px of room below it — these values give exactly
+   that at 30px/34px of base padding. */
+@media (max-width:1023px){ .cfoot-in{ padding-bottom:136px; } }
+@media (max-width:768px){ .cfoot-in{ padding-bottom:196px; } }
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  .co-seg, .crel-card, .ccta-btn, .nav-cta, .skip-link{ transition:none; }
+}
+@media print{
+  nav, .skip-link, .ccta, .crel, .mf-scroll-prog{ display:none !important; }
+  body::before{ display:none; }
+  .calc{ grid-template-columns:1fr; }
+  .cpanel{ break-inside:avoid; border:1px solid #cbd5e1; box-shadow:none; }
+  .co-seg{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  .cb-a,.cb-b{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+}

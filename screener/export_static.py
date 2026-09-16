@@ -343,7 +343,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <a href="/scores/">Integrity Score</a>
       <a href="/fii-dii/">FII/DII</a>
       <a href="/factor-report/">Factor Report</a>
-      <a href="/calculator.html">Fee Calculator</a>
+      <a href="/calculator.html">Calculators</a>
       <a href="/recover.html">Recover Access</a>
       <a href="/login.html">Sign In</a>
       <a href="/signup.html" class="nav-cta">Get Started</a>

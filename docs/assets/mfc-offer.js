@@ -24,6 +24,15 @@
     } catch (e) {}
 
     var onSignup = /signup\.html$/i.test(location.pathname);
+    /* V37.7 — THE CTA WAS RELATIVE, AND FIVE SURFACES ARE NOT AT THE ROOT.
+       `href="signup.html"` resolves against the CURRENT directory, so on every
+       subdirectory page that carries this strip — /scores/, /screener/,
+       /fii-dii/, /factor-report/ and the 28 stock-directory pages — the site's
+       primary conversion CTA pointed at /<dir>/signup.html and returned 404.
+       Verified against production before the change: /scores/signup.html and
+       /screener/signup.html both 404. Root-absolute is the only form that is
+       correct from every depth, and it is what the shared code already uses for
+       /disclosures.html. */
 
     var bar = document.createElement("div");
     bar.id = "mfc-offer-bar";
@@ -34,7 +43,7 @@
         '<span class="mfc-offer-gift" aria-hidden="true">🎁</span>' +
         '<span class="mfc-offer-text"><strong>1st month FREE</strong><span class="mfc-offer-tail"> for all new members</span>' +
           '<span class="mfc-offer-sub"> · only pay from month two</span></span>' +
-        (onSignup ? "" : '<a class="mfc-offer-cta" href="signup.html">Get started →</a>') +
+        (onSignup ? "" : '<a class="mfc-offer-cta" href="/signup.html">Get started →</a>') +
         '<button class="mfc-offer-x" type="button" aria-label="Dismiss offer">×</button>' +
       "</div>";
 
