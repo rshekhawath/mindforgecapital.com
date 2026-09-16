@@ -66,7 +66,10 @@
    headline slid underneath the dismiss button, on all 18 pages that carry
    it. Wrapping costs nothing at the default size (nothing wraps) and makes
    the bar grow DOWN, which is the only direction it has room in. */
-      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 44px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
+      // V37.8: right padding 44 -> 50px, reserving room for a CENTRED 44px tap
+      // pad on the .mfc-offer-x button (was exactly the pad's own width, so a
+      // centred pad had zero buffer against the CTA — see the comment there).
+      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 50px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
       "#mfc-offer-bar .mfc-offer-gift{font-size:15px;flex-shrink:0;}" +
       /* V29.1 — the bar is a blue→teal gradient, so its lightest stop is the one
          that has to carry the text. At .96 white the trailing clause measured
@@ -104,16 +107,21 @@
       // would reach back over the CTA's right edge and swallow taps meant for the
       // conversion button. That reasoning was right about the collision and wrong
       // about the conclusion — see below.
-      /* V33.5 — the pad is anchored to the bar's RIGHT edge, not centred on the
-         button, and that is what makes 44px fit. Measured at eleven widths from
-         320 to 1440: the gap between the CTA's right edge and this button's left
-         edge is 6px at every one of them, and the button sits 12px in from the
-         bar's edge — so the room between the CTA and the screen is 6+26+12 = 44
-         exactly. A pad CENTRED on the button (V33.4's 34px) either stays short or
-         reaches across the CTA and steals its taps, which is the collision V28.7
-         recorded; anchored right, it fills the corner precisely and touches the
-         CTA without overlapping it. */
-      "#mfc-offer-bar .mfc-offer-x::before{content:'';position:absolute;left:auto;right:-12px;top:50%;width:44px;height:44px;transform:translateY(-50%);}" +
+      /* V37.8 — SUPERSEDES V33.5. Anchoring the pad to the bar's edge instead of
+         centring it on the button made the pad's own hit-test fail: a real
+         44px target check (four points at +-20.5px from the VISUAL button's own
+         centre, not the pad's) landed two of them outside this pad on the left,
+         because the pad only reached 6px past the button there against the 9px
+         a centred 44px box needs. V33.5's fix traded a correct target for an
+         asymmetric one that merely avoided the CTA — it never re-measured
+         against the button's own centre.
+         Fixed at the root instead of re-shifting the pad: the reserved gap
+         between the CTA and the corner (was 44px, exactly the pad's width,
+         hence zero spare) is now 50px, so a truly CENTRED 9px/9px pad
+         (26 + 9 + 9 = 44) lands with a 3px buffer clear of the CTA on the left
+         and 3px clear of the bar's true edge on the right — measured at six
+         widths from 320 to 1440. */
+      "#mfc-offer-bar .mfc-offer-x::before{content:'';position:absolute;left:auto;right:-9px;top:50%;width:44px;height:44px;transform:translateY(-50%);}" +
       "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
       "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}#mfc-offer-bar::after{animation:none;}}";
 

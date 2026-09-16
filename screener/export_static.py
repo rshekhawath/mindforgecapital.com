@@ -591,6 +591,39 @@ def write_directory(stocks, out_dir, day):
 # data it does, so BOTH bytes and parse time fall and there is no rehydration
 # cost. The row shape is unchanged, so none of the seven renderers change.
 #
+# V37.8 — THE AUDIT COVERED SEVEN RENDERERS AND MISSED TEN. "seven
+# universe-backed renderers" above names the functions inside the SHARED
+# assets/mfc-company.js. company.html's OWN inline script has ten more —
+# render, renderHero, renderScorecard, renderKPIs, renderPriceTrend,
+# renderOverview, renderRatios, renderShareholding, renderAbout,
+# renderHistTrend — and between them they read 40 more fields the reduced
+# bundle never carried: day_change (the hero's price-change arrow, so it
+# always showed "—"), the whole Financials card (market_cap, revenue,
+# net_profit, ebitda, enterprise_value, net_debt, gross_profit,
+# free_cashflow, operating_cf, total_cash, total_debt, book_value,
+# cash_per_share, working_capital_cr, revenue_per_share and their _margin
+# siblings), most of Ratios (quick_ratio, peg_ratio, price_to_fcf, ps_ratio,
+# ev_revenue, beta, dividend_rate, eps_forward, pe_forward, payout_ratio,
+# payable_days), Shareholding (institutional_holding, promoter_holding), the
+# SMA-crossover flags (above_sma50, above_sma200), the 52-week range
+# (52w_high, 52w_low, 52w_from_low_pct), and the per-listing provenance trio
+# (country, currency, exchange). Confirmed on the live page before this fix:
+# "Market Cap—", "Net Profit—", "EBITDA—", "Quick Ratio—", "52W High—" —
+# silently blank on all 2,126 pages, in production, since V36.6 shipped.
+# None of the 40 are near-zero-coverage placeholders (checked against the
+# 2026-09-15 snapshot: the lowest is peg_ratio at 3.8%, which is intrinsically
+# sparse — most companies have no positive growth rate to divide by — and the
+# rest run 50-100%), and none collide with the fields V31.5's memory calls out
+# as genuinely dead. Adding them restores parity with what the FULL bundle
+# always served this page; nothing in the rendering code changes.
+#
+# THE RE-DERIVATION ITSELF HAS A BLIND SPOT: `grep -oP "D\.\w+"` finds every
+# DOT-notation read (`D.beta`) but not BRACKET notation (`D["52w_high"]`) —
+# needed here because a field name starting with a digit cannot follow a dot.
+# The first pass at this widening (still this release) caught 37 fields this
+# way and missed exactly the three spelled with brackets; re-derive with BOTH
+# patterns (`D\.\w+` and `D\["[\w]+"\]`) or the same gap reopens silently.
+#
 # THE FACTOR KEYS ARE READ OUT OF scores-engine.js RATHER THAN LISTED HERE.
 # Adding a factor to that file must widen this bundle or the new factor silently
 # scores null for every stock on the company page while working fine on the list
@@ -598,18 +631,46 @@ def write_directory(stocks, out_dir, day):
 # finding. Same principle as _asset_ver(): read it from the source of truth.
 _ENGINE_JS = os.path.join(HERE, "..", "docs", "scores", "scores-engine.js")
 
-# Fields the seven company-page renderers read from the universe array, which
-# are NOT factor keys. Derived by walking each function body; re-derive if a
-# renderer starts reading something new.
+# Fields the company-page renderers read from the universe array, which are
+# NOT factor keys. Derived by walking each function body across BOTH
+# assets/mfc-company.js and company.html's own inline script (V37.8 widened
+# this from the original seven-renderer sweep) — re-derive if a renderer
+# starts reading something new.
 _COMPANY_FIELDS = (
     "symbol", "name", "sector", "industry", "market_cap_cr",
     "enterprise_value_cr", "revenue_cr", "net_profit_cr", "current_price",
     "shares_outstanding", "float_pct", "employees", "eps", "pe_ratio",
     "pb_ratio", "sma_50", "sma_200", "52w_from_high_pct",
+    # V37.8 — read via bracket notation (D["52w_high"]) since the key starts
+    # with a digit, which is why the original grep-based re-derivation of this
+    # list (and this same session's first pass at widening it) missed all
+    # three: 52W High/Low on the Shareholding "Market Position" card and the
+    # Ratios card both showed "—" until these were added.
+    "52w_high", "52w_low", "52w_from_low_pct",
     # V36.7 — provenance: set only for a listing whose statements are reported
     # in a different currency from its quote (INFY, HCLTECH). The company page
     # says so rather than printing a translated figure silently.
     "financial_currency",
+    # V37.8 — the hero's day-over-day price change.
+    "day_change",
+    # V37.8 — the Financials card (absolute-rupee figures, distinct from the
+    # already-included _cr crore figures other cards use) and its margins.
+    "market_cap", "revenue", "net_profit", "ebitda", "enterprise_value",
+    "net_debt", "gross_profit", "free_cashflow", "operating_cf",
+    "total_cash", "total_debt", "book_value", "cash_per_share",
+    "working_capital_cr", "revenue_per_share", "opcf_margin",
+    "ebitda_margin", "gross_margin",
+    # V37.8 — the Ratios card.
+    "quick_ratio", "peg_ratio", "price_to_fcf", "ps_ratio", "ev_revenue",
+    "beta", "dividend_rate", "eps_forward", "pe_forward", "payout_ratio",
+    "payable_days",
+    # V37.8 — Shareholding.
+    "institutional_holding", "promoter_holding",
+    # V37.8 — the SMA-crossover flags (price vs its 50/200-day average).
+    "above_sma50", "above_sma200",
+    # V37.8 — per-listing provenance (always India/INR/NSE on this screener,
+    # but the page states it rather than assuming it).
+    "country", "currency", "exchange",
 )
 
 # The two the LITE bundle drops and the detail page exists to show.

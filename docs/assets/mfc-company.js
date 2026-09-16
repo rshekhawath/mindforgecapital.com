@@ -572,7 +572,14 @@
     if (industry && industry !== sector) chips.push('<span class="mfx-chip"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.5 7.8v8.4a1.6 1.6 0 0 1-.85 1.41l-6.9 3.72a1.6 1.6 0 0 1-1.5 0l-6.9-3.72A1.6 1.6 0 0 1 3.5 16.2V7.8a1.6 1.6 0 0 1 .85-1.41l6.9-3.72a1.6 1.6 0 0 1 1.5 0l6.9 3.72A1.6 1.6 0 0 1 20.5 7.8Z"/><path d="m3.8 6.9 8.2 4.4 8.2-4.4M12 21v-9.7"/></svg> ' + esc(industry) + "</span>");
     chips.push('<span class="mfx-chip" id="mfxCapChip" style="display:none"></span>');
     if (num(D.employees) != null) chips.push('<span class="mfx-chip"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15.5 20v-1.8a3.6 3.6 0 0 0-3.6-3.6H6.6A3.6 3.6 0 0 0 3 18.2V20"/><circle cx="9.25" cy="7.6" r="3.6"/><path d="M21 20v-1.8a3.6 3.6 0 0 0-2.7-3.48M16.2 4.24a3.6 3.6 0 0 1 0 6.97"/></svg> <b>' + num(D.employees).toLocaleString("en-IN") + "</b> employees</span>");
-    if (D.website) chips.push('<span class="mfx-chip accent"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.2 13.8a4 4 0 0 0 5.66 0l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.4 1.4"/><path d="M13.8 10.2a4 4 0 0 0-5.66 0l-2.83 2.83a4 4 0 1 0 5.66 5.66l1.4-1.4"/></svg> <a href="' + esc(D.website) + '" target="_blank" rel="noopener">Website</a></span>');
+    // V37.8: the anchor now WRAPS the whole chip (icon included) instead of
+    // sitting inside a <span class="mfx-chip">. The pill's own padding
+    // (5px 12px) reads as a generous, obviously-tappable target, but the old
+    // markup only made the six-letter "Website" text clickable — 48x16, under
+    // even this codebase's own documented 24x24 WCAG 2.5.8 minimum (see the
+    // V32.6 comment on .cmp-crosslink). A tap on the icon or the padding did
+    // nothing. Same class, so nothing about the visual chip changes.
+    if (D.website) chips.push('<a class="mfx-chip accent" href="' + esc(D.website) + '" target="_blank" rel="noopener"><svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.2 13.8a4 4 0 0 0 5.66 0l2.83-2.83a4 4 0 0 0-5.66-5.66l-1.4 1.4"/><path d="M13.8 10.2a4 4 0 0 0-5.66 0l-2.83 2.83a4 4 0 1 0 5.66 5.66l1.4-1.4"/></svg> Website</a>');
     el("mfxStripChips").innerHTML = chips.join("");
 
     var more = el("mfxStripMore");
