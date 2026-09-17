@@ -202,6 +202,11 @@ html[data-theme="dark"] .cout{ background:linear-gradient(140deg,rgba(120,160,24
   color:var(--white); font-variant-numeric:tabular-nums; margin:6px 0 4px; }
 .co-fig.is-pos{ color:var(--ink-pos,#046b4c); }
 .co-fig.is-neg{ color:var(--ink-neg,#b51a1a); }
+/* Settled-value pop (the dashboard's mf106 idiom, V37.7 shipped the split bar's
+   grow-in but left this headline hard-set): fires once typing/dragging quiets
+   down, not on every keystroke — see mfc-calc.js maybePop(). */
+.co-fig.mfc-pop{ animation:mfc-fig-pop .42s cubic-bezier(.22,1,.36,1); }
+@keyframes mfc-fig-pop{ 0%{ transform:scale(1); } 35%{ transform:scale(1.05); } 100%{ transform:scale(1); } }
 .co-cap{ font-size:13px; color:var(--text2); line-height:1.6; max-width:52ch; }
 .co-cap b{ color:var(--white); font-weight:700; }
 .co-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(122px,1fr)); gap:12px 16px; margin-top:18px; }
@@ -254,7 +259,10 @@ html[data-theme="dark"] .cbars.is-cost .cb-b{ background:#d97706; }
 @media (max-width:600px){ .cbars{ height:112px; gap:2px; } }
 .cb{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:stretch; height:100%; }
 .cb-stack{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; }
-.cb-a,.cb-b{ display:block; width:100%; }
+/* grow from 0 on the next frame (mfc-calc.js) — the same V23.5 bar idiom the
+   split bar above already uses; a column painted at its final height has a
+   dead transition. */
+.cb-a,.cb-b{ display:block; width:100%; transition:height .6s cubic-bezier(.22,1,.36,1); }
 /* the same two inks as the split bar above: one panel, one colour language */
 .cb-a{ background:#2563eb; border-radius:0 0 2px 2px; }
 .cb-b{ background:#059669; border-radius:2px 2px 0 0; }
@@ -382,9 +390,26 @@ footer.cfoot .cfoot-in > nav.cfoot-nav{ background:none; border-bottom:0; box-sh
 @media (max-width:1023px){ .cfoot-in{ padding-bottom:136px; } }
 @media (max-width:768px){ .cfoot-in{ padding-bottom:196px; } }
 
+/* ── ENTRANCE REVEAL ────────────────────────────────────────────────────────
+   The one motion idiom every other content page on the site carries
+   (calculator.html's own V19.1 staggered .fade-up) that these seven pages
+   shipped without in V37.7 — everything below the fold appeared instantly,
+   with no scroll-reveal at all. Same class name, same mechanism, activated
+   from mfc-calc.js so all seven pages get it from one file. */
+.fade-up{ opacity:0; transform:translateY(16px);
+  transition:opacity .6s ease, transform .7s cubic-bezier(.22,1,.36,1); will-change:opacity,transform; }
+.fade-up.in{ opacity:1; transform:none; }
+.chero-badge.fade-up{ transition-delay:.02s; }
+.chero h1.fade-up{ transition-delay:.08s; }
+.chero-sub.fade-up{ transition-delay:.15s; }
+.cpanel.fade-up{ transition-delay:.05s; }
+.cpanel.cout.fade-up{ transition-delay:.12s; }
+
 @media (prefers-reduced-motion: reduce){
   html{ scroll-behavior:auto; }
-  .co-seg, .crel-card, .ccta-btn, .nav-cta, .skip-link{ transition:none; }
+  .co-seg, .crel-card, .ccta-btn, .nav-cta, .skip-link, .cb-a, .cb-b{ transition:none; }
+  .co-fig.mfc-pop{ animation:none; }
+  .fade-up{ opacity:1 !important; transform:none !important; transition:none; }
 }
 @media print{
   nav, .skip-link, .ccta, .crel, .mf-scroll-prog{ display:none !important; }

@@ -45,6 +45,7 @@
       --red:    #dc2626;
     }
 
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
       background: var(--bg);
@@ -510,6 +511,69 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
 <link rel="stylesheet" href="assets/mfc-finish.css?v=3660">
+<style id="mf-v380-admin-dark">
+/* V38.0 — the admin page's theme toggle set data-theme="dark" on <html> but
+   nothing here read it: this local :root block (top of <head>) has its own
+   var names (--ink/--accent/--bg/--card/--muted/--border/--green/--orange/
+   --red), separate from and NOT overridden by the shared site palette above,
+   so every admin surface — nav, stat tiles, table, inputs, the passcode gate
+   — stayed white/light regardless of the toggle. This flips the same vars for
+   dark, deliberately placed AFTER the mfc-finish.css link: that stylesheet's
+   own html[data-theme="dark"] block also defines --ink/--accent/--green
+   (same names, different meaning — its --ink is a page-BACKGROUND, admin's is
+   TEXT colour) and being later in the file would otherwise win the cascade,
+   which is what first happened here (text rendered near-black-navy on a dark
+   card — verified via computed style before landing this ordering). Also
+   overrides the handful of admin components that bypass the vars entirely
+   with hardcoded hex or inline styles (those need !important to win). */
+html[data-theme="dark"] {
+  --ink:    #e7edfb;
+  --accent: #5b8def;
+  --bg:     #080d1a;
+  --card:   #121d33;
+  --muted:  #8698b7;
+  --border: rgba(150,180,240,.20);
+  --green:  #16c78d;
+  --orange: #f0a836;
+  --red:    #f87171;
+}
+/* mfc-finish.css's own html[data-theme="dark"] body{background:var(--ink)}
+   (--ink meaning PAGE BACKGROUND there) resolves against whichever --ink wins
+   the cascade — which is now this block's --ink (meaning TEXT colour here) —
+   so body would otherwise paint near-white. Pin it explicitly. */
+html[data-theme="dark"] body { background: var(--bg) !important; }
+html[data-theme="dark"] .nav-badge { background: rgba(240,168,54,.16); color: #f0a836; }
+html[data-theme="dark"] .search-input,
+html[data-theme="dark"] .filter-select,
+html[data-theme="dark"] #lead-search { background: var(--card); border-color: var(--border); }
+html[data-theme="dark"] #activate-modal { background: var(--card); }
+html[data-theme="dark"] code { background: rgba(150,180,240,.14); }
+html[data-theme="dark"] .table-wrap table thead th,
+html[data-theme="dark"] table thead th {
+  background: linear-gradient(180deg, var(--card) 0%, var(--card) 80%, rgba(18,29,51,.95) 100%) !important;
+  box-shadow: 0 1px 0 rgba(150,180,240,.14), 0 2px 6px -3px rgba(0,0,0,.35) !important;
+}
+html[data-theme="dark"] .status-activated {
+  background: linear-gradient(135deg, rgba(22,199,141,.22), rgba(22,199,141,.12)) !important;
+  color: #6ee7c2;
+}
+html[data-theme="dark"] .status-declined {
+  background: linear-gradient(135deg, rgba(248,113,113,.22), rgba(248,113,113,.12)) !important;
+  color: #fca5a5;
+}
+/* Passcode gate — the one surface an admin sees before unlocking anything,
+   styled entirely with inline style="" attributes, so every override here
+   needs !important to beat them. */
+html[data-theme="dark"] #passcode-modal { background: var(--card) !important; }
+html[data-theme="dark"] #passcode-modal h2 { color: var(--ink) !important; }
+html[data-theme="dark"] #passcode-modal p { color: var(--muted) !important; }
+html[data-theme="dark"] #passcode-modal code { background: rgba(150,180,240,.16) !important; color: #83aaff !important; }
+html[data-theme="dark"] #passcode-input {
+  background: var(--card) !important; color: var(--ink) !important;
+  border-color: var(--border) !important;
+}
+html[data-theme="dark"] #passcode-input:focus { background: var(--card) !important; }
+</style>
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */

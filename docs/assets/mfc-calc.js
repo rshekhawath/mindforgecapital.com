@@ -142,8 +142,8 @@
       var show = (i === 0 || i === n - 1 || (i + 1) % every === 0);
       return '<span class="cb" title="' + esc(b.label + ': ' + inr((b.a || 0) + (b.b || 0))) + '">' +
         '<span class="cb-stack">' +
-          '<i class="cb-b" style="height:' + hb.toFixed(2) + '%"></i>' +
-          '<i class="cb-a" style="height:' + ha.toFixed(2) + '%"></i>' +
+          '<i class="cb-b" data-h="' + hb.toFixed(2) + '%" style="height:0%"></i>' +
+          '<i class="cb-a" data-h="' + ha.toFixed(2) + '%" style="height:0%"></i>' +
         '</span>' +
         '<span class="cb-x">' + (show ? esc(b.label) : '') + '</span>' +
       '</span>';
@@ -187,10 +187,24 @@
     if (out.note) html += '<div class="co-note">' + out.note + '</div>';
     host.innerHTML = html;
 
-    // grow the split from zero on the next frame — the site's bar idiom; a bar
-    // painted at its final width has a dead transition (V23.5).
+    // grow the split bar AND the year columns from zero on the next frame —
+    // the site's bar idiom; a bar painted at its final size has a dead
+    // transition (V23.5). The year chart shipped without this in V37.7 (only
+    // the split bar above got it); same fix, same mechanism, one paint pass.
     var segs = host.querySelectorAll('.co-seg[data-w]');
-    var paint = function () { segs.forEach(function (s) { s.style.width = s.dataset.w; }); };
+    var bars = host.querySelectorAll('.cb-a[data-h], .cb-b[data-h]');
+    // V38.0: these elements are brand-new (just written via innerHTML above),
+    // so their 0% state has never actually been committed to a rendered frame
+    // — requestAnimationFrame alone let the browser coalesce the 0% write and
+    // the target-size write into one style recalc, so the transition never
+    // started (confirmed: bars snapped straight to final size on every load
+    // and every input change). Forcing a synchronous layout read commits the
+    // 0% state first, so the following rAF write is a genuine second frame.
+    void host.offsetHeight;
+    var paint = function () {
+      segs.forEach(function (s) { s.style.width = s.dataset.w; });
+      bars.forEach(function (b) { b.style.height = b.dataset.h; });
+    };
     w.requestAnimationFrame ? w.requestAnimationFrame(paint) : paint();
     setTimeout(paint, 160);
   }
@@ -257,11 +271,31 @@
       // keystroke. One sentence, once the typing stops, is the readable form.
       sayT = setTimeout(function () { el.textContent = out.fig.k + ': ' + out.fig.v + '.'; }, 700);
     }
+    // Reuses the dashboard's mf106 idiom (size-summary / donut-centre "pop"):
+    // the headline result already redraws on every keystroke and every slider
+    // pixel, so a pop on EACH render would thrash. Fire it only once the value
+    // has actually settled — same 400ms debounce, first paint never pops.
+    var popT = null, lastFigV = null, popSeeded = false;
+    function maybePop(out) {
+      if (!out || !out.fig) return;
+      var v = out.fig.v;
+      if (!popSeeded) { popSeeded = true; lastFigV = v; return; }
+      if (v === lastFigV) return;
+      lastFigV = v;
+      if (popT) clearTimeout(popT);
+      popT = setTimeout(function () {
+        var reduce = w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduce) return;
+        var el = host.querySelector('.co-fig');
+        if (!el) return;
+        el.classList.remove('mfc-pop'); void el.offsetWidth; el.classList.add('mfc-pop');
+      }, 400);
+    }
     function run() {
       var out;
       try { out = cfg.compute(Object.assign({}, state), mode); }
       catch (e) { return; }
-      if (out) { render(host, out); announce(out); }
+      if (out) { render(host, out); announce(out); maybePop(out); }
       if (typeof cfg.onRender === 'function') { try { cfg.onRender(out, Object.assign({}, state), mode); } catch (e) {} }
     }
 
@@ -291,4 +325,23 @@
 
   w.MFCalc = { init: init, inr: inr, compact: compact, pct: pct, group: group, round: round,
                clamp: clamp, esc: esc, math: math };
+
+  /* ── entrance reveal (V19.1's calculator.html idiom, ported here so all
+     seven pages share one copy) — defensive, additive, reduced-motion + no-IO
+     safe; a safety-net timeout guarantees nothing is left permanently invisible. */
+  function ready(fn) { if (d.readyState !== 'loading') fn(); else d.addEventListener('DOMContentLoaded', fn); }
+  ready(function () {
+    try {
+      var els = [].slice.call(d.querySelectorAll('.fade-up'));
+      if (!els.length) return;
+      function showAll() { els.forEach(function (e) { e.classList.add('in'); }); }
+      var reduce = w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduce || !('IntersectionObserver' in w)) { showAll(); return; }
+      var io = new IntersectionObserver(function (ents) {
+        ents.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+      }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' });
+      els.forEach(function (e) { io.observe(e); });
+      setTimeout(showAll, 2600);
+    } catch (e) {}
+  });
 })(window, document);
