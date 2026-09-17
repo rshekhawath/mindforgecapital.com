@@ -2455,6 +2455,127 @@ html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
     </div>
   </section>
 
+  <!-- ── V38.1 — "Which model fits your risk comfort?" ───────────────────────
+       A genuinely interactive first-visit tool, not a visual add-on. Deliberately
+       NOT framed as a quiz or a recommendation engine — three tabs, one pick,
+       one honest reveal — because a "match score" or "we recommend" phrasing on
+       a SEBI-registered research site risks reading as personalised advice.
+       Every figure in a panel is stamped by the SAME MFSTAT injection markers
+       the compare table below already carries (cagr_posttax / max_dd), so this
+       can never disagree with that table — no number is computed here, only
+       selected. HONESTY CONDITION: no "recommended for you" language anywhere;
+       the disclaimer states plainly that this is self-selection, not advice. ── -->
+  <section class="fit-section" id="find-fit" aria-labelledby="fit-h">
+    <style>
+      .fit-card{ background:var(--ink2); border:0.5px solid var(--border2); border-radius:var(--r,16px);
+        padding:28px; box-shadow:0 20px 46px -26px rgba(26,80,216,0.22), 0 6px 16px -10px rgba(15,23,42,0.06); }
+      .fit-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--accent2); }
+      .fit-head h2{ font-size:24px; font-weight:800; letter-spacing:-.01em; margin:8px 0 8px; color:var(--text); }
+      .fit-sub{ font-size:13.5px; color:var(--text2); line-height:1.6; max-width:640px; }
+      .fit-tabs{ display:flex; gap:10px; flex-wrap:wrap; margin:22px 0 20px; }
+      .fit-tab{ flex:1 1 180px; display:flex; flex-direction:column; align-items:flex-start; gap:7px;
+        background:var(--ink); border:1px solid var(--border2); border-radius:12px; padding:12px 14px;
+        cursor:pointer; text-align:left; transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease; font:inherit; }
+      .fit-tab:hover{ transform:translateY(-2px); box-shadow:0 10px 22px -14px rgba(26,80,216,0.30); }
+      .fit-tab.is-active{ border-color:var(--accent2); box-shadow:0 0 0 1px var(--accent2) inset, 0 10px 24px -14px rgba(26,80,216,0.35); }
+      .fit-tab:focus-visible{ outline:2px solid var(--accent2); outline-offset:2px; }
+      .fit-band{ display:inline-block; padding:2px 9px; border-radius:12px; font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+      .fit-band.low{ background:rgba(5,150,105,0.14); color:var(--data-strong,#047857); }
+      .fit-band.med{ background:rgba(37,99,235,0.14); color:var(--data-mid,#1a50d8); }
+      .fit-band.high{ background:rgba(220,38,38,0.12); color:var(--ink-neg,#dc2626); }
+      .fit-tab-lbl{ font-size:12.5px; font-weight:600; color:var(--text2); line-height:1.4; }
+      .fit-panel{ display:none; }
+      .fit-panel.is-active{ display:block; animation:fitReveal .35s ease; }
+      @keyframes fitReveal{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+      @media (prefers-reduced-motion:reduce){ .fit-panel.is-active{ animation:none; } }
+      .fit-panel-name{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:17px; font-weight:800; color:var(--text); }
+      .fit-panel-desc{ font-size:13.5px; color:var(--text2); margin:8px 0 16px; line-height:1.6; max-width:600px; }
+      .fit-panel-stats{ display:flex; gap:28px; flex-wrap:wrap; margin-bottom:18px; }
+      .fit-panel-stats b{ display:block; font-size:22px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; }
+      .fit-panel-stats span{ display:block; font-size:11px; color:var(--text3); margin-top:2px; }
+      .fit-panel-row{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+      .fit-cta{ font-size:13px; font-weight:600; color:var(--accent2); }
+      .fit-cta-btn{ display:inline-block !important; width:auto !important; padding:11px 22px !important; font-size:13.5px !important; }
+      .fit-disc{ font-size:11px; color:var(--text3); margin-top:20px; line-height:1.55; max-width:680px; }
+      @media(max-width:600px){ .fit-card{ padding:20px; } .fit-tabs{ flex-direction:column; } .fit-tab{ flex:none; } }
+    </style>
+    <div class="container">
+      <div class="fit-card fade-up">
+        <div class="fit-head">
+          <span class="fit-eyebrow">Explore, don&rsquo;t guess</span>
+          <h2 id="fit-h">Which model fits how much swing you can take?</h2>
+          <p class="fit-sub">Pick the risk comfort closest to yours and see MindForge&rsquo;s own published backtest for that band — the same figures as the comparison table below. A self-selection tool, not personalised investment advice.</p>
+        </div>
+        <div class="fit-tabs" role="tablist" aria-label="Risk comfort">
+          <button type="button" class="fit-tab" role="tab" id="fit-tab-ma" aria-selected="false" aria-controls="fit-panel-ma" onclick="fitSelect('ma')">
+            <span class="fit-band low">Low</span>
+            <span class="fit-tab-lbl">Smooth over fast — diversified across asset classes</span>
+          </button>
+          <button type="button" class="fit-tab is-active" role="tab" id="fit-tab-lm" aria-selected="true" aria-controls="fit-panel-lm" onclick="fitSelect('lm')">
+            <span class="fit-band med">Medium</span>
+            <span class="fit-tab-lbl">A typical correction doesn&rsquo;t rattle me</span>
+          </button>
+          <button type="button" class="fit-tab" role="tab" id="fit-tab-sm" aria-selected="false" aria-controls="fit-panel-sm" onclick="fitSelect('sm')">
+            <span class="fit-band high">High</span>
+            <span class="fit-tab-lbl">Sharp swings, for more upside potential</span>
+          </button>
+        </div>
+        <div class="fit-panels">
+          <div class="fit-panel" id="fit-panel-ma" role="tabpanel" aria-labelledby="fit-tab-ma">
+            <div class="fit-panel-name">MindForge MultiAsset <span class="cmp-badge free">Free</span></div>
+            <p class="fit-panel-desc">8 ETFs across equity, gold, silver &amp; debt — the diversified, lowest-drawdown book.</p>
+            <div class="fit-panel-stats">
+              <div><b><!--MFSTAT:ma:cagr_posttax-->15.9%<!--/MFSTAT--></b><span>Backtest CAGR, after tax</span></div>
+              <div><b><!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></b><span>Max drawdown, backtest</span></div>
+            </div>
+            <div class="fit-panel-row">
+              <button type="button" class="sidebar-btn fit-cta-btn" onclick="openRegModal('MindForge MultiAsset', 0, 'multiasset')">Get MultiAsset — free &rarr;</button>
+              <a class="fit-cta" href="multiasset.html">See the full MultiAsset page &rarr;</a>
+            </div>
+          </div>
+          <div class="fit-panel is-active" id="fit-panel-lm" role="tabpanel" aria-labelledby="fit-tab-lm">
+            <div class="fit-panel-name">MindForge LargeMidcap 250 <span class="cmp-badge pop">★ Most popular</span></div>
+            <p class="fit-panel-desc">A factor-ranked large &amp; midcap book — the edge is the 5-year compounding.</p>
+            <div class="fit-panel-stats">
+              <div><b><!--MFSTAT:lm:cagr_posttax-->29.8%<!--/MFSTAT--></b><span>Backtest CAGR, after tax</span></div>
+              <div><b><!--MFSTAT:lm:max_dd-->-25.8%<!--/MFSTAT--></b><span>Max drawdown, backtest</span></div>
+            </div>
+            <div class="fit-panel-row">
+              <button type="button" class="sidebar-btn fit-cta-btn" onclick="openRegModal('MindForge LargeMidcap 250', 999, 'largemidcap')">Get my dashboard — &#8377;999/mo &rarr;</button>
+              <a class="fit-cta" href="largemidcap.html">See the full LargeMidcap 250 page &rarr;</a>
+            </div>
+          </div>
+          <div class="fit-panel" id="fit-panel-sm" role="tabpanel" aria-labelledby="fit-tab-sm">
+            <div class="fit-panel-name">MindForge SmallMicro 500 <span class="cmp-badge cagr">Top CAGR</span></div>
+            <p class="fit-panel-desc">The highest-conviction small &amp; microcap book — also the highest-volatility.</p>
+            <div class="fit-panel-stats">
+              <div><b><!--MFSTAT:sm:cagr_posttax-->39.6%<!--/MFSTAT--></b><span>Backtest CAGR, after tax</span></div>
+              <div><b><!--MFSTAT:sm:max_dd-->-22.5%<!--/MFSTAT--></b><span>Max drawdown, backtest</span></div>
+            </div>
+            <div class="fit-panel-row">
+              <button type="button" class="sidebar-btn fit-cta-btn" onclick="openRegModal('MindForge SmallMicro 500', 1499, 'smallmicro')">Get my dashboard — &#8377;1,499/mo &rarr;</button>
+              <a class="fit-cta" href="smallmicro.html">See the full SmallMicro 500 page &rarr;</a>
+            </div>
+          </div>
+        </div>
+        <p class="fit-disc">Backtested / simulated figures, after 20%&nbsp;short-term capital-gains tax — the identical numbers as the comparison table below, sourced the same way. Past performance does not guarantee future results. This reflects the risk comfort <b>you</b> picked; it is not personalised investment advice.</p>
+      </div>
+    </div>
+  </section>
+  <script>
+    // V38.1 — three tabs, one active panel, no framework. aria-selected/hidden
+    // kept in sync so the reveal is announced correctly, not just painted.
+    function fitSelect(key){
+      ['ma','lm','sm'].forEach(function(k){
+        var tab = document.getElementById('fit-tab-' + k);
+        var panel = document.getElementById('fit-panel-' + k);
+        var on = (k === key);
+        if (tab){ tab.classList.toggle('is-active', on); tab.setAttribute('aria-selected', on ? 'true' : 'false'); }
+        if (panel){ panel.classList.toggle('is-active', on); }
+      });
+    }
+  </script>
+
   <!-- ── COMPARISON TABLE ── -->
   <div class="compare-section" id="compare">
     <h3>Compare all strategies <span class="updated-badge">Updated Jul&nbsp;2026</span></h3>

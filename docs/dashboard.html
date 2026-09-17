@@ -3509,7 +3509,22 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
        on the same edge as the two figures above it — a flex row defaults to
        flex-start and stranded "1D +0.42%" against the left of the cell. */
     td.price .px-day{ display:flex; justify-content:flex-end; margin-left:0; margin-top:2px; }
+    /* ── V38.2 — "Since you last checked": see renderWelcomeDigest() below for
+       the honesty condition. Purely additive; hidden unless there is a real,
+       device-local previous visit to compare against. */
+    .wb-card{ display:none; align-items:flex-start; gap:10px; background:var(--ink2);
+      border:0.5px solid var(--border2); border-radius:14px; padding:13px 16px;
+      margin-bottom:14px; }
+    .wb-dot{ width:8px; height:8px; border-radius:50%; background:var(--accent2);
+      margin-top:5px; flex-shrink:0; }
+    .wb-body{ font-size:13px; color:var(--text2); line-height:1.55; }
+    .wb-line + .wb-line{ margin-top:4px; }
+    html[data-theme="dark"] .wb-card{ background:rgba(91,141,239,0.08); }
     </style>
+    <div class="wb-card fade-up" id="wb-card" style="display:none;">
+      <span class="wb-dot" aria-hidden="true"></span>
+      <div class="wb-body" id="wb-body"></div>
+    </div>
     <div class="profit-card fade-up" id="profit-card" style="display:none;">
       <div class="pc-left">
         <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span>Live profit since rebalance <span id="pc-rebal-date"></span></div>
@@ -6274,6 +6289,10 @@ function renderDashboard(sub, stocks) {
   progressSyncLoad(currentStrategy).then(function (changed) {
     if (changed) applyBoughtToDom();
   });
+  // V38.2 — "since you last checked" digest. Reads a local snapshot of the last
+  // visit and reports only real deltas; see renderWelcomeDigest() for the
+  // honesty condition. Runs from localStorage alone so it works in ?demo=1 too.
+  try { renderWelcomeDigest(); } catch (e) {}
   document.getElementById('strategy-name').textContent = currentStrategy || '—';
   setupStrategySwitcher(currentStrategy);   // V21.3: turn the pill into a switcher when ≥2 strategies are known
 
@@ -8199,6 +8218,67 @@ function loadBought(strategy) {
     const raw = localStorage.getItem(boughtStorageKey(strategy));
     return raw ? JSON.parse(raw) : {};
   } catch (e) { return {}; }
+}
+
+/* ── V38.2 — "SINCE YOU LAST CHECKED": A REAL-EVENTS DIGEST, NOT A LOGIN STREAK ──
+   The dashboard already answers "what is my number today" in depth (the profit
+   headline, Top/Lagging chips, the attribution breakdown, the cycle track
+   record). It never answered "what changed since I was last here" — a member
+   had to re-read the whole page to find out, every time.
+   This diffs the CURRENT page state against a snapshot of the member's
+   PREVIOUS visit (localStorage, per device, per token — the same durability
+   trade-off the price cache already makes) and reports only two kinds of real
+   delta: a new rebalance has published, or the member has placed more orders
+   in this cycle than they had last time. Both are facts already computed
+   elsewhere on this page (window._rebalDate, loadBought()) — nothing here is a
+   new number, only a comparison of two old ones.
+   HONESTY CONDITION — this is the line that keeps it from being a streak/login
+   gamification mechanic, which the owner explicitly ruled out: there is no
+   counter of visits, days, or logins anywhere in this feature, opening the
+   page twice in a row produces nothing ("since last visit" needs ≥10 minutes
+   to have passed, so a refresh mid-session is never read as a return trip),
+   and a visit where nothing changed shows NOTHING — it does not manufacture a
+   "no changes!" banner just to have something to say. Fail-soft throughout: no
+   card in the DOM, no previous snapshot, or a strategy switch → the card stays
+   hidden and the page is exactly what it was before this existed. */
+function _welcomeKey(){ return 'mfc_lastvisit_' + (token || 'demo' + (demoMode || '')); }
+function renderWelcomeDigest(){
+  var card = document.getElementById('wb-card');
+  if (!card) return;
+  card.style.display = 'none';
+  var strat = currentStrategy || '';
+  var rebalIso = null;
+  try { var d = window._rebalDate; if (d && !isNaN(d.getTime())) rebalIso = _isoDay(d); } catch(e){}
+  var orders = 0;
+  try { orders = Object.keys(loadBought(strat) || {}).length; } catch(e){}
+
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(_welcomeKey()) || 'null'); } catch(e){}
+  var now = Date.now();
+  var lines = [];
+  var sameCycle = raw && raw.rebal && rebalIso && raw.rebal === rebalIso;
+  if (raw && typeof raw === 'object' && raw.strategy === strat &&
+      (now - (Number(raw.ts) || 0)) > 10 * 60 * 1000){
+    if (rebalIso && raw.rebal && rebalIso !== raw.rebal){
+      lines.push('New picks are live for this cycle — your book has moved on since your last visit.');
+    } else if (sameCycle && typeof raw.orders === 'number' && orders > raw.orders){
+      var n = orders - raw.orders;
+      lines.push('You’ve placed ' + n + ' more order' + (n === 1 ? '' : 's') + ' since your last visit.');
+    }
+  }
+  if (lines.length){
+    var body = document.getElementById('wb-body');
+    if (body) body.innerHTML = lines.map(function(t){
+      return '<div class="wb-line">' + t.replace(/</g,'&lt;') + '</div>';
+    }).join('');
+    card.style.display = 'flex';
+  }
+  // Overwrite AFTER reading — the next visit compares against what is true now.
+  try {
+    localStorage.setItem(_welcomeKey(), JSON.stringify({
+      strategy: strat, rebal: rebalIso, orders: orders, ts: now
+    }));
+  } catch(e){}
 }
 
 /* ── V36.6 — THE CHECKLIST NOW OUTLIVES THE BROWSER IT WAS TICKED IN ─────────
