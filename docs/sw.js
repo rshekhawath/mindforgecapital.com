@@ -715,7 +715,15 @@
 // also lost the duplicate broker-verified strip and got the rebuilt footer
 // credential block. A precached document has no query to bust, so an installed
 // visitor left on v98 would keep the old nav and the old footer.
-const CACHE = 'mfc-v99';
+// V38.4 — mfc-v100. Both precached documents changed: index.html and login.html
+// each carry the new mfc-finish.css?v=3670 link (the footer touch-target rule
+// now covers the calculators' .cfoot-nav) and login.html's footer credential
+// block gained the non-breaking spaces + the nowrap guard around the INH number
+// that the rest of the site already had — at 320px it was breaking as
+// "…· INH-" / "XXXXXXXXXXX ·" and splitting "Sagar / Shekhawath". A precached
+// document has no query string to bust, so an installed visitor left on v99
+// would keep both the old footer and the old stylesheet link.
+const CACHE = 'mfc-v100';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

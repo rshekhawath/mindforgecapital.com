@@ -38,9 +38,24 @@
       --accent: #1a50d8;
       --bg:     #f0f5ff;
       --card:   #ffffff;
-      --muted:  #64748b;
+      /* V38.4: was #64748b, which measured 4.35:1 on --bg and 4.34:1 on the
+         #f1f5f9 Clear button — both under AA for 14px body text. #475569 is the
+         public site's own --text3 and lands at 6.9:1 on both. */
+      --muted:  #475569;
       --border: #dbeafe;
       --green:  #059669;
+      /* V38.4 — TWO GREENS ON PURPOSE. --green is INK (stat value, status dot,
+         icon) on a light surface. --green-fill is the same family darkened until
+         WHITE text on it clears AA: #059669 measured 3.77:1 behind "Activate
+         selected →" and the confirm button, under the 4.5 those 13-14px labels
+         need. #047857 is 5.55:1 — and was already this page's own hover colour,
+         so the resting state was the less legible of the two. --on-fill is the
+         ink that sits on a filled button; dark mode flips it (see the dark block
+         at the end of this <style>) because the dark palette's fills are bright
+         accents, where white is the unreadable choice. */
+      --green-fill:     #047857;
+      --green-fill-hov: #036448;
+      --on-fill:        #ffffff;
       --orange: #d97706;
       --red:    #dc2626;
     }
@@ -204,7 +219,7 @@
     .btn-refresh {
       padding: 9px 18px;
       background: var(--accent);
-      color: #fff;
+      color: var(--on-fill);
       border: none;
       border-radius: 8px;
       font-size: 14px;
@@ -312,7 +327,7 @@
     .btn-activate,
     .btn-decline {
       padding: 6px 14px;
-      color: #fff;
+      color: var(--on-fill);
       border: none;
       border-radius: 7px;
       font-size: 13px;
@@ -322,8 +337,8 @@
       transition: background .2s, opacity .2s, transform .15s;
       white-space: nowrap;
     }
-    .btn-activate { background: var(--green); }
-    .btn-activate:hover { background: #047857; transform: translateY(-1px); }
+    .btn-activate { background: var(--green-fill); }
+    .btn-activate:hover { background: var(--green-fill-hov); transform: translateY(-1px); }
     .btn-decline  { background: var(--red, #dc2626); }
     .btn-decline:hover  { background: #b91c1c; transform: translateY(-1px); }
     .btn-activate:disabled,
@@ -418,8 +433,8 @@
     .btn-modal-confirm {
       flex: 2;
       padding: 11px;
-      background: var(--green);
-      color: #fff;
+      background: var(--green-fill);
+      color: var(--on-fill);
       border: none;
       border-radius: 8px;
       font-size: 14px;
@@ -428,7 +443,7 @@
       cursor: pointer;
       transition: background .2s;
     }
-    .btn-modal-confirm:hover { background: #047857; }
+    .btn-modal-confirm:hover { background: var(--green-fill-hov); }
     .btn-modal-confirm:disabled { opacity: .5; cursor: default; }
 
     .close-modal-btn {
@@ -459,8 +474,8 @@
       box-shadow: 0 8px 32px rgba(0,0,0,.15);
       white-space: nowrap;
     }
-    #toast.success { background: var(--green); color: #fff; }
-    #toast.error   { background: var(--red);   color: #fff; }
+    #toast.success { background: var(--green-fill); color: var(--on-fill); }
+    #toast.error   { background: var(--red);   color: var(--on-fill); }
 
     /* ── Empty / loading states ── */
     .state-msg {
@@ -510,7 +525,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3660">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3670">
 <style id="mf-v380-admin-dark">
 /* V38.0 — the admin page's theme toggle set data-theme="dark" on <html> but
    nothing here read it: this local :root block (top of <head>) has its own
@@ -534,9 +549,27 @@ html[data-theme="dark"] {
   --muted:  #8698b7;
   --border: rgba(150,180,240,.20);
   --green:  #16c78d;
+  /* V38.4 — the dark palette's accents are BRIGHT, so a filled button here takes
+     dark ink, not white. Measured with white: Refresh 3.23:1, Activate 2.19:1,
+     Decline 2.77:1 — all under AA, all invisible to the light-mode pass because
+     V38.0 flipped the surfaces and left the ink. With #06121f: Refresh 5.10:1,
+     Activate 7.59:1, Decline 5.72:1. Keeping the bright fill (rather than
+     darkening it to rescue white) is what keeps these buttons reading as the
+     primary action on a near-black page. */
+  --green-fill:     #16c78d;
+  --green-fill-hov: #0fb37e;
+  --on-fill:        #06121f;
   --orange: #f0a836;
   --red:    #f87171;
 }
+/* The Clear button is the one filled control whose background was a hardcoded
+   light hex (#f1f5f9): in dark it kept that near-white plate while its label
+   followed --muted to #8698b7 — 2.67:1, the worst reading on the page. */
+html[data-theme="dark"] .btn-modal-cancel {
+  background: rgba(150,180,240,.12) !important;
+  color: var(--ink) !important;
+}
+html[data-theme="dark"] .btn-modal-cancel:hover { background: rgba(150,180,240,.20) !important; }
 /* mfc-finish.css's own html[data-theme="dark"] body{background:var(--ink)}
    (--ink meaning PAGE BACKGROUND there) resolves against whichever --ink wins
    the cascade — which is now this block's --ink (meaning TEXT colour here) —
@@ -672,7 +705,14 @@ html[data-theme="dark"] #passcode-input:focus { background: var(--card) !importa
       <p>Loading leads…</p>
     </div>
     <!-- V5.2 #11: bulk-activate toolbar (visible only when ≥1 row selected) -->
-    <div id="bulk-bar" style="display:none;margin:0 0 12px;padding:10px 14px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.22);border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <!-- V38.4 — this attribute carried BOTH `display:none` and, six declarations later,
+     `display:flex`. Last one wins, so the bar's hidden default never applied: it
+     painted on first load and stayed through a failed fetch, offering "0 selected",
+     two force-strategy dropdowns and an "Activate selected →" button over an empty
+     table reading "Loading leads…" / "Error loading data". refreshBulkBar() sets
+     display:flex when a checkbox is ticked, so the flex declaration was never needed
+     here; the other flex properties stay and take effect when it does. -->
+    <div id="bulk-bar" style="display:none;margin:0 0 12px;padding:10px 14px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.22);border-radius:10px;align-items:center;gap:12px;flex-wrap:wrap;">
       <strong id="bulk-count" style="color:var(--accent);">0 selected</strong>
       <select id="bulk-strategy" aria-label="Force a strategy for the selected leads" style="padding:8px 12px;border:1px solid #dbeafe;border-radius:8px;font-size:16px;flex:1;min-width:200px;">
         <option value="">Use each lead's chosen strategy</option>
@@ -786,7 +826,7 @@ html[data-theme="dark"] #passcode-input:focus { background: var(--card) !importa
     <button id="passcode-submit" style="width:100%; margin-top:16px; padding:13px; background:linear-gradient(135deg, #1a50d8, #2563eb); color:#ffffff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; transition:transform .15s, box-shadow .2s, background-position .35s; box-shadow:0 8px 20px -8px rgba(26,80,216,0.45);">
       Unlock admin →
     </button>
-    <p style="margin:14px 0 0; font-size:11.5px; color:#94a3b8; text-align:center;">Cached in sessionStorage until tab closes</p>
+    <p style="margin:14px 0 0; font-size:11.5px; color:#5b6779; text-align:center;">Cached in sessionStorage until tab closes</p>
   </div>
 </div>
 <style>
@@ -931,6 +971,7 @@ function loadLeads() {
     })
     .catch(function(err) {
       document.getElementById('table-state').innerHTML = '<div class="icon" style="color:var(--orange);">' + ICON_WARN + '</div><p>Error loading data. Check your Apps Script URL and make sure it is deployed as a Web App accessible to Anyone.</p>';
+      refreshBulkBar();   // V38.4: the only other caller is renderLeads(), which this path never reaches
     })
     .finally(function() {
       if (refreshBtn) refreshBtn.classList.remove('spinning');
