@@ -2599,5 +2599,60 @@ html[data-theme="dark"] .px52-mark{ border-color:var(--accent2); box-shadow:0 1p
   }catch(e){}
 })();
 </script>
+
+<!-- V38.6 · THE SORT STRIP GOT AN EDGE CUE IN V34.0; THE TABLE IT SORTS NEVER DID.
+     The block directly above fades #mobSort's ends so a reader knows chips
+     continue past the edge. The scoring table itself — the reason the page
+     exists — is cut off at EVERY width a desktop or tablet reader ever sees,
+     and says nothing. `.table-card` is the scroll container here (on screener
+     an inner `.tbl-scroll` is, which is why that page's fix names a different
+     element), and it is the widest table on the site: eleven columns against a
+     card that tops out at 1182px.
+
+         601px  -> 944px hidden      1024px -> 545px hidden
+         768px  -> 777px hidden      1440px -> 329px hidden
+         820px  -> 725px hidden      1920px -> 329px hidden
+
+     So on a 1920px monitor the reader still loses INTEGRITY, PRICE and
+     INTRINSIC VALUE with nothing to suggest they exist. Scrollbars do not cover
+     this: they are overlay-only on a trackpad and absent on touch.
+
+     WHY THE MASK IS SAFE ON THIS ELEMENT, both verified before shipping:
+      · `.table-card` carries the V31.8 frozen first-two-columns
+        (`position:sticky`) at >=901px. A CSS mask creates a containing block and
+        can break sticky descendants — measured at 1024px with scrollLeft 300,
+        the frozen cell stays pinned 1px off the card's left edge with the mask
+        applied exactly as without it.
+      · The card also wraps #mobSort, which owns the ms-l/ms-r mask above.
+        The two never paint together: the strip is shown only below 601px and
+        the card only scrolls at 601px and up, so there is no nested fade.
+
+     Self-limiting like every other copy of this cue — the class is applied only
+     while something is hidden and removed at the end of the scroll. -->
+<style id="mf-v386-scroll-cue">
+.table-card.mfx-more-r{
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+          mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+}
+</style>
+<script id="mfc-scroll-cue">
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.table-card'));
+    if(!els.length) return;
+    function sync(el){
+      var max=el.scrollWidth-el.clientWidth;
+      el.classList.toggle('mfx-more-r', max>8 && el.scrollLeft < max-4);
+    }
+    els.forEach(function(el){
+      var run=function(){ sync(el); };
+      el.addEventListener('scroll', run, {passive:true});
+      window.addEventListener('resize', run, {passive:true});
+      if(typeof MutationObserver==='function') new MutationObserver(run).observe(el,{childList:true,subtree:true});
+      run();
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

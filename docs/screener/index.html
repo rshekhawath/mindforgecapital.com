@@ -3192,5 +3192,49 @@ h1, h2, h3, h4, th,
      fallback fires only when nothing else moved aria-expanded, and the drawer
      sizing writes the same measured value this page already writes. -->
 <script defer src="../assets/mfc-chrome.js?v=3400"></script>
+
+<!-- V38.6 · THE RESULTS TABLE HAD NO EDGE CUE, AND IT IS THE ONE TABLE ON THIS
+     PAGE A READER CANNOT SEE ALL OF. V34.0 gave every horizontal scroller a
+     right-edge fade so content past the edge announces itself; V34.6 then took
+     the 600px gate off because the band that needed it most was ABOVE 600. Both
+     shipped to smallmicro, largemidcap, disclosures and fii-dii. This page was
+     never given either, although its scroller carries the very class the shared
+     script looks for. Measured here, table mode, nothing hidden by a scrollbar
+     (they are overlay-only on the trackpad this is read on):
+
+         601px -> 149px hidden, NOTHING    700px ->  50px hidden, NOTHING
+         640px -> 110px hidden, NOTHING    768px -> fits
+         1180px -> 18px hidden, NOTHING
+
+     149px is a whole column of the results — a phone held sideways, a small
+     tablet, or a half-screen window loses it with no sign it was ever there.
+     The mask is self-limiting: the class goes on only while something is
+     actually hidden and comes off at the end of the scroll, so it needs no
+     width bound and paints nothing on the widths that already fit. -->
+<style id="mf-v386-scroll-cue">
+.mfx-more-r{
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+          mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+}
+</style>
+<script id="mfc-scroll-cue">
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.tbl-scroll'));
+    if(!els.length) return;
+    function sync(el){
+      var max=el.scrollWidth-el.clientWidth;
+      el.classList.toggle('mfx-more-r', max>8 && el.scrollLeft < max-4);
+    }
+    els.forEach(function(el){
+      var run=function(){ sync(el); };
+      el.addEventListener('scroll', run, {passive:true});
+      window.addEventListener('resize', run, {passive:true});
+      if(typeof MutationObserver==='function') new MutationObserver(run).observe(el,{childList:true,subtree:true});
+      run();
+    });
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
