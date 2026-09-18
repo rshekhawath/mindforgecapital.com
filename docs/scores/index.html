@@ -596,6 +596,9 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
    dropped them to 4.44 / 4.34 — one step deeper in the same hue clears AA. */
 .gp-weak{background:rgba(180,83,9,.08);color:var(--ink-warn);border:0.5px solid rgba(180,83,9,.2)}
 .gp-bad{background:rgba(220,38,38,.07);color:var(--ink-neg);border:0.5px solid rgba(220,38,38,.18)}
+/* V38.5 — the sixth pill. gradeCls() can now return it (see the `na` branch);
+   same declaration scores/company.html has carried since V26.8. */
+.gp-na{background:var(--ink3);color:var(--text3);border:0.5px solid var(--border2)}
 .skel{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(37,99,235,.07) 25%,rgba(37,99,235,.16) 37%,rgba(37,99,235,.07) 63%);background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
 @keyframes skel-sweep{0%{background-position:100% 0}100%{background-position:0 0}}
 .empty-row td{text-align:center;padding:56px 24px;color:var(--text3)}
@@ -1290,7 +1293,12 @@ let bandFilter=null, BANDS=[], BAND_COUNTS=[];
 const PAGE_SIZE=30;
 let sortKey="market_cap_cr", sortDir=-1;   // default: largest market cap first
 
-function gradeCls(s){const g=MFCScores.grade(s).cls;return g==="v-strong"?"gp-strong":g==="v-good"?"gp-good":g==="v-weak"?"gp-weak":g==="v-bad"?"gp-bad":"gp-fair";}
+/* V38.5 — the `na` branch was missing HERE and present in scores/company.html,
+   two copies of one function. MFCScores.grade(null) returns cls "na", which fell
+   through to "gp-fair" — so an unscored stock would have rendered the blue
+   "Fair" pill carrying the label "No score": the colour saying one thing and the
+   word another. .gp-na is defined alongside the other five pills below. */
+function gradeCls(s){const g=MFCScores.grade(s).cls;return g==="v-strong"?"gp-strong":g==="v-good"?"gp-good":g==="v-weak"?"gp-weak":g==="v-bad"?"gp-bad":g==="na"?"gp-na":"gp-fair";}
 function fmtTone(v,d,kind){if(v==null)return`<span class="na">—</span>`;return`<span class="num ${toneClass(v,kind)}">${Number(v).toFixed(d)}</span>`;}
 function toneClass(v,kind){if(v==null)return"";if(kind==="q")return v>=25?"v-strong":v>=15?"v-good":v>=0?"":"v-bad";if(kind==="pe")return v<0?"v-bad":v<=18?"v-good":v<=35?"":v<=60?"v-weak":"v-bad";return"";}
 function scoreCell(s){
@@ -1300,7 +1308,15 @@ function scoreCell(s){
   return`<div class="score-cell"><span class="score-num" style="color:${k}">${s.toFixed(0)}</span><div class="score-track"><div class="score-fill" style="width:${s}%;background:${c}"></div></div></div>`;
 }
 function overallCell(d){
-  const s=d._overall;const c=MFCScores.color(s),g=MFCScores.grade(s);
+  const s=d._overall;
+  /* V38.5 — scoreCell() above guards `s==null`; this one did not, and `s.toFixed(0)`
+     on a null throws TypeError, which kills the WHOLE table render rather than one
+     cell. _overall is null by design in scores-engine.js whenever a stock has too
+     few Quality or Value inputs (8 of 2,120 today: 3PLAND, AGRITECH, ASHIKAG,
+     ELCIDIN, NDGL, NIRAJISPAT, TECILCHEM, TIIL). Nothing reached here only because
+     ALL is filtered to scored rows upstream — one filter away from a blank page. */
+  if(s==null)return`<div class="overall-cell"><span class="overall-num na">—</span><span class="grade-pill gp-na">No score</span></div>`;
+  const c=MFCScores.color(s),g=MFCScores.grade(s);
   return`<div class="overall-cell"><span class="overall-num" style="color:${c}">${s.toFixed(0)}</span><span class="grade-pill ${gradeCls(s)}">${g.label}</span></div>`;
 }
 // V16.3: Intrinsic Value (Graham number = √(22.5 × EPS × Book Value)) + colour-coded
