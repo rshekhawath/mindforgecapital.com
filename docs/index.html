@@ -1732,18 +1732,26 @@ html[data-theme="dark"] .vcard-bt-alpha{ background:rgba(120,160,240,.12); borde
   .timeline::before { display: none; }          /* hide vertical line */
   .tl-item {
     grid-template-columns: 1fr !important;       /* stack year above content */
-    padding: 20px 0;
+    padding: 16px 0 16px 16px;
     border-bottom: 0.5px solid var(--border);
+    border-left: 2px solid var(--accent);        /* left-border replaces vertical connector */
     gap: 6px;
   }
   .tl-item:last-child { border-bottom: none; }
-  .tl-item::before { display: none; }           /* hide dot */
+  .tl-item::before { display: none; }           /* hide dot (replaced by border-left) */
   .tl-year { text-align: left !important; padding: 0; font-size: 12px; }
 
-  /* ── Five criteria pills ── */
+  /* ── Five criteria pills: flex so the last 2 auto-center ── */
   .criteria-row {
-    grid-template-columns: repeat(3, 1fr) !important;
+    display: flex !important;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
+  }
+  .criteria-row .crit-pill {
+    width: calc(33.333% - 6px);
+    min-width: 120px;
+    flex-shrink: 0;
   }
 
   /* ── Team grid (overrides inline style) ── */
@@ -1802,14 +1810,7 @@ html[data-theme="dark"] .vcard-bt-alpha{ background:rgba(120,160,240,.12); borde
   50% { transform: translate(35px, -20px) scale(1.1); }
 }
 
-/* ── HERO VISUAL CARD: gentle float ── */
-.hv-card {
-  animation: hv-float 7s ease-in-out infinite;
-}
-@keyframes hv-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
+/* ── HERO VISUAL CARD: gentle float (active rule is v14-float in the V14 block below) ── */
 @media (prefers-reduced-motion: reduce) {
   .hv-card { animation: none; }
   .hero-bg::before, .hero-bg::after { animation: none; }
@@ -2618,12 +2619,6 @@ footer::before {
     0 18px 36px -14px rgba(26,80,216,0.45);
 }
 
-/* Decorative accent under each section label — tiny bar below the eyebrow text */
-.section-label::after {
-  content: ''; display: inline-block;
-  width: 0; height: 0;
-  margin: 0;
-}
 
 /* Tiny gradient rule under every section h2 (where it's a sub-heading after the section-label) */
 .how h2.fade-up, .strategies h2.fade-up, .why-h2,
@@ -2641,19 +2636,8 @@ footer::before {
 }
 .newsletter h2.fade-up::after { margin-left: auto; margin-right: auto; }
 
-/* Strategy card shine sweep on hover — diagonal shimmer like premium fintech */
+/* Strategy card container — position context for the hover gradient ring (set by V14 block) */
 .strat-card:not(.featured) { position: relative; overflow: hidden; }
-.strat-card:not(.featured)::after {
-  /* override the existing 1px top-rule by adding a second pseudo via a different layer:
-     keep this layer purely as a hover shine, gated on hover only */
-}
-.strat-card .shine-overlay,
-.strat-card::before {
-  /* keep existing */
-}
-.strat-card:not(.featured) > *:first-child::before {
-  /* unused — skip */
-}
 
 /* Footer brand: soft radial halo behind logo + tighter copy hierarchy */
 .footer-brand {
