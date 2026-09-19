@@ -3277,3 +3277,160 @@ html textarea:not(:focus):not(:hover){
 @media print{
   html input, html select, html textarea{ border-color: #64748b !important; }
 }
+
+/* ============================================================================
+   V38.7 — "FREE TOOLS" NAV GROUP
+   ----------------------------------------------------------------------------
+   The bar carried nine items, and three of them (Scanner, Integrity Score,
+   FII/DII) serve a visitor who wants to research stocks themselves — the exact
+   person who has already decided not to. The two links a first-time visitor
+   actually reaches for, "How it works" and "Pricing", did not exist at all.
+
+   Nothing is deleted: the five research tools move one level down into a native
+   <details> group, and every URL, footer link and sitemap entry is untouched.
+   <details> rather than a scripted menu for the same reason the FAQ uses it —
+   the links are in the DOM for crawlers and for JS-off readers, and keyboard and
+   screen-reader behaviour comes for free. mfc-chrome.js adds outside-click and
+   Escape closing on top; without the script the group still opens and closes.
+
+   Two shapes, one markup:
+     >=1025px  a dropdown — summary in the bar, menu absolutely positioned under it
+     <=1024px  an inline section inside the drawer, because an absolute overlay
+               inside a scrolling drawer is a trap on a phone
+   ========================================================================== */
+.nav-links .nav-group{ position:relative; }
+.nav-links .nav-group > summary{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:14px; font-weight:400; color:var(--text2);
+  height:40px; line-height:1; cursor:pointer;
+  list-style:none; white-space:nowrap;
+  transition:color .2s;
+}
+.nav-links .nav-group > summary::-webkit-details-marker{ display:none; }
+.nav-links .nav-group > summary::after{
+  content:""; width:7px; height:7px; flex:0 0 auto;
+  border-right:1.6px solid currentColor; border-bottom:1.6px solid currentColor;
+  transform:translateY(-2px) rotate(45deg);
+  transition:transform .22s cubic-bezier(.22,.8,.2,1);
+}
+.nav-links .nav-group[open] > summary::after{ transform:translateY(1px) rotate(225deg); }
+.nav-links .nav-group > summary:hover,
+.nav-links .nav-group[open] > summary{ color:var(--white); }
+.nav-links .nav-group.has-active > summary{ color:var(--white); font-weight:500; }
+.nav-links .nav-group > summary:focus-visible{
+  outline:2px solid var(--accent3); outline-offset:3px; border-radius:6px;
+}
+@media (prefers-reduced-motion:reduce){
+  .nav-links .nav-group > summary,
+  .nav-links .nav-group > summary::after{ transition:none; }
+}
+
+/* the menu itself */
+.nav-links .nav-group-menu{ display:flex; flex-direction:column; }
+.nav-links .nav-group-menu a{
+  display:flex; align-items:center;
+  font-size:14px; font-weight:400; color:var(--text2);
+  white-space:nowrap;
+}
+.nav-links .nav-group-menu a:hover{ color:var(--white); }
+
+@media (min-width:1025px){
+  .nav-links .nav-group-menu{
+    position:absolute; top:calc(100% + 6px); right:0; z-index:200;
+    min-width:212px; padding:8px;
+    background:var(--ink2, #fff);
+    border:0.5px solid var(--border2);
+    border-radius:14px;
+    box-shadow:0 18px 44px -20px rgba(15,23,42,.42), 0 2px 8px -4px rgba(15,23,42,.18);
+  }
+  .nav-links .nav-group-menu a{
+    height:auto; padding:10px 12px; border-radius:9px; border-bottom:none;
+  }
+  .nav-links .nav-group-menu a:hover{ background:rgba(37,99,235,.08); }
+  /* the underline sweep the bar's own links carry would draw inside the panel */
+  .nav-links .nav-group-menu a::after{ display:none !important; }
+}
+
+/* In the drawer the group is an inline section: the menu pushes the items below
+   it down instead of floating over them, and the 44px targets the rest of the
+   drawer uses are kept. The left rule is what tells a reader these five sit one
+   level in from the items above. */
+@media (max-width:1024px){
+  .nav-links .nav-group{ width:100%; border-bottom:0.5px solid var(--border); }
+  .nav-links .nav-group > summary{
+    width:100%; justify-content:space-between;
+    font-size:16px; height:auto; padding:13px 0; line-height:1.4;
+  }
+  .nav-links .nav-group-menu{
+    padding:2px 0 10px 14px;
+    border-left:2px solid var(--border2);
+    margin:0 0 6px;
+  }
+  .nav-links .nav-group-menu a{
+    font-size:15px; padding:11px 0; min-height:44px;
+    border-bottom:none;
+  }
+  /* the drawer fades its own links in on a stagger; the group is not an <a>, so
+     it was the one item that appeared instantly. Match it. */
+  .nav-links .nav-group{ opacity:0; transform:translateY(-6px);
+    transition:opacity .35s ease, transform .35s ease; }
+  .nav-links.open .nav-group{ opacity:1; transform:none; transition-delay:.22s; }
+  @media (prefers-reduced-motion:reduce){
+    .nav-links .nav-group{ opacity:1; transform:none; transition:none; }
+  }
+}
+
+html[data-theme="dark"] .nav-links .nav-group-menu{
+  background:#111a2e;
+  border-color:rgba(255,255,255,.14);
+  box-shadow:0 18px 44px -18px rgba(0,0,0,.72);
+}
+html[data-theme="dark"] .nav-links .nav-group-menu a:hover{ background:rgba(96,165,250,.14); }
+
+/* ============================================================================
+   V38.7 — THE TWO FLOATING BUTTONS COVERED THE TABLE THE READER WAS READING
+   ----------------------------------------------------------------------------
+   Measured on production, strategies.html at 375x812, scrolled to the Max
+   Drawdown row: #fab-wa and #back-to-top both intersected cells of the strategy
+   comparison table, and elementFromPoint at the intersection returned the FAB,
+   not the cell — the "FREE" cell was covered by both at once. That table is the
+   one screen where the buying decision is made, on the device most of these
+   readers arrive on.
+
+   Two states, both driven from mfc-chrome.js:
+
+   .mfc-fab-tuck   a horizontally-scrollable data region is underneath a FAB
+                   right now. Both controls go away until it passes. A dimmed or
+                   shrunk button still paints over the numbers, so hiding is the
+                   only version of this that actually fixes it — and the sticky
+                   action bar keeps a conversion path visible the whole time.
+
+   .mfc-fab-hold   the reader has not scrolled far enough to have asked for
+                   anything yet. On a 812px phone the offer strip, the sticky
+                   nav, the sticky action bar and this FAB together took about a
+                   quarter of the first screen. The FAB now earns its place at
+                   40% depth; back-to-top has always had its own y>600 gate.
+
+   !important is required, not decorative: .fab-wa ends its entrance on
+   `animation: fab-in ... forwards`, and a filled animation beats a plain
+   declaration of the same property. Scoped to two named controls under an
+   html-level state class, so it cannot reach anything else.
+   ========================================================================== */
+html.mfc-fab-tuck .fab-wa,
+html.mfc-fab-tuck .back-to-top,
+html.mfc-fab-tuck .mfc-btt,
+html.mfc-fab-hold .fab-wa{
+  opacity:0 !important;
+  pointer-events:none !important;
+  visibility:hidden !important;
+  transition:opacity .18s ease, visibility 0s linear .18s;
+}
+@media (prefers-reduced-motion:reduce){
+  html.mfc-fab-tuck .fab-wa,
+  html.mfc-fab-tuck .back-to-top,
+  html.mfc-fab-tuck .mfc-btt,
+  html.mfc-fab-hold .fab-wa{ transition:none; }
+}
+/* No print rule here on purpose: V30.1's block above already hides .fab-wa,
+   .mfc-btt, #back-to-top and .back-to-top on paper, and a second copy would be
+   one more place to keep in step with the first. */

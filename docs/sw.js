@@ -723,7 +723,16 @@
 // "…· INH-" / "XXXXXXXXXXX ·" and splitting "Sagar / Shekhawath". A precached
 // document has no query string to bust, so an installed visitor left on v99
 // would keep both the old footer and the old stylesheet link.
-const CACHE = 'mfc-v100';
+// V38.7 — mfc-v101. Both precached documents changed, and this one MUST move:
+// index.html and login.html each carry the restructured nav (five research tools
+// folded into a "Free tools" <details> group, new "How it works" / "Pricing" /
+// "Sample dashboard" tabs) and the new mfc-finish.css?v=3680 + mfc-chrome.js?v=3410
+// links that style and drive it. index.html also carries the rewritten hero.
+// A precached document has no query string to bust, so an installed visitor left
+// on v100 would keep the old nav AND request the old stylesheet by its old URL,
+// which is a cache hit on the file without the nav-group rules — i.e. an unstyled
+// <details> in the middle of the nav bar.
+const CACHE = 'mfc-v101';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -135,6 +135,26 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .sidebar-row .val{color:var(--white);font-weight:500;}
 .sidebar-btn{display:block;text-align:center;padding:13px;border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;background:var(--accent);color:#fff;border:none;cursor:pointer;width:100%;transition:all .2s;}
 .sidebar-btn:hover{background:#2a7fff;transform:translateY(-1px);}
+/* V38.7 — the risk pair that now opens the comparison. */
+.ma-riskpair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px;}
+.ma-rp{background:var(--ink2);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:16px 18px;}
+.ma-rp-k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);}
+.ma-rp-v{font-size:30px;font-weight:800;color:var(--accent2);line-height:1.15;margin-top:8px;font-variant-numeric:tabular-nums;}
+.ma-rp-v.is-dd{color:var(--data-strong);}
+.ma-rp-s{font-size:12px;color:var(--text3);margin-top:6px;line-height:1.6;}
+.ma-rp-s b{color:var(--text2);font-weight:700;}
+@media (max-width:560px){ .ma-riskpair{grid-template-columns:1fr;} .ma-rp-v{font-size:26px;} }
+
+/* V38.7 — the two secondary paths beneath the subscribe button. Quiet by design:
+   they are alternatives to the primary action, not competitors to it. 44px+ tall
+   including the sub-line, and they carry their own focus ring because the page's
+   button rule does not reach an <a>. */
+.sidebar-alt{display:block;margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--ink2);color:var(--accent2);font-size:13.5px;font-weight:600;line-height:1.35;text-decoration:none;transition:border-color .2s, background .2s;}
+.sidebar-alt span{display:block;margin-top:4px;font-size:11.5px;font-weight:400;color:var(--text3);line-height:1.55;}
+.sidebar-alt:hover{border-color:var(--accent2);background:rgba(37,99,235,.05);}
+.sidebar-alt:focus-visible{outline:2px solid var(--accent3);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){ .sidebar-alt{transition:none;} }
+
 
 /* Pillars grid */
 .pillars{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0;}
@@ -1718,7 +1738,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3670">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3680">
 <style id="mf-v326-gross">
 /* V32.6 — the gross-of-tax note above the backtest charts. Amber rather than red:
    this is a basis statement, not a warning. --data-weak is the AA-safe amber token
@@ -1836,12 +1856,10 @@ html[data-theme="dark"] .ctx-row.is-us{ background:rgba(120,160,240,.08); }
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
       <a href="strategies.html" class="active">Strategies</a>
-      <a href="screener/" style="color:var(--text2);">Scanner</a>
-      <a href="scores/" style="color:var(--text2);">Integrity Score</a>
-      <a href="fii-dii/" style="color:var(--text2);">FII/DII</a>
-      <a href="factor-report/" style="color:var(--text2);">Factor Report</a>
-      <a href="calculator.html" style="color:var(--text2);">Calculators</a>
-      <a href="recover.html" style="color:var(--text2);">Recover Access</a>
+      <a href="index.html#how" style="color:var(--text2);">How it works</a>
+      <a href="index.html#strategies" style="color:var(--text2);">Pricing</a>
+      <a href="dashboard.html?demo=1" style="color:var(--text2);">Sample dashboard</a>
+      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
       <a href="signup.html" class="nav-cta">Get Started</a>
     </div>
@@ -1925,7 +1943,42 @@ html[data-theme="dark"] .ctx-row.is-us{ background:rgba(120,160,240,.08); }
                (paint at zero, set the width after) rather than inventing a new one.
                ══════════════════════════════════════════════════════════════════ -->
           <div class="ctx-cmp">
-            <div class="ctx-cmp-h">How MultiAsset stacks up&nbsp;&middot; backtest&nbsp;CAGR, after&nbsp;tax</div>
+            <!-- ── V38.7 · MULTIASSET IS BUILT FOR A SMALLER FALL, NOT A BIGGER NUMBER ──
+                 This page led with a CAGR bar chart in which the free flagship
+                 LOSES: 15.9% against Quant Multi Asset's 22.0% and ICICI Pru's
+                 18.3% (stats.json peer_best_gap: -6.07%). The honesty is right
+                 and the chart stays. What was wrong was the ORDER — MultiAsset
+                 is the free front door, and the first thing a reader who came
+                 here because funds return too little saw was a fund winning.
+                 It also flattered the comparison in a way nobody would notice:
+                 this book's simulation charges NO trading cost at all (see the
+                 disclosure below), so 15.9% is the most optimistic of the three
+                 strategies on cost, not the most conservative.
+                 So the risk pair goes first, because that is the comparison this
+                 book actually wins and the reason it exists: Sharpe 0.99 against
+                 the index's 0.31, and a deepest fall of -11.6% against -14.8%.
+                 Then the CAGR chart, unchanged, under a heading that says what
+                 it is. ────────────────────────────────────────────────────── -->
+            <div class="ctx-cmp-h">What MultiAsset is for&nbsp;&middot; return per unit of risk, and the deepest fall</div>
+            <p class="ctx-cmp-sub">This book exists to be held through a bad year, not to win a good one.
+              Measured over the same backtest window as everything else on this page, against its own
+              benchmark: it earned roughly <b>three times the return per unit of risk</b> the index did,
+              and its worst peak-to-trough fall was shallower.</p>
+            <div class="ma-riskpair">
+              <div class="ma-rp">
+                <div class="ma-rp-k">Sharpe ratio&nbsp;· backtest</div>
+                <div class="ma-rp-v"><!--MFSTAT:ma:sharpe-->0.99<!--/MFSTAT--></div>
+                <div class="ma-rp-s">Nifty&nbsp;50 over the same window: <b><!--MFSTAT:ma:bench_sharpe-->0.31<!--/MFSTAT--></b></div>
+              </div>
+              <div class="ma-rp">
+                <div class="ma-rp-k">Deepest fall&nbsp;· backtest</div>
+                <div class="ma-rp-v is-dd"><!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></div>
+                <div class="ma-rp-s">Nifty&nbsp;50 over the same window: <b><!--MFSTAT:ma:bench_max_dd-->-14.8%<!--/MFSTAT--></b></div>
+              </div>
+            </div>
+            <p class="ctx-cmp-sub" style="margin-top:14px;">And the return itself, which is the comparison this book does
+              not win &mdash; published here rather than left out:</p>
+            <div class="ctx-cmp-h">Return, side by side&nbsp;&middot; backtest&nbsp;CAGR, after&nbsp;tax</div>
             <p class="ctx-cmp-sub">Ours pays <b>20% short-term capital-gains&nbsp;tax</b> every month it
               books a profit, because it rebalances monthly. The funds and the index are bought once
               and held, so they pay <b>12.5% long-term</b> once at exit on gains above ₹1,25,000.
@@ -2007,11 +2060,25 @@ html[data-theme="dark"] .ctx-row.is-us{ background:rgba(120,160,240,.08); }
           <div class="sidebar-card">
             <h3>Subscription details</h3>
             <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹1,00,000</span></div>
+            <div class="sidebar-row"><span class="key">Works from</span><span class="val" style="color:var(--data-strong)"><!--MFMIN:ma:capital-->₹25,000<!--/MFMIN--></span></div>
             <div class="sidebar-row"><span class="key">Price</span><span class="val" style="color:var(--data-strong);font-weight:700;">FREE — for everyone</span></div>
             <div class="sidebar-row"><span class="key">Access</span><span class="val">Full model portfolio</span></div>
             <div class="sidebar-row"><span class="key">Rebalance</span><span class="val">Monthly</span></div>
           </div>
           <button class="sidebar-btn" onclick="openRegModal('MindForge MultiAsset', 0, 'multiasset')">Get started — FREE →</button>
+          <!-- V38.7 — TWO THINGS THAT WERE ONLY REACHABLE AFTER PAYING.
+               The sample dashboard (?demo=1) is the one surface that answers
+               "how much work is this" in the reader's own units — the order
+               list, the Kite baskets, the cost-of-the-cycle panel — and it was
+               linked from exactly one line in the middle of the homepage.
+               The complimentary 1:1 with the registered analyst lived only
+               inside the member dashboard, so the strongest piece of evidence
+               that a real, named, registered person stands behind this was
+               visible only to people who had already decided. Both belong
+               here, next to the decision. -->
+          <a class="sidebar-alt" href="/calculators/mindforge-vs-fund.html">Compare it with your fund →<span>Your starting capital, your monthly addition — after each side’s own tax, with our flat fee taken out in rupees.</span></a>
+          <a class="sidebar-alt" href="/dashboard.html?demo=1">See a sample dashboard →<span>The screen members place their orders from, with placeholder stocks.</span></a>
+          <a class="sidebar-alt" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20before%20I%20subscribe%2C%20I%27d%20like%20to%20book%2015%20minutes%20with%20Sagar%20Shekhawath%20(SEBI%20RA)%20to%20walk%20through%20the%20process%20and%20the%20published%20record." target="_blank" rel="noopener">Talk to the analyst first →<span>15 minutes with Sagar Shekhawath (SEBI RA), before you subscribe. No charge.</span></a>
         </div>
       </div>
 
@@ -2900,7 +2967,7 @@ html[data-theme="dark"] .stat-card.highlight .sv.green{
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=3400"></script>
+<script defer src="assets/mfc-chrome.js?v=3410"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

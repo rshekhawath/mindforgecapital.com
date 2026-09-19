@@ -478,3 +478,138 @@
   setTimeout(mfcScrollRegions, 900);
   setTimeout(mfcScrollRegions, 2600);
 })();
+
+/* ============================================================================
+   V38.7 — the "Free tools" nav group's outside-click and Escape close.
+   ----------------------------------------------------------------------------
+   The group is a native <details>, so opening, closing, keyboard and AT
+   behaviour all work with no script at all — this only adds the two things a
+   dropdown in a nav bar needs and <details> does not give you: it closes when
+   you click elsewhere, and it closes on Escape without also closing the mobile
+   drawer around it.
+
+   Appended at the END of this file on purpose. V28.0's note applies: an early
+   `return` anywhere above would silently strip whatever follows it, so this is
+   wrapped in its own IIFE and reaches the document directly rather than through
+   any state the block above it may or may not have set up.
+   ========================================================================== */
+(function () {
+  "use strict";
+  var D = document;
+  function closeGroups(except) {
+    var open = D.querySelectorAll(".nav-group[open]");
+    for (var i = 0; i < open.length; i++) {
+      if (open[i] !== except) open[i].removeAttribute("open");
+    }
+  }
+  // Only on the wide layout: inside the drawer the group is an inline section,
+  // and collapsing it because the visitor tapped the drawer's own scroll area
+  // would be the wrong behaviour entirely.
+  function isBar() {
+    try { return matchMedia("(min-width:1025px)").matches; } catch (_) { return true; }
+  }
+  D.addEventListener("click", function (e) {
+    if (!isBar()) return;
+    var inside = e.target.closest && e.target.closest(".nav-group");
+    closeGroups(inside);
+  }, true);
+  D.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape" && e.key !== "Esc") return;
+    var open = D.querySelector(".nav-group[open]");
+    if (!open) return;                       // let the drawer's own handler run
+    var s = open.querySelector("summary");
+    open.removeAttribute("open");
+    if (s && typeof s.focus === "function") { try { s.focus(); } catch (_) {} }
+    e.stopPropagation();                     // do not also close the drawer
+  }, true);
+})();
+
+/* ============================================================================
+   V38.7 — keep the floating buttons off the data. See the matching block in
+   mfc-finish.css for what was measured and why hiding beats dimming.
+   Its own IIFE, for the reason V28.0 gives: the first block in this file returns
+   early on the busiest pages, and those are exactly the pages with wide tables.
+   ========================================================================== */
+(function () {
+  "use strict";
+  var D = document, W = window, root = D.documentElement;
+  var HOLD_AT = 0.40;                     // fraction of the page scrolled
+  var regions = [];
+
+  function collect() {
+    regions = [];
+    var all = D.querySelectorAll("div, section, figure, aside");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!el.querySelector("table")) continue;
+      var ox;
+      try { ox = getComputedStyle(el).overflowX; } catch (_) { continue; }
+      if (ox !== "auto" && ox !== "scroll") continue;
+      regions.push(el);
+    }
+  }
+
+  function fabs() {
+    return D.querySelectorAll(".fab-wa, .back-to-top, .mfc-btt");
+  }
+
+  function hit(a, b) {
+    return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+  }
+
+  function update() {
+    // hold: only while the reader is still at the top of a long page
+    var y = W.scrollY || W.pageYOffset || 0;
+    var max = (root.scrollHeight - root.clientHeight) || 1;
+    // A page too short to scroll has nothing to earn — never hold there.
+    root.classList.toggle("mfc-fab-hold", max > 400 && (y / max) < HOLD_AT);
+
+    // tuck: measure against the buttons' own boxes, so this follows whatever
+    // offsets the page gives them rather than assuming a corner.
+    var tuck = false;
+    if (regions.length) {
+      var boxes = [], f = fabs();
+      for (var i = 0; i < f.length; i++) {
+        var r = f[i].getBoundingClientRect();
+        if (r.width && r.height) boxes.push(r);
+      }
+      for (var j = 0; j < regions.length && !tuck; j++) {
+        var rr = regions[j].getBoundingClientRect();
+        if (!rr.width || !rr.height) continue;
+        if (rr.bottom < 0 || rr.top > (W.innerHeight || 0)) continue;
+        // only a region that actually scrolls sideways is worth hiding for
+        if (regions[j].scrollWidth <= regions[j].clientWidth + 1) continue;
+        for (var k = 0; k < boxes.length; k++) {
+          if (hit(rr, boxes[k])) { tuck = true; break; }
+        }
+      }
+    }
+    root.classList.toggle("mfc-fab-tuck", tuck);
+  }
+
+  var queued = false;
+  function soon() {
+    if (queued) return;
+    queued = true;
+    var run = function () { queued = false; update(); };
+    // NOT `(W.requestAnimationFrame || setTimeout)(run)` — pulling rAF off the
+    // window object and calling it bare drops its receiver and throws Illegal
+    // invocation, which kills the scroll handler on its first tick.
+    if (typeof W.requestAnimationFrame === "function") W.requestAnimationFrame(run);
+    else setTimeout(run, 16);
+  }
+
+  function boot() {
+    collect();
+    update();
+    W.addEventListener("scroll", soon, { passive: true });
+    W.addEventListener("resize", function () { collect(); soon(); }, { passive: true });
+    // Tables are frequently written by script after load; re-collect once things
+    // have settled rather than only at DOMContentLoaded.
+    setTimeout(function () { collect(); update(); }, 1200);
+    setTimeout(function () { collect(); update(); }, 3000);
+  }
+
+  if (D.readyState !== "loading") boot();
+  else D.addEventListener("DOMContentLoaded", boot);
+})();

@@ -429,7 +429,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3670">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3680">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 <!-- V25.7: this page had no structured data at all, so Google had
      nothing to build a breadcrumb trail from and rendered the bare URL. -->
@@ -447,12 +447,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
-      <a href="screener/" style="color:var(--text2);">Scanner</a>
-      <a href="scores/" style="color:var(--text2);">Integrity Score</a>
-      <a href="fii-dii/" style="color:var(--text2);">FII/DII</a>
-      <a href="factor-report/" style="color:var(--text2);">Factor Report</a>
-      <a href="calculator.html" style="color:var(--text2);">Calculators</a>
-      <a href="recover.html" style="color:var(--text2);">Recover Access</a>
+      <a href="index.html#how" style="color:var(--text2);">How it works</a>
+      <a href="index.html#strategies" style="color:var(--text2);">Pricing</a>
+      <a href="dashboard.html?demo=1" style="color:var(--text2);">Sample dashboard</a>
+      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
       <a href="signup.html" class="nav-cta">Get Started</a>
     </div>
@@ -624,24 +622,36 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <h2>You're registered!</h2>
       <p class="desc" id="success-desc">Your details have been saved. Here's what happens next:</p>
 
+      <!-- V38.7 — THIS PANEL CONTRADICTED THE OFFER IT WAS SHOWN UNDER.
+           The form above promises, for every paid strategy, "Your 1st month is
+           FREE. New members pay nothing for month one." This panel then made
+           "Make payment" step 2 and gated access on "payment confirmation" —
+           so the reader was told, in the same flow, both that month one costs
+           nothing and that nothing happens until they pay. V18.3 added a branch
+           for MultiAsset (free outright) and stopped there; the free-FIRST-MONTH
+           case, which is every other signup, kept the paid wording.
+
+           Three branches now, not two, and the steps are written per branch
+           rather than hidden — reordering by display:none cannot put payment
+           AFTER access, which is the whole point of the offer. -->
       <div class="success-step">
         <div class="step-num">1</div>
         <div class="step-text">
           <strong>Connect on WhatsApp</strong>
-          We're opening WhatsApp now. Send us the pre-filled message to confirm your interest.
+          <span id="ss-s1-text">We're opening WhatsApp now. Send us the pre-filled message to confirm your interest.</span>
         </div>
       </div>
-      <div class="success-step" id="ss-pay-step">
+      <div class="success-step" id="ss-step2">
         <div class="step-num">2</div>
         <div class="step-text">
-          <strong>Make payment</strong>
-          We'll share a UPI QR code and payment details on WhatsApp.
+          <strong id="ss-s2-title">Make payment</strong>
+          <span id="ss-s2-text">We'll share a UPI QR code and payment details on WhatsApp.</span>
         </div>
       </div>
-      <div class="success-step">
+      <div class="success-step" id="ss-step3">
         <div class="step-num" id="ss-access-num">3</div>
         <div class="step-text">
-          <strong>Get dashboard access</strong>
+          <strong id="ss-s3-title">Get dashboard access</strong>
           <span id="ss-access-text">Within 24 hours of payment confirmation, your personalised dashboard link will be emailed to you.</span>
         </div>
       </div>
@@ -667,6 +677,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <script>
 var WHATSAPP_NUMBER = '917601032082';
 var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec';
+
+// V38.7 — ONE SWITCH FOR THE LAUNCH OFFER. Both the banner above the form and
+// the success checklist below it read this, so they cannot say different things
+// about whether month one is paid. Set false when the offer ends.
+var FIRST_MONTH_FREE = true;
 
 var STRATEGY_META = {
   // V18.3: MultiAsset is FREE for everyone — no payment, full dashboard access.
@@ -721,8 +736,10 @@ function onStrategyChange() {
       fmbIcon.textContent = '🎉';
       fmbText.innerHTML = '<strong>MindForge MultiAsset is FREE for everyone.</strong> No payment required — register below and get the full model-portfolio dashboard at ₹0.';
     } else {
-      fmbIcon.textContent = '🎁';
-      fmbText.innerHTML = '<strong>Your 1st month is FREE.</strong> New members pay nothing for month one — you’re only billed from month two.';
+      fmbIcon.textContent = FIRST_MONTH_FREE ? '🎁' : '✓';
+      fmbText.innerHTML = FIRST_MONTH_FREE
+        ? '<strong>Your 1st month is FREE.</strong> New members pay nothing for month one — you’re only billed from month two.'
+        : '<strong>Flat monthly fee.</strong> No percentage of your corpus, no exit load, cancel any time.';
     }
   }
 
@@ -854,16 +871,43 @@ async function handleSubmit() {
   var isFree = !!meta.free;
   var price = isFree ? 'FREE (₹0)' : inr(p.total) + ' for ' + p.label;
 
-  // V18.3: free strategy — the success checklist drops the "Make payment" step
-  // and the access step no longer references payment confirmation.
-  var payStep    = document.getElementById('ss-pay-step');
+  // V38.7 — three branches. See the comment on the success panel markup.
+  //   isFree            MultiAsset: no payment exists at all.
+  //   FIRST_MONTH_FREE  every paid strategy under the launch offer: access
+  //                     first, payment set up before month two.
+  //   neither           the plain paid flow, unchanged.
+  // FIRST_MONTH_FREE is the one switch: turning the offer off here restores the
+  // original wording, and the banner above the form reads the same constant, so
+  // the promise and the checklist cannot drift apart again.
+  var step2      = document.getElementById('ss-step2');
+  var s2Title    = document.getElementById('ss-s2-title');
+  var s2Text     = document.getElementById('ss-s2-text');
+  var s3Title    = document.getElementById('ss-s3-title');
   var accessNum  = document.getElementById('ss-access-num');
   var accessText = document.getElementById('ss-access-text');
-  if (payStep)    payStep.style.display = isFree ? 'none' : '';
-  if (accessNum)  accessNum.textContent = isFree ? '2' : '3';
-  if (accessText) accessText.textContent = isFree
-    ? 'Within 24 hours, your personalised dashboard link will be emailed to you — no payment needed.'
-    : 'Within 24 hours of payment confirmation, your personalised dashboard link will be emailed to you.';
+  var offer      = !isFree && FIRST_MONTH_FREE;
+
+  if (step2) step2.style.display = isFree ? 'none' : '';
+  if (accessNum) accessNum.textContent = isFree ? '2' : '3';
+
+  if (isFree) {
+    if (s3Title)    s3Title.textContent = 'Get dashboard access';
+    if (accessText) accessText.textContent =
+      'Within 24 hours, your personalised dashboard link will be emailed to you — no payment needed.';
+  } else if (offer) {
+    if (s2Title) s2Title.textContent = 'Get dashboard access';
+    if (s2Text)  s2Text.textContent  =
+      'Within 24 hours your personalised dashboard link is emailed to you. Month one costs nothing — there is nothing to pay first.';
+    if (s3Title) s3Title.textContent = 'Set up payment before month two';
+    if (accessText) accessText.textContent =
+      'We\u2019ll send the payment link on WhatsApp about a week before your first bill. Cancel before then and you were never charged.';
+  } else {
+    if (s2Title) s2Title.textContent = 'Make payment';
+    if (s2Text)  s2Text.textContent  = "We'll share a UPI QR code and payment details on WhatsApp.";
+    if (s3Title) s3Title.textContent = 'Get dashboard access';
+    if (accessText) accessText.textContent =
+      'Within 24 hours of payment confirmation, your personalised dashboard link will be emailed to you.';
+  }
 
   // Save lead to sheet (fire-and-forget — don't block UX on network).
   // agreement:true tells the backend to generate + store the signed T&C PDF.
@@ -1439,7 +1483,7 @@ html[data-theme="dark"] .card::after{
   .card::after{ animation:none; }
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=3400"></script>
+<script defer src="assets/mfc-chrome.js?v=3410"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

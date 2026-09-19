@@ -339,12 +339,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="/strategies.html">Strategies</a>
-      <a href="/screener/" class="active">Scanner</a>
-      <a href="/scores/">Integrity Score</a>
-      <a href="/fii-dii/">FII/DII</a>
-      <a href="/factor-report/">Factor Report</a>
-      <a href="/calculator.html">Calculators</a>
-      <a href="/recover.html">Recover Access</a>
+      <a href="/index.html#how">How it works</a>
+      <a href="/index.html#strategies">Pricing</a>
+      <a href="/dashboard.html?demo=1">Sample dashboard</a>
+      <details class="nav-group has-active"><summary>Free tools</summary><div class="nav-group-menu"><a href="/screener/" class="active">Stock Scanner</a><a href="/scores/">Integrity Score</a><a href="/fii-dii/">FII/DII activity</a><a href="/factor-report/">Factor Report</a><a href="/calculator.html">Calculators</a></div></details>
       <a href="/login.html">Sign In</a>
       <a href="/signup.html" class="nav-cta">Get Started</a>
     </div>

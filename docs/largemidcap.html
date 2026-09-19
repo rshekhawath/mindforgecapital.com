@@ -142,6 +142,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 .sidebar-row .val{color:var(--white);font-weight:500;}
 .sidebar-btn{display:block;text-align:center;padding:13px;border-radius:var(--r-sm);font-size:14px;font-weight:600;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;background:var(--accent);color:#fff;border:none;cursor:pointer;width:100%;transition:all .2s;}
 .sidebar-btn:hover{background:#2a7fff;transform:translateY(-1px);}
+/* V38.7 — the two secondary paths beneath the subscribe button. Quiet by design:
+   they are alternatives to the primary action, not competitors to it. 44px+ tall
+   including the sub-line, and they carry their own focus ring because the page's
+   button rule does not reach an <a>. */
+.sidebar-alt{display:block;margin-top:10px;padding:12px 14px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--ink2);color:var(--accent2);font-size:13.5px;font-weight:600;line-height:1.35;text-decoration:none;transition:border-color .2s, background .2s;}
+.sidebar-alt span{display:block;margin-top:4px;font-size:11.5px;font-weight:400;color:var(--text3);line-height:1.55;}
+.sidebar-alt:hover{border-color:var(--accent2);background:rgba(37,99,235,.05);}
+.sidebar-alt:focus-visible{outline:2px solid var(--accent3);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){ .sidebar-alt{transition:none;} }
+
 
 /* Pillars grid */
 .pillars{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:28px 0;}
@@ -1725,7 +1735,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3670">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3680">
 <style id="mf-v326-gross">
 /* V32.6 — the gross-of-tax note above the backtest charts. Amber rather than red:
    this is a basis statement, not a warning. --data-weak is the AA-safe amber token
@@ -1961,12 +1971,10 @@ html[data-theme="dark"] .sv-cta:hover{background:rgba(120,160,240,.10);border-co
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
       <a href="strategies.html" class="active">Strategies</a>
-      <a href="screener/" style="color:var(--text2);">Scanner</a>
-      <a href="scores/" style="color:var(--text2);">Integrity Score</a>
-      <a href="fii-dii/" style="color:var(--text2);">FII/DII</a>
-      <a href="factor-report/" style="color:var(--text2);">Factor Report</a>
-      <a href="calculator.html" style="color:var(--text2);">Calculators</a>
-      <a href="recover.html" style="color:var(--text2);">Recover Access</a>
+      <a href="index.html#how" style="color:var(--text2);">How it works</a>
+      <a href="index.html#strategies" style="color:var(--text2);">Pricing</a>
+      <a href="dashboard.html?demo=1" style="color:var(--text2);">Sample dashboard</a>
+      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
       <a href="signup.html" class="nav-cta">Get Started</a>
     </div>
@@ -2161,16 +2169,34 @@ html[data-theme="dark"] .sv-cta:hover{background:rgba(120,160,240,.10);border-co
         <div class="sidebar-row"><span class="key">Alpha (annual, after&nbsp;tax)</span><span class="val" style="color:var(--accent2)"><!--MFSTAT:lm:alpha_posttax-->+17.66%<!--/MFSTAT--></span></div>
         <div class="sidebar-row"><span class="key">Sharpe ratio</span><span class="val" style="color:var(--accent2)"><!--MFSTAT:lm:sharpe-->1.39<!--/MFSTAT--></span></div>
         <div class="sidebar-row"><span class="key">Max drawdown</span><span class="val" style="color:var(--data-bad)"><!--MFSTAT:lm:max_dd-->-25.8%<!--/MFSTAT--></span></div>
+        <!-- V38.7 — the only version of this number that answers "what do I keep".
+             The backtest already computes it; it was never published. -->
+        <div class="sidebar-row"><span class="key">After tax <b>and our fee</b></span><span class="val" style="color:var(--data-strong)"><!--MFSTAT:lm:cagr_posttax_postfee-->29.0%<!--/MFSTAT--></span></div>
+        <div class="sidebar-row"><span class="key">Subscription paid over the window</span><span class="val" style="font-size:12px;"><!--MFSTAT:lm:subscription_paid-->₹60,939<!--/MFSTAT--></span></div>
         <div class="sidebar-row"><span class="key">Beat benchmark</span><span class="val">~70% of months</span></div>
           </div>
           <div class="sidebar-card">
             <h3>Subscription details</h3>
             <div class="sidebar-row"><span class="key">Recommended Investment</span><span class="val">₹10,00,000</span></div>
+            <div class="sidebar-row"><span class="key">Works from</span><span class="val" style="color:var(--data-strong)"><!--MFMIN:lm:capital-->₹1,90,000<!--/MFMIN--></span></div>
             <div class="sidebar-row"><span class="key">Monthly</span><span class="val">₹999 / mo</span></div>
             <div class="sidebar-row"><span class="key">Annual</span><span class="val" style="color:var(--data-strong);">₹9,590 / yr <span style="font-size:10px;">(save ₹2,398)</span></span></div>
             <div class="sidebar-row"><span class="key">Portfolio size</span><span class="val">10 stocks</span></div>
           </div>
           <button class="sidebar-btn" onclick="openRegModal('MindForge LargeMidcap 250', 999, 'largemidcap')">Subscribe — ₹999/month →</button>
+          <!-- V38.7 — TWO THINGS THAT WERE ONLY REACHABLE AFTER PAYING.
+               The sample dashboard (?demo=1) is the one surface that answers
+               "how much work is this" in the reader's own units — the order
+               list, the Kite baskets, the cost-of-the-cycle panel — and it was
+               linked from exactly one line in the middle of the homepage.
+               The complimentary 1:1 with the registered analyst lived only
+               inside the member dashboard, so the strongest piece of evidence
+               that a real, named, registered person stands behind this was
+               visible only to people who had already decided. Both belong
+               here, next to the decision. -->
+          <a class="sidebar-alt" href="/calculators/mindforge-vs-fund.html">Compare it with your fund →<span>Your starting capital, your monthly addition — after each side’s own tax, with our flat fee taken out in rupees.</span></a>
+          <a class="sidebar-alt" href="/dashboard.html?demo=1">See a sample dashboard →<span>The screen members place their orders from, with placeholder stocks.</span></a>
+          <a class="sidebar-alt" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20before%20I%20subscribe%2C%20I%27d%20like%20to%20book%2015%20minutes%20with%20Sagar%20Shekhawath%20(SEBI%20RA)%20to%20walk%20through%20the%20process%20and%20the%20published%20record." target="_blank" rel="noopener">Talk to the analyst first →<span>15 minutes with Sagar Shekhawath (SEBI RA), before you subscribe. No charge.</span></a>
         </div>
       </div>
 
@@ -3263,7 +3289,7 @@ html[data-theme="dark"] .stat-card.highlight .sv.green{
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=3400"></script>
+<script defer src="assets/mfc-chrome.js?v=3410"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

@@ -455,6 +455,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
    (<=14 gold, <=7 red) and the same ramp as .sub-prog-fill.warn / .danger, so the
    pill's dot, the pill's fill and the rail can never disagree about how close the
    renewal is. */
+/* V38.7 — THE CALM STATE. A member with most of a year of access left does not
+   need a countdown to the end of it, and certainly not above their holdings.
+   The "Access ends" meter and the renewal row come off; the "New picks" meter —
+   the one date they actually act on — stays. Class names verified against the
+   markup above rather than assumed: the rows are .cyc-row, and a rule written
+   for a .cyc-grid or .cyc-rail that does not exist would have matched nothing
+   and hidden nothing, silently. */
+.cyc-card.is-calm .cyc-row.is-exp-row,
+.cyc-card.is-calm #cyc-actions{ display:none !important; }
 .cyc-card.is-soon::before{ background:linear-gradient(90deg,transparent,rgba(217,119,6,.55),transparent) !important; }
 .cyc-card.is-urgent::before{ background:linear-gradient(90deg,transparent,rgba(220,38,38,.55),transparent) !important; }
 .cyc-card.is-soon .cyc-badge.warn{ background:rgba(217,119,6,.13); border-color:rgba(217,119,6,.34); }
@@ -2897,7 +2906,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3670">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3680">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -2928,11 +2937,8 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
-      <a href="screener/" style="color:var(--text2);">Scanner</a>
-      <a href="scores/" style="color:var(--text2);">Integrity Score</a>
-      <a href="fii-dii/" style="color:var(--text2);">FII/DII</a>
-      <a href="factor-report/" style="color:var(--text2);">Factor Report</a>
-      <a href="calculator.html" style="color:var(--text2);">Calculators</a>
+      <a href="index.html#how" style="color:var(--text2);">How it works</a>
+      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);">My Account</a>
       <a href="login.html" id="nav-signout" style="color:var(--text2);">Sign out</a>
       <span class="nav-badge">Member Dashboard</span>
@@ -3141,7 +3147,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </span>
         <span class="cyc-badge" id="cyc-badge"></span>
       </div>
-      <div class="cyc-row">
+      <div class="cyc-row is-exp-row">
         <span class="cyc-key">Access ends</span>
         <span class="cyc-bar"><i class="cyc-fill is-exp" id="cyc-fill-exp"></i></span>
         <span class="cyc-val" id="cyc-val-exp">—</span>
@@ -5597,6 +5603,12 @@ async function init() {
       return;
     }
     stocksData = data.stocks || [];
+    // V38.7 — awaited, and ONLY on a device with no history of its own: see
+    // bookHistSyncLoad(). On every other load it resolves synchronously-fast
+    // without a request, so this costs a first paint nothing in the normal case
+    // — and in the case it does cost something, the alternative is painting a
+    // fifteen-order month at a member who has four orders to place.
+    try { await bookHistSyncLoad(data.subscription.strategy); } catch (e) {}
     renderDashboard(data.subscription, stocksData);
     loadLiveProfit();   // V14.3: live profit since rebalance (non-blocking)
     startPricePolling();  // V35.3 — keep "live" live; see the note on PX_POLL_MS
@@ -5625,6 +5637,11 @@ function nextRebalanceDate(now){
 
 // V28.2 — fill the cycle rail. Pure presentation: every figure it prints is one
 // the KPI row above already computed, so the two surfaces cannot disagree.
+/* V38.7 — how early the dashboard is allowed to talk about renewing.
+   Two numbers, named once, so the two behaviours below cannot drift apart. */
+var RAIL_FULL_FROM  = 60;   // days of access below which the full rail is shown
+var RENEW_CTA_FROM  = 45;   // days of access below which a renew button appears
+
 function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   var card = document.getElementById('cyc-card');
   if (!card) return;
@@ -5636,6 +5653,12 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   // always means a later date. Guard the degenerate both-zero case (bars would be
   // 0/0) by giving the axis a floor of 1 day.
   var axis = Math.max(1, daysLeft, daysToReb);
+
+  /* V38.7 — the rail is a countdown, and a countdown with 294 days on it is not
+     news. Past RAIL_FULL_FROM days of access the card keeps its one useful line
+     (when the next picks land) and drops the two meters and the renewal row;
+     inside it, the card is exactly what it was. */
+  card.classList.toggle('is-calm', daysLeft > RAIL_FULL_FROM);
 
   var vExp = document.getElementById('cyc-val-exp');
   var vReb = document.getElementById('cyc-val-reb');
@@ -5650,7 +5673,11 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
     badge.textContent = covered ? 'Next rebalance covered' : 'Renewal due first';
   }
   var foot = document.getElementById('cyc-foot');
-  if (foot) {
+  if (foot && card.classList.contains('is-calm')) {
+    // Calm: one line, about the next set of picks rather than about billing.
+    foot.innerHTML = 'Your next set of picks lands on <b>' + fmt(nextReb) + '</b> — ' +
+      dayWord(daysToReb) + '. Access runs to ' + fmt(expiry) + '.';
+  } else if (foot) {
     // V35.2 — the retired "Subscription" tile carried the words "Renew anytime on
     // WhatsApp" at every day count, while the status pill only grows a renew BUTTON
     // inside the last 14 days. Retiring the tile would have left a member with 20
@@ -5670,7 +5697,16 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   // without a renewal route, and the two never both appear.
   var acts = document.getElementById('cyc-actions');
   if (acts){
-    if (daysLeft > 14){
+    /* V38.7 — A RENEWAL BUTTON 294 DAYS BEFORE RENEWAL.
+       An annual member signing in to place this month's orders met, before a
+       single holding: "Subscription active until 10 Jul 2027", an access-ends
+       meter, and a green Renew on WhatsApp button — roughly a screen and a half
+       of billing ahead of the thing they came for. V35.2 added the persistent
+       link so a member at 20 days was never without a renewal route; that was
+       right, and it was applied at every day count instead of near the end.
+       Below 45 days the button is restored exactly as V35.2 wrote it, and the
+       pill's own CTA still takes over inside 14. */
+    if (daysLeft > 14 && daysLeft <= RENEW_CTA_FROM){
       var sub = window._currentSub || {};
       acts.innerHTML = '<a class="renew-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=' +
         encodeURIComponent('Hi MindForge Capital — I would like to renew my subscription. Strategy: ' +
@@ -10478,6 +10514,12 @@ async function refreshDashboard() {
     }
     if (!data.subscription) { showToast('Refresh failed'); return; }
     stocksData = data.stocks || [];
+    // V38.7 — awaited, and ONLY on a device with no history of its own: see
+    // bookHistSyncLoad(). On every other load it resolves synchronously-fast
+    // without a request, so this costs a first paint nothing in the normal case
+    // — and in the case it does cost something, the alternative is painting a
+    // fifteen-order month at a member who has four orders to place.
+    try { await bookHistSyncLoad(data.subscription.strategy); } catch (e) {}
     renderDashboard(data.subscription, stocksData);
     loadLiveProfit(true);   // V14.3: force-refresh live prices on manual refresh
     showToast('Data refreshed');
@@ -10543,6 +10585,82 @@ function _loadBookHist(){
         return (o && typeof o === 'object') ? o : {}; } catch(e){ return {}; }
 }
 function _saveBookHist(o){ try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e){} }
+
+/* ── V38.7 · THE BOOK HISTORY FOLLOWS THE MEMBER, NOT THE BROWSER ────────────
+   BOOK_HIST_KEY is localStorage, so "what changed this cycle" — the feature that
+   turns a fifteen-order month into a four-order one, and the page's whole answer
+   to "how much time will this take me" — existed only on the device that had
+   seen the previous cycle. Open the same account on a second device and the
+   tiles honestly degraded to the whole book: ORDERS TO PLACE 15, "first cycle
+   tracked on this device". For a member who reads the rebalance email on a phone
+   and places orders on a laptop, that is not an edge case, it is the normal path.
+
+   No backend change is needed and none was made. handleSetProgress already takes
+   an arbitrary `cycle_key` and merges a `map` into a per-token blob, so the
+   history rides the SAME endpoint the tick map uses, under its own key, as a
+   single entry that each save overwrites (`cur[tk] = map[tk]` is an assignment).
+   The entry carries its own `t` so the server's keep-newest pruning does not
+   treat it as the stalest key on the row.
+
+   The pull is deliberately ONE-WAY AND COLD-START ONLY: the server copy is
+   adopted only when this device has no previous cycle at all. It can therefore
+   turn "no diff" into "a diff" and can never overwrite, reorder or contradict a
+   device that already has history — which matters because the diff drives sell
+   quantities and broker baskets, and the failure mode there is a money error,
+   not a cosmetic one. Offline, or against a deployment without the endpoints,
+   every one of these paths is a no-op and the page behaves exactly as before. */
+function _bookHistKey(strategy){
+  var st = String(strategy || 'default').replace(/ /g, ' ').trim();
+  return ('bookhist::' + st).slice(0, 120);
+}
+
+/* Push the rolled-over history up. Called only where the slot actually changed,
+   so a plain re-read of the same cycle sends nothing. */
+function bookHistPush(strategy, slot){
+  if (isDemo || !token || !slot) return;
+  try {
+    var body = JSON.stringify({
+      action: 'set_progress', token: token, cycle_key: _bookHistKey(strategy),
+      map: { book: { t: new Date().toISOString(), d: JSON.stringify(slot) } }, removed: []
+    });
+    fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain'},
+                             body: body, keepalive: true }).catch(function(){});
+  } catch (e) {}
+}
+
+/* Cold-start pull. Resolves once, never rejects, and writes nothing unless the
+   server knows a previous cycle this device does not. */
+function bookHistSyncLoad(strategy){
+  if (isDemo || !token) return Promise.resolve(false);
+  var strat = String(strategy || 'default');
+  var hist = _loadBookHist();
+  if (hist[strat] && hist[strat].prev && (hist[strat].prev.tickers || []).length) {
+    return Promise.resolve(false);                 // this device already knows
+  }
+  return fetch(APPS_SCRIPT_URL + '?action=get_progress&token=' +
+               encodeURIComponent(token) + '&_=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d || d.status !== 'ok' || !d.progress) return false;
+      var entry = d.progress[_bookHistKey(strat)];
+      var raw = entry && entry.book && entry.book.d;
+      if (!raw) return false;
+      var slot = JSON.parse(raw);
+      if (!slot || typeof slot !== 'object') return false;
+      var prev = slot.prev;
+      if (!prev || !(prev.tickers || []).length) return false;
+      var cur = _loadBookHist();
+      var mine = cur[strat] || {};
+      // Adopt the server's PREV only. `cur` is this render's own book and is
+      // authoritative here; taking the server's would re-introduce a stale
+      // holdings list into the sell basket.
+      mine.prev = prev;
+      cur[strat] = mine;
+      _saveBookHist(cur);
+      return true;
+    })
+    .catch(function(){ return false; });
+}
 
 /* V35.3 — WHAT A CYCLE RECORD HAS TO CARRY IF THE SELLS ARE TO BE ACTIONABLE.
    V35.2 stored a ticker list, which is all a COUNT needs. An order needs more: to
@@ -10648,6 +10766,9 @@ function bookDiff(sub, stocks){
     slot.cur.pos = pos;
   }
   hist[strat] = slot; _saveBookHist(hist);
+  // V38.7 — mirror to the member's row. Only on a rollover or a first record:
+  // a same-cycle re-read changes nothing the other device needs.
+  if (out.rolled || !slot.prev) bookHistPush(strat, slot);
 
   if (!slot.prev || !slot.prev.tickers || !slot.prev.tickers.length) return out;
   var prev = slot.prev.tickers, prevSet = {}, curSet = {};
@@ -10728,13 +10849,24 @@ function cycleOrders(){
    book and handing it the equity fixture would print a nonsense 8-in / 10-out cycle
    — the exact stale-fixture failure V33.9 called out, where demo mode stops
    exercising the branch it exists to exercise.
-     ?demo=1  two of the ten equity names swapped  -> 2 in / 2 out / 8 held
+     ?demo=1  four of the ten equity names swapped -> 4 in / 4 out / 6 held
+
+              V38.7 — THIS USED TO BE 2 IN / 2 OUT, AND THAT WAS THE LIGHTEST
+              MONTH IN THE WHOLE RECORD SHOWN AS THE TYPICAL ONE. The sample
+              dashboard is what a prospect judges the workload by, and its
+              headline read "4 orders to place this cycle ... the other 8 of your
+              10 carry over untouched". Measured off LargeMidcap's own 61-month
+              backtest (results.csv Turnover, = |old △ new| / N), the order count
+              is median 8, mean 8.2, range 4-14 — a 4-order cycle happened THREE
+              times in sixty-one. The fixture now sits on the median. It still
+              reads light, because 8 orders is one Kite basket, and it is the
+              month the member actually meets in month two.
      ?demo=2  the ETF sleeve is fixed and only its WEIGHTS rotate, which is what
               MultiAsset actually does -> 0 in / 0 out / 8 held, i.e. the
               "nothing to trade" branch, which nothing else here would reach. */
 function _demoPrevTickers(){
   if (demoMode === '2') return ['MON100','HDFCSML250','JUNIORBEES','MID150BEES','EBBETF0431','GOLDBEES','SILVERBEES','NIFTYBEES'];
-  return ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','RELIANCE','BHARTIARTL','TITAN','WIPRO'];
+  return ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','TITAN','ASIANPAINT','NESTLEIND','HINDUNILVR'];
 }
 /* V35.3 — the previous cycle's POSITIONS for the fixture, so ?demo exercises the
    sell basket, the realised-gain arithmetic and the cost row rather than only the
@@ -10762,6 +10894,13 @@ function _demoPrevPos(){
     ['SILVERBEES', 198.44,  215,  4.05, 'Silver ETF'],
     ['NIFTYBEES',  274.90,   40,  3.24, 'Nifty 50 ETF']
   ]);
+  // Quantities are floor(1,00,000 / price) — what a 10,00,000 book at 10% a name
+  // actually buys — so the demo's sell tickets reconcile against its own Shares
+  // column. Six of these ten carry into the current fixture; TITAN, ASIANPAINT,
+  // NESTLEIND and HINDUNILVR leave, and RELIANCE, BHARTIARTL, SUNPHARMA and LT
+  // join. The leavers are paired inside their own industries so the previous book
+  // also honours the 2-per-industry cap, which the old fixture did not (it held
+  // INFY, TCS and WIPRO — three IT Services names).
   return mk([
     ['INFY',       1498.00,  66, 10.00, 'Infosys'],
     ['TCS',        3755.00,  26, 10.00, 'Tata Consultancy Services'],
@@ -10769,10 +10908,10 @@ function _demoPrevPos(){
     ['ICICIBANK',  1172.00,  85, 10.00, 'ICICI Bank'],
     ['MARUTI',    11640.00,   8, 10.00, 'Maruti Suzuki India'],
     ['M&M',        2848.00,  35, 10.00, 'Mahindra & Mahindra'],
-    ['RELIANCE',   2988.00,  33, 10.00, 'Reliance Industries'],
-    ['BHARTIARTL', 1540.00,  64, 10.00, 'Bharti Airtel'],
     ['TITAN',      3402.00,  29, 10.00, 'Titan Company'],
-    ['WIPRO',       262.40, 381, 10.00, 'Wipro']
+    ['ASIANPAINT', 2410.00,  41, 10.00, 'Asian Paints'],
+    ['NESTLEIND',  2240.00,  44, 10.00, 'Nestle India'],
+    ['HINDUNILVR', 2378.00,  42, 10.00, 'Hindustan Unilever']
   ]);
 }
 
@@ -14901,7 +15040,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=3400"></script>
+<script defer src="assets/mfc-chrome.js?v=3410"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
