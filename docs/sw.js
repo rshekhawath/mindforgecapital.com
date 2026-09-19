@@ -732,7 +732,11 @@
 // on v100 would keep the old nav AND request the old stylesheet by its old URL,
 // which is a cache hit on the file without the nav-group rules — i.e. an unstyled
 // <details> in the middle of the nav bar.
-const CACHE = 'mfc-v101';
+// V38.7a — mfc-v102. Both precached documents changed again: the nav's "How it
+// works" tab pointed at #how, which is the section headed "The science" — a
+// label landing on the wrong content. It now points at #your-month, the
+// month-by-month explanation, which is what the question actually means.
+const CACHE = 'mfc-v102';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
