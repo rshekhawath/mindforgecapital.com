@@ -854,7 +854,11 @@ html[data-theme="dark"] .sess{background:rgba(251,191,36,0.06);border-color:rgba
 .sess-lead b{color:var(--white);font-weight:800;font-variant-numeric:tabular-nums;}
 .sess-chip{flex:0 0 auto;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
   padding:3px 9px;border-radius:20px;white-space:nowrap;
-  color:#b45309;background:rgba(180,83,9,0.10);border:0.5px solid rgba(180,83,9,0.24);}
+  /* V38.8 — #b45309 measured 3.82:1 here at 10px and 4.34:1 on .sess-b-v at
+     11px, both under AA, on the one element whose job is to warn. Darkened
+     to amber-800; the tint and border keep the same hue so nothing else
+     about the chip changes. Dark theme already passes on #fbbf24. */
+  color:#8a3d0c;background:rgba(180,83,9,0.10);border:0.5px solid rgba(180,83,9,0.24);}
 html[data-theme="dark"] .sess-chip{color:#fbbf24;background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.28);}
 .sess-track{height:7px;border-radius:4px;margin-top:11px;overflow:hidden;
   background:rgba(180,83,9,0.12);}
@@ -882,7 +886,7 @@ html[data-theme="dark"] .sess:not(.is-clean) .sess-b.is-over .sess-b-fl{backgrou
 .sess-b-cap{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px dashed rgba(12,24,49,.40);}
 html[data-theme="dark"] .sess-b-cap{border-left-color:rgba(255,255,255,.42);}
 .sess-b-v{font-size:11px;font-weight:800;color:var(--text2);text-align:right;font-variant-numeric:tabular-nums;}
-.sess:not(.is-clean) .sess-b.is-over .sess-b-v{color:#b45309;}
+.sess:not(.is-clean) .sess-b.is-over .sess-b-v{color:#8a3d0c;}
 html[data-theme="dark"] .sess:not(.is-clean) .sess-b.is-over .sess-b-v{color:#fbbf24;}
 .sess-note{margin-top:10px;font-size:12px;color:var(--text3);line-height:1.55;}
 .sess-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums;}
@@ -1143,6 +1147,18 @@ td.company{color:var(--white);font-weight:600;}
 .company-link:hover .cl-ico{opacity:.9;}
 .company-link:focus-visible{outline:2px solid rgba(37,99,235,.6);outline-offset:2px;border-radius:3px;}
 .sc-company .company-link{border-bottom-color:rgba(148,163,184,.35);}
+/* V38.8 — THE CARD'S COMPANY LINK WAS A 20px TAP TARGET.
+   Measured at 320px on the picks card view: 97x20, self-owned, with no larger
+   interactive ancestor to inherit — under the 24px floor, on the control a
+   member taps to open a holding. The remedy is this repo's own (V28.3, and the
+   note in project_touch_minheight_squares_controls): pad the HIT AREA rather
+   than set a min-height, because vertical padding on an inline element extends
+   its hit box without touching the line box, so the card's layout is unchanged.
+   3px/4px takes it to 27px. Coarse pointers only, so a mouse user's dashed
+   underline keeps sitting exactly where it does now. */
+@media (hover:none) and (pointer:coarse){
+  .sc-company .company-link{ padding-top:3px; padding-bottom:4px; }
+}
 tr.row-bought .company-link{color:inherit;}
 /* V28.5: this rule had been dead since the picks table moved to a JS template —
    the <td> was emitted with no class, so nothing here applied. Restoring the class

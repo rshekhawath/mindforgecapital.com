@@ -736,7 +736,14 @@
 // works" tab pointed at #how, which is the section headed "The science" — a
 // label landing on the wrong content. It now points at #your-month, the
 // month-by-month explanation, which is what the question actually means.
-const CACHE = 'mfc-v102';
+// V38.8 — mfc-v103. index.html is precached and its inline CSS changed twice:
+// the "Where this fits" field stopped being hard-coded white (it was
+// var(--bg,#fff), and --bg is defined nowhere on this site, so dark mode drew
+// near-white value text on a white field) and its 4-column table got its own
+// scroller so a 320px phone no longer scrolls sideways by 59px. A precached
+// document has no query string to bust, so an installed visitor left on v102
+// would keep both.
+const CACHE = 'mfc-v103';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

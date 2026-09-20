@@ -4528,7 +4528,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .fit-calc-h{ font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
 .fit-in{ display:flex; align-items:center; gap:10px; margin:12px 0 6px; flex-wrap:wrap; }
 .fit-in label{ font-size:14px; color:var(--text2); font-weight:500; }
-.fit-field{ display:inline-flex; align-items:center; gap:7px; background:var(--bg,#fff); border:1px solid var(--field-edge); border-radius:10px; padding:0 12px; }
+/* V38.8 — THIS FIELD WAS HARD-CODED WHITE IN BOTH THEMES. `var(--bg,#fff)`
+   looks theme-aware and is not: --bg is defined nowhere on this site (the
+   surface tokens are --ink/--ink2/--ink3), so the fallback won every time.
+   In dark that left --text3 ink at 2.92:1 on white — and, worse, the value
+   the reader types is --white (#eaf1ff) on that same white, about 1.1:1,
+   i.e. invisible. The contrast probe never saw the worse half because an
+   input's value is not textContent; it now has a second pass that does. */
+.fit-field{ display:inline-flex; align-items:center; gap:7px; background:var(--ink2); border:1px solid var(--field-edge); border-radius:10px; padding:0 12px; }
 .fit-field span{ font-size:15px; color:var(--text3); }
 .fit-field input{ width:150px; border:none; outline:none; background:transparent; font-size:16px; font-weight:700; color:var(--white); padding:11px 0; font-variant-numeric:tabular-nums; min-height:44px; box-sizing:border-box; }
 .fit-chips{ display:flex; gap:7px; flex-wrap:wrap; }
@@ -4539,8 +4546,22 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .fit-chip{ font-size:12.5px; font-weight:600; color:var(--accent2); background:rgba(37,99,235,.07); border:1px solid rgba(37,99,235,.2); border-radius:999px; padding:9px 14px; line-height:1.2; cursor:pointer; transition:background .15s, border-color .15s; }
 .fit-chip:hover{ background:rgba(37,99,235,.13); border-color:var(--accent2); }
 .fit-chip:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
-.fit-tbl{ width:100%; border-collapse:collapse; margin-top:16px; font-variant-numeric:tabular-nums; }
-.fit-tbl th, .fit-tbl td{ text-align:right; padding:10px 8px; font-size:13.5px; border-bottom:0.5px solid var(--border); }
+/* V38.8 — four columns do not fit a 320px phone: the table measured 344px in a
+   256px content box and pushed the whole page 59px wide. Same remedy the
+   figures table on the vs-fund calculator uses — its own scroller and a text
+   cue, so nothing is dropped and nothing is hidden without saying so. */
+.fit-tbl-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin-top:16px; }
+.fit-tbl-hint{ display:none; font-size:11.5px; color:var(--text3); text-align:center; margin:6px 0 0; }
+@media (max-width:430px){ .fit-tbl-hint{ display:block; } .fit-tbl{ min-width:330px; } }
+.fit-tbl{ width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+/* V38.8 — nowrap on the value cells. Without it the U+2212 minus broke away
+   onto its own line at narrow widths, leaving "−" stranded above "₹1,30,500":
+   a loss that reads as a gain. No probe caught this — overflow and contrast
+   both passed — it took looking at the rendered cell. Safe to nowrap now that
+   the table sits in its own scroller; before that it would have widened the
+   page instead of the scrollport. */
+.fit-tbl th, .fit-tbl td{ text-align:right; padding:10px 8px; font-size:13.5px; border-bottom:0.5px solid var(--border); white-space:nowrap; }
+.fit-tbl td:first-child, .fit-tbl th:first-child{ white-space:normal; }
 .fit-tbl th:first-child, .fit-tbl td:first-child{ text-align:left; }
 .fit-tbl thead th{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text3); }
 .fit-tbl tbody td:first-child{ color:var(--white); font-weight:600; }
@@ -4597,14 +4618,17 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <button type="button" class="fit-chip" data-fit="10000000">₹1Cr</button>
         </span>
       </div>
-      <table class="fit-tbl">
-        <thead><tr><th scope="col">If this strategy is…</th><th scope="col">10% of it</th><th scope="col">25% of it</th><th scope="col">50% of it</th></tr></thead>
-        <tbody>
-          <tr data-dd="11.6"><td>MultiAsset<span class="fit-dd">deepest fall <!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></span></td><td>—</td><td>—</td><td>—</td></tr>
-          <tr data-dd="25.8"><td>LargeMidcap&nbsp;250<span class="fit-dd">deepest fall <!--MFSTAT:lm:max_dd-->-25.8%<!--/MFSTAT--></span></td><td>—</td><td>—</td><td>—</td></tr>
-          <tr data-dd="22.5"><td>SmallMicro&nbsp;500<span class="fit-dd">deepest fall <!--MFSTAT:sm:max_dd-->-22.5%<!--/MFSTAT--></span></td><td>—</td><td>—</td><td>—</td></tr>
-        </tbody>
-      </table>
+      <div class="fit-tbl-wrap">
+        <table class="fit-tbl">
+          <thead><tr><th scope="col">If this strategy is…</th><th scope="col">10% of it</th><th scope="col">25% of it</th><th scope="col">50% of it</th></tr></thead>
+          <tbody>
+            <tr data-dd="11.6"><td>MultiAsset<span class="fit-dd">deepest fall <!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr data-dd="25.8"><td>LargeMidcap&nbsp;250<span class="fit-dd">deepest fall <!--MFSTAT:lm:max_dd-->-25.8%<!--/MFSTAT--></span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr data-dd="22.5"><td>SmallMicro&nbsp;500<span class="fit-dd">deepest fall <!--MFSTAT:sm:max_dd-->-22.5%<!--/MFSTAT--></span></td><td>—</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fit-tbl-hint" aria-hidden="true">← swipe to see every column →</p>
       <p class="fit-foot" id="fit-note">Each figure is the paper loss at the bottom of that strategy's worst stretch in the backtest, on the slice of your corpus shown — arithmetic on the published drawdown and the number you typed, not a forecast and not a recommendation. The honest test is not whether you like the CAGR; it is whether you would still have been holding at the bottom of that column. We publish research as a SEBI-registered Research Analyst and do not give personalised advice — how much belongs here is your decision, and a qualified adviser's.</p>
     </div>
   </div>
