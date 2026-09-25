@@ -178,7 +178,16 @@ html[data-theme="dark"] .cf-rng{ background:linear-gradient(90deg,var(--accent2)
    growing the input itself would square off the shell (V37.5) */
 @media (pointer:coarse){
   .cf-in{ padding-top:12px; padding-bottom:12px; }
-  .cf-rng{ margin-top:16px; margin-bottom:8px; }
+  /* V39.0 — THE TRACK WAS 4px TALL AND THAT IS WHAT A FINGER GOT. V37.5 added
+     the margins above and below and noted, correctly, that growing the control
+     would "square off the shell" — that is true of a plain height, which would
+     paint the track 44px deep. It is not true with the padding clipped out of
+     the background: the element's BOX becomes 44px, so the hit area does too,
+     while the gradient still paints only in the 4px content strip. Measured
+     before: 38–40px of grabbable height on a 390px phone. The negative margin
+     keeps the taller box from moving anything below it. */
+  .cf-rng{ height:44px; padding:20px 0; background-clip:content-box;
+           margin-top:-4px; margin-bottom:-12px; }
   .cmodes button{ padding-top:12px; padding-bottom:12px; }
   /* V37.7 breadcrumb hit area. The links are 12px/15px tall, and "Home" is only
      34.6px wide — well under a thumb. Padding (not a ::after pad) so the two

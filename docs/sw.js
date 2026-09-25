@@ -752,7 +752,16 @@
 // how many live cycles the figure beside it is drawn from). A precached document
 // has no query string to bust, so an installed visitor left on v103 would keep
 // the old homepage and none of it.
-const CACHE = 'mfc-v104';
+// V39.0 -> mfc-v105. index.html is in ASSET_PATHS and changed again since v104
+// shipped: the "What this is not" card's second grid track was `auto`, which
+// sizes to max-content, so from 901px up the sidebar took 768px and the message
+// itself was left 111px with its five pills stacked. An installed visitor left
+// on v104 would keep exactly that. Two shared assets moved with it —
+// assets/mfc-live.js 3890 -> 3900 (a record:countword slot, because "1 cycles
+// published" had a hand-typed plural beside a machine-written count) and
+// assets/mfc-calc.css 7 -> 390 (the 4px range track now carries a 44px hit box
+// with the background clipped to its content, so it still paints 4px).
+const CACHE = 'mfc-v105';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

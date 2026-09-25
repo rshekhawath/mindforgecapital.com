@@ -117,6 +117,13 @@
         if (!rec || !(rec.count > 0)) return;
         if (spec[1] === "count") val = String(rec.count);
         else if (spec[1] === "since") val = fmtDate(rec.first_rebalance);
+        // V39.0 — the noun, agreeing with the count. V38.9 pluralised the
+        // `phrase` slot and left the one place where the number and its noun
+        // are separate elements reading "1 cycles published". A slot for the
+        // word is the only version of this that cannot drift: the alternative
+        // is a hand-typed "cycles" beside a machine-written "1", which is the
+        // seam this project keeps finding.
+        else if (spec[1] === "countword") val = (rec.count === 1 ? "cycle" : "cycles");
         else if (spec[1] === "phrase") {
           val = "Live record: " + rec.count + (rec.count === 1 ? " cycle" : " cycles") +
                 (rec.first_rebalance ? ", since " + fmtDate(rec.first_rebalance) : "");

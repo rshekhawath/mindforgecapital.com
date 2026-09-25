@@ -4144,8 +4144,19 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
      surfaces cannot drift apart. ════════════════════════════════════════════ -->
 <style>
 .notwhat{ padding:34px 0 6px; }
+/* V39.0 — THE SECOND TRACK WAS `auto` AND IT ATE THE CARD. `auto` sizes to
+   MAX-content, and .notwhat-vs ends in a two-sentence footnote whose max-content
+   is about 770px — so the sidebar claimed 768px at every width from 901 up and
+   the main column, the actual message, was left 111px. Measured at 901 / 960 /
+   1024: five pills stacked into a vertical list 219px tall, "WHAT THIS IS NOT"
+   broken across two lines, the sentence set 3 words to a line, and a ~180px void
+   under the sidebar. The first track needs minmax(0,1fr) rather than 1fr for the
+   same family of reason — a bare 1fr floors at min-content and cannot give way.
+   Bounded both: the sidebar gets a range it cannot exceed, the message gets the
+   rest. Checked at 901 (the breakpoint edge), 960, 1024, 1100, 1200 and 1440. */
 .notwhat-card{ background:var(--ink2); border:1px solid var(--border); border-radius:16px;
-  padding:22px 24px; display:grid; grid-template-columns:1fr auto; gap:20px 32px; align-items:center; }
+  padding:22px 24px; display:grid; grid-template-columns:minmax(0,1fr) minmax(236px,320px);
+  gap:20px 32px; align-items:center; }
 .notwhat-k{ font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
   color:var(--text3); margin-bottom:9px; }
 .notwhat-pills{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:11px; }
@@ -4168,6 +4179,13 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
 .notwhat-vs a{ font-size:12px; font-weight:700; color:var(--accent2); text-decoration:none;
   display:inline-block; margin-top:7px; }
 .notwhat-vs a:hover{ text-decoration:underline; }
+/* V39.0 — this is a standalone call-to-action on its own line, not a link inside
+   a sentence, so the WCAG 2.5.8 inline exemption does not cover it. Measured
+   38px tall on a 390px phone. The pad goes on the link's own box rather than a
+   min-height, which would square a text link and push the footnote below it. */
+@media (hover:none) and (pointer:coarse){
+  .notwhat-vs a{ padding:12px 0; margin-top:0; }
+}
 .notwhat-vs .nv-f{ font-size:10.5px; color:var(--text3); line-height:1.6; margin:8px 0 0; }
 @media (max-width:900px){
   .notwhat-card{ grid-template-columns:1fr; gap:18px; }
@@ -5095,7 +5113,7 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
            an auditor's question, and it is answered in full one click away —
            the trade-off bars above it stay open, because comparing three books
            on one axis is work the pricing cards genuinely cannot do. -->
-      <details class="to-win-d tl-more" id="to-win-d" hidden>
+      <details class="to-win-d tl-more tl-keep" id="to-win-d" hidden>
         <summary><span>Which months each backtest covers</span><i aria-hidden="true"></i></summary>
       <div class="to-win-rail" id="to-win-rail" hidden>
         <div class="to-wr-head">
@@ -6508,12 +6526,21 @@ html[data-theme="dark"] .tdist-col.is-med .tdist-bar{ background:linear-gradient
    they use for a closed <details>: modern Chromium/WebKit skip ::details-content
    with content-visibility, older engines put display:none on the non-summary
    children. */
+/* V39.0 — THE FLATTEN NEEDS AN OPT-OUT NOW THAT .tl-more HAS THREE USERS.
+   The rule above is right for a disclosure that is ALREADY inside the phone
+   accordion — the timeline (#how) and the narrowing (#how-built) both are, and
+   nesting a second one there costs a second tap for nothing. V38.9 reused the
+   class for "Measured over", which sits in the pricing area and is inside NO
+   accordion: flattening it left a panel permanently expanded on a phone, with
+   no summary and no way to close it, which is the opposite of why it was
+   collapsed. Measured at 390px: 346px of backtest-window methodology, open,
+   uncloseable. The opt-out is explicit so the next disclosure has to choose. */
 @media (max-width:600px){
-  .tl-more > summary{ display:none; }
-  .tl-more::details-content{ content-visibility:visible; block-size:auto; }
-  .tl-more > .timeline{ display:block; }
-  .tl-more{ margin-top:0; }
-  .tl-more .timeline{ margin-top:18px; }
+  .tl-more:not(.tl-keep) > summary{ display:none; }
+  .tl-more:not(.tl-keep)::details-content{ content-visibility:visible; block-size:auto; }
+  .tl-more:not(.tl-keep) > .timeline{ display:block; }
+  .tl-more:not(.tl-keep){ margin-top:0; }
+  .tl-more:not(.tl-keep) .timeline{ margin-top:18px; }
 }
 .mm-foot{ margin-top:18px; font-size:12px; color:var(--text3); line-height:1.75; max-width:70ch; }
 .mm-foot b{ color:var(--text2); font-weight:700; }
@@ -7205,7 +7232,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
              by mfc-live.js from live-history.json, so it counts up on its own
              and can never claim a month that did not happen. -->
         <p>Every monthly rebalance is published in full — exact tickers, exact weights. No black-box claims. You see what the model sees, and no published cycle has ever been rewritten.</p>
-        <div class="why-stat"><span class="why-stat-val" data-live="record:count">0</span> <span class="why-stat-lbl">cycles published, none revised</span></div>
+        <div class="why-stat"><span class="why-stat-val" data-live="record:count">0</span> <span class="why-stat-lbl"><span data-live="record:countword">cycles</span> published, none revised</span></div>
       </div>
 
       <div class="why-card fade-up tilt-host">
@@ -9176,7 +9203,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 </style>
 <script src="assets/mfc-offer.js?v=3380" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=3890" defer></script>
+<script src="assets/mfc-live.js?v=3900" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
