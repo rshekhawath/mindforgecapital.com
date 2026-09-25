@@ -634,10 +634,21 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            Three branches now, not two, and the steps are written per branch
            rather than hidden — reordering by display:none cannot put payment
            AFTER access, which is the whole point of the offer. -->
+      <!-- V38.9 — STEP ONE IS NO LONGER "GO AND TALK TO SOMEBODY" ON THE FREE
+           BOOK. MultiAsset is free: there is no price to agree, no payment to
+           collect and nothing to negotiate, so routing its signup through a
+           chat thread was pure friction on the one product whose entire job is
+           to be tried without friction — and the page that sends people here
+           promises "free, and not a trial ... no card". The registration is
+           already saved to the backend by the time this panel renders; the
+           WhatsApp message adds nothing to it. The window no longer opens by
+           itself for the free book and the button below stays, as a way to ask
+           a question rather than a step to complete. Paid signups are
+           unchanged: there a human still has to take a payment. -->
       <div class="success-step">
         <div class="step-num">1</div>
         <div class="step-text">
-          <strong>Connect on WhatsApp</strong>
+          <strong id="ss-s1-title">Connect on WhatsApp</strong>
           <span id="ss-s1-text">We're opening WhatsApp now. Send us the pre-filled message to confirm your interest.</span>
         </div>
       </div>
@@ -723,6 +734,20 @@ function onStrategyChange() {
   var note = document.getElementById('strategy-note');
   var m = STRATEGY_META[sel];
   var isFree = !!(m && m.free);
+
+  // V38.9 — the submit button stops promising a chat thread on the free book.
+  // "Register & Connect on WhatsApp" was the label on every strategy, and for
+  // MultiAsset it described a step that no longer happens.
+  // No `disabled` guard: the button is disabled until the T&C box is ticked,
+  // which is normally AFTER the strategy is chosen, and handleTncChange() does
+  // not rewrite the label — guarding on it would leave the free book showing
+  // the WhatsApp wording for the whole of the decision.
+  var rb = document.getElementById('reg-btn');
+  if (rb) {
+    rb.setAttribute('data-label', isFree ? 'free' : 'paid');
+    rb.innerHTML = isFree ? 'Register &amp; get my dashboard &#8594;'
+                          : 'Register &amp; Connect on WhatsApp &#8594;';
+  }
 
   // The 1st-month-free launch offer banner: MultiAsset is free outright, so it
   // gets its own message; every other strategy gets the standard offer copy
@@ -815,9 +840,14 @@ function hideError() {
 function setBtn(loading) {
   var btn = document.getElementById('reg-btn');
   btn.disabled = loading;
+  // V38.9 — restore the label the CURRENT strategy earned, not the paid one.
+  // setBtn(false) runs after every submit and after every validation failure,
+  // so hard-coding the WhatsApp wording here would undo onStrategyChange().
   btn.innerHTML = loading
     ? '<span class="spinner"></span>Saving…'
-    : 'Register &amp; Connect on WhatsApp &#8594;';
+    : (btn.getAttribute('data-label') === 'free'
+        ? 'Register &amp; get my dashboard &#8594;'
+        : 'Register &amp; Connect on WhatsApp &#8594;');
 }
 
 // Hard-gate the submit button on the T&C checkbox.
@@ -890,11 +920,22 @@ async function handleSubmit() {
   if (step2) step2.style.display = isFree ? 'none' : '';
   if (accessNum) accessNum.textContent = isFree ? '2' : '3';
 
+  var s1Title = document.getElementById('ss-s1-title');
+  var s1Text  = document.getElementById('ss-s1-text');
+
   if (isFree) {
+    // V38.9 — the free book asks for nothing further. Step 1 states what has
+    // already happened rather than sending the reader to a chat queue.
+    if (s1Title) s1Title.textContent = 'You’re registered';
+    if (s1Text)  s1Text.textContent  =
+      'Nothing else is needed from you — no card, no payment, no message to send.';
     if (s3Title)    s3Title.textContent = 'Get dashboard access';
     if (accessText) accessText.textContent =
       'Within 24 hours, your personalised dashboard link will be emailed to you — no payment needed.';
   } else if (offer) {
+    if (s1Title) s1Title.textContent = 'Connect on WhatsApp';
+    if (s1Text)  s1Text.textContent  =
+      'We’re opening WhatsApp now. Send us the pre-filled message to confirm your interest.';
     if (s2Title) s2Title.textContent = 'Get dashboard access';
     if (s2Text)  s2Text.textContent  =
       'Within 24 hours your personalised dashboard link is emailed to you. Month one costs nothing — there is nothing to pay first.';
@@ -902,6 +943,13 @@ async function handleSubmit() {
     if (accessText) accessText.textContent =
       'We\u2019ll send the payment link on WhatsApp about a week before your first bill. Cancel before then and you were never charged.';
   } else {
+    // resetForm() re-runs this without a page load, so step 1 has to be written
+    // on EVERY branch — a free registration followed by "register for another
+    // strategy" would otherwise leave a paid signup saying "you're registered,
+    // nothing else is needed" with a payment step underneath it.
+    if (s1Title) s1Title.textContent = 'Connect on WhatsApp';
+    if (s1Text)  s1Text.textContent  =
+      'We’re opening WhatsApp now. Send us the pre-filled message to confirm your interest.';
     if (s2Title) s2Title.textContent = 'Make payment';
     if (s2Text)  s2Text.textContent  = "We'll share a UPI QR code and payment details on WhatsApp.";
     if (s3Title) s3Title.textContent = 'Get dashboard access';
@@ -949,10 +997,18 @@ async function handleSubmit() {
     'Details saved for ' + name + '. Here’s what happens next:';
   document.getElementById('wa-link').href = waUrl;
 
-  // Show success, open WhatsApp
+  // V38.9 — the free book does not pop a chat window. The lead is already
+  // saved; WhatsApp is a way to ask a question, not a step to complete, so the
+  // button stays and relabels rather than the window opening unasked.
+  var waBtn = document.getElementById('wa-link');
+  if (waBtn) {
+    waBtn.lastChild.nodeValue = isFree ? ' Ask us a question on WhatsApp' : ' Open WhatsApp';
+  }
+
+  // Show success; open WhatsApp only where a human still has to take a payment.
   document.getElementById('step-form').style.display = 'none';
   document.getElementById('step-success').style.display = 'block';
-  window.open(waUrl, '_blank', 'noopener,noreferrer');
+  if (!isFree) window.open(waUrl, '_blank', 'noopener,noreferrer');
 
   setBtn(false);
 }

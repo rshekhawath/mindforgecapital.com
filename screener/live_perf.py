@@ -179,12 +179,18 @@ def main() -> None:
                   "Model portfolio, not audited client returns."),
         "strategies": strategies,
     }
+    # V38.9 — history first, so the cycle count it returns can be published
+    # inside live-perf.json. append_history() only reads `out`; it never needed
+    # the file on disk, so the reorder is safe and keeps the count derived in
+    # exactly one place.
+    record = append_history(out)
+    if record:
+        out["record"] = record
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n")
     print(f"wrote {OUT.relative_to(ROOT)}")
-    append_history(out)
 
 
-def append_history(out: dict) -> None:
+def append_history(out: dict) -> dict | None:
     """Roll this run's figures into docs/live-history.json — the LIVE track record.
 
     V35.3. Everything the member dashboard could say about performance was about
@@ -247,6 +253,19 @@ def append_history(out: dict) -> None:
     }, ensure_ascii=False, indent=1) + "\n")
     sealed = sum(1 for c in cycles if c.get("sealed"))
     print(f"wrote {HIST.relative_to(ROOT)} — {len(cycles)} cycle(s), {sealed} sealed")
+    # V38.9 — hand the counts back so live-perf.json can publish HOW YOUNG the
+    # live record is beside the figure itself. Every surface that prints a live
+    # cycle % was printing it without a sample size, and the first number a
+    # first-time reader meets on this site is that one. "−0.04% this cycle"
+    # reads as performance; "−0.04% this cycle · live record: 1 cycle" reads as
+    # what it actually is. The count has to travel WITH the number, and it has
+    # to be derived here, where the history is, or it goes stale the first month
+    # nobody remembers to edit the HTML.
+    return {
+        "count": len(cycles),
+        "sealed": sealed,
+        "first_rebalance": (cycles[0].get("rebalance_date") if cycles else None),
+    }
 
 
 if __name__ == "__main__":

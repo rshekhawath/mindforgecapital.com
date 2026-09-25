@@ -743,7 +743,16 @@
 // scroller so a 320px phone no longer scrolls sideways by 59px. A precached
 // document has no query string to bust, so an installed visitor left on v102
 // would keep both.
-const CACHE = 'mfc-v103';
+// V38.9 -> mfc-v104. index.html is in ASSET_PATHS, and this release rewrites it:
+// the "Where this fits" ladder re-anchors from ₹10L–₹1Cr to ₹2L–₹25L and grows a
+// monthly-addition field and a fee-at-your-size readout, the pricing cards grow a
+// "Works from" figure, a "What this is not" block lands under the hero, and the
+// fee anchor publishes the case where the flat fee LOSES. One shared asset moved
+// with it: assets/mfc-live.js 3620 -> 3890 (the record:phrase slot, which prints
+// how many live cycles the figure beside it is drawn from). A precached document
+// has no query string to bust, so an installed visitor left on v103 would keep
+// the old homepage and none of it.
+const CACHE = 'mfc-v104';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

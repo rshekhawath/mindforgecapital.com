@@ -103,6 +103,25 @@
       var val = null, isPct = false, num = null;
       if (spec[0] === "rebal") val = fmtDate(data.rebalance_date);
       else if (spec[0] === "asof") val = fmtDate(data.data_through);
+      // V38.9 — HOW YOUNG THE LIVE RECORD IS, beside the live figure itself.
+      // Every surface on this site prints a cycle % with no sample size, and on
+      // the homepage that number is the first thing a first-time reader meets.
+      // One cycle of −0.04% reads as performance; it is a sample of one, and
+      // the page has to say so in the same breath rather than hope the reader
+      // infers it. Derived in live_perf.py from the history file, so it cannot
+      // go stale the way a hand-typed count would; absent payload (an older
+      // live-perf.json, a cached one from before this release) simply leaves
+      // the slot's authored fallback text alone.
+      else if (spec[0] === "record") {
+        var rec = data.record;
+        if (!rec || !(rec.count > 0)) return;
+        if (spec[1] === "count") val = String(rec.count);
+        else if (spec[1] === "since") val = fmtDate(rec.first_rebalance);
+        else if (spec[1] === "phrase") {
+          val = "Live record: " + rec.count + (rec.count === 1 ? " cycle" : " cycles") +
+                (rec.first_rebalance ? ", since " + fmtDate(rec.first_rebalance) : "");
+        }
+      }
       else {
         var s = (data.strategies || {})[spec[0]];
         if (!s) return;
