@@ -39,8 +39,9 @@ import json
 import os
 import sys
 import warnings
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 warnings.filterwarnings("ignore")
 
@@ -92,18 +93,71 @@ def rebalance_date() -> datetime:
         mts.append((IP / "strategies" / folder / "outputs" / "portfolio.csv").stat().st_mtime)
     if max(mts) - min(mts) > 86400:
         raise RuntimeError("portfolio.csv files span >1 day — mixed publish runs; refusing")
-    return datetime.fromtimestamp(max(mts))
+    return datetime.fromtimestamp(max(mts), IST)
+
+
+# ── V39.3 — COMPLETED SESSIONS ONLY ─────────────────────────────────────────
+# On 25 Sep 2026 this script ran at 09:12 IST, before the open. yfinance hands
+# back TODAY's daily bar as soon as the session starts, `px()` took the last
+# row, and every benchmark published was the 25 Sep OPENING print (Nifty 50
+# −4.34%, LargeMidcap composite −4.34%, Smallcap 250 −1.08% — each equal to the
+# open to the basis point) while the pages said "closes through 25 Sept". A
+# sealed live-history row is final, so a pre-open run just before a publish
+# would have frozen an opening print into the live record for good.
+#
+# The rule now: a bar counts only once its session has CLOSED and been printed
+# as a close. Before 16:00 IST that means yesterday at the latest (NSE closes
+# at 15:30; the extra half hour is for the closing price to settle at the data
+# vendor). MFC_LIVE_NOW overrides the clock so the rule can be tested.
+IST = ZoneInfo("Asia/Kolkata")
+SESSION_FINAL = time(16, 0)
+
+
+def now_ist() -> datetime:
+    override = os.environ.get("MFC_LIVE_NOW", "").strip()
+    if override:
+        dt = datetime.fromisoformat(override)
+        return dt if dt.tzinfo else dt.replace(tzinfo=IST)
+    return datetime.now(IST)
+
+
+def last_complete_day(now: datetime) -> date:
+    """Newest calendar day whose session (if it had one) has closed."""
+    now = now.astimezone(IST)
+    return now.date() if now.time() >= SESSION_FINAL else now.date() - timedelta(days=1)
+
+
+def baseline_day(published: datetime) -> date:
+    """The session whose close the published picks were priced from.
+
+    publish.py stamps each pick's recommended price as the latest close at
+    publish time, and the dashboard measures from that price. A book published
+    after the close (31 Aug 2026, 20:36) is priced off that day's close; one
+    published before it is priced off the previous session's. The public figure
+    has to start from the same close or it measures a different cycle from the
+    one members see."""
+    return last_complete_day(published)
 
 
 def main() -> None:
     import pandas as pd
     import yfinance as yf
 
+    dry = "--dry-run" in sys.argv          # V39.3 — compute and print, write nothing
+    now = now_ist()
+    done = pd.Timestamp(last_complete_day(now))   # newest bar allowed to count
     rebal = rebalance_date()
-    rebal_ts = pd.Timestamp(rebal.date())
+    base = baseline_day(rebal)
+    rebal_ts = pd.Timestamp(base)          # baseline = last close on/before this day
+
+    def completed(frame):
+        """Drop any bar whose session has not closed yet (see SESSION_FINAL)."""
+        return frame.loc[frame.index.normalize() <= done]
 
     all_syms = sorted({r["yahoo"] for k in STRATS for r in load_picks(*STRATS[k][:2])})
-    print(f"live-perf: {len(all_syms)} tickers · rebalance {rebal:%Y-%m-%d}")
+    print(f"live-perf: {len(all_syms)} tickers · rebalance {rebal:%Y-%m-%d %H:%M} · "
+          f"baseline close {base} · completed sessions through {done.date()}"
+          + (" · DRY RUN" if dry else ""))
     raw = yf.download(all_syms, start=(rebal_ts - pd.Timedelta(days=12)).date(),
                       auto_adjust=True, progress=False)
     close = raw["Close"] if "Close" in getattr(raw.columns, "levels", [raw.columns])[0] else raw
@@ -111,6 +165,31 @@ def main() -> None:
         close = close.to_frame(all_syms[0])
     if getattr(close.index, "tz", None) is not None:
         close.index = close.index.tz_localize(None)
+    close = completed(close)
+
+    # V39.3 — ONE DATE FOR EVERY FIGURE. Yahoo does not publish every
+    # instrument's bar at the same moment: on 26 Sep 2026 the stocks had their
+    # 25 Sep close while most MultiAsset ETFs still stopped at 24 Sep. Taking
+    # each ticker's own last bar then measured the ETFs to the 24th against a
+    # Nifty 50 to the 25th, under one "closes through 25 Sept" label. So find
+    # the latest completed session on which EVERY strategy has at least 80% of
+    # its picks priced (the same coverage rule the figures already use), and
+    # measure everything — picks and benchmarks — through that one session.
+    picks_by_key = {k: load_picks(*STRATS[k][:2]) for k in STRATS}
+
+    def latest_covered(picks):
+        cols = [r["yahoo"] for r in picks if r["yahoo"] in close.columns]
+        if not picks or not cols:
+            return None
+        cov = close[cols].notna().sum(axis=1) / len(picks)
+        ok = cov[cov >= 0.8]
+        return ok.index[-1] if len(ok) else None
+
+    covered = [d for d in (latest_covered(p) for p in picks_by_key.values()) if d is not None]
+    common = min(covered) if covered else None
+    if common is not None:
+        close = close.loc[:common]
+        print(f"  measuring every figure through the {common.date()} close")
 
     def px(sym, upto=None):
         if sym not in close.columns:
@@ -122,7 +201,7 @@ def main() -> None:
 
     strategies, as_of = {}, None
     for key, (folder, suffix, name, curr) in STRATS.items():
-        picks = load_picks(folder, suffix)
+        picks = picks_by_key[key]
         w_sum = w_ret = 0.0
         priced = 0
         for r in picks:
@@ -138,7 +217,7 @@ def main() -> None:
             print(f"  !! {key}: only {priced}/{len(picks)} priced — publishing null")
 
         bcfg = REAL_BENCHMARKS[STRAT_TO_BENCHKEY[key]]
-        b_ret, b_ok = 0.0, True
+        b_ret, b_ok, legs = 0.0, True, []
         for tkr, wt in bcfg["tickers"].items():
             b = yf.download(tkr, start=(rebal_ts - pd.Timedelta(days=12)).date(),
                             auto_adjust=True, progress=False)["Close"]
@@ -147,11 +226,18 @@ def main() -> None:
             b = b.dropna()
             if getattr(b.index, "tz", None) is not None:
                 b.index = b.index.tz_localize(None)
+            b = completed(b)
+            if common is not None:
+                b = b.loc[:common]
             b0 = b.loc[:rebal_ts]
             if b0.empty or b.empty:
                 b_ok = False
                 break
             b_ret += wt * (float(b.iloc[-1]) / float(b0.iloc[-1]) - 1.0)
+            # V39.3 — publish each leg's baseline level so the member dashboard
+            # can price the benchmark at the SAME moment as the member's live
+            # figure, instead of subtracting this run's close from a live price.
+            legs.append({"t": tkr, "w": wt, "base": round(float(b0.iloc[-1]), 4)})
             as_of = max(as_of or b.index[-1], b.index[-1])
         strategies[key] = {
             "name": name,
@@ -161,6 +247,8 @@ def main() -> None:
             "n": len(picks),
             "currency": curr,
         }
+        if b_ok:
+            strategies[key]["bench_legs"] = legs
         print(f"  {key}: live {live_pct}%  bench {strategies[key]['bench_pct']}%  ({priced}/{len(picks)} priced)")
 
     data_through = None
@@ -172,25 +260,30 @@ def main() -> None:
     out = {
         "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "rebalance_date": rebal.strftime("%Y-%m-%d"),
+        "baseline_date": base.isoformat(),
         "data_through": (max(data_through, as_of) if data_through is not None and as_of is not None
                          else data_through or as_of).strftime("%Y-%m-%d"),
         "basis": ("Weight-weighted model-portfolio movement since the last rebalance; "
-                  "closing prices; baseline = last close on/before the rebalance date. "
-                  "Model portfolio, not audited client returns."),
+                  "closing prices of completed sessions only; baseline = the close the "
+                  "published picks were priced from. Model portfolio, not audited client returns."),
         "strategies": strategies,
     }
     # V38.9 — history first, so the cycle count it returns can be published
     # inside live-perf.json. append_history() only reads `out`; it never needed
     # the file on disk, so the reorder is safe and keeps the count derived in
     # exactly one place.
-    record = append_history(out)
+    record = append_history(out, write=not dry)
     if record:
         out["record"] = record
+    if dry:
+        print(json.dumps(out, ensure_ascii=False, indent=1))
+        print("dry run — nothing written")
+        return
     OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n")
     print(f"wrote {OUT.relative_to(ROOT)}")
 
 
-def append_history(out: dict) -> dict | None:
+def append_history(out: dict, write: bool = True) -> dict | None:
     """Roll this run's figures into docs/live-history.json — the LIVE track record.
 
     V35.3. Everything the member dashboard could say about performance was about
@@ -238,9 +331,27 @@ def append_history(out: dict) -> dict | None:
     cycles = [c for c in cycles if c.get("rebalance_date") != rebal]
     cycles.append(entry)
     cycles.sort(key=lambda c: c.get("rebalance_date") or "")
+    # V39.3 — a row is sealed at whatever the LAST run before the new book
+    # measured. If that run stopped short of the close the new book is priced
+    # from, the sessions in between belong to no cycle, and a sealed row can
+    # never be corrected afterwards (the old picks are overwritten by then).
+    # This cannot repair it; it makes sure nobody learns about it by accident.
+    base = out.get("baseline_date") or ""
+    for c in cycles:
+        sealing = not c.get("sealed") and (c.get("rebalance_date") or "") < rebal
+        if sealing and base and (c.get("data_through") or "") < base:
+            print(f"  !! live-history: sealing the {c.get('rebalance_date')} cycle at "
+                  f"{c.get('data_through')}, but the new book is priced from the {base} close — "
+                  f"the sessions in between are in no cycle. Next time run the stock refresh "
+                  f"AFTER the close and BEFORE runner/publish.py.")
     for c in cycles:
         c["sealed"] = (c.get("rebalance_date") or "") < rebal
     cycles = cycles[-HIST_MAX:]
+
+    if not write:
+        sealed = sum(1 for c in cycles if c.get("sealed"))
+        return {"count": len(cycles), "sealed": sealed,
+                "first_rebalance": (cycles[0].get("rebalance_date") if cycles else None)}
 
     HIST.write_text(json.dumps({
         "generated_utc": out["generated_utc"],

@@ -768,7 +768,13 @@
 // cycle no longer rewrites the V38.7 headline; the process heading rule; the
 // footer logo's touch height). One shared asset moved with it: mfc-calc.css
 // 390 -> 392 on all eight calculator pages.
-const CACHE = 'mfc-v107';
+// V39.3 -> mfc-v108. index.html is precached and this release rewrites it (the
+// eyebrow names the reader, a live cycle count replaces "5Y backtested track
+// record", the verified-P&L copy says only what Zerodha's page shows, a Start-free
+// button in the free-book section). One shared asset moved with it:
+// assets/mfc-live.js 3900 -> 3910 (the record line names the close it runs to, and
+// the owner-supplied dedicated-since dates, empty for now, render nothing).
+const CACHE = 'mfc-v108';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

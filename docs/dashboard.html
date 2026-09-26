@@ -1381,9 +1381,11 @@ html[data-theme="dark"] .mf-abar-cap{ background:rgba(120,150,255,.10); }
 .mf-abar-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
 .mf-abar-amt{ font-size:11px; font-weight:700; opacity:.92; font-variant-numeric:tabular-nums; }
 .mf-abar-amt:empty{ display:none; }
-/* Shown only where the gap it closes actually exists. Above 600px the table is a
-   table, the page is a third of the length and the Kite band is reachable. */
-@media (max-width:600px){ .mf-abar.is-on{ display:flex; } }
+/* Shown only where the gap it closes actually exists. V39.3 — B6: that is every
+   width below 1200px, not just phones. The picks render as cards below 1200
+   (V37.4), and on an iPad at 767px the Kite band sat 5.6 screens down under the
+   attribution and the picks. At 1200+ the table is a table and the band is near. */
+@media (max-width:1199px){ .mf-abar.is-on{ display:flex; } }
 /* Landscape phones give ~40% of the screen to chrome already (V34.1) — a 64px
    bar there costs more than it returns. */
 @media (max-height:480px){ .mf-abar.is-on{ display:none; } }
@@ -3061,7 +3063,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <!-- HERO -->
     <div class="dash-hero fade-up">
       <div class="section-label">Member Dashboard</div>
-      <h1>Welcome back, <span class="accent welcome-name" id="hero-name">Investor</span>.</h1>
+      <h1><span id="hero-greet">Welcome back</span>, <span class="accent welcome-name" id="hero-name">Investor</span>.</h1>
       <p class="sub" id="dash-subtitle">Here are this cycle's picks for your strategy. Place them in your broker and you're done for the month.</p>
       <div class="meta-row">
         <div class="meta-pill" id="pill-status">
@@ -3552,6 +3554,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </div>
       </div>
       <div class="at-net" id="at-net"></div>
+      <!-- V39.3 — C6. Same reason V39.1 took the sentiment gauge off this page: a
+           ranked "holding it back" list in red, mid-month, invites selling the
+           laggard — the discretionary override the model exists to remove. The
+           split and the sentence above stay open; the per-name ranking is one
+           click away. The renderers write by id, so nothing else changed. -->
+      <details class="track-more at-more" id="at-more">
+        <summary><span>See each holding&rsquo;s share</span><i aria-hidden="true"></i></summary>
       <!-- V37.6 — the same contributions, summed by industry (or asset class on
            MultiAsset). Rendered by renderAttribution(); hidden when the book has
            only one group, where the second view would repeat the first. -->
@@ -3564,6 +3573,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
       <div class="at-rows" id="at-rows"></div>
       <div class="at-foot" id="at-foot">Contribution = the holding's model weight &times; its move since the rebalance, in percentage points of the headline above. All contributions sum to that headline exactly.</div>
+      </details>
     </div>
 
     <!-- MEMBER BENEFIT: 1:1 Zoom call (V8.2) -->
@@ -4526,9 +4536,11 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           </span>
           <div class="vfy-txt">
             <h3>This strategy trades in a real account</h3>
-            <p><b id="vfy-name">This strategy</b> is executed in its own dedicated Zerodha
-               account — that model and nothing else — and Zerodha publishes that account&rsquo;s
-               realised and unrealised P&amp;L on its own verified page.</p>
+            <p><b id="vfy-name">This strategy</b> is traded in its own Zerodha account, and
+               Zerodha publishes that account&rsquo;s realised P&amp;L &mdash; closed trades only,
+               over the account&rsquo;s whole history &mdash; on its own verified page. It does
+               not show open positions or a percentage return.</p>
+            <p class="vfy-since" id="vfy-since" hidden></p>
           </div>
         </div>
         <a class="vfy-cta" id="vfy-link" href="#" target="_blank" rel="noopener">
@@ -4909,7 +4921,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="oo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
         <div class="oo-text">
           <div class="oo-title">1:1 Zoom call with Sagar Shekhawath<span class="oo-badge">SEBI RA</span></div>
-          <div class="oo-sub">A complimentary member benefit — book a one-on-one Zoom call to walk through your strategy, this cycle's picks and position sizing with our SEBI-Registered Research Analyst.</div>
+          <div class="oo-sub">A complimentary member benefit — a one-on-one Zoom walkthrough of the dashboard and the monthly routine with our SEBI-Registered Research Analyst: sizing with the tool, placing the baskets, reading the record. It is about the process, not personal advice.</div>
         </div>
         <a id="oneonone-cta" class="oo-cta" target="_blank" rel="noopener" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20I%27d%20like%20to%20book%20my%201%3A1%20Zoom%20call%20with%20Sagar%20Shekhawath%20(SEBI%20RA).">Book your 1:1 Zoom call →</a>
       </div>
@@ -6313,6 +6325,17 @@ function renderDashboard(sub, stocks) {
   const now    = new Date();
 
   document.getElementById('hero-name').textContent = firstName(sub.name);
+  // V39.3 — B4. "Welcome back" greeted members on their very first visit. First
+  // visit = this device has never opened a dashboard AND holds no amount for this
+  // book. A returning member on a NEW device is put right the moment the server
+  // copy of their progress arrives (capitalSyncLoad). Never in demo.
+  try {
+    var _greet = document.getElementById('hero-greet');
+    var _seen = false;
+    try { _seen = !!localStorage.getItem('mfc_dash_seen'); } catch (e) {}
+    if (_greet && !isDemo && !_seen && !(loadSavedCapital(sub.strategy || '') > 0)) _greet.textContent = 'Welcome';
+    if (!isDemo) { try { localStorage.setItem('mfc_dash_seen', '1'); } catch (e) {} }
+  } catch (e) {}
   // expiry-date span lives inside the pill that we re-render below — defensive
   const _exp = document.getElementById('expiry-date');
   if (_exp) _exp.textContent = mfDate(expiry, {day:'numeric',month:'short',year:'numeric'});
@@ -7187,6 +7210,90 @@ function loadSavedCapital(strategy) {
 }
 function saveCapital(strategy, v) {
   try { localStorage.setItem(capitalStorageKey(strategy), String(normaliseCapital(v))); } catch (e) {}
+  // V39.3 — B4: a timestamp, so a newer amount on another device can win.
+  try { localStorage.setItem(capitalStorageKey(strategy) + '_at', new Date().toISOString()); } catch (e) {}
+  var first = !window._capEntered;
+  window._capEntered = true;
+  _capPush(strategy, v);
+  if (first) _capRefreshLabels();
+}
+
+/* ── V39.3 — B4 · YOUR AMOUNT, ON EVERY DEVICE — NEVER SOMEONE ELSE'S ────────
+   Capital lived in this device's localStorage only, and an unset field fell back
+   to the RECOMMENDED size (₹15,00,000 on SmallMicro 500). So a member who typed
+   ₹3,00,000 on a laptop opened the phone at night to "On your ₹15,00,000 that is
+   +₹22,150" and a fifteen-order, ₹14.9L Kite basket sized to it.
+   Now: (1) the amount rides the progress endpoint under its own `capital::` key
+   (the backend exempts that key from its two-cycle pruning; an older deployment
+   may prune it, and then this device's copy simply stands); (2) until the member
+   has typed or confirmed an amount (`_capEntered`), every surface says the size
+   is the recommended one, and no Kite basket can be sent — sendKiteBasket()
+   routes to the field instead. The recommended default is still used for the
+   figures: it is a sensible starting point, just never presented as theirs. */
+window._capEntered = false;
+function _capServerKey(strategy) {
+  return ('capital::' + String(strategy || 'default').replace(/\u00A0/g, ' ').trim()).slice(0, 120);
+}
+var _capTimer = null;
+window._capServer = false;   // set by capitalSyncLoad() from get_progress's `features`
+function _capPush(strategy, v) {
+  // Only against a backend that advertises the capital feature: an older one
+  // prunes progress to two keys and would evict a cycle to store the amount.
+  if (isDemo || !token || !(Number(v) > 0) || !window._capServer) return;
+  if (_capTimer) clearTimeout(_capTimer);
+  _capTimer = setTimeout(function () {
+    _capTimer = null;
+    try {
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
+        body: JSON.stringify({ action: 'set_progress', token: token, cycle_key: _capServerKey(strategy),
+                               map: { cap: { t: new Date().toISOString(), v: normaliseCapital(v) } }, removed: [] })
+      }).catch(function () {});
+    } catch (e) {}
+  }, 1500);
+}
+/* Resolves to the server's amount when it is newer than this device's, else
+   null. Also corrects the first-visit greeting for a member who has progress on
+   the server. Never rejects; offline or on an older backend it resolves null. */
+function capitalSyncLoad(strategy) {
+  if (isDemo || !token) return Promise.resolve(null);
+  return fetch(APPS_SCRIPT_URL + '?action=get_progress&token=' + encodeURIComponent(token) + '&_=' + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || d.status !== 'ok' || !d.progress) return null;
+      window._capServer = Array.isArray(d.features) && d.features.indexOf('capital') >= 0;
+      if (Object.keys(d.progress).length) {
+        var g = document.getElementById('hero-greet');
+        if (g) g.textContent = 'Welcome back';
+      }
+      var c = (d.progress[_capServerKey(strategy)] || {}).cap;
+      var v = c ? normaliseCapital(c.v) : 0;
+      var localAt = '';
+      try { localAt = String(localStorage.getItem(capitalStorageKey(strategy) + '_at') || ''); } catch (e) {}
+      var serverNewer = v > 0 && !(localAt && c.t && String(c.t) <= localAt);
+      // This device holds an amount the server has not got (or an older one):
+      // send it up, now that the backend is known to keep it.
+      if (!serverNewer && window._capServer && window._capEntered && localAt) _capPush(strategy, currentCapital);
+      return serverNewer ? v : null;
+    })
+    .catch(function () { return null; });
+}
+function _capRefreshLabels() {
+  try { if (window._livePx) renderProfitHeadline(); } catch (e) {}
+  try { refreshKiteBasket(); } catch (e) {}
+}
+function confirmCapital() {
+  if (currentStrategy) saveCapital(currentStrategy, currentCapital);
+  showToast('Your orders are sized for ' + fmtMoney(currentCapital) + ' — change it any time in Position sizing');
+}
+/* The line the basket band and the headline share while no amount is set. */
+function _kbCapNote() {
+  if (isDemo || window._capEntered) return '';
+  var amt = escapeHtml(fmtMoney(currentCapital));
+  // The basket's own button(s) already say "enter your amount" and route to the
+  // field, so the note offers only the other answer: keep the recommended size.
+  return '<span class="kb-capnote"><b>Sized for ' + amt + ' — the recommended amount, not one you entered.</b> ' +
+         '<button type="button" class="kb-capbtn" onclick="confirmCapital()">Use ' + amt + '</button></span> ';
 }
 
 /* ── V31.0 — BROKER-VERIFIED ACCOUNT, PER BOOK ─────────────────────────────
@@ -7201,11 +7308,15 @@ function saveCapital(strategy, v) {
    The card carries NO percentage on purpose: every other figure on this page is
    the member's own book, and a second, unrelated number here would invite a
    reconciliation that does not exist. ── */
+/* V39.3 — A1. `since`: the date each account became dedicated to its model.
+   EMPTY until the owner supplies it, and empty renders nothing. The public pages
+   read the same two dates from DEDICATED_SINCE in assets/mfc-live.js — set both
+   together (and bump mfc-live.js's ?v on the pages that load it). */
 var VERIFIED_ACCOUNTS = [
   { re: /largemidcap/i, name: 'MindForge LargeMidcap\u00A0250',
-    url: 'https://console.zerodha.com/verified/ddd3611c' },
+    url: 'https://console.zerodha.com/verified/ddd3611c', since: '' },
   { re: /smallmicro/i,  name: 'MindForge SmallMicro\u00A0500',
-    url: 'https://console.zerodha.com/verified/9eafe0ef' }
+    url: 'https://console.zerodha.com/verified/9eafe0ef', since: '' }
 ];
 function renderVerified(strategy) {
   var card = document.getElementById('vfy-card');
@@ -7222,6 +7333,12 @@ function renderVerified(strategy) {
     link.setAttribute('href', hit.url);
     link.setAttribute('aria-label', hit.name + ' — verified live P&L on Zerodha (opens in a new tab)');
   }
+  var since = document.getElementById('vfy-since');
+  if (since) {
+    since.textContent = hit.since ? 'Dedicated to this model since ' + hit.since +
+      '. Trades before that date are in Zerodha\u2019s total.' : '';
+    since.hidden = !hit.since;
+  }
   card.style.display = 'flex';
 }
 
@@ -7234,6 +7351,7 @@ function setupCapitalCalculator(stocks, strategy) {
   // V30.2: normalise on the way IN as well — a stored value written by an older
   // release (or hand-edited) must not re-enter the page unbounded.
   currentCapital = normaliseCapital(saved > 0 ? saved : presets.recommended);
+  window._capEntered = isDemo || saved > 0;   // V39.3 — B4
 
   const prefixEl = document.getElementById('size-prefix');
   if (prefixEl) prefixEl.textContent = '₹';
@@ -7260,6 +7378,19 @@ function setupCapitalCalculator(stocks, strategy) {
 
   refreshSizeSummary();
   card.style.display = '';
+
+  // V39.3 — B4: an amount this member set on another device wins over this
+  // device's default — never over an amount typed here more recently.
+  capitalSyncLoad(strategy).then(function (v) {
+    if (!(v > 0) || strategy !== currentStrategy) return;
+    if (v !== currentCapital) {
+      setCapital(v, null, false);
+      showToast('Using the amount you set on another device: ' + fmtMoney(v));
+    } else if (!window._capEntered) {
+      window._capEntered = true;
+      _capRefreshLabels();
+    }
+  });
 }
 
 function shortLakhs(v) {
@@ -8617,7 +8748,13 @@ function refreshActionBar(){
     var lab = document.getElementById('abar-cta-label');
     var amt = document.getElementById('abar-amt');
     var cta = document.getElementById('abar-cta');
-    if (canSend){
+    if (canSend && !isDemo && !window._capEntered){      // V39.3 — B4
+      if (lab) lab.textContent = 'Enter your amount';
+      if (amt) amt.textContent = 'sized for ' + shortMoney(currentCapital);
+      if (cta){ cta.onclick = abarEditCapital;
+                cta.setAttribute('aria-label', 'Enter your amount first. The orders are sized for the recommended ' +
+                  fmtMoney(currentCapital) + ', which you have not entered'); }
+    } else if (canSend){
       var many = plan.total > 1;
       if (lab) lab.textContent = many ? 'Basket ' + nextB.pos + ' of ' + plan.total + ' on Kite' : 'Review ' + send + ' on Kite';
       if (amt) amt.textContent = val > 0 ? (many ? send + ' orders · ' : '') + preciseMoney(val) : '';
@@ -9674,6 +9811,14 @@ function kiteBasketForm() {
 /* Send basket `pos` (1-based, in the live numbering), or the next one that has
    not been opened yet. */
 function sendKiteBasket(pos) {
+  // V39.3 — B4. Every send path ends here (the single button, each numbered
+  // basket, the sticky bar), so this is the one place the rule has to live:
+  // no basket goes to Kite sized to an amount the member never set.
+  if (!isDemo && !window._capEntered) {
+    abarEditCapital();
+    showToast('Enter your amount first — every quantity is sized to it');
+    return;
+  }
   var plan = kiteBasketPlan();
   var b = (pos != null) ? plan.live[pos - 1] : (plan.next || null);
   if (!b || !b.open.length) {
@@ -9788,8 +9933,12 @@ function refreshKiteBasket() {
           (tot > 0 ? preciseMoney(tot) : '') + ' on Kite';
       }
       if (btn) btn.onclick = function () { sendKiteBasket(1); };
+      if (label && !isDemo && !window._capEntered) {       // V39.3 — B4
+        label.textContent = 'Sized for ' + shortMoney(currentCapital) + ' — enter your amount';
+        if (btn) btn.onclick = abarEditCapital;
+      }
       if (note) {
-        note.innerHTML = _kbHoursNote() +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() +
           (b.state === 'sent'
             ? '<b>Opened on Kite from this device.</b> Tick each order once it fills; send again only if you closed Kite without confirming. '
             : b.state === 'stale'
@@ -9815,7 +9964,8 @@ function refreshKiteBasket() {
             b.state === 'sent'  ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' :
             b.state === 'stale' ? '<span class="kbsk-b-state is-stale">Capital changed since sent</span>' :
             isNext              ? '<span class="kbsk-b-state is-next">Next</span>' : '';
-          var btnLabel = (b.state === 'sent' || b.state === 'stale') ? 'Send again' : 'Review on Kite';
+          var btnLabel = (!isDemo && !window._capEntered) ? 'Enter your amount'      // V39.3 — B4
+                       : (b.state === 'sent' || b.state === 'stale') ? 'Send again' : 'Review on Kite';
           return '<li class="kbsk-b' + (isNext ? ' is-next' : '') + ' is-' + b.state + '">' +
                    '<span class="kbsk-b-n" aria-hidden="true">' + b.pos + '</span>' +
                    '<span class="kbsk-b-main">' +
@@ -9834,7 +9984,7 @@ function refreshKiteBasket() {
         list.hidden = false;
       }
       if (note) {
-        note.innerHTML = _kbHoursNote() +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() +
           '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' +
           (plan.next
             ? 'Send basket ' + plan.next.pos + ', confirm it on Kite, then come back for ' +
@@ -12055,7 +12205,11 @@ function renderProfitHeadline(){
   var sub = document.getElementById('pc-sub');
   sub.innerHTML = 'Weighted return across ' + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
     (rebal ? ' on <strong>' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
-    '. On your ' + fmtMoney(currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.';
+    (window._capEntered
+      ? '. On your ' + fmtMoney(currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.'
+      // V39.3 — B4: never "your" for an amount the member did not set.
+      : '. On ' + fmtMoney(currentCapital) + ', the recommended size rather than an amount you entered, that is <strong>' +
+        absSign + absStr + '</strong>. <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter yours</button>');
   var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
   var br = document.getElementById('pc-breakdown');
   if (br) br.innerHTML =
@@ -12636,37 +12790,79 @@ function renderNewerSetNotice(){
   el.hidden = false;
 }
 
-function renderBenchCompare(port){
-  var el = document.getElementById('pc-bench');
-  if (!el) return;
-  el.style.display = 'none'; el.innerHTML = '';
-  var d = _benchPerf; if (!d || !d.strategies) return;
-  var key = _strategyPerfKey(currentStrategy || ''); if (!key) return;
-  var s = d.strategies[key];
-  if (!s || s.bench_pct == null || !isFinite(s.bench_pct)) return;
-  // guard (1): same window on both sides, or nothing
-  if (!d.rebalance_date || _isoDay(window._rebalDate) !== d.rebalance_date) return;
-
-  var bench = s.bench_pct;
-  var gap = port - bench;
+/* V39.3 — A2.4 · ONE MOMENT ON BOTH SIDES OF THE PILL.
+   This used to subtract live-perf.json's benchmark (measured by the last data
+   refresh — on 25 Sep 2026, the 09:12 opening print) from THIS page's live
+   headline, so "+2.61 pts ahead" compared two different moments. live_perf.py
+   now publishes each benchmark leg's baseline level (bench_legs), so the index
+   is priced here, through the same prices endpoint and within the same minutes
+   as the member's holdings. If any leg cannot be priced, the pill shows the
+   published PAIR instead — both sides from the same close, with that close's
+   date — and it never subtracts across two timestamps. */
+var _benchLiveP = null, _benchLiveAt = 0, _benchLiveKey = '';
+function _benchLive(key, s){
+  var legs = (s && Array.isArray(s.bench_legs)) ? s.bench_legs : [];
+  if (!legs.length) return Promise.resolve(null);
+  if (_benchLiveP && _benchLiveKey === key && (Date.now() - _benchLiveAt) < _pxMaxAge()) return _benchLiveP;
+  _benchLiveKey = key; _benchLiveAt = Date.now();
+  _benchLiveP = _fetchPricesBatch(legs.map(function(l){ return l.t; })).then(function(px){
+    if (!px) return null;
+    var r = 0;
+    for (var i = 0; i < legs.length; i++){
+      var l = legs[i], q = px[l.t], base = Number(l.base), w = Number(l.w);
+      if (!q || !(q.price > 0) || !(base > 0) || !isFinite(w)) return null;
+      r += w * (q.price / base - 1);
+    }
+    return r * 100;
+  }).catch(function(){ return null; });
+  return _benchLiveP;
+}
+function _paintBenchPill(el, s, model, bench, asOfIso){
+  var gap = model - bench;
   var state = gap > 0.05 ? 'ahead' : (gap < -0.05 ? 'behind' : 'level');
-  // the PILL is a label ("+0.35\u00A0pts ahead"); the aria sentence below needs the
+  // the PILL is a label ("+0.35 pts ahead"); the aria sentence below needs the
   // preposition ("ahead OF Nifty…"). Reusing one string for both left a
   // dangling "of" on screen.
   var pillWord  = state === 'level' ? 'level' : state;
   var ariaWord  = state === 'ahead' ? 'ahead of' : (state === 'behind' ? 'behind' : 'level with');
   // a difference of two percentages is measured in POINTS, not per cent
-  var gapTxt = (gap > 0 ? '+' : gap < 0 ? '\u2212' : '\u00b1') + Math.abs(gap).toFixed(2) + ' pts';
-  var benchTxt = (bench > 0 ? '+' : bench < 0 ? '\u2212' : '+') + Math.abs(bench).toFixed(2) + '%';
+  var gapTxt = (gap > 0 ? '+' : gap < 0 ? '−' : '±') + Math.abs(gap).toFixed(2) + ' pts';
+  var fmt = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '+') + Math.abs(v).toFixed(2) + '%'; };
+  var benchTxt = fmt(bench);
   var benchCls = bench > 0.05 ? 'up' : (bench < -0.05 ? 'down' : '');
-
+  var bname = s.bench_name || 'Benchmark';
+  var when = '';
+  if (asOfIso){ var dt = new Date(asOfIso + 'T00:00:00'); if (!isNaN(dt)) when = mfDate(dt, {day:'numeric', month:'short'}); }
+  var lbl = asOfIso
+    ? 'To the ' + escapeHtml(when) + ' close: this book ' + fmt(model) + ' · ' + escapeHtml(bname)
+    : escapeHtml(bname) + ' over the same cycle';
   el.innerHTML =
-    '<span class="pcb-lbl">' + escapeHtml(s.bench_name || 'Benchmark') +
-      ' over the same cycle</span> <b class="pcb-bench ' + benchCls + '">' + benchTxt + '</b>' +
+    '<span class="pcb-lbl">' + lbl + '</span> <b class="pcb-bench ' + benchCls + '">' + benchTxt + '</b>' +
     '<span class="pcb-gap ' + state + '">' + gapTxt + ' ' + pillWord + '</span>';
   el.style.display = 'flex';
-  el.setAttribute('aria-label', 'Your portfolio is ' + gapTxt + ' ' + ariaWord + ' ' +
-    (s.bench_name || 'its benchmark') + ', which moved ' + benchTxt + ' over the same cycle.');
+  el.setAttribute('aria-label', asOfIso
+    ? 'To the ' + when + ' close this book moved ' + fmt(model) + ' and ' + bname + ' ' + benchTxt + ': ' + gapTxt + ' ' + ariaWord + ' it.'
+    : 'Your portfolio is ' + gapTxt + ' ' + ariaWord + ' ' + bname + ', which moved ' + benchTxt + ' over the same cycle.');
+}
+function renderBenchCompare(port){
+  var el = document.getElementById('pc-bench');
+  if (!el) return;
+  var hide = function(){ el.style.display = 'none'; el.innerHTML = ''; };
+  var d = _benchPerf; if (!d || !d.strategies) return hide();
+  var key = _strategyPerfKey(currentStrategy || ''); if (!key) return hide();
+  var s = d.strategies[key];
+  if (!s || s.bench_pct == null || !isFinite(s.bench_pct)) return hide();
+  // guard (1): same window on both sides, or nothing
+  if (!d.rebalance_date || _isoDay(window._rebalDate) !== d.rebalance_date) return hide();
+  // A capital change re-runs the headline, and with it this; the newest call owns
+  // the element, so a slow first fetch can never paint over a later answer.
+  var tok = (el._bcTok = (el._bcTok || 0) + 1);
+  _benchLive(key, s).then(function(live){
+    if (el._bcTok !== tok) return;
+    if (live != null && isFinite(live) && isFinite(port)) return _paintBenchPill(el, s, port, live, null);
+    if (s.live_pct != null && isFinite(s.live_pct)) return _paintBenchPill(el, s, Number(s.live_pct), Number(s.bench_pct), d.data_through);
+    hide();
+  });
 }
 
 // V15.3: data-freshness chip — reads the auto-refresh timestamp from fii-dii.json
@@ -16821,7 +17017,10 @@ html[data-theme="dark"] .cyc-newer .cn-cta{ text-decoration-color:rgba(120,160,2
 .track-more[open] > summary i::after{ opacity:0; }
 .track-more[open] > .drift, .track-more[open] > .clad{ margin-top:14px; }
 .hs-allplaced{ margin-top:10px; min-height:44px; padding:0 16px; border-radius:999px; cursor:pointer;
-  font:600 13px/1 inherit; color:var(--ink-link,#0951c6); background:transparent; border:1px solid rgba(37,99,235,.35); }
+  font-weight:600; font-size:13px; line-height:1; font-family:inherit; color:var(--ink-link,#0951c6); background:transparent; border:1px solid rgba(37,99,235,.35); }
+/* V39.3 — was `font:600 13px/1 inherit`, which is INVALID (inherit is not a font
+   family), so the whole declaration was dropped and the button rendered in the
+   UA default font. Longhand is the only way to say "inherit the family". */
 /* --ink-link, not --accent2: the accent on the how-to card's tint measured 3.11:1 (light) and
    3.62:1 (dark) at the worst rendered pixel — the V34.8 accent-on-a-tint trap. */
 .hs-allplaced:hover{ background:rgba(37,99,235,.06); }
@@ -16838,6 +17037,30 @@ html[data-theme="dark"] .cyc-newer .cn-cta{ text-decoration-color:rgba(120,160,2
 html[data-theme="dark"] .cyc-join{ background:rgba(131,170,255,.08); border-color:rgba(131,170,255,.22); }
 html[data-theme="dark"] .itr-card{ border-color:rgba(131,170,255,.22); }
 @media print{ .hs-allplaced, .itr-hide{ display:none; } }
+</style>
+<style id="mf-v393-dash">
+/* V39.3 — surfaces the checks-before-paying release added. New class names only. */
+.pc-capfix{ display:inline; padding:0; margin:0 0 0 2px; border:0; background:none; cursor:pointer;
+  font-family:inherit; font-size:inherit; font-weight:700; color:var(--ink-link,#0951c6);
+  text-decoration:underline; text-underline-offset:2px; }
+/* A text link inside a sentence (WCAG 2.5.8's inline exemption). The dashboard's
+   touch rule makes every <button> an inline-block at least 44px tall, which opened
+   a 25px gap in the middle of the profit sentence; this one control opts out. */
+#pc-sub .pc-capfix{ display:inline !important; min-height:0 !important; min-width:0 !important;
+  padding:0 !important; line-height:inherit !important; vertical-align:baseline !important; }
+.pc-capfix:focus-visible{ outline:2px solid var(--accent3,#1a50d8); outline-offset:2px; border-radius:3px; }
+.kb-capnote{ display:block; margin:0 0 8px; }
+.kb-capnote b{ color:var(--text,#0c1831); }
+.kb-capbtn{ display:inline-flex; align-items:center; min-height:36px; margin:6px 6px 0 0; padding:0 14px;
+  border-radius:999px; cursor:pointer; font-family:inherit; font-size:12.5px; font-weight:700;
+  color:var(--ink-link,#0951c6); background:var(--ink2,#fff); border:1px solid rgba(37,99,235,.35); }
+@media (pointer:coarse){ .kb-capbtn{ min-height:44px; } }
+.kb-capbtn:focus-visible{ outline:2px solid var(--accent3,#1a50d8); outline-offset:2px; }
+html[data-theme="dark"] .kb-capbtn{ color:#9dbbff; border-color:rgba(131,170,255,.4); }
+html[data-theme="dark"] .pc-capfix{ color:#9dbbff; }
+.at-more{ margin-top:14px; }
+.at-more[open] > .at-lhead{ margin-top:14px; }
+.vfy-since{ margin:8px 0 0; font-size:12.5px; line-height:1.55; color:var(--text2,#1e3a5f); }
 </style>
 </body>
 </html>

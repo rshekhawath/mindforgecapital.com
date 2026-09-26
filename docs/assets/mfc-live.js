@@ -93,6 +93,29 @@
               .replace(/\s+/g, NB);
     } catch (e) { return iso; }
   }
+  // V39.3 — day and month only, for a date read beside a full one ("since 31 Aug
+  // 2026 · to the 24 Sept close"); same NBSP binding as fmtDate.
+  function fmtDayMonth(iso) {
+    try {
+      var d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }).replace(/\s+/g, NB);
+    } catch (e) { return iso; }
+  }
+
+  /* V39.3 — A1. The date each paid strategy's Zerodha account became dedicated to
+     its model. EMPTY until the owner supplies it (V39.3 handover, D3), and an empty
+     value renders nothing — never a placeholder. The member dashboard carries the
+     same two dates in its VERIFIED_ACCOUNTS (`since`): set both together, then bump
+     this file's ?v on every page that loads it. */
+  var DEDICATED_SINCE = { lm: "", sm: "" };
+  function fillDedicated() {
+    document.querySelectorAll("[data-dedicated]").forEach(function (el) {
+      var d = DEDICATED_SINCE[el.getAttribute("data-dedicated")] || "";
+      el.textContent = d ? "Dedicated to this model since " + d +
+        ". Trades before that date are in Zerodha\u2019s total." : "";
+      el.hidden = !d;
+    });
+  }
 
   function fill(data) {
     var els = document.querySelectorAll("[data-live]");
@@ -126,7 +149,10 @@
         else if (spec[1] === "countword") val = (rec.count === 1 ? "cycle" : "cycles");
         else if (spec[1] === "phrase") {
           val = "Live record: " + rec.count + (rec.count === 1 ? " cycle" : " cycles") +
-                (rec.first_rebalance ? ", since " + fmtDate(rec.first_rebalance) : "");
+                (rec.first_rebalance ? ", since " + fmtDate(rec.first_rebalance) : "") +
+                // V39.3 — A2.5: WHICH close the figure runs to. live_perf.py now
+                // counts completed sessions only, so this is always a real close.
+                (data.data_through ? " · to the " + fmtDayMonth(data.data_through) + " close" : "");
         }
       }
       else {
@@ -487,6 +513,7 @@
 
   function boot() {
     injectStyle();
+    fillDedicated();
     // cache-bust hourly — fresh enough for a twice-daily data pipeline without
     // defeating the CDN entirely
     var bust = Math.floor(Date.now() / 3600000);

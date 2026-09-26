@@ -508,7 +508,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       </div>
       <div class="trust-row" aria-label="Why subscribe">
         <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>SEBI-registered RA</span>
-        <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>Activated in 24 hours</span>
+        <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg><span id="chip-sla">Activated in 24 hours</span></span>
         <span class="trust-chip" id="chip-wa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>WhatsApp support</span>
       </div>
 
@@ -693,6 +693,37 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4
 // the success checklist below it read this, so they cannot say different things
 // about whether month one is paid. Set false when the offer ends.
 var FIRST_MONTH_FREE = true;
+/* V39.3 — B1. The free book is activated by the backend itself the moment the
+   lead is saved (handleSaveLead -> activateCore_), so its dashboard link is
+   emailed in a minute or two instead of waiting for someone to click Activate.
+   This constant only switches the PRE-submit promise ("in minutes"); the success
+   panel always follows what the backend actually answered (`activated:true`), so
+   the page can never claim an instant link the server did not send — a daily cap
+   or an older deployment falls back to the 24-hour wording on its own.
+   The homepage's MultiAsset card carries the same promise in static text
+   (index.html, .strat-sla under the MultiAsset card): change both together. */
+var FREE_INSTANT = false;
+
+/* The free book's "Get dashboard access" step, written from the state the
+   backend is actually in: 'sending' while the save is in flight (only when the
+   instant path is expected), 'sent' when it answered activated:true, 'queued'
+   for everything else (an older deployment, the daily cap, a network error). */
+function freeAccessCopy(state, email){
+  var t  = document.getElementById('ss-access-text');
+  var s3 = document.getElementById('ss-s3-title');
+  if (!t) return;
+  if (state === 'sent') {
+    if (s3) s3.textContent = 'Your dashboard link is in your inbox';
+    t.textContent = 'We have just emailed it to ' + (email || 'you') + ', from MindForge Capital with the subject ' +
+      '\u201cYour MindForge Capital dashboard is active\u201d. If it is not there in a few minutes, check your spam folder.';
+  } else if (state === 'sending') {
+    if (s3) s3.textContent = 'Get dashboard access';
+    t.textContent = 'Emailing your dashboard link now \u2014 no payment needed.';
+  } else {
+    if (s3) s3.textContent = 'Get dashboard access';
+    t.textContent = 'Within 24 hours, your personalised dashboard link will be emailed to you \u2014 no payment needed.';
+  }
+}
 
 var STRATEGY_META = {
   // V18.3: MultiAsset is FREE for everyone — no payment, full dashboard access.
@@ -961,9 +992,7 @@ async function handleSubmit() {
     if (s1Title) s1Title.textContent = 'You’re registered';
     if (s1Text)  s1Text.textContent  =
       'Nothing else is needed from you — no card, no payment, no message to send.';
-    if (s3Title)    s3Title.textContent = 'Get dashboard access';
-    if (accessText) accessText.textContent =
-      'Within 24 hours, your personalised dashboard link will be emailed to you — no payment needed.';
+    freeAccessCopy(FREE_INSTANT ? 'sending' : 'queued', email);
   } else if (offer) {
     // V39.1 — A6: nothing to confirm and nothing to pay yet, so no chat step.
     if (s1Title) s1Title.textContent = 'You’re registered';
@@ -1006,7 +1035,12 @@ async function handleSubmit() {
       duration_label: p.label,
       agreement: true
     })
-  }).catch(function(err){ console.warn('Lead save failed (non-blocking):', err); });
+  }).then(function(r){ return r.json(); })
+    .then(function(d){ if (isFree) freeAccessCopy(d && d.activated === true ? 'sent' : 'queued', email); })
+    .catch(function(err){
+      console.warn('Lead save failed (non-blocking):', err);
+      if (isFree) freeAccessCopy('queued', email);
+    });
 
   // V36.6 — the one event mfc-track.js cannot infer from the DOM. `signup_start`
   // is a first-input listener, but "completed" is only knowable at the point the
@@ -1166,11 +1200,16 @@ function resetForm() {
     var parts  = step2Parts(), got = parts.filter(Boolean).length;
 
     var pct, note, left;
+    var _stSel0 = document.getElementById('reg-strategy');
+    var _free0 = !!(_stSel0 && STRATEGY_META[_stSel0.value] && STRATEGY_META[_stSel0.value].free);
     if(submitted){
       setStep(steps[0],'done'); setStep(steps[1],'done'); setStep(steps[2],'active');
       pct = 67;
       left = '1 step to go';
-      note = '<span class="gg-done">Registration done.</span> Last step: we confirm on WhatsApp and your dashboard opens — usually within 24 hours.';
+      // V39.3 — the free book never had a WhatsApp step; this line said it did.
+      note = _free0
+        ? '<span class="gg-done">Registration done.</span> Last step: your dashboard link arrives by email' + (FREE_INSTANT ? ' in a minute or two.' : ' within 24 hours.')
+        : '<span class="gg-done">Registration done.</span> Last step: we confirm on WhatsApp and your dashboard opens — usually within 24 hours.';
     } else if(!chosen){
       setStep(steps[0],'active'); setStep(steps[1],null); setStep(steps[2],null);
       pct = 0;
@@ -1213,10 +1252,13 @@ function resetForm() {
     var _free = !!(_stSel && STRATEGY_META[_stSel.value] && STRATEGY_META[_stSel.value].free);
     if(descEl) descEl.textContent = (chosen && !submitted)
       ? (_free
-          ? 'Your strategy is locked in. Two short steps left — your details, then your dashboard link arrives by email within 24 hours. No card, no payment, no chat.'
+          ? 'Your strategy is locked in. Two short steps left — your details, then your dashboard link arrives by email ' +
+            (FREE_INSTANT ? 'in a minute or two' : 'within 24 hours') + '. No card, no payment, no chat.'
           : 'Your strategy is locked in. Two short steps left — your details, then your dashboard link arrives by email within 24 hours.' +
             (FIRST_MONTH_FREE ? ' Month one is free; we confirm payment details with you on WhatsApp before month two.' : ' We confirm payment details with you on WhatsApp.'))
       : 'Choose a strategy and register. Your dashboard link arrives by email within 24 hours; for a paid plan we confirm payment details with you on WhatsApp.';
+    var _sla = document.getElementById('chip-sla');                     // V39.3 — B1
+    if (_sla) _sla.textContent = (_free && FREE_INSTANT) ? 'Access in minutes' : 'Activated in 24 hours';
     var _chip = document.getElementById('chip-wa');
     if (_chip && _chip.lastChild && _chip.lastChild.nodeType === 3) _chip.lastChild.nodeValue = _free ? 'No card' : 'WhatsApp support';
     // the chip's speech-bubble icon belongs to "WhatsApp support", not to "No card"
