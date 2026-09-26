@@ -516,7 +516,15 @@ async function requestOTP() {
   try {
     var res = await fetch(APPS_SCRIPT_URL + '?action=request_otp&email=' + encodeURIComponent(email));
     var data = await res.json();
-    if (data.error) {
+    if (data.status === 'pending') {
+      // V39.1 — B1. Inert until runner/apps_script.gs returns it (see the V39.1 deploy
+      // note). A registrant waiting for activation was told "Please subscribe to a
+      // strategy first" — the one reply that reads like a lost registration.
+      var when = data.registered_at ? new Date(data.registered_at) : null;
+      showError('email-error', 'We have your registration' + (data.strategy ? ' for ' + data.strategy : '') +
+        (when && !isNaN(when.getTime()) ? ', from ' + when.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '') +
+        '. Your dashboard link is emailed within 24 hours of signing up — the sample dashboard on our homepage shows exactly what you will get.');
+    } else if (data.error) {
       showError('email-error', data.error);
     } else {
       document.getElementById('otp-desc').textContent = 'We\'ve sent a 6-digit code to ' + email + '. It expires in 10 minutes.';

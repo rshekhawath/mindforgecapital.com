@@ -648,7 +648,7 @@ html[data-theme="dark"] #passcode-input:focus { background: var(--card) !importa
 <main class="page" id="main-content">
   <div class="page-header">
     <h1>Lead Management</h1>
-    <p>View WhatsApp registrations and activate subscribers once payment is confirmed.</p>
+    <p>View registrations and activate subscribers. Free (MultiAsset) and first-month-free signups can be activated straight away; a paid plan outside the offer, once payment is confirmed.</p>
   </div>
 
   <!-- Stats -->
@@ -758,7 +758,7 @@ html[data-theme="dark"] #passcode-input:focus { background: var(--card) !importa
      this page's section headings are children of the one <h1>, so h2 is the
      rank they actually have. Visual size is set by CSS, not by the tag. -->
 <h2>Activate Subscriber</h2>
-    <p>Confirm payment received, then click Activate. An email with their dashboard link will be sent automatically.</p>
+    <p>Free and first-month-free signups: activate now. A paid plan outside the offer: confirm payment received first. An email with their dashboard link is sent automatically.</p>
 
     <div class="modal-field">
       <label>Name</label>
@@ -1253,6 +1253,14 @@ function admInr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
 
 // Refresh the price preview + rewrite the Duration option labels with
 // per-strategy totals so the admin sees what to charge.
+/* V39.1 — A1/A6. The free book is always a 12-month activation; `billing` tells the
+   activation email which sentence is true (runner/apps_script.gs, once deployed:
+   no more "Your payment has been verified" to someone who paid nothing).
+   ADM_FIRST_MONTH_FREE mirrors signup.html's FIRST_MONTH_FREE — change both. */
+var ADM_FIRST_MONTH_FREE = true;
+function _admFree(strategy){ return /multiasset/i.test(String(strategy || '').replace(/\u00A0/g, ' ')); }
+function _admBilling(strategy){ return _admFree(strategy) ? 'free' : (ADM_FIRST_MONTH_FREE ? 'offer' : 'paid'); }
+
 function updateActPrice(){
   var strat = document.getElementById('act-strategy').value;
   var durSel = document.getElementById('act-duration');
@@ -1282,10 +1290,14 @@ function updateActPrice(){
   if (monthly === 0 && d && box){
     // V18.3: MultiAsset is FREE — show an explicit ₹0 preview so the admin
     // knows there is no payment to collect before activating.
-    document.getElementById('act-price-total').textContent = 'FREE for ' + d.label;
-    document.getElementById('act-price-meta').textContent  = '(₹0 — free strategy, no payment to collect)';
+    // V39.1 — A1: the free book is activated as a 12-month term (served the latest
+    // run, with rebalance emails), never as the one-month pinned row it used to be.
+    if (durSel) { durSel.value = '12'; durSel.disabled = true; }
+    document.getElementById('act-price-total').textContent = 'FREE — no end date';
+    document.getElementById('act-price-meta').textContent  = '(₹0 — activated as 12 months: updates on the 1st, with an email)';
     box.style.display = 'block';
   } else if (monthly && d && box){
+    if (durSel) durSel.disabled = false;          // V39.1 — undo the free book's lock
     var total = Math.round(monthly * d.months * (1 - d.disc));
     var save  = (monthly * d.months) - total;
     var saveTxt = d.disc > 0 ? '  ·  save ' + admInr(save) + ' (' + Math.round(d.disc * 100) + '% off)' : '';
@@ -1346,7 +1358,8 @@ async function bulkActivate(){
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           action: 'activate', name: name, email: email, phone: phone,
-          strategy: strategy, duration_months: duration,
+          strategy: strategy, duration_months: _admFree(strategy) ? 12 : duration,
+          billing: _admBilling(strategy),
           admin_secret: getAdminSecret()
         })
       });
@@ -1422,7 +1435,8 @@ function confirmActivate() {
       email:           email,
       phone:           phone,
       strategy:        strategy,
-      duration_months: duration,
+      duration_months: _admFree(strategy) ? 12 : duration,
+      billing:         _admBilling(strategy),     // V39.1 — read by the activation email once deployed
       admin_secret:    getAdminSecret()
     })
   })

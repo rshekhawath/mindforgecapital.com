@@ -379,6 +379,23 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     return { end: bal, paid: paid, put: put };
   }
 
+  /* V39.1 — B9. THE FLIP, COMPUTED. This page said the size where the answer
+     flips "is worth knowing before you subscribe" and never computed it. Same
+     month-by-month loop, bisected over starting capital with the reader's own
+     monthly addition and years: the gap (MindForge minus fund) rises with capital
+     because the fee is a fixed number of rupees, so one crossing exists or none.
+     Reported in both directions — including "never", which it can be. */
+  function flipCapital(d, monthly, years){
+    if (!d || !(d.fee > 0)) return null;                         // no fee, no flip
+    var gap = function(S){ return grow(d.cagr, d.fee, S, monthly, years).end - grow(d.peerCagr, 0, S, monthly, years).end; };
+    var CAP = 10000000;
+    if (gap(0) >= 0) return { always: true };
+    if (gap(CAP) < 0) return { never: true, cap: CAP };
+    var lo = 0, hi = CAP;
+    for (var i = 0; i < 60 && hi - lo > 500; i++){ var mid = (lo + hi) / 2; if (gap(mid) >= 0) hi = mid; else lo = mid; }
+    return { at: Math.ceil(hi / 5000) * 5000 };
+  }
+
   MFCalc.init({
     key: 'mfvf',
     modes: { options: [
@@ -417,7 +434,14 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           cap: '<b>' + NAME[mode] + '</b> at <b>' + MFCalc.pct(d.cagr * 100, 1) + '</b> after tax, less <b>' +
                (d.fee ? MFCalc.inr(d.fee) + ' a month' : 'no fee') + '</b>, against <b>' + MFCalc.esc(d.peer) +
                '</b> at <b>' + MFCalc.pct(d.peerCagr * 100, 1) + '</b> after tax — over ' + v.years +
-               (v.years === 1 ? ' year' : ' years') + '. Backtest on one side, a real trailing return on the other.'
+               (v.years === 1 ? ' year' : ' years') + '. Backtest on one side, a real trailing return on the other.' +
+               (function(){
+                 var f = flipCapital(d, v.monthly, v.years);
+                 if (!f) return '';
+                 if (f.always) return ' On these inputs MindForge ends ahead at <b>any starting capital</b>, including none.';
+                 if (f.never)  return ' On these inputs it does <b>not</b> overtake this fund at any starting capital up to <b>' + MFCalc.inr(f.cap) + '</b>.';
+                 return ' On these inputs MindForge overtakes this fund from a starting capital of <b>' + MFCalc.inr(f.at) + '</b>.';
+               })()
         },
         stats: [
           { k:'MindForge, after tax and fee', v:MFCalc.inr(mf.end), tone: ahead ? 'pos' : '',

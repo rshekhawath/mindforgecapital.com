@@ -465,7 +465,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <div id="step-form">
       <div class="brand-eyebrow"><span class="brand-dot"></span>MindForge Capital</div>
       <h1 id="reg-h1">Get started</h1>
-      <p class="desc" id="reg-desc">Choose a strategy and register. We'll reach out on WhatsApp with payment details and activate your dashboard within 24 hours.</p>
+      <p class="desc" id="reg-desc">Choose a strategy and register. Your dashboard link arrives by email within 24 hours; for a paid plan we confirm payment details with you on WhatsApp.</p>
 
       <!-- ══ V34.8 · YOU ARE ALREADY A THIRD OF THE WAY IN ═══════════════════
            People finish what they have started far more reliably than they
@@ -509,7 +509,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="trust-row" aria-label="Why subscribe">
         <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>SEBI-registered RA</span>
         <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>Activated in 24 hours</span>
-        <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>WhatsApp support</span>
+        <span class="trust-chip" id="chip-wa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 21l2.1-5.3A8.5 8.5 0 1 1 21 11.5z"/></svg>WhatsApp support</span>
       </div>
 
       <div class="free-month-banner" role="note" id="free-month-banner">
@@ -708,6 +708,11 @@ var DURATIONS = {
   '12': { months: 12, disc: 0.20, label: '1 year'   }
 };
 function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+/* V39.1 — D1: false while apps_script.gs pins 1-month plans to one run. Flip it in
+   the same release that deploys a backend serving them the latest run, together
+   with the same constant in index.html and the "How the plans differ" FAQ. */
+var MONTHLY_PLAN_UPDATES = false;
+
 function priceFor(strategy, durKey){
   var m = STRATEGY_META[strategy]; if (!m) return null;
   var d = DURATIONS[durKey] || DURATIONS['1'];
@@ -744,9 +749,11 @@ function onStrategyChange() {
   // the WhatsApp wording for the whole of the decision.
   var rb = document.getElementById('reg-btn');
   if (rb) {
-    rb.setAttribute('data-label', isFree ? 'free' : 'paid');
+    // V39.1 — A6: under the launch offer the paid path no longer opens a chat.
+    rb.setAttribute('data-label', isFree ? 'free' : (FIRST_MONTH_FREE ? 'offer' : 'paid'));
     rb.innerHTML = isFree ? 'Register &amp; get my dashboard &#8594;'
-                          : 'Register &amp; Connect on WhatsApp &#8594;';
+                 : FIRST_MONTH_FREE ? 'Register — month one is free &#8594;'
+                 : 'Register &amp; Connect on WhatsApp &#8594;';
   }
 
   // The 1st-month-free launch offer banner: MultiAsset is free outright, so it
@@ -782,7 +789,30 @@ function onStrategyChange() {
       if (o.parentNode !== durSel) durSel.insertBefore(o, durSel.options[i] || null);
     });
   }
+  /* V39.1 — A1. "FREE PERMANENTLY" MUST NOT BE SOLD AS 30 DAYS. The free book had
+     a Duration select defaulting to "1 month — FREE", and runner/apps_script.gs
+     turns a 1-month row into ONE frozen book that expires in 30 days, with a renew
+     button from day one. The free book has no duration: it posts 12 months, which
+     the backend serves the latest run to, with rebalance emails on. */
+  if (durSel) {
+    var durGroup = durSel.closest('.form-group');
+    if (isFree) { durSel.value = '12'; if (durGroup) durGroup.style.display = 'none'; }
+    else if (durGroup) durGroup.style.display = '';
+  }
   var durKey = (durSel || {}).value || '1';
+  /* V39.1 — A2. WHAT THE PLAN BUYS, UNDER THE DURATION. A 1-month plan is pinned
+     to the run current at activation (no next book, no email); 3/6/12-month plans
+     are served each new run. MONTHLY_PLAN_UPDATES flips with the backend (D1). */
+  var dn = document.getElementById('duration-note');
+  if (dn) {
+    if (isFree || !sel) { dn.style.display = 'none'; dn.textContent = ''; }
+    else {
+      dn.innerHTML = (durKey === '1' && !MONTHLY_PLAN_UPDATES)
+        ? '<b>One book.</b> A 1-month plan is the set of picks current when your access starts; it does not change during the month, and the next month\u2019s set needs a renewal.'
+        : '<b>A new book on the 1st, automatically</b>, with an email when it lands, for the whole ' + (durKey === '1' ? 'month' : 'term') + '.';
+      dn.style.display = 'block';
+    }
+  }
 
   // Rewrite each Duration <option> label so it shows the actual total for this plan.
   if (durSel) {
@@ -809,8 +839,8 @@ function onStrategyChange() {
       note.innerHTML = osHTML({
         pill: 'Free', pillFree: true,
         total: '₹0', totalFree: true,
-        per: 'for ' + p.label,
-        save: 'No payment required — full dashboard access', saveFree: true,
+        per: 'no end date',
+        save: 'No payment · a new book on the 1st, with an email', saveFree: true,
         desc: m.desc
       });
     } else {
@@ -847,7 +877,9 @@ function setBtn(loading) {
     ? '<span class="spinner"></span>Saving…'
     : (btn.getAttribute('data-label') === 'free'
         ? 'Register &amp; get my dashboard &#8594;'
-        : 'Register &amp; Connect on WhatsApp &#8594;');
+        : btn.getAttribute('data-label') === 'offer'
+          ? 'Register — month one is free &#8594;'
+          : 'Register &amp; Connect on WhatsApp &#8594;');
 }
 
 // Hard-gate the submit button on the T&C checkbox.
@@ -933,9 +965,10 @@ async function handleSubmit() {
     if (accessText) accessText.textContent =
       'Within 24 hours, your personalised dashboard link will be emailed to you — no payment needed.';
   } else if (offer) {
-    if (s1Title) s1Title.textContent = 'Connect on WhatsApp';
+    // V39.1 — A6: nothing to confirm and nothing to pay yet, so no chat step.
+    if (s1Title) s1Title.textContent = 'You’re registered';
     if (s1Text)  s1Text.textContent  =
-      'We’re opening WhatsApp now. Send us the pre-filled message to confirm your interest.';
+      'Nothing to pay today. WhatsApp is there if you want to ask us anything.';
     if (s2Title) s2Title.textContent = 'Get dashboard access';
     if (s2Text)  s2Text.textContent  =
       'Within 24 hours your personalised dashboard link is emailed to you. Month one costs nothing — there is nothing to pay first.';
@@ -1002,13 +1035,16 @@ async function handleSubmit() {
   // button stays and relabels rather than the window opening unasked.
   var waBtn = document.getElementById('wa-link');
   if (waBtn) {
-    waBtn.lastChild.nodeValue = isFree ? ' Ask us a question on WhatsApp' : ' Open WhatsApp';
+    waBtn.lastChild.nodeValue = isFree ? ' Ask us a question on WhatsApp'
+                              : (offer ? ' Say hello on WhatsApp (optional)' : ' Open WhatsApp');
   }
 
   // Show success; open WhatsApp only where a human still has to take a payment.
   document.getElementById('step-form').style.display = 'none';
   document.getElementById('step-success').style.display = 'block';
-  if (!isFree) window.open(waUrl, '_blank', 'noopener,noreferrer');
+  // V39.1 — A6. Under the launch offer nothing is owed for a month, so the chat
+  // does not open itself either; the button stays, relabelled below.
+  if (!isFree && !offer) window.open(waUrl, '_blank', 'noopener,noreferrer');
 
   setBtn(false);
 }
@@ -1051,6 +1087,10 @@ function resetForm() {
   var sel = document.getElementById('reg-strategy');
   if (map[s]) {
     sel.value = map[s];
+    // V39.1 — A2. The homepage's duration toggle now travels in &duration=N;
+    // it used to arrive here as "1 month" whatever the reader had picked.
+    var dur = params.get('duration'), durSel = document.getElementById('reg-duration');
+    if (durSel && ['1','3','6','12'].indexOf(dur) > -1) durSel.value = dur;
     onStrategyChange();
   }
 })();
@@ -1167,9 +1207,20 @@ function resetForm() {
 
     // The heading acknowledges the choice rather than restarting the funnel.
     if(h1)     h1.textContent = (chosen && !submitted) ? 'You’re a third of the way there' : 'Get started';
+    // V39.1 — B1. The free book involves no chat, and a paid plan under the
+    // launch offer involves no payment until month two; the copy says so per case.
+    var _stSel = document.getElementById('reg-strategy');
+    var _free = !!(_stSel && STRATEGY_META[_stSel.value] && STRATEGY_META[_stSel.value].free);
     if(descEl) descEl.textContent = (chosen && !submitted)
-      ? 'Your strategy is locked in. Two short steps left — your details, then we confirm on WhatsApp and open your dashboard within 24 hours.'
-      : 'Choose a strategy and register. We’ll reach out on WhatsApp with payment details and activate your dashboard within 24 hours.';
+      ? (_free
+          ? 'Your strategy is locked in. Two short steps left — your details, then your dashboard link arrives by email within 24 hours. No card, no payment, no chat.'
+          : 'Your strategy is locked in. Two short steps left — your details, then your dashboard link arrives by email within 24 hours.' +
+            (FIRST_MONTH_FREE ? ' Month one is free; we confirm payment details with you on WhatsApp before month two.' : ' We confirm payment details with you on WhatsApp.'))
+      : 'Choose a strategy and register. Your dashboard link arrives by email within 24 hours; for a paid plan we confirm payment details with you on WhatsApp.';
+    var _chip = document.getElementById('chip-wa');
+    if (_chip && _chip.lastChild && _chip.lastChild.nodeType === 3) _chip.lastChild.nodeValue = _free ? 'No card' : 'WhatsApp support';
+    // the chip's speech-bubble icon belongs to "WhatsApp support", not to "No card"
+    var _ico = _chip && _chip.querySelector('svg'); if (_ico) _ico.style.display = _free ? 'none' : '';
   }
 
   ['input','change'].forEach(function(evt){
@@ -1645,5 +1696,12 @@ html[data-theme="dark"] .card::after{
   }catch(e){}
 })();
 </script>
+<style id="mf-v391-signup">
+/* V39.1 — the plan note under Duration reads --text2, not the .strategy-note
+   class's --text3: on its own tinted panel in dark mode that measured 4.04:1 at
+   the worst rendered pixel. */
+#duration-note{ color:var(--text2); line-height:1.55; }
+#duration-note b{ color:var(--text); }
+</style>
 </body>
 </html>

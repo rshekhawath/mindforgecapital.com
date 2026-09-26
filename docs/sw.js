@@ -761,7 +761,10 @@
 // published" had a hand-typed plural beside a machine-written count) and
 // assets/mfc-calc.css 7 -> 390 (the 4px range track now carries a 44px hit box
 // with the background clipped to its content, so it still paints 4px).
-const CACHE = 'mfc-v105';
+// V39.1 -> mfc-v106. index.html is precached and this release rewrites it (the
+// fee comparison folded into one disclosure, five new FAQs, the plan note under
+// the duration toggle); the activate handler purges every cache != CACHE.
+const CACHE = 'mfc-v106';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
