@@ -177,7 +177,8 @@ html[data-theme="dark"] .cf-rng{ background:linear-gradient(90deg,var(--accent2)
 /* the thumb is 20px; a 44px row needs the padding on the ROW, not the control —
    growing the input itself would square off the shell (V37.5) */
 @media (pointer:coarse){
-  .cf-in{ padding-top:12px; padding-bottom:12px; }
+  /* V39.2 — 12px gave 43px against the 44px touch standard; 13px gives 45. */
+  .cf-in{ padding-top:13px; padding-bottom:13px; }
   /* V39.0 — THE TRACK WAS 4px TALL AND THAT IS WHAT A FINGER GOT. V37.5 added
      the margins above and below and noted, correctly, that growing the control
      would "square off the shell" — that is true of a plain height, which would
@@ -427,4 +428,16 @@ footer.cfoot .cfoot-in > nav.cfoot-nav{ background:none; border-bottom:0; box-sh
   .cpanel{ break-inside:avoid; border:1px solid #cbd5e1; box-shadow:none; }
   .co-seg{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
   .cb-a,.cb-b{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+}
+
+/* V39.2 — THE CALCULATOR FOOTER WAS THE ONE FOOTER UNDER 44px ON TOUCH. The shared
+   V38.4 tiers in mfc-finish.css give footer nav links 3px of padding (27px) and step
+   to 9px (39px) only at <=600px, so on an iPad these nine links were 27px tall —
+   while every other footer on the site measures 44+ with its own pads. Scoped to a
+   coarse pointer, and one class deeper than the shared rule, which loads after this
+   file. The gradient hover underline keeps sitting on the text baseline. */
+@media (pointer:coarse){
+  footer.cfoot .cfoot-nav a{ display:inline-flex; align-items:center; min-height:44px;
+    padding-top:0; padding-bottom:0; background-position:0 calc(100% - 12px); }
+  footer.cfoot .cfoot-nav{ row-gap:0; }
 }

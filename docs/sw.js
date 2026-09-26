@@ -764,7 +764,11 @@
 // V39.1 -> mfc-v106. index.html is precached and this release rewrites it (the
 // fee comparison folded into one disclosure, five new FAQs, the plan note under
 // the duration toggle); the activate handler purges every cache != CACHE.
-const CACHE = 'mfc-v106';
+// V39.2 -> mfc-v107. index.html is precached and changed again (the hero's verb
+// cycle no longer rewrites the V38.7 headline; the process heading rule; the
+// footer logo's touch height). One shared asset moved with it: mfc-calc.css
+// 390 -> 392 on all eight calculator pages.
+const CACHE = 'mfc-v107';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

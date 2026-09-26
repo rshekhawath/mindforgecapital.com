@@ -9716,7 +9716,13 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
       var WORDS = ["engineers","optimizes","reinforces","diversifies"];
       var current = (em.textContent||"").trim();
       var idx = WORDS.indexOf(current);
-      if(idx < 0){ WORDS.unshift(current); idx = 0; }
+      /* V39.2 — ONLY CYCLE A VERB SLOT. V38.7 rewrote the H1 to "A researched stock
+         portfolio, <em>every month</em>." and this script adopted "every month" as a
+         fifth word, so every ~3.4s the live headline read "A researched stock
+         portfolio, engineers." — then "optimizes", "reinforces", "diversifies" — with
+         a gap before the full stop where the widest word's width was reserved. The
+         accent is no longer a verb, so the cycle stands down unless it finds one. */
+      if(idx < 0){ delete em.dataset.verbCycle; return; }
 
       // Reserve the widest verb's width so " your portfolio." can never reflow.
       // Re-measured on resize / orientation change so the reservation always
@@ -10753,6 +10759,19 @@ h1, h2, h3, h4, th,
 .fee-more > .fee-anchor, .fee-more > .fee-lad{ margin-top:22px; }
 .bf-pipe-d{ margin-top:22px; }
 .fit-fee .fl-be{ margin-top:10px; }
+</style>
+<style id="mf-v392-css">
+/* V39.2 — the footer logo link was 36px tall on touch (the masthead logo is 44). */
+@media (hover:none),(pointer:coarse){ .footer-brand > a.logo{ min-height:44px; align-items:center; } }
+/* V39.2 — "The process" was the one heading in the phone accordion list (Science /
+   Process / Why / Founders) without the section rule its neighbours draw; V39.1 moved
+   "The science" next to it, which made the gap visible. Same rule, same draw-in. */
+.build-flow h2.fade-up{ position:relative; padding-bottom:4px; }
+.build-flow h2.fade-up::after{ content:''; display:block; width:56px; height:2px; margin-top:18px;
+  background:linear-gradient(90deg,var(--accent) 0%,#2dd4bf 100%); border-radius:2px;
+  transform:scaleX(0); transform-origin:left; }
+.build-flow h2.fade-up.visible::after{ animation:mf101-rule .7s cubic-bezier(.22,1,.36,1) .25s forwards; }
+@media (prefers-reduced-motion: reduce){ .build-flow h2.fade-up::after{ animation:none; transform:none; } }
 </style>
 </body>
 </html>
