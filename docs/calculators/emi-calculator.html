@@ -41,7 +41,7 @@
 <meta name="twitter:description" content="Free EMI calculator for home, car and personal loans: monthly instalment, total interest, the full cost of the loan, and the year-by-year split.">
 <meta name="twitter:image" content="https://mindforgecapital.com/assets/og-card.png">
 
-<link rel="stylesheet" href="../assets/mfc-calc.css?v=392">
+<link rel="stylesheet" href="../assets/mfc-calc.css?v=397">
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -198,6 +198,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <p id="calc-status" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;"></p>
     </section>
   </div>
+  <div id="calc-table" hidden></div>
 
   <div class="ccta fade-up">
     <div>
@@ -258,28 +259,36 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <h2 id="rel-h">Other calculators</h2>
   <div class="crel-grid">
     <a class="crel-card is-feat" href="../calculator.html">
-      <span class="n">Fee Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="n">Fee Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
       <span class="d">What a percentage-of-AUM fee costs against a flat subscription.</span>
     </a>
+    <a class="crel-card" href="fd-calculator.html">
+      <span class="n">FD Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">A fixed deposit’s maturity, and what it earns after tax and inflation.</span>
+    </a>
+    <a class="crel-card" href="rd-calculator.html">
+      <span class="n">RD Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">A recurring deposit’s maturity, interest and post-tax return.</span>
+    </a>
     <a class="crel-card" href="sip-calculator.html">
-      <span class="n">SIP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="n">SIP Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
       <span class="d">What a monthly SIP grows to at a return you choose.</span>
     </a>
-    <a class="crel-card" href="lumpsum-calculator.html">
-      <span class="n">Lumpsum Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
-      <span class="d">What a one-time investment grows to, and how much of it is growth.</span>
-    </a>
-    <a class="crel-card" href="step-up-sip-calculator.html">
-      <span class="n">Step-Up SIP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
-      <span class="d">A SIP that rises with your income — and what it is worth after inflation.</span>
+    <a class="crel-card" href="inflation-calculator.html">
+      <span class="n">Inflation Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">What something will cost in future, and what a future sum is worth today.</span>
     </a>
     <a class="crel-card" href="goal-sip-calculator.html">
-      <span class="n">Goal SIP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="n">Goal SIP Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
       <span class="d">The monthly SIP a target needs, with the goal inflated to its future cost.</span>
     </a>
-    <a class="crel-card" href="swp-calculator.html">
-      <span class="n">SWP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
-      <span class="d">What a monthly withdrawal does to a corpus, and how long it lasts.</span>
+    <a class="crel-card" href="ppf-calculator.html">
+      <span class="n">PPF Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">Public Provident Fund maturity over 15 years or an extended term.</span>
+    </a>
+    <a class="crel-card crel-all" href="index.html">
+      <span class="n">All 16 calculators&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">Grouped by the question each one answers.</span>
     </a>
   </div>
 </section>
@@ -316,7 +325,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </svg>
 </a>
 
-<script src="../assets/mfc-calc.js?v=390"></script>
+<script src="../assets/mfc-calc.js?v=397"></script>
 
 <script>
 MFCalc.init({
@@ -338,7 +347,7 @@ MFCalc.init({
     var emi = MFCalc.math.emi(v.amount, v.rate, v.years);
     var n = Math.round(v.years * 12);
     var total = emi * n, interest = total - v.amount;
-    var r = v.rate / 100 / 12, bal = v.amount, bars = [];
+    var r = v.rate / 100 / 12, bal = v.amount, bars = [], rows = [];
     for (var y = 1; y <= v.years; y++) {
       var pi = 0, ii = 0;
       for (var k = 0; k < 12; k++) {
@@ -347,6 +356,7 @@ MFCalc.init({
         bal -= pr; pi += pr; ii += int1;
       }
       bars.push({ label: String(y), a: pi, b: ii });
+      rows.push({ y: y, pr: pi, int: ii, bal: Math.max(0, bal) });
     }
     return {
       fig: { k: 'Monthly EMI', v: MFCalc.inr(emi),
@@ -362,6 +372,10 @@ MFCalc.init({
       split: { a: { k: 'Principal', v: v.amount }, b: { k: 'Interest', v: interest } },
       bars: bars, barsTitle: 'Where each year\u2019s payments go', barsNote: 'principal vs interest',
       barKeys: { a: 'Principal', b: 'Interest' },
+      table: { title: 'Year-by-year repayment table', cols: [
+          { k: 'y', label: 'Year' }, { k: 'pr', label: 'Principal paid', fmt: 'money', short: 'Principal' },
+          { k: 'int', label: 'Interest paid', fmt: 'money', short: 'Interest' }, { k: 'bal', label: 'Loan left at year end', fmt: 'money', short: 'Loan left' } ],
+        rows: rows },
       note: 'Fixed rate, equal instalments, no prepayment, and no processing fee, insurance or GST — those are paid on top. A floating-rate loan re-prices when its benchmark moves.'
     };
   }

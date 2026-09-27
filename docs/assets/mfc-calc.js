@@ -15,6 +15,10 @@
    · Every figure the panel prints carries the unit it is in, and every
      assumption the maths makes is stated on the page, not implied.
    · No dependency, no network, no storage. The numbers never leave the browser.
+   V39.7 added two things every page can opt into: a choice field
+   (unit:'choice', a pressed-button row for a short fixed list) and a
+   year-by-year table (out.table, rendered into #calc-table when the page has
+   one). The section grew from seven calculators to fifteen on this engine.
    ════════════════════════════════════════════════════════════════════════════ */
 (function (w, d) {
   "use strict";
@@ -42,7 +46,13 @@
     if (a >= 1e3) return sign + '₹' + group(a);
     return sign + '₹' + round(a);
   }
-  function pct(n, dp) { return (Number(n) || 0).toFixed(dp == null ? 1 : dp) + '%'; }
+  // V39.7 — a negative rate carries the true minus sign the money figures use
+  // (−₹1,200, −0.80%), and a value that rounds to zero never prints "-0.0%".
+  function pct(n, dp) {
+    n = Number(n) || 0;
+    var s = Math.abs(n).toFixed(dp == null ? 1 : dp);
+    return (n < 0 && Number(s) !== 0 ? '−' : '') + s + '%';
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -84,7 +94,25 @@
   };
 
   /* ── input rows ─────────────────────────────────────────────────────────── */
+  // V39.7 — a CHOICE field: a short fixed list (compounding frequency, a PPF
+  // tenure) as a row of pressed/unpressed buttons, the same control the EMI
+  // page's loan-type bar uses. A slider over four discrete values would
+  // pretend the values in between exist.
+  function choiceHTML(f, id) {
+    return '' +
+      '<div class="cf cf-choice" data-f="' + esc(f.k) + '">' +
+        '<div class="cf-top"><span class="cf-lbl" id="' + id + '-l">' + esc(f.label) +
+          (f.hint ? '<span class="cf-hint">' + esc(f.hint) + '</span>' : '') + '</span></div>' +
+        '<div class="cmodes cf-opts' + (f.pairs ? ' cf-opts-2' : '') + '" role="group" aria-labelledby="' + id + '-l">' +
+          f.options.map(function (o) {
+            return '<button type="button" data-v="' + esc(o.v) + '" aria-pressed="' + (o.v === f.value) + '">' +
+              esc(o.label) + '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+  }
   function fieldHTML(f, id) {
+    if (f.unit === 'choice') return choiceHTML(f, id);
     var pre = f.unit === 'money' ? '₹' : '';
     var suf = f.unit === 'pct' ? '%' : (f.unit === 'years' ? (f.sufLabel || 'yrs') : (f.suffix || ''));
     // A money field is a TEXT input carrying Indian grouping: ₹50,00,000 is
@@ -157,8 +185,74 @@
       '</div>';
   }
 
-  function render(host, out) {
+  /* V39.7 — THE YEAR-BY-YEAR TABLE. The chart shows the shape; the table is
+     where a member checks a particular year ("what do I withdraw in year 12,
+     and what is left?"). A <details>, closed by default: forty rows open under
+     the result would bury the page below it. Money cells carry the full rupee
+     figure AND the lakh/crore form, and the stylesheet shows one per width —
+     so five columns fit a 320px phone without a sideways scroll, and a desktop
+     still reads ₹12,34,567. A column may also carry `short` (its phone header)
+     and `xs:false` (a derivable column dropped below 381px, so five columns
+     never scroll sideways on a 320px phone). */
+  function tableHTML(t, open) {
+    var cols = t.cols || [], rows = t.rows || [];
+    if (!cols.length || !rows.length) return '';
+    function cell(c, r) {
+      var v = r[c.k];
+      if (v == null || v === '') return '—';
+      if (c.fmt === 'money') return '<span class="tf">' + esc(inr(v)) + '</span><span class="tc">' + esc(compact(v)) + '</span>';
+      if (c.fmt === 'pct') return esc(pct(v));
+      return esc(v);
+    }
+    var n = rows.length, unit = t.unit || 'year';
+    return '<details class="ctbl"' + (open ? ' open' : '') + '>' +
+      '<summary><span class="t">' + esc(t.title || 'Year-by-year table') + '</span>' +
+        '<span class="n">' + n + ' ' + unit + (n === 1 ? '' : 's') + '</span></summary>' +
+      '<div class="ctbl-wrap"><table class="ctbl-t">' +
+        '<caption>' + esc(t.caption || t.title || 'Year-by-year table') + '</caption>' +
+        '<thead><tr>' + cols.map(function (c, i) {
+          // a column may carry a phone label ("Balance" for "Balance at year end"):
+          // the longest word in a header sets its column's minimum width
+          var lab = c.short ? '<span class="tf">' + esc(c.label) + '</span><span class="tc">' + esc(c.short) + '</span>' : esc(c.label);
+          var cls = (i && c.fmt ? 'r' : '') + (c.xs === false ? ' hx' : '');
+          return '<th scope="col"' + (cls.trim() ? ' class="' + cls.trim() + '"' : '') + '>' + lab + '</th>';
+        }).join('') + '</tr></thead>' +
+        '<tbody>' + rows.map(function (r) {
+          return '<tr' + (r._cls ? ' class="' + esc(r._cls) + '"' : '') + '>' + cols.map(function (c, i) {
+            return i === 0 ? '<th scope="row">' + cell(c, r) + '</th>'
+                           : '<td' + ((c.fmt || c.xs === false) ? ' class="' + ((c.fmt ? 'r' : '') + (c.xs === false ? ' hx' : '')).trim() + '"' : '') + '>' + cell(c, r) + '</td>';
+          }).join('') + '</tr>';
+        }).join('') + '</tbody></table></div>' +
+      (t.note ? '<p class="ctbl-note">' + t.note + '</p>' : '') +
+    '</details>';
+  }
+  // the house scroll cue (V34.0): a right-edge fade only while columns are
+  // hidden past the edge — a safety net here, since the table is sized to fit
+  function tableCue(wrap) {
+    if (!wrap) return;
+    var max = wrap.scrollWidth - wrap.clientWidth;
+    wrap.classList.toggle('mfx-more-r', max > 8 && wrap.scrollLeft < max - 4);
+  }
+  function wireTable(tblHost) {
+    var det = tblHost.querySelector('details.ctbl'), wrap = tblHost.querySelector('.ctbl-wrap');
+    if (!det || !wrap) return;
+    wrap.addEventListener('scroll', function () { tableCue(wrap); }, { passive: true });
+    det.addEventListener('toggle', function () { tableCue(wrap); });
+    tableCue(wrap);
+  }
+  if (!w.__mfcTblCue) {
+    w.__mfcTblCue = 1;
+    w.addEventListener('resize', function () {
+      [].forEach.call(d.querySelectorAll('.ctbl-wrap'), tableCue);
+    }, { passive: true });
+  }
+
+  function render(host, out, tblHost) {
     var fig = out.fig || {};
+    // the table's open/closed state is the member's, so a re-render keeps it
+    var tblOpen = !!(tblHost ? tblHost : host).querySelector('details.ctbl[open]');
+    var tbl = out.table ? tableHTML(out.table, tblOpen) : '';
+    if (tblHost) { tblHost.innerHTML = tbl; tblHost.hidden = !tbl; if (tbl) wireTable(tblHost); }
     var html = '' +
       '<div class="co-k">' + esc(fig.k || 'Result') + '</div>' +
       '<div class="co-fig' + (fig.tone ? ' ' + fig.tone : '') + '">' + esc(fig.v || '—') + '</div>' +
@@ -185,7 +279,9 @@
         barsHTML(out.bars, out.barKeys || { a: 'Invested', b: 'Returns' }, out.tone) + '</div>';
     }
     if (out.note) html += '<div class="co-note">' + out.note + '</div>';
+    if (tbl && !tblHost) html += tbl;
     host.innerHTML = html;
+    if (tbl && !tblHost) wireTable(host);
 
     // grow the split bar AND the year columns from zero on the next frame —
     // the site's bar idiom; a bar painted at its final size has a dead
@@ -213,6 +309,7 @@
   function init(cfg) {
     var form = d.getElementById(cfg.formId || 'calc-fields');
     var host = d.getElementById(cfg.outId || 'calc-out');
+    var tblHost = d.getElementById(cfg.tableId || 'calc-table');   // V39.7 — optional, full width
     if (!form || !host) return null;
 
     var state = {}, fields = cfg.fields.slice(), mode = cfg.modes ? cfg.modes.options[0].k : null;
@@ -232,6 +329,19 @@
       fs.forEach(function (f) { state[f.k] = f.value; });
       form.querySelectorAll('.cf').forEach(function (row) {
         var f = fs.filter(function (x) { return x.k === row.dataset.f; })[0];
+        if (f.unit === 'choice') {
+          var btns = row.querySelectorAll('button[data-v]');
+          [].forEach.call(btns, function (b) {
+            b.addEventListener('click', function () {
+              var o = f.options.filter(function (x) { return String(x.v) === b.dataset.v; })[0];
+              if (!o || state[f.k] === o.v) return;
+              state[f.k] = o.v;
+              [].forEach.call(btns, function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+              run();
+            });
+          });
+          return;
+        }
         var num = row.querySelector('.cf-in'), rng = row.querySelector('.cf-rng');
         var money = f.unit === 'money';
         var read = function () {
@@ -295,7 +405,7 @@
       var out;
       try { out = cfg.compute(Object.assign({}, state), mode); }
       catch (e) { return; }
-      if (out) { render(host, out); announce(out); maybePop(out); }
+      if (out) { render(host, out, tblHost); announce(out); maybePop(out); }
       if (typeof cfg.onRender === 'function') { try { cfg.onRender(out, Object.assign({}, state), mode); } catch (e) {} }
     }
 

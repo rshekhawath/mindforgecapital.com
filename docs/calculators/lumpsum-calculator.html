@@ -41,7 +41,7 @@
 <meta name="twitter:description" content="Free lumpsum calculator: see what a one-time investment grows to at the return and horizon you choose, how much is growth, and its value after inflation.">
 <meta name="twitter:image" content="https://mindforgecapital.com/assets/og-card.png">
 
-<link rel="stylesheet" href="../assets/mfc-calc.css?v=392">
+<link rel="stylesheet" href="../assets/mfc-calc.css?v=397">
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -190,6 +190,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <p id="calc-status" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;"></p>
     </section>
   </div>
+  <div id="calc-table" hidden></div>
 
   <div class="ccta fade-up">
     <div>
@@ -242,28 +243,36 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <h2 id="rel-h">Other calculators</h2>
   <div class="crel-grid">
     <a class="crel-card is-feat" href="../calculator.html">
-      <span class="n">Fee Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="n">Fee Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
       <span class="d">What a percentage-of-AUM fee costs against a flat subscription.</span>
     </a>
     <a class="crel-card" href="sip-calculator.html">
-      <span class="n">SIP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="n">SIP Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
       <span class="d">What a monthly SIP grows to at a return you choose.</span>
     </a>
-    <a class="crel-card" href="step-up-sip-calculator.html">
-      <span class="n">Step-Up SIP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
-      <span class="d">A SIP that rises with your income — and what it is worth after inflation.</span>
+    <a class="crel-card" href="cagr-calculator.html">
+      <span class="n">CAGR Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">The steady yearly rate between a starting and an ending value.</span>
+    </a>
+    <a class="crel-card" href="fd-calculator.html">
+      <span class="n">FD Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">A fixed deposit’s maturity, and what it earns after tax and inflation.</span>
+    </a>
+    <a class="crel-card" href="inflation-calculator.html">
+      <span class="n">Inflation Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">What something will cost in future, and what a future sum is worth today.</span>
     </a>
     <a class="crel-card" href="goal-sip-calculator.html">
-      <span class="n">Goal SIP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="n">Goal SIP Calculator&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
       <span class="d">The monthly SIP a target needs, with the goal inflated to its future cost.</span>
     </a>
-    <a class="crel-card" href="emi-calculator.html">
-      <span class="n">EMI Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
-      <span class="d">Home, car and personal loan instalments, and what the interest adds up to.</span>
+    <a class="crel-card" href="mindforge-vs-fund.html">
+      <span class="n">MindForge vs your fund&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">Two published returns compounded side by side, each after its own tax.</span>
     </a>
-    <a class="crel-card" href="swp-calculator.html">
-      <span class="n">SWP Calculator <span class="ar" aria-hidden="true">&rarr;</span></span>
-      <span class="d">What a monthly withdrawal does to a corpus, and how long it lasts.</span>
+    <a class="crel-card crel-all" href="index.html">
+      <span class="n">All 16 calculators&nbsp;<span class="ar" aria-hidden="true">&rarr;</span></span>
+      <span class="d">Grouped by the question each one answers.</span>
     </a>
   </div>
 </section>
@@ -300,7 +309,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   </svg>
 </a>
 
-<script src="../assets/mfc-calc.js?v=390"></script>
+<script src="../assets/mfc-calc.js?v=397"></script>
 
 <script>
 MFCalc.init({
@@ -315,10 +324,12 @@ MFCalc.init({
     var fv = MFCalc.math.lumpFV(v.amount, v.rate, v.years);
     var gains = fv - v.amount;
     var real = MFCalc.math.real(fv, v.infl, v.years);
-    var bars = [];
+    var bars = [], rows = [], prev = v.amount;
     for (var y = 1; y <= v.years; y++) {
       var f = MFCalc.math.lumpFV(v.amount, v.rate, y);
       bars.push({ label: String(y), a: v.amount, b: Math.max(0, f - v.amount) });
+      rows.push({ y: y, gr: f - prev, val: f, real: MFCalc.math.real(f, v.infl, y) });
+      prev = f;
     }
     return {
       fig: { k: 'Value after ' + v.years + (v.years === 1 ? ' year' : ' years'), v: MFCalc.inr(fv),
@@ -332,6 +343,10 @@ MFCalc.init({
       split: { a: { k: 'Invested', v: v.amount }, b: { k: 'Growth', v: gains } },
       bars: bars, barsTitle: 'Year by year', barsNote: 'value at the end of each year',
       barKeys: { a: 'Invested', b: 'Growth' },
+      table: { title: 'Year-by-year table', cols: [
+          { k: 'y', label: 'Year' }, { k: 'gr', label: 'Growth in the year', fmt: 'money', short: 'Growth' },
+          { k: 'val', label: 'Value at year end', fmt: 'money', short: 'Value' }, { k: 'real', label: 'In today\u2019s money', fmt: 'money', short: 'Today\u2019s value' } ],
+        rows: rows },
       note: 'Compounded annually at a constant rate, before fees and taxes. Illustration, not a forecast.'
     };
   }
