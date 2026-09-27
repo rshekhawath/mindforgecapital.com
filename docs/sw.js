@@ -774,7 +774,13 @@
 // button in the free-book section). One shared asset moved with it:
 // assets/mfc-live.js 3900 -> 3910 (the record line names the close it runs to, and
 // the owner-supplied dedicated-since dates, empty for now, render nothing).
-const CACHE = 'mfc-v108';
+// V39.4 -> mfc-v109. index.html is precached and changed (the pricing cards'
+// backtest pair is paired at 601–900 and loses its dangling divider at 901–1100).
+// Two shared assets moved with it: assets/mfc-live.js 3910 -> 3940 (the record
+// line breaks only after its dot) and assets/mfc-finish.css 3680 -> 3940 on all 58
+// pages that link it (the "Free tools" summary at 44px on touch, and the
+// calculator footer's short links padded to 44px wide).
+const CACHE = 'mfc-v109';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

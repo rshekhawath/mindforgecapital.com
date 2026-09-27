@@ -148,11 +148,15 @@
         // seam this project keeps finding.
         else if (spec[1] === "countword") val = (rec.count === 1 ? "cycle" : "cycles");
         else if (spec[1] === "phrase") {
-          val = "Live record: " + rec.count + (rec.count === 1 ? " cycle" : " cycles") +
-                (rec.first_rebalance ? ", since " + fmtDate(rec.first_rebalance) : "") +
+          // V39.4 — two bound phrases that may break only after the dot:
+          // "since 31 Aug 2026 ·" / "to the 24 Sept close". With plain spaces the
+          // homepage card ended a line on "to" (390px) or "the" (414px), began one
+          // with "·" (360px), and left "close" alone on a line at 1024.
+          val = "Live record: " + rec.count + NB + (rec.count === 1 ? "cycle" : "cycles") +
+                (rec.first_rebalance ? ", since" + NB + fmtDate(rec.first_rebalance) : "") +
                 // V39.3 — A2.5: WHICH close the figure runs to. live_perf.py now
                 // counts completed sessions only, so this is always a real close.
-                (data.data_through ? " · to the " + fmtDayMonth(data.data_through) + " close" : "");
+                (data.data_through ? NB + "· to" + NB + "the" + NB + fmtDayMonth(data.data_through) + NB + "close" : "");
         }
       }
       else {

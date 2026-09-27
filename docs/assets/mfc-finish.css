@@ -2389,13 +2389,19 @@ html[data-theme="dark"] .cmp-row .v{ color: var(--ink-link); }
    24px floor with room to spare.
    ========================================================================== */
 @media (hover: none) and (pointer: coarse) {
+  /* V39.4 — `footer .cfoot-nav a` is the calculator footer (mfc-calc.css), the one
+     footer list this rule never named: its "Home" and "Terms" hit-tested 36.6 and
+     38.1 wide at every touch width once V39.2 had given them the height. Same pad;
+     its 20px column gap leaves room for the 3.7px a side it can grow. */
   html .nav-links a:not(.nav-cta),
   html footer .footer-links a,
-  html footer .links a{ position: relative; }
+  html footer .links a,
+  html footer .cfoot-nav a{ position: relative; }
 
   html .nav-links a:not(.nav-cta)::before,
   html footer .footer-links a::before,
-  html footer .links a::before{
+  html footer .links a::before,
+  html footer .cfoot-nav a::before{
     content: ''; position: absolute;
     left: 50%; top: 50%;
     width: 100%; min-width: 44px; height: 100%; min-height: 44px;
@@ -3349,6 +3355,14 @@ html textarea:not(:focus):not(:hover){
   .nav-links .nav-group-menu a:hover{ background:rgba(37,99,235,.08); }
   /* the underline sweep the bar's own links carry would draw inside the panel */
   .nav-links .nav-group-menu a::after{ display:none !important; }
+}
+/* V39.4 — in the bar the summary is a fixed 40px, and it was the one item there the
+   touch rule `html .nav-links a{ min-height:44px }` could not reach: it is not an
+   <a>. So on an iPad in landscape (1180, 1366) "Free tools" hit-tested 77.8 x 40.8
+   beside 44px neighbours. min-height wins over height; the bar is already 44+ tall
+   on touch, so nothing around it moves. The drawer (<=1024) is 48px already. */
+@media (hover: none) and (pointer: coarse) and (min-width:1025px){
+  html .nav-links .nav-group > summary{ min-height:44px; }
 }
 
 /* In the drawer the group is an inline section: the menu pushes the items below
