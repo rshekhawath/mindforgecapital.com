@@ -70,7 +70,10 @@
      every panel except the business description, which is what it did for
      stocks with no description in the snapshot anyway. */
   function hydrateProse(sym) {
-    if (!sym) return Promise.resolve(false);
+    /* V39.6 — a symbol outside the universe has no prose file either: the
+       not-found page (?symbol=ZZZNOTREAL) requested one and logged a 404 on
+       every load. BY_SYM is complete by the time this runs (see load()). */
+    if (!sym || !BY_SYM[sym]) return Promise.resolve(false);
     return fetch("../screener/prose/" + encodeURIComponent(sym) + ".json")
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (p) {

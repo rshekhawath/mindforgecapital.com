@@ -785,7 +785,11 @@
 // and its pointer, the advance-tax lines in the tax FAQ, FAQ deep links open their
 // answer, and the backtest window rail is machine-stamped at both ends). No shared
 // asset moved.
-const CACHE = 'mfc-v110';
+// V39.6 -> mfc-v111. index.html is precached and changed (the "See the member
+// dashboard (sample)" link keeps its arrow on the same line at 360). One page
+// asset moved: scores/scores-engine.js 3360 -> 3960 on both pages that load it
+// (a symbol outside the universe no longer asks for a prose file).
+const CACHE = 'mfc-v111';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

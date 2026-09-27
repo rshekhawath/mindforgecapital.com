@@ -4531,7 +4531,8 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <li>Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month.</li>
           <li>Your broker's Tax P&amp;L shows the gains realised so far this year. On Zerodha it is in Console, under Reports &rarr; Tax P&amp;L.</li>
         </ul>
-        <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours. <button type="button" class="itr-hide" onclick="addAdvanceTaxToCalendar()">Add the four dates to my calendar</button> <button type="button" class="itr-hide" onclick="hideAdvTaxCard()">Hide until the next one</button></p>
+        <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours.</p>
+        <div class="itr-acts"><button type="button" class="itr-hide" onclick="addAdvanceTaxToCalendar()">Add the four dates to my calendar</button><button type="button" class="itr-hide" onclick="hideAdvTaxCard()">Hide until the next one</button></div>
       </section>
 
       <!-- REBALANCE NOTIFICATIONS -->
@@ -10511,7 +10512,7 @@ function refreshKiteBasket() {
       if (label) {
         var tot = b.buyVal + b.sellVal;
         label.textContent = (b.state === 'sent' ? 'Send again · ' : 'Review ' + b.open.length + ' order' + (b.open.length === 1 ? '' : 's') + ' · ') +
-          (tot > 0 ? preciseMoney(tot) : '') + ' on Kite';
+          (tot > 0 ? preciseMoney(tot) : '') + ' on Kite';   // V39.6 — "Kite" alone on the second line at 360
       }
       if (btn) btn.onclick = function () { sendKiteBasket(1); };
       if (label && !isDemo && !window._capEntered) {       // V39.3 — B4
@@ -10840,16 +10841,37 @@ function showToast(msg) {
   window._toastT = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-function copyText(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text);
-  }
-  const ta = document.createElement('textarea');
-  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+/* V39.6 — writeText can REJECT, not only be missing: Chrome refuses it while the
+   document is not focused ("Document is not focused"), and in-app browsers and
+   embedded webviews can deny the permission outright. The rejection went back to
+   eight callers that only attach .then(), so a tap on Copy did nothing and logged
+   an uncaught error — measured on the order sheet's Copy on a phone and two iPads.
+   A rejection now falls through to the textarea path; when that fails too the
+   member is told so, and the promise never settles, so no caller paints a
+   "Copied" that did not happen. The textarea path keeps focus where it was, so
+   a keyboard member's next Tab starts from the button they pressed. */
+function _copyViaTextarea(text) {
+  var prev = document.activeElement, ok = false;
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed'; ta.style.top = '0'; ta.style.left = '0'; ta.style.opacity = '0';
   document.body.appendChild(ta); ta.select();
-  try { document.execCommand('copy'); } catch(e){}
+  try { ta.setSelectionRange(0, ta.value.length); } catch(e){}
+  try { ok = document.execCommand('copy'); } catch(e){}
   document.body.removeChild(ta);
-  return Promise.resolve();
+  if (prev && prev.focus && prev !== document.body) { try { prev.focus({ preventScroll:true }); } catch(e){} }
+  return ok;
+}
+function copyText(text) {
+  function fallback() {
+    if (_copyViaTextarea(text)) return;
+    showToast('Your browser blocked copying — select the text and copy it instead');
+    return new Promise(function(){});
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(fallback);
+  }
+  return fallback() || Promise.resolve();
 }
 
 /* V30.3 — the ticker chips are copy-to-clipboard controls (one per holding, 25 of
@@ -17895,6 +17917,42 @@ html[data-theme="dark"] .cs-nudge a{ color:#9dbcff; }
 .cs-cal{ font-family:inherit; cursor:pointer; }
 
 @media print{ .cs-card, .cs-nudge, .osheet .os-copy, .os-tick{ display:none; } }
+</style>
+<style id="mf-v396-dash">
+/* ── V39.6 · the in-page jumps stop BELOW the sticky nav ─────────────────────
+   The bar's "Open the order sheet" and "Go to picks", a sector chip in the
+   allocation card and the nudge's "Add the names you can't hold" all call
+   scrollIntoView({block:'start'}), and nothing on this page carried a
+   scroll-margin — so each landed its target at y=0, under the 57px (phone,
+   iPad) / 65px (desktop) nav. Measured: the sheet's "Step 3" heading and the
+   picks' "Stock picks" h2 both painted behind the nav on a phone and on two
+   iPads. 88px is the site's value (mfc-finish.css, the skip-link target): the
+   tallest masthead plus breathing room. scroll-margin only moves where a
+   scroll stops; it changes no layout. */
+.table-section, #cs-card, #osheet{ scroll-margin-top:88px; }
+
+/* ── V39.6 · the held-back sell row ─────────────────────────────────────────
+   Four children in a three-column grid: the Remind me button wrapped to row 2
+   under the clock and widened that `auto` column to its own 91px, the nowrap
+   date took the other auto column (122px), and the 1fr ticker column kept what
+   was left — 6.7px at iPad 1024 ("TITAN" one letter per line), 28.7px on a
+   390 phone ("TIT / AN"). The date now sits under the ticker, and the button
+   and the clock each span both rows. */
+.chg-sell.cs-row.is-hold{ grid-template-columns:auto minmax(0,1fr) auto; }
+.chg-sell.cs-row.is-hold > .cs-clock{ grid-column:1; grid-row:1 / span 2; }
+.chg-sell.cs-row.is-hold > .chg-sell-id{ grid-column:2; grid-row:1; }
+.chg-sell.cs-row.is-hold > .cs-hold-when{ grid-column:2; grid-row:2; white-space:normal; }
+.chg-sell.cs-row.is-hold > .cs-cal{ grid-column:3; grid-row:1 / span 2; justify-self:end; }
+.chg-sell.cs-row.is-hold .chg-sell-t, .cs-hold-when b{ white-space:nowrap; }
+
+/* ── V39.6 · the advance-tax card's two buttons ──────────────────────────────
+   They sat inline after the disclaimer: on a phone they wrapped into a stack
+   36px tall with no gap between them — two tap targets under the 44px floor,
+   touching. A row that wraps with a gap, and 44px on a touch screen. */
+.itr-acts{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0; }
+.itr-acts .itr-hide{ margin-left:0; }
+@media (pointer:coarse){ .itr-hide{ min-height:44px; } }
+@media print{ .itr-acts{ display:none; } }
 </style>
 </body>
 </html>
