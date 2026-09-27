@@ -3201,6 +3201,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </span>
         <a class="cyc-cal-btn" id="cyc-cal-g" target="_blank" rel="noopener noreferrer" href="#">Google Calendar</a>
         <button type="button" class="cyc-cal-btn" id="cyc-cal-ics" onclick="addCycleToCalendar()">Apple / Outlook (.ics)</button>
+        <button type="button" class="cyc-cal-btn" id="cyc-cal-atx" onclick="addAdvanceTaxToCalendar()">Advance-tax dates (.ics)</button>
       </div>
     </div>
     <style>
@@ -4005,6 +4006,9 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="cvg-track" aria-hidden="true"><span class="cvg-fill" id="cvg-fill"></span></div>
         <div class="cvg-note" id="cvg-note"></div>
       </div>
+      <!-- V39.5 — B1: the one-line door to the rules card, until the member sets a rule
+           or hides it. Never in demo; never on MultiAsset. -->
+      <p class="cs-nudge" id="cs-nudge" hidden><span>Work somewhere with a trading code? <a href="#cs-card" onclick="csOpenCard(event)">Add the names you can't hold</a> &mdash; once &mdash; and the dashboard never sizes them.</span> <button type="button" class="cs-nudge-x" onclick="csDismissNudge()">Hide</button></p>
 
     </div>
 
@@ -4046,7 +4050,6 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             <label class="msort-lbl" for="msort-key">Sort</label>
             <select class="msort-sel" id="msort-key" aria-label="Sort picks by">
               <option value="">Model order</option>
-              <option value="num">Conviction rank</option>
               <option value="company">Company</option>
               <option value="ticker">Ticker</option>
               <option value="industry" id="msort-group">Industry</option>
@@ -4069,6 +4072,8 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             <option value="kite">Kite</option>
             <option value="groww">Groww</option>
             <option value="upstox">Upstox</option>
+            <!-- V39.5 — B7: the bank broker a salary account came with (and any other). -->
+            <option value="other">Another broker</option>
           </select>
           <button class="tbl-btn" id="btn-copy-tickers" onclick="copyAllTickers()" title="Copy all tickers for your broker">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
@@ -4319,6 +4324,15 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             <span id="kbsk-label">Review basket on Kite</span>
           </button>
         </div>
+        <!-- V39.5 — B7: the same step for a broker without baskets (a bank broker, or
+             any other). Rendered by renderOrderSheet() from the same plan the Kite band
+             sends; the tick is the picks table's own. -->
+        <div class="osheet" id="osheet" hidden>
+          <div class="kbsk-eyebrow">Step 3, one ticket per line</div>
+          <p class="osheet-facts" id="osheet-facts"></p>
+          <ol class="osheet-list" id="osheet-list"></ol>
+          <p class="kbsk-note" id="osheet-note"></p>
+        </div>
       </div>
 
       <!-- ══ V37.5 · ADJUST YOUR BOOK ═══════════════════════════════════════════
@@ -4394,6 +4408,59 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <p class="adj-foot">Arithmetic on the model's published weights and the numbers you enter — not a separate recommendation. Orders open on your broker's own screen; nothing is placed until you confirm there.</p>
       </section>
 
+      <!-- ══ V39.5 · B1–B3 · YOUR EMPLOYER'S TRADING RULES ══════════════════════
+           Set once, applied to every cycle: names this page never sizes or trades,
+           a minimum holding period for sales, and this cycle's orders as a
+           pre-clearance list. Equity books only. Rendered by csRender(); the rules
+           live in localStorage and, against a backend that advertises `prefs`, on
+           the member's progress row. -->
+      <section class="cs-card" id="cs-card" aria-labelledby="cs-title" hidden>
+        <div class="cs-head">
+          <div>
+            <h2 id="cs-title">Your employer's trading rules</h2>
+            <p class="cs-lead">For a job that comes with a trading code. Set it once &mdash; every order on this page follows it.</p>
+          </div>
+          <span class="cs-status" id="cs-status">None set</span>
+        </div>
+        <div class="cs-grid">
+          <div class="cs-block">
+            <h3>Names I can't hold</h3>
+            <p class="cs-help">Your employer's shares, a client on your firm's restricted list, a stock you already hold through your job. The dashboard never sizes, buys or sells these for you, and the rest of the book is spread across by the model's weights.</p>
+            <form class="cs-add" id="cs-add" autocomplete="off" novalidate>
+              <label class="cs-sr" for="cs-in">NSE symbol or company name</label>
+              <input id="cs-in" class="cs-in" type="text" autocapitalize="characters" spellcheck="false" autocomplete="off" placeholder="Employer's NSE symbol" maxlength="60" enterkeyhint="done">
+              <button type="submit" class="cs-btn">Add</button>
+            </form>
+            <p class="cs-msg" id="cs-msg" aria-live="polite"></p>
+            <ul class="cs-list" id="cs-list" aria-label="Names on your restricted list"></ul>
+          </div>
+          <div class="cs-block">
+            <h3>Minimum holding period</h3>
+            <p class="cs-help">If your code says a purchase must be held for a set number of days, each sale waits until then &mdash; counted from the day you ticked the buy as placed.</p>
+            <div class="cs-hold">
+              <label for="cs-hold-sel">Hold each purchase for at least</label>
+              <select id="cs-hold-sel" class="cs-sel">
+                <option value="0">No minimum</option>
+                <option value="30">30 days</option>
+                <option value="60">60 days</option>
+                <option value="90">90 days</option>
+                <option value="other">Another number of days</option>
+              </select>
+              <input id="cs-hold-n" class="cs-in cs-in-n" type="number" min="1" max="365" inputmode="numeric" aria-label="Days" hidden>
+            </div>
+            <p class="cs-warn" id="cs-hold-warn" hidden></p>
+          </div>
+          <div class="cs-block">
+            <h3>Pre-clearance</h3>
+            <p class="cs-help">This cycle's orders as a plain list to paste into your request. Approvals are usually valid for a few trading days; this month's list stays valid until the next rebalance.</p>
+            <pre class="cs-pre" id="cs-pre" hidden></pre>
+            <button type="button" class="cs-btn cs-btn-wide" id="cs-copy" onclick="csCopyPreclear()">Copy for pre-clearance</button>
+          </div>
+        </div>
+        <p class="cs-cost" id="cs-cost" hidden></p>
+        <p class="cs-foot"><span id="cs-saved">Saved on this device.</span> Not legal advice &mdash; your employer's code of conduct decides. <a href="index.html#faq-employer">How this fits insider-trading rules &rarr;</a></p>
+      </section>
+
       <!-- V39.1 — C6. The ±bps tracking gauge and the four-size capital ladder sat
            between the sizing field and the picks, pushing the action a phone
            screen down for a member who came to place orders. Same blocks, same
@@ -4445,10 +4512,26 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <h3 id="itr-h">Filing season: what this book adds to your return</h3>
         <ul>
           <li>Your broker's Tax P&amp;L report already lists every trade this book realised. On Zerodha it is in Console, under Reports &rarr; Tax P&amp;L.</li>
-          <li>Gains from these books are short-term (section 111A), because nothing is held twelve months. With short-term gains you can no longer file ITR-1, and a salaried filer usually moves to ITR-2.</li>
+          <li>Gains from these books are short-term (section 196 of the Income-tax Act, 2025; section 111A before April&nbsp;2026), because nothing is held twelve months. With short-term gains you can no longer file ITR-1, and a salaried filer usually moves to ITR-2.</li>
           <li class="itr-count" hidden>At this book's turnover that is roughly <b data-itr-yearly></b> realised transactions a year: one summary in your return, not one line each.</li>
+          <li>Your salary TDS does not cover these gains. If your tax for the year beyond it comes to &#8377;10,000 or more, it is due as advance tax &mdash; by 15&nbsp;June, 15&nbsp;September, 15&nbsp;December and 15&nbsp;March.</li>
         </ul>
         <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours. <button type="button" class="itr-hide" onclick="hideItrCard()">Hide until next season</button></p>
+      </section>
+
+      <!-- V39.5 — B5. ADVANCE TAX, ON THE DATES IT FALLS DUE. The ITR card above shows
+           1 Feb – 31 Jul, the filing season; two of the four instalments (15 Sep,
+           15 Dec) fall outside it. Shown for the 21 days before each due date (IST),
+           hideable per instalment. States the rule and the date; computes nothing from
+           the member's ticks. Not tax advice. -->
+      <section class="itr-card atx-card" id="atx-card" hidden aria-labelledby="atx-h">
+        <h3 id="atx-h">Advance tax is due by <span data-atx-date>15 December</span></h3>
+        <ul>
+          <li>Your salary TDS is worked out on your salary alone, so it does not cover the gains these books realise. If your tax for the year beyond it comes to &#8377;10,000 or more, it is due as advance tax &mdash; <b data-atx-share>75%</b> of the year's tax by <b data-atx-date2>15 December</b>.</li>
+          <li>Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month.</li>
+          <li>Your broker's Tax P&amp;L shows the gains realised so far this year. On Zerodha it is in Console, under Reports &rarr; Tax P&amp;L.</li>
+        </ul>
+        <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours. <button type="button" class="itr-hide" onclick="addAdvanceTaxToCalendar()">Add the four dates to my calendar</button> <button type="button" class="itr-hide" onclick="hideAdvTaxCard()">Hide until the next one</button></p>
       </section>
 
       <!-- REBALANCE NOTIFICATIONS -->
@@ -5302,7 +5385,7 @@ const demoMode = new URLSearchParams(window.location.search).get('demo');
 // switch to ?demo=2 fell through to the TOKEN path, found no token and rendered
 // nothing. Accept every mode _demoData() knows about, and nothing else — an
 // unrecognised ?demo= value must still take the real path, not a blank dashboard.
-const DEMO_MODES = ['1', '2', 'pinned'];   // V39.1 — 'pinned' is the test-only state ?demo=1 used to be
+const DEMO_MODES = ['1', '2', 'pinned', 'restricted'];   // V39.1 — 'pinned' is the test-only state ?demo=1 used to be; V39.5 — 'restricted' is the career-safe test state
 const isDemo = DEMO_MODES.indexOf(demoMode) > -1;
 
 /* V30.4 — THE BACK/FORWARD CACHE. This is the Safari fix; the nonce above is not.
@@ -5348,6 +5431,101 @@ let currentStrategy = '';
 let currentCapital = 0;
 let _searchQ = '';
 
+/* ══ V39.5 · B1–B3 · YOUR EMPLOYER'S TRADING RULES ═══════════════════════════
+   The reader the homepage now names — "people whose career comes first" — very
+   often works under an employee trading code. A designated person at a listed
+   company cannot buy the employer's shares and sell them a month later (SEBI's
+   insider-trading code bars an opposite trade within six months and the profit is
+   disgorged); a bank, fund-house or audit-firm employee may have to pre-clear every
+   trade and hold each purchase for 30 days. A monthly book does exactly those
+   things, and nothing on this page let a member say so.
+   Three member-side tools, all ARITHMETIC on the published book, like Add money:
+     · a standing RESTRICTED LIST — names this page never sizes, buys or sells for
+       the member. Deliberately NOT a per-cycle "skip": a monthly deselect would be
+       the discretionary override the model exists to remove, so the list lives in
+       one settings card and applies to every cycle until the member changes it;
+     · a MINIMUM HOLDING PERIOD — a sale waits until N days after the member ticked
+       the buy as placed (the tick's own `t`, V36.6);
+     · a PRE-CLEARANCE LIST — this cycle's orders as plain text.
+   Equity books only: MultiAsset is an allocation across asset classes, and taking
+   one out changes what the book is. No substitute is ever named and no next-ranked
+   pick is shown — that would be model output. Everything that SIZES reads the list
+   through allocBudget(), everything that ORDERS through cycleOrders(); everything
+   that DESCRIBES THE MODEL (the names, Why these N, the sector card, the track
+   record, the benchmark) is left alone, so the published book stays readable
+   beside the member's own. CAREER_SAFE_ENABLED is the one switch if the owner's
+   adviser objects. ══════════════════════════════════════════════════════════ */
+var CAREER_SAFE_ENABLED = true;
+var CS_MAX_NAMES = 25;
+var CS_KEY = isDemo ? 'mfc_rules_demo' : 'mfc_rules_v1';
+var CS_SERVER_KEY = 'prefs::member';
+window._mfRules = { r: [], h: 0, t: '' };
+/* The same normaliser the holdings matcher uses: NSE:INFY, INFY-EQ, INFY.NS and
+   "infy" are one name; only exchange SERIES suffixes are stripped, so BAJAJ-AUTO
+   and M&M survive. */
+function _csNormSym(t){
+  return String(t == null ? '' : t).trim().replace(/^["']|["']$/g,'').toUpperCase()
+    .replace(/^(NSE|BSE|NSE_EQ|BSE_EQ)\s*[:|]\s*/,'')
+    .replace(/\.(NS|BO|NSE|BSE)$/,'')
+    .replace(/-(EQ|BE|BZ|SM|ST|BL|IL|GB|GS|N[0-9]|T[0-9])$/,'');
+}
+function _csValidSym(t){ return /^[A-Z0-9&\-]{1,20}$/.test(String(t || '')); }
+function _csHoldDays(v){ var n = Math.floor(Number(v)); return (isFinite(n) && n >= 0 && n <= 365) ? n : 0; }
+function _csClean(o){
+  var r = [], seen = {};
+  ((o && Array.isArray(o.r)) ? o.r : []).forEach(function(t){
+    t = _csNormSym(t);
+    if (_csValidSym(t) && !seen[t] && r.length < CS_MAX_NAMES){ seen[t] = 1; r.push(t); }
+  });
+  return { r: r, h: _csHoldDays(o && o.h), t: String((o && o.t) || '').slice(0, 40) };
+}
+(function _csLoadLocal(){
+  try { var raw = localStorage.getItem(CS_KEY); if (raw) window._mfRules = _csClean(JSON.parse(raw)); } catch (e) {}
+  // ?demo=restricted — the test-only state: one carried-over name and one new buy
+  // on the list, a 30-day hold, and (see _csPrevBuyTick) one purchase 20 days old.
+  if (demoMode === 'restricted') window._mfRules = { r: ['TCS', 'RELIANCE'], h: 30, t: '' };
+})();
+function _csEquityBook(){
+  var s = String((window._currentSub && window._currentSub.strategy) || currentStrategy || '');
+  return !!s && !/multi\s*asset/i.test(s);
+}
+function _csOn(){ return CAREER_SAFE_ENABLED && _csEquityBook(); }
+function _restrictActive(){ return _csOn() && window._mfRules.r.length > 0; }
+function _isRestricted(t){
+  return _restrictActive() && window._mfRules.r.indexOf(String(t == null ? '' : t).toUpperCase()) !== -1;
+}
+/* The member's book: the published picks minus their restricted names — for the
+   surfaces that COUNT what the member holds (coverage, the sizing card, the
+   capital ladder). Sizing needs no call: allocBudget() applies the same rule. */
+function memberBook(list){
+  list = list || [];
+  return _restrictActive() ? list.filter(function(x){ return !_isRestricted(x && x.ticker); }) : list;
+}
+/* B2 — the date a sale may go ahead. The buy's own tick carries the time it was
+   ticked (V36.6); last cycle's map stays on this device (pruneBoughtKeys keeps two
+   cycles). No tick is no date, and the row says so rather than guessing. */
+function _csPrevBuyTick(ticker){
+  if (demoMode === 'restricted' && String(ticker) === 'TITAN') return new Date(Date.now() - 20 * 864e5);
+  try {
+    var d = window._bookDiff; if (!d || !d.prevKey) return null;
+    var base = 'mfc_bought_' + String(currentStrategy || 'default').replace(/[^a-z0-9]+/gi,'_') + '__';
+    var raw = localStorage.getItem(base + String(d.prevKey).replace(/[^a-z0-9]+/gi,'_'));
+    var m = raw ? JSON.parse(raw) : null, v = m && m[String(ticker)];
+    var at = (v && typeof v === 'object' && v.t) ? new Date(v.t) : null;
+    return (at && !isNaN(at.getTime())) ? at : null;
+  } catch (e) { return null; }
+}
+/* The first day the sale is allowed, or null when it already is (or no rule). */
+function _csHoldUntil(ticker){
+  var h = window._mfRules.h;
+  if (!_csOn() || !(h > 0)) return null;
+  var at = _csPrevBuyTick(ticker); if (!at) return null;
+  var until = new Date(at.getFullYear(), at.getMonth(), at.getDate() + h);
+  var now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return until > today ? until : null;
+}
+function _csUnknownBuy(ticker){ return _csOn() && window._mfRules.h > 0 && !_csPrevBuyTick(ticker); }
+
 // V12.5: positions are sized by each pick's MODEL WEIGHT (weight_pct), not split
 // equally. For the equal-weight equity strategies every weight is identical, so this
 // reduces exactly to capital/N (those strategies are unchanged). For the composite-
@@ -5371,6 +5549,13 @@ function sharesFor(stock) {
 }
 
 function allocBudget(stock, list, capital) {
+  // V39.5 — B1: a name on the member's restricted list gets no money, and the rest
+  // re-spread over what is left by their model weights — which is exactly what the
+  // lines below do when handed the shorter list. All 32 sizing paths inherit it.
+  if (_restrictActive()) {
+    if (stock && _isRestricted(stock.ticker)) return 0;
+    list = (list || []).filter(function (x) { return !_isRestricted(x && x.ticker); });
+  }
   const n = (list && list.length) || 1;
   const totalW = sumWeights(list);
   if (totalW <= 0) return capital / n;            // no weights anywhere → equal split
@@ -5793,6 +5978,15 @@ function addCycleToCalendar(){
   try {
     var ev = _cycCalEvents();
     if (!ev.length) return;
+    _downloadIcs(ev, 'reminders', 'reminder');
+  } catch (e) {}
+}
+/* V39.5 — the writer, shared: the cycle reminders (V37.5), the advance-tax dates
+   (B5) and a sale held back by the member's holding period (B2). An event may
+   carry its own `alarm` (an RFC 5545 duration); the default is 9 am on the day. */
+function _downloadIcs(ev, fileTag, noun){
+  try {
+    if (!ev || !ev.length) return;
     var esc = function(t){ return String(t).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); };
     var now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
     var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//MindForge Capital//Member dashboard//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
@@ -5801,7 +5995,7 @@ function addCycleToCalendar(){
         'DTSTART;VALUE=DATE:' + e.d0, 'DTEND;VALUE=DATE:' + e.d1,
         'SUMMARY:' + esc(e.title), 'DESCRIPTION:' + esc(e.desc), 'URL:https://mindforgecapital.com/dashboard.html',
         'TRANSP:TRANSPARENT',
-        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(e.title), 'TRIGGER:PT9H', 'END:VALARM',
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(e.title), 'TRIGGER:' + (e.alarm || 'PT9H'), 'END:VALARM',
         'END:VEVENT');
     });
     lines.push('END:VCALENDAR');
@@ -5810,10 +6004,11 @@ function addCycleToCalendar(){
     var blob = new Blob([lines.map(fold).join('\r\n') + '\r\n'], { type:'text/calendar;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'mindforge-reminders-' + ev[0].d0 + '.ics';
+    a.download = 'mindforge-' + (fileTag || 'reminders') + '-' + ev[0].d0 + '.ics';
     document.body.appendChild(a); a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1500);
-    showToast('Calendar file ready — open it to add ' + ev.length + ' reminder' + (ev.length === 1 ? '' : 's'));
+    noun = noun || 'reminder';
+    showToast('Calendar file ready — open it to add ' + ev.length + ' ' + noun + (ev.length === 1 ? '' : 's'));
   } catch (e) {}
 }
 
@@ -6491,6 +6686,10 @@ function renderDashboard(sub, stocks) {
   setupCapitalCalculator(stocks, currentStrategy);
   renderVerified(currentStrategy);   // V31.0 — broker-verified account, per book
   renderTable(stocks);
+  try { csRender(); } catch (e) {}   // V39.5 — B1–B3: the rules card
+  // V39.5 — the rules, from the member's row when the backend keeps them. Not awaited:
+  // the page renders from this device's copy and re-renders only if the server knew more.
+  csSyncLoad().then(function (changed) { if (changed) csApplyEverywhere(); else { try { csRender(); } catch (e) {} } });
   renderSectorChips();  // V5.2 #20: filter chips above the table
   restoreSort();        // V5.2 #1: re-apply user's last sort preference
   // V10.6 fix: a refresh / strategy switch rebuilt the rows fully visible while
@@ -6657,6 +6856,13 @@ function renderPortfolioMap(stocks) {
   const grid = document.getElementById('pmap-grid');
   const sub  = document.getElementById('pmap-sub');
   if (!card || !grid) return;
+  /* V39.5 — C1. Tile width follows model weight, so on an equal-weight book
+     (LargeMidcap, SmallMicro) this drew 10 or 15 identical tiles coloured by sector
+     — the same fact as the sector card above it and the industry chips on the
+     table, on a dashboard a time-poor member scrolls end to end. It stays where
+     the sizes differ (MultiAsset's weighted asset classes). Hidden, not deleted:
+     the ids are hooks. */
+  if (!isWeightedBook(stocks || [])) { card.style.display = 'none'; return; }
   const list = (stocks || []).filter(s => s && (s.ticker || s.company_name));
   if (!list.length) { card.style.display = 'none'; return; }
   const colorMap = buildSectorColorMap(stocks);          // canonical → matches legend
@@ -7421,7 +7627,7 @@ function setCapital(v, btn, fromInput) {
 }
 
 function refreshSizeSummary() {
-  const n = stocksData.length || 1;
+  const n = memberBook(stocksData).length || 1;   // V39.5 — restricted names are not in the member's book
   let totalAlloc = 0;
   // V28.1: each Allocation cell prints fmtINR(amt), i.e. Math.round of its own
   // amount, while this summed the raw floats and rounded once at the end — so
@@ -7497,7 +7703,8 @@ function refreshCoverage() {
   try {
     const box = document.getElementById('cvg');
     if (!box) return;
-    const list = stocksData || [];
+    const list = memberBook(stocksData || []);   // V39.5 — a restricted name is out on purpose, not short of capital
+    const nRs = (stocksData || []).length - list.length;
     const priced = list.filter(s => (Number(s.recommended_price) || 0) > 0);
     if (!priced.length || !(currentCapital > 0)) { box.style.display = 'none'; return; }
 
@@ -7525,7 +7732,7 @@ function refreshCoverage() {
 
     let note;
     if (!short) {
-      note = 'Every pick in this cycle is buyable at this capital. What stays in cash is '
+      note = (nRs > 0 ? 'Every pick in your book' : 'Every pick in this cycle') + ' is buyable at this capital. What stays in cash is '
            + 'whole-share rounding only &mdash; no order can be part of a share.';
     } else {
       // When nothing is buyable, naming four of the twenty-five is noise — the only
@@ -7542,6 +7749,8 @@ function refreshCoverage() {
            + '<span class="cvg-names">' + shown + more + '</span> '
            + 'All <b>' + n + '</b> become buyable from <b>' + fmtMoney(need) + '</b>.';
     }
+    if (nRs > 0) note += ' <b>' + nRs + '</b> ' + (nRs === 1 ? 'name is' : 'names are') +
+      ' on your restricted list and left out on purpose &mdash; their weight is spread across the rest.';
     document.getElementById('cvg-note').innerHTML = note;
     box.style.display = '';
   } catch (e) { /* sizing card must survive a coverage failure */ }
@@ -7678,7 +7887,7 @@ function refreshDrift() {
    V28.1 rupee totals ended up disagreeing.
    ══════════════════════════════════════════════════════════════════════════ */
 function _bookAt(capital) {
-  const list = stocksData || [];
+  const list = memberBook(stocksData || []);   // V39.5
   if (!(capital > 0) || !list.length) return null;
   let buyable = 0, priced = 0, alloc = 0, total = 0, modelSum = 0;
   const held = [];
@@ -7931,6 +8140,7 @@ function heldWeights(capital) {
     read: function (s, amt) {
       const w = Number(s.weight_pct) || 0;
       if (!ok || !(w > 0)) return null;
+      if (_isRestricted(s.ticker)) return null;   // V39.5 — out on purpose, so no gap to draw
       const actual = amt / total * 100;
       const target = w / modelSum * 100;
       return { actual: actual, target: target, bps: Math.round((actual - target) * 100),
@@ -7984,15 +8194,16 @@ function updateAllocationCells() {
     const price = Number(s.recommended_price) || 0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
     const amt = shares * price;
+    const rs = _isRestricted(s.ticker);   // V39.5 — a dash, never "0 shares", for a name left out on purpose
     const allocCell = document.querySelector('tr[data-row="'+i+'"] .alloc-amt');
     const sharesCell = document.querySelector('tr[data-row="'+i+'"] .shares');
-    if (allocCell) allocCell.textContent = fmtMoney(amt);
-    if (sharesCell) sharesCell.innerHTML = '<span class="qty">' + shares + '</span>';
+    if (allocCell) allocCell.textContent = rs ? '\u2014' : fmtMoney(amt);
+    if (sharesCell) sharesCell.innerHTML = '<span class="qty">' + (rs ? '\u2014' : shares) + '</span>';
     // Mobile
     const mAlloc = document.querySelector('.stock-card[data-row="'+i+'"] .sc-alloc');
     const mShares = document.querySelector('.stock-card[data-row="'+i+'"] .sc-shares');
-    if (mAlloc) mAlloc.textContent = fmtMoney(amt);
-    if (mShares) mShares.textContent = shares;
+    if (mAlloc) mAlloc.textContent = rs ? '\u2014' : fmtMoney(amt);
+    if (mShares) mShares.textContent = rs ? '\u2014' : shares;
     /* V32.7 — the held-weight overlay is a function of the capital, so it has to
        move with it. This function patches cells in place rather than re-rendering,
        so without this the bar would freeze at whatever capital first drew it and
@@ -8141,28 +8352,29 @@ function renderTable(stocks) {
     const barPct = (w / maxW) * 100;
     const shares = entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0;
     const amt = shares * entry;
-    const held = isHeldRow(s.ticker);        // V35.4 — carried over from last cycle
+    const rs = _isRestricted(s.ticker);      // V39.5 — B1: on the member's restricted list
+    const held = !rs && isHeldRow(s.ticker);        // V35.4 — carried over from last cycle
     const movePP = held ? heldMovePP(s.ticker) : null;   // …and re-weighted, or not
-    const isBought = !held && !!bought[s.ticker];
-    const isNew = !held && !!(window._bookDiff && window._bookDiff.known);
+    const isBought = !rs && !held && !!bought[s.ticker];
+    const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known);
     const rowCls = [isBought ? 'row-bought' : '', held ? 'row-held' : '',
                     movePP != null ? 'row-reweighted' : '',
-                    isNew ? 'row-new' : ''].filter(Boolean).join(' ');
+                    isNew ? 'row-new' : '', rs ? 'row-restricted' : ''].filter(Boolean).join(' ');
     // data-row carries the CANONICAL stocksData index (not the sorted position) so
     // filterStocks/applySectorFilter/updateAllocationCells — which look up
     // stocksData[data-row] — stay correct after a column sort reorders the rows.
     const ci = stocksData.indexOf(s);
     const hr = HW.read(s, amt);
     return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
-      <td class="bought-col">${held ? heldMark(s, movePP)
+      <td class="bought-col">${rs ? _csLockMark(s) : held ? heldMark(s, movePP)
         : `<input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}>`}</td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${newTag(s)}</td>
-      <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${brokerLink(s)}</td>
+      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}</td>
+      <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${rs ? '' : brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(groupName(s))}">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></td>
       <td class="price right"><span class="px-rec">${fmtPrice(entry)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
-      <td class="alloc-amt right">${fmtAmt(amt)}</td>
-      <td class="shares right"><span class="qty">${shares}</span></td>
+      <td class="alloc-amt right">${rs ? '\u2014' : fmtAmt(amt)}</td>
+      <td class="shares right"><span class="qty">${rs ? '\u2014' : shares}</span></td>
       <td class="right">
         <div class="weight-cell">
           <div class="weight-bar-wrap" role="img" title="${heldLabel(s, hr, w)}" aria-label="${heldLabel(s, hr, w)}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(hr)}</div>
@@ -8180,12 +8392,13 @@ function renderTable(stocks) {
     const barPct = (w / maxW) * 100;
     const shares = entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0;
     const amt = shares * entry;
-    const held = isHeldRow(s.ticker);     // V35.4 — carried over from last cycle
+    const rs = _isRestricted(s.ticker);   // V39.5 — B1
+    const held = !rs && isHeldRow(s.ticker);     // V35.4 — carried over from last cycle
     const movePP = held ? heldMovePP(s.ticker) : null;
-    const isBought = !held && !!bought[s.ticker];
-    const isNew = !held && !!(window._bookDiff && window._bookDiff.known);
+    const isBought = !rs && !held && !!bought[s.ticker];
+    const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known);
     const cardCls = 'stock-card' + (isBought ? ' row-bought' : '') + (held ? ' row-held' : '') +
-                    (movePP != null ? ' row-reweighted' : '') + (isNew ? ' row-new' : '');
+                    (movePP != null ? ' row-reweighted' : '') + (isNew ? ' row-new' : '') + (rs ? ' row-restricted' : '');
     const ci = stocksData.indexOf(s);   // canonical index — keep filters/cell-updates correct after sort
     // V25.2: same stagger the desktop <tr> above gets, so the phone's holdings
     // cascade instead of popping. Capped lower (360ms) than the row's 600ms —
@@ -8220,18 +8433,18 @@ function renderTable(stocks) {
         <div class="sc-num">${i+1}</div>
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
-          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${newTag(s)}</div>
+          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${rs ? _csTag() : newTag(s)}</div>
         </div>
         <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>
       </div>
       <div class="sc-act">
-        <div class="sc-act-qty"><span class="sc-shares">${shares}</span><span class="sc-act-unit">${held ? (movePP != null ? 'shares · target' : 'shares held') : 'shares to buy'}</span></div>
+        <div class="sc-act-qty"><span class="sc-shares">${rs ? '\u2014' : shares}</span><span class="sc-act-unit">${rs ? 'not sized' : held ? (movePP != null ? 'shares · target' : 'shares held') : 'shares to buy'}</span></div>
         <div class="sc-act-wt sc-row-wt">
           <span class="sc-val">${w ? w.toFixed(1)+'%' : '—'}${gapTag(hwR)}</span>
           <div class="sc-bar-wrap weight-bar-wrap" role="img" title="${wLbl}" aria-label="${wLbl}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(hwR)}</div>
           <span class="sc-act-lbl">weight vs model</span>
         </div>
-        <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${fmtAmt(amt)}</span><span class="sc-act-lbl">allocation</span></div>
+        <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${rs ? '\u2014' : fmtAmt(amt)}</span><span class="sc-act-lbl">allocation</span></div>
       </div>
       <div class="sc-cmp">
         <span class="sc-cmp-rec">Rec <b>${fmtPrice(entry)}</b></span>
@@ -8239,12 +8452,14 @@ function renderTable(stocks) {
         <span class="sc-cmp-live">Live <span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></span>
       </div>
       <div class="sc-foot">
-        <div class="sc-bought-row">${held
+        <div class="sc-bought-row">${rs
+          ? `<span class="sc-held cs-rs-foot">${_csLockMark(s)}On your restricted list &mdash; not sized, not traded</span>`
+          : held
           ? `<span class="sc-held">${heldMark(s, movePP)}${movePP != null
                ? `Re-weighted &mdash; adjust to ${fmtAmt(amt)}`
                : 'Held &mdash; carried over'}</span>`
           : `<label><input type="checkbox" class="bought-cb" aria-label="Order placed: ${escapeHtml(s.ticker)}" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>`}</div>
-        ${brokerLink(s)}
+        ${rs ? '' : brokerLink(s)}
       </div>
     </div>`;
   }).join('');
@@ -8762,6 +8977,11 @@ function refreshActionBar(){
                 cta.setAttribute('aria-label', (many ? 'Basket ' + nextB.pos + ' of ' + plan.total + ': review ' : 'Review ') +
                   send + ' order' + (send === 1 ? '' : 's') +
                   ' on Kite, worth ' + fmtMoney(val) + ' at the recommended prices'); }
+    } else if (getBroker() === 'other' && pending.length){
+      // V39.5 — B7: no basket to send; the next job is the numbered order sheet.
+      if (lab) lab.textContent = 'Open the order sheet';
+      if (amt) amt.textContent = pending.length + ' left';
+      if (cta){ cta.onclick = abarGoToSheet; cta.setAttribute('aria-label', 'Jump to the order sheet: ' + pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left to place'); }
     } else if (isKite && plan.openN){
       // Every basket opened, orders not yet ticked: the next job is the tick-list.
       if (lab) lab.textContent = 'Tick what filled';
@@ -8946,9 +9166,16 @@ var BROKERS = {
               // Upstox search-page deeplink
               return 'https://upstox.com/search?q=' + encodeURIComponent(t);
             } },
+  /* V39.5 — B7. A member whose demat came with their salary account (a bank broker)
+     had to pick one of three brokers that were not theirs, and every row then
+     linked into the wrong app. There is no order link to build for "any broker",
+     so this entry has none: each row offers COPY (the ticker and its quantity) and
+     step 3 becomes a numbered order sheet — one ticket per line, ticked as placed. */
+  other:  { name: 'Another broker', color: '#475569', ink: '#334155', inkDark: '#cbd5e1',
+            link: function(){ return ''; }, copy: true },
 };
 function getBroker(){
-  try { var saved = localStorage.getItem('mfc-broker'); if (saved) return saved; } catch(e){}
+  try { var saved = localStorage.getItem('mfc-broker'); if (saved && BROKERS[saved]) return saved; } catch(e){}
   // V24.5: every book is NSE, so Kite is always the default (the V9.3 US-book
   // Groww fallback existed only because Kite India can't trade US tickers).
   return 'kite';
@@ -8964,12 +9191,15 @@ function setBroker(key){
   // re-applies the filters, so only the chips change.
   applySort();
   refreshHowto();           // V28.8 — step 2 names the broker that is selected
-  refreshKiteBasket();      // V34.2 — the basket button is Kite-only
+  refreshKiteBasket();      // V34.2 — the basket button is Kite-only (V39.5: the sheet is the rest)
+  try { if (window._bookDiff) renderBookChange(window._bookDiff, stocksData); } catch(e){}   // V39.5 — its rows carry the broker too
+  try { refreshActionBar(); } catch(e){}
   showToast('Broker set to ' + BROKERS[key].name);
 }
 function brokerLink(s){
   var key = getBroker();
   var b = BROKERS[key] || BROKERS.kite;
+  if (b.copy) return _csCopyBtn(s.ticker, sharesFor(s));   // V39.5 — B7
   var url = b.link(s);
   if (!url) return '';
   var safeUrl = url.replace(/"/g,'&quot;');
@@ -9011,6 +9241,30 @@ function companyCell(s){
    phone card so the two can never show a row differently. The accessible name
    carries the whole meaning — a screen reader gets the state and the instruction,
    not a bare "image". */
+/* V39.5 — B7: one order line to the clipboard — "RELIANCE 33" — for any broker. */
+function _csCopyBtn(t, qty){
+  if ((BROKERS[getBroker()] || {}).copy !== true) return '';
+  var line = String(t || '').toUpperCase() + (qty > 0 ? ' ' + qty : '');
+  return '<button type="button" class="broker-link broker-copy" data-copy="' + escapeHtml(line) +
+    '" onclick="copyOrderLine(this)" title="Copy ' + escapeHtml(line) + '" aria-label="Copy ' + escapeHtml(line) + '">Copy</button>';
+}
+function copyOrderLine(el){
+  var line = el && el.getAttribute('data-copy'); if (!line) return;
+  copyText(line).then(function(){ showToast('Copied ' + line); el.classList.add('copied'); setTimeout(function(){ el.classList.remove('copied'); }, 1400); });
+}
+function _csIso(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _csClockMark(){
+  return '<span class="cs-lock cs-clock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>';
+}
+/* V39.5 — B1: the restricted row's mark and tag. A lock, not a disabled checkbox:
+   a disabled control reads as a task taken away (the V35.4 rule for held rows). */
+function _csLockMark(s){
+  return '<span class="cs-lock" role="img" aria-label="' + escapeHtml(String(s && s.ticker || '')) +
+    ' is on your restricted list" title="On your restricted list — not sized, not traded">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>';
+}
+function _csTag(){ return '<span class="rs-tag" title="On your restricted list — this dashboard never sizes, buys or sells it for you">Restricted</span>'; }
 function heldMark(s, movePP){
   var tk = escapeHtml(s.ticker || '');
   if (movePP != null){
@@ -9481,6 +9735,262 @@ function hideItrCard(){
   var card = document.getElementById('itr-card'); if (card) card.hidden = true;
 }
 
+/* ── V39.5 · B5 · ADVANCE TAX ─────────────────────────────────────────────────
+   Salary TDS is worked out on salary alone, so a salaried member's gains here are
+   not covered by it: once the year's remaining tax is ₹10,000 or more it is due in
+   four instalments (Income-tax Act, 2025, tax year 2026-27 onwards: ss.424–425
+   carry the interest that ss.234B–234C did). The card shows for the 21 days before
+   each due date, IST, hideable per instalment. Rule and date only — nothing here is
+   computed from the member's ticks, and it is not tax advice. */
+var ADV_TAX_DUE = [[5, 15, '15%'], [8, 15, '45%'], [11, 15, '75%'], [2, 15, '100%']];   // [month index, day, cumulative share]
+function _istToday(){
+  var l = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  return new Date(l.getFullYear(), l.getMonth(), l.getDate());
+}
+function _advTaxDates(today){
+  var c = [];
+  [today.getFullYear(), today.getFullYear() + 1].forEach(function(y){
+    ADV_TAX_DUE.forEach(function(d){ c.push({ date: new Date(y, d[0], d[1]), share: d[2] }); });
+  });
+  c.sort(function(a, b){ return a.date - b.date; });
+  return c.filter(function(x){ return x.date >= today; });
+}
+function _advTaxKey(d){ return 'mfc_atx_hidden_' + _csIso(d); }
+function renderAdvTaxCard(){
+  var card = document.getElementById('atx-card');
+  if (!card) return;
+  try {
+    var today = _istToday(), nx = _advTaxDates(today)[0];
+    if (!nx){ card.hidden = true; return; }
+    var days = Math.round((nx.date - today) / 864e5);
+    var hidden = false;
+    try { hidden = localStorage.getItem(_advTaxKey(nx.date)) === '1'; } catch (e) {}
+    if (days > 21 || hidden){ card.hidden = true; return; }
+    var lbl = mfDate(nx.date, { day: 'numeric', month: 'long' });
+    var d1 = card.querySelector('[data-atx-date]'), d2 = card.querySelector('[data-atx-date2]');
+    if (d1) d1.textContent = lbl + (days === 0 ? ' — today' : days === 1 ? ' — tomorrow' : '');
+    if (d2) d2.textContent = lbl;
+    var sh = card.querySelector('[data-atx-share]'); if (sh) sh.textContent = nx.share;
+    card.hidden = false;
+  } catch (e) { card.hidden = true; }
+}
+function hideAdvTaxCard(){
+  try { var nx = _advTaxDates(_istToday())[0]; if (nx) localStorage.setItem(_advTaxKey(nx.date), '1'); } catch (e) {}
+  var c = document.getElementById('atx-card'); if (c) c.hidden = true;
+}
+function addAdvanceTaxToCalendar(){
+  try {
+    var out = _advTaxDates(_istToday()).slice(0, 4).map(function(x){
+      var next = new Date(x.date.getFullYear(), x.date.getMonth(), x.date.getDate() + 1);
+      return { title: 'Advance tax: ' + x.share + ' of the year’s tax due',
+               desc: 'If your tax for the year beyond your salary TDS comes to Rs 10,000 or more, ' + x.share +
+                     ' of it is due by today. Your broker’s Tax P&L shows the gains realised so far. Not tax advice.',
+               d0: _cycYmd(x.date), d1: _cycYmd(next), alarm: '-P6DT15H',   // 9 am, a week ahead
+               uid: 'mfc-advtax-' + _cycYmd(x.date) + '@mindforgecapital.com' };
+    });
+    _downloadIcs(out, 'advance-tax', 'date');
+  } catch (e) {}
+}
+
+/* ── V39.5 · B1–B3 · THE RULES CARD ────────────────────────────────────────── */
+window._csServer = false;   // set by csSyncLoad() from get_progress's `features`
+var _csTimer = null, _csWired = false;
+function _csPush(){
+  // Only against a backend that advertises `prefs`: an older one would count the key
+  // as a cycle and prune real progress to make room for it (the V39.3 capital rule).
+  if (isDemo || !token || !window._csServer) return;
+  if (_csTimer) clearTimeout(_csTimer);
+  _csTimer = setTimeout(function(){
+    _csTimer = null;
+    try {
+      var R = window._mfRules;
+      fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, keepalive: true,
+        body: JSON.stringify({ action: 'set_progress', token: token, cycle_key: CS_SERVER_KEY,
+          map: { prefs: { t: R.t || new Date().toISOString(), r: R.r, h: R.h } }, removed: [] }) }).catch(function(){});
+    } catch (e) {}
+  }, 1200);
+}
+/* Resolves true when the server holds NEWER rules than this device (and adopts
+   them); pushes this device's copy when it is the newer one. Never rejects. */
+function csSyncLoad(){
+  if (isDemo || !token) return Promise.resolve(false);
+  return fetch(APPS_SCRIPT_URL + '?action=get_progress&token=' + encodeURIComponent(token) + '&_=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (!d || d.status !== 'ok' || !d.progress) return false;
+      window._csServer = Array.isArray(d.features) && d.features.indexOf('prefs') >= 0;
+      if (!window._csServer) return false;
+      var e = d.progress[CS_SERVER_KEY], v = e && e.prefs, local = window._mfRules;
+      if (v && v.t && (!local.t || String(v.t) > String(local.t))){
+        var clean = _csClean(v); clean.t = String(v.t).slice(0, 40);
+        window._mfRules = clean;
+        try { localStorage.setItem(CS_KEY, JSON.stringify(clean)); } catch (e2) {}
+        return true;
+      }
+      if (local.t && (!v || String(local.t) > String(v.t || ''))) _csPush();
+      return false;
+    })
+    .catch(function(){ return false; });
+}
+function _csSave(o){
+  var clean = _csClean(o); clean.t = new Date().toISOString();
+  window._mfRules = clean;
+  if (!isDemo){ try { localStorage.setItem(CS_KEY, JSON.stringify(clean)); } catch (e) {} }   // a sample saves nothing
+  _csPush();
+  csApplyEverywhere();
+}
+/* One re-render of everything the rules move: the table (in its current sort and
+   filter), the change card, the sizing card and all it drives, the headline. */
+function csApplyEverywhere(){
+  try { applySort(); } catch (e) { try { renderTable(stocksData); } catch (e2) {} }
+  try { if (window._bookDiff) renderBookChange(window._bookDiff, stocksData); } catch (e) {}
+  try { refreshSizeSummary(); } catch (e) {}
+  try { if (window._livePx) renderProfitHeadline(); } catch (e) {}
+  try { csRender(); } catch (e) {}
+  try { refreshActionBar(); } catch (e) {}
+}
+function _csNameKey(n){
+  return String(n == null ? '' : n).toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\b(limited|ltd|pvt|private|company|co|corporation|corp|inc|the)\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function _csResolve(text){
+  var raw = String(text || '').trim(); if (!raw) return null;
+  var list = stocksData || [], sym = _csNormSym(raw);
+  var hit = list.filter(function(x){ return String(x.ticker).toUpperCase() === sym; })[0];
+  if (!hit){ var want = _csNameKey(raw); if (want) hit = list.filter(function(x){ return _csNameKey(x.company_name) === want; })[0]; }
+  if (hit) return { t: String(hit.ticker).toUpperCase(), name: hit.company_name || '', inBook: true };
+  return _csValidSym(sym) ? { t: sym, name: '', inBook: false } : null;
+}
+function csAdd(text){
+  var msg = document.getElementById('cs-msg'), R = window._mfRules, hit = _csResolve(text);
+  var say = function(t){ if (msg) msg.textContent = t; };
+  if (!hit){ say('That doesn’t look like an NSE symbol — use the one your broker shows in your holdings.'); return false; }
+  if (R.r.indexOf(hit.t) !== -1){ say(hit.t + ' is already on your list.'); return false; }
+  if (R.r.length >= CS_MAX_NAMES){ say('The list holds up to ' + CS_MAX_NAMES + ' names.'); return false; }
+  _csSave({ r: R.r.concat([hit.t]), h: R.h });
+  say('Added ' + hit.t + (hit.name && hit.name !== hit.t ? ' — ' + hit.name : '') + (hit.inBook
+    ? '. It is in this cycle’s book, so your orders were re-sized without it.'
+    : '. It is not in this cycle’s book; the rule applies whenever the model picks it.'));
+  return true;
+}
+function csRemove(t){
+  var R = window._mfRules;
+  _csSave({ r: R.r.filter(function(x){ return x !== t; }), h: R.h });
+  var msg = document.getElementById('cs-msg'); if (msg) msg.textContent = 'Removed ' + t + '.';
+}
+function csSetHold(days){ var R = window._mfRules; _csSave({ r: R.r, h: _csHoldDays(days) }); }
+function _csPreclearText(){
+  var oc = cycleOrders(), placed = loadBought(currentStrategy) || {};
+  var open = oc.all.filter(function(o){ return o.qty >= 1 && !placed[orderKey(o)]; });
+  var hb = oc.holdBack || [];
+  if (!open.length && !hb.length) return '';
+  var byT = {}; (stocksData || []).forEach(function(x){ byT[String(x.ticker).toUpperCase()] = x; });
+  var id = function(t, n){ var x = byT[t]; return ((x && x.company_name) || n || t) + ' (NSE: ' + t + ')'; };
+  var w = Math.max.apply(null, open.map(function(o){ return id(o.ticker, o.name).length; }).concat([10]));
+  var pad = function(t){ return t + new Array(Math.max(1, w - t.length + 3)).join(' '); };
+  var lines = open.map(function(o){
+    return (o.side === 'SELL' ? 'SELL  ' : 'BUY   ') + pad(id(o.ticker, o.name)) + o.qty + ' shares   ~' + fmtMoney(Math.round(o.qty * (o.price || 0)));
+  });
+  hb.forEach(function(h){
+    lines.push('SELL  ' + pad(id(h.ticker, h.name)) + (h.qty > 0 ? h.qty + ' shares   ' : '') + 'on or after ' + mfDate(h.until, { day: 'numeric', month: 'short', year: 'numeric' }));
+  });
+  return 'Orders I intend to place in my own account — ' + mfDate(new Date(), { day: 'numeric', month: 'short', year: 'numeric' }) + '\n' + lines.join('\n');
+}
+function csCopyPreclear(){
+  var t = _csPreclearText();
+  if (!t){ showToast('No orders left to pre-clear this cycle'); return; }
+  copyText(t).then(function(){ showToast('Copied — paste it into your pre-clearance request'); });
+}
+function csHoldToCalendar(ticker){
+  try {
+    var h = (cycleOrders().holdBack || []).filter(function(x){ return x.ticker === ticker; })[0];
+    if (!h) return;
+    var next = new Date(h.until.getFullYear(), h.until.getMonth(), h.until.getDate() + 1);
+    _downloadIcs([{ title: 'Holding period ends: you may sell ' + h.ticker, desc: 'Your minimum holding period for ' + h.ticker +
+      ' ends today. Open your dashboard to place the sale: https://mindforgecapital.com/dashboard.html',
+      d0: _cycYmd(h.until), d1: _cycYmd(next), uid: 'mfc-hold-' + h.ticker.replace(/[^A-Z0-9]/g, '') + '-' + _cycYmd(h.until) + '@mindforgecapital.com' }], 'holding-period', 'reminder');
+  } catch (e) {}
+}
+function csOpenCard(ev){
+  if (ev) ev.preventDefault();
+  var card = document.getElementById('cs-card'); if (!card || card.hidden) return;
+  var prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  card.scrollIntoView({ block: 'start' });
+  document.documentElement.style.scrollBehavior = prev;
+  var inp = document.getElementById('cs-in'); if (inp) try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); }
+}
+function csDismissNudge(){
+  try { localStorage.setItem('mfc_rules_nudge_off', '1'); } catch (e) {}
+  var n = document.getElementById('cs-nudge'); if (n) n.hidden = true;
+}
+function _csWire(){
+  if (_csWired) return; _csWired = true;
+  var form = document.getElementById('cs-add'), inp = document.getElementById('cs-in');
+  if (form && inp) form.addEventListener('submit', function(e){ e.preventDefault(); if (csAdd(inp.value)) inp.value = ''; });
+  var ul = document.getElementById('cs-list');
+  if (ul) ul.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-cs-rm]'); if (b) csRemove(b.getAttribute('data-cs-rm')); });
+  var sel = document.getElementById('cs-hold-sel'), num = document.getElementById('cs-hold-n');
+  if (sel && num){
+    sel.addEventListener('change', function(){
+      if (sel.value === 'other'){ num.hidden = false; try { num.focus(); } catch (e) {} return; }
+      num.hidden = true; csSetHold(sel.value);
+    });
+    num.addEventListener('change', function(){ var v = _csHoldDays(num.value); if (v > 0) csSetHold(v); });
+  }
+}
+function csRender(){
+  var card = document.getElementById('cs-card'), nudge = document.getElementById('cs-nudge');
+  var on = _csOn() && (stocksData || []).length > 0;
+  if (card) card.hidden = !on;
+  if (!on){ if (nudge) nudge.hidden = true; return; }
+  _csWire();
+  var R = window._mfRules, list = stocksData || [];
+  var st = document.getElementById('cs-status'), bits = [];
+  if (R.r.length) bits.push(R.r.length + (R.r.length === 1 ? ' name restricted' : ' names restricted'));
+  if (R.h > 0) bits.push(R.h + '-day minimum hold');
+  if (st){ st.textContent = bits.length ? bits.join(' · ') : 'None set'; st.classList.toggle('is-set', bits.length > 0); }
+  var byT = {}; list.forEach(function(x){ byT[String(x.ticker).toUpperCase()] = x; });
+  var ul = document.getElementById('cs-list');
+  if (ul) ul.innerHTML = R.r.map(function(t){
+    var x = byT[t];
+    return '<li class="cs-item">' + _csLockMark({ ticker: t }) + '<span class="cs-item-t">' + escapeHtml(t) + '</span>' +
+      (x && x.company_name ? '<span class="cs-item-n">' + escapeHtml(x.company_name) + '</span>' : '') +
+      (x ? '<span class="cs-item-in">in this cycle’s book</span>' : '') +
+      '<button type="button" class="cs-x" data-cs-rm="' + escapeHtml(t) + '" aria-label="Remove ' + escapeHtml(t) + ' from your restricted list">Remove</button></li>';
+  }).join('');
+  var sel = document.getElementById('cs-hold-sel'), num = document.getElementById('cs-hold-n');
+  if (sel && num && document.activeElement !== num){
+    var preset = ['0', '30', '60', '90'].indexOf(String(R.h)) !== -1;
+    sel.value = preset ? String(R.h) : 'other';
+    num.hidden = preset;
+    if (!preset) num.value = R.h;
+  }
+  var warn = document.getElementById('cs-hold-warn');
+  if (warn){
+    warn.hidden = !(R.h > 60);
+    if (R.h > 60) warn.textContent = 'A monthly book sells about half its names each month. With a ' + R.h +
+      '-day minimum, most sales will wait — this strategy may not suit your employer’s rules.';
+  }
+  var cost = document.getElementById('cs-cost'), nb = list.length, nIn = memberBook(list).length, nRs = nb - nIn;
+  if (cost){
+    var ln = [];
+    if (nRs > 0) ln.push('Your book now differs from the model: <b>' + nIn + ' of ' + nb + '</b> names, each sized a little larger. ' +
+      'The published record, the live figures and the verified account are the model’s, not your book’s.');
+    if (nRs > 0 && nIn * 2 < nb) ln.push('<b>Fewer than half the model’s names are left</b> — your book no longer resembles this strategy, and it may not suit your rules.');
+    cost.innerHTML = ln.join(' '); cost.hidden = !ln.length;
+  }
+  var pre = document.getElementById('cs-pre'), cp = document.getElementById('cs-copy'), txt = _csPreclearText();
+  if (pre){ pre.textContent = txt; pre.hidden = !txt; }
+  if (cp) cp.disabled = !txt;
+  var sv = document.getElementById('cs-saved');
+  if (sv) sv.textContent = isDemo ? 'A sample — nothing here is saved.' : (window._csServer ? 'Saved to your account.' : 'Saved on this device.');
+  if (nudge){
+    var off = false; try { off = localStorage.getItem('mfc_rules_nudge_off') === '1'; } catch (e) {}
+    nudge.hidden = isDemo || off || R.r.length > 0 || R.h > 0;
+  }
+}
+
 function refreshBoughtProgress() {
   try { renderMyPosition(); } catch (e) {}
   const map = loadBought(currentStrategy);
@@ -9518,6 +10028,8 @@ function refreshBoughtProgress() {
   refreshKiteBasket();      // V34.2 — a tick removes that row from the basket
   try { var ap = document.getElementById('hs-allplaced'); if (ap) ap.hidden = !(total > 0 && bought < total); } catch (e) {}
   try { renderItrCard(); } catch (e) {}
+  try { renderAdvTaxCard(); } catch (e) {}   // V39.5 — B5
+  try { csRender(); } catch (e) {}           // V39.5 — the pre-clearance list follows the ticks
 }
 
 // V29.6 — "Why these 25": how the member's book was BUILT.
@@ -9886,7 +10398,76 @@ if (document.readyState === 'loading') {
   mfcHandleKiteReturn();
 }
 
+/* V39.5 — B7. THE ORDER SHEET, FOR A BROKER WITHOUT BASKETS.
+   The same kiteBasketPlan() order the Kite band sends (sells first, V35.4), as a
+   numbered list: one ticket per line, a Copy per line, and a tick bound to the SAME
+   map the picks table and the change card write — so the progress bar, the hero line
+   and the sticky bar move together whichever surface the member ticks on. */
+function renderOrderSheet(){
+  var sh = document.getElementById('osheet');
+  if (!sh) return;
+  try {
+    if ((BROKERS[getBroker()] || {}).copy !== true) { sh.hidden = true; return; }
+    var oc = cycleOrders(), placed = loadBought(currentStrategy) || {};
+    var rows = oc.all.filter(function(o){ return o.qty >= 1; });
+    if (!rows.length) { sh.hidden = true; return; }
+    var left = rows.filter(function(o){ return !placed[orderKey(o)]; }).length;
+    var facts = document.getElementById('osheet-facts');
+    if (facts) facts.textContent = left ? (left + ' of ' + rows.length + ' left \u00b7 one ticket per line, in this order')
+                                        : ('All ' + rows.length + ' placed \u2014 done for this cycle');
+    var list = document.getElementById('osheet-list');
+    if (list) list.innerHTML = rows.map(function(o, i){
+      var k = orderKey(o), done = !!placed[k];
+      var line = o.ticker + ' ' + o.qty;
+      return '<li class="os-row' + (done ? ' is-done' : '') + '">' +
+        '<span class="os-n">' + (i + 1) + '</span>' +
+        '<span class="os-side ' + (o.side === 'SELL' ? 'is-sell' : 'is-buy') + '">' + o.side + '</span>' +
+        '<span class="os-t">' + escapeHtml(o.ticker) + '</span>' +
+        '<span class="os-meta">' + o.qty + ' share' + (o.qty === 1 ? '' : 's') + ' \u00b7 ~' + escapeHtml(fmtMoney(Math.round(o.qty * (o.price || 0)))) + '</span>' +
+        '<button type="button" class="broker-link broker-copy os-copy" data-copy="' + escapeHtml(line) + '" onclick="copyOrderLine(this)" aria-label="Copy ' + escapeHtml(line) + '">Copy</button>' +
+        '<label class="os-tick"><input type="checkbox" data-okey="' + escapeHtml(k) + '"' + (done ? ' checked' : '') +
+          ' onchange="toggleSheetOrder(this)" aria-label="' + escapeHtml(o.side === 'SELL' ? 'Sold' : 'Bought') + ': ' + escapeHtml(line) + '"><span>Placed</span></label>' +
+        '</li>';
+    }).join('');
+    var hb = (oc.holdBack || []).length;
+    var note = document.getElementById('osheet-note');
+    if (note) note.innerHTML = 'On your broker&rsquo;s own order screen: NSE, delivery (CNC), market or a limit near the price shown. ' +
+      'Sells first &mdash; their proceeds fund the buys.' +
+      (hb ? ' <b>' + hb + '</b> sale' + (hb === 1 ? ' is' : 's are') + ' held back by your holding period and ' + (hb === 1 ? 'is' : 'are') + ' not on this sheet.' : '') +
+      ' <button type="button" class="kb-capbtn" onclick="copyOrderSheet()">Copy the whole list</button>';
+    sh.hidden = false;
+  } catch (e) { sh.hidden = true; }
+}
+function toggleSheetOrder(cb){
+  var key = cb.getAttribute('data-okey'); if (!key) return;
+  var map = loadBought(currentStrategy);
+  // a BUY key is the bare ticker, and records {p,q,t} exactly as the table's tick does
+  if (cb.checked) map[key] = key.indexOf('SELL:') === 0 ? true : boughtValueFor(key, map[key]);
+  else delete map[key];
+  saveBought(currentStrategy, map);
+  document.querySelectorAll('[data-ticker="' + key.replace(/"/g, '\\"') + '"] .bought-cb, input[data-okey="' + key.replace(/"/g, '\\"') + '"]').forEach(function(x){ if (x !== cb) x.checked = cb.checked; });
+  document.querySelectorAll('[data-ticker="' + key.replace(/"/g, '\\"') + '"]').forEach(function(el){ el.classList.toggle('row-bought', cb.checked); });
+  refreshBoughtProgress();
+}
+function copyOrderSheet(){
+  var oc = cycleOrders(), placed = loadBought(currentStrategy) || {};
+  var rows = oc.all.filter(function(o){ return o.qty >= 1 && !placed[orderKey(o)]; });
+  if (!rows.length) { showToast('Nothing left to place'); return; }
+  var w = rows.reduce(function(m, o){ return Math.max(m, o.ticker.length); }, 6);
+  var txt = rows.map(function(o){ return (o.side === 'BUY' ? 'BUY  ' : 'SELL ') + o.ticker + new Array(Math.max(1, w - o.ticker.length + 2)).join(' ') + o.qty; }).join('\n');
+  copyText(txt).then(function(){ showToast('Copied ' + rows.length + ' order' + (rows.length === 1 ? '' : 's')); });
+}
+function abarGoToSheet(){
+  var el = document.getElementById('osheet');
+  if (!el || el.hidden) return abarGoToPicks();
+  var prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  el.scrollIntoView({ block:'start' });
+  document.documentElement.style.scrollBehavior = prev;
+}
+
 function refreshKiteBasket() {
+  try { renderOrderSheet(); } catch (e) {}   // V39.5 — B7: the other brokers' step 3
   try {
     var wrap = document.getElementById('kbsk');
     if (!wrap) return;
@@ -10234,13 +10815,17 @@ function refreshSession(map) {
     const leftWord = left === 1 ? ' buy order' : ' buy orders';
     const more = inds.length > SHOWN ? ' (showing the top ' + SHOWN + ' of ' + inds.length + ')' : '';
     const spread = '<b>' + inds.length + '</b> of <b>' + nFull + '</b> ' + axisWords;
+    // V39.5 — with restricted names out, the finished book is the member's, not the model's.
+    const _rsBook = (stocksData || []).length > list.filter(s => !_isRestricted(s.ticker)).length;
+    const _finished = _rsBook ? 'your finished book (the model less your restricted names) peaks in any one '
+                              : 'the finished model caps any one ';
     document.getElementById('sess-note').innerHTML = hot
       ? ('Right now the book you actually hold is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) +
-         ', across ' + spread + ' &mdash; the finished model caps any one ' + axisWord + ' at <b>' + capPct.toFixed(1) +
+         ', across ' + spread + ' &mdash; ' + _finished + axisWord + ' at <b>' + capPct.toFixed(1) +
          '%</b> (dashed line)' + more + '. Placing the remaining <b>' + left + '</b>' + leftWord +
          ' brings it back; spreading them across ' + axisWords + ' as you go keeps it closer on the way.')
       : ('Your part-placed book is <b>' + top.pct.toFixed(0) + '%</b> ' + escapeHtml(top.nm) + ' at its heaviest, across ' +
-         spread + ' &mdash; close to the finished model’s <b>' + capPct.toFixed(1) + '%</b> ceiling' + more +
+         spread + ' &mdash; close to ' + (_rsBook ? 'your finished book’s' : 'the finished model’s') + ' <b>' + capPct.toFixed(1) + '%</b> ceiling' + more +
          '. <b>' + left + '</b>' + leftWord + ' still to place.');
     box.style.display = '';
   } catch (e) { /* a mid-session read must never break the table */ }
@@ -10371,6 +10956,7 @@ function exportCSV() {
        assumption the change card and the picks table were both carrying. */
     const mv = known ? heldMovePP(s.ticker) : null;
     const row = [
+      _isRestricted(s.ticker) ? 'RESTRICTED' :   // V39.5 — B1: never sized, never traded
       known ? (addSet[s.ticker] ? 'BUY' : (mv != null ? 'REWEIGHT' : 'HOLD')) : 'BUY',
       i+1,
       JSON.stringify(s.company_name||''),
@@ -10390,10 +10976,12 @@ function exportCSV() {
      than one that never carried them. */
   if (known && diff.removed.length){
     const pp = diff.prevPos || {};
-    diff.removed.forEach((t, j) => {
+    // V39.5 — no row for a restricted name; a held-back sale carries its date.
+    diff.removed.filter(t => !_isRestricted(t)).forEach((t, j) => {
       const p = pp[t] || {};
+      const until = _csHoldUntil(t);
       lines.push([
-        'SELL', rowsOut.length + j + 1,
+        until ? 'SELL ON OR AFTER ' + _csIso(until) : 'SELL', rowsOut.length + j + 1,
         JSON.stringify(p.n || t), JSON.stringify(t), JSON.stringify('—'),
         (Number(p.rec)||0).toFixed(2), '0.00', '0.00', (Number(p.qty)||0)
       ].join(','));
@@ -10493,7 +11081,8 @@ function _setHowToStep3(orders){
   if (nS) bits.push('sell the ' + nS + (nS === 1 ? ' name' : ' names') + ' marked above');
   if (nB) bits.push('buy the ' + nB + ' new ' + (nB === 1 ? 'one' : 'ones') + ' at the Shares quantity in the table');
   p.textContent = 'Only ' + (nB + nS) + ' order' + (nB + nS === 1 ? '' : 's') + ' this cycle — ' +
-    bits.join(', then ') + '. Everything else you already hold, untouched.' + base;
+    bits.join(', then ') + '. Everything else you already hold, untouched.' + base +
+    ((BROKERS[getBroker()] || {}).copy === true ? ' The order sheet below lists them in order, one ticket per line.' : '');
 }
 
 /* V35.3 — "Your picks stay fixed for your subscription" was told to BOTH plans,
@@ -11032,17 +11621,28 @@ function cycleOrders(){
              y:s.yahoo_ticker || '', price:price, qty:qty, stock:s };
   };
 
+  // V39.5 — B1/B2. A restricted name gets no order on either side, ever; a sale
+  // still inside the member's minimum holding period waits in `holdBack` (with its
+  // date) and joins no list, basket, count or CSV until that date.
+  out.holdBack = [];
+  var okBuy = function(s){ return !_isRestricted(s && s.ticker); };
   if (!diff || !diff.known){
-    out.buys = list.map(mkBuy);
+    out.buys = list.filter(okBuy).map(mkBuy);
     out.all  = out.buys.slice();
     return out;
   }
 
   out.known = true;
-  out.buys = diff.added.map(function(t){ return byTicker[t]; }).filter(Boolean).map(mkBuy);
+  out.buys = diff.added.map(function(t){ return byTicker[t]; }).filter(Boolean).filter(okBuy).map(mkBuy);
 
   var pp = diff.prevPos || {};
-  out.sells = diff.removed.map(function(t){
+  var sellable = diff.removed.filter(function(t){
+    if (_isRestricted(t)) return false;
+    var until = _csHoldUntil(t);
+    if (until){ var p0 = pp[t] || {}; out.holdBack.push({ ticker:String(t).toUpperCase(), name:p0.n || t, qty:Number(p0.qty) || 0, until:until }); return false; }
+    return true;
+  });
+  out.sells = sellable.map(function(t){
     var p = pp[t] || {};
     var qty = Number(p.qty) || 0;
     if (qty > 0) out.sellSized++; else out.sellUnsized++;
@@ -11147,7 +11747,7 @@ var CYCLE_COST_BPS = {
   sm: { bps: 20, src: 'modelled' },
   ma: { bps: 10, src: 'assumed'  }
 };
-var STCG_RATE = 0.20;   // s.111A, the post-23-Jul-2024 regime; config.py TAX.STCG_RATE
+var STCG_RATE = 0.20;   // s.111A (s.196 of the Income-tax Act, 2025 from Apr 2026), the post-23-Jul-2024 regime; config.py TAX.STCG_RATE
 
 /* Three legs, because there are three ways money moves in a rebalance:
      BUY      the names joining, at their published price x the member's shares
@@ -11190,7 +11790,9 @@ function renderCycleCost(){
      be printed beside the words "realised loss". Where any leg is unpriced the
      tile says so instead. */
   var sellVal = 0, gain = 0, gainKnown = true, sellSized = 0;
-  diff.removed.forEach(function(t){
+  // V39.5 — a restricted name is never sold here, and a held-back sale is not this cycle's.
+  var goneNow = diff.removed.filter(function(t){ return !_isRestricted(t) && !_csHoldUntil(t); });
+  goneNow.forEach(function(t){
     var p = pp[t] || {}, qty = Number(p.qty) || 0, rec = Number(p.rec) || 0;
     if (!(qty > 0) || !(rec > 0)){ gainKnown = false; return; }
     sellSized++;
@@ -11199,8 +11801,8 @@ function renderCycleCost(){
     sellVal += qty * live;
     gain    += qty * (live - rec);
   });
-  if (diff.removed.length && !sellSized) gainKnown = false;
-  if (!diff.removed.length) gainKnown = true;   // nothing sold, nothing realised
+  if (goneNow.length && !sellSized) gainKnown = false;
+  if (!goneNow.length) gainKnown = true;   // nothing sold, nothing realised
 
   // REBALANCE leg — held names whose model weight moved.
   var rebFrac = 0, rebKnown = false, wDelta = 0, wSeen = 0;
@@ -11243,7 +11845,7 @@ function renderCycleCost(){
              : 'assumed for liquid&nbsp;ETFs')) +
       (!gainKnown
         ? cell('Short-term tax', '&mdash;',
-               diff.removed.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
+               goneNow.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
         : gain > 0.5
           ? cell('Short-term tax', '~' + fmtMoney(Math.round(tax)),
                  '20% on ' + fmtMoney(Math.round(gain)) + ' realised')
@@ -11300,9 +11902,22 @@ function renderHeroJob(){
   var total = (stocksData || []).length;
   if (!diff || !diff.known || !total){ el.textContent = HERO_SUB_DEFAULT; return; }
 
-  var nIn = diff.added.length, nOut = diff.removed.length, nHold = diff.held.length;
+  /* V39.5 — B1/B2: counted from the member's order list, not the raw diff — a
+     restricted name gets no order and a held-back sale is not today's. With no
+     rule set these are exactly the diff's counts, so the line is unchanged. */
+  var _ocH = cycleOrders();
+  var nIn = _ocH.buys.length, nOut = _ocH.sells.length;
+  var nHold = diff.held.filter(function(t){ return !_isRestricted(t); }).length;
+  var nHb = (_ocH.holdBack || []).length;
+  total = memberBook(stocksData || []).length || total;
   var orders = nIn + nOut;
   var plural = function(n, one, many){ return n + '\u00a0' + (n === 1 ? one : many); };
+  if (!orders && nHb){
+    var _first = _ocH.holdBack.map(function(h){ return h.until; }).sort(function(a, b){ return a - b; })[0];
+    el.textContent = 'Nothing to place today \u2014 ' + (nHb === 1 ? 'one sale waits' : nHb + '\u00a0sales wait') +
+      ' for your holding period' + (_first ? ', until ' + mfDate(_first, { day:'numeric', month:'short' }) : '') + '.';
+    return;
+  }
 
   /* A weighted book can have zero name changes and still be a full rebalance —
      the same case the Orders tile handles with "weights to adjust". Counting the
@@ -11366,7 +11981,8 @@ function renderHeroJob(){
   }
   el.textContent = lead + '. ' +
     (nHold ? 'The other ' + nHold + ' of your ' + total + ' carry over untouched.'
-           : 'Everything else is already in place.');
+           : 'Everything else is already in place.') +
+    (nHb ? ' ' + (nHb === 1 ? 'One sale waits' : nHb + '\u00a0sales wait') + ' for your holding period.' : '');
 }
 
 /* ── V37.6 · THE ORDERS TILE COUNTS WHAT IS LEFT ──────────────────────────────
@@ -11496,6 +12112,22 @@ function renderBookChange(diff, stocks){
   }
 
   if (!card) return;
+  /* V39.5 — B1/B2: what the member's own rules take out of this cycle. Counted from
+     the same cycleOrders() the basket and the tick-list read, so the sentence, the
+     rows below and the order count cannot disagree. */
+  var ocB = cycleOrders(), hbBy = {};
+  (ocB.holdBack || []).forEach(function(h){ hbBy[h.ticker] = h; });
+  var rsN = diff.added.concat(diff.removed, diff.held).filter(function(t){ return _isRestricted(t); }).length;
+  var hbN = (ocB.holdBack || []).length;
+  var csBits = [];
+  if (rsN) csBits.push('<strong>' + rsN + '</strong> ' + (rsN === 1 ? 'is' : 'are') + ' on your restricted list');
+  if (hbN) csBits.push('<strong>' + hbN + '</strong> sale' + (hbN === 1 ? ' waits' : 's wait') + ' for your holding period');
+  var csSentence = csBits.length ? ' Your rules: ' + csBits.join(' and ') + '.' : '';
+  var ordersNow = csBits.length ? ocB.all.length : orders;
+  // "…of YOUR n carry over" is the member's book once names are taken out — the hero
+  // line above says the same, so the two cannot give different counts for one thing.
+  var yourHold = rsN ? diff.held.filter(function(t){ return !_isRestricted(t); }).length : nHold;
+  var yourTotal = rsN ? (memberBook(stocks || []).length || total) : total;
   var when = document.getElementById('chg-when');
   if (when){
     var w = diff.prevWhen ? new Date(diff.prevWhen) : null;
@@ -11531,7 +12163,7 @@ function renderBookChange(diff, stocks){
     var carryPhrase = nMoved
       ? ('<strong>' + nHold + '</strong> of your ' + total + ' stay in the book, ' +
          (nMoved === nHold ? 'all of them' : '<strong>' + nMoved + '</strong> of them') + ' re-weighted')
-      : ('<strong>' + nHold + '</strong> of your ' + total + ' carry over untouched');
+      : ('<strong>' + yourHold + '</strong> of your ' + yourTotal + ' carry over untouched');
     line.innerHTML = orders === 0
       ? (nMoved
           ? 'The model kept the <strong>same ' + total + '</strong> holdings and re-scored their weights. Nothing is bought or sold outright this cycle — you are <strong>rebalancing between them</strong>.' + rotSentence
@@ -11540,8 +12172,8 @@ function renderBookChange(diff, stocks){
             : 'The model re-scored the universe and arrived at the <strong>same ' + total + '</strong> names. <strong>Nothing to trade this cycle</strong> — hold what you have.')
       : ('<strong>' + nOut + '</strong> ' + (nOut === 1 ? 'name leaves' : 'names leave') +
          ' the book and <strong>' + nIn + '</strong> ' + (nIn === 1 ? 'joins' : 'join') + ' it; ' + carryPhrase +
-         '. That is <strong>' + orders + '</strong> order' +
-         (orders === 1 ? '' : 's') + ' to place, not ' + total + '.' + rotSentence);
+         '.' + csSentence + ' That is <strong>' + ordersNow + '</strong> order' +
+         (ordersNow === 1 ? '' : 's') + ' to place, not ' + yourTotal + '.' + rotSentence);
   }
   var box = document.getElementById('chg-groups');
   if (box){
@@ -11565,6 +12197,8 @@ function renderBookChange(diff, stocks){
         var s2 = byT[t] || {};
         var rec = Number(s2.recommended_price) || 0;
         var y   = s2.yahoo_ticker || '';
+        if (_isRestricted(t)) return '<span class="chg-tk is-restricted" title="On your restricted list — not held through this dashboard">' +
+          escapeHtml(t) + '<span class="chg-tk-rs">restricted</span></span>';   // V39.5
         return '<span class="chg-tk">' + escapeHtml(t) +
           (rec > 0 && y
             ? '<span class="px-live chg-tk-px" data-px-mode="ret" data-px="' + escapeHtml(y) +
@@ -11583,10 +12217,23 @@ function renderBookChange(diff, stocks){
     var pp     = diff.prevPos || {};
     var sells  = function(list){
       if (!list.length) return '<div class="chg-none">None this cycle</div>';
+      var unknownN = 0;
       return '<div class="chg-sells">' + list.map(function(t){
         var p    = pp[t] || {};
         var qty  = Number(p.qty) || 0;
         var key  = 'SELL:' + String(t).toUpperCase();
+        // V39.5 — B1: a restricted name is never sold from here.
+        if (_isRestricted(t)) return '<div class="chg-sell cs-row is-restricted">' + _csLockMark({ ticker:t }) +
+          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+          '<span class="chg-sell-q">On your restricted list &mdash; nothing to sell here</span></span></div>';
+        // V39.5 — B2: inside the member's holding period — no tick, no link, a date.
+        var hb = hbBy[String(t).toUpperCase()];
+        if (hb) return '<div class="chg-sell cs-row is-hold">' + _csClockMark() +
+          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+            (qty > 0 ? '<span class="chg-sell-q">' + qty + ' share' + (qty === 1 ? '' : 's') + ' held</span>' : '') + '</span>' +
+          '<span class="cs-hold-when">Sell on or after <b>' + escapeHtml(mfDate(hb.until, { day:'numeric', month:'short' })) + '</b></span>' +
+          '<button type="button" class="chg-sell-lnk cs-cal" onclick="csHoldToCalendar(\'' + escapeHtml(hb.ticker) + '\')">Remind me</button></div>';
+        if (_csUnknownBuy(t)) unknownN++;
         var done = !!placed[key];
         var url  = '';
         try { url = bk.link({ ticker: t }) || ''; } catch(e){}
@@ -11598,10 +12245,13 @@ function renderBookChange(diff, stocks){
             (qty > 0 ? '<span class="chg-sell-q">' + qty + ' share' + (qty === 1 ? '' : 's') + ' held</span>' : '') +
           '</span>' +
           (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
-                 escapeHtml(bk.name) + ' &rarr;</a>' : '') +
+                 escapeHtml(bk.name) + ' &rarr;</a>' : _csCopyBtn(t, qty)) +
         '</div>';
       }).join('') + '</div>' +
-      '<div class="chg-hint">Tick each one once the sell order is placed.</div>';
+      '<div class="chg-hint">Tick each one once the sell order is placed.' +
+        (unknownN ? ' No purchase date is recorded for ' + (unknownN === 1 ? 'one of these' : unknownN + ' of these') +
+          ' &mdash; if you bought ' + (unknownN === 1 ? 'it' : 'any') + ' within your ' + window._mfRules.h +
+          '-day holding period, hold ' + (unknownN === 1 ? 'it' : 'those') + ' until the period ends.' : '') + '</div>';
     };
     /* V35.4 — ON A WEIGHT-ROTATING BOOK, "HOLD" IS NOT "DO NOTHING".
        MultiAsset keeps the same eight ETFs every month and re-scores their
@@ -11624,6 +12274,9 @@ function renderBookChange(diff, stocks){
       if (!list.length) return '<div class="chg-none">None this cycle</div>';
       return '<div class="chg-sells">' + list.map(function(t){
         var s2   = byT[t];
+        if (_isRestricted(t)) return '<div class="chg-buy cs-row is-restricted">' + _csLockMark({ ticker:t }) +   // V39.5 — B1
+          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+          '<span class="chg-sell-q">On your restricted list &mdash; not bought</span></span></div>';
         var done = !!placed[t];
         var url  = '';
         try { url = bk.link({ ticker: t }) || ''; } catch(e){}
@@ -11635,7 +12288,7 @@ function renderBookChange(diff, stocks){
             '<span class="chg-sell-q" data-buyqty="' + escapeHtml(t) + '">' + _buyQtyText(s2) + '</span>' +
           '</span>' +
           (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
-                 escapeHtml(bk.name) + ' &rarr;</a>' : '') +
+                 escapeHtml(bk.name) + ' &rarr;</a>' : _csCopyBtn(t, s2 ? sharesFor(s2) : 0)) +
         '</div>';
       }).join('') + '</div>' +
       '<div class="chg-hint">Tick each one once the buy order is placed &mdash; the same tick as the picks table below.</div>';
@@ -12203,10 +12856,15 @@ function renderProfitHeadline(){
   var absSign = absGain >= 0 ? '+' : '−';
   var absStr = fmtMoney(Math.abs(Math.round(absGain)));
   var sub = document.getElementById('pc-sub');
-  sub.innerHTML = 'Weighted return across ' + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
+  /* V39.5 — B1: with names on the member's restricted list the percentage is still the
+     MODEL's (every published holding) while the rupees are the member's own book, so
+     the line says which is which instead of letting one pass for the other. */
+  var _nRs = (stocks || []).filter(function(x){ return _isRestricted(x.ticker); }).length;
+  var _rsOut = _nRs ? ', leaving out your ' + _nRs + ' restricted name' + (_nRs === 1 ? '' : 's') + ',' : '';
+  sub.innerHTML = (_nRs ? 'The model’s weighted return across ' : 'Weighted return across ') + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
     (rebal ? ' on <strong>' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
     (window._capEntered
-      ? '. On your ' + fmtMoney(currentCapital) + ' that is <strong>' + absSign + absStr + '</strong>.'
+      ? '. On your ' + fmtMoney(currentCapital) + _rsOut + ' that is <strong>' + absSign + absStr + '</strong>.'
       // V39.3 — B4: never "your" for an amount the member did not set.
       : '. On ' + fmtMoney(currentCapital) + ', the recommended size rather than an amount you entered, that is <strong>' +
         absSign + absStr + '</strong>. <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter yours</button>');
@@ -16463,9 +17121,11 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
 
   /* ── ADD MONEY ─────────────────────────────────────────────────────────── */
   function planAdd(amount){
-    var list = stocks(), out = { orders:[], zero:[], spent:0, cash:0, live:0, n:list.length };
-    if (!list.length || !(amount > 0)) return out;
-    var rows = list.map(function(s){
+    // V39.5 — B1: planned over the member's book; a restricted pick is never bought
+    // and is not one the amount "could not reach" either.
+    var list = stocks(), mb = memberBook(list), out = { orders:[], zero:[], spent:0, cash:0, live:0, n:mb.length };
+    if (!mb.length || !(amount > 0)) return out;
+    var rows = mb.map(function(s){
       var p = priceOf(s), budget = allocBudget(s, list, amount);
       var qty = p.v > 0 ? Math.floor(budget / p.v) : 0;
       if (p.live) out.live++;
@@ -16525,12 +17185,18 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
   function planSync(parsedIn, includeOthers){
     var list = stocks(), cap = Number(currentCapital) || 0;
     var parsed = resolveRows(parsedIn);
-    var out = { model:[], left:[], other:[], orders:[], buyVal:0, sellVal:0, unpriced:0, onTarget:0, cap:cap,
+    var out = { model:[], left:[], other:[], restricted:[], orders:[], buyVal:0, sellVal:0, unpriced:0, onTarget:0, cap:cap,
                 matched:parsed.matched, count:parsed.count };
     if (!list.length) return out;
     var modelSet = {};
+    // V39.5 — B1: a restricted name is KEPT, never bought or sold from here — not even
+    // when "Also sell holdings that aren't in this strategy" is ticked.
+    var rsSet = {};
+    if (_restrictActive()) window._mfRules.r.forEach(function(t){ rsSet[normSym(t)] = 1; });
     list.forEach(function(s){
-      var k = normSym(s.ticker); modelSet[k] = 1;
+      var k = normSym(s.ticker);
+      if (rsSet[k]) return;
+      modelSet[k] = 1;
       var p = priceOf(s);
       var target = (p.v > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / p.v) : 0;
       var held = parsed.rows[k] || 0;
@@ -16544,6 +17210,7 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     var diff = window._bookDiff || null, leftSet = {}, prevPos = (diff && diff.prevPos) || {};
     if (diff && diff.known) (diff.removed || []).forEach(function(t){ leftSet[normSym(t)] = t; });
     Object.keys(parsed.rows).forEach(function(k){
+      if (rsSet[k]){ out.restricted.push({ ticker:k, held:parsed.rows[k] }); return; }
       if (modelSet[k]) return;
       var held = parsed.rows[k], px = parsed.px[k] || 0;
       if (!px && leftSet[k]){
@@ -16700,6 +17367,9 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
         return $('adj-sync-others').checked ? tr('SELL', 'sell', r.ticker, r.held, null, r.held, r.px ? r.held * r.px : null)
                                              : tr('KEEP', 'ok', r.ticker, r.held, null, 0, null);
       }).join('');
+    if (p.restricted && p.restricted.length) body += '<tr class="adj-grp"><td colspan="4">On your restricted list · ' + p.restricted.length +
+      ' &mdash; kept, never traded here</td></tr>' +
+      p.restricted.map(function(r){ return tr('KEEP', 'ok', r.ticker, r.held, null, 0, null); }).join('');
     var nB = p.orders.filter(function(o){ return o.side === 'BUY'; }).length, nS = p.orders.length - nB;
     box.innerHTML =
       (mismatch ? '<div class="adj-warn"><b>None of the ' + p.count + ' holdings you pasted are in this strategy.</b> ' +
@@ -17032,7 +17702,8 @@ html[data-theme="dark"] .cyc-newer .cn-cta{ text-decoration-color:rgba(120,160,2
 .itr-card ul{ margin:0; padding-left:18px; font-size:13px; line-height:1.65; color:var(--text2,#1e3a5f); max-width:75ch; }
 .itr-card li + li{ margin-top:6px; }
 .itr-foot{ margin:12px 0 0; font-size:12px; color:var(--text3,#475569); }
-.itr-hide{ margin-left:6px; min-height:36px; padding:0 12px; border-radius:999px; cursor:pointer; font:600 12px/1 inherit;
+.itr-hide{ margin-left:6px; min-height:36px; padding:0 12px; border-radius:999px; cursor:pointer;
+  font-family:inherit; font-size:12px; font-weight:600; line-height:1;   /* V39.5 — was `font:600 12px/1 inherit`, invalid, so the button fell back to the UA font */
   color:var(--accent2,#2563eb); background:transparent; border:1px solid rgba(37,99,235,.3); }
 html[data-theme="dark"] .cyc-join{ background:rgba(131,170,255,.08); border-color:rgba(131,170,255,.22); }
 html[data-theme="dark"] .itr-card{ border-color:rgba(131,170,255,.22); }
@@ -17066,6 +17737,164 @@ html[data-theme="dark"] .pc-capfix{ color:#9dbbff; }
 .at-more{ margin-top:14px; }
 .at-more[open] > .at-lhead{ margin-top:14px; }
 .vfy-since{ margin:8px 0 0; font-size:12.5px; line-height:1.55; color:var(--text2,#1e3a5f); }
+</style>
+<style id="mf-v395-dash">
+/* V39.5 — the career-safe rules (B1–B3), the other-broker order sheet (B7) and the
+   advance-tax card (B5). New class names only. No opacity-muting (V35.6): muted
+   states use the text tokens, which hold contrast; every control is ≥44px on a
+   coarse pointer and every field is 16px so iOS does not zoom on focus. */
+
+/* ── a restricted row, table and phone card ── */
+tr.row-restricted td{ background:repeating-linear-gradient(135deg, rgba(100,116,139,.06) 0 6px, transparent 6px 12px); }
+tr.row-restricted td.company, tr.row-restricted td.alloc-amt, tr.row-restricted td.shares{ color:var(--text2); }
+.stock-card.row-restricted{ background:repeating-linear-gradient(135deg, rgba(100,116,139,.06) 0 6px, transparent 6px 12px), var(--ink2); }
+html[data-theme="dark"] tr.row-restricted td,
+html[data-theme="dark"] .stock-card.row-restricted{ background-color:transparent;
+  background-image:repeating-linear-gradient(135deg, rgba(148,163,184,.08) 0 6px, transparent 6px 12px); }
+.rs-tag{ display:inline-block; margin-left:7px; vertical-align:middle;
+  font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  line-height:1; padding:4px 6px; border-radius:5px; white-space:nowrap;
+  color:#334155; background:rgba(100,116,139,.12); border:0.5px solid rgba(71,85,105,.40); }
+html[data-theme="dark"] .rs-tag{ color:#cbd5e1; background:rgba(148,163,184,.14); border-color:rgba(148,163,184,.34); }
+.cs-lock{ display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
+  border-radius:7px; color:#475569; background:rgba(100,116,139,.12); flex:0 0 auto; vertical-align:middle; }
+.cs-lock svg{ width:14px; height:14px; }
+html[data-theme="dark"] .cs-lock{ color:#cbd5e1; background:rgba(148,163,184,.14); }
+.cs-rs-foot{ display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text2); }
+
+/* ── the change card's rule rows ── */
+.chg-sell.cs-row, .chg-buy.cs-row{ align-items:center; }
+.chg-sell.cs-row .chg-sell-q, .chg-buy.cs-row .chg-sell-q{ color:var(--text2); }
+.cs-clock{ color:#9a3412; background:rgba(234,88,12,.12); }
+html[data-theme="dark"] .cs-clock{ color:#fdba74; background:rgba(251,146,60,.14); }
+.cs-hold-when{ font-size:12.5px; color:var(--text2); white-space:nowrap; }
+.cs-hold-when b{ color:var(--white); }
+.chg-tk.is-restricted{ color:var(--text2); background:rgba(100,116,139,.10); }
+.chg-tk-rs{ font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text2); }
+
+/* ── Copy, for a broker without order links ── */
+button.broker-copy{ cursor:pointer; background:rgba(71,85,105,.08); border-color:rgba(71,85,105,.34);
+  --bk-ink:#334155; --bk-ink-d:#cbd5e1; font-family:inherit; }
+button.broker-copy.copied{ border-color:#0f9d6e; }
+@media (pointer:coarse){ button.broker-copy{ min-height:44px; padding:0 14px; } }
+
+/* ── the order sheet ── */
+.osheet{ margin:16px 0 0; padding:16px 18px; border-radius:var(--r); background:var(--ink2);
+  border:0.5px solid var(--border2); box-shadow:0 10px 26px -20px rgba(15,23,42,.35); }
+.osheet .kbsk-eyebrow{ color:var(--text2); }
+.osheet .kbsk-eyebrow::before{ display:none; }   /* the Kite roundel means "goes to Kite" — this does not */
+.osheet-facts{ margin:0 0 10px; font-size:13px; font-weight:700; color:var(--white); }
+.osheet-list{ list-style:none; margin:0 0 10px; padding:0; display:grid; gap:6px; }
+.os-row{ display:grid; grid-template-columns:28px 52px minmax(0,1fr) auto auto auto; align-items:center; gap:8px 12px;
+  padding:8px 10px; border-radius:10px; border:0.5px solid var(--border2); background:var(--ink); font-size:13px; }
+.os-row.is-done{ background:rgba(15,157,110,.06); }
+.os-row.is-done .os-t, .os-row.is-done .os-meta{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text2); }
+.os-n{ font-weight:800; color:var(--text3); font-variant-numeric:tabular-nums; text-align:right; }
+.os-side{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-align:center; padding:4px 0; border-radius:6px; }
+.os-side.is-sell{ color:#991b1b; background:rgba(220,38,38,.10); }
+.os-side.is-buy{ color:#0b6b4f; background:rgba(15,157,110,.12); }
+html[data-theme="dark"] .os-side.is-sell{ color:#fca5a5; background:rgba(248,113,113,.14); }
+html[data-theme="dark"] .os-side.is-buy{ color:#6ee7b7; background:rgba(52,211,153,.14); }
+.os-t{ font-weight:800; color:var(--white); letter-spacing:.02em; overflow-wrap:anywhere; }
+.os-meta{ color:var(--text2); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.os-copy{ margin-left:0; }
+.os-tick{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--text2); cursor:pointer; white-space:nowrap; }
+.os-tick input{ width:18px; height:18px; accent-color:#0f9d6e; }
+@media (pointer:coarse){ .os-tick{ min-height:44px; } }
+/* A phone: two short rows per order — the order and its two controls, then the
+   quantity and value under the ticker. The tick keeps its accessible name; only
+   the visible word goes. */
+@media (max-width:600px){
+  /* row 1: number · side · the ticker, which gets the whole remaining width (a
+     first pass put the controls beside it and broke ASIANPAINT mid-word);
+     row 2: quantity and value, then Copy and the tick. */
+  .os-row{ grid-template-columns:22px 44px minmax(0,1fr) auto auto; gap:4px 8px; padding:8px 8px 6px; }
+  .os-n{ grid-column:1; grid-row:1; }
+  .os-side{ grid-column:2; grid-row:1; }
+  .os-t{ grid-column:3 / span 3; grid-row:1; overflow-wrap:normal; }
+  .os-meta{ grid-column:2 / span 2; grid-row:2; font-size:12px; }
+  .os-copy{ grid-column:4; grid-row:2; }
+  .os-row .os-copy{ padding:0 10px; min-width:48px; }
+  .os-tick{ grid-column:5; grid-row:2; min-width:44px; min-height:44px; justify-content:center; }
+  .os-tick span{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+}
+
+/* ── the rules card ── */
+.cs-card{ margin-top:28px; background:var(--ink2); border:0.5px solid var(--border2);
+  border-radius:var(--r); padding:24px 28px; box-shadow:var(--shadow-sm); }
+.cs-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px 16px; flex-wrap:wrap; margin:0 0 16px; }
+.cs-head h2{ font-size:18px; font-weight:700; color:var(--white); margin:0 0 3px; letter-spacing:-.01em; }
+.cs-lead{ margin:0; font-size:13px; color:var(--text2); max-width:62ch; }
+.cs-status{ font-size:11.5px; font-weight:800; letter-spacing:.04em; padding:6px 10px; border-radius:999px;
+  color:var(--text2); background:rgba(100,116,139,.10); border:0.5px solid rgba(71,85,105,.30); white-space:nowrap; }
+.cs-status.is-set{ color:#0b4fb3; background:rgba(37,99,235,.08); border-color:rgba(37,99,235,.30); }
+html[data-theme="dark"] .cs-status.is-set{ color:#9dbcff; background:rgba(120,160,240,.10); border-color:rgba(120,160,240,.30); }
+.cs-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
+@media (max-width:1100px){ .cs-grid{ grid-template-columns:1fr 1fr; } .cs-grid .cs-block:last-child{ grid-column:1 / -1; } }
+@media (max-width:700px){ .cs-grid{ grid-template-columns:1fr; } }
+.cs-block{ padding:14px 16px; border-radius:12px; background:var(--ink); border:0.5px solid var(--border2); min-width:0; }
+.cs-block h3{ font-size:14px; font-weight:700; color:var(--white); margin:0 0 6px; }
+.cs-help{ font-size:12.5px; line-height:1.6; color:var(--text2); margin:0 0 12px; }
+.cs-add{ display:flex; gap:8px; }
+.cs-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.cs-in{ flex:1 1 auto; min-width:0; min-height:44px; padding:10px 12px; font-size:16px; font-weight:600;
+  font-family:inherit; color:var(--white); background:var(--ink2); border-radius:10px;
+  border:1px solid var(--field-edge, rgba(15,23,42,.42)); outline:none; text-transform:uppercase; }
+.cs-in::placeholder{ text-transform:none; color:var(--text3); font-weight:500; }
+.cs-in:focus, .cs-sel:focus{ border-color:var(--accent); box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+.cs-in-n{ flex:0 0 96px; text-transform:none; }
+.cs-btn{ font:inherit; font-size:13.5px; font-weight:700; min-height:44px; padding:0 16px; border-radius:10px;
+  cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  color:var(--accent); background:var(--ink2); border:1px solid rgba(37,99,235,.35); }
+.cs-btn:hover{ border-color:var(--accent); background:rgba(37,99,235,.05); }
+.cs-btn:disabled{ cursor:default; color:var(--text2); border-color:var(--border2); background:var(--ink2); }
+.cs-btn-wide{ width:100%; }
+html[data-theme="dark"] .cs-btn{ color:#9dbcff; border-color:rgba(120,160,240,.35); }
+html[data-theme="dark"] .cs-btn:disabled{ color:var(--text2); border-color:var(--border2); }
+.cs-btn:focus-visible, .cs-x:focus-visible, .cs-nudge-x:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.cs-msg{ min-height:1em; margin:8px 0 0; font-size:12.5px; line-height:1.55; color:var(--text2); }
+.cs-list{ list-style:none; margin:8px 0 0; padding:0; display:grid; gap:6px; }
+.cs-item{ display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; padding:6px 6px 6px 8px; border-radius:10px;
+  background:var(--ink2); border:0.5px solid var(--border2); }
+.cs-item-t{ font-weight:800; color:var(--white); letter-spacing:.02em; }
+.cs-item-n{ font-size:12.5px; color:var(--text2); min-width:0; }
+.cs-item-in{ font-size:11px; font-weight:700; color:#0b4fb3; }
+html[data-theme="dark"] .cs-item-in{ color:#9dbcff; }
+.cs-x{ margin-left:auto; font:inherit; font-size:12px; font-weight:700; min-height:36px; padding:0 12px; border-radius:8px;
+  cursor:pointer; color:var(--text2); background:transparent; border:1px solid var(--border2); }
+.cs-x:hover{ color:#991b1b; border-color:rgba(220,38,38,.4); }
+html[data-theme="dark"] .cs-x:hover{ color:#fca5a5; }
+@media (pointer:coarse){ .cs-x{ min-height:44px; } }
+.cs-hold{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
+.cs-hold label{ font-size:12.5px; font-weight:700; color:var(--text2); flex:0 0 100%; }
+.cs-sel{ min-height:44px; padding:0 12px; font-size:16px; font-family:inherit; font-weight:600; color:var(--white);
+  background:var(--ink2); border-radius:10px; border:1px solid var(--field-edge, rgba(15,23,42,.42)); outline:none; max-width:100%; }
+.cs-warn{ margin:10px 0 0; font-size:12.5px; line-height:1.55; color:#9a3412; }
+html[data-theme="dark"] .cs-warn{ color:#fdba74; }
+.cs-pre{ margin:0 0 10px; padding:10px 12px; border-radius:10px; background:var(--ink2); border:0.5px solid var(--border2);
+  font:500 11.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:var(--white);
+  white-space:pre-wrap; overflow-wrap:anywhere; max-height:none; }
+.cs-cost{ margin:14px 0 0; padding:10px 12px; border-radius:10px; font-size:12.5px; line-height:1.6; color:var(--text2);
+  background:rgba(100,116,139,.08); border:0.5px solid rgba(71,85,105,.24); max-width:none; }
+.cs-cost b{ color:var(--white); }
+.cs-foot{ margin:14px 0 0; font-size:12px; line-height:1.6; color:var(--text3); }
+.cs-foot a{ color:var(--ink-link, #0951c6); font-weight:700; }
+html[data-theme="dark"] .cs-foot a{ color:#9dbcff; }
+@media (max-width:600px){ .cs-card{ padding:18px 16px; } }
+
+/* ── the one-line door under the capital field ── */
+.cs-nudge{ margin:12px 0 0; padding:9px 10px 9px 12px; border-radius:10px; font-size:12.5px; line-height:1.55; color:var(--text2);
+  background:rgba(37,99,235,.05); border:0.5px solid rgba(37,99,235,.20); display:flex; flex-wrap:nowrap; align-items:center; gap:4px 12px; }
+.cs-nudge > span{ flex:1 1 auto; min-width:0; }
+.cs-nudge a{ color:var(--ink-link, #0951c6); font-weight:700; }
+html[data-theme="dark"] .cs-nudge{ background:rgba(120,160,240,.07); border-color:rgba(120,160,240,.22); }
+html[data-theme="dark"] .cs-nudge a{ color:#9dbcff; }
+.cs-nudge-x{ margin-left:auto; font:inherit; font-size:12px; font-weight:700; min-height:32px; padding:0 10px; border-radius:8px;
+  cursor:pointer; color:var(--text2); background:transparent; border:1px solid var(--border2); }
+@media (pointer:coarse){ .cs-nudge-x{ min-height:44px; } }
+.cs-cal{ font-family:inherit; cursor:pointer; }
+
+@media print{ .cs-card, .cs-nudge, .osheet .os-copy, .os-tick{ display:none; } }
 </style>
 </body>
 </html>

@@ -780,7 +780,12 @@
 // line breaks only after its dot) and assets/mfc-finish.css 3680 -> 3940 on all 58
 // pages that link it (the "Free tools" summary at 44px on touch, and the
 // calculator footer's short links padded to 44px wide).
-const CACHE = 'mfc-v109';
+// V39.5 -> mfc-v110. index.html is precached and changed (the ten-minute promise
+// names Zerodha, "Your month" gives the other brokers' count, an employer-rules FAQ
+// and its pointer, the advance-tax lines in the tax FAQ, FAQ deep links open their
+// answer, and the backtest window rail is machine-stamped at both ends). No shared
+// asset moved.
+const CACHE = 'mfc-v110';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
