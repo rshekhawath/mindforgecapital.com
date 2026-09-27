@@ -136,14 +136,136 @@
             (suf ? '<span class="cf-suf" aria-hidden="true">' + esc(suf) + '</span>' : '') +
           '</span>' +
         '</div>' +
-        '<input class="cf-rng" type="range" min="' + f.min + '" max="' + f.max + '" step="' + (f.step || 1) + '" ' +
-          'value="' + f.value + '" tabindex="-1" aria-hidden="true">' +
-        '<div class="cf-ends"><span>' + esc(f.minLabel || labelFor(f, f.min)) + '</span>' +
-          '<span>' + esc(f.maxLabel || labelFor(f, f.max)) + '</span></div>' +
+        (f._scale
+          ? '<input class="cf-rng" type="range" min="0" max="1000" step="1" ' +
+              'value="' + Math.round(scalePos(f._scale, f.value) * 1000) + '" tabindex="-1" aria-hidden="true">'
+          : '<input class="cf-rng" type="range" min="' + f.min + '" max="' + f.max + '" step="' + (f.step || 1) + '" ' +
+              'value="' + f.value + '" tabindex="-1" aria-hidden="true">') +
+        ticksHTML(f) +
         '<div class="cf-err" role="status">Enter a value between ' + esc(labelFor(f, f.min)) +
           ' and ' + esc(labelFor(f, f.max)) + '.</div>' +
       '</div>';
   }
+  /* ── V39.9 · BREAK POINTS AND WHOLE-NUMBER NOTCHES ─────────────────────────
+     The owner asked for each slider to have "a break … points in between which
+     are whole numbers like 10 L, 25 L, 50L, 1 CR, 5 CR, 10 CR and then finally
+     20 CR". So a money slider is now a row of labelled break points spaced
+     EVENLY along the track, and between two breaks the thumb moves through a
+     ladder of round values (1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 7.5, 8, 9 × each
+     power of ten) — clicking from notch to notch, never landing on
+     ₹24,87,311. Equal spacing is what lets 10Cr and 20Cr both carry a label (on
+     a plain log track they sit 5% apart), and it gives every band — ₹1L–₹10L,
+     ₹10L–₹25L, … — the same room. A field may name its own breaks
+     (`breaks:[…]`); otherwise they are the powers of ten, then the 5s, then the
+     2.5s, up to eight. Typing still takes any exact value; the thumb then sits
+     on the nearest notch. Percent and year sliders keep their steps and gain
+     labelled whole-number points too. */
+  var RUNGS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 7.5, 8, 9];
+  function ladder(min, max, step) {
+    var out = [min], lo = Math.max(min, step || 1, 1);
+    for (var k = Math.floor(Math.log(lo) / Math.LN10); Math.pow(10, k) <= max; k++) {
+      RUNGS.forEach(function (m) {
+        var v = Math.round(m * Math.pow(10, k));
+        if (v > min && v < max && v >= lo) out.push(v);
+      });
+    }
+    out.push(max);
+    return out.filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) { return a - b; });
+  }
+  function nearestIdx(stops, v) {
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < stops.length; i++) {
+      var a = stops[i], d = (a > 0 && v > 0) ? Math.abs(Math.log(a / v)) : Math.abs(a - v) / Math.max(1, Math.abs(v));
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  function breaksFor(f, rungs) {
+    if (f.breaks) return f.breaks.filter(function (v) { return v >= f.min && v <= f.max; });
+    var out = [f.min, f.max], MAX = 8;
+    [1, 5, 2.5].forEach(function (m) {
+      for (var k = 12; k >= 0; k--) {
+        var v = Math.round(m * Math.pow(10, k));
+        if (out.length < MAX && v > f.min && v < f.max && rungs.indexOf(v) >= 0) out.push(v);
+      }
+    });
+    return out.sort(function (a, b) { return a - b; });
+  }
+  // rung values, their positions (0..1) and the labelled breaks
+  function moneyScale(f) {
+    var rungs = ladder(f.min, f.max, f.step);
+    var br = breaksFor(f, rungs);
+    br.forEach(function (b) { if (rungs.indexOf(b) < 0) rungs.push(b); });
+    rungs.sort(function (a, b) { return a - b; });
+    var bi = br.map(function (b) { return rungs.indexOf(b); }), pos = [];
+    for (var s = 0; s < bi.length - 1; s++) {
+      for (var i = bi[s]; i < bi[s + 1]; i++) pos[i] = (s + (i - bi[s]) / (bi[s + 1] - bi[s])) / (bi.length - 1);
+    }
+    pos[rungs.length - 1] = 1;
+    return { rungs: rungs, pos: pos, ticks: br.map(function (b, i) { return { v: b, p: i / (br.length - 1) }; }) };
+  }
+  function shortMoney(v) {
+    if (v >= 1e7) return '₹' + +(v / 1e7).toFixed(2) + 'Cr';
+    if (v >= 1e5) return '₹' + +(v / 1e5).toFixed(2) + 'L';
+    if (v >= 1e3) return '₹' + +(v / 1e3).toFixed(1) + 'k';
+    return '₹' + round(v);
+  }
+  // years carry their unit on the two ends only ("1 yr · 10 · 20 · 40 yrs"):
+  // "35 yrs · 40 yrs" did not fit side by side on a 320px phone
+  function tickLabel(f, v, end) {
+    if (f.unit === 'money') return shortMoney(v);
+    if (f.unit === 'pct') return +v.toFixed(2) + '%';
+    if (f.unit === 'years') return end ? v + (v === 1 ? ' yr' : ' yrs') : String(v);
+    return String(v);
+  }
+  /* Labels that would touch on THIS screen lose their text (the notch mark
+     stays). Ends first, then powers of ten, then the rest left to right, each
+     kept only with 4px of air on both sides — so a desktop shows all eight
+     corpus breaks and a 320px phone drops the one or two that cannot fit. */
+  function fitTicks(root) {
+    [].forEach.call((root || d).querySelectorAll('.cf-ticks'), function (row) {
+      var sp = [].slice.call(row.querySelectorAll('span'));
+      sp.forEach(function (x) { x.classList.remove('hx'); });
+      if (!row.getClientRects().length) return;
+      var order = sp.slice(1, -1).sort(function (a, b) {
+        return (b.hasAttribute('data-dec') ? 1 : 0) - (a.hasAttribute('data-dec') ? 1 : 0);
+      });
+      var kept = [sp[0], sp[sp.length - 1]].map(function (x) { return x.getBoundingClientRect(); });
+      order.forEach(function (x) {
+        var r = x.getBoundingClientRect();
+        var clash = kept.some(function (k) { return r.left < k.right + 4 && r.right > k.left - 4; });
+        if (clash) x.classList.add('hx'); else kept.push(r);
+      });
+    });
+  }
+  if (!w.__mfcFitTicks) {
+    w.__mfcFitTicks = 1;
+    var _ft; w.addEventListener('resize', function () { clearTimeout(_ft); _ft = setTimeout(function () { fitTicks(); }, 120); }, { passive: true });
+    try { if (d.fonts && d.fonts.ready) d.fonts.ready.then(function () { fitTicks(); }); } catch (e) {}
+  }
+  // linear sliders: whole-number points on a 1-2-5 step, at most seven, none
+  // closer than 12% of the track to another
+  function linearTicks(f) {
+    var span = f.max - f.min, st = 1, steps = [1, 2, 5];
+    for (var e = -2; e < 4 && span / st > 6; e++) for (var j = 0; j < 3 && span / st > 6; j++) st = steps[j] * Math.pow(10, e);
+    var kept = [{ v: f.min, p: 0 }, { v: f.max, p: 1 }];
+    for (var t = Math.ceil(f.min / st) * st; t < f.max - 1e-9; t += st) {
+      var v = Math.round(t * 100) / 100, p = (v - f.min) / span;
+      if (v > f.min && kept.every(function (q) { return Math.abs(q.p - p) >= 0.12; })) kept.push({ v: v, p: p });
+    }
+    return kept.sort(function (a, b) { return a.p - b.p; });
+  }
+  function ticksHTML(f) {
+    var ticks = f._scale ? f._scale.ticks : linearTicks(f), n = ticks.length;
+    return '<div class="cf-ends cf-ticks" aria-hidden="true">' + ticks.map(function (q, i) {
+      var end = i === 0 ? 's' : (i === n - 1 ? 'e' : '');
+      var dec = f.unit === 'money' && q.v > 0 && Math.abs(Math.log(q.v) / Math.LN10 % 1) < 1e-9;
+      return '<span' + (end ? ' class="' + end + '"' : '') + (dec ? ' data-dec' : '') + ' style="--p:' + q.p.toFixed(4) + '">' +
+        esc(end === 's' && f.minLabel ? f.minLabel : (end === 'e' && f.maxLabel ? f.maxLabel : tickLabel(f, q.v, !!end))) + '</span>';
+    }).join('') + '</div>';
+  }
+  function scalePos(sc, v) { return sc.pos[nearestIdx(sc.rungs, v)]; }
+
   function labelFor(f, v) {
     if (f.unit === 'money') return compact(v);
     if (f.unit === 'pct') return pct(v, v % 1 ? 1 : 0);
@@ -324,7 +446,9 @@
     }
 
     function build() {
-      var fs = fieldsFor(mode);
+      var fs = fieldsFor(mode).map(function (f) {
+        return f.unit === 'money' ? Object.assign({}, f, { _scale: moneyScale(f) }) : f;
+      });
       form.innerHTML = fs.map(function (f, i) { return fieldHTML(f, (cfg.key || 'c') + '-f' + i); }).join('');
       fs.forEach(function (f) { state[f.k] = f.value; });
       form.querySelectorAll('.cf').forEach(function (row) {
@@ -348,8 +472,10 @@
           return money ? parseFloat(String(num.value).replace(/[^0-9.]/g, '')) : parseFloat(num.value);
         };
         var show = function (v) { num.value = money ? group(v) : v; };
+        var sc = f._scale;
         var fill = function () {
-          var p = (state[f.k] - f.min) / (f.max - f.min) * 100;
+          var p = sc ? scalePos(sc, state[f.k]) * 100
+                        : (state[f.k] - f.min) / (f.max - f.min) * 100;
           rng.style.setProperty('--fill', clamp(p, 0, 100).toFixed(1) + '%');
         };
         var commit = function (v, fromRange) {
@@ -358,7 +484,7 @@
           row.classList.toggle('is-bad', bad && !fromRange);
           state[f.k] = clamp(isFinite(v) ? v : f.value, f.min, f.max);
           if (fromRange) show(state[f.k]);
-          rng.value = state[f.k];
+          rng.value = sc ? Math.round(scalePos(sc, state[f.k]) * 1000) : state[f.k];
           fill(); run();
         };
         num.addEventListener('input', function () { commit(read(), false); });
@@ -367,7 +493,14 @@
         num.addEventListener('blur', function () {
           show(state[f.k]); row.classList.remove('is-bad'); run();
         });
-        rng.addEventListener('input', function () { commit(parseFloat(rng.value), true); });
+        rng.addEventListener('input', function () {
+          var raw = parseFloat(rng.value);
+          if (!sc) { commit(raw, true); return; }
+          // the notch nearest the thumb; commit() then parks the thumb ON it
+          var p = raw / 1000, best = 0;
+          for (var i = 1; i < sc.pos.length; i++) if (Math.abs(sc.pos[i] - p) < Math.abs(sc.pos[best] - p)) best = i;
+          commit(sc.rungs[best], true);
+        });
         fill();
       });
     }
@@ -423,17 +556,17 @@
           bar.querySelectorAll('button').forEach(function (x) {
             x.setAttribute('aria-pressed', String(x.dataset.m === mode));
           });
-          build(); run();
+          build(); run(); fitTicks(form);
         });
       }
     }
 
-    build(); run();
+    build(); run(); fitTicks(form);
     return { run: run, state: function () { return Object.assign({}, state); },
-             setMode: function (m) { mode = m; build(); run(); } };
+             setMode: function (m) { mode = m; build(); run(); fitTicks(form); } };
   }
 
-  w.MFCalc = { init: init, inr: inr, compact: compact, pct: pct, group: group, round: round,
+  w.MFCalc = { init: init, scale: moneyScale, inr: inr, compact: compact, pct: pct, group: group, round: round,
                clamp: clamp, esc: esc, math: math };
 
   /* ── entrance reveal (V19.1's calculator.html idiom, ported here so all

@@ -271,6 +271,18 @@ nav {
   .fc-range::-moz-range-thumb { transition: none; }
 }
 .fc-scale { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text3); margin-top: 7px; letter-spacing: .01em; }
+/* V39.9 — labelled break points, each centred on its notch (the 20px thumb
+   travels 100% − 20px); ends pinned to the edges; a label that would touch its
+   neighbour on this screen hides its text and keeps its mark. */
+.fc-scale.fc-ticks{ display:block; position:relative; height:15px; pointer-events:none; }
+.fc-ticks span{ position:absolute; top:0; left:calc(10px + (100% - 20px) * var(--p)); transform:translateX(-50%); white-space:nowrap; line-height:15px; }
+.fc-ticks span.s{ left:0; transform:none; }
+.fc-ticks span.e{ left:auto; right:0; transform:none; }
+.fc-ticks span::before{ content:''; position:absolute; left:50%; top:-6px; width:1px; height:4px; background:var(--border2); }
+.fc-ticks span.s::before{ left:10px; }
+.fc-ticks span.e::before{ left:auto; right:10px; }
+.fc-ticks span.hx{ color:transparent; }
+@media (max-width:400px){ .fc-scale.fc-ticks{ font-size:10px; } }
 
 /* results / KPIs */
 .fc-right { display: flex; flex-direction: column; gap: 22px; }
@@ -1139,11 +1151,111 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     sip:   { num:'fc-sip-num',    rng:'fc-sip-rng',    pill:'fc-sip-pill',    min:0, max:200000, step:500, kind:'rupee' }
   };
 
+  /* ── V39.9 · BREAK POINTS AND WHOLE-NUMBER NOTCHES ────────────────────────
+     The same scale the calculators under /calculators/ use (assets/mfc-calc.js,
+     kept in step by hand — this page does not load that engine): labelled break
+     points spaced evenly along each slider, and between two breaks the thumb
+     clicks through round values only. The capital slider's old logarithmic
+     track is replaced by it (₹1L · ₹5L · ₹10L · ₹50L · ₹1Cr · ₹5Cr · ₹10Cr ·
+     ₹100Cr); the flat fee steps through price points (₹499, ₹999, ₹1,499 …),
+     the fees a subscription actually charges. The slider still is the source of
+     truth readAll() uses, so a TYPED exact value is remembered (c._exact) and
+     returned while the thumb sits on its notch — typing ₹12,34,567 is not
+     silently rounded to a notch. */
+  var RUNGS = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 7.5, 8, 9];
+  function ladder(min, max, step){
+    var out = [min], lo = Math.max(min, step || 1, 1);
+    for(var k = Math.floor(Math.log(lo)/Math.LN10); Math.pow(10,k) <= max; k++){
+      RUNGS.forEach(function(m){ var v = Math.round(m*Math.pow(10,k)); if(v > min && v < max && v >= lo) out.push(v); });
+    }
+    out.push(max);
+    return out.filter(function(v,i,a){ return a.indexOf(v) === i; }).sort(function(a,b){ return a-b; });
+  }
+  function nearestIdx(stops, v){
+    var best = 0, bd = Infinity;
+    for(var i = 0; i < stops.length; i++){
+      var a = stops[i], d = (a > 0 && v > 0) ? Math.abs(Math.log(a/v)) : Math.abs(a-v)/Math.max(1, Math.abs(v));
+      if(d < bd){ bd = d; best = i; }
+    }
+    return best;
+  }
+  function buildScale(c){
+    var rungs = c.rungs ? c.rungs.slice() : ladder(c.min, c.max, c.step), br;
+    if(c.breaks) br = c.breaks.slice();
+    else {
+      br = [c.min, c.max];
+      [1, 5, 2.5].forEach(function(m){ for(var k = 12; k >= 0; k--){ var v = Math.round(m*Math.pow(10,k)); if(br.length < 8 && v > c.min && v < c.max && rungs.indexOf(v) >= 0) br.push(v); } });
+      br.sort(function(a,b){ return a-b; });
+    }
+    var bi = br.map(function(b){ return rungs.indexOf(b); }), pos = [];
+    for(var s = 0; s < bi.length-1; s++) for(var i = bi[s]; i < bi[s+1]; i++) pos[i] = (s + (i-bi[s])/(bi[s+1]-bi[s]))/(bi.length-1);
+    pos[rungs.length-1] = 1;
+    return { rungs:rungs, pos:pos, ticks:br.map(function(b,i){ return { v:b, p:i/(br.length-1) }; }) };
+  }
+  CFG.invest.sc = buildScale({ min:100000, max:1000000000, step:10000 });
+  CFG.sip.sc    = buildScale({ min:0, max:200000, step:500 });
+  CFG.flat.sc   = buildScale({ rungs:[499, 999, 1499, 1999, 2499, 2999, 3999, 4999, 7499, 9999, 14999, 19999, 24999],
+                               breaks:[499, 999, 1499, 4999, 9999, 24999] });
+  function scPos(c, v){ return c.sc.pos[nearestIdx(c.sc.rungs, v)]; }
+
   var el = {};
   Object.keys(CFG).forEach(function(k){
     var c = CFG[k];
     el[k] = { num:document.getElementById(c.num), rng:document.getElementById(c.rng), pill:document.getElementById(c.pill) };
+    // the markup's value="…" was written for the old track; seed the thumb
+    // from the number box (the default) before init() reads the sliders
+    if(c.sc){ el[k].rng.min = 0; el[k].rng.max = 1000; el[k].rng.step = 1;
+              var v0 = digits(el[k].num.value); c._exact = v0; el[k].rng.value = Math.round(scPos(c, v0)*1000); }
   });
+
+  // the tick rows under the six sliders, from the same scales
+  function tickText(k, c, v, end){
+    if(c.kind === 'rupee'){
+      if(k === 'flat') return '₹' + grp(v);
+      if(v >= 1e7) return '₹' + +(v/1e7).toFixed(2) + 'Cr';
+      if(v >= 1e5) return '₹' + +(v/1e5).toFixed(2) + 'L';
+      if(v >= 1e3) return '₹' + +(v/1e3).toFixed(1) + 'k';
+      return '₹' + v;
+    }
+    if(c.kind === 'pct') return +v.toFixed(2) + '%';
+    if(c.kind === 'yrs') return end ? v + (v === 1 ? ' yr' : ' yrs') : String(v);
+    return String(v);
+  }
+  function linTicks(c){
+    var span = c.max - c.min, st = 1, steps = [1,2,5];
+    for(var e = -2; e < 4 && span/st > 6; e++) for(var j = 0; j < 3 && span/st > 6; j++) st = steps[j]*Math.pow(10,e);
+    var kept = [{ v:c.min, p:0 }, { v:c.max, p:1 }];
+    for(var t = Math.ceil(c.min/st)*st; t < c.max - 1e-9; t += st){
+      var v = Math.round(t*100)/100, p = (v - c.min)/span;
+      if(v > c.min && kept.every(function(q){ return Math.abs(q.p - p) >= 0.12; })) kept.push({ v:v, p:p });
+    }
+    return kept.sort(function(a,b){ return a.p - b.p; });
+  }
+  function fitTicks(){
+    document.querySelectorAll('.fc-ticks').forEach(function(row){
+      var sp = [].slice.call(row.querySelectorAll('span'));
+      sp.forEach(function(x){ x.classList.remove('hx'); });
+      if(!row.getClientRects().length) return;
+      var kept = [sp[0], sp[sp.length-1]].map(function(x){ return x.getBoundingClientRect(); });
+      sp.slice(1,-1).sort(function(a,b){ return (b.hasAttribute('data-dec')?1:0) - (a.hasAttribute('data-dec')?1:0); }).forEach(function(x){
+        var r = x.getBoundingClientRect();
+        if(kept.some(function(q){ return r.left < q.right + 4 && r.right > q.left - 4; })) x.classList.add('hx'); else kept.push(r);
+      });
+    });
+  }
+  Object.keys(CFG).forEach(function(k){
+    var c = CFG[k], row = el[k].rng.nextElementSibling;
+    if(!row || !row.classList.contains('fc-scale')) return;
+    var ticks = c.sc ? c.sc.ticks : linTicks(c), n = ticks.length;
+    row.classList.add('fc-ticks'); row.setAttribute('aria-hidden', 'true');
+    row.innerHTML = ticks.map(function(q, i){
+      var end = i === 0 ? 's' : (i === n-1 ? 'e' : ''), dec = c.kind === 'rupee' && k !== 'flat' && q.v > 0 && Math.abs(Math.log(q.v)/Math.LN10 % 1) < 1e-9;
+      return '<span' + (end ? ' class="' + end + '"' : '') + (dec ? ' data-dec' : '') + ' style="--p:' + q.p.toFixed(4) + '">' + tickText(k, c, q.v, !!end) + '</span>';
+    }).join('');
+  });
+  fitTicks();
+  var _fcft; window.addEventListener('resize', function(){ clearTimeout(_fcft); _fcft = setTimeout(fitTicks, 120); }, { passive:true });
+  try{ if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitTicks); }catch(e){}
 
   function snap(v,c){ // snap to step within range
     var n = clamp(v, c.min, c.max);
@@ -1184,8 +1296,21 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   }
   function snapAny(v,c){ return c.log ? logSnap(v,c) : snap(v,c); }
   // the ONLY sanctioned ways to read/write a control's slider
-  function rngVal(k){ var c=CFG[k], raw=parseFloat(el[k].rng.value); return c.log ? posToVal(raw,c) : raw; }
-  function setRng(k,val){ var c=CFG[k]; el[k].rng.value = c.log ? valToPos(val,c) : val; }
+  function rngVal(k){
+    var c=CFG[k], raw=parseFloat(el[k].rng.value);
+    if(c.sc){
+      var p = raw/1000, best = 0;
+      for(var i = 1; i < c.sc.pos.length; i++) if(Math.abs(c.sc.pos[i]-p) < Math.abs(c.sc.pos[best]-p)) best = i;
+      if(c._exact != null && nearestIdx(c.sc.rungs, c._exact) === best) return c._exact;
+      return c.sc.rungs[best];
+    }
+    return c.log ? posToVal(raw,c) : raw;
+  }
+  function setRng(k,val){
+    var c=CFG[k];
+    if(c.sc){ c._exact = val; el[k].rng.value = Math.round(scPos(c, val)*1000); return; }
+    el[k].rng.value = c.log ? valToPos(val,c) : val;
+  }
   function pillText(v,c){
     if(c.kind==='rupee') return '₹'+grp(Math.round(v));
     if(c.kind==='pct') return (v%1===0 ? v.toFixed(1) : String(Math.round(v*100)/100))+'%';
@@ -1636,6 +1761,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     // range drives everything
     el[k].rng.addEventListener('input', function(){
       var val = rngVal(k);
+      if(c.sc) setRng(k, val);                 // V39.9 — park the thumb on the notch
       el[k].num.value = numText(val,c);
       setPillAndEcho(k,c,val);
       render(true);
