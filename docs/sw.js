@@ -789,7 +789,10 @@
 // dashboard (sample)" link keeps its arrow on the same line at 360). One page
 // asset moved: scores/scores-engine.js 3360 -> 3960 on both pages that load it
 // (a symbol outside the universe no longer asks for a prose file).
-const CACHE = 'mfc-v111';
+// V40.0 -> mfc-v112. index.html is precached and changed (the September 2026
+// republish rewrote every backtest figure on it, and LargeMidcap 250 is now a
+// fifteen-stock book). No shared asset moved.
+const CACHE = 'mfc-v112';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

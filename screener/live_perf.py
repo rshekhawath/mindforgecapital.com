@@ -54,6 +54,7 @@ HIST_MAX = 36          # three years of monthly cycles; older ones drop off the 
 sys.path.insert(0, str(IP))
 
 from shared.benchmark import REAL_BENCHMARKS  # noqa: E402  (V23.8 real-index map)
+from shared.nse_closes import close_on as nse_close_on  # noqa: E402  (V40.0 fallback)
 
 # key → (folder, yahoo suffix, display name, currency) — keys match the site's
 # MFSTAT shorthand (lm/sm/ma); suffixes mirror runner/publish.py.
@@ -199,6 +200,26 @@ def main() -> None:
             s = s.loc[:upto]
         return float(s.iloc[-1]) if len(s) else None
 
+    # V40.0 — A PICK YAHOO CANNOT PRICE IS PRICED FROM NSE, NOT DROPPED.
+    # On 30 Sep 2026 Yahoo had lost MID150BEES's history before 22 Sep, so it had
+    # no baseline close; the pick was skipped and the 80% guard let MultiAsset
+    # publish on seven of its eight holdings — a figure that would have been sealed
+    # into live-history.json for good. Such a pick now takes NSE's own bhavcopy
+    # closes on the SAME two days (baseline and measured), both from one source so
+    # the pair shares a basis. If NSE has not yet published the measured day's file,
+    # the Yahoo close for that day stands beside NSE's baseline. Exact days only.
+    measured = (common if common is not None else done).date()
+
+    def nse_pair(sym, rec, live):
+        try:
+            n_rec, n_live = nse_close_on(sym, base), nse_close_on(sym, measured)
+        except Exception as e:                   # the fallback must never stop a run
+            print(f"  !! {sym}: NSE fallback failed ({e})")
+            return rec, live
+        if n_rec and n_live:
+            return n_rec, n_live
+        return (rec or n_rec), (live or n_live)
+
     strategies, as_of = {}, None
     for key, (folder, suffix, name, curr) in STRATS.items():
         picks = picks_by_key[key]
@@ -206,6 +227,10 @@ def main() -> None:
         priced = 0
         for r in picks:
             rec, live = px(r["yahoo"], rebal_ts), px(r["yahoo"])
+            if not rec or not live:
+                rec, live = nse_pair(r["yahoo"], rec, live)
+                print(f"  ↺  {key}: {r['yahoo']} not fully priced by Yahoo; NSE bhavcopy "
+                      f"{base} → {measured}: " + ("priced" if rec and live else "still missing"))
             if not rec or not live:
                 continue
             priced += 1
