@@ -118,9 +118,14 @@
      stay in their fail-soft (hidden) state, and only the surfaces that opt in
      with data-live-new (the homepage hero) say what is happening instead.
      SHOW_LAST_CYCLE (owner switch, D5 in the V40.1 handover) additionally
-     puts the last FINISHED cycle there, from live-history.json. Off until the
-     owner and their adviser say otherwise. */
-  var SHOW_LAST_CYCLE = false;
+     puts the last FINISHED cycle there, from live-history.json.
+     V40.2 — ON, at the owner's request: the hero box must carry a number, not
+     only a sentence. In the gap it now shows the last sealed cycle's figure
+     against its index, labelled LAST CYCLE with its own dates, and the "new
+     book" line moves underneath it. A sealed row is final, so this is the one
+     figure that can stand in for the open cycle without being a guess; with no
+     sealed cycle yet (the very first book) the box keeps the sentence alone. */
+  var SHOW_LAST_CYCLE = true;
   function zeroSession(d) {
     return !!(d && d.baseline_date && d.data_through && String(d.data_through) <= String(d.baseline_date));
   }
@@ -548,29 +553,47 @@
     }, 1400);
   }
 
-  /* V40.1 — D5. The last FINISHED cycle, for the [data-live="newbook"] slot,
-     only when SHOW_LAST_CYCLE is on. Sealed rows in live-history.json are final. */
+  /* V40.1 — D5. The last FINISHED cycle, for the surfaces that opt in with
+     data-live-new, only when SHOW_LAST_CYCLE is on. Sealed rows in
+     live-history.json are final.
+     V40.2 — the figure is now a NUMBER in the card's own big-figure layout, not
+     a sentence: the cycle is published as window.MFCLive.last_cycle and the
+     wrap gains .has-last; the homepage hero (which owns its tab switching)
+     listens for "mfc-live-last" and paints the selected book from it. Only the
+     opted-in wraps are touched — every other live surface keeps its fail-soft
+     hidden state, so no "this cycle" label anywhere carries last month's move. */
+  function lastSealed(h) {
+    var sealed = ((h && h.cycles) || []).filter(function (c) {
+      return c && c.sealed && c.strategies && c.rebalance_date && c.data_through;
+    });
+    return sealed[sealed.length - 1] || null;
+  }
   function showLastCycle(data) {
     fetch("/live-history.json?t=" + Math.floor(Date.now() / 3600000), { credentials: "omit" })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (h) {
-        var sealed = ((h && h.cycles) || []).filter(function (c) { return c.sealed; });
-        var c = sealed[sealed.length - 1]; if (!c) return;
-        var parts = [];
-        [["sm", "SmallMicro 500"], ["lm", "LargeMidcap 250"], ["ma", "MultiAsset"]].forEach(function (k) {
-          var s = (c.strategies || {})[k[0]];
-          if (s && s.live_pct != null && s.bench_pct != null)
-            parts.push(k[1] + " " + fmtPct(s.live_pct) + " vs " + (s.bench_name || "its index") + " " + fmtPct(s.bench_pct));
+        var c = lastSealed(h);
+        if (!c) return;
+        var any = false;
+        ["sm", "lm", "ma"].forEach(function (k) {
+          var s = c.strategies[k];
+          if (s && s.live_pct != null && isFinite(s.live_pct) && s.bench_pct != null && isFinite(s.bench_pct)) any = true;
         });
-        if (!parts.length) return;
-        document.querySelectorAll('[data-live="newbook"]').forEach(function (el) {
-          el.textContent = "Last complete cycle, " + fmtDayMonth(c.rebalance_date) + NB + "→ " + fmtDayMonth(c.data_through) +
-            ": " + parts.join(" · ") + ". Model portfolio, not audited returns. New book published " +
-            fmtDate(data.rebalance_date) + "; its first figure comes after the next close.";
+        if (!any) return;
+        if (window.MFCLive === data) data.last_cycle = c;
+        document.querySelectorAll("[data-live-wrap][data-live-new]").forEach(function (w) {
+          w.classList.add("has-last");
         });
+        try {
+          document.dispatchEvent(new CustomEvent("mfc-live-last", { detail: c }));
+        } catch (e) {}
       })
       .catch(function () {});
   }
+  // the cycle's own dates, "31 Aug → 30 Sept", for a LAST CYCLE label
+  window.MFCLiveSpan = function (c) {
+    return c ? fmtDayMonth(c.rebalance_date) + NB + "\u2192" + NB + fmtDayMonth(c.data_through) : "";
+  };
 
   function boot() {
     injectStyle();

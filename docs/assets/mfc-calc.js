@@ -445,8 +445,24 @@
       });
     }
 
-    function build() {
+    /* V40.2 — a book or loan-type switch rebuilds the fields, and used to put
+       EVERY field back to its default: a reader who typed their own ₹10,00,000
+       into "MindForge vs your fund" and switched books was quietly back at
+       ₹2,00,000. Now a switch (keep) carries each field's current value across
+       unless the new mode sets that field's value itself (the EMI page's loan
+       types do, on purpose), clamped to the new range. */
+    function build(keep) {
+      var opt = cfg.modes && mode ? (cfg.modes.options.filter(function (x) { return x.k === mode; })[0] || {}) : {};
       var fs = fieldsFor(mode).map(function (f) {
+        var ov = (opt.fields || {})[f.k] || {};
+        if (keep && Object.prototype.hasOwnProperty.call(state, f.k) && !('value' in ov)) {
+          var cur = state[f.k];
+          if (f.unit === 'choice') {
+            if (f.options.some(function (x) { return x.v === cur; })) f = Object.assign({}, f, { value: cur });
+          } else if (isFinite(cur)) {
+            f = Object.assign({}, f, { value: clamp(cur, f.min, f.max) });
+          }
+        }
         return f.unit === 'money' ? Object.assign({}, f, { _scale: moneyScale(f) }) : f;
       });
       form.innerHTML = fs.map(function (f, i) { return fieldHTML(f, (cfg.key || 'c') + '-f' + i); }).join('');
@@ -473,6 +489,15 @@
         };
         var show = function (v) { num.value = money ? group(v) : v; };
         var sc = f._scale;
+        /* V40.2 — A WHOLE-YEAR FIELD TAKES WHOLE YEARS. The input is
+           type=number step=1, but typing "12.5" was committed as 12.5: the
+           step-up SIP then compounded twelve years of instalments under a
+           "Corpus after 12.5 years" label (and deflated by 12.5), and the EMI
+           table stopped at year 12 with half a year of the loan still owed.
+           A years field whose step is a whole number rounds to that step; one
+           with a fractional step (CAGR's "Over", 0.5) still takes any value. */
+        var whole = f.unit === 'years' && f.step >= 1 && f.step % 1 === 0;
+        var snap = function (v) { return whole && isFinite(v) ? f.min + Math.round((v - f.min) / f.step) * f.step : v; };
         var fill = function () {
           var p = sc ? scalePos(sc, state[f.k]) * 100
                         : (state[f.k] - f.min) / (f.max - f.min) * 100;
@@ -482,7 +507,7 @@
           var bad = !isFinite(v);
           if (!bad && (v < f.min || v > f.max)) bad = true;
           row.classList.toggle('is-bad', bad && !fromRange);
-          state[f.k] = clamp(isFinite(v) ? v : f.value, f.min, f.max);
+          state[f.k] = clamp(isFinite(v) ? snap(v) : f.value, f.min, f.max);
           if (fromRange) show(state[f.k]);
           rng.value = sc ? Math.round(scalePos(sc, state[f.k]) * 1000) : state[f.k];
           fill(); run();
@@ -556,14 +581,14 @@
           bar.querySelectorAll('button').forEach(function (x) {
             x.setAttribute('aria-pressed', String(x.dataset.m === mode));
           });
-          build(); run(); fitTicks(form);
+          build(true); run(); fitTicks(form);
         });
       }
     }
 
     build(); run(); fitTicks(form);
     return { run: run, state: function () { return Object.assign({}, state); },
-             setMode: function (m) { mode = m; build(); run(); fitTicks(form); } };
+             setMode: function (m) { mode = m; build(true); run(); fitTicks(form); } };
   }
 
   w.MFCalc = { init: init, scale: moneyScale, inr: inr, compact: compact, pct: pct, group: group, round: round,

@@ -797,7 +797,13 @@
 // slab note, three new FAQs). One shared asset moved: assets/mfc-live.js
 // 3940 -> 4010 on the seven pages that load it (a cycle with no completed
 // session prints no +0.00%).
-const CACHE = 'mfc-v113';
+// V40.2 -> mfc-v114. index.html is precached and changed (the hero's live box
+// now shows the last sealed cycle's figure in the new-book gap instead of a
+// sentence; the MultiAsset slab link's tap target). Two shared assets moved:
+// assets/mfc-live.js 4010 -> 4020 on the seven pages that load it, and
+// assets/mfc-calc.js 399 -> 402 on the sixteen calculator pages (whole-year
+// fields round to whole years; a book switch keeps the reader's own amounts).
+const CACHE = 'mfc-v114';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

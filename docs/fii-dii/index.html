@@ -976,7 +976,7 @@ function renderUpdated(d){
   let gen="";
   try{const g=new Date(d.generated_at);if(!isNaN(g))gen=g.toLocaleString("en-IN",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}catch(_){}
   el.innerHTML=`<span class="dot" style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span>
-    Data through <b>${escapeHtml(d.data_date||"—")}</b>${gen?`<span class="sep"></span>Refreshed ${escapeHtml(gen)}`:""}`;
+    Data through <b>${escapeHtml(nd(d.data_date)||"—")}</b>${gen?`<span class="sep"></span>Refreshed ${escapeHtml(gen)}`:""}`;
 }
 
 function renderIndices(idx){
@@ -1019,7 +1019,7 @@ function flowCard(kind,rec){
 
 function renderCash(d){
   const cash=d.cash||{};
-  document.getElementById("cashDateTag").textContent=cash.date||d.data_date||"—";
+  document.getElementById("cashDateTag").textContent=nd(cash.date||d.data_date)||"—";
   const grid=document.getElementById("cashGrid");
   if(!cash.fii&&!cash.dii){grid.innerHTML=`<div class="err-box" style="grid-column:1/-1"><b>Cash data unavailable</b>The latest provisional cash figures could not be loaded.</div>`;return;}
   grid.innerHTML=flowCard("fii",cash.fii)+flowCard("dii",cash.dii);
@@ -1051,7 +1051,7 @@ function renderCash(d){
       msg=`<b>Opposing flows.</b> FIIs net <b>${fSide}</b> ₹${grp(Math.abs(fn))} cr while DIIs net <b>${dSide}</b> ₹${grp(Math.abs(dn))} cr. Combined net <b class="${tot>=0?'up':'down'}" style="color:${tot>=0?'var(--green-ink)':'var(--red-ink)'}">${cr(tot)} cr</b>.`;
     }else{
       ico=tot>=0?'<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 16.5 5.4-5.4 3.6 3.6L21 5.5"/><path d="M15.5 5.5H21v5.5"/></svg>':'<svg class="mfi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m3 7.5 5.4 5.4 3.6-3.6L21 18.5"/><path d="M15.5 18.5H21V13"/></svg>';
-      msg=`Both sides net <b>${fSide==='bought'&&dSide==='bought'?'bought':'sold'}</b>. Combined institutional net flow <b class="${tot>=0?'up':'down'}" style="color:${tot>=0?'var(--green-ink)':'var(--red-ink)'}">${cr(tot)} cr</b> on ${escapeHtml(cash.date||d.data_date||"")}.`;
+      msg=`Both sides net <b>${fSide==='bought'&&dSide==='bought'?'bought':'sold'}</b>. Combined institutional net flow <b class="${tot>=0?'up':'down'}" style="color:${tot>=0?'var(--green-ink)':'var(--red-ink)'}">${cr(tot)} cr</b> on ${escapeHtml(nd(cash.date||d.data_date))}.`;
     }
     // tug-of-war: FII vs DII cash net on a shared scale (who moved the market, by how much)
     const mx=Math.max(1,Math.abs(fn||0),Math.abs(dn||0));
@@ -1117,7 +1117,7 @@ function renderTrend(d){
   const maxNet=Math.max(1,...rows.flatMap(r=>[Math.abs(r.fii_net||0),Math.abs(r.dii_net||0)]));
   const dbar=(v,mx)=>`<span class="dbar">${v?`<span class="dfill ${v>0?"r":"l"}" style="width:${(Math.abs(v)/mx*50).toFixed(1)}%"></span>`:""}</span>`;
   body.innerHTML=rows.map(r=>`<tr>
-    <td>${escapeHtml(r.date)}</td>
+    <td>${escapeHtml(nd(r.date))}</td>
     <td>${grp(r.fii_buy)}</td><td>${grp(r.fii_sell)}</td><td class="${sign(r.fii_net)}"><span class="netnum">${cr(r.fii_net)}</span>${dbar(r.fii_net||0,maxNet)}</td>
     <td>${grp(r.dii_buy)}</td><td>${grp(r.dii_sell)}</td><td class="${sign(r.dii_net)}"><span class="netnum">${cr(r.dii_net)}</span>${dbar(r.dii_net||0,maxNet)}</td>
   </tr>`).join("");
@@ -1198,7 +1198,7 @@ function renderCumulative(d){
   + `<span class="cumu-key dii"><i></i>DII ${cr0(last.i)}\u00A0cr</span>`;
 
   document.getElementById("cumuSub").textContent =
-    `${pts.length} sessions · ${rows[0].date} → ${last.d}`;
+    `${pts.length} sessions · ${nd(rows[0].date)} → ${nd(last.d)}`;
 
   // The caption is the accessible reading of the shape, and it names the basis
   // the cash panel above already declares (provisional NSE figures).
@@ -1214,6 +1214,12 @@ function renderCumulative(d){
   box.style.display="";
 }
 
+/* V40.2 — NSE writes "01-Oct-2026"; every other date on this site (and the
+   "Refreshed 2 Oct 2026" stamp beside it in this page's own header) reads
+   "1 Oct 2026". Display only — dkey() still sorts on the raw NSE string. The
+   day and month are bound with no-break spaces, the house rule for dates. */
+function nd(s,noYear){const m=/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(String(s||"").trim());if(!m)return s||"";
+  const mo=m[2].charAt(0).toUpperCase()+m[2].slice(1).toLowerCase();return (+m[1])+"\u00A0"+mo+(noYear?"":"\u00A0"+m[3]);}
 function dkey(s){const m=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];try{const[d,mo,y]=String(s).split("-");return new Date(+y,m.indexOf(mo.toLowerCase().slice(0,3)),+d).getTime();}catch(_){return 0;}}
 
 function drawChart(rows){
@@ -1261,9 +1267,9 @@ function drawChart(rows){
     // / End walk it — the standard composite-widget pattern, and the reason this
     // chart does not cost a keyboard user twenty presses to get past it.
     bars+=`<g class="bargrp" tabindex="${i===0?0:-1}" role="listitem" data-i="${i}"`
-        +` aria-label="${escapeHtml(r.date||"")}: FII net ${cr(r.fii_net||0)} crore, DII net ${cr(r.dii_net||0)} crore">${one}</g>`;
+        +` aria-label="${escapeHtml(nd(r.date))}: FII net ${cr(r.fii_net||0)} crore, DII net ${cr(r.dii_net||0)} crore">${one}</g>`;
     // x label (show every nth to avoid crowding)
-    const lab=r.date?r.date.slice(0,6):"";
+    const lab=r.date?nd(r.date,true):"";
     if(i%every===0||(i===lastI&&showLast))
       bars+=`<text class="xlab" x="${gx.toFixed(1)}" y="${H-12}" text-anchor="middle" font-size="9.5">${escapeHtml(lab)}</text>`;
   });
@@ -1296,7 +1302,7 @@ function wireTrendRead(rows){
   const num=(v)=>`<span class="tr-v ${v>=0?"pos":"neg"}">${cr(v)}</span>`;
   const paint=(i,pinned)=>{
     const r=rows[i]; if(!r) return;
-    read.innerHTML=`<span class="tr-date">${escapeHtml(r.date||"—")}</span>`
+    read.innerHTML=`<span class="tr-date">${escapeHtml(nd(r.date)||"—")}</span>`
       +`<span class="tr-sep"></span>FII ${num(r.fii_net||0)} cr`
       +`<span class="tr-sep"></span>DII ${num(r.dii_net||0)} cr`
       +`<span class="tr-hint">${pinned?"Latest session\u00A0· hover or tab any bar":`Session ${i+1} of ${rows.length}`}</span>`;
@@ -1336,7 +1342,7 @@ function optBias(p,prefix){
 
 function renderDerivatives(d){
   const deriv=d.derivatives;
-  document.getElementById("derivDateTag").textContent=deriv&&deriv.date?deriv.date:"—";
+  document.getElementById("derivDateTag").textContent=deriv&&deriv.date?nd(deriv.date):"—";
   if(!deriv||!deriv.oi||!deriv.oi.FII){
     document.getElementById("gaugeCard").innerHTML=`<div class="err-box"><b>Derivatives data unavailable</b>The participant-wise F&amp;O report could not be loaded for the latest day.</div>`;
     document.getElementById("instList").innerHTML="";
