@@ -90,7 +90,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         {
           "@type": "Question",
           "name": "Is the MindForge figure a real return?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. It is a backtest — a simulation over historical data, not live trading, and it carries the survivorship and other limitations set out in full on the Disclosures page. The fund figure is a real trailing return for the Direct Plan of a real fund. That asymmetry is the most important thing on this page: one side actually happened and the other did not." }
+          "acceptedAnswer": { "@type": "Answer", "text": "No. It is a backtest — a simulation over historical data, not live trading, and it carries the survivorship and other limitations set out in full on the Disclosures page. The fund figure is the actual return of a real fund's Direct Plan over the same months, measured from AMFI's published NAVs. That asymmetry is the most important thing on this page: one side actually happened and the other did not." }
         },
         {
           "@type": "Question",
@@ -100,7 +100,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         {
           "@type": "Question",
           "name": "How is tax handled on each side?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Each side pays its own. MindForge rebalances monthly, so no position is held twelve months and every gain is short-term at 20% — already subtracted from the CAGR used here, at the harshest reading, with no set-off for losing months. A fund you buy and hold pays 12.5% long-term once at exit on gains above ₹1,25,000, which is subtracted from the fund CAGR used here." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Each side pays its own. MindForge rebalances monthly, so no position is held twelve months and every gain is short-term at 20% — already subtracted from the CAGR used here, at the harshest reading, with no set-off for losing months. A fund you buy and hold pays 12.5% long-term once at exit on gains above ₹1,25,000, which is subtracted from the fund CAGR used here. MultiAsset is the exception on our side: its international, gold, silver and bond ETFs are taxed at your income-tax slab rather than 20%, so for a 30%-slab investor its real figure is lower than the one used here." }
+        },
+        {
+          "@type": "Question",
+          "name": "What if the money I'd start with is in a fund today?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Then switching has a cost that staying does not: tax on the gain you realise when you redeem, and any exit load. Held for more than twelve months, an equity fund's gain above ₹1,25,000 in a year is taxed at 12.5%; held for twelve months or less, all of it is taxed at 20%. Exit loads vary by fund and are often 1% within the first year. Open “Moving money out of a fund you hold?” above to take them off the MindForge side. You can also keep the fund and send only your new monthly savings: set the starting capital to zero. This is general information, not tax advice." }
         },
         {
           "@type": "Question",
@@ -140,7 +145,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <p class="chero-crumb"><a href="https://mindforgecapital.com/">Home</a> <span aria-hidden="true">›</span> <a href="index.html">Calculators</a> <span aria-hidden="true">›</span> MindForge vs your fund</p>
     <span class="chero-badge fade-up">Comparison calculator</span>
     <h1 class="fade-up">What would switching from <span class="grad">your fund</span> have changed?</h1>
-    <p class="chero-sub fade-up">Every other calculator on this site asks you to assume a return. This one does not: it uses MindForge's published backtest on one side and a real fund's published trailing return on the other, each after its own tax — and it subtracts the MindForge subscription in rupees, every month, because a flat fee does not scale the way a percentage does.</p>
+    <p class="chero-sub fade-up">Every other calculator on this site asks you to assume a return. This one does not: it uses MindForge's published backtest on one side and a real fund's actual return over the same months on the other, measured from AMFI's published NAVs, each after its own tax — and it subtracts the MindForge subscription in rupees, every month, because a flat fee does not scale the way a percentage does.</p>
   </section>
 
   <div class="calc">
@@ -150,6 +155,37 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <div class="cmodes" id="calc-modes" role="group" aria-label="Strategy"></div>
       
       <form id="calc-fields" onsubmit="return false;"></form>
+      <!-- V40.1 — B3. The cost of the switch itself. Optional, closed by default;
+           it changes nothing until the reader says the money comes out of a fund. -->
+      <details class="vf-sw" id="vf-sw">
+        <summary>Moving money out of a fund you hold?</summary>
+        <div class="vf-sw-body">
+          <p class="vf-sw-p">If the starting capital would come out of a mutual fund, switching costs something staying does
+            not: tax on the gain you realise, and any exit load. Both come off the MindForge side.</p>
+          <div class="cf cf-choice">
+            <div class="cf-top"><span class="cf-lbl" id="vf-sw-h-l">Where the starting capital comes from</span></div>
+            <div class="cmodes cf-opts" role="group" aria-labelledby="vf-sw-h-l" id="vf-sw-held">
+              <button type="button" data-held="new" aria-pressed="true">New savings</button>
+              <button type="button" data-held="long" aria-pressed="false">A fund held over 12&nbsp;months</button>
+              <button type="button" data-held="short" aria-pressed="false">A fund held 12&nbsp;months or less</button>
+            </div>
+          </div>
+          <div class="cf">
+            <div class="cf-top">
+              <label class="cf-lbl" for="vf-sw-gain">Of the starting capital, how much is gain<span class="cf-hint">what it is worth now, less what you put in</span></label>
+              <span class="cf-shell"><span class="cf-pre" aria-hidden="true">₹</span><input class="cf-in" id="vf-sw-gain" type="text" inputmode="numeric" autocomplete="off" value="0"></span>
+            </div>
+          </div>
+          <div class="cf">
+            <div class="cf-top">
+              <label class="cf-lbl" for="vf-sw-load">Exit load<span class="cf-hint">often 1% inside the first year — check your fund</span></label>
+              <span class="cf-shell"><input class="cf-in" id="vf-sw-load" type="number" inputmode="decimal" step="0.25" min="0" max="5" value="0"><span class="cf-suf" aria-hidden="true">%</span></span>
+            </div>
+          </div>
+          <p class="vf-sw-out" id="vf-sw-out" aria-live="polite"></p>
+          <button type="button" class="vf-sw-keep" id="vf-sw-keep">Keep the fund — invest only new savings</button>
+        </div>
+      </details>
     </section>
     <section class="cpanel cout fade-up" aria-labelledby="out-h">
       <h2 id="out-h" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;">Result</h2>
@@ -161,7 +197,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <div class="ccta fade-up">
     <div>
       <p class="ccta-t">One side of this comparison actually happened. The other is a simulation.</p>
-      <p class="ccta-s">The fund column is a real trailing return for a real Direct Plan. The MindForge column is a backtest, with every known limitation published in full — including where it flatters us. The two paid strategies also trade in their own broker-verified Zerodha accounts, which is the only part of our record we do not write ourselves.</p>
+      <p class="ccta-s">The fund column is a real Direct Plan's actual return over the backtest's own months, from AMFI's NAVs. The MindForge column is a backtest, with every known limitation published in full — including where it flatters us. The two paid strategies also trade in their own broker-verified Zerodha accounts, which is the only part of our record we do not write ourselves.</p>
     </div>
     <a class="ccta-btn" href="https://mindforgecapital.com/strategies.html">See how we backtest <span aria-hidden="true">&rarr;</span></a>
   </div>
@@ -170,44 +206,49 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <h2 id="fig-h">The figures this uses</h2>
     <p>Nothing here is typed by hand. Every number below is written into this page from the same simulation output that
       produces the figures on the strategy pages, on every publish — so if a strategy's backtest moves, this calculator
-      moves with it.</p>
+      moves with it. The funds are measured from AMFI's published NAVs over the same months, in the same step.</p>
     <!-- Five columns do not fit a 320px phone, so the table gets its own
          scroller — and, per this repo's scroll-cue rule, a cue to go with it.
          A new scroller opts OUT of the shared cue by default, and a text hint
          counts, so this is the hint. -->
     <div class="vf-src-wrap">
     <table class="vf-src" id="vf-src">
-        <thead><tr><th scope="col">Strategy</th><th scope="col">Backtest CAGR, after 20% STCG</th><th scope="col">Flat fee</th><th scope="col">Comparable fund</th><th scope="col">Its CAGR, after 12.5% LTCG</th></tr></thead>
+        <thead><tr><th scope="col">Strategy</th><th scope="col">Backtest CAGR, after 20% STCG</th><th scope="col">Flat fee</th><th scope="col">Works from</th><th scope="col">Best comparable fund, same months</th><th scope="col">Its CAGR, after 12.5% LTCG</th></tr></thead>
         <tbody>
           <tr data-k="sm" data-fee="1499">
-            <th scope="row">SmallMicro&nbsp;500</th>
+            <th scope="row">SmallMicro&nbsp;500<span class="vf-win"><span data-f="span"><!--MFPEER:sm:span-->Sep&nbsp;2021 → Sep&nbsp;2026<!--/MFPEER--></span> · <span data-f="months"><!--MFPEER:sm:months-->61<!--/MFPEER--></span>&nbsp;months</span></th>
             <td data-f="cagr"><!--MFSTAT:sm:cagr_posttax-->46.1%<!--/MFSTAT--></td>
             <td>₹1,499/mo</td>
-            <td data-f="peer"><!--MFSTAT:sm:peer_best_name-->Nippon India Small Cap<!--/MFSTAT--></td>
-            <td data-f="peercagr"><!--MFSTAT:sm:peer_best_posttax-->20.0%<!--/MFSTAT--></td>
+            <td data-f="min"><!--MFMIN:sm:capital-->₹65,000<!--/MFMIN--></td>
+            <td data-f="peer"><!--MFPEER:sm:best_name-->Quant Small&nbsp;Cap<!--/MFPEER--></td>
+            <td data-f="peercagr"><!--MFPEER:sm:best_post-->18.3%<!--/MFPEER--></td>
           </tr>
           <tr data-k="lm" data-fee="999">
-            <th scope="row">LargeMidcap&nbsp;250</th>
+            <th scope="row">LargeMidcap&nbsp;250<span class="vf-win"><span data-f="span"><!--MFPEER:lm:span-->Sep&nbsp;2021 → Sep&nbsp;2026<!--/MFPEER--></span> · <span data-f="months"><!--MFPEER:lm:months-->61<!--/MFPEER--></span>&nbsp;months</span></th>
             <td data-f="cagr"><!--MFSTAT:lm:cagr_posttax-->20.5%<!--/MFSTAT--></td>
             <td>₹999/mo</td>
-            <td data-f="peer"><!--MFSTAT:lm:peer_best_name-->Motilal Oswal Large &amp; Midcap<!--/MFSTAT--></td>
-            <td data-f="peercagr"><!--MFSTAT:lm:peer_best_posttax-->19.5%<!--/MFSTAT--></td>
+            <td data-f="min"><!--MFMIN:lm:capital-->₹6,85,000<!--/MFMIN--></td>
+            <td data-f="peer"><!--MFPEER:lm:best_name-->Motilal Oswal Large &amp; Midcap<!--/MFPEER--></td>
+            <td data-f="peercagr"><!--MFPEER:lm:best_post-->16.5%<!--/MFPEER--></td>
           </tr>
           <tr data-k="ma" data-fee="0">
-            <th scope="row">MultiAsset</th>
+            <th scope="row">MultiAsset<span class="vf-win"><span data-f="span"><!--MFPEER:ma:span-->Mar&nbsp;2023 → Sep&nbsp;2026<!--/MFPEER--></span> · <span data-f="months"><!--MFPEER:ma:months-->43<!--/MFPEER--></span>&nbsp;months</span></th>
             <td data-f="cagr"><!--MFSTAT:ma:cagr_posttax-->14.2%<!--/MFSTAT--></td>
             <td>Free</td>
-            <td data-f="peer"><!--MFSTAT:ma:peer_best_name-->Quant Multi Asset<!--/MFSTAT--></td>
-            <td data-f="peercagr"><!--MFSTAT:ma:peer_best_posttax-->22.0%<!--/MFSTAT--></td>
+            <td data-f="min"><!--MFMIN:ma:capital-->₹20,000<!--/MFMIN--></td>
+            <td data-f="peer"><!--MFPEER:ma:best_name-->Quant Multi&nbsp;Asset<!--/MFPEER--></td>
+            <td data-f="peercagr"><!--MFPEER:ma:best_post-->20.5%<!--/MFPEER--></td>
           </tr>
         </tbody>
       </table>
     </div>
     <p class="vf-src-hint" aria-hidden="true">← swipe to see every column →</p>
-    <p class="vf-src-note">Fund returns are Direct Plan trailing returns taken from the funds' own published pages and are already
-      net of their expense ratio; they change over time. Shown for comparison only — not a recommendation of any fund, and not
+    <p class="vf-src-note">Fund returns are each fund's actual Direct Plan return over the same months as the backtest, measured from
+      AMFI's published NAVs and already net of their expense ratio; they move with the window. "Works from" is the smallest capital
+      at which every name in this month's book can be bought in one whole share. Shown for comparison only — not a recommendation of any fund, and not
       investment advice. <b>MultiAsset is behind its comparable fund on return over this window, and that is published here rather
-      than left out.</b> It is built for the shallowest fall of the three, and it is free.</p>
+      than left out</b> — and its figure applies 20% to every gain, while its international, gold, silver and bond ETFs are
+      taxed at your slab, so at a 30% slab it is lower still. It is built for the shallowest fall of the three, and it is free.</p>
   </section>
 
   <section class="cprose fade-up">
@@ -216,7 +257,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       From there each compounds at its own net rate, month by month:</p>
     <p class="cformula">balance<sub>next</sub> = (balance + monthly addition) × (1 + r)<sup>1/12</sup> − fee</p>
     <p>where <b>r</b> is that side's annual rate <i>after its own tax</i>, and <b>fee</b> is the MindForge subscription in
-      rupees — zero on the fund side, and zero for MultiAsset.</p>
+      rupees — zero on the fund side, and zero for MultiAsset. If your starting capital would come out of a fund you already
+      hold, the tax and exit load of selling it come off the MindForge side only: staying where you are costs the fund side
+      nothing.</p>
     <h2>Why the fee is subtracted in rupees</h2>
     <p>A percentage-of-assets fee scales with your corpus, so it can be modelled as a haircut to the return. A flat
       subscription cannot: ₹1,499 a month is 12% a year of a ₹1,50,000 portfolio and 1.2% of a ₹15,00,000 one. Folding it
@@ -225,11 +268,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       flips is worth knowing before you subscribe.</p>
     <h2>What it deliberately does not do</h2>
     <ul>
-      <li><b>It does not forecast.</b> It compounds two historical figures forward at a constant rate. Real returns arrive in
+      <li><b>It does not forecast.</b> It stops where each backtest stops — five years for the two equity books, three for
+        MultiAsset — and compounds the two historical figures at a constant rate inside that window. Real returns arrive in
         an uneven sequence, and with money going in monthly the sequence changes the answer.</li>
       <li><b>It does not model your slab.</b> MindForge's side assumes 20% on every profitable month with no set-off for
-        losing ones, which is the harshest reading of the rules; the fund side assumes 12.5% once at exit. Your own
-        position will differ.</li>
+        losing ones, which is the harshest reading of the rules; the fund side assumes 12.5% once at exit. MultiAsset's
+        international, gold, silver and bond ETFs are taxed at your slab rate instead, so at a 30% slab its real figure is
+        lower than the one used here. Your own position will differ.</li>
       <li><b>It does not add brokerage or slippage on your orders.</b> The backtest charges a trading cost inside itself;
         what your broker charges you is between you and your broker.</li>
     </ul>
@@ -240,7 +285,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <div class="cfaq">
     <details>
       <summary>Is the MindForge figure a real return?</summary>
-      <div class="a">No. It is a backtest — a simulation over historical data, not live trading, and it carries the survivorship and other limitations set out in full on the <a href="https://mindforgecapital.com/disclosures.html">Disclosures</a> page. The fund figure is a real trailing return for the Direct Plan of a real fund. That asymmetry is the most important thing on this page: one side actually happened and the other did not.</div>
+      <div class="a">No. It is a backtest — a simulation over historical data, not live trading, and it carries the survivorship and other limitations set out in full on the <a href="https://mindforgecapital.com/disclosures.html">Disclosures</a> page. The fund figure is the actual return of a real fund's Direct Plan over the same months, measured from AMFI's published NAVs. That asymmetry is the most important thing on this page: one side actually happened and the other did not.</div>
     </details>
     <details>
       <summary>Does this subtract the subscription?</summary>
@@ -248,7 +293,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </details>
     <details>
       <summary>How is tax handled on each side?</summary>
-      <div class="a">Each side pays its own. MindForge rebalances monthly, so no position is held twelve months and every gain is short-term at 20% — already subtracted from the CAGR used here, at the harshest reading, with no set-off for losing months. A fund you buy and hold pays 12.5% long-term once at exit on gains above ₹1,25,000, which is subtracted from the fund CAGR used here.</div>
+      <div class="a">Each side pays its own. MindForge rebalances monthly, so no position is held twelve months and every gain is short-term at 20% — already subtracted from the CAGR used here, at the harshest reading, with no set-off for losing months. A fund you buy and hold pays 12.5% long-term once at exit on gains above ₹1,25,000, which is subtracted from the fund CAGR used here. MultiAsset is the exception on our side: its international, gold, silver and bond ETFs are taxed at your income-tax slab rather than 20%, so for a 30%-slab investor its real figure is lower than the one used here.</div>
+    </details>
+    <details>
+      <summary>What if the money I'd start with is in a fund today?</summary>
+      <div class="a">Then switching has a cost that staying does not: tax on the gain you realise when you redeem, and any exit load. Held for more than twelve months, an equity fund's gain above ₹1,25,000 in a year is taxed at 12.5%; held for twelve months or less, all of it is taxed at 20%. Exit loads vary by fund and are often 1% within the first year. Open “Moving money out of a fund you hold?” above to take them off the MindForge side. You can also keep the fund and send only your new monthly savings: set the starting capital to zero. This is general information, not tax advice.</div>
     </details>
     <details>
       <summary>Why does MultiAsset lose to its comparable fund?</summary>
@@ -344,6 +393,28 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   .vf-src{ font-size:12.5px; }
   .vf-src th, .vf-src td{ padding:9px 5px; }
 }
+/* V40.1 — the backtest window under each book's name, and the switching panel */
+.vf-src .vf-win{ display:block; font-size:11px; font-weight:500; color:var(--text3); margin-top:2px; white-space:nowrap; }
+@media (max-width:640px){ .vf-src{ min-width:560px; } }
+.vf-sw{ margin-top:18px; border-top:0.5px solid var(--border); padding-top:6px; }
+.vf-sw > summary{ cursor:pointer; list-style:none; padding:12px 30px 12px 0; position:relative;
+  font-size:14px; font-weight:700; color:var(--white); }
+.vf-sw > summary::-webkit-details-marker{ display:none; }
+.vf-sw > summary::after{ content:'+'; position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  font-size:18px; font-weight:600; color:var(--accent2); }
+.vf-sw[open] > summary::after{ content:'−'; }
+.vf-sw > summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+.vf-sw-body{ padding:2px 0 6px; }
+.vf-sw-p{ font-size:13px; color:var(--text2); line-height:1.65; margin:0 0 14px; max-width:70ch; }
+.vf-sw .cf{ margin-bottom:14px; }
+.vf-sw .cf-opts{ flex-wrap:wrap; }
+.vf-sw .cf-opts button{ min-height:44px; white-space:normal; line-height:1.3; }
+.vf-sw-out{ font-size:12.5px; color:var(--text2); line-height:1.65; margin:4px 0 12px; max-width:70ch; }
+.vf-sw-keep{ -webkit-appearance:none; appearance:none; border:1px solid var(--border2); background:var(--ink2);
+  color:var(--accent2); font:inherit; font-size:13px; font-weight:700; border-radius:10px; padding:11px 14px;
+  min-height:44px; cursor:pointer; }
+.vf-sw-keep:hover{ border-color:var(--accent); }
+.vf-sw-keep:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 </style>
 <script>
 /* ── V38.7 · MINDFORGE vs THE FUND YOU ALREADY HOLD ──────────────────────────
@@ -372,7 +443,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         cagr: num(q('cagr')) / 100,
         peer: q('peer'),
         peerCagr: num(q('peercagr')) / 100,
-        fee: num(tr.getAttribute('data-fee'))
+        fee: num(tr.getAttribute('data-fee')),
+        // V40.1 — the backtest's own length and the book's works-from floor,
+        // read from the same table (MFPEER / MFMIN markers), never typed here.
+        months: num(q('months')),
+        min: num(q('min'))
       };
     });
   } catch (e) {}
@@ -381,6 +456,35 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   var OK = SRC.sm && SRC.lm && SRC.ma && SRC.sm.cagr > 0;
 
   var NAME = { sm:'SmallMicro 500', lm:'LargeMidcap 250', ma:'MultiAsset' };
+
+  /* V40.1 — A2. THE CALCULATOR STOPS WHERE THE DATA STOPS. It used to run to 30
+     years and open at 10, compounding a 61-month backtest for 120 months: the
+     default read "MindForge ahead by ₹4,75,33,602", and 30 years printed
+     ₹1,24,55,62,15,912. Past the end of the backtest that is a forecast, which
+     this page says it is not. The cap is the backtest's own length in whole
+     years, read from the table below (5 / 5 / 3). */
+  function yearsFor(k){ var m = SRC[k] && SRC[k].months; return m >= 12 ? Math.floor(m / 12) : 5; }
+  function yearsHint(k){
+    var m = SRC[k] && SRC[k].months, y = yearsFor(k);
+    return m ? 'The backtest covers ' + m + ' months, so this stops at ' + y + (y === 1 ? ' year' : ' years') +
+               ' — past that it would be a forecast.' : '';
+  }
+
+  /* V40.1 — B3. WHAT SWITCHING COSTS. The page asks what switching from your
+     fund would have changed, and used to ignore the switch itself: tax on the
+     gain you realise when you redeem, and any exit load. Those come off the
+     MindForge side only — staying in the fund costs nothing. Equity-oriented
+     fund: held over 12 months, 12.5% on the gain above ₹1,25,000 (assumes this
+     year's exemption is unused); 12 months or less, 20% on all of it. */
+  var SW = { mode: 'new', gain: 0, load: 0 };
+  function switchCost(start){
+    if (SW.mode === 'new' || !(start > 0)) return { tax: 0, load: 0, total: 0 };
+    var gain = Math.min(Math.max(0, SW.gain), start);
+    var tax = SW.mode === 'long' ? 0.125 * Math.max(0, gain - 125000) : 0.20 * gain;
+    var load = start * Math.max(0, Math.min(5, SW.load)) / 100;
+    var total = Math.min(start, tax + load);
+    return { tax: tax, load: load, total: total };
+  }
 
   function grow(rate, fee, start, monthly, years){
     var m = Math.pow(1 + rate, 1/12) - 1;      // the monthly rate that compounds to `rate`
@@ -412,35 +516,50 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     return { at: Math.ceil(hi / 5000) * 5000 };
   }
 
-  MFCalc.init({
+  var calc = MFCalc.init({
     key: 'mfvf',
-    modes: { options: [
-      { k:'sm', label:'SmallMicro 500' },
-      { k:'lm', label:'LargeMidcap 250' },
-      { k:'ma', label:'MultiAsset (free)' }
-    ]},
+    // V40.1 — LargeMidcap 250 opens the page: it is the book the homepage puts
+    // beside a fund. SmallMicro 500 is the satellite the site says to size
+    // smallest, and opening on all of the reader's money in it said otherwise.
+    modes: { options: ['lm', 'sm', 'ma'].map(function (k) {
+      return { k: k, label: k === 'ma' ? 'MultiAsset (free)' : NAME[k],
+               fields: { years: { max: yearsFor(k), value: yearsFor(k), hint: yearsHint(k) } } };
+    })},
     fields: [
       { k:'start',   label:'Starting capital', unit:'money', min:0,    max:20000000, step:25000, value:200000 },
       { k:'monthly', label:'Added every month', hint:'from your salary — set to 0 for a pure lump sum', unit:'money', min:0, max:500000, step:5000, value:40000 },
-      { k:'years',   label:'For how long', unit:'years', min:1, max:30, step:1, value:10 }
+      { k:'years',   label:'For how long', unit:'years', min:1, max:5, step:1, value:5 }
     ],
     compute: function (v, mode) {
-      var d = SRC[mode] || SRC.sm;
+      var d = SRC[mode] || SRC.lm;
       if (!OK || !d) {
         return { fig: { k:'Figures unavailable', v:'—',
                         cap:'This calculator reads its rates from the published figures table below, and could not. Nothing here is estimated in their absence.' },
                  stats: [], note:'' };
       }
-      var mf   = grow(d.cagr,     d.fee, v.start, v.monthly, v.years);
-      var fund = grow(d.peerCagr, 0,     v.start, v.monthly, v.years);
+      var years = Math.min(v.years, yearsFor(mode));             // never past the data
+      var sw   = switchCost(v.start);
+      var mfStart = Math.max(0, v.start - sw.total);
+      var mf   = grow(d.cagr,     d.fee, mfStart, v.monthly, years);
+      var fund = grow(d.peerCagr, 0,     v.start, v.monthly, years);
       var gap  = mf.end - fund.end;
       var ahead = gap >= 0;
 
       var bars = [];
-      for (var y = 1; y <= v.years; y++){
+      for (var y = 1; y <= years; y++){
         bars.push({ label:String(y),
                     a: grow(d.peerCagr, 0, v.start, v.monthly, y).end,
-                    b: Math.max(0, grow(d.cagr, d.fee, v.start, v.monthly, y).end - grow(d.peerCagr, 0, v.start, v.monthly, y).end) });
+                    b: Math.max(0, grow(d.cagr, d.fee, mfStart, v.monthly, y).end - grow(d.peerCagr, 0, v.start, v.monthly, y).end) });
+      }
+
+      // V40.1 — A2. Below the book's works-from floor, the model's book cannot be
+      // bought in full; say so, and when a year of contributions gets past it.
+      var floorLine = '';
+      if (d.min > 0 && mfStart < d.min) {
+        var need = d.min - mfStart, n = v.monthly > 0 ? Math.ceil(need / v.monthly) : 0;
+        floorLine = ' Below <b>' + MFCalc.inr(d.min) + '</b> this month\u2019s ' + NAME[mode] + ' book can\u2019t be bought in full' +
+          (n && n <= years * 12 ? ' — at ' + MFCalc.inr(v.monthly) + ' a month your contributions pass it in month <b>' + n + '</b>.'
+                                : (v.monthly > 0 ? ' — your contributions do not reach it inside ' + years + (years === 1 ? ' year.' : ' years.') : '.'));
       }
 
       return {
@@ -449,10 +568,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           v: MFCalc.inr(Math.abs(gap)),
           cap: '<b>' + NAME[mode] + '</b> at <b>' + MFCalc.pct(d.cagr * 100, 1) + '</b> after tax, less <b>' +
                (d.fee ? MFCalc.inr(d.fee) + ' a month' : 'no fee') + '</b>, against <b>' + MFCalc.esc(d.peer) +
-               '</b> at <b>' + MFCalc.pct(d.peerCagr * 100, 1) + '</b> after tax — over ' + v.years +
-               (v.years === 1 ? ' year' : ' years') + '. Backtest on one side, a real trailing return on the other.' +
+               '</b> at <b>' + MFCalc.pct(d.peerCagr * 100, 1) + '</b> after tax — over ' + years +
+               (years === 1 ? ' year' : ' years') + '. Backtest on one side, the fund\u2019s actual return over the same months on the other.' +
+               (sw.total > 0 ? ' Switching costs <b>' + MFCalc.inr(sw.total) + '</b> in tax and exit load, taken off the MindForge side.' : '') +
+               floorLine +
                (function(){
-                 var f = flipCapital(d, v.monthly, v.years);
+                 if (sw.total > 0) return '';
+                 var f = flipCapital(d, v.monthly, years);
                  if (!f) return '';
                  if (f.always) return ' On these inputs MindForge ends ahead at <b>any starting capital</b>, including none.';
                  if (f.never)  return ' On these inputs it does <b>not</b> overtake this fund at any starting capital up to <b>' + MFCalc.inr(f.cap) + '</b>.';
@@ -463,18 +585,59 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           { k:'MindForge, after tax and fee', v:MFCalc.inr(mf.end), tone: ahead ? 'pos' : '',
             s:(d.fee ? MFCalc.inr(mf.paid) + ' of subscription paid' : 'no subscription — MultiAsset is free') },
           { k:'The fund, after its tax', v:MFCalc.inr(fund.end), tone: ahead ? '' : 'pos',
-            s:MFCalc.esc(d.peer) + ', Direct Plan' },
-          { k:'You put in', v:MFCalc.inr(mf.put), s:'the same on both sides' }
+            s:d.peer + ', Direct Plan' },   // V40.1 — the engine escapes stat sublines itself; escaping here too printed "&amp;"
+          { k:'You put in', v:MFCalc.inr(fund.put),
+            s: sw.total > 0 ? 'the same on both sides — ' + MFCalc.inr(sw.total) + ' of it goes on switching' : 'the same on both sides' }
         ],
         split: ahead
           ? { a:{ k:'The fund', v:fund.end }, b:{ k:'MindForge ahead', v:Math.abs(gap) } }
           : { a:{ k:'MindForge', v:mf.end },  b:{ k:'Fund ahead',      v:Math.abs(gap) } },
         bars: bars, barsTitle:'Year by year', barsNote:'the fund, and what MindForge adds on top of it',
         barKeys: { a:'The fund', b:'MindForge above it' },
-        note: 'The MindForge side is a BACKTEST — simulated, never traded — compounded at its published after-tax CAGR with the flat subscription taken out in rupees each month. The fund side is that fund’s real published trailing return, after 12.5% long-term tax and already net of its expense ratio. Both are compounded at a constant rate, which no real market delivers. Illustration, not a forecast, and not a recommendation of any fund.'
+        note: 'The MindForge side is a BACKTEST — simulated, never traded — compounded at its published after-tax CAGR with the flat subscription taken out in rupees each month. The fund side is that fund’s actual Direct Plan return over the backtest’s own months, measured from AMFI’s NAVs, after 12.5% long-term tax and already net of its expense ratio. Both are compounded at a constant rate, which no real market delivers. Illustration, not a forecast, and not a recommendation of any fund.'
       };
     }
   });
+
+  /* V40.1 — B3 wiring. Every change re-runs the calculator, which reads SW. */
+  (function(){
+    var box = document.getElementById('vf-sw'); if (!box || !calc) return;
+    var held = document.getElementById('vf-sw-held'), gainEl = document.getElementById('vf-sw-gain'),
+        loadEl = document.getElementById('vf-sw-load'), out = document.getElementById('vf-sw-out'),
+        keep = document.getElementById('vf-sw-keep');
+    function money(t){ var n = parseFloat(String(t).replace(/[^0-9.]/g, '')); return isFinite(n) ? n : 0; }
+    function say(){
+      var st = calc.state(), c = switchCost(st.start || 0);
+      if (SW.mode === 'new') { out.textContent = 'New savings: nothing to pay to switch.'; return; }
+      out.innerHTML = 'Tax <b>' + MFCalc.inr(c.tax) + '</b> + exit load <b>' + MFCalc.inr(c.load) + '</b> = <b>' +
+        MFCalc.inr(c.total) + '</b> to switch ' + MFCalc.inr(st.start || 0) + '. ' +
+        (SW.mode === 'long' ? 'Long-term: 12.5% on the gain above ₹1,25,000, assuming this year\u2019s exemption is unused.'
+                            : 'Short-term: 20% on all of the gain.') + ' General information, not tax advice.';
+    }
+    function apply(){ SW.gain = money(gainEl.value); SW.load = parseFloat(loadEl.value) || 0; calc.run(); say(); }
+    held.addEventListener('click', function(ev){
+      var b = ev.target && ev.target.closest ? ev.target.closest('button[data-held]') : null; if (!b) return;
+      SW.mode = b.getAttribute('data-held');
+      held.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+      // a fund held twelve months or less usually still carries its exit load
+      if (SW.mode === 'short' && !(parseFloat(loadEl.value) > 0)) loadEl.value = '1';
+      if (SW.mode === 'long' && parseFloat(loadEl.value) === 1) loadEl.value = '0';
+      apply();
+    });
+    gainEl.addEventListener('input', apply);
+    gainEl.addEventListener('blur', function(){ var n = money(gainEl.value); gainEl.value = n ? MFCalc.group(n) : '0'; });
+    loadEl.addEventListener('input', apply);
+    keep.addEventListener('click', function(){
+      SW.mode = 'new';
+      held.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x.getAttribute('data-held') === 'new')); });
+      var f = document.querySelector('#calc-fields .cf[data-f="start"] .cf-in');
+      if (f) { f.value = '0'; f.dispatchEvent(new Event('input', { bubbles: true })); f.dispatchEvent(new Event('blur')); }
+      apply();
+    });
+    // the start field is rebuilt when the book changes; keep the line current
+    document.getElementById('calc-fields').addEventListener('input', function(){ if (SW.mode !== 'new') say(); });
+    say();
+  })();
 })();
 </script>
 <script src="../assets/mfc-offer.js?v=3380" defer></script>

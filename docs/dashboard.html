@@ -698,6 +698,7 @@ html[data-theme="dark"] .cvg-track{background:rgba(120,150,255,0.14);}
 .cvg.is-short .cvg-fill{background:linear-gradient(90deg,#d97706,#f0a836);}
 .cvg-note{margin-top:9px;font-size:12px;color:var(--text3);line-height:1.55;}
 .cvg-note b{color:var(--text2);font-weight:700;font-variant-numeric:tabular-nums;}
+.cvg-real{display:block;margin-top:6px;color:var(--text2);font-weight:600;}
 .cvg-names{display:inline-flex;flex-wrap:wrap;gap:5px;vertical-align:middle;margin:0 2px;}
 .cvg-name{display:inline-block;font-size:11px;font-weight:700;color:var(--text2);
   padding:1px 7px;border-radius:20px;background:rgba(15,23,42,0.05);border:0.5px solid var(--border);}
@@ -3437,7 +3438,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <span data-k="lm:neg"><!--MFRISK:lm:neg-->18<!--/MFRISK--></span><span data-k="lm:months"><!--MFRISK:lm:months-->61<!--/MFRISK--></span><span data-k="lm:worst"><!--MFRISK:lm:worst-->-13.9%<!--/MFRISK--></span>
           <span data-k="sm:neg"><!--MFRISK:sm:neg-->14<!--/MFRISK--></span><span data-k="sm:months"><!--MFRISK:sm:months-->61<!--/MFRISK--></span><span data-k="sm:worst"><!--MFRISK:sm:worst-->-16.3%<!--/MFRISK--></span>
           <span data-k="ma:neg"><!--MFRISK:ma:neg-->9<!--/MFRISK--></span><span data-k="ma:months"><!--MFRISK:ma:months-->43<!--/MFRISK--></span><span data-k="ma:worst"><!--MFRISK:ma:worst-->-9.1%<!--/MFRISK--></span>
-          <span data-k="lm:median"><!--MFTURN:lm:median-->8<!--/MFTURN--></span><span data-k="lm:yearly"><!--MFTURN:lm:yearly-->100<!--/MFTURN--></span>
+          <span data-k="lm:median"><!--MFTURN:lm:median-->12<!--/MFTURN--></span><span data-k="lm:yearly"><!--MFTURN:lm:yearly-->140<!--/MFTURN--></span>
           <span data-k="sm:median"><!--MFTURN:sm:median-->14<!--/MFTURN--></span><span data-k="sm:yearly"><!--MFTURN:sm:yearly-->170<!--/MFTURN--></span>
         </div>
         <div class="pc-leaders" id="pc-leaders"></div>
@@ -3921,6 +3922,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     .cc-note{ font-size:11px; color:var(--text3); line-height:1.6; margin:12px 0 0; }
     .cc-note a{ color:var(--accent); }
     html[data-theme="dark"] .cc-note a{ color:#9dbcff; }
+    /* V40.1 — A7: the member's own slab, for MultiAsset's slab-rated ETFs */
+    .cc-slab{ display:inline-flex; align-items:center; gap:6px; font-weight:700; color:var(--text2); white-space:nowrap; }
+    .cc-slab select{ font:inherit; font-size:12px; font-weight:700; padding:3px 6px; border-radius:7px;
+      border:1px solid var(--border2); background:var(--ink2); color:var(--white); }
+    @media (hover:none) and (pointer:coarse){ .cc-slab select{ font-size:16px; min-height:44px; } }
     @media (max-width:600px){ .cc-grid{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); } .cc-val{ font-size:17px; } }
     @media print{ .chg-cost{ break-inside:avoid; } }
 /* the per-row badge. Green ink on its own tint, measured in PIXELS on both
@@ -4005,6 +4011,13 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         </div>
         <div class="cvg-track" aria-hidden="true"><span class="cvg-fill" id="cvg-fill"></span></div>
         <div class="cvg-note" id="cvg-note"></div>
+        <!-- V40.1 — A5. The REAL books' works-from floors (MFMIN, written by
+             inject_site_stats.py), read only by the sample: its placeholder prices
+             are lower than the real book's, so at ₹2L it said "Full book" for a
+             LargeMidcap 250 book that needs ₹6.85L. -->
+        <span id="mfmin-lm" hidden><!--MFMIN:lm:capital-->₹6,85,000<!--/MFMIN--></span>
+        <span id="mfmin-sm" hidden><!--MFMIN:sm:capital-->₹65,000<!--/MFMIN--></span>
+        <span id="mfmin-ma" hidden><!--MFMIN:ma:capital-->₹20,000<!--/MFMIN--></span>
       </div>
       <!-- V39.5 — B1: the one-line door to the rules card, until the member sets a rule
            or hides it. Never in demo; never on MultiAsset. -->
@@ -4356,7 +4369,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="adj-head">
           <div>
             <h2 id="adj-title">Adjust your book</h2>
-            <p class="adj-lead">For the two jobs the picks table can't do on its own.</p>
+            <p class="adj-lead">For the three jobs the picks table can't do on its own.</p>
           </div>
         </div>
         <div class="adj-tabs" role="tablist" aria-label="Adjust your book">
@@ -4367,6 +4380,11 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <button type="button" class="adj-tab" role="tab" id="adj-tab-sync" aria-controls="adj-panel-sync" aria-selected="false" tabindex="-1">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 1-15.5 6.2M3 12a9 9 0 0 1 15.5-6.2"/><polyline points="21 4 21 9 16 9"/><polyline points="3 20 3 15 8 15"/></svg>
             <span><b>Match my holdings</b><small>Reconcile your broker with the model</small></span>
+          </button>
+          <!-- V40.1 — B2. "Side earnings" is money with a job; how it comes back out. -->
+          <button type="button" class="adj-tab" role="tab" id="adj-tab-take" aria-controls="adj-panel-take" aria-selected="false" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>
+            <span><b>Take money out</b><small>Sell across the book, keep it in step</small></span>
           </button>
         </div>
 
@@ -4404,6 +4422,24 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             <label class="adj-check"><input type="checkbox" id="adj-sync-others"> Also sell holdings that aren't in this strategy</label>
           </div>
           <div class="adj-out" id="adj-sync-out" aria-live="polite"></div>
+        </div>
+        <div class="adj-panel" role="tabpanel" id="adj-panel-take" aria-labelledby="adj-tab-take" hidden>
+          <p class="adj-desc">Need some of it back &mdash; a down payment, school fees, a sabbatical? Enter the amount. This lists the sales, in whole shares, that leave the rest of your book as close to the model&rsquo;s weights as whole shares allow. It starts from the capital entered above, so if your account has drifted from the model, run Match my holdings first.</p>
+          <div class="adj-row">
+            <label class="adj-lbl" for="adj-take-amt">Amount to take out</label>
+            <div class="adj-field">
+              <span class="adj-cur" aria-hidden="true">₹</span>
+              <input type="text" id="adj-take-amt" class="adj-input" inputmode="numeric" autocomplete="off" placeholder="1,00,000" aria-describedby="adj-take-hint">
+            </div>
+            <div class="adj-chips" id="adj-take-chips">
+              <button type="button" class="adj-chip" data-amt="25000">₹25K</button>
+              <button type="button" class="adj-chip" data-amt="50000">₹50K</button>
+              <button type="button" class="adj-chip" data-amt="100000">₹1L</button>
+              <button type="button" class="adj-chip" data-amt="200000">₹2L</button>
+            </div>
+          </div>
+          <p class="adj-hint" id="adj-take-hint"></p>
+          <div class="adj-out" id="adj-take-out" aria-live="polite"></div>
         </div>
         <p class="adj-foot">Arithmetic on the model's published weights and the numbers you enter — not a separate recommendation. Orders open on your broker's own screen; nothing is placed until you confirm there.</p>
       </section>
@@ -4692,6 +4728,8 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       .trk-tick{ position:absolute; top:0; bottom:0; width:2px; border-radius:2px;
         background:var(--text3); opacity:.85; }
       .trk-val{ font-size:12.5px; font-weight:800; text-align:right; font-variant-numeric:tabular-nums; }
+      /* V40.1 — a cycle with no completed session yet: one line across the axis and value columns */
+      .trk-pend{ grid-column:2 / span 2; font-size:11.5px; font-weight:600; color:var(--text3); }
       .trk-val.up  { color:var(--ink-pos,#047653); }
       .trk-val.down{ color:var(--ink-neg,#c92020); }
       .trk-val.flat{ color:var(--text3); }
@@ -6137,8 +6175,8 @@ function setupStrategySwitcher(activeStrategy){
   // pill is a switcher. Fires at most once per device (localStorage flag), then
   // never again — returning members aren't nagged.
   try {
-    if (!localStorage.getItem('mfc_strat_switch_hinted')){
-      localStorage.setItem('mfc_strat_switch_hinted', '1');
+    if (!localStorage.getItem(_devKey('mfc_strat_switch_hinted'))){
+      localStorage.setItem(_devKey('mfc_strat_switch_hinted'), '1');
       pill.classList.add('nudge');
       setTimeout(function(){ pill.classList.remove('nudge'); }, 3800);
     }
@@ -7025,8 +7063,11 @@ const ASSET_CLASS_RULES = [
   { cls: 'Gold',   re: /\bgold\b|goldbees/i },
   { cls: 'Silver', re: /\bsilver\b|silverbees/i },
   { cls: 'Debt',   re: /\bbond\b|\bgilt\b|\bg-?sec\b|\bsdl\b|\bdebt\b|\bliquid\b|\btreasury\b|\bbharat\s*bond\b|ebbetf/i },
-  // Equity last: it is the broadest test, so anything the three above claim wins.
-  { cls: 'Equity', re: /\bnifty\b|\bsensex\b|\bnasdaq\b|\bmidcap\b|\bsmallcap\b|\bmicrocap\b|\blargecap\b|\bequity\b|\bindex\b|\bnext\s*50\b|\bbees\b|\bs&p\b/i }
+  // V40.1 — B4. US equity is its own class: the Nasdaq-100 ETF is a different
+  // market from the Indian ETFs, and a different tax class (slab, not 20%).
+  { cls: 'US equity', re: /\bnasdaq\b|mon100|\bs&p\b|\bus\s*equity\b/i },
+  // Equity last: it is the broadest test, so anything the classes above claim wins.
+  { cls: 'Indian equity', re: /\bnifty\b|\bsensex\b|\bmidcap\b|\bsmallcap\b|\bmicrocap\b|\blargecap\b|\bequity\b|\bindex\b|\bnext\s*50\b|\bbees\b/i }
 ];
 function assetClassOf(stock){
   const hay = ((stock.company_name || '') + ' ' + (stock.ticker || '')).trim();
@@ -7050,7 +7091,7 @@ function deriveAssetClasses(stocks){
    and cyan steps outright so the two modes are one system; Silver stays a neutral
    by design (it is the one class whose identity IS "no hue") and only its
    lightness moves. Worst across all nineteen measured backdrops: 3.24:1. */
-const ASSET_CLASS_COLORS = { Equity:'#4073fd', Gold:'#c16407', Silver:'#768191', Debt:'#098bc0' };
+const ASSET_CLASS_COLORS = { 'Indian equity':'#4073fd', 'US equity':'#9050fd', Gold:'#c16407', Silver:'#768191', Debt:'#098bc0' };
 
 /* ══════════════════════════════════════════════════════════════════════════
    V30.3 — ONE GROUPING AXIS FOR THE WHOLE PAGE.
@@ -7412,8 +7453,16 @@ function normaliseCapital(v) {
   if (!isFinite(n) || n < 0) n = 0;
   return Math.min(n, MAX_CAPITAL);
 }
+/* V40.1 — A5. THE SAMPLE MUST NEVER WRITE A REAL MEMBER'S SETTINGS. This key had
+   no demo namespace, so clicking a capital preset in ?demo=1 overwrote the
+   LargeMidcap amount a real member keeps on that device — and a real visit then
+   treated it as their own confirmed amount (_capEntered = saved > 0), with a
+   fresh timestamp that also beat the server's copy under V39.3's newer-wins rule.
+   The sample's first-visit path is exactly this reader's path to subscribing.
+   Every per-device preference the sample can touch now goes through _devKey(). */
+function _devKey(k) { return isDemo ? k + '::demo' : k; }
 function capitalStorageKey(strategy) {
-  return 'mfc_capital_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
+  return 'mfc_capital_' + (isDemo ? 'demo_' : '') + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
 }
 function loadSavedCapital(strategy) {
   try {
@@ -7758,6 +7807,16 @@ function refreshCoverage() {
     }
     if (nRs > 0) note += ' <b>' + nRs + '</b> ' + (nRs === 1 ? 'name is' : 'names are') +
       ' on your restricted list and left out on purpose &mdash; their weight is spread across the rest.';
+    // V40.1 — A5: the sample says when the REAL book would not fit this capital
+    if (isDemo) {
+      const k = _strategyPerfKey(currentStrategy || '');
+      const fEl = k && document.getElementById('mfmin-' + k);
+      const floor = fEl ? Number(String(fEl.textContent).replace(/[^0-9.]/g, '')) : 0;
+      if (floor > 0 && currentCapital < floor)
+        note += ' <span class="cvg-real">This month&rsquo;s real ' + escapeHtml(String(currentStrategy || '').replace(/^MindForge\s*/, '')) +
+                ' book works from <b>' + fmtMoney(floor) + '</b>, so at ' + fmtMoney(currentCapital) +
+                ' it could not be bought in full. The placeholder prices in this sample are lower.</span>';
+    }
     document.getElementById('cvg-note').innerHTML = note;
     box.style.display = '';
   } catch (e) { /* sizing card must survive a coverage failure */ }
@@ -9182,14 +9241,14 @@ var BROKERS = {
             link: function(){ return ''; }, copy: true },
 };
 function getBroker(){
-  try { var saved = localStorage.getItem('mfc-broker'); if (saved && BROKERS[saved]) return saved; } catch(e){}
+  try { var saved = localStorage.getItem(_devKey('mfc-broker')); if (saved && BROKERS[saved]) return saved; } catch(e){}
   // V24.5: every book is NSE, so Kite is always the default (the V9.3 US-book
   // Groww fallback existed only because Kite India can't trade US tickers).
   return 'kite';
 }
 function setBroker(key){
   if (!BROKERS[key]) return;
-  try { localStorage.setItem('mfc-broker', key); } catch(e){}
+  try { localStorage.setItem(_devKey('mfc-broker'), key); } catch(e){}
   // Re-render table so all rows pick up the new deeplinks.
   // V28.0: this used to render stocksData in its canonical order, so picking a
   // broker silently undid the user's sort AND their filter while the sort arrow
@@ -9551,14 +9610,14 @@ function sortByKey(key){
     _sortKey = key;
     _sortDir = (key === 'company' || key === 'ticker' || key === 'industry') ? 1 : -1;
   }
-  try { localStorage.setItem('mfc-sort-' + (currentStrategy||'_'), _sortKey + ',' + _sortDir); } catch(e){}
+  try { localStorage.setItem(_devKey('mfc-sort-' + (currentStrategy||'_')), _sortKey + ',' + _sortDir); } catch(e){}
   applySort();
 }
 // Restore from storage on dashboard render
 function restoreSort(){
   if (!currentStrategy) return;
   try {
-    var v = localStorage.getItem('mfc-sort-' + currentStrategy);
+    var v = localStorage.getItem(_devKey('mfc-sort-' + currentStrategy));
     if (!v) return;
     var parts = v.split(',');
     _sortKey = parts[0]; _sortDir = Number(parts[1]) || 1;
@@ -9719,7 +9778,7 @@ function markAllPlaced(){
    season once dismissed. Counts come from MFTURN in #mfrisk; MultiAsset has none. */
 function _itrSeasonKey(){
   var l = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-  return 'mfc_itr_hidden_' + l.getFullYear();
+  return _devKey('mfc_itr_hidden_' + l.getFullYear());
 }
 function renderItrCard(force){
   var card = document.getElementById('itr-card');
@@ -9762,7 +9821,7 @@ function _advTaxDates(today){
   c.sort(function(a, b){ return a.date - b.date; });
   return c.filter(function(x){ return x.date >= today; });
 }
-function _advTaxKey(d){ return 'mfc_atx_hidden_' + _csIso(d); }
+function _advTaxKey(d){ return _devKey('mfc_atx_hidden_' + _csIso(d)); }
 function renderAdvTaxCard(){
   var card = document.getElementById('atx-card');
   if (!card) return;
@@ -11414,9 +11473,32 @@ function _cycleKey(sub){
   if (d && !isNaN(d.getTime())) return 'd' + d.toISOString().slice(0,10);
   return null;
 }
+/* V40.1 — A5. V40.0 namespaced the sample's history for NEW writes only. A device
+   that opened the sample before 30 Sep 2026 still holds the fixture under the
+   real strategy name (cur.key "20260831_090000_LM", prev.key "demo-prev" — found
+   on the review browser), and a real member's next visit rolled it over as "the
+   set you last opened": what changed, its sells and the sell basket all came from
+   the sample's book. The fixture's signature is unmistakable — its run ids are
+   YYYYMMDD_090000_<LM|MA|SM> and its previous set is "demo-prev" — so a real load
+   drops any non-demo entry carrying it, before anything reads or pushes it. */
+var _DEMO_RUN_RE = /^\d{8}_090000_(LM|MA|SM)$/;
+function _isDemoResidue(slot){
+  if (!slot || typeof slot !== 'object') return false;
+  return [slot.cur && slot.cur.key, slot.prev && slot.prev.key].some(function(k){
+    return k === 'demo-prev' || (typeof k === 'string' && _DEMO_RUN_RE.test(k));
+  });
+}
 function _loadBookHist(){
   try { var o = JSON.parse(localStorage.getItem(BOOK_HIST_KEY) || '{}');
-        return (o && typeof o === 'object') ? o : {}; } catch(e){ return {}; }
+        if (!o || typeof o !== 'object') return {};
+        if (!isDemo){
+          var healed = false;
+          Object.keys(o).forEach(function(k){
+            if (k.indexOf('demo::') !== 0 && _isDemoResidue(o[k])) { delete o[k]; healed = true; }
+          });
+          if (healed) { try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e2){} }
+        }
+        return o; } catch(e){ return {}; }
 }
 function _saveBookHist(o){ try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e){} }
 /* V40.0 — THE SAMPLE KEEPS ITS OWN HISTORY. ?demo stored its fixture under the
@@ -11496,6 +11578,8 @@ function bookHistSyncLoad(strategy){
       if (!slot || typeof slot !== 'object') return false;
       var prev = slot.prev;
       if (!prev || !(prev.tickers || []).length) return false;
+      // V40.1 — A5: never adopt a server copy that a pre-V40.0 sample visit polluted
+      if (_isDemoResidue({ prev: prev })) return false;
       var cur = _loadBookHist();
       var mine = cur[strat] || {};
       // Adopt the server's PREV only. `cur` is this render's own book and is
@@ -11797,6 +11881,28 @@ var CYCLE_COST_BPS = {
 };
 var STCG_RATE = 0.20;   // s.111A (s.196 of the Income-tax Act, 2025 from Apr 2026), the post-23-Jul-2024 regime; config.py TAX.STCG_RATE
 
+/* V40.1 — A7. MULTIASSET IS NOT TAXED AT 20%. Its Indian equity ETFs are; its
+   Nasdaq-100, gold and silver ETFs pay the member's SLAB rate on short-term
+   gains, and its bond ETF pays the slab rate however long it is held. The cost
+   card used to apply 20% to every sale — and, because MultiAsset never swaps a
+   holding (it only re-weights the same eight), it found no "sells" at all and
+   printed "₹0 · no gain realised" under a rebalance that trims winners. The
+   ticker map is fixed (the universe is eight ETFs); an unknown ticker gets no
+   estimate rather than a guessed rate. The slab is the member's own answer,
+   kept on this device only (the backend's prefs entry accepts no new field). */
+var MA_TAX_CLASS = { NIFTYBEES:'eq', JUNIORBEES:'eq', MID150BEES:'eq', HDFCSML250:'eq',
+                     MON100:'slab', GOLDBEES:'slab', SILVERBEES:'slab', EBBETF0431:'slab' };
+var TAX_SLABS = [30, 25, 20, 15, 10, 5];
+function _taxSlab(){
+  try { var v = Number(localStorage.getItem(_devKey('mfc_tax_slab'))); if (TAX_SLABS.indexOf(v) > -1) return v; } catch (e) {}
+  return 30;
+}
+function setTaxSlab(v){
+  v = Number(v); if (TAX_SLABS.indexOf(v) < 0) return;
+  try { localStorage.setItem(_devKey('mfc_tax_slab'), String(v)); } catch (e) {}
+  renderCycleCost();
+}
+
 /* Three legs, because there are three ways money moves in a rebalance:
      BUY      the names joining, at their published price x the member's shares
      SELL     the names leaving, at the live price where we have one and the price
@@ -11868,6 +11974,29 @@ function renderCycleCost(){
   var charges = traded * (cost.bps / 10000);
   var tax     = gain > 0 ? gain * STCG_RATE : 0;
 
+  // V40.1 — A7. MultiAsset: the TRIMS are the sales. Each held ETF whose model
+  // weight fell gives up (w_prev - w_new)% of the capital; the gain on that slice
+  // is its share of the move since the price it was recorded at. Rated per ETF.
+  var maTax = null;
+  if (key === 'ma' && rebKnown && rebVal > 0){
+    var slab = _taxSlab(), eqGain = 0, slGain = 0, unknown = 0, trimmed = 0;
+    diff.held.forEach(function(t){
+      var s = byTicker[t], p = pp[t];
+      if (!s || !p || typeof p.w !== 'number') return;
+      var give = p.w - (Number(s.weight_pct) || 0);
+      if (!(give > 0)) return;
+      trimmed++;
+      var cls = MA_TAX_CLASS[String(t).replace(/\.NS$/, '')];
+      var q = px[p.y], live = (q && Number(q.price) > 0) ? Number(q.price) : (Number(s.recommended_price) || 0);
+      var rec = Number(p.rec) || 0;
+      if (!cls || !(live > 0) || !(rec > 0)){ unknown++; return; }
+      var g = (give / 100) * cap * (live - rec) / live;
+      if (cls === 'eq') eqGain += g; else slGain += g;
+    });
+    maTax = { known: unknown === 0 && trimmed > 0, eqGain: eqGain, slGain: slGain, slab: slab,
+              tax: Math.max(0, eqGain) * STCG_RATE + Math.max(0, slGain) * (slab / 100) * 1.04 };
+  }
+
   var chip = document.getElementById('cc-chip');
   // "% of your book turns over" would overstate it: this counts BOTH legs, so a
   // 2-in-2-out month on a ten-name book reads 40% while only two holdings in ten
@@ -11891,7 +12020,15 @@ function renderCycleCost(){
            cost.bps + '&nbsp;bps a side, ' + (cost.src === 'modelled'
              ? 'the figure the published backtest is net&nbsp;of'
              : 'assumed for liquid&nbsp;ETFs')) +
-      (!gainKnown
+      (maTax
+        ? (maTax.known
+            ? (maTax.tax > 0.5
+                ? cell('Short-term tax', '~' + fmtMoney(Math.round(maTax.tax)),
+                       '20% on ' + fmtMoney(Math.round(Math.max(0, maTax.eqGain))) + ' &middot; ' +
+                       (maTax.slab * 1.04).toFixed(1).replace(/\.0$/, '') + '% on ' + fmtMoney(Math.round(Math.max(0, maTax.slGain))))
+                : cell('Short-term tax', fmtMoney(0), 'the trims realise no net gain', true))
+            : cell('Short-term tax', '&mdash;', 'needs last cycle&rsquo;s price for each trimmed ETF', true))
+        : !gainKnown
         ? cell('Short-term tax', '&mdash;',
                goneNow.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
         : gain > 0.5
@@ -11906,9 +12043,15 @@ function renderCycleCost(){
   if (note){
     note.innerHTML = 'Estimates, at the capital you entered. Charges are a single ' + cost.bps +
       '&nbsp;bps-a-side assumption; your broker’s plan, STT, stamp duty, exchange and SEBI fees and GST are not itemised. ' +
-      'Tax is the 20% short-term rate on gains realised by the sells above ' +
-      '— every book here rebalances monthly, so no gain is ever long term. ' +
-      '<a href="disclosures.html#backtest-methodology" target="_blank" rel="noopener">How the published figures treat cost and tax &rarr;</a>';
+      (key === 'ma'
+        ? 'Tax: the Indian equity ETFs pay the 20% short-term rate; the Nasdaq-100, gold, silver and bond ETFs pay your ' +
+          'income-tax slab plus 4% cess — estimated on the weight each ETF gives up this cycle. ' +
+          '<label class="cc-slab">Your slab <select id="cc-slab" onchange="setTaxSlab(this.value)">' +
+          TAX_SLABS.map(function(v){ return '<option value="' + v + '"' + (v === _taxSlab() ? ' selected' : '') + '>' + v + '%</option>'; }).join('') +
+          '</select></label> '
+        : 'Tax is the 20% short-term rate on gains realised by the sells above ' +
+          '— every book here rebalances monthly, so no gain is ever long term. ') +
+      '<a href="disclosures.html#' + (key === 'ma' ? 'ma-slab' : 'backtest-methodology') + '" target="_blank" rel="noopener">How the published figures treat cost and tax &rarr;</a>';
   }
   box.hidden = false;
 }
@@ -13086,7 +13229,7 @@ function _atRenderLadder(){
   var head = document.getElementById('at-lhead'), tog = document.getElementById('at-tog');
   var canGroup = groups.length >= 2 && groups.length < pp.length;
   var mode = 'hold';
-  try { if (localStorage.getItem('mfc_attrib_view') === 'grp') mode = 'grp'; } catch (e) {}
+  try { if (localStorage.getItem(_devKey('mfc_attrib_view')) === 'grp') mode = 'grp'; } catch (e) {}
   if (!canGroup) mode = 'hold';
   if (head){
     head.hidden = !canGroup;
@@ -13099,7 +13242,7 @@ function _atRenderLadder(){
         tog.addEventListener('click', function(ev){
           var b = ev.target && ev.target.closest ? ev.target.closest('button[data-at]') : null;
           if (!b) return;
-          try { localStorage.setItem('mfc_attrib_view', b.getAttribute('data-at')); } catch (e) {}
+          try { localStorage.setItem(_devKey('mfc_attrib_view'), b.getAttribute('data-at')); } catch (e) {}
           _atRenderLadder();
         });
       }
@@ -13288,6 +13431,12 @@ function loadTrackRecord(){
   } catch(e){ _trkP = Promise.resolve(null); }
   return _trkP;
 }
+// V40.1 — "30 Sept" for the pending row ("opened 30 Sept · no close yet")
+function _trkDay(iso){
+  var dt = new Date(String(iso) + 'T00:00:00');
+  if (isNaN(dt.getTime())) return String(iso);
+  return mfDate(dt, { day:'numeric', month:'short' });
+}
 function renderTrackRecord(){
   var card = document.getElementById('trk-card');
   if (!card) return;
@@ -13303,6 +13452,11 @@ function renderTrackRecord(){
     var s = (c.strategies || {})[key];
     if (!s || s.live_pct == null || !isFinite(s.live_pct)) return null;
     return { ix:ix, when:c.rebalance_date, through:c.data_through, sealed:!!c.sealed,
+             // V40.1 — A8. An open cycle whose last measured close IS its baseline
+             // has no completed session yet: 0.00 vs 0.00 is the absence of a
+             // measurement, not a result, and it must not be judged or drawn as one.
+             pending: !c.sealed && !!c.data_through && !!c.rebalance_date &&
+                      String(c.data_through) <= String(c.rebalance_date),
              live:Number(s.live_pct),
              bench:(s.bench_pct != null && isFinite(s.bench_pct)) ? Number(s.bench_pct) : null,
              benchName:s.bench_name || '' };
@@ -13317,10 +13471,13 @@ function renderTrackRecord(){
     scale = Math.max(scale, Math.abs(r.live), r.bench == null ? 0 : Math.abs(r.bench));
   });
 
+  // V40.1 — A8. Only FINISHED cycles are judged. The sample read "Ahead of the
+  // index in 1 of 2" because the cycle that opened that evening (0.00 vs 0.00,
+  // no close yet) counted as a cycle that was not ahead.
   var ahead = 0, judged = 0, sealed = 0;
   rows.forEach(function(r){
     if (r.sealed) sealed++;
-    if (r.bench == null) return;
+    if (r.bench == null || !r.sealed) return;
     judged++; if (r.live > r.bench) ahead++;
   });
 
@@ -13334,8 +13491,13 @@ function renderTrackRecord(){
      is a worse trade than the ambiguity. An apostrophe before the digits can
      only be a year. Bound with a non-breaking space explicitly — _mfBindDate's
      letter-to-digit rule cannot see across the apostrophe. */
+  /* V40.1 — A8. Rows are labelled by the month they MEASURED, not the month the
+     book was published: the cycle rebalanced on 31 Aug is the market from 1 Sept
+     to 30 Sept, and calling it "Aug ’26" sent a reader checking it against what
+     they knew of August. Month-end rebalances make that the next day's month. */
   var mon = function(iso){
     var dt = new Date(iso + 'T00:00:00');
+    if (!isNaN(dt.getTime())) dt.setDate(dt.getDate() + 1);
     if (isNaN(dt.getTime())) return iso;
     return mfDate(dt, { month:'short', year:'2-digit' })
              .replace(/[\s\u00a0](\d{2})$/, '\u00a0\u2019$1');
@@ -13364,12 +13526,18 @@ function renderTrackRecord(){
          meet two phrasings of one fact. `gap >= 0` is ahead, matching it
          exactly; the colour follows the GAP, never the row's own return, so a
          losing cycle that still beat its index reads green on that line. */
+      if (r.pending){
+        return '<div class="trk-row is-pending">' +
+          '<span class="trk-when">' + mon(r.when) + '<i>live</i></span>' +
+          '<span class="trk-pend">opened ' + escapeHtml(_trkDay(r.when)) + ' \u00b7 no close yet</span>' +
+        '</div>';
+      }
       var gapEl = '';
       if (r.bench != null){
-        var g = r.live - r.bench, ah = g >= 0;
+        var g = r.live - r.bench, ah = g >= 0, lvl = Math.abs(g) < 0.005;
         gapEl = '<i class="trk-gap' + (ah ? '' : ' behind') + '">' +
-                (ah ? '+' : '\u2212') + Math.abs(g).toFixed(2) + '\u00a0pts ' +
-                (ah ? 'ahead' : 'behind') + '</i>';
+                (lvl ? 'level with the index'
+                     : (ah ? '+' : '\u2212') + Math.abs(g).toFixed(2) + '\u00a0pts ' + (ah ? 'ahead' : 'behind')) + '</i>';
       }
       var aria = mon(r.when) + ' cycle: ' + fmtPct(r.live) +
         (r.bench == null ? '' : ', against ' + fmtPct(r.bench) + ' for ' + r.benchName) +
@@ -16942,7 +17110,7 @@ html[data-theme="dark"] .demo-banner-cta{ color:#9dbcff; }
   border-radius:var(--r); padding:24px 28px; box-shadow:var(--shadow-sm); }
 .adj-head h2{ font-size:18px; font-weight:700; color:var(--white); margin:0 0 3px; letter-spacing:-.01em; }
 .adj-lead{ margin:0; font-size:13px; color:var(--text2); }
-.adj-tabs{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0 14px; }
+.adj-tabs{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:16px 0 14px; }
 .adj-tab{ display:flex; align-items:center; gap:12px; text-align:left; cursor:pointer;
   font:inherit; color:var(--text2); padding:12px 14px; min-height:60px; border-radius:12px;
   background:var(--ink2); border:1px solid var(--border2); transition:border-color .15s, background .15s, box-shadow .15s; }
@@ -17081,7 +17249,7 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
   var card = document.getElementById('adj-card');
   if (!card) return;
   var $ = function(id){ return document.getElementById(id); };
-  var state = { tab:'add', addAmt:0, syncText:'', syncRan:false, sentAdj:{} };
+  var state = { tab:'add', addAmt:0, takeAmt:0, syncText:'', syncRan:false, sentAdj:{} };
 
   function stocks(){ try { return (typeof stocksData !== 'undefined' && stocksData) ? stocksData : []; } catch(e){ return []; } }
   function money(v){ try { return fmtMoney(Math.round(v)); } catch(e){ return '₹' + Math.round(v); } }
@@ -17205,6 +17373,49 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
       var p = priceOf(s).v, share = allocBudget(s, list, 1);
       return (p > 0 && share > 0) ? Math.max(m, Math.ceil(p / share)) : m;
     }, 0);
+    return out;
+  }
+
+  /* ── TAKE MONEY OUT (V40.1 · B2) ───────────────────────────────────────────
+     The reverse of Add money. Starting from the book as sized at the capital in
+     the box (what the Shares column says the member holds), it works out the
+     book at (capital - amount) and sells the difference, name by name, in whole
+     shares. Rounding can leave the proceeds short of the amount; the shortfall is
+     sold one share at a time from whichever name sits furthest ABOVE its new
+     weight, re-ranked after every share — the mirror of Add money's residue rule.
+     A restricted name is never sized, so never sold; a sale inside the member's
+     minimum holding period is held back and named. Never a recommendation. */
+  function planTake(amount){
+    var list = stocks(), mb = memberBook(list), cap = Number(currentCapital) || 0;
+    var out = { orders:[], held:[], raised:0, left:0, cap:cap, amount:amount, all:false, live:0, n:mb.length };
+    if (!mb.length || !(amount > 0) || !(cap > 0)) return out;
+    var next = Math.max(0, cap - amount);
+    out.all = next <= 0;
+    var rows = mb.map(function(s){
+      var p = priceOf(s); if (p.live) out.live++;
+      var have = p.v > 0 ? Math.floor(allocBudget(s, list, cap) / p.v) : 0;
+      var keep = (p.v > 0 && next > 0) ? Math.floor(allocBudget(s, list, next) / p.v) : 0;
+      var hold = typeof _csHoldUntil === 'function' ? _csHoldUntil(s.ticker) : null;
+      return { s:s, px:p.v, have:have, keep:Math.min(keep, have), budget:allocBudget(s, list, Math.max(next, 1)), hold:hold };
+    });
+    rows.forEach(function(r){ if (r.hold && r.have > r.keep){ out.held.push({ ticker:String(r.s.ticker), until:r.hold }); r.keep = r.have; } });
+    var raised = rows.reduce(function(a, r){ return a + (r.have - r.keep) * r.px; }, 0);
+    for (var guard = 0; guard < 400 && raised < amount - 1e-6; guard++){
+      var best = null, bestOver = -Infinity;
+      rows.forEach(function(r){
+        if (r.hold || !(r.px > 0) || r.keep <= 0) return;
+        var over = (r.keep * r.px - (next > 0 ? r.budget : 0)) / (r.budget || 1);
+        if (over > bestOver + 1e-9 || (!best && over === bestOver)){ best = r; bestOver = over; }
+      });
+      if (!best) break;
+      best.keep--; raised += best.px;
+    }
+    rows.forEach(function(r){
+      var q = r.have - r.keep;
+      if (q > 0) out.orders.push({ side:'SELL', ticker:String(r.s.ticker), qty:q, price:r.px, name:r.s.company_name });
+    });
+    out.raised = out.orders.reduce(function(a, o){ return a + o.qty * o.price; }, 0);
+    out.left = rows.reduce(function(a, r){ return a + r.keep * r.px; }, 0);
     return out;
   }
 
@@ -17381,6 +17592,47 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
         '<button type="button" class="adj-btn" data-adj-apply="add">Use ' + esc(money((Number(currentCapital) || 0) + amt)) + ' as my capital</button>' +
       '</div>';
   }
+  var lastTake = null;
+  function renderTake(){
+    var box = $('adj-take-out'), hint = $('adj-take-hint');
+    var amt = state.takeAmt;
+    document.querySelectorAll('#adj-take-chips .adj-chip').forEach(function(b){ b.classList.toggle('is-on', Number(b.dataset.amt) === amt); });
+    if (!(amt > 0)){ box.innerHTML = ''; hint.textContent = ''; lastTake = null; return; }
+    var p = planTake(amt); lastTake = p;
+    var basis = p.live === p.n ? 'live prices' : (p.live ? 'live prices where available, recommended prices otherwise' : 'recommended prices (live prices have not loaded)');
+    hint.textContent = 'Starting from ' + money(p.cap) + ', sized at ' + basis + '.';
+    var isMA = /multiasset/i.test(String((typeof currentStrategy !== 'undefined' && currentStrategy) || ''));
+    var taxLine = isMA
+      ? 'Every sale here is short-term: 20% on gains from the Indian equity ETFs, your income-tax slab plus 4% cess on the Nasdaq-100, gold, silver and bond ETFs.'
+      : 'Every sale here is short-term: gains are taxed at 20%, losses offset other short-term gains.';
+    var heldLine = p.held.length ? '<span class="adj-sum-note">' + p.held.length + ' sale' + (p.held.length === 1 ? ' is' : 's are') +
+        ' held back by your minimum holding period (' + esc(p.held.map(function(h){ return h.ticker + ' until ' + mfDate(h.until, { day:'numeric', month:'short' }); }).join(', ')) + ').</span>' : '';
+    if (!p.orders.length){
+      box.innerHTML = '<div class="adj-warn">Nothing can be sold for ' + esc(money(amt)) + ' at this capital' +
+        (p.held.length ? ' &mdash; the sales it needs are inside your minimum holding period.' : '.') + '</div>' + heldLine;
+      return;
+    }
+    var rowsH = p.orders.map(function(o){
+      return '<tr><td><span class="adj-tk">' + esc(o.ticker) + '</span></td><td><span class="adj-side sell">SELL</span></td>' +
+             '<td class="r"><span class="adj-q">' + o.qty + '</span></td><td class="r adj-v">' + esc(money(o.qty * o.price)) + '</td></tr>';
+    }).join('');
+    box.innerHTML =
+      (p.all ? '<div class="adj-warn">' + esc(money(amt)) + ' is the whole book at this capital, so this sells everything.</div>' : '') +
+      '<div class="adj-sum">' +
+        '<span class="adj-sum-f"><b>' + p.orders.length + '</b>sale' + (p.orders.length === 1 ? '' : 's') + '</span>' +
+        '<span class="adj-sum-f"><b>' + esc(money(p.raised)) + '</b>raised</span>' +
+        '<span class="adj-sum-f"><b>' + esc(money(p.left)) + '</b>stays invested</span>' +
+        '<span class="adj-sum-note">' + taxLine + ' Proceeds reach your broker ledger the next working day; you withdraw them to your bank from there.</span>' +
+        heldLine +
+      '</div>' +
+      '<div class="adj-tbl-wrap"><table class="adj-tbl"><thead><tr><th scope="col">Pick</th><th scope="col">Order</th><th scope="col" class="r">Shares</th><th scope="col" class="r adj-v">Est. value</th></tr></thead><tbody>' + rowsH + '</tbody></table></div>' +
+      basketsHtml('take', p.orders) +
+      '<div class="adj-acts">' +
+        '<button type="button" class="adj-btn" data-adj-copy="take">Copy order list</button>' +
+        '<button type="button" class="adj-btn" data-adj-csv="take">Download CSV</button>' +
+        (p.all ? '' : '<button type="button" class="adj-btn" data-adj-apply="take">Use ' + esc(money(Math.max(0, p.cap - amt))) + ' as my capital</button>') +
+      '</div>';
+  }
   function renderSync(){
     var box = $('adj-sync-out');
     if (!state.syncRan){ box.innerHTML = ''; lastSync = null; return; }
@@ -17442,14 +17694,14 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     var list = stocks();
     card.hidden = !list.length;
     if (!list.length) return;
-    renderAdd(); renderSync();
+    renderAdd(); renderSync(); renderTake();
   }
   window.adjRefresh = function(){ try { render(); } catch(e){} };
 
   /* ── wiring ────────────────────────────────────────────────────────────── */
   function setTab(t, focus){
     state.tab = t;
-    ['add','sync'].forEach(function(k){
+    ['add','sync','take'].forEach(function(k){
       var tab = $('adj-tab-' + k), pan = $('adj-panel-' + k), on = k === t;
       tab.setAttribute('aria-selected', on ? 'true' : 'false'); tab.tabIndex = on ? 0 : -1;
       pan.hidden = !on;
@@ -17458,10 +17710,14 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
   }
   $('adj-tab-add').addEventListener('click', function(){ setTab('add'); });
   $('adj-tab-sync').addEventListener('click', function(){ setTab('sync'); });
+  $('adj-tab-take').addEventListener('click', function(){ setTab('take'); });
   card.querySelector('.adj-tabs').addEventListener('keydown', function(e){
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
     e.preventDefault();
-    setTab(state.tab === 'add' ? 'sync' : 'add', true);
+    var order = ['add', 'sync', 'take'], i = order.indexOf(state.tab);
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? order.length - 1
+          : (i + (e.key === 'ArrowRight' ? 1 : -1) + order.length) % order.length;
+    setTab(order[j], true);
   });
   var amtIn = $('adj-add-amt'), tmr = null;
   amtIn.addEventListener('input', function(){
@@ -17476,6 +17732,19 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     state.addAmt = Number(b.dataset.amt) || 0;
     try { amtIn.value = fmtNum(state.addAmt); } catch(e2){ amtIn.value = state.addAmt; }
     renderAdd();
+  });
+  var takeIn = $('adj-take-amt'), tmrT = null;
+  takeIn.addEventListener('input', function(){
+    state.takeAmt = Math.min(parseAmt(takeIn.value), 1e9);
+    clearTimeout(tmrT); tmrT = setTimeout(renderTake, 180);
+  });
+  takeIn.addEventListener('blur', function(){ if (state.takeAmt > 0) try { takeIn.value = fmtNum(state.takeAmt); } catch(e){} });
+  takeIn.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); renderTake(); } });
+  $('adj-take-chips').addEventListener('click', function(e){
+    var b = e.target.closest('.adj-chip'); if (!b) return;
+    state.takeAmt = Number(b.dataset.amt) || 0;
+    try { takeIn.value = fmtNum(state.takeAmt); } catch(e2){ takeIn.value = state.takeAmt; }
+    renderTake();
   });
   $('adj-sync-go').addEventListener('click', function(){
     state.syncText = $('adj-sync-in').value; state.syncRan = true; renderSync();
@@ -17495,19 +17764,20 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     if (!t) return;
     var which = t.getAttribute('data-adj-copy') || t.getAttribute('data-adj-csv') || t.getAttribute('data-adj-apply') ||
                 (t.getAttribute('data-adj-send') || '').split(':')[0];
-    var plan = which === 'add' ? lastAdd : lastSync;
+    var plan = which === 'add' ? lastAdd : which === 'take' ? lastTake : lastSync;
     if (!plan || !plan.orders || !plan.orders.length) return;
     var strat = String((typeof currentStrategy !== 'undefined' && currentStrategy) || 'MindForge');
     var stamp = new Date().toISOString().slice(0, 10);
     if (t.hasAttribute('data-adj-send')){
       sendAdj(which, Number(t.getAttribute('data-adj-send').split(':')[1]) || 0, plan.orders);
     } else if (t.hasAttribute('data-adj-copy')){
-      var head = strat + (which === 'add' ? ' · add ' + money(state.addAmt) : ' · match holdings') + ' · ' + stamp;
+      var head = strat + (which === 'add' ? ' · add ' + money(state.addAmt) : which === 'take' ? ' · take out ' + money(state.takeAmt) : ' · match holdings') + ' · ' + stamp;
       copyText(head + '\n' + orderLines(plan.orders)).then(function(){ showToast('Copied ' + plan.orders.length + ' order' + (plan.orders.length === 1 ? '' : 's')); });
     } else if (t.hasAttribute('data-adj-csv')){
-      download('mindforge-' + (which === 'add' ? 'add-money' : 'match-holdings') + '-' + stamp + '.csv', csvOf(plan.orders), 'text/csv;charset=utf-8;');
+      download('mindforge-' + (which === 'add' ? 'add-money' : which === 'take' ? 'take-money-out' : 'match-holdings') + '-' + stamp + '.csv', csvOf(plan.orders), 'text/csv;charset=utf-8;');
     } else if (t.hasAttribute('data-adj-apply')){
-      var next = (Number(currentCapital) || 0) + state.addAmt;
+      var next = which === 'take' ? Math.max(0, (Number(currentCapital) || 0) - state.takeAmt)
+                                  : (Number(currentCapital) || 0) + state.addAmt;
       try { setCapital(next); showToast('Capital set to ' + money(next)); } catch(e2){}
       render();
     }

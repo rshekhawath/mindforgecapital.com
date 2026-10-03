@@ -108,6 +108,22 @@
      same two dates in its VERIFIED_ACCOUNTS (`since`): set both together, then bump
      this file's ?v on every page that loads it. */
   var DEDICATED_SINCE = { lm: "", sm: "" };
+
+  /* V40.1 — A8. THE FIRST DAYS OF A CYCLE. On the evening a new book is
+     published its baseline IS the last measured close, so every figure is
+     0.00 against 0.00 — and the morning refresh measures one session behind,
+     so the site said "+0.00% THIS CYCLE … to the 30 Sept close" for days (a
+     holiday and a weekend followed the September publish). A cycle with no
+     completed session has no figure: nothing prints +0.00%, the live surfaces
+     stay in their fail-soft (hidden) state, and only the surfaces that opt in
+     with data-live-new (the homepage hero) say what is happening instead.
+     SHOW_LAST_CYCLE (owner switch, D5 in the V40.1 handover) additionally
+     puts the last FINISHED cycle there, from live-history.json. Off until the
+     owner and their adviser say otherwise. */
+  var SHOW_LAST_CYCLE = false;
+  function zeroSession(d) {
+    return !!(d && d.baseline_date && d.data_through && String(d.data_through) <= String(d.baseline_date));
+  }
   function fillDedicated() {
     document.querySelectorAll("[data-dedicated]").forEach(function (el) {
       var d = DEDICATED_SINCE[el.getAttribute("data-dedicated")] || "";
@@ -120,12 +136,17 @@
   function fill(data) {
     var els = document.querySelectorAll("[data-live]");
     if (!els.length) return;
-    var any = false;
+    var any = false, zero = zeroSession(data);
     els.forEach(function (el) {
       var spec = (el.getAttribute("data-live") || "").split(":");
       var val = null, isPct = false, num = null;
       if (spec[0] === "rebal") val = fmtDate(data.rebalance_date);
       else if (spec[0] === "asof") val = fmtDate(data.data_through);
+      // V40.1 — what the hero says while a new book has no completed session
+      else if (spec[0] === "newbook") {
+        if (!zero) { el.textContent = ""; return; }
+        val = "New book published " + fmtDate(data.rebalance_date) + NB + "· its first figure comes after the next close.";
+      }
       // V38.9 — HOW YOUNG THE LIVE RECORD IS, beside the live figure itself.
       // Every surface on this site prints a cycle % with no sample size, and on
       // the homepage that number is the first thing a first-time reader meets.
@@ -156,12 +177,14 @@
                 (rec.first_rebalance ? ", since" + NB + fmtDate(rec.first_rebalance) : "") +
                 // V39.3 — A2.5: WHICH close the figure runs to. live_perf.py now
                 // counts completed sessions only, so this is always a real close.
-                (data.data_through ? NB + "· to" + NB + "the" + NB + fmtDayMonth(data.data_through) + NB + "close" : "");
+                // V40.1 — not while the open cycle has no close of its own.
+                (data.data_through && !zero ? NB + "· to" + NB + "the" + NB + fmtDayMonth(data.data_through) + NB + "close" : "");
         }
       }
       else {
         var s = (data.strategies || {})[spec[0]];
         if (!s) return;
+        if (zero && (spec[1] === "live" || spec[1] === "bench" || spec[1] === "alpha")) return;
         if (spec[1] === "live")  { num = s.live_pct;  val = fmtPct(s.live_pct);  isPct = true; }
         if (spec[1] === "bench") { num = s.bench_pct; val = fmtPct(s.bench_pct); isPct = true; }
         if (spec[1] === "benchname") val = s.bench_name;
@@ -183,8 +206,18 @@
       any = true;
     });
     if (!any) return;
+    if (zero) {
+      // V40.1 — only the surfaces built to say "new book" are revealed
+      document.querySelectorAll("[data-live-wrap][data-live-new]").forEach(function (w) {
+        w.classList.add("live-ready", "is-new");
+      });
+      if (SHOW_LAST_CYCLE) showLastCycle(data);
+      return;          // no mfc-live-ready: listeners would paint the zeros
+
+    }
     document.querySelectorAll("[data-live-wrap]").forEach(function (w) {
       w.classList.add("live-ready");
+      w.classList.remove("is-new");
     });
     // V24.3: hosts are containers whose layout shifts once live data is in —
     // strategy cards demote their backtest metrics, the strategy-page KPI grid
@@ -515,6 +548,30 @@
     }, 1400);
   }
 
+  /* V40.1 — D5. The last FINISHED cycle, for the [data-live="newbook"] slot,
+     only when SHOW_LAST_CYCLE is on. Sealed rows in live-history.json are final. */
+  function showLastCycle(data) {
+    fetch("/live-history.json?t=" + Math.floor(Date.now() / 3600000), { credentials: "omit" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (h) {
+        var sealed = ((h && h.cycles) || []).filter(function (c) { return c.sealed; });
+        var c = sealed[sealed.length - 1]; if (!c) return;
+        var parts = [];
+        [["sm", "SmallMicro 500"], ["lm", "LargeMidcap 250"], ["ma", "MultiAsset"]].forEach(function (k) {
+          var s = (c.strategies || {})[k[0]];
+          if (s && s.live_pct != null && s.bench_pct != null)
+            parts.push(k[1] + " " + fmtPct(s.live_pct) + " vs " + (s.bench_name || "its index") + " " + fmtPct(s.bench_pct));
+        });
+        if (!parts.length) return;
+        document.querySelectorAll('[data-live="newbook"]').forEach(function (el) {
+          el.textContent = "Last complete cycle, " + fmtDayMonth(c.rebalance_date) + NB + "→ " + fmtDayMonth(c.data_through) +
+            ": " + parts.join(" · ") + ". Model portfolio, not audited returns. New book published " +
+            fmtDate(data.rebalance_date) + "; its first figure comes after the next close.";
+        });
+      })
+      .catch(function () {});
+  }
+
   function boot() {
     injectStyle();
     fillDedicated();
@@ -525,9 +582,10 @@
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (d) {
         if (!d || !d.strategies) return;
+        d.zero_session = zeroSession(d);
         window.MFCLive = d;
         fill(d);
-        fillMeters(d);
+        if (!d.zero_session) fillMeters(d);
       })
       .catch(function () { /* fail-soft: page stays in its pre-pivot state */ });
   }

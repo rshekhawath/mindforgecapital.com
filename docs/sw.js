@@ -792,7 +792,12 @@
 // V40.0 -> mfc-v112. index.html is precached and changed (the September 2026
 // republish rewrote every backtest figure on it, and LargeMidcap 250 is now a
 // fifteen-stock book). No shared asset moved.
-const CACHE = 'mfc-v112';
+// V40.1 -> mfc-v113. index.html is precached and changed (same-window fund
+// figures, the new-book state in the hero, the fee on the slice, the MultiAsset
+// slab note, three new FAQs). One shared asset moved: assets/mfc-live.js
+// 3940 -> 4010 on the seven pages that load it (a cycle with no completed
+// session prints no +0.00%).
+const CACHE = 'mfc-v113';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

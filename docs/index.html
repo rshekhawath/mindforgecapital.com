@@ -244,6 +244,12 @@ html[data-theme="dark"] .hv-nbar-fill.is-bench { background: linear-gradient(90d
 .hv-live-rec { margin-top: 5px; font-size: 11px; font-weight: 700; letter-spacing: .03em;
   color: var(--text3); }
 .hv-live-rec:empty { display: none; }
+/* V40.1 — A8: the new-book state (no completed session yet) */
+.hv-live-new { display: none; }
+.hv-live.is-new .hv-live-top, .hv-live.is-new .hv-live-sub { display: none; }
+.hv-live.is-new .hv-live-new { display: block; font-size: 13px; font-weight: 600; line-height: 1.5; color: var(--text2); }
+.hv-live.is-new .hv-live-new::before { content: 'NEW BOOK'; display: inline-block; margin: 0 8px 4px 0; font-size: 9.5px; font-weight: 800;
+  letter-spacing: 0.14em; color: var(--data-strong); border: 1px solid rgba(5,150,105,0.35); border-radius: 999px; padding: 2.5px 8px; }
 .hv-live-bench { font-weight: 700; font-variant-numeric: tabular-nums; }
 .hv-card.has-live .hv-num .val { font-size: 22px; }
 .hv-card.has-live .hv-num.bench .val { font-size: 17px; }
@@ -3969,6 +3975,14 @@ sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')=
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
 <link rel="stylesheet" href="assets/mfc-finish.css?v=3940">
+<style id="mf-v401-slab">
+/* V40.1 — A7. MultiAsset's after-tax CAGR applies 20% to every gain; its
+   international, gold, silver and bond ETFs are taxed at the investor's slab.
+   IP/shared/config.py: "Do not publish it without that note." */
+.mf-slab{ display:inline-block; margin-top:4px; font-size:11.5px; font-weight:600; line-height:1.5;
+  color:var(--accent2); text-decoration:underline; text-underline-offset:2px; }
+.mf-slab:hover{ text-decoration-thickness:2px; }
+</style>
 </head>
 <body>
 
@@ -4051,7 +4065,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
                fetch degrades to the backtest-first layout that shipped before. The
                sm:* data-live slots give the DEFAULT tab its values even if the hero
                script never runs; tab switches re-fill them from window.MFCLive. -->
-          <div class="hv-live" data-live-wrap aria-live="polite">
+          <div class="hv-live" data-live-wrap data-live-new aria-live="polite">
+            <!-- V40.1 — A8. While a new book has no completed session, mfc-live.js
+                 adds .is-new: the zeros are hidden and this line says why. -->
+            <div class="hv-live-new" data-live="newbook"></div>
             <div class="hv-live-top">
               <span class="hv-live-badge"><span class="hv-live-dot"></span>LIVE</span>
               <span class="hv-live-val flat" id="hv-live-val" data-live="sm:live">—</span>
@@ -4193,6 +4210,10 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
   .notwhat-vs a{ padding:12px 0; margin-top:0; }
 }
 .notwhat-vs .nv-f{ font-size:10.5px; color:var(--text3); line-height:1.6; margin:8px 0 0; }
+/* V40.1 — the after-fee figure under our row: same ink as the footnote, one step larger */
+.notwhat-vs .nv-sub{ font-size:11px; color:var(--text3); line-height:1.5; margin:-3px 0 8px;
+  font-variant-numeric:tabular-nums; }
+.notwhat-vs .nv-sub b{ color:var(--text2); font-weight:700; }
 @media (max-width:900px){
   .notwhat-card{ grid-template-columns:1fr; gap:18px; }
   .notwhat-vs{ border-left:none; border-top:1px solid var(--border); padding-left:0; padding-top:18px; min-width:0; }
@@ -4227,17 +4248,25 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
       </div>
       <div class="notwhat-vs">
         <div class="nv-k">And the reason people leave funds</div>
+        <!-- V40.1 — A1. Both sides over the SAME months. The fund figure used to be
+             a typed "5-year trailing" return from ~Jul 2026 (IP config PEER_FUNDS),
+             i.e. different months from the backtest beside it; it is now measured
+             from AMFI NAVs over the backtest's own window by runner/peer_window.py
+             (MFPEER). The after-fee line says what the reader keeps after OUR fee,
+             at the capital the tax arithmetic assumes. -->
         <div class="nv-row">
           <span class="nv-nm">MindForge LargeMidcap&nbsp;250</span>
           <span class="nv-n"><!--MFSTAT:lm:cagr_posttax-->20.5%<!--/MFSTAT--></span>
         </div>
+        <p class="nv-sub">after our fee as well, at <!--MFPEER:lm:capital-->₹10,00,000<!--/MFPEER-->: <b><!--MFSTAT:lm:cagr_posttax_postfee-->19.7%<!--/MFSTAT--></b></p>
         <div class="nv-row is-fund">
-          <span class="nv-nm"><!--MFSTAT:lm:peer_best_name-->Motilal Oswal Large &amp; Midcap<!--/MFSTAT--></span>
-          <span class="nv-n"><!--MFSTAT:lm:peer_best_posttax-->19.5%<!--/MFSTAT--></span>
+          <span class="nv-nm"><!--MFPEER:lm:best_name-->Motilal Oswal Large &amp; Midcap<!--/MFPEER--></span>
+          <span class="nv-n"><!--MFPEER:lm:best_post-->16.5%<!--/MFPEER--></span>
         </div>
         <a href="strategies.html#compare">See both, and every other fund →</a>
-        <p class="nv-f">Ours is a <b>backtest</b>, after 20% short-term tax. The fund's is a real Direct Plan
-        trailing return, after 12.5% LTCG. Not a recommendation of any fund.</p>
+        <p class="nv-f">Both over the same <!--MFPEER:lm:months-->61<!--/MFPEER--> months, <!--MFPEER:lm:span-->Sep&nbsp;2021 → Sep&nbsp;2026<!--/MFPEER-->.
+        Ours is a <b>backtest</b>, after 20% short-term tax. The fund's is its real Direct Plan
+        return, measured from AMFI's published NAVs, after 12.5% LTCG. Not a recommendation of any fund.</p>
       </div>
     </div>
   </div>
@@ -4629,6 +4658,10 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
 .fit-tbl tbody td{ color:var(--data-strong); font-weight:600; }
 .fit-tbl tbody tr:last-child td{ border-bottom:none; }
 .fit-dd{ font-size:11px; color:var(--text3); font-weight:500; display:block; margin-top:2px; }
+/* V40.1 — A6: the fee on the slice under each loss, or the floor it falls below */
+.fit-tbl .fit-sub{ display:block; font-size:11px; font-weight:500; color:var(--text3); margin-top:2px;
+  white-space:normal; line-height:1.35; min-width:9ch; }
+.fit-tbl .fit-sub.is-below{ color:var(--text2); font-style:italic; }
 .fit-foot{ margin-top:14px; font-size:12px; color:var(--text3); line-height:1.75; max-width:70ch; }
 
 /* ── V38.9 · the second input row and the fee-at-this-size readout ───────── */
@@ -4729,9 +4762,9 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
         <table class="fit-tbl">
           <thead><tr><th scope="col">If this strategy is…</th><th scope="col">10% of it</th><th scope="col">25% of it</th><th scope="col">50% of it</th></tr></thead>
           <tbody>
-            <tr data-dd="11.6"><td>MultiAsset<span class="fit-dd">deepest fall <!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></span><span class="fit-dd">up to <!--MFRISK:ma:underwater-->4<!--/MFRISK-->&nbsp;months below a previous high</span></td><td>—</td><td>—</td><td>—</td></tr>
-            <tr data-dd="23.1"><td>LargeMidcap&nbsp;250<span class="fit-dd">deepest fall <!--MFSTAT:lm:max_dd-->-23.1%<!--/MFSTAT--></span><span class="fit-dd">up to <!--MFRISK:lm:underwater-->16<!--/MFRISK-->&nbsp;months below a previous high</span></td><td>—</td><td>—</td><td>—</td></tr>
-            <tr data-dd="24.2"><td>SmallMicro&nbsp;500<span class="fit-dd">deepest fall <!--MFSTAT:sm:max_dd-->-24.2%<!--/MFSTAT--></span><span class="fit-dd">up to <!--MFRISK:sm:underwater-->16<!--/MFRISK-->&nbsp;months below a previous high</span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr data-dd="11.6" data-k="ma"><td>MultiAsset<span class="fit-dd">deepest fall <!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--></span><span class="fit-dd">up to <!--MFRISK:ma:underwater-->4<!--/MFRISK-->&nbsp;months below a previous high</span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr data-dd="23.1" data-k="lm"><td>LargeMidcap&nbsp;250<span class="fit-dd">deepest fall <!--MFSTAT:lm:max_dd-->-23.1%<!--/MFSTAT--></span><span class="fit-dd">up to <!--MFRISK:lm:underwater-->16<!--/MFRISK-->&nbsp;months below a previous high</span></td><td>—</td><td>—</td><td>—</td></tr>
+            <tr data-dd="24.2" data-k="sm"><td>SmallMicro&nbsp;500<span class="fit-dd">deepest fall <!--MFSTAT:sm:max_dd-->-24.2%<!--/MFSTAT--></span><span class="fit-dd">up to <!--MFRISK:sm:underwater-->16<!--/MFRISK-->&nbsp;months below a previous high</span></td><td>—</td><td>—</td><td>—</td></tr>
           </tbody>
         </table>
       </div>
@@ -4794,9 +4827,27 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
         var lab = tr.querySelector('.fit-dd'), m = lab && /(\d+(?:\.\d+)?)%/.exec(lab.textContent);
         var dd = (m ? parseFloat(m[1]) : parseFloat(tr.getAttribute('data-dd'))) / 100;
         var tds = tr.querySelectorAll('td');
+        // V40.1 — A6. The fee ON THE SLICE, and the slices that cannot hold the
+        // book. This table sizes each book at 10/25/50% of the corpus while the
+        // fee readout below divided the fee by the WHOLE corpus: at ₹5,00,000 it
+        // said SmallMicro 500 cost 3.60% a year, when a quarter of ₹5L is
+        // ₹1,25,000 and ₹17,988 is 14.4% of that — and every LargeMidcap cell sat
+        // below that book's own works-from floor. Both read off the page: the
+        // monthly price from STRAT_MONTHLY (the table the cards are priced from),
+        // the floor from the card's own MFMIN figure.
+        var key = tr.getAttribute('data-k'), amt = key && document.getElementById(key + '-price-amt');
+        var card = amt && amt.closest ? amt.closest('.strat-card') : null;
+        var wEl = card && card.querySelector('.strat-works span');
+        var floor = wEl ? parse(wEl.textContent) : 0;
+        var monthly = (window.STRAT_MONTHLY && typeof window.STRAT_MONTHLY[key] === 'number') ? window.STRAT_MONTHLY[key] : null;
         SHARES.forEach(function(share, i){
-          var loss = corpus * share * dd;
-          tds[i + 1].textContent = corpus > 0 ? '−₹' + inr(loss) : '—';
+          var slice = corpus * share, loss = slice * dd, sub = '';
+          if (corpus > 0) {
+            if (floor > 0 && slice < floor) sub = '<span class="fit-sub is-below">below its ₹' + inr(floor) + ' floor</span>';
+            else if (monthly > 0) sub = '<span class="fit-sub">fee ' + (monthly * 12 / slice * 100).toFixed(1) + '% a year</span>';
+            else if (monthly === 0) sub = '<span class="fit-sub">no fee</span>';
+          }
+          tds[i + 1].innerHTML = corpus > 0 ? '−₹' + inr(loss) + sub : '—';
         });
       });
     }
@@ -4861,7 +4912,9 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
 
       if (noteEl){
         noteEl.innerHTML =
-          'Your own numbers, not a recommended size: the annual subscription divided by the corpus you typed. ' +
+          'Your own numbers, not a recommended size: the annual subscription divided by your <b>whole</b> corpus. ' +
+          'If you put only a share of it into a book, the table above shows the fee on that share, which is the figure that ' +
+          'decides whether the book is worth its fee at your size. ' +
           'A flat fee is a fixed number of rupees, so <b>its share falls as the corpus grows</b> — which is the whole ' +
           'of the argument, and the reason it is worth seeing at your size rather than at ours.' +
           (monthly > 0
@@ -4873,6 +4926,9 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
     }
 
     function all(){ render(); renderFee(); }
+    // V40.1 — STRAT_MONTHLY is declared further down the page; the per-slice fee
+    // needs it, so the table is drawn again once the document has finished parsing.
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
 
     inp.addEventListener('input', all);
     inp.addEventListener('blur', function(){
@@ -5476,7 +5532,7 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
                which is why it carries data-rec rather than being read by
                position. -->
           <div class="strat-min">
-            <span class="strat-works">Works from <span><!--MFMIN:sm:capital-->₹70,000<!--/MFMIN--></span></span>
+            <span class="strat-works">Works from <span><!--MFMIN:sm:capital-->₹65,000<!--/MFMIN--></span></span>
             <span class="strat-rec">Recommended <span data-rec>₹15,00,000</span></span>
           </div>
           <div class="price-row">
@@ -5499,7 +5555,7 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
 
       <!-- LargeMidcap -->
       <div class="strat-card featured tilt-host fade-up" data-live-host data-bt-start="2021-09" data-bt-end="2026-09">
-        <span class="badge-pop">Popular</span>
+        <span class="badge-pop">Core-plus</span>
         <span class="strat-badge badge-purple">Large &amp; Midcap</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> LargeMidcap&nbsp;250</div>
         <div class="strat-universe">15 stocks&nbsp;· Nifty LargeMidcap&nbsp;250&nbsp;· Monthly rebalance</div>
@@ -5566,7 +5622,7 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
         <p class="strat-desc">Built as a core-plus — fifteen large and mid-cap names, in the part of the market you already own through funds. Equal weight, rebalanced on the 1st. The backtest shows <!--MFSTAT:lm:alpha_posttax-->+10.73%<!--/MFSTAT--> a year over the Nifty LargeMidcap&nbsp;250, after tax.</p>
         <div class="strat-footer">
           <div class="strat-min">
-            <span class="strat-works">Works from <span><!--MFMIN:lm:capital-->₹6,90,000<!--/MFMIN--></span></span>
+            <span class="strat-works">Works from <span><!--MFMIN:lm:capital-->₹6,85,000<!--/MFMIN--></span></span>
             <span class="strat-rec">Recommended <span data-rec>₹10,00,000</span></span>
           </div>
           <div class="price-row">
@@ -5662,7 +5718,7 @@ html[data-theme="dark"] .fit-fee-now{ color:var(--data-mid); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">Built as a core — eight ETFs across equity, gold, silver and debt, rebalanced on the 1st, and free. The backtest shows <!--MFSTAT:ma:alpha_posttax-->+6.61%<!--/MFSTAT--> a year over the Nifty&nbsp;50, after tax.</p>
+        <p class="strat-desc">Built as a core — eight ETFs across equity, gold, silver and debt, rebalanced on the 1st, and free. The backtest shows <!--MFSTAT:ma:alpha_posttax-->+6.61%<!--/MFSTAT--> a year over the Nifty&nbsp;50, after tax. <a class="mf-slab" href="disclosures.html#ma-slab">At a 30% tax slab the real after-tax figure is lower — why&nbsp;&rarr;</a></p>
         <div class="strat-footer">
           <div class="strat-min">
             <span class="strat-works">Works from <span><!--MFMIN:ma:capital-->₹20,000<!--/MFMIN--></span></span>
@@ -6684,7 +6740,7 @@ html[data-theme="dark"] .mm-demo-arr{ color:#9dbcff; }
         <p class="tdist-foot">Bar height is how many months landed on that order count; the number above each bar is that count of months, the number below is the orders. The highlighted column is the median, <!--MFTURN:sm:median-->14<!--/MFTURN-->. Backtest, <!--MFTURN:sm:months-->61<!--/MFTURN--> months.</p>
       </figure>
 
-      <p class="mm-foot">The ten minutes are genuinely yours: MindForge never holds your funds, never has access to your broker and never executes a trade on your behalf — <b>you place every order</b>. Month one is the full list. After that you trade only what changed — which, over five years of backtest, has been <b>about half the book</b>: typically <!--MFTURN:sm:median-->14<!--/MFTURN--> orders a month on SmallMicro&nbsp;500 and <!--MFTURN:lm:median-->8<!--/MFTURN--> on LargeMidcap&nbsp;250, and never fewer than <!--MFTURN:sm:lo-->6<!--/MFTURN-->. The dashboard groups them into Zerodha baskets, so that is <b>two confirmations, not fourteen</b> — and ten minutes is two basket confirmations, not ten minutes of deciding anything. On Zerodha you can do it at night: orders placed in the evening are queued as after-market orders for the next morning's open. On Groww or Upstox it is one tap per name; on any other broker — including the bank brokers many salary accounts come with — it is one order ticket per name, worked down a numbered list the dashboard builds for you. On a 3-, 6- or 12-month plan, skip a month and nothing breaks — the next list is waiting when you come back.</p>
+      <p class="mm-foot">The ten minutes are genuinely yours: MindForge never holds your funds, never has access to your broker and never executes a trade on your behalf — <b>you place every order</b>. Month one is the full list. After that you trade only what changed — which, over five years of backtest, has been <b>about half the book</b>: typically <!--MFTURN:sm:median-->14<!--/MFTURN--> orders a month on SmallMicro&nbsp;500 and <!--MFTURN:lm:median-->12<!--/MFTURN--> on LargeMidcap&nbsp;250, and never fewer than <!--MFTURN:sm:lo-->6<!--/MFTURN-->. The dashboard groups them into Zerodha baskets, so that is <b>two confirmations, not fourteen</b> — and ten minutes is two basket confirmations, not ten minutes of deciding anything. On Zerodha you can do it at night: orders placed in the evening are queued as after-market orders for the next morning's open. On Groww or Upstox it is one tap per name; on any other broker — including the bank brokers many salary accounts come with — it is one order ticket per name, worked down a numbered list the dashboard builds for you. On a 3-, 6- or 12-month plan, skip a month and nothing breaks — the next list is waiting when you come back.</p>
       <!-- ══ V38.9 · A3 · THE SALARIED MOTION, NAMED ═════════════════════════
            This page had no word for how its reader actually invests. Every
            figure on the site assumed a corpus that arrives once; "SIP" appeared
@@ -6698,7 +6754,9 @@ html[data-theme="dark"] .mm-demo-arr{ color:#9dbcff; }
       have and add what you save each month — so the dashboard has a tool for exactly that:
       <b>Add money</b> takes the amount, splits it across the picks at their model weights in whole shares at
       today's prices, and puts the cash the rounding leaves over into the most underweight names. It is the same
-      ten minutes, and it is on the sample screen below.</p>
+      ten minutes, and it is on the sample screen below. And when you need some of it back — a down payment,
+      school fees, a sabbatical — <b>Take money out</b> does the reverse: it lists the sales that leave the rest
+      of the book as close to the model as whole shares allow.</p>
       <!-- V37.5 — the ten minutes, shown rather than described. The member dashboard
            has a sample mode (placeholder stocks and prices, clearly bannered as a
            sample on arrival), and nothing on the public site pointed at it, so a
@@ -7844,7 +7902,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 
       <details class="faq-item" data-ld-sync>
         <summary><span>How much capital do I need to start?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>Each strategy card shows the capital that book <b>works from</b>: <!--MFMIN:ma:capital-->₹20,000<!--/MFMIN--> for MultiAsset, <!--MFMIN:lm:capital-->₹6,90,000<!--/MFMIN--> for LargeMidcap&nbsp;250 and <!--MFMIN:sm:capital-->₹70,000<!--/MFMIN--> for SmallMicro&nbsp;500 — the smallest amount at which every name in this month's book can be bought in one whole share. Below it, some holdings cannot be bought at all, so the book you hold is not the model's. Each card also shows a recommended size: the point at which whole-share rounding stops pulling your weights away from the model's. It is not a minimum, and it is not a view on how much of your money belongs here. A flat fee weighs more on a small corpus, so the fee at your own size is worked out under <a href="#where-this-fits">Where this fits</a>.</p></div>
+        <div class="faq-a"><p>Each strategy card shows the capital that book <b>works from</b>: <!--MFMIN:ma:capital-->₹20,000<!--/MFMIN--> for MultiAsset, <!--MFMIN:lm:capital-->₹6,85,000<!--/MFMIN--> for LargeMidcap&nbsp;250 and <!--MFMIN:sm:capital-->₹65,000<!--/MFMIN--> for SmallMicro&nbsp;500 — the smallest amount at which every name in this month's book can be bought in one whole share. Below it, some holdings cannot be bought at all, so the book you hold is not the model's. Each card also shows a recommended size: the point at which whole-share rounding stops pulling your weights away from the model's. It is not a minimum, and it is not a view on how much of your money belongs here. A flat fee weighs more on a small corpus, so the fee at your own size is worked out under <a href="#where-this-fits">Where this fits</a>.</p></div>
       </details>
 
       <!-- V38.7 — two questions the site had never answered in writing, both of
@@ -7857,7 +7915,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
            content a visitor cannot see is a structured-data violation. -->
       <details class="faq-item" data-ld-sync>
         <summary><span>What does monthly rebalancing do to my tax return?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>Every gain is short-term. All three books rebalance monthly, so no position is ever held twelve months and each realised gain pays the 20% short-term rate in the year it is booked — which is already subtracted from every CAGR published on this site. The paperwork is the part nobody warns you about: at the models' measured turnover that is roughly <!--MFTURN:sm:yearly-->170<!--/MFTURN--> realised transactions a year on SmallMicro&nbsp;500 and about <!--MFTURN:lm:yearly-->100<!--/MFTURN--> on LargeMidcap&nbsp;250. In practice your broker produces the Tax P&amp;L statement for you, and you carry one summary into your return rather than typing out every row. Short-term gains do change your form: with them you can no longer file ITR-1, and a salaried filer usually moves to ITR-2. And because your salary TDS is worked out on your salary alone, these gains are not covered by it: if your tax for the year beyond what your employer deducts comes to ₹10,000 or more — ₹50,000 of short-term gains is ₹10,000 of tax at 20% — it is due as <strong>advance tax</strong>, in instalments by 15&nbsp;June, 15&nbsp;September, 15&nbsp;December and 15&nbsp;March. Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month. One thing works in your favour and we deliberately do not claim it: losing months offset gains under the actual rules, and our published figures assume they do not — tax is modelled at 20% on every profitable month with no set-off, the harshest reading. Your real outcome should therefore be better than the figures shown, not worse. None of this is tax advice; your slab, your other income and your set-offs are yours.</p></div>
+        <div class="faq-a"><p>Every gain is short-term. All three books rebalance monthly, so no position is ever held twelve months, and each realised gain is taxed in the year it is booked — at the 20% short-term rate on shares and Indian equity ETFs, which is already subtracted from every CAGR published on this site. MultiAsset is the exception: short-term gains on its Nasdaq-100, gold, silver and bond ETFs are taxed at your income-tax slab — 31.2% at the 30% slab, with cess — so for a 30%-slab investor its real after-tax figure is lower than the one published. The paperwork is the part nobody warns you about: at the models' measured turnover that is roughly <!--MFTURN:sm:yearly-->170<!--/MFTURN--> realised transactions a year on SmallMicro&nbsp;500 and about <!--MFTURN:lm:yearly-->140<!--/MFTURN--> on LargeMidcap&nbsp;250. In practice your broker produces the Tax P&amp;L statement for you, and you carry one summary into your return rather than typing out every row. Short-term gains do change your form: with them you can no longer file ITR-1, and a salaried filer usually moves to ITR-2. And because your salary TDS is worked out on your salary alone, these gains are not covered by it: if your tax for the year beyond what your employer deducts comes to ₹10,000 or more — ₹50,000 of short-term gains is ₹10,000 of tax at 20% — it is due as <strong>advance tax</strong>, in instalments by 15&nbsp;June, 15&nbsp;September, 15&nbsp;December and 15&nbsp;March. Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month. One thing works in your favour and we deliberately do not claim it: losing months offset gains under the actual rules, and our published figures assume they do not — tax is modelled at 20% on every profitable month with no set-off, the harshest reading. Your real outcome should therefore be better than the figures shown, not worse. None of this is tax advice; your slab, your other income and your set-offs are yours.</p></div>
       </details>
 
       <details class="faq-item" data-ld-sync>
@@ -7880,6 +7938,12 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         <div class="faq-a"><p>No. These are growth books: any dividend a stock pays goes straight to you as the shareholder, but nothing else is paid out, and none of them is built for income. What a book does instead is compound — and every gain it books at a rebalance is short-term and taxed in the year it is booked, which is already subtracted from every CAGR on this site. It also falls. In its backtest, before tax, SmallMicro&nbsp;500 lost money in <!--MFRISK:sm:neg-->14<!--/MFRISK--> of <!--MFRISK:sm:months-->61<!--/MFRISK--> months and once spent <!--MFRISK:sm:underwater-->16<!--/MFRISK--> months below a previous high. Money you need for expenses, or within the next few years, does not belong in an equity book.</p></div>
       </details>
 
+      <!-- V40.1 — B2. "Side earnings" is money with a job to do; how it comes back out. -->
+      <details class="faq-item" data-ld-sync id="faq-withdraw">
+        <summary><span>Can I take money out when I need it?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>Yes, at any time — the shares are in your own demat. Sell what you need in your broker; the money reaches your broker ledger the next working day and your bank when you withdraw it from there. To keep what stays invested in step with the model, the member dashboard's <b>Take money out</b> splits a withdrawal across the book: you enter the amount and it lists the sales, in whole shares, that leave the rest of your book as close to the model's weights as whole shares allow, and says how the gains on them are taxed. It is arithmetic on your own numbers, not a recommendation to sell. A book is not built for income, so money with a date on it belongs somewhere steadier.</p></div>
+      </details>
+
       <details class="faq-item" data-ld-sync id="faq-stop">
         <summary><span>What happens if I stop or cancel?</span><i aria-hidden="true"></i></summary>
         <div class="faq-a"><p>Your shares are yours. They were bought in your own demat account with your own money, and MindForge never had access to either, so stopping changes nothing you hold — you simply stop receiving new books. You can keep the stocks, sell them or manage them however you like. Dashboard access runs to the end of the term you paid for, and billing, cancellation and refunds are set out in <a href="terms.html#billing">section 9 of our Terms of Service</a>.</p></div>
@@ -7893,6 +7957,18 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
       <details class="faq-item" data-ld-sync id="faq-alternatives">
         <summary><span>Why not a smallcase, an index fund or a PMS?</span><i aria-hidden="true"></i></summary>
         <div class="faq-a"><p>All three are reasonable, and they solve different problems. An index fund is the cheapest way to own the market and asks nothing of you; our <a href="strategies.html#compare">strategies page</a> puts each book beside real funds in its category, each after its own tax. A PMS is a managed account, with a &#8377;50&nbsp;lakh minimum set by SEBI. A smallcase is a platform on which SEBI-registered analysts and advisers publish model portfolios like ours; it adds one-click ordering through many brokers and automatic SIPs, and charges its own per-order transaction fee on top of the manager's subscription. What MindForge adds is a published record: after-tax backtests, a free book you can run before paying, and two dedicated accounts whose P&amp;L Zerodha publishes. What it does not have is one-click ordering outside Zerodha.</p></div>
+      </details>
+
+      <!-- V40.1 — B1. The closest substitute for this reader: rules-based, no orders, long-term tax. -->
+      <details class="faq-item" data-ld-sync id="faq-factor">
+        <summary><span>Why not a momentum or factor index fund?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>It is the closest thing to what we do, and a fair choice. A factor index fund also follows published rules: it holds an index of 30 to 50 stocks chosen on one style — momentum, quality, value or low volatility — rebalanced about twice a year, for an expense ratio usually under 1%. You place no orders, and gains held over a year are taxed as long-term. Our books differ on each of those: <!--MFFUN:lm:held-->15<!--/MFFUN--> names ranked on several price- and volume-based signals together and re-ranked every month, so every gain is short-term and a year means roughly <!--MFTURN:lm:yearly-->140<!--/MFTURN--> to <!--MFTURN:sm:yearly-->170<!--/MFTURN--> orders; a flat fee instead of an expense ratio; and a backtest and live record published in full. Which style leads moves around — our free monthly <a href="factor-report/">Factor Report</a> tracks the flagship factor funds — and the <a href="strategies.html#compare">strategies page</a> puts each book beside real funds over the same months. Not a recommendation of any fund.</p></div>
+      </details>
+
+      <!-- V40.1 — B3. The reader already holds funds; switching has a cost of its own. -->
+      <details class="faq-item" data-ld-sync id="faq-switch">
+        <summary><span>Do I have to sell my mutual funds to start?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>No. Many people keep the funds they have and send only their new monthly savings to a book — the dashboard's Add money splits each month's amount across the picks. If you do move money out of a fund, the switch has a cost that staying does not: tax on the gain you realise (for an equity fund held over twelve months, 12.5% on gains above ₹1,25,000 in a year; held twelve months or less, 20%), and any exit load, often 1% in the first year. The <a href="calculators/mindforge-vs-fund.html">comparison calculator</a> takes both off before it compares. This is general information, not tax or investment advice.</p></div>
       </details>
 
     </div>
@@ -7986,7 +8062,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         "name": "How much capital do I need to start?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Each strategy card shows the capital that book works from: ₹20,000 for MultiAsset, ₹6,90,000 for LargeMidcap 250 and ₹70,000 for SmallMicro 500 — the smallest amount at which every name in this month's book can be bought in one whole share. Below it, some holdings cannot be bought at all, so the book you hold is not the model's. Each card also shows a recommended size: the point at which whole-share rounding stops pulling your weights away from the model's. It is not a minimum, and it is not a view on how much of your money belongs here. A flat fee weighs more on a small corpus, so the fee at your own size is worked out under Where this fits."
+          "text": "Each strategy card shows the capital that book works from: ₹20,000 for MultiAsset, ₹6,85,000 for LargeMidcap 250 and ₹65,000 for SmallMicro 500 — the smallest amount at which every name in this month's book can be bought in one whole share. Below it, some holdings cannot be bought at all, so the book you hold is not the model's. Each card also shows a recommended size: the point at which whole-share rounding stops pulling your weights away from the model's. It is not a minimum, and it is not a view on how much of your money belongs here. A flat fee weighs more on a small corpus, so the fee at your own size is worked out under Where this fits."
         }
       }
     ,
@@ -7995,7 +8071,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         "name": "What does monthly rebalancing do to my tax return?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Every gain is short-term. All three books rebalance monthly, so no position is ever held twelve months and each realised gain pays the 20% short-term rate in the year it is booked — which is already subtracted from every CAGR published on this site. The paperwork is the part nobody warns you about: at the models' measured turnover that is roughly 170 realised transactions a year on SmallMicro 500 and about 100 on LargeMidcap 250. In practice your broker produces the Tax P&L statement for you, and you carry one summary into your return rather than typing out every row. Short-term gains do change your form: with them you can no longer file ITR-1, and a salaried filer usually moves to ITR-2. And because your salary TDS is worked out on your salary alone, these gains are not covered by it: if your tax for the year beyond what your employer deducts comes to ₹10,000 or more — ₹50,000 of short-term gains is ₹10,000 of tax at 20% — it is due as advance tax, in instalments by 15 June, 15 September, 15 December and 15 March. Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month. One thing works in your favour and we deliberately do not claim it: losing months offset gains under the actual rules, and our published figures assume they do not — tax is modelled at 20% on every profitable month with no set-off, the harshest reading. Your real outcome should therefore be better than the figures shown, not worse. None of this is tax advice; your slab, your other income and your set-offs are yours."
+          "text": "Every gain is short-term. All three books rebalance monthly, so no position is ever held twelve months, and each realised gain is taxed in the year it is booked — at the 20% short-term rate on shares and Indian equity ETFs, which is already subtracted from every CAGR published on this site. MultiAsset is the exception: short-term gains on its Nasdaq-100, gold, silver and bond ETFs are taxed at your income-tax slab — 31.2% at the 30% slab, with cess — so for a 30%-slab investor its real after-tax figure is lower than the one published. The paperwork is the part nobody warns you about: at the models' measured turnover that is roughly 170 realised transactions a year on SmallMicro 500 and about 140 on LargeMidcap 250. In practice your broker produces the Tax P&L statement for you, and you carry one summary into your return rather than typing out every row. Short-term gains do change your form: with them you can no longer file ITR-1, and a salaried filer usually moves to ITR-2. And because your salary TDS is worked out on your salary alone, these gains are not covered by it: if your tax for the year beyond what your employer deducts comes to ₹10,000 or more — ₹50,000 of short-term gains is ₹10,000 of tax at 20% — it is due as advance tax, in instalments by 15 June, 15 September, 15 December and 15 March. Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month. One thing works in your favour and we deliberately do not claim it: losing months offset gains under the actual rules, and our published figures assume they do not — tax is modelled at 20% on every profitable month with no set-off, the harshest reading. Your real outcome should therefore be better than the figures shown, not worse. None of this is tax advice; your slab, your other income and your set-offs are yours."
         }
       },
       {
@@ -8024,6 +8100,14 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
       },
       {
         "@type": "Question",
+        "name": "Can I take money out when I need it?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, at any time — the shares are in your own demat. Sell what you need in your broker; the money reaches your broker ledger the next working day and your bank when you withdraw it from there. To keep what stays invested in step with the model, the member dashboard's Take money out splits a withdrawal across the book: you enter the amount and it lists the sales, in whole shares, that leave the rest of your book as close to the model's weights as whole shares allow, and says how the gains on them are taxed. It is arithmetic on your own numbers, not a recommendation to sell. A book is not built for income, so money with a date on it belongs somewhere steadier."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "What happens if I stop or cancel?",
         "acceptedAnswer": {
           "@type": "Answer",
@@ -8044,6 +8128,22 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "All three are reasonable, and they solve different problems. An index fund is the cheapest way to own the market and asks nothing of you; our strategies page puts each book beside real funds in its category, each after its own tax. A PMS is a managed account, with a ₹50 lakh minimum set by SEBI. A smallcase is a platform on which SEBI-registered analysts and advisers publish model portfolios like ours; it adds one-click ordering through many brokers and automatic SIPs, and charges its own per-order transaction fee on top of the manager's subscription. What MindForge adds is a published record: after-tax backtests, a free book you can run before paying, and two dedicated accounts whose P&L Zerodha publishes. What it does not have is one-click ordering outside Zerodha."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Why not a momentum or factor index fund?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It is the closest thing to what we do, and a fair choice. A factor index fund also follows published rules: it holds an index of 30 to 50 stocks chosen on one style — momentum, quality, value or low volatility — rebalanced about twice a year, for an expense ratio usually under 1%. You place no orders, and gains held over a year are taxed as long-term. Our books differ on each of those: 15 names ranked on several price- and volume-based signals together and re-ranked every month, so every gain is short-term and a year means roughly 140 to 170 orders; a flat fee instead of an expense ratio; and a backtest and live record published in full. Which style leads moves around — our free monthly Factor Report tracks the flagship factor funds — and the strategies page puts each book beside real funds over the same months. Not a recommendation of any fund."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I have to sell my mutual funds to start?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Many people keep the funds they have and send only their new monthly savings to a book — the dashboard's Add money splits each month's amount across the picks. If you do move money out of a fund, the switch has a cost that staying does not: tax on the gain you realise (for an equity fund held over twelve months, 12.5% on gains above ₹1,25,000 in a year; held twelve months or less, 20%), and any exit load, often 1% in the first year. The comparison calculator takes both off before it compares. This is general information, not tax or investment advice."
         }
       }
     ]
@@ -9357,7 +9457,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 </style>
 <script src="assets/mfc-offer.js?v=3380" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=3940" defer></script>
+<script src="assets/mfc-live.js?v=4010" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
