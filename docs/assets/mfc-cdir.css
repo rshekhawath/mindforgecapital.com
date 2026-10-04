@@ -1,0 +1,141 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   mfc-cdir.css — V40.4 · EVERY CALCULATOR, AT THE TOP OF EVERY CALCULATOR PAGE
+   The owner opened "Free tools → Calculators", landed on the Fee Calculator,
+   and found twelve of the other fifteen tools in a grid at the very BOTTOM of
+   the page (RD, CAGR and MindForge-vs-fund were not offered there at all);
+   each calculator page listed seven of its neighbours at the bottom too. This
+   is the one directory the fee page and all fifteen calculators now open with
+   (the hub keeps its cards, and gains a search box: mfc-cdir.js).
+
+   Two shapes, one markup (written into each page, so there is no layout shift
+   and every link is in the HTML a crawler reads):
+     · data-mode="grid" — the Fee Calculator (where the nav lands): five labelled
+       groups side by side, every calculator visible at once.
+     · data-mode="rail" — each calculator page: the same sixteen as chips. On a
+       desktop they wrap and all show; on a tablet or phone they scroll sideways
+       in one row (the current one centred) and "Show all" opens the grid.
+   It is a <div role="navigation">, NOT a <nav>: these pages style a bare `nav`
+   as the sticky masthead (mfc-finish.css, the fee page's own base), which is
+   exactly how the calculators' footer list became a second masthead in V37.7.
+   Tokens fall back to the light values, so the fee page — which does not load
+   mfc-calc.css — renders it identically.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+.cdir{ position:relative; z-index:2; margin:22px 0 0; padding:14px 16px 16px;
+  border-radius:var(--r,16px); background:var(--ink2,#fff);
+  border:0.5px solid var(--border2,rgba(37,99,235,.20)); box-shadow:var(--shadow-sm,0 1px 2px rgba(15,23,42,.04)); }
+.cdir-top{ display:flex; align-items:center; justify-content:space-between; gap:8px 14px; flex-wrap:wrap; margin:0 0 10px; }
+.cdir-k{ margin:0; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--text3,#475569); line-height:1.4; }
+.cdir-k .s{ font-weight:600; letter-spacing:.01em; text-transform:none; }
+.cdir-acts{ display:inline-flex; align-items:center; gap:6px 14px; flex-wrap:wrap; }
+.cdir-hub{ font-size:12.5px; font-weight:700; color:var(--ink-link,#0951c6); white-space:nowrap;
+  display:inline-flex; align-items:center; min-height:32px; }
+.cdir-hub:hover{ text-decoration:underline; }
+.cdir-tog{ display:none; appearance:none; -webkit-appearance:none; font:inherit; font-size:12px; font-weight:700;
+  align-items:center; gap:6px; color:var(--accent2,#2563eb); background:none; cursor:pointer;
+  border:0.5px solid var(--border2,rgba(37,99,235,.20)); border-radius:999px; padding:6px 12px; min-height:32px; }
+.cdir-tog svg{ width:12px; height:12px; transition:transform .25s cubic-bezier(.22,.8,.2,1); }
+.cdir-tog[aria-expanded="true"] svg{ transform:rotate(180deg); }
+.cdir-tog:hover{ border-color:var(--accent2,#2563eb); background:rgba(37,99,235,.07); }
+.cdir-tog:focus-visible, .cdir-a:focus-visible, .cdir-hub:focus-visible{ outline:2px solid var(--accent,#1a50d8); outline-offset:2px; }
+
+.cdir-gh{ margin:0 0 6px; font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--text3,#475569); line-height:1.4; }
+.cdir-ul{ list-style:none; margin:0; padding:0; }
+.cdir-a{ display:flex; align-items:center; gap:9px; color:var(--text2,#1e3a5f); font-size:13.5px; font-weight:600;
+  line-height:1.3; text-decoration:none; transition:background .15s, color .15s, border-color .15s; }
+.cdir-a:hover{ color:var(--white,#0c1831); background:rgba(37,99,235,.07); }
+.cdir-i{ flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+  width:28px; height:28px; border-radius:8px; background:rgba(37,99,235,.09); color:var(--accent2,#2563eb); }
+.cdir-i svg{ width:16px; height:16px; display:block; }
+/* the page you are on — the one filled chip in the set */
+.cdir-a[aria-current="page"]{ color:#fff; background:linear-gradient(135deg,#1a50d8,#2563eb); }
+.cdir-a[aria-current="page"] .cdir-i{ background:rgba(255,255,255,.20); color:#fff; }
+html[data-theme="dark"] .cdir-a[aria-current="page"]{ background:linear-gradient(135deg,#2f5fe0,#3b6ae3); }
+html[data-theme="dark"] .cdir-i{ background:rgba(120,160,240,.14); color:#9dbcff; }
+html[data-theme="dark"] .cdir-a:hover{ background:rgba(120,160,240,.10); }
+html[data-theme="dark"] .cdir-tog{ color:#9dbcff; }
+
+/* ── grid: five groups, every tool at once ─────────────────────────────── */
+.cdir[data-mode="grid"] .cdir-list{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px 18px; }
+.cdir[data-mode="grid"] .cdir-ul{ display:flex; flex-direction:column; gap:2px; }
+.cdir[data-mode="grid"] .cdir-a{ min-height:40px; padding:5px 8px 5px 5px; border-radius:10px; }
+@media (max-width:1100px){ .cdir[data-mode="grid"] .cdir-list{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (max-width:700px){ .cdir[data-mode="grid"] .cdir-list{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 10px; } }
+@media (max-width:359px){ .cdir[data-mode="grid"] .cdir-list{ grid-template-columns:1fr; } }
+
+/* ── rail: chips, grouped by a wider gap ───────────────────────────────── */
+.cdir[data-mode="rail"] .cdir-gh{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.cdir[data-mode="rail"] .cdir-list{ display:flex; flex-wrap:wrap; gap:8px 18px; }
+.cdir[data-mode="rail"] .cdir-g{ display:flex; }
+.cdir[data-mode="rail"] .cdir-ul{ display:flex; flex-wrap:wrap; gap:8px; }
+.cdir[data-mode="rail"] .cdir-a{ min-height:36px; padding:4px 13px 4px 5px; border-radius:999px; white-space:nowrap;
+  border:0.5px solid var(--border2,rgba(37,99,235,.20)); font-size:13px; }
+.cdir[data-mode="rail"] .cdir-a[aria-current="page"]{ border-color:transparent; }
+.cdir[data-mode="rail"] .cdir-i{ width:26px; height:26px; border-radius:50%; }
+.cdir[data-mode="rail"] .cdir-i svg{ width:15px; height:15px; }
+
+/* Tablet and phone: one sideways row, the current chip centred by mfc-cdir.js,
+   a fade on whichever edge hides chips (the house scroll cue), and "Show all"
+   to open the grid. The row bleeds to the card's edges so a chip can scroll
+   under the fade rather than stopping at the padding. */
+@media (max-width:1024px){
+  .cdir[data-base="rail"] .cdir-tog{ display:inline-flex; }
+  .cdir[data-mode="rail"] .cdir-list{ flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
+    margin:0 -16px; padding:2px 16px 4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .cdir[data-mode="rail"] .cdir-list::-webkit-scrollbar{ display:none; }
+  .cdir[data-mode="rail"] .cdir-g, .cdir[data-mode="rail"] .cdir-ul{ flex-wrap:nowrap; }
+  .cdir[data-mode="rail"] .cdir-list.cdir-more-r{ -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 34px),transparent); }
+  .cdir[data-mode="rail"] .cdir-list.cdir-more-l{ -webkit-mask-image:linear-gradient(90deg,transparent,#000 34px);
+    mask-image:linear-gradient(90deg,transparent,#000 34px); }
+  .cdir[data-mode="rail"] .cdir-list.cdir-more-l.cdir-more-r{
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 34px,#000 calc(100% - 34px),transparent); }
+}
+@media (max-width:600px){ .cdir{ padding:12px 14px 14px; } .cdir[data-mode="rail"] .cdir-list{ margin:0 -14px; padding:2px 14px 4px; } }
+
+/* touch: every control here is a target (the house 44px rule, V28.7) */
+@media (pointer:coarse){
+  .cdir-a, .cdir[data-mode="rail"] .cdir-a, .cdir[data-mode="grid"] .cdir-a, .cdir-tog, .cdir-hub{ min-height:44px; }
+}
+@media (prefers-reduced-motion: reduce){ .cdir-a, .cdir-tog svg{ transition:none; } }
+@media print{ .cdir{ display:none !important; } }
+
+/* ── the hub: one search box over the grouped cards ─────────────────────── */
+.csearch{ position:relative; max-width:560px; margin:14px 0 4px; }
+.csearch svg{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:17px; height:17px;
+  color:var(--text3,#475569); pointer-events:none; }
+.csearch input{ width:100%; min-height:48px; padding:11px 14px 11px 42px; font:inherit; font-size:16px;
+  color:var(--white,#0c1831); background:var(--ink2,#fff); border-radius:12px;
+  border:1px solid var(--field-edge,rgba(15,23,42,.42)); box-shadow:var(--shadow-sm,0 1px 2px rgba(15,23,42,.04)); }
+.csearch input::placeholder{ color:var(--text3,#475569); }
+.csearch input:focus{ outline:2px solid var(--accent,#1a50d8); outline-offset:1px; border-color:var(--accent,#1a50d8); }
+.csearch-none{ margin:14px 0 0; font-size:14px; color:var(--text2,#1e3a5f); }
+.crel-hub .is-out{ display:none !important; }
+/* every calculator card (the hub's groups, each page's "Other calculators")
+   carries the same icon as its directory chip: icon in a column of its own,
+   name and line beside it — the description is an inline span, so a float
+   let its second line run back under the icon */
+.crel-card{ display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto 1fr; column-gap:12px; align-items:start; }
+.crel-card .crel-i{ grid-row:1 / span 2; display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
+  margin-top:1px; border-radius:9px; background:rgba(37,99,235,.09); color:var(--accent2,#2563eb); }
+.crel-card .crel-i svg{ width:17px; height:17px; display:block; }
+.crel-card .n, .crel-card .d{ grid-column:2; }
+.crel-card .d{ display:block; }
+html[data-theme="dark"] .crel-card .crel-i{ background:rgba(120,160,240,.14); color:#9dbcff; }
+
+/* the scroller is the containing block for the visually-hidden group headings:
+   absolutely positioned against .cdir, they escaped the overflow clip and made
+   a 390px page 1,739px wide (the V28.4 sr-only-in-a-scroller trap) */
+.cdir-list{ position:relative; }
+/* the Fee Calculator: inside its hero, so the hero's wash runs behind it */
+.calc-hero .cdir-wrap{ position:relative; z-index:1; margin:-30px auto 34px; text-align:left; }
+@media (max-width:600px){
+  .calc-hero .cdir-wrap{ margin:-36px auto 26px; }
+  /* one header row on a phone: the label and the control, nothing else */
+  .cdir-k .s{ display:none; }
+  .cdir[data-base="rail"] .cdir-hub{ display:none; }
+  .cdir-top{ margin-bottom:8px; }
+}

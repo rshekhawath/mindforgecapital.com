@@ -572,3 +572,68 @@ footer.cfoot .cfoot-in > nav.cfoot-nav{ background:none; border-bottom:0; box-sh
 .cf-ticks span.e::before{ left:auto; right:10px; }
 @media (max-width:400px){ .cf-ticks{ font-size:10px; } }
 .cf-ticks span.hx{ color:transparent; }
+
+/* ── V40.4 · KEEP, COMPARE, RESET ───────────────────────────────────────────
+   The row under every result (mfc-calc.js builds it): the Fee Calculator's
+   pill buttons, same size, same wording, so the two families feel like one. */
+.ctools{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; padding-top:14px; border-top:0.5px solid var(--border); }
+.ctool{ appearance:none; -webkit-appearance:none; font:inherit; font-size:12px; font-weight:700; line-height:1.2;
+  display:inline-flex; align-items:center; gap:6px; color:var(--accent2); background:none; cursor:pointer;
+  border:0.5px solid var(--border2); border-radius:999px; padding:7px 12px; transition:border-color .2s, background .2s, color .2s; }
+.ctool svg{ width:13px; height:13px; flex:0 0 auto; }
+.ctool:hover{ border-color:var(--accent2); background:rgba(37,99,235,.07); }
+.ctool:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+.ctool.done{ color:var(--data-strong,#047857); border-color:rgba(5,150,105,.4); background:rgba(5,150,105,.08); }
+.ctool[aria-pressed="true"]{ color:#fff; background:#1a50d8; border-color:#1a50d8; }
+.ctool[hidden]{ display:none; }
+html[data-theme="dark"] .ctool{ color:#9dbcff; }
+html[data-theme="dark"] .ctool[aria-pressed="true"]{ color:#fff; background:#2f5fe0; border-color:#2f5fe0; }
+@media (pointer:coarse){ .ctool{ min-height:44px; padding-top:0; padding-bottom:0; } }
+@media (prefers-reduced-motion: reduce){ .ctool{ transition:none; } }
+
+/* the pinned figure, under the live one: dashed, because it is a reference */
+.co-pin{ display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 9px; margin:10px 0 0; padding:9px 12px;
+  border-radius:10px; background:var(--ink3); border:0.5px dashed var(--border2); font-size:12.5px; line-height:1.45; color:var(--text2); }
+.co-pin .pk{ font-size:10px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+.co-pin b{ color:var(--white); font-weight:800; font-variant-numeric:tabular-nums; }
+.co-pin .pl{ color:var(--text3); }
+.co-pin .pd{ font-weight:700; color:var(--white); font-variant-numeric:tabular-nums; }
+
+/* the live figure while the inputs scroll — one column only */
+.clive{ display:none; }
+@media (max-width:980px){
+  .clive{ position:sticky; top:calc(var(--clive-top, 56px) + 8px); z-index:5;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin:0 0 14px; padding:8px 8px 8px 13px; border-radius:12px; background:var(--ink2);
+    border:0.5px solid rgba(37,99,235,.32); box-shadow:0 12px 26px -18px rgba(26,80,216,.6), 0 1px 2px rgba(15,23,42,.06); }
+  html[data-theme="dark"] .clive{ border-color:rgba(120,160,240,.34); box-shadow:0 12px 26px -18px rgba(0,0,0,.8); }
+  .clive-t{ display:flex; flex-direction:column; min-width:0; }
+  .clive-k{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text3);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .clive-v{ font-size:17px; font-weight:800; color:var(--white); font-variant-numeric:tabular-nums; letter-spacing:-.01em;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .clive-go{ flex:0 0 auto; display:inline-flex; align-items:center; min-height:44px; padding:0 8px;
+    font-size:12.5px; font-weight:700; color:var(--ink-link,#0951c6); white-space:nowrap; border-radius:8px; }
+  .clive-go:hover{ text-decoration:underline; }
+  .clive-go:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .cout{ scroll-margin-top:calc(var(--clive-top, 56px) + 12px); }
+}
+@media print{ .ctools, .clive{ display:none !important; } }
+
+/* V40.4 — the directory now opens every calculator page, above the hero: the
+   crumb sits over it, so the hero no longer needs its own top air, and the
+   badge carries the same icon as this calculator's chip. */
+.wrap > .chero-crumb{ margin:22px 0 0; }
+.cdir + .chero{ padding-top:22px; }
+.chero-badge svg{ width:13px; height:13px; flex:0 0 auto; }
+@media (max-width:600px){ .wrap > .chero-crumb{ margin-top:16px; } .cdir + .chero{ padding-top:18px; } }
+
+/* V40.4 — the live strip's label does not wrap, so its min-content width is the
+   whole label: "MATURITY VALUE AFTER 15 YEARS" made PPF's one-column grid 390px
+   wide on a 360px phone (16px at 375). The one-column track may now shrink like
+   the two-column tracks above always could, and the strip never sizes its card —
+   it ellipsises instead. */
+@media (max-width:980px){
+  .calc{ grid-template-columns:minmax(0,1fr); }
+  .clive{ contain:inline-size; }
+}

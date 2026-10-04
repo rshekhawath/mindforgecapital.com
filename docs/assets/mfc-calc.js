@@ -19,6 +19,11 @@
    (unit:'choice', a pressed-button row for a short fixed list) and a
    year-by-year table (out.table, rendered into #calc-table when the page has
    one). The section grew from seven calculators to fifteen on this engine.
+   V40.4 gave every result the Fee Calculator's "keep it" tools and a few more:
+   copy this scenario (the inputs ride in the link and are restored on load),
+   pin to compare, the year table as a CSV, print, reset — and, where the result
+   sits below the inputs (one column, ≤980px), a strip at the top of the inputs
+   that stays in view and carries the live figure while the sliders move.
    ════════════════════════════════════════════════════════════════════════════ */
 (function (w, d) {
   "use strict";
@@ -435,6 +440,10 @@
     if (!form || !host) return null;
 
     var state = {}, fields = cfg.fields.slice(), mode = cfg.modes ? cfg.modes.options[0].k : null;
+    var setters = {}, lastOut = null, pinned = null;
+    // V40.4 — a shared link carries the inputs; read it before anything renders
+    var q0 = readQuery();
+    if (q0.mode) mode = q0.mode;
 
     function fieldsFor(m) {
       if (!cfg.modes || !m) return fields;
@@ -471,6 +480,15 @@
         var f = fs.filter(function (x) { return x.k === row.dataset.f; })[0];
         if (f.unit === 'choice') {
           var btns = row.querySelectorAll('button[data-v]');
+          // V40.4 — a setter the link, reset and pin share (quiet: no re-run)
+          setters[f.k] = function (v, quiet) {
+            var o = f.options.filter(function (x) { return String(x.v) === String(v); })[0];
+            if (!o) return false;
+            state[f.k] = o.v;
+            [].forEach.call(btns, function (x) { x.setAttribute('aria-pressed', String(x.dataset.v === String(o.v))); });
+            if (!quiet) run();
+            return true;
+          };
           [].forEach.call(btns, function (b) {
             b.addEventListener('click', function () {
               var o = f.options.filter(function (x) { return String(x.v) === b.dataset.v; })[0];
@@ -526,6 +544,19 @@
           for (var i = 1; i < sc.pos.length; i++) if (Math.abs(sc.pos[i] - p) < Math.abs(sc.pos[best] - p)) best = i;
           commit(sc.rungs[best], true);
         });
+        // V40.4 — the same clamp and snap a typed value gets, without a re-run
+        // per field when a link restores several at once
+        setters[f.k] = function (v, quiet) {
+          v = Number(v);
+          if (!isFinite(v)) return false;
+          state[f.k] = clamp(snap(v), f.min, f.max);
+          show(state[f.k]);
+          rng.value = sc ? Math.round(scalePos(sc, state[f.k]) * 1000) : state[f.k];
+          row.classList.remove('is-bad');
+          fill();
+          if (!quiet) run();
+          return true;
+        };
         fill();
       });
     }
@@ -563,15 +594,235 @@
       var out;
       try { out = cfg.compute(Object.assign({}, state), mode); }
       catch (e) { return; }
-      if (out) { render(host, out, tblHost); announce(out); maybePop(out); }
+      if (out) { render(host, out, tblHost); announce(out); maybePop(out); lastOut = out; afterRender(out); }
       if (typeof cfg.onRender === 'function') { try { cfg.onRender(out, Object.assign({}, state), mode); } catch (e) {} }
     }
 
+    /* ── V40.4 · THE SCENARIO IS THE READER'S ─────────────────────────────────
+       The Fee Calculator has let a reader keep what they built since V34.8
+       ("Copy this scenario" puts every input in the link and the page restores
+       it on load). The other fifteen threw it away on refresh. Same idea, same
+       wording, for every engine page — plus a pin to compare two scenarios, the
+       year table as a spreadsheet, print, and a reset. A link holds only the
+       inputs that differ from the page's defaults, so an unchanged page keeps
+       its clean address; a junk or out-of-range value is clamped or ignored,
+       never trusted. Nothing is stored and nothing is sent. */
+    function readQuery() {
+      var out = { mode: null, vals: {} };
+      try {
+        var p = new URLSearchParams(w.location.search);
+        if (cfg.modes) {
+          var m = p.get('mode');
+          if (m && cfg.modes.options.some(function (x) { return x.k === m; })) out.mode = m;
+        }
+        cfg.fields.forEach(function (f) {
+          var raw = p.get(f.k);
+          if (raw !== null && raw !== '') out.vals[f.k] = raw;
+        });
+      } catch (e) {}
+      return out;
+    }
+    function applyQuery(q) {
+      Object.keys(q.vals).forEach(function (k) { if (setters[k]) setters[k](q.vals[k], true); });
+    }
+    function defaultsFor(m) {
+      var out = {};
+      fieldsFor(m).forEach(function (f) { out[f.k] = f.value; });
+      return out;
+    }
+    function scenarioURL() {
+      var u;
+      try { u = new URL(w.location.href); } catch (e) { return String(w.location.href); }
+      u.search = ''; u.hash = '';
+      var def = defaultsFor(mode);
+      if (cfg.modes && mode && mode !== cfg.modes.options[0].k) u.searchParams.set('mode', mode);
+      Object.keys(def).forEach(function (k) {
+        var a = state[k], b = def[k];
+        if (a == null) return;
+        var same = (typeof a === 'number' && typeof b === 'number') ? Math.abs(a - b) < 1e-9 : String(a) === String(b);
+        if (!same) u.searchParams.set(k, typeof a === 'number' ? String(Math.round(a * 1e6) / 1e6) : String(a));
+      });
+      return u.toString();
+    }
+
+    // the headline as a number, when it is one: ₹1,26,14,400 · −₹1,200 · ₹1.26Cr · 12.4%
+    function moneyNum(s) {
+      var m = String(s || '').match(/^\s*([−-])?₹\s?([\d,]+(?:\.\d+)?)\s*(Cr|L|k)?\s*$/);
+      if (!m) return null;
+      var n = parseFloat(m[2].replace(/,/g, ''));
+      n *= m[3] === 'Cr' ? 1e7 : m[3] === 'L' ? 1e5 : m[3] === 'k' ? 1e3 : 1;
+      return m[1] ? -n : n;
+    }
+    function pctNum(s) {
+      var m = String(s || '').match(/^\s*([−-])?(\d+(?:\.\d+)?)%\s*$/);
+      return m ? (m[1] ? -1 : 1) * parseFloat(m[2]) : null;
+    }
+    // Pinned: the figure, what it was a figure OF, and how far the current one
+    // has moved from it. No green or red: on the EMI page "more" is worse.
+    function pinHTML(out) {
+      if (!pinned || !out || !out.fig) return '';
+      var now = out.fig.v, diff = '';
+      var n0 = moneyNum(pinned.v), n1 = moneyNum(now), p0 = pctNum(pinned.v), p1 = pctNum(now);
+      if (n0 != null && n1 != null) {
+        var dl = n1 - n0;
+        diff = Math.abs(dl) < 0.5 ? 'Same as now' :
+          'Now ' + (dl > 0 ? '+' : '−') + compact(Math.abs(dl)) +
+          (Math.abs(n0) >= 1 ? ' (' + (dl > 0 ? '+' : '−') + Math.abs(dl / Math.abs(n0) * 100).toFixed(1) + '%)' : '');
+      } else if (p0 != null && p1 != null) {
+        var dp = p1 - p0;
+        diff = Math.abs(dp) < 0.005 ? 'Same as now' : 'Now ' + (dp > 0 ? '+' : '−') + Math.abs(dp).toFixed(2) + ' pts';
+      } else if (now !== pinned.v) {
+        diff = 'Now ' + now;
+      } else {
+        diff = 'Same as now';
+      }
+      return '<p class="co-pin"><span class="pk">Pinned</span><b>' + esc(pinned.v) + '</b>' +
+        '<span class="pl">' + esc(pinned.k) + '</span><span class="pd">' + esc(diff) + '</span></p>';
+    }
+
+    var reduceMotion = w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var outPanel = host.closest ? host.closest('.cout') : null;
+    if (outPanel && !outPanel.id) outPanel.id = 'calc-result';
+    var SVGA = ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
+    var ICON = {
+      share: '<svg' + SVGA + '><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v14"/></svg>',
+      pin: '<svg' + SVGA + '><path d="M12 17v5"/><path d="M9 3h6l-1 6 4 4H6l4-4z"/></svg>',
+      csv: '<svg' + SVGA + '><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>',
+      print: '<svg' + SVGA + '><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M8 14h8v7H8z"/></svg>',
+      reset: '<svg' + SVGA + '><path d="M3 12a9 9 0 103-6.7"/><path d="M3 4v5h5"/></svg>'
+    };
+    function toolBtn(act, label) {
+      return '<button type="button" class="ctool" data-act="' + act + '"' + (act === 'pin' ? ' aria-pressed="false"' : '') + '>' +
+        ICON[act] + '<span class="t">' + label + '</span></button>';
+    }
+    var tools = d.createElement('div');
+    tools.className = 'ctools';
+    tools.setAttribute('role', 'group');
+    tools.setAttribute('aria-label', 'Keep, compare or reset this result');
+    tools.innerHTML = toolBtn('share', 'Copy this scenario') + toolBtn('pin', 'Pin to compare') +
+      toolBtn('csv', 'Download table (CSV)') + toolBtn('print', 'Print') + toolBtn('reset', 'Reset');
+    host.parentNode.insertBefore(tools, host.nextSibling);
+    var bShare = tools.querySelector('[data-act="share"]'), bPin = tools.querySelector('[data-act="pin"]'),
+        bCsv = tools.querySelector('[data-act="csv"]');
+
+    function flash(btn, text, ms, done) {
+      var t = btn.querySelector('.t'), was = btn._label || (btn._label = t.textContent);
+      btn.classList.toggle('done', !!done); t.textContent = text;
+      clearTimeout(btn._t);
+      btn._t = setTimeout(function () { btn.classList.remove('done'); t.textContent = was; }, ms || 2200);
+    }
+    bShare.addEventListener('click', function () {
+      var url = scenarioURL();
+      // the address bar follows either way, so there is always a link to copy by hand
+      try { w.history.replaceState(null, '', url); } catch (e) {}
+      var ok = function () { flash(bShare, 'Link copied', 2200, true); };
+      var fallback = function () { flash(bShare, 'Link is in the address bar', 2600, false); };
+      try {
+        if (w.navigator.clipboard && w.navigator.clipboard.writeText) w.navigator.clipboard.writeText(url).then(ok, fallback);
+        else fallback();
+      } catch (e) { fallback(); }
+    });
+    bPin.addEventListener('click', function () {
+      if (pinned) { pinned = null; }
+      else if (lastOut && lastOut.fig) { pinned = { k: lastOut.fig.k, v: lastOut.fig.v }; }
+      bPin.setAttribute('aria-pressed', String(!!pinned));
+      bPin.querySelector('.t').textContent = pinned ? 'Unpin' : 'Pin to compare';
+      if (lastOut) afterRender(lastOut);
+    });
+    function csvCell(s) { s = String(s == null ? '' : s); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+    bCsv.addEventListener('click', function () {
+      var t = lastOut && lastOut.table;
+      if (!t || !t.cols || !t.rows || !t.rows.length) return;
+      var lines = [t.cols.map(function (c) {
+        return csvCell(c.label + (c.fmt === 'money' ? ' (Rs)' : c.fmt === 'pct' ? ' (%)' : ''));
+      }).join(',')];
+      t.rows.forEach(function (r) {
+        lines.push(t.cols.map(function (c) {
+          var v = r[c.k];
+          if (v == null || v === '') return '';
+          if (c.fmt === 'money') return String(Math.round(v));
+          if (c.fmt === 'pct') return String(Math.round(v * 100) / 100);
+          return csvCell(v);
+        }).join(','));
+      });
+      try {
+        var blob = new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+        var a = d.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (cfg.key || 'calculator') + '-year-by-year.csv';
+        d.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); if (a.parentNode) a.parentNode.removeChild(a); }, 1500);
+        flash(bCsv, 'Downloaded', 1800, true);
+      } catch (e) { flash(bCsv, 'Could not download here', 2600, false); }
+    });
+    tools.querySelector('[data-act="print"]').addEventListener('click', function () {
+      // a closed year table would print as one line; open it for the printout only
+      var det = (tblHost || host).querySelector('details.ctbl'), was = det ? det.open : true;
+      if (det) det.open = true;
+      var restore = function () { if (det && !was) det.open = false; w.removeEventListener('afterprint', restore); };
+      w.addEventListener('afterprint', restore);
+      try { w.print(); } catch (e) { restore(); }
+    });
+    tools.querySelector('[data-act="reset"]').addEventListener('click', function () {
+      if (cfg.modes) { mode = cfg.modes.options[0].k; syncModeBar(); }
+      pinned = null; bPin.setAttribute('aria-pressed', 'false'); bPin.querySelector('.t').textContent = 'Pin to compare';
+      build(); run(); fitTicks(form);
+      // the address bar too, or a refresh would quietly undo the reset
+      try { w.history.replaceState(null, '', w.location.pathname); } catch (e) {}
+    });
+
+    /* Where the result sits BELOW the inputs (one column, ≤980px), a reader
+       moving a slider could not see what it did — the figure was a screen
+       further down. This strip sits at the top of the inputs card and, being
+       sticky INSIDE that card, stays under the nav while the inputs scroll and
+       leaves with them: it never floats over the result, the footer or the
+       WhatsApp button. Its link takes the reader to the full result. */
+    var live = null, formPanel = form.closest ? form.closest('.cpanel') : null;
+    if (formPanel) {
+      live = d.createElement('div');
+      live.className = 'clive';
+      live.innerHTML = '<span class="clive-t" aria-hidden="true"><span class="clive-k"></span><b class="clive-v"></b></span>' +
+        '<a class="clive-go" href="#calc-result">Full result<span aria-hidden="true">&nbsp;&darr;</span></a>';
+      formPanel.insertBefore(live, form);
+      live.querySelector('.clive-go').addEventListener('click', function (e) {
+        if (!outPanel) return;
+        e.preventDefault();
+        outPanel.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      });
+    }
+    function navTop() {
+      var n = d.querySelector('body > nav');
+      var h = n ? Math.round(n.getBoundingClientRect().height) : 0;
+      d.documentElement.style.setProperty('--clive-top', h + 'px');
+    }
+    navTop();
+    var navT; w.addEventListener('resize', function () { clearTimeout(navT); navT = setTimeout(navTop, 120); }, { passive: true });
+
+    function afterRender(out) {
+      if (!out) return;
+      if (pinned && out.fig) {
+        var anchor = host.querySelector('.co-cap') || host.querySelector('.co-fig');
+        if (anchor) anchor.insertAdjacentHTML('afterend', pinHTML(out));
+      }
+      bCsv.hidden = !(out.table && out.table.rows && out.table.rows.length);
+      if (live && out.fig) {
+        live.querySelector('.clive-k').textContent = out.fig.k || 'Result';
+        live.querySelector('.clive-v').textContent = out.fig.v || '—';
+      }
+    }
+
+    var bar = cfg.modes ? d.getElementById(cfg.modesId || 'calc-modes') : null;
+    function syncModeBar() {
+      if (!bar) return;
+      [].forEach.call(bar.querySelectorAll('button[data-m]'), function (x) {
+        x.setAttribute('aria-pressed', String(x.dataset.m === mode));
+      });
+    }
     if (cfg.modes) {
-      var bar = d.getElementById(cfg.modesId || 'calc-modes');
       if (bar) {
-        bar.innerHTML = cfg.modes.options.map(function (o, i) {
-          return '<button type="button" data-m="' + esc(o.k) + '" aria-pressed="' + (i === 0) + '">' +
+        // V40.4 — pressed from `mode`, not "the first": a shared link may open on the second
+        bar.innerHTML = cfg.modes.options.map(function (o) {
+          return '<button type="button" data-m="' + esc(o.k) + '" aria-pressed="' + (o.k === mode) + '">' +
             esc(o.label) + '</button>';
         }).join('');
         bar.addEventListener('click', function (ev) {
@@ -586,9 +837,10 @@
       }
     }
 
-    build(); run(); fitTicks(form);
+    build(); applyQuery(q0); run(); fitTicks(form);
     return { run: run, state: function () { return Object.assign({}, state); },
-             setMode: function (m) { mode = m; build(true); run(); fitTicks(form); } };
+             setMode: function (m) { mode = m; build(true); run(); fitTicks(form); },
+             scenarioURL: scenarioURL };
   }
 
   w.MFCalc = { init: init, scale: moneyScale, inr: inr, compact: compact, pct: pct, group: group, round: round,
