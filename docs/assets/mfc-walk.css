@@ -1,0 +1,201 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   mfc-walk.css — V40.6 · GETTING STARTED, SHOWN RATHER THAN DESCRIBED
+   (.mfw-sbtn sets justify-content itself: mfc-finish.css centres every touch
+   button's content, which centred the step titles on a phone.)
+   The homepage's #get-started section: three steps (choose a book, sign up,
+   place the month's orders) beside a phone that plays each one. The phone's
+   screens are HTML, not a video: the page's CSP has media-src 'none', and HTML
+   stays sharp at any density, follows the light/dark theme and costs a few KB.
+   Behaviour (autoplay, pause, prices read from the page) is in mfc-walk.js.
+   Tokens fall back to the light values; html[data-theme="dark"] redefines them.
+   ════════════════════════════════════════════════════════════════════════════ */
+.mfw{ padding:64px 0; border-top:0.5px solid var(--border,rgba(37,99,235,.10)); position:relative; }
+.mfw-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:56px; align-items:center; }
+.mfw-h2{ font-size:42px; line-height:1.12; color:var(--white,#0c1831); margin:0 0 14px; max-width:520px; letter-spacing:-.02em; }
+.mfw-desc{ font-size:17px; color:var(--text2,#1e3a5f); font-weight:300; line-height:1.7; max-width:520px; margin:0; }
+
+/* ── the steps ───────────────────────────────────────────────────────────── */
+.mfw-steps{ list-style:none; margin:28px 0 0; padding:0; max-width:540px; }
+.mfw-step{ position:relative; border-bottom:0.5px solid var(--border2,rgba(37,99,235,.20)); border-radius:14px;
+  transition:background .25s ease, box-shadow .25s ease, border-color .25s ease; }
+.mfw-step.is-on{ background:var(--ink2,#fff); border-color:transparent;
+  box-shadow:0 0 0 1px var(--border2,rgba(37,99,235,.20)), 0 14px 32px -22px rgba(26,80,216,.45); }
+.mfw-sbtn{ display:flex; align-items:baseline; justify-content:flex-start; gap:14px; width:100%; min-height:44px; padding:18px 18px 16px;
+  margin:0; background:none; border:0; border-radius:14px; text-align:left; font:inherit; color:var(--white,#0c1831); cursor:pointer; }
+.mfw-sbtn:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; }
+.mfw-n{ flex:0 0 auto; font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--text3,#475569); font-variant-numeric:tabular-nums; }
+.mfw-step.is-on .mfw-n{ color:var(--accent2,#2563eb); }
+.mfw-t{ font-size:19px; font-weight:700; letter-spacing:-.01em; }
+.mfw-d{ margin:-4px 0 0; padding:0 18px 20px 47px; font-size:15px; line-height:1.6; color:var(--text2,#1e3a5f); max-width:56ch; }
+/* inactive descriptions stay in the reading order for a screen reader (the
+   site's 1x1 clipped sr-only box, which cannot escape a container — V28.4) */
+.mfw-step:not(.is-on) .mfw-d{ display:block; width:1px; height:1px; overflow:hidden; clip-path:inset(50%);
+  white-space:nowrap; margin:0; padding:0; }
+.mfw-bar{ position:absolute; left:18px; right:18px; bottom:0; height:3px; border-radius:3px; overflow:hidden;
+  background:var(--border,rgba(37,99,235,.10)); opacity:0; transition:opacity .2s; }
+.mfw-step.is-on .mfw-bar{ opacity:1; }
+.mfw-bar i{ display:block; height:100%; transform-origin:left center; transform:scaleX(0);
+  background:linear-gradient(90deg,var(--accent,#1a50d8),#2dd4bf); }
+
+.mfw-cta{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; margin-top:28px; }
+.mfw-more{ font-size:15px; font-weight:600; color:var(--accent2,#2563eb); text-decoration:none; display:inline-flex; align-items:center; min-height:44px; }
+.mfw-more:hover{ text-decoration:underline; }
+
+/* ── the stage: phone, controls, note ───────────────────────────────────── */
+.mfw-stage{ position:relative; padding:18px 0 0; }
+.mfw-stage::before{ content:""; position:absolute; left:4%; right:4%; top:64px; bottom:96px; border-radius:28px; z-index:0;
+  background:linear-gradient(160deg,rgba(37,99,235,.10),rgba(45,212,191,.10)); }
+.mfw-device{ position:relative; z-index:1; width:288px; margin:0 auto; }
+.mfw-phone{ position:relative; width:288px; height:588px; padding:10px; border-radius:44px; background:#0f1b33;
+  box-shadow:0 34px 64px -34px rgba(12,24,49,.6), inset 0 0 0 1px rgba(255,255,255,.07); }
+.mfw-screen{ position:relative; height:100%; border-radius:34px; overflow:hidden; background:var(--ink2,#fff); color:var(--text,#0c1831);
+  font-size:12px; line-height:1.4; }
+.mfw-island{ position:absolute; top:9px; left:50%; width:86px; height:24px; margin-left:-43px; border-radius:14px; background:#0f1b33; z-index:4; }
+.mfw-status{ display:flex; justify-content:space-between; align-items:center; height:38px; padding:8px 24px 0 26px;
+  font-size:12px; font-weight:700; color:var(--white,#0c1831); }
+.mfw-status svg{ width:44px; height:12px; }
+.mfw-appbar{ display:flex; align-items:center; gap:8px; height:40px; padding:0 16px; border-bottom:0.5px solid var(--border2,rgba(37,99,235,.20));
+  font-size:13px; font-weight:800; letter-spacing:-.01em; color:var(--white,#0c1831); }
+.mfw-appbar .mfw-logo{ width:20px; height:20px; border-radius:6px; display:grid; place-items:center; color:#fff; font-size:11px; font-weight:800;
+  background:linear-gradient(135deg,#1a50d8,#0e7490); }
+.mfw-appbar .mfw-ctx{ margin-left:auto; font-size:10.5px; font-weight:600; color:var(--text3,#475569); }
+.mfw-view{ position:absolute; top:78px; left:0; right:0; bottom:0; }
+.mfw-fr{ position:absolute; inset:0; padding:14px 14px 16px; opacity:0; visibility:hidden; transform:translateX(16px);
+  transition:opacity .35s ease, transform .35s ease, visibility 0s linear .35s; overflow:hidden; }
+.mfw-fr.on{ opacity:1; visibility:visible; transform:none; transition:opacity .35s ease, transform .35s ease, visibility 0s; }
+.mfw-fr.out{ transform:translateX(-16px); }
+
+/* screen parts */
+.mfw-k{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3,#475569); margin:2px 0 8px; }
+.mfw-h{ font-size:15px; font-weight:800; letter-spacing:-.01em; color:var(--white,#0c1831); margin:0 0 4px; }
+.mfw-s{ font-size:11.5px; color:var(--text3,#475569); margin:0 0 12px; }
+.mfw-card{ border:1px solid var(--border2,rgba(37,99,235,.20)); border-radius:13px; padding:10px 11px; margin:0 0 9px; background:var(--ink2,#fff);
+  transition:border-color .2s, box-shadow .2s, background .2s; }
+.mfw-card.is-picked{ border-color:var(--accent3,#3b82f6); box-shadow:0 0 0 2px rgba(59,130,246,.22); }
+.mfw-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.mfw-name{ font-size:12.5px; font-weight:800; color:var(--white,#0c1831); }
+.mfw-meta{ font-size:10.5px; color:var(--text3,#475569); margin-top:3px; }
+.mfw-price{ font-size:12px; font-weight:800; color:var(--white,#0c1831); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.mfw-free{ font-size:10px; font-weight:800; letter-spacing:.05em; color:#047857; background:rgba(5,150,105,.12); border-radius:999px; padding:3px 8px; }
+.mfw-btn{ display:flex; align-items:center; justify-content:center; height:38px; border-radius:11px; font-size:12.5px; font-weight:800; color:#fff;
+  /* fixed colours, not the theme tokens: dark's --accent2 is #5b8def, under which
+     white text measured 3.0-3.5:1 on real pixels */
+  background:linear-gradient(135deg,#1a50d8,#2563eb); box-shadow:0 10px 18px -12px rgba(26,80,216,.8);
+  transition:transform .15s ease, filter .15s ease; }
+.mfw-btn.is-picked{ transform:scale(.97); filter:brightness(1.08); }
+.mfw-field{ margin:0 0 9px; }
+.mfw-field .mfw-lab{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3,#475569); margin:0 0 4px; }
+.mfw-input{ display:flex; align-items:center; height:32px; padding:0 10px; border-radius:9px; border:1px solid var(--border2,rgba(37,99,235,.20));
+  font-size:12px; color:var(--white,#0c1831); background:var(--ink,#f0f5ff); overflow:hidden; white-space:nowrap; }
+.mfw-input.is-live{ border-color:var(--accent3,#3b82f6); box-shadow:0 0 0 2px rgba(59,130,246,.18); }
+.mfw-caret{ display:inline-block; width:1.5px; height:14px; margin-left:1px; background:var(--accent2,#2563eb); vertical-align:middle; }
+.mfw-input:not(.is-live) .mfw-caret{ display:none; }
+.mfw-chips{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.mfw-chip{ border:1px solid var(--border2,rgba(37,99,235,.20)); border-radius:9px; padding:6px 8px; font-size:10.5px; color:var(--text2,#1e3a5f);
+  background:var(--ink2,#fff); transition:border-color .2s, background .2s, color .2s; }
+.mfw-chip b{ display:block; font-size:11.5px; color:var(--white,#0c1831); }
+.mfw-chip.is-picked{ border-color:var(--accent3,#3b82f6); background:rgba(59,130,246,.10); }
+.mfw-check{ display:flex; gap:8px; align-items:flex-start; font-size:10.5px; color:var(--text2,#1e3a5f); margin:10px 0 12px; }
+.mfw-box{ flex:0 0 auto; width:15px; height:15px; border-radius:4px; border:1.5px solid var(--text3,#475569); display:grid; place-items:center;
+  color:#fff; font-size:10px; line-height:1; transition:background .2s, border-color .2s; }
+.mfw-box::after{ content:""; }
+.mfw-check.is-picked .mfw-box{ background:var(--accent2,#2563eb); border-color:var(--accent2,#2563eb); }
+.mfw-check.is-picked .mfw-box::after{ content:"\2713"; }
+.mfw-gift{ font-size:10.5px; color:#047857; background:rgba(5,150,105,.10); border-radius:9px; padding:7px 9px; margin:0 0 10px; }
+.mfw-ok{ width:40px; height:40px; border-radius:50%; display:grid; place-items:center; margin:8px 0 10px; color:#fff; font-size:20px; font-weight:800;
+  background:#047857; }
+.mfw-list{ list-style:none; margin:0; padding:0; }
+.mfw-li{ display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:0.5px solid var(--border2,rgba(37,99,235,.20)); font-size:11.5px; color:var(--text2,#1e3a5f); }
+.mfw-li:last-child{ border-bottom:0; }
+.mfw-li .mfw-i{ flex:0 0 auto; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font-size:10.5px; font-weight:800;
+  color:var(--accent2,#2563eb); background:rgba(37,99,235,.10); }
+.mfw-li b{ color:var(--white,#0c1831); }
+.mfw-sum{ display:flex; gap:8px; margin:0 0 10px; }
+.mfw-sum div{ flex:1; border-radius:10px; padding:7px 9px; background:var(--ink,#f0f5ff); }
+.mfw-sum b{ display:block; font-size:13px; color:var(--white,#0c1831); font-variant-numeric:tabular-nums; }
+.mfw-sum span{ font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text3,#475569); }
+.mfw-ord{ display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:0.5px solid var(--border,rgba(37,99,235,.10)); font-size:11.5px; }
+.mfw-ord .mfw-side{ flex:0 0 34px; text-align:center; font-size:9.5px; font-weight:800; letter-spacing:.04em; border-radius:6px; padding:2px 0; }
+.mfw-ord .buy{ color:#047857; background:rgba(5,150,105,.12); }
+.mfw-ord .sell{ color:#b91c1c; background:rgba(220,38,38,.10); }
+.mfw-ord .mfw-co{ flex:1; color:var(--white,#0c1831); font-weight:600; }
+.mfw-ord .mfw-q{ color:var(--text3,#475569); font-variant-numeric:tabular-nums; }
+.mfw-ord .mfw-done{ flex:0 0 16px; width:16px; height:16px; border-radius:50%; display:grid; place-items:center; font-size:9.5px; color:#fff;
+  background:#047857; transform:scale(0); transition:transform .25s cubic-bezier(.2,.9,.3,1.4); }
+.mfw-ord.is-placed .mfw-done{ transform:scale(1); }
+.mfw-dock{ position:absolute; left:0; right:0; bottom:0; padding:10px 14px 14px; background:var(--ink2,#fff);
+  border-top:0.5px solid var(--border2,rgba(37,99,235,.20)); }
+.mfw-sheet{ position:absolute; left:0; right:0; bottom:0; padding:14px 14px 16px; border-radius:18px 18px 0 0; background:var(--ink2,#fff);
+  box-shadow:0 -14px 30px -10px rgba(12,24,49,.35); transform:translateY(105%); transition:transform .4s cubic-bezier(.2,.8,.2,1); }
+.mfw-fr.is-open .mfw-sheet{ transform:none; }
+.mfw-scrim{ position:absolute; inset:0; background:rgba(12,24,49,.35); opacity:0; transition:opacity .3s ease; pointer-events:none; }
+.mfw-fr.is-open .mfw-scrim{ opacity:1; }
+.mfw-grip{ width:36px; height:4px; border-radius:4px; background:var(--border2,rgba(37,99,235,.20)); margin:0 auto 10px; }
+
+/* the simulated finger */
+.mfw-tap{ position:absolute; left:0; top:0; z-index:5; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; pointer-events:none;
+  background:rgba(12,24,49,.20); border:2px solid rgba(255,255,255,.9); box-shadow:0 3px 10px rgba(12,24,49,.25);
+  opacity:0; transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .2s ease; }
+.mfw-tap.is-on{ opacity:1; }
+.mfw-tap.is-press{ animation:mfw-press .32s ease; }
+@keyframes mfw-press{ 0%{ scale:1; } 45%{ scale:.72; } 100%{ scale:1; } }
+
+/* controls beside the phone */
+.mfw-ctrl{ position:absolute; z-index:2; top:50%; left:calc(50% - 144px - 66px); transform:translateY(-62%); display:flex; flex-direction:column; gap:10px; }
+.mfw-cb{ width:42px; height:42px; border-radius:50%; display:grid; place-items:center; padding:0; cursor:pointer; color:var(--accent2,#2563eb);
+  background:var(--ink2,#fff); border:1px solid var(--border2,rgba(37,99,235,.20)); box-shadow:0 6px 16px -10px rgba(26,80,216,.45); }
+.mfw-cb svg{ width:18px; height:18px; }
+.mfw-cb:hover{ border-color:var(--accent3,#3b82f6); }
+.mfw-cb:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; }
+.mfw-cb[aria-pressed="true"]{ background:#2563eb; border-color:#2563eb; color:#fff; }
+.mfw-cb .ic-play{ display:none; }
+.mfw-cb[aria-pressed="true"] .ic-play{ display:block; }
+.mfw-cb[aria-pressed="true"] .ic-pause{ display:none; }
+.mfw-note{ position:relative; z-index:1; max-width:440px; margin:22px auto 0; font-size:12px; line-height:1.55; font-style:italic; color:var(--text3,#475569); text-align:center; }
+
+/* ── dark theme: the app's own colours that are not tokens ─────────────── */
+html[data-theme="dark"] .mfw-phone{ background:#050a14; box-shadow:0 34px 64px -34px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.10); }
+html[data-theme="dark"] .mfw-island{ background:#050a14; }
+html[data-theme="dark"] .mfw-free, html[data-theme="dark"] .mfw-gift{ color:#34d399; background:rgba(52,211,153,.14); }
+html[data-theme="dark"] .mfw-ord .buy{ color:#34d399; background:rgba(52,211,153,.14); }
+html[data-theme="dark"] .mfw-ord .sell{ color:#f87171; background:rgba(248,113,113,.14); }
+html[data-theme="dark"] .mfw-stage::before{ background:linear-gradient(160deg,rgba(91,141,239,.14),rgba(45,212,191,.10)); }
+html[data-theme="dark"] .mfw-step.is-on{ box-shadow:0 0 0 1px var(--border2), 0 14px 32px -22px rgba(0,0,0,.7); }
+html[data-theme="dark"] .mfw-scrim{ background:rgba(0,0,0,.5); }
+html[data-theme="dark"] .mfw-btn{ background:linear-gradient(135deg,#2f5fe0,#1a50d8); }
+html[data-theme="dark"] .mfw-cb[aria-pressed="true"]{ background:#2f5fe0; border-color:#2f5fe0; }
+
+/* ── narrower screens ───────────────────────────────────────────────────── */
+@media (max-width:1080px){ .mfw-grid{ gap:36px; } .mfw-h2{ font-size:36px; } }
+@media (max-width:860px){
+  .mfw-grid{ grid-template-columns:minmax(0,1fr); gap:30px; }
+  .mfw-h2, .mfw-desc, .mfw-steps{ max-width:none; }
+  .mfw-stage{ padding-top:0; }
+  .mfw-stage::before{ top:40px; bottom:150px; }
+  /* the controls go under the phone, in a row */
+  .mfw-ctrl{ position:static; transform:none; flex-direction:row; justify-content:center; margin:18px auto 0; }
+}
+@media (max-width:600px){
+  .mfw{ padding:52px 0; }
+  .mfw-h2{ font-size:30px; }
+  .mfw-desc{ font-size:16px; }
+  .mfw-sbtn{ padding:15px 14px 13px; gap:12px; }
+  .mfw-t{ font-size:17px; }
+  .mfw-d{ padding:0 14px 16px 41px; font-size:14.5px; }
+  .mfw-bar{ left:14px; right:14px; }
+  .mfw-cta .btn-primary{ width:100%; text-align:center; justify-content:center; }
+}
+@media (max-width:359px){
+  .mfw-device, .mfw-phone{ width:260px; }
+  .mfw-phone{ height:540px; }
+  .mfw-ctrl{ left:auto; }
+}
+@media (pointer:coarse){ .mfw-cb{ width:44px; height:44px; } }
+
+/* still screens for anyone who asked for less motion: no finger, no slides */
+@media (prefers-reduced-motion: reduce){
+  .mfw-fr, .mfw-fr.on, .mfw-sheet, .mfw-tap, .mfw-ord .mfw-done, .mfw-step, .mfw-btn, .mfw-chip, .mfw-card{ transition:none !important; }
+  .mfw-tap{ display:none; }
+  .mfw-fr.out{ transform:none; }
+}
+@media print{ .mfw-stage, .mfw-bar{ display:none !important; } .mfw-step:not(.is-on) .mfw-d{ width:auto; height:auto; clip-path:none; white-space:normal; padding:0 18px 12px 47px; } }

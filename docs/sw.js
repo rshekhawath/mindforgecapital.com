@@ -808,7 +808,7 @@
 // their sparklines and repeated bars, one-slice "Where this fits", the FAQ in
 // four groups, three trust cards) and login.html (an expired free book starts
 // again at ₹0 instead of a WhatsApp renewal). No shared asset moved.
-const CACHE = 'mfc-v116';
+const CACHE = 'mfc-v117';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
