@@ -585,7 +585,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         </label>
       </div>
 
-      <button class="btn" id="reg-btn" disabled style="opacity:0.6;cursor:not-allowed;" onclick="handleSubmit()">Register &amp; Connect on WhatsApp&nbsp;&#8594;</button>
+      <!-- V40.3 — C7: the label before any strategy is chosen. "Connect on WhatsApp"
+           was the first thing every visitor read, though neither the free book nor
+           the first-month-free path involves a chat. onStrategyChange() relabels it. -->
+      <button class="btn" id="reg-btn" disabled style="opacity:0.6;cursor:not-allowed;" onclick="handleSubmit()">Register&nbsp;&#8594;</button>
       <div class="err-box" id="reg-error"></div>
 
       <div class="disclaimer">
@@ -910,7 +913,9 @@ function setBtn(loading) {
         ? 'Register &amp; get my dashboard&nbsp;&#8594;'
         : btn.getAttribute('data-label') === 'offer'
           ? 'Register&nbsp;— month one is free&nbsp;&#8594;'
-          : 'Register &amp; Connect on WhatsApp&nbsp;&#8594;');
+          : btn.getAttribute('data-label') === 'paid'
+            ? 'Register &amp; Connect on WhatsApp&nbsp;&#8594;'
+            : 'Register&nbsp;&#8594;');                    // V40.3 — C7: no strategy chosen yet
 }
 
 // Hard-gate the submit button on the T&C checkbox.

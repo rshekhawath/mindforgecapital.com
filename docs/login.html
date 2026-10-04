@@ -635,6 +635,17 @@ function renderSubscriptions(subs) {
       return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
     });
     var dateStr = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+    if (expired && /multiasset/i.test(String(sub.strategy || '').replace(/ /g, ' '))) {
+      // V40.3 — B2.3: the free book is not renewed on WhatsApp; there is nothing to
+      // pay. It starts again at ₹0 from the same signup the homepage uses.
+      return '<a class="sub-row" href="signup.html?strategy=multiasset" style="opacity:0.7;text-decoration:none;">' +
+        '<div>' +
+          '<div class="sub-name">' + safeStrat + '</div>' +
+          '<div class="sub-meta" style="color:var(--data-bad);">Ended on ' + dateStr + ' · Start it again, still ₹0</div>' +
+        '</div>' +
+        '<div class="sub-go" style="color:var(--data-strong);">Start again →</div>' +
+      '</a>';
+    }
     if (expired) {
       // Don't navigate to a dashboard that will just error out — send the user
       // straight to WhatsApp to renew, with strategy + email pre-filled.
@@ -665,7 +676,9 @@ function renderSubscriptions(subs) {
   var expiredCount = subs.length - activeCount;
   var desc = 'Found ' + subs.length + ' subscription' + (subs.length > 1 ? 's' : '') + ' for ' + _email + '.';
   if (expiredCount && activeCount) desc += ' (' + activeCount + ' active, ' + expiredCount + ' expired)';
-  else if (expiredCount && !activeCount) desc += ' All expired — tap Renew to subscribe again on WhatsApp.';
+  else if (expiredCount && !activeCount) desc += subs.some(function(s){ return /multiasset/i.test(String(s.strategy || '')); })
+    ? ' All expired — tap one to renew it, or to start the free book again.'
+    : ' All expired — tap one to renew it.';
   document.getElementById('subs-desc').textContent = desc;
   document.getElementById('step-otp').style.display = 'none';
   document.getElementById('step-subs').style.display = 'block';

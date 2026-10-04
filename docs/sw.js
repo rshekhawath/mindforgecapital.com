@@ -803,7 +803,12 @@
 // assets/mfc-live.js 4010 -> 4020 on the seven pages that load it, and
 // assets/mfc-calc.js 399 -> 402 on the sixteen calculator pages (whole-year
 // fields round to whole years; a book switch keeps the reader's own amounts).
-const CACHE = 'mfc-v114';
+// V40.3 -> mfc-v115. Both precached documents changed: index.html (Your month
+// above the prices, the two accounts after the free book, the cards without
+// their sparklines and repeated bars, one-slice "Where this fits", the FAQ in
+// four groups, three trust cards) and login.html (an expired free book starts
+// again at ₹0 instead of a WhatsApp renewal). No shared asset moved.
+const CACHE = 'mfc-v115';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

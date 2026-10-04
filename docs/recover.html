@@ -99,6 +99,11 @@ input[type=email]:focus,input[type=tel]:focus{border-color:var(--accent);box-sha
 .result-box{display:none;margin-top:20px;padding:16px 18px;border-radius:var(--r-sm);font-size:14px;line-height:1.6;}
 .result-box.success{background:rgba(5,150,105,0.08);border:0.5px solid rgba(5,150,105,0.3);color:#065f46;}
 .result-box.error{background:rgba(220,38,38,0.06);border:0.5px solid rgba(220,38,38,0.25);color:#991b1b;}
+.result-box a{color:inherit;text-decoration:underline;text-underline-offset:2px;font-weight:700;}
+/* V40.3 — the light-theme reds and greens above measured about 2:1 on the dark
+   page; the result box now carries its own dark-theme tones. */
+html[data-theme="dark"] .result-box.error{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.32);color:#fca5a5;}
+html[data-theme="dark"] .result-box.success{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.30);color:#6ee7b7;}
 
 .divider{border:none;border-top:0.5px solid var(--border);margin:28px 0;}
 
@@ -341,7 +346,15 @@ async function recoverAccess() {
     const res  = await fetch(APPS_SCRIPT_URL + '?' + params.toString());
     const data = await res.json();
 
-    if (data.error) {
+    if (data.error && /subscription has expired/i.test(data.error)) {
+      // V40.3 — B2.3. Access that has run out is not an error the member made:
+      // it has ended, and the way back is one tap. The server says only
+      // "expired", so the page cannot tell a free book from a paid one; it
+      // offers both routes. No token, and nothing but the typed email, in a link.
+      showResult('error', '<strong>Your access has ended.</strong> To carry on, <a href="https://wa.me/917601032082?text=' +
+        encodeURIComponent('Hi MindForge Capital — my access has ended and I would like to renew.' + (email ? ' Email: ' + email + '.' : '')) +
+        '" target="_blank" rel="noopener">renew a paid plan on WhatsApp</a>, or <a href="signup.html?strategy=multiasset">start the free book again (&#8377;0)</a>.', true);
+    } else if (data.error) {
       showResult('error', data.error);
     } else {
       // Security: the API intentionally no longer returns the dashboard URL —

@@ -218,6 +218,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 /* V35.2 — the retry action. Primary weight, 44px tall so it clears the touch
    floor on the one screen a member reaches on a bad connection (i.e. on a phone). */
 #error-retry{ margin-top:22px; }
+/* V40.3 — C8 / B2.3: the primary way back on the sign-in and access-ended states.
+   Same fixed stops as .err-retry-btn below, for the contrast reason it records. */
+.err-act{ margin-top:22px; }
+.err-act-btn{ font-size:14.5px; font-weight:700; text-decoration:none;
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  min-height:44px; padding:0 22px; border-radius:12px; color:#fff;
+  background:linear-gradient(135deg,#1a50d8,#2f6ae0);
+  box-shadow:0 10px 22px -10px rgba(26,80,216,.62); }
+.err-act-btn:hover{ filter:brightness(1.06); }
+.err-act-btn:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
 .err-retry-btn{ font:inherit; font-size:14.5px; font-weight:700; cursor:pointer;
   display:inline-flex; align-items:center; justify-content:center; gap:9px;
   min-height:44px; padding:0 22px; border-radius:12px; color:#fff; border:0;
@@ -1603,6 +1613,16 @@ html[data-theme="dark"] .howto-card::before{background:linear-gradient(90deg,tra
 .howto-card h3 .ico{width:22px;height:22px;color:var(--accent2);display:inline-flex;align-items:center;justify-content:center;}
 .howto-card h3 .ico svg{width:100%;height:100%;}
 .howto-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
+/* V40.3 — C6: a member who has already done a cycle sees the title and the
+   progress rail; the four step cards open on request. #kbsk is not in the grid. */
+.hs-show{ display:none; }
+.howto-card.is-collapsed .howto-grid{ display:none; }
+.howto-card.is-collapsed .hs-show{ display:inline-flex; align-items:center; gap:6px; min-height:44px;
+  margin:2px 0 4px; padding:0; font:inherit; font-size:13.5px; font-weight:700; cursor:pointer;
+  color:var(--accent); background:none; border:0; }
+.howto-card.is-collapsed .hs-show:hover{ text-decoration:underline; }
+.hs-show:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+html[data-theme="dark"] .howto-card.is-collapsed .hs-show{ color:#9dbcff; }
 /* V26.9 — iPad tier (see the .stats-row note above). Declared AFTER the base
    rule so it wins on source order; auto-fit strands the 4th card 3+1 across
    769–1000px otherwise. */
@@ -2999,6 +3019,11 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     </div>
     <h3 id="error-title">Access Denied</h3>
     <p id="error-msg">This link is invalid or your subscription has expired.</p>
+    <!-- V40.3 — C8 / B2.3. The way back, as a button, for the two states that have
+         one: no session on this device ("Sign in to your dashboard" → a one-time
+         code) and access that has ended (renew, or start the free book again).
+         Written by showError({action}); hidden for every other state. -->
+    <p class="err-act" id="error-action" hidden><a class="err-act-btn" id="error-action-link" href="login.html"></a></p>
     <!-- V35.2 — THE WAY FORWARD, not just the way out. A network blip surfaces here
          as "Connection Error", and until now the only things offered were "Sign in
          again" and "Recover dashboard access" — both of them the wrong action for a
@@ -3059,7 +3084,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <aside class="demo-banner" id="demo-banner" hidden aria-label="Sample dashboard">
       <span class="demo-banner-tag">Sample</span>
       <span class="demo-banner-txt"><b>This is a sample dashboard.</b> The member, stocks and prices are placeholders that show how the dashboard works — they are not MindForge's picks.</span>
-      <a class="demo-banner-cta" href="/strategies.html">See the strategies <span aria-hidden="true">→</span></a>
+      <!-- V40.3 — B1. The sample's only exit used to be "See the strategies": a
+           prospect convinced by this screen was sent back to browse. The free
+           book is the same screen with real picks, so it leads. -->
+      <span class="demo-banner-ctas">
+        <a class="demo-banner-cta is-go" href="/signup.html?strategy=multiasset">Start the free book — this screen, with real picks <span aria-hidden="true">→</span></a>
+        <a class="demo-banner-cta" href="/strategies.html">See the strategies <span aria-hidden="true">→</span></a>
+      </span>
     </aside>
     <!-- HERO -->
     <div class="dash-hero fade-up">
@@ -4260,6 +4291,9 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <span class="hs-link" data-link="3"><i></i></span>
           <span class="hs-node" data-node="4"><i></i></span>
         </div>
+        <!-- V40.3 — C6: shown only while the card is collapsed (a member who has
+             already done a cycle). The one-tap Kite band below stays either way. -->
+        <button type="button" class="hs-show" id="hs-show" aria-expanded="true" onclick="hsShowSteps()">Show the four steps <span aria-hidden="true">↓</span></button>
         <div class="howto-grid">
           <div class="howto-step" data-hs="1">
             <div class="num">1</div>
@@ -4458,6 +4492,13 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           </div>
           <span class="cs-status" id="cs-status">None set</span>
         </div>
+        <!-- V40.3 — C5. Most members have no trading code, and this card sat fully
+             open (1.7 phone screens) reading "None set" on every visit. While no
+             rule is set it closes to its title and this one line; it opens by
+             itself once a rule exists, in ?demo=restricted, when the URL hash is
+             #cs-card, and from the nudge above. Logic, ids and storage unchanged. -->
+        <button type="button" class="cs-open" id="cs-open" aria-controls="cs-body" aria-expanded="false" onclick="csExpand()">Work under a trading code? Set a restricted list, a minimum hold or a pre-clearance list <span aria-hidden="true">→</span></button>
+        <div class="cs-body" id="cs-body">
         <div class="cs-grid">
           <div class="cs-block">
             <h3>Names I can't hold</h3>
@@ -4495,6 +4536,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         </div>
         <p class="cs-cost" id="cs-cost" hidden></p>
         <p class="cs-foot"><span id="cs-saved">Saved on this device.</span> Not legal advice &mdash; your employer's code of conduct decides. <a href="index.html#faq-employer">How this fits insider-trading rules &rarr;</a></p>
+        </div>
       </section>
 
       <!-- V39.1 — C6. The ±bps tracking gauge and the four-size capital ladder sat
@@ -4546,13 +4588,16 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
            the FORM: short-term gains take them off ITR-1. Facts only, not advice. -->
       <section class="itr-card" id="itr-card" hidden aria-labelledby="itr-h">
         <h3 id="itr-h">Filing season: what this book adds to your return</h3>
+        <!-- V40.3 — B4. The reader's whole year in time, in one line: the site gave
+             "~10 min a month" and left the return and the instalments to an FAQ. -->
+        <p class="itr-year"><b>Your year, with one book:</b> twelve sessions of about ten minutes on the 1st. ITR-2 instead of ITR-1 &mdash; your broker's Tax P&amp;L carries the detail. Advance tax, if this year's tax beyond your salary TDS reaches &#8377;10,000: up to four payments, and the dashboard works out each one. On a 12-month plan, one renewal.</p>
         <ul>
           <li>Your broker's Tax P&amp;L report already lists every trade this book realised. On Zerodha it is in Console, under Reports &rarr; Tax P&amp;L.</li>
           <li>Gains from these books are short-term (section 196 of the Income-tax Act, 2025; section 111A before April&nbsp;2026), because nothing is held twelve months. With short-term gains you can no longer file ITR-1, and a salaried filer usually moves to ITR-2.</li>
           <li class="itr-count" hidden>At this book's turnover that is roughly <b data-itr-yearly></b> realised transactions a year: one summary in your return, not one line each.</li>
           <li>Your salary TDS does not cover these gains. If your tax for the year beyond it comes to &#8377;10,000 or more, it is due as advance tax &mdash; by 15&nbsp;June, 15&nbsp;September, 15&nbsp;December and 15&nbsp;March.</li>
         </ul>
-        <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours. <button type="button" class="itr-hide" onclick="hideItrCard()">Hide until next season</button></p>
+        <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours. <a class="itr-atx-link" href="#advance-tax" onclick="atxOpen(event)">Work out advance tax on these gains &rarr;</a> <button type="button" class="itr-hide" onclick="hideItrCard()">Hide until next season</button></p>
       </section>
 
       <!-- V39.5 — B5. ADVANCE TAX, ON THE DATES IT FALLS DUE. The ITR card above shows
@@ -4567,6 +4612,37 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <li>Tax on a gain paid by the next instalment after you make it costs no interest; a missed instalment costs 1% a month.</li>
           <li>Your broker's Tax P&amp;L shows the gains realised so far this year. On Zerodha it is in Console, under Reports &rarr; Tax P&amp;L.</li>
         </ul>
+        <!-- V40.3 — B3. THE CARD STATED THE RULE AND LEFT THE ARITHMETIC TO THE READER,
+             four times a year, to someone salary TDS has always covered. One number
+             from the broker's Tax P&L in, one amount and one date out. Arithmetic on
+             what the member types: nothing is stored, nothing is sent, and nothing is
+             read from the ticks (a tick has no sale price). 20% on share and
+             equity-ETF gains (s.196 of the 2025 Act), the member's slab on the
+             slab-taxed ETFs (the device-only mfc_tax_slab answer, shared with the
+             cost card), surcharge by income band (capped at 15% on these gains) and
+             4% cess. Above ₹2 crore it declines to answer rather than guess. -->
+        <details class="atx-calc" id="advance-tax">
+          <summary><span>Work out this instalment</span><i aria-hidden="true"></i></summary>
+          <div class="atx-form">
+            <label class="atx-row" for="atx-g"><span class="atx-l">Short-term gains so far this tax year<small>as your broker's Tax P&amp;L shows them &mdash; a net loss is negative</small></span>
+              <span class="atx-f"><span aria-hidden="true">&#8377;</span><input id="atx-g" class="atx-in" type="text" inputmode="numeric" autocomplete="off" placeholder="0" enterkeyhint="next"></span></label>
+            <label class="atx-row" for="atx-s"><span class="atx-l">Of that, on gold, silver, bond and Nasdaq-100 ETFs<small>taxed at your slab &mdash; MultiAsset only; leave blank if none</small></span>
+              <span class="atx-f"><span aria-hidden="true">&#8377;</span><input id="atx-s" class="atx-in" type="text" inputmode="numeric" autocomplete="off" placeholder="0" enterkeyhint="next"></span></label>
+            <label class="atx-row" for="atx-slab"><span class="atx-l">Your income-tax slab, for those ETFs</span>
+              <select id="atx-slab" class="atx-sel"><option value="30">30%</option><option value="25">25%</option><option value="20">20%</option><option value="15">15%</option><option value="10">10%</option><option value="5">5%</option></select></label>
+            <label class="atx-row" for="atx-band"><span class="atx-l">Your total income this year<small>it sets the surcharge</small></span>
+              <select id="atx-band" class="atx-sel"><option value="0">Up to &#8377;50 lakh</option><option value="10">&#8377;50 lakh &ndash; &#8377;1 crore</option><option value="15">&#8377;1 &ndash; 2 crore</option><option value="x">Above &#8377;2 crore</option></select></label>
+            <label class="atx-row" for="atx-p"><span class="atx-l">Advance tax already paid this year on these gains</span>
+              <span class="atx-f"><span aria-hidden="true">&#8377;</span><input id="atx-p" class="atx-in" type="text" inputmode="numeric" autocomplete="off" placeholder="0" enterkeyhint="done"></span></label>
+          </div>
+          <p class="atx-out" id="atx-out" aria-live="polite">Enter the short-term gains your broker's Tax P&amp;L shows for this tax year.</p>
+          <ul class="atx-notes">
+            <li>Tax on a gain paid by the next instalment after you make it costs no interest; a gain from before an earlier date that has passed may cost 1% a month.</li>
+            <li>If your total tax for the year beyond your salary TDS stays under &#8377;10,000, no advance tax is due.</li>
+            <li>Pay on the income-tax portal: e-Pay Tax &rarr; Advance Tax (100).</li>
+          </ul>
+          <p class="itr-foot">Arithmetic on the numbers you enter, not tax advice. Your other income, losses and set-offs are yours. Nothing you type here is saved or sent.</p>
+        </details>
         <p class="itr-foot">Not tax advice: your slab, your other income and your set-offs are yours.</p>
         <div class="itr-acts"><button type="button" class="itr-hide" onclick="addAdvanceTaxToCalendar()">Add the four dates to my calendar</button><button type="button" class="itr-hide" onclick="hideAdvTaxCard()">Hide until the next one</button></div>
       </section>
@@ -5758,7 +5834,10 @@ async function init() {
     return;
   }
   if (!token) {
-    showError('No Access Token', 'No dashboard token found in this link. Please use the link from your subscription email.');
+    // V40.3 — C8: "No Access Token" was developer vocabulary, met by a member
+    // opening a bookmark on a new device. Same state, the reader's words.
+    showError('Sign in to your dashboard', 'We’ll email you a one-time code — no password needed.',
+              { action: { href: 'login.html', label: 'Email me a code →' } });
     return;
   }
   try {
@@ -5775,6 +5854,7 @@ async function init() {
     // {status:'error', message} are all failures. Testing `data.error` alone let
     // the third shape through to renderDashboard(undefined, …).
     if (isErrorPayload(data)) {
+      var _expNm = _expiredStrategy();          // V40.3 — B2.3: read before the registry drops it
       if (isAuthFailure(data)) {
         // V21.6: clear the dead SESSION token, but KEEP the strategy switcher registry —
         // only drop this one dead strategy from it. Previously clearDashSession() wiped
@@ -5783,6 +5863,7 @@ async function init() {
         clearDashSession({ keepRegistry: true });
         removeStratByToken(token);
       }
+      if (/expired/i.test(errMessage(data))) { showExpired(_expNm); return; }
       showError('Access Denied', errMessage(data) || 'This link is invalid or your subscription has expired.');
       return;
     }
@@ -9831,14 +9912,94 @@ function renderAdvTaxCard(){
     var days = Math.round((nx.date - today) / 864e5);
     var hidden = false;
     try { hidden = localStorage.getItem(_advTaxKey(nx.date)) === '1'; } catch (e) {}
-    if (days > 21 || hidden){ card.hidden = true; return; }
+    // V40.3 — B3: the helper is reachable at any time — from the ITR card, from
+    // the .ics events (dashboard.html#advance-tax) — not only in the 21-day window.
+    var forced = !!window._atxForce || (location.hash || '') === '#advance-tax';
+    if (!forced && (days > 21 || hidden)){ card.hidden = true; return; }
+    _atxWire();
     var lbl = mfDate(nx.date, { day: 'numeric', month: 'long' });
     var d1 = card.querySelector('[data-atx-date]'), d2 = card.querySelector('[data-atx-date2]');
     if (d1) d1.textContent = lbl + (days === 0 ? ' — today' : days === 1 ? ' — tomorrow' : '');
     if (d2) d2.textContent = lbl;
     var sh = card.querySelector('[data-atx-share]'); if (sh) sh.textContent = nx.share;
     card.hidden = false;
+    // Arriving from a calendar event: open the helper and take the reader to it, once.
+    if ((location.hash || '') === '#advance-tax' && !window._atxHashDone){
+      window._atxHashDone = true;
+      setTimeout(function(){ try { atxOpen(); } catch (e) {} }, 400);
+    }
   } catch (e) { card.hidden = true; }
+}
+/* V40.3 — B3. The instalment, worked out from what the member types (see the
+   markup note). Rounded to the rupee; the 2025 Act numbering is the card's. */
+function _atxNum(v){
+  var s = String(v == null ? '' : v).replace(/[^0-9.\-]/g, '');
+  var n = parseFloat(s);
+  return isFinite(n) ? n : 0;
+}
+function atxCalc(gain, slabPart, slabPct, band, paid){
+  // Pure: every input explicit, so the arithmetic can be checked on its own.
+  if (band === 'x') return { state: 'ask' };
+  if (!(gain > 0)) return { state: 'none' };
+  var sur = (Number(band) || 0) / 100;
+  var slabNet = Math.min(Math.max(0, slabPart), gain);   // a loss on one side offsets the other
+  var eq = gain - slabNet;
+  var tax = (eq * STCG_RATE + slabNet * (Number(slabPct) || 0) / 100) * (1 + sur) * 1.04;
+  var p = Math.max(0, paid);
+  return { state: 'due', tax: Math.round(tax), paid: Math.round(p), due: Math.max(0, Math.round(tax - p)) };
+}
+function atxCompute(){
+  var out = document.getElementById('atx-out'); if (!out) return;
+  var gEl = document.getElementById('atx-g');
+  if (!gEl || String(gEl.value).trim() === ''){
+    out.innerHTML = 'Enter the short-term gains your broker’s Tax P&amp;L shows for this tax year.'; return;
+  }
+  var nx = null; try { nx = _advTaxDates(_istToday())[0]; } catch (e) {}
+  var by = nx ? mfDate(nx.date, { day: 'numeric', month: 'long' }) : 'the next due date';
+  var r = atxCalc(_atxNum(gEl.value), _atxNum((document.getElementById('atx-s') || {}).value),
+                  (document.getElementById('atx-slab') || {}).value, (document.getElementById('atx-band') || {}).value,
+                  _atxNum((document.getElementById('atx-p') || {}).value));
+  if (r.state === 'ask'){
+    out.innerHTML = 'Above ₹2 crore of income the surcharge on the slab part is higher than this sheet models — ask your CA for this one.'; return;
+  }
+  if (r.state === 'none'){
+    out.innerHTML = '<b>No advance tax is due on these gains</b> — your Tax P&amp;L shows no net short-term gain this year.'; return;
+  }
+  out.innerHTML = 'Tax on these gains: about <b>' + fmtMoney(r.tax) + '</b>' +
+    (r.paid > 0 ? '. Less what you’ve paid: ' + fmtMoney(r.paid) : '') + '. ' +
+    (r.due > 0 ? '<b>Pay ' + fmtMoney(r.due) + ' by ' + by + '.</b>' : '<b>Nothing more to pay by ' + by + '</b> on these gains.') +
+    '<span class="atx-basis">20% on share and equity-ETF gains, your slab on the rest, plus surcharge and 4% cess.</span>';
+}
+var _atxWired = false;
+function _atxWire(){
+  if (_atxWired) return; _atxWired = true;
+  var sl = document.getElementById('atx-slab');
+  if (sl){
+    try { sl.value = String(_taxSlab()); } catch (e) {}
+    sl.addEventListener('change', function(){ try { setTaxSlab(sl.value); } catch (e) {} atxCompute(); });
+  }
+  ['atx-g', 'atx-s', 'atx-p'].forEach(function(id){
+    var el = document.getElementById(id); if (!el) return;
+    el.addEventListener('input', atxCompute);
+    el.addEventListener('blur', function(){
+      var v = String(el.value).trim(); if (v === '') return;
+      var n = _atxNum(v); el.value = (n < 0 ? '-' : '') + fmtNum(Math.abs(Math.round(n)));
+    });
+  });
+  var bd = document.getElementById('atx-band'); if (bd) bd.addEventListener('change', atxCompute);
+}
+function atxOpen(ev){
+  if (ev) ev.preventDefault();
+  window._atxForce = true;
+  renderAdvTaxCard();
+  var card = document.getElementById('atx-card'), d = document.getElementById('advance-tax');
+  if (!card || card.hidden || !d) return;
+  d.open = true;
+  var prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  card.scrollIntoView({ block: 'start' });
+  document.documentElement.style.scrollBehavior = prev;
+  var g = document.getElementById('atx-g'); if (g) try { g.focus({ preventScroll: true }); } catch (e) { g.focus(); }
 }
 function hideAdvTaxCard(){
   try { var nx = _advTaxDates(_istToday())[0]; if (nx) localStorage.setItem(_advTaxKey(nx.date), '1'); } catch (e) {}
@@ -9850,7 +10011,8 @@ function addAdvanceTaxToCalendar(){
       var next = new Date(x.date.getFullYear(), x.date.getMonth(), x.date.getDate() + 1);
       return { title: 'Advance tax: ' + x.share + ' of the year’s tax due',
                desc: 'If your tax for the year beyond your salary TDS comes to Rs 10,000 or more, ' + x.share +
-                     ' of it is due by today. Your broker’s Tax P&L shows the gains realised so far. Not tax advice.',
+                     ' of it is due by today. Your broker’s Tax P&L shows the gains realised so far. ' +
+                     'Work out the amount on your dashboard: https://mindforgecapital.com/dashboard.html#advance-tax . Not tax advice.',
                d0: _cycYmd(x.date), d1: _cycYmd(next), alarm: '-P6DT15H',   // 9 am, a week ahead
                uid: 'mfc-advtax-' + _cycYmd(x.date) + '@mindforgecapital.com' };
     });
@@ -9977,9 +10139,16 @@ function csHoldToCalendar(ticker){
       d0: _cycYmd(h.until), d1: _cycYmd(next), uid: 'mfc-hold-' + h.ticker.replace(/[^A-Z0-9]/g, '') + '-' + _cycYmd(h.until) + '@mindforgecapital.com' }], 'holding-period', 'reminder');
   } catch (e) {}
 }
+function csExpand(){
+  var card = document.getElementById('cs-card'); if (!card) return;
+  card._csOpen = true;
+  card.classList.remove('is-collapsed');
+  var inp = document.getElementById('cs-in'); if (inp) try { inp.focus({ preventScroll: true }); } catch (e) { inp.focus(); }
+}
 function csOpenCard(ev){
   if (ev) ev.preventDefault();
   var card = document.getElementById('cs-card'); if (!card || card.hidden) return;
+  card._csOpen = true; card.classList.remove('is-collapsed');   // V40.3 — C5
   var prev = document.documentElement.style.scrollBehavior;
   document.documentElement.style.scrollBehavior = 'auto';
   card.scrollIntoView({ block: 'start' });
@@ -10016,6 +10185,9 @@ function csRender(){
   if (R.r.length) bits.push(R.r.length + (R.r.length === 1 ? ' name restricted' : ' names restricted'));
   if (R.h > 0) bits.push(R.h + '-day minimum hold');
   if (st){ st.textContent = bits.length ? bits.join(' · ') : 'None set'; st.classList.toggle('is-set', bits.length > 0); }
+  // V40.3 — C5: closed to one line while no rule is set (see the markup note).
+  var csWant = bits.length > 0 || !!card._csOpen || (location.hash || '') === '#cs-card';
+  card.classList.toggle('is-collapsed', !csWant);
   var byT = {}; list.forEach(function(x){ byT[String(x.ticker).toUpperCase()] = x; });
   var ul = document.getElementById('cs-list');
   if (ul) ul.innerHTML = R.r.map(function(t){
@@ -10386,6 +10558,74 @@ function kiteBasketForm() {
   document.body.appendChild(f);
   return f;
 }
+/* ── V40.3 · B1 · A SAMPLE NEVER OPENS A REAL ORDER SCREEN ───────────────────
+   Both basket paths — sendKiteBasket() below and the Adjust planner's sendAdj()
+   — submit through here. In ?demo the stocks are real NSE symbols at placeholder
+   sizes (₹5.22L of them in ?demo=1), and the post went straight to Kite's basket
+   screen: a prospect "trying the flow" met a Zerodha sign-in from a page
+   labelled sample, and one already signed in to Kite met eight live orders.
+   The sample now says what the real dashboard does and offers the free book.
+   Returns true only when a basket was actually submitted, so the callers skip
+   their "opened on Kite" bookkeeping and toast in the sample. */
+function _kbSubmit(rows) {
+  if (isDemo) { _demoKiteSheet(); return false; }
+  var f = kiteBasketForm();
+  document.getElementById('kbsk-key').value  = KITE_API_KEY;
+  document.getElementById('kbsk-data').value = JSON.stringify(rows);
+  f.submit();
+  return true;
+}
+function _demoKiteSheet() {
+  var sh = document.getElementById('demo-kite-sheet');
+  if (!sh) {
+    sh = document.createElement('div');
+    sh.id = 'demo-kite-sheet';
+    sh.className = 'dks';
+    sh.hidden = true;
+    sh.setAttribute('role', 'dialog');
+    sh.setAttribute('aria-modal', 'true');
+    sh.setAttribute('aria-labelledby', 'dks-h');
+    sh.setAttribute('aria-describedby', 'dks-p');
+    sh.innerHTML =
+      '<div class="dks-panel">' +
+        '<span class="dks-tag">Sample</span>' +
+        '<h2 id="dks-h">In the sample, this is where Zerodha would open</h2>' +
+        '<p id="dks-p">On your own dashboard, this button opens Zerodha’s basket with these orders and quantities filled in. ' +
+          'You sign in to Zerodha there and confirm; nothing is placed until you do. ' +
+          'These are placeholder stocks, so the sample stops here.</p>' +
+        '<div class="dks-acts">' +
+          '<a class="dks-go" href="/signup.html?strategy=multiasset">Start the free book (₹0) <span aria-hidden="true">→</span></a>' +
+          '<button type="button" class="dks-x">Close</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(sh);
+    sh.addEventListener('click', function(e){ if (e.target === sh) _demoKiteSheetClose(); });
+    sh.querySelector('.dks-x').addEventListener('click', _demoKiteSheetClose);
+    document.addEventListener('keydown', function(e){
+      var s = document.getElementById('demo-kite-sheet');
+      if (!s || s.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); _demoKiteSheetClose(); return; }
+      if (e.key !== 'Tab') return;
+      // Two controls; keep Tab inside the dialog while it is open.
+      var f = [s.querySelector('.dks-go'), s.querySelector('.dks-x')];
+      var i = f.indexOf(document.activeElement);
+      if (e.shiftKey && i <= 0) { e.preventDefault(); f[1].focus(); }
+      else if (!e.shiftKey && i === 1) { e.preventDefault(); f[0].focus(); }
+      else if (i < 0) { e.preventDefault(); f[0].focus(); }
+    });
+  }
+  sh._opener = document.activeElement;
+  sh.hidden = false;
+  document.documentElement.classList.add('dks-open');
+  setTimeout(function(){ var g = sh.querySelector('.dks-go'); if (g) g.focus(); }, 30);
+}
+function _demoKiteSheetClose() {
+  var sh = document.getElementById('demo-kite-sheet');
+  if (!sh || sh.hidden) return;
+  sh.hidden = true;
+  document.documentElement.classList.remove('dks-open');
+  try { if (sh._opener && sh._opener.focus) sh._opener.focus(); } catch (e) {}
+}
 /* Send basket `pos` (1-based, in the live numbering), or the next one that has
    not been opened yet. */
 function sendKiteBasket(pos) {
@@ -10404,10 +10644,7 @@ function sendKiteBasket(pos) {
     return;
   }
   var rows = b.open.slice(0, KITE_BASKET_MAX).map(_kbRow);   // <= 10 by construction
-  var f = kiteBasketForm();
-  document.getElementById('kbsk-key').value  = KITE_API_KEY;
-  document.getElementById('kbsk-data').value = JSON.stringify(rows);
-  f.submit();
+  if (!_kbSubmit(rows)) return;            // V40.3 — B1: the sample stops here
   _kbSentMark(b.open);
   var msg = 'Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite';
   if (plan.total > 1) {
@@ -10763,7 +11000,41 @@ function refreshHowto() {
       var cnt = document.getElementById('hs-rail-count');
       if (cnt) cnt.textContent = nowStep ? ('Step ' + nowStep + ' of 4') : '';
     }
+
+    /* V40.3 — C6. THE FOUR STEPS ARE A FIRST-MONTH LESSON, NOT A MONTHLY CHORE.
+       1.65 phone screens of the same four steps sat open on every visit, for
+       members who had already done them. A member who ticked orders in the
+       previous cycle (the prevKey tick map this page already keeps — server-backed
+       since V36.6, so it holds across devices) has done the routine; for them the
+       card closes to its title and progress rail. The one-tap Kite band
+       (#kbsk) lives outside .howto-grid and stays. First month and every sample:
+       open. Nothing is stored — the state is read afresh on each render. */
+    var hcard = document.querySelector('.howto-card');
+    if (hcard) {
+      var returning = false;
+      try {
+        var bd = window._bookDiff;
+        if (!isDemo && bd && bd.known && bd.prevKey) {
+          var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
+                   String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
+          var pm = JSON.parse(localStorage.getItem(pk) || '{}');
+          returning = !!pm && Object.keys(pm).length > 0;
+        }
+      } catch (e) { returning = false; }
+      hcard.classList.toggle('is-collapsed', returning && !hcard._hsOpen);
+      var hb = document.getElementById('hs-show');
+      if (hb) hb.setAttribute('aria-expanded', hcard.classList.contains('is-collapsed') ? 'false' : 'true');
+    }
   } catch (e) {}
+}
+function hsShowSteps() {
+  var hcard = document.querySelector('.howto-card');
+  if (!hcard) return;
+  hcard._hsOpen = true;
+  hcard.classList.remove('is-collapsed');
+  var hb = document.getElementById('hs-show'); if (hb) hb.setAttribute('aria-expanded', 'true');
+  var first = hcard.querySelector('.howto-step');
+  if (first) { first.setAttribute('tabindex', '-1'); try { first.focus({ preventScroll: true }); } catch (e) {} }
 }
 
 // V28.6 — the book that exists WHILE you are placing orders.
@@ -11304,6 +11575,18 @@ function showError(title, msg, opts) {
   document.getElementById('state-error').style.display = 'block';
   document.getElementById('error-title').textContent = title;
   document.getElementById('error-msg').textContent = msg;
+  // V40.3 — C8 / B2.3: an optional primary action (see the markup note).
+  var actBox = document.getElementById('error-action'), actA = document.getElementById('error-action-link');
+  if (actBox && actA){
+    var act = opts.action;
+    actBox.hidden = !act;
+    if (act){
+      actA.textContent = act.label;
+      actA.setAttribute('href', act.href);
+      if (act.ext){ actA.setAttribute('target', '_blank'); actA.setAttribute('rel', 'noopener'); }
+      else { actA.removeAttribute('target'); actA.removeAttribute('rel'); }
+    }
+  }
   var retry = !!opts.retry;
   var rBox = document.getElementById('error-retry');
   var lock = document.getElementById('error-icon-lock');
@@ -11346,6 +11629,35 @@ function retryDashboard(){
 // other, working strategies are invisible even though this device still has their
 // tokens. List whatever the registry knows (minus the token that just failed) and
 // let one click switch to it. Silent no-op when there is nothing to offer.
+/* ── V40.3 · B2.3 · "YOUR ACCESS HAS ENDED", NOT "ACCESS DENIED" ───────────────
+   A paying member whose term ran out was shown a padlock and "Access Denied —
+   Subscription has expired", with "Sign in again" (which cannot help) as the
+   only way on. Their access has ended; nothing was denied. The way back depends
+   on the book: a paid one renews (WhatsApp today, the same prefilled message the
+   renewal rail uses), the free one starts again at ₹0. The strategy is read from
+   this device's switcher registry by token, BEFORE the auth-failure path drops
+   it; unknown → the paid wording, which is still true for a free member. */
+function _expiredStrategy(){
+  try {
+    var reg = readStratRegistry();
+    return Object.keys(reg).filter(function(n){ return reg[n] === token; })[0] || '';
+  } catch (e) { return ''; }
+}
+function showExpired(name){
+  var nm = String(name || '').replace(/ /g, ' ').trim();
+  var free = /multiasset/i.test(nm);
+  if (free) {
+    showError('Your access has ended',
+      'Your free MultiAsset registration has run its course. Start it again — still ₹0 — and the next book reaches you.',
+      { action: { href: 'signup.html?strategy=multiasset', label: 'Start it again (₹0) →' } });
+  } else {
+    showError('Your access has ended',
+      'Your shares stay in your own demat either way. To keep receiving the monthly book' + (nm ? ' for ' + nm : '') + ', renew.',
+      { action: { href: 'https://wa.me/917601032082?text=' + encodeURIComponent(
+          'Hi MindForge Capital — my dashboard access has ended and I would like to renew' + (nm ? ' ' + nm : '') + '.'),
+        label: 'Renew on WhatsApp →', ext: true } });
+  }
+}
 function offerOtherStrategies(){
   try {
     var box  = document.getElementById('error-strats'),
@@ -11398,8 +11710,10 @@ async function refreshDashboard() {
        which carries the way back to the member's other strategies. */
     if (isErrorPayload(data)) {
       if (isAuthFailure(data)) {
+        var _expNm2 = _expiredStrategy();       // V40.3 — B2.3: read before the registry drops it
         clearDashSession({ keepRegistry: true });
         removeStratByToken(token);
+        if (/expired/i.test(errMessage(data))) { showExpired(_expNm2); return; }
         showError('Access Denied', errMessage(data) || 'This link is invalid or your subscription has expired.');
         return;
       }
@@ -17104,6 +17418,42 @@ html[data-theme="dark"] .sc-header .sc-ticker{ color:#9dbcff; background:rgba(12
 html[data-theme="dark"] .demo-banner{ background:rgba(251,191,36,.08); border-color:rgba(251,191,36,.26); }
 html[data-theme="dark"] .demo-banner-tag{ color:#1b1302; background:#fbbf24; }
 html[data-theme="dark"] .demo-banner-cta{ color:#9dbcff; }
+/* V40.3 — B1: the sample's way on (the free book leads) and the sheet that
+   replaces a real Kite basket in ?demo. */
+.demo-banner-ctas{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; }
+.demo-banner-cta.is-go{ white-space:normal; padding:0 16px; border-radius:12px; color:#fff;
+  background:linear-gradient(135deg,#1a50d8,#2f6ae0); text-decoration:none;
+  box-shadow:0 8px 20px -12px rgba(26,80,216,.75); }
+.demo-banner-cta.is-go:hover{ text-decoration:none; filter:brightness(1.06); }
+.demo-banner-cta:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:10px; }
+html[data-theme="dark"] .demo-banner-cta.is-go{ color:#fff; }
+.dks{ position:fixed; inset:0; z-index:3000; display:flex; align-items:center; justify-content:center;
+  padding:16px; background:rgba(8,13,26,.55); }
+.dks[hidden]{ display:none; }
+html.dks-open, html.dks-open body{ overflow:hidden; }
+.dks-panel{ width:100%; max-width:480px; background:var(--ink2); color:var(--text2);
+  border:0.5px solid var(--border2); border-radius:18px; padding:22px 22px 18px;
+  box-shadow:0 24px 60px -20px rgba(8,13,26,.55); }
+.dks-tag{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+  color:#fff; background:#b45309; padding:4px 9px; border-radius:6px; }
+html[data-theme="dark"] .dks-tag{ color:#1b1302; background:#fbbf24; }
+.dks-panel h2{ margin:12px 0 8px; font-size:18px; line-height:1.35; font-weight:800; color:var(--white); }
+.dks-panel p{ margin:0; font-size:14px; line-height:1.6; color:var(--text2); }
+.dks-acts{ display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+.dks-go{ flex:1 1 auto; display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  min-height:46px; padding:0 18px; border-radius:12px; text-decoration:none; font-weight:800; font-size:14px;
+  color:#fff; background:linear-gradient(135deg,#1a50d8,#2f6ae0);
+  box-shadow:0 8px 20px -12px rgba(26,80,216,.75); }
+.dks-x{ flex:0 0 auto; min-height:46px; padding:0 18px; border-radius:12px; cursor:pointer;
+  font:inherit; font-size:14px; font-weight:700; color:var(--text2); background:transparent;
+  border:1px solid var(--border2); }
+.dks-go:focus-visible, .dks-x:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+@media (max-width:600px){
+  .dks{ align-items:flex-end; padding:0; }
+  .dks-panel{ max-width:none; border-radius:18px 18px 0 0; padding:20px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .dks-go, .dks-x{ flex:1 1 100%; }
+}
+@media print{ .dks{ display:none !important; } }
 </style>
 <style id="mf-v375-adjust">
 .adj-card{ margin-top:28px; background:var(--ink2); border:0.5px solid var(--border2);
@@ -17547,10 +17897,7 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
       return { variety:'regular', exchange:'NSE', tradingsymbol:o.ticker, transaction_type:o.side,
                order_type:'MARKET', product:'CNC', quantity:o.qty, readonly:false, tag:'MFC' };
     });
-    var f = kiteBasketForm();
-    $('kbsk-key').value = KITE_API_KEY;
-    $('kbsk-data').value = JSON.stringify(rows);
-    f.submit();
+    if (!_kbSubmit(rows)) return;          // V40.3 — B1: the sample stops here
     state.sentAdj[key + ':' + idx] = 1;
     showToast('Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite');
     render();
@@ -18026,6 +18373,44 @@ html[data-theme="dark"] .cyc-newer .cn-cta{ text-decoration-color:rgba(120,160,2
 html[data-theme="dark"] .cyc-join{ background:rgba(131,170,255,.08); border-color:rgba(131,170,255,.22); }
 html[data-theme="dark"] .itr-card{ border-color:rgba(131,170,255,.22); }
 @media print{ .hs-allplaced, .itr-hide{ display:none; } }
+/* V40.3 — B4: the year line, and B3: the advance-tax helper. */
+.itr-year{ margin:0 0 10px; font-size:13px; line-height:1.65; color:var(--text2,#1e3a5f); max-width:75ch; }
+.itr-year b{ color:var(--text,#0c1831); }
+.itr-atx-link{ display:inline-flex; align-items:center; min-height:36px; margin-left:4px; font-weight:700;
+  color:var(--accent,#1a50d8); text-decoration:none; }
+.itr-atx-link:hover{ text-decoration:underline; }
+html[data-theme="dark"] .itr-atx-link{ color:#9dbcff; }
+.atx-calc{ margin:14px 0 0; border-top:0.5px solid rgba(37,99,235,.18); padding-top:6px; }
+.atx-calc > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+  gap:10px; min-height:44px; font-size:14px; font-weight:700; color:var(--accent,#1a50d8); }
+.atx-calc > summary::-webkit-details-marker{ display:none; }
+.atx-calc > summary i{ width:9px; height:9px; border-right:2px solid currentColor; border-bottom:2px solid currentColor;
+  transform:rotate(45deg); margin:-4px 6px 0 0; transition:transform .2s ease; flex:0 0 auto; }
+.atx-calc[open] > summary i{ transform:rotate(-135deg); margin-top:4px; }
+.atx-calc > summary:focus-visible{ outline:2px solid var(--accent,#1a50d8); outline-offset:3px; border-radius:6px; }
+html[data-theme="dark"] .atx-calc > summary{ color:#9dbcff; }
+.atx-form{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px 16px; margin:6px 0 12px; }
+@media (max-width:700px){ .atx-form{ grid-template-columns:1fr; } }
+.atx-row{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.atx-l{ font-size:12.5px; font-weight:600; line-height:1.45; color:var(--text2,#1e3a5f); }
+.atx-l small{ display:block; font-size:11.5px; font-weight:500; color:var(--text3,#475569); }
+.atx-f{ display:flex; align-items:center; gap:6px; min-height:44px; padding:0 12px; border-radius:10px;
+  background:var(--ink,#f0f5ff); border:1px solid var(--field-edge, rgba(15,23,42,.42)); }
+.atx-f > span{ font-weight:700; color:var(--text3,#475569); }
+.atx-in{ flex:1 1 auto; min-width:0; min-height:42px; border:0; outline:none; background:transparent;
+  font-family:inherit; font-size:16px; font-weight:600; color:var(--white,#0c1831); font-variant-numeric:tabular-nums; }
+.atx-f:focus-within{ border-color:var(--accent,#1a50d8); box-shadow:0 0 0 4px rgba(37,99,235,.12); }
+.atx-sel{ min-height:44px; padding:0 10px; border-radius:10px; font-family:inherit; font-size:16px; font-weight:600;
+  color:var(--white,#0c1831); background:var(--ink,#f0f5ff); border:1px solid var(--field-edge, rgba(15,23,42,.42)); }
+.atx-sel:focus{ border-color:var(--accent,#1a50d8); box-shadow:0 0 0 4px rgba(37,99,235,.12); outline:none; }
+.atx-out{ margin:0 0 10px; padding:12px 14px; border-radius:12px; font-size:14px; line-height:1.6;
+  color:var(--text2,#1e3a5f); background:rgba(37,99,235,.06); border:0.5px solid rgba(37,99,235,.20); }
+.atx-out b{ color:var(--white,#0c1831); }
+.atx-basis{ display:block; margin-top:4px; font-size:12px; color:var(--text3,#475569); }
+html[data-theme="dark"] .atx-out{ background:rgba(131,170,255,.08); border-color:rgba(131,170,255,.22); }
+.atx-notes{ margin:0; padding-left:18px; font-size:12.5px; line-height:1.6; color:var(--text2,#1e3a5f); }
+.atx-notes li + li{ margin-top:4px; }
+@media print{ .atx-calc{ display:none; } }
 </style>
 <style id="mf-v393-dash">
 /* V39.3 — surfaces the checks-before-paying release added. New class names only. */
@@ -18140,6 +18525,20 @@ html[data-theme="dark"] .os-side.is-buy{ color:#6ee7b7; background:rgba(52,211,1
 /* ── the rules card ── */
 .cs-card{ margin-top:28px; background:var(--ink2); border:0.5px solid var(--border2);
   border-radius:var(--r); padding:24px 28px; box-shadow:var(--shadow-sm); }
+/* V40.3 — C5: the closed state (no rule set). Title + one line; the body, lead
+   and "None set" pill wait for the member to open it. */
+.cs-open{ display:none; }
+.cs-card.is-collapsed .cs-body,
+.cs-card.is-collapsed .cs-lead,
+.cs-card.is-collapsed .cs-status{ display:none; }
+.cs-card.is-collapsed .cs-head{ margin-bottom:6px; }
+.cs-card.is-collapsed .cs-open{ display:inline-flex; align-items:center; gap:6px; min-height:44px; padding:0;
+  font:inherit; font-size:13.5px; font-weight:700; text-align:left; line-height:1.45; cursor:pointer;
+  color:var(--accent); background:none; border:0; }
+.cs-card.is-collapsed .cs-open:hover{ text-decoration:underline; }
+.cs-open:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+html[data-theme="dark"] .cs-card.is-collapsed .cs-open{ color:#9dbcff; }
+@media (max-width:600px){ .cs-card.is-collapsed{ padding:16px 16px 10px; } }
 .cs-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px 16px; flex-wrap:wrap; margin:0 0 16px; }
 .cs-head h2{ font-size:18px; font-weight:700; color:var(--white); margin:0 0 3px; letter-spacing:-.01em; }
 .cs-lead{ margin:0; font-size:13px; color:var(--text2); max-width:62ch; }
@@ -18147,6 +18546,9 @@ html[data-theme="dark"] .os-side.is-buy{ color:#6ee7b7; background:rgba(52,211,1
   color:var(--text2); background:rgba(100,116,139,.10); border:0.5px solid rgba(71,85,105,.30); white-space:nowrap; }
 .cs-status.is-set{ color:#0b4fb3; background:rgba(37,99,235,.08); border-color:rgba(37,99,235,.30); }
 html[data-theme="dark"] .cs-status.is-set{ color:#9dbcff; background:rgba(120,160,240,.10); border-color:rgba(120,160,240,.30); }
+/* V40.3 — at 320px "2 names restricted · 30-day minimum hold" ran 7px past the
+   card on one unbreakable line. On a phone the pill may wrap inside the card. */
+@media (max-width:600px){ .cs-status{ white-space:normal; max-width:100%; border-radius:12px; } }
 .cs-grid{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
 @media (max-width:1100px){ .cs-grid{ grid-template-columns:1fr 1fr; } .cs-grid .cs-block:last-child{ grid-column:1 / -1; } }
 @media (max-width:700px){ .cs-grid{ grid-template-columns:1fr; } }
