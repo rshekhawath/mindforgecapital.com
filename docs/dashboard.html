@@ -1400,6 +1400,13 @@ html[data-theme="dark"] .mf-abar-cap{ background:rgba(120,150,255,.10); }
 /* Landscape phones give ~40% of the screen to chrome already (V34.1) — a 64px
    bar there costs more than it returns. */
 @media (max-height:480px){ .mf-abar.is-on{ display:none; } }
+/* V40.5 — the room it needs, on exactly the screens it shows on. The bar is fixed,
+   so without this the last 65px of the document sits under it: the SEBI
+   disclaimer and the footer's Privacy / Terms / Recover links. That room used to
+   be reserved only below 600px while the bar has shown below 1200px since V39.3,
+   so on an iPad those links could not be reached at all. --mf-abar-h is 0px
+   whenever there is no bar. */
+@media (max-width:1199px) and (min-height:481px){ body{ padding-bottom:var(--mf-abar-h, 0px); } }
 @media print{ .mf-abar{ display:none !important; } }
 @media (prefers-reduced-motion:reduce){ .mf-abar-cta:active,.mf-abar-cap:active{ transform:none; } }
 
@@ -2691,9 +2698,11 @@ html[data-theme="dark"] tr.row-bought .broker-link{ color: var(--ink-link, #83aa
   color: #fff;
   box-shadow: 0 10px 28px -8px rgba(37,99,235,0.45), 0 4px 10px rgba(0,0,0,0.10);
   opacity: 0; transform: translateY(8px) scale(0.85); pointer-events: none;
-  transition: opacity .28s ease, transform .28s cubic-bezier(.22,1,.36,1), box-shadow .2s ease;
+  /* V40.5 — hidden from the keyboard as well (it was a Tab stop at opacity 0). */
+  visibility: hidden;
+  transition: opacity .28s ease, transform .28s cubic-bezier(.22,1,.36,1), box-shadow .2s ease, visibility 0s linear .28s;
 }
-.mf-fab-top.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.mf-fab-top.visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; visibility: visible; transition-delay: 0s; }
 .mf-fab-top:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 14px 36px -8px rgba(37,99,235,0.55), 0 6px 14px rgba(0,0,0,0.12); }
 .mf-fab-top:focus-visible { outline: 2px solid rgba(37,99,235,0.55); outline-offset: 3px; }
 .mf-fab-top svg { width: 20px; height: 20px; }
@@ -16550,7 +16559,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=3410"></script>
+<script defer src="assets/mfc-chrome.js?v=4050"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -17209,11 +17218,8 @@ html[data-theme="dark"] .pspread-scale .dn{ color:#f87171; }
      table section, and a narrower gutter inside a wider card is correct nesting
      rather than a broken edge. */
 
-  /* The action bar is fixed, so without this the last 65px of the document sits
-     under it — on this page that is the SEBI disclaimer and the footer, which
-     are the two things that must never be the ones covered. Only applied while
-     a bar is actually showing, because --mf-abar-h is 0px otherwise. */
-  body{ padding-bottom:var(--mf-abar-h, 0px); }
+  /* (V40.5: the room the action bar needs is reserved beside the bar's own
+     display rule now — the bar shows below 1200px, not only on phones.) */
 }
 </style>
 

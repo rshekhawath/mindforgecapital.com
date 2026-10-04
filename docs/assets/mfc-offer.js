@@ -96,6 +96,8 @@
       "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(12,24,49,.22);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;}" +
       "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
       "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
+      // V40.5 — the CTA had only the site's blue ring, the strip's own blue: invisible.
+      "#mfc-offer-bar .mfc-offer-cta:focus-visible{outline:2px solid #fff;outline-offset:2px;}" +
       // V27.9: 26×26 clears the 24px WCAG floor but is still a small thing to hit
       // with a thumb, and this is the one control on the bar a phone user aims at.
       // The bar is only ~44px tall, so the VISIBLE button cannot grow without

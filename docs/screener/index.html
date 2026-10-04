@@ -713,7 +713,10 @@ tbody tr.rowlink{cursor:pointer}
 .page-btn:disabled{color:var(--text3);background:transparent;cursor:not-allowed}
 
 /* ── TOAST ── */
-.toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999}
+/* V40.5 — like the FII/DII page's: role=status so a screen reader hears the toast,
+   and pointer-events:none so for the seconds it shows it no longer swallows taps
+   on whatever lies under it (toasts here are text only). */
+.toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999;pointer-events:none}
 .toast{
   background:var(--ink2);border:0.5px solid var(--border2);
   border-radius:var(--r);padding:13px 18px;
@@ -1006,6 +1009,10 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
   #resultsTable thead{display:none}
   #tableBody tr.rowlink{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;border:0.5px solid var(--border2,rgba(37,99,235,.2));border-radius:14px;margin:0 0 12px;background:var(--ink2,#fff);box-shadow:0 1px 2px rgba(15,23,42,.04),0 8px 22px -16px rgba(37,99,235,.18);overflow:hidden}
   #tableBody tr.rowlink.expanded{box-shadow:inset 0 0 0 1.5px var(--accent,#1a50d8),0 8px 22px -16px rgba(37,99,235,.25)}
+  /* V40.5 — a focused card shows it. The card rule above (#tableBody, 1,1,1) outranked
+     the table's tbody tr.rowlink:focus-visible (0,2,2), so on a phone a keyboard user
+     tabbed through the cards with no visible change at all. */
+  #tableBody tr.rowlink:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent3,#3b82f6),0 8px 22px -16px rgba(37,99,235,.25)}
   /* every ratio cell: tiny caps label stacked over its value */
   #tableBody tr.rowlink td{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;padding:9px 13px 10px;white-space:normal;text-align:left;border-bottom:none;min-width:0}
   #tableBody tr.rowlink td::before{content:attr(data-label);font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);line-height:1.2}
@@ -1513,7 +1520,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 </footer>
 
 <!-- Toast -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- (Static snapshot — no live fetch modal) -->
 
@@ -2708,7 +2715,7 @@ checkHealth();
   }
 })();
 </script>
-<script src="../assets/mfc-offer.js?v=3380" defer></script>
+<script src="../assets/mfc-offer.js?v=4050" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -3189,7 +3196,7 @@ h1, h2, h3, h4, th,
      handler in the second is written to coexist with a page's own — the open
      fallback fires only when nothing else moved aria-expanded, and the drawer
      sizing writes the same measured value this page already writes. -->
-<script defer src="../assets/mfc-chrome.js?v=3410"></script>
+<script defer src="../assets/mfc-chrome.js?v=4050"></script>
 
 <!-- V38.6 · THE RESULTS TABLE HAD NO EDGE CUE, AND IT IS THE ONE TABLE ON THIS
      PAGE A READER CANNOT SEE ALL OF. V34.0 gave every horizontal scroller a

@@ -1299,13 +1299,16 @@ function wireTrendRead(rows){
   const read=document.getElementById("trendRead");
   if(!read||!rows.length) return;
   const last=rows.length-1;
+  // V40.5 — a phone or an iPad has no hover: there a tap reads the day (the bars
+  // take the tap through the browser's mouse events), so the hint says so.
+  const HOW=(window.matchMedia&&matchMedia("(hover: none)").matches)?"tap any bar":"hover or tab any bar";
   const num=(v)=>`<span class="tr-v ${v>=0?"pos":"neg"}">${cr(v)}</span>`;
   const paint=(i,pinned)=>{
     const r=rows[i]; if(!r) return;
     read.innerHTML=`<span class="tr-date">${escapeHtml(nd(r.date)||"—")}</span>`
       +`<span class="tr-sep"></span>FII ${num(r.fii_net||0)} cr`
       +`<span class="tr-sep"></span>DII ${num(r.dii_net||0)} cr`
-      +`<span class="tr-hint">${pinned?"Latest session\u00A0· hover or tab any bar":`Session ${i+1} of ${rows.length}`}</span>`;
+      +`<span class="tr-hint">${pinned?"Latest session\u00A0· "+HOW:`Session ${i+1} of ${rows.length}`}</span>`;
   };
   paint(last,true);
   const host=document.getElementById("chart");
@@ -1525,8 +1528,8 @@ fetch("fii-dii.json?v="+Date.now()).then(r=>{if(!r.ok)throw new Error("http "+r.
 })();
 </script>
 <!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page (self-injecting, dismissible, reduced-motion safe) -->
-<script src="../assets/mfc-offer.js?v=3380" defer></script>
-<script defer src="../assets/mfc-chrome.js?v=3410"></script>
+<script src="../assets/mfc-offer.js?v=4050" defer></script>
+<script defer src="../assets/mfc-chrome.js?v=4050"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

@@ -80,10 +80,13 @@
       '.mfc-btt{position:fixed;right:24px;bottom:var(--mfc-btt-b,24px);width:44px;height:44px;border-radius:50%;',
         'background:var(--ink2,#fff);border:0.5px solid var(--border2,rgba(37,99,235,.2));color:var(--accent2,#2563eb);',
         'display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:89;opacity:0;',
-        'pointer-events:none;transform:translateY(8px);',
-        'transition:opacity .25s ease,transform .25s ease,background .25s ease,color .25s ease,border-color .25s ease;',
+        // V40.5 — hidden means hidden from the keyboard too: at opacity 0 it was
+        // still a Tab stop, so focus vanished onto an invisible button on every
+        // page too short to show it. visibility waits out the fade, then drops it.
+        'pointer-events:none;transform:translateY(8px);visibility:hidden;',
+        'transition:opacity .25s ease,transform .25s ease,background .25s ease,color .25s ease,border-color .25s ease,visibility 0s linear .25s;',
         'box-shadow:0 8px 24px -8px rgba(26,80,216,.20),inset 0 1px 0 rgba(255,255,255,.7);}',
-      '.mfc-btt.visible{opacity:1;pointer-events:auto;transform:translateY(0);}',
+      '.mfc-btt.visible{opacity:1;pointer-events:auto;transform:translateY(0);visibility:visible;transition-delay:0s;}',
       '.mfc-btt:hover{transform:translateY(-2px);background:var(--accent,#1a50d8);color:#fff;',
         'border-color:var(--accent,#1a50d8);box-shadow:0 12px 28px -8px rgba(26,80,216,.45);}',
       '.mfc-btt:focus-visible{outline:2px solid var(--accent2,#2563eb);outline-offset:3px;}',
@@ -612,4 +615,90 @@
 
   if (D.readyState !== "loading") boot();
   else D.addEventListener("DOMContentLoaded", boot);
+})();
+
+/* ============================================================================
+   V40.5 — A FOCUSED CONTROL IS NEVER LEFT UNDER THE PAGE'S OWN CHROME.
+   Tab and Shift+Tab scroll the next control just into view — to the very edge —
+   where the sticky masthead (top) or the dashboard's action bar and the WhatsApp
+   invite (bottom) then cover it. Measured: the fee page's presets, the Integrity
+   Score rows, the calculators' FAQ and the dashboard's controls, all focused
+   behind the nav or the bar. After the browser's own scroll, if what is painted
+   at the control's centre is a fixed or sticky box and not the control, the page
+   moves just far enough to clear that box. Keyboard only: a click or a tap is
+   never second-guessed. A full-screen layer (a gate, an open sheet) is left alone.
+   Its own IIFE, for the reason V28.0 gives.
+   ========================================================================== */
+(function () {
+  "use strict";
+  var D = document, W = window, kb = false;
+  // A scroller that itself takes focus drops its edge fade while focused: the fade
+  // is a mask, and a mask hides everything outside the box — the focus ring with
+  // it (measured: the FII/DII participant table showed 0px of its ring).
+  try {
+    var st = D.createElement('style'); st.id = 'mfc-focus-clear';
+    st.textContent = 'html .mfx-more-r:focus-visible{-webkit-mask-image:none;mask-image:none}';
+    (D.head || D.documentElement).appendChild(st);
+  } catch (e) {}
+  D.addEventListener('keydown', function (e) { if (e.key === 'Tab') kb = true; }, true);
+  D.addEventListener('pointerdown', function () { kb = false; }, true);
+  function scrollerX(el) {
+    for (var p = el.parentElement; p && p !== D.body && p !== D.documentElement; p = p.parentElement) {
+      var ox = getComputedStyle(p).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && p.scrollWidth > p.clientWidth + 1) return p;
+    }
+    return null;
+  }
+  function clear(el, pass) {
+    if (D.activeElement !== el || !el.getBoundingClientRect) return;
+    var r = el.getBoundingClientRect(), vw = W.innerWidth, vh = W.innerHeight;
+    if (r.width < 2 || r.height < 2 || r.bottom <= 0 || r.top >= vh) return;
+    // Sideways first: in a wide table (or any row that scrolls sideways) the browser
+    // leaves a half-visible control where it is, and a frozen column can sit on it
+    // — measured on the Integrity Score headers. Scroll that row, not the page;
+    // a second pass then clears a frozen column the first scroll uncovered.
+    var sc = scrollerX(el), lo = 0, hi = 0;
+    // A row with scroll snapping scrolls a focused child in and snaps on its own; a
+    // second scroll from here only fights the snap (measured: the Integrity Score's
+    // phone sort chips ended half past the edge). Leave its sideways scroll alone.
+    var snap = sc ? getComputedStyle(sc).scrollSnapType : 'none';
+    var side = !(snap && snap !== 'none');
+    if (sc && side) {
+      var sr = sc.getBoundingClientRect(); lo = sr.left + sc.clientLeft; hi = lo + sc.clientWidth;
+      if (r.left < lo - 1 || r.right > hi + 1) {
+        var before = sc.scrollLeft;
+        sc.scrollLeft += r.left < lo ? r.left - lo - 8 : r.right - hi + 8;
+        if (sc.scrollLeft !== before && !pass) clear(el, 1);
+        return;
+      }
+    }
+    var x = Math.min(Math.max(r.left + r.width / 2, 1), vw - 1),
+        y = Math.min(Math.max(r.top + Math.min(r.height / 2, 20), 1), vh - 1);
+    var hit = D.elementFromPoint(x, y);
+    if (!hit || hit === el || el.contains(hit) || hit.contains(el)) return;
+    if (sc && side && hit !== sc && sc.contains(hit)) {   // that row's own frozen column
+      for (var b = hit; b && b !== sc; b = b.parentElement) {
+        if (getComputedStyle(b).position !== 'sticky') continue;
+        var fb = b.getBoundingClientRect(), was = sc.scrollLeft;
+        sc.scrollLeft += (fb.left + fb.width / 2 <= r.left + r.width / 2) ? r.left - fb.right - 8 : r.right - fb.left + 8;
+        if (sc.scrollLeft !== was && !pass) clear(el, 1);
+        return;
+      }
+    }
+    for (var a = hit; a && a !== D.body && a !== D.documentElement; a = a.parentElement) {
+      var pos = getComputedStyle(a).position;
+      if (pos !== 'fixed' && pos !== 'sticky') continue;
+      if (a.contains(el) || (sc && sc.contains(a))) return;   // inside that chrome, or the row's own frozen cells
+      var c = a.getBoundingClientRect();
+      if (c.height > vh * 0.6) return;                // a full-screen layer, not a bar
+      var dy = (c.top + c.height / 2 < vh / 2) ? r.top - c.bottom - 12 : r.bottom - c.top + 12;
+      if (Math.abs(dy) > 1) W.scrollBy(0, dy);
+      return;
+    }
+  }
+  D.addEventListener('focusin', function (e) {
+    if (!kb || !e.target || e.target === D.body) return;
+    var el = e.target;
+    setTimeout(function () { clear(el); }, 0);        // after the browser's own scroll
+  }, true);
 })();

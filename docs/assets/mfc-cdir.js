@@ -31,6 +31,16 @@
       cue();
     }
     list.addEventListener('scroll', cue, { passive: true });
+    // V40.5 — a browser only scrolls a focused chip into a sideways row when it is
+    // wholly out of view, so the last chip of each group was focused with most of
+    // it past the edge (and under the fade). Bring it fully in, clear of the fade.
+    list.addEventListener('focusin', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('.cdir-a') : null;
+      if (!a || nav.getAttribute('data-mode') !== 'rail' || list.scrollWidth <= list.clientWidth) return;
+      var lr = list.getBoundingClientRect(), ar = a.getBoundingClientRect(), pad = 40;
+      if (ar.left < lr.left + pad) list.scrollLeft -= (lr.left + pad - ar.left);
+      else if (ar.right > lr.right - pad) list.scrollLeft += (ar.right - (lr.right - pad));
+    });
     var rt; w.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(cue, 120); }, { passive: true });
     if (tog) {
       tog.addEventListener('click', function () {
@@ -55,6 +65,10 @@
     var hub = d.querySelector('.crel-hub'); if (!hub) return;
     var cards = [].slice.call(hub.querySelectorAll('.crel-card'));
     var none = d.getElementById('cdir-none');
+    // V40.5 — a live region that is in the page from the start says how many cards
+    // a search leaves. The no-match line used to be the only status, and a region
+    // revealed from [hidden] is often not announced at all.
+    var count = d.getElementById('cdir-count'), sayT;
     function text(c) { return ((c.textContent || '') + ' ' + (c.getAttribute('data-k') || '')).toLowerCase(); }
     var hay = cards.map(text);
     function apply() {
@@ -74,6 +88,11 @@
       if (none) {
         none.hidden = shown > 0;
         var q = none.querySelector('q'); if (q) q.textContent = input.value.trim();
+      }
+      if (count) {
+        clearTimeout(sayT);
+        var msg = !words.length ? '' : shown ? shown + (shown === 1 ? ' calculator matches' : ' calculators match') : 'No calculator matches';
+        sayT = setTimeout(function () { count.textContent = msg; }, 450);
       }
     }
     input.addEventListener('input', apply);

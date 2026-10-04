@@ -195,7 +195,11 @@ html[data-theme="dark"] .hp-seg-n{color:#0c1831}
 .hp-seg{appearance:none;-webkit-appearance:none;border:0;padding:0;font:inherit;cursor:pointer;
   position:relative;transition:width .8s cubic-bezier(.22,1,.36,1),filter .18s ease,opacity .18s ease}
 .hp-seg:hover{filter:saturate(1.22) brightness(1.10)}
-.hp-seg:focus-visible{outline:2px solid var(--accent3);outline-offset:2px;z-index:3;border-radius:3px}
+/* V40.5 — drawn INSIDE the segment: the bar's rounded overflow:hidden clipped an
+   outside ring to a 2px sliver. White on the light theme's deep segments; navy on
+   the dark theme's pastel ones (the colour their labels already use). */
+.hp-seg:focus-visible{outline:2px solid #fff;outline-offset:-4px;z-index:3;border-radius:3px}
+html[data-theme="dark"] .hp-seg:focus-visible{outline-color:#0c1831}   /* dark segments are pastel, labelled navy */
 /* while a band is picked, the others recede so the selection reads instantly */
 .hp-dist-bar.has-pick .hp-seg{opacity:.32;filter:saturate(.55)}
 .hp-dist-bar.has-pick .hp-seg[aria-pressed="true"]{opacity:1;filter:saturate(1.15) brightness(1.06)}
@@ -624,7 +628,10 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 .disclaimer b{color:var(--text2)}
 
 /* toast + modal */
-.toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999}
+/* V40.5 — like the FII/DII page's: role=status so a screen reader hears the toast,
+   and pointer-events:none so for the seconds it shows it no longer swallows taps
+   on whatever lies under it (toasts here are text only). */
+.toast-container{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:999;pointer-events:none}
 .toast{background:var(--ink2);border:0.5px solid var(--border2);border-radius:var(--r);padding:13px 18px;font-size:13px;font-weight:500;color:var(--text);box-shadow:0 12px 32px -10px rgba(15,23,42,0.18);animation:slideIn .2s ease;max-width:320px}
 .toast.success{border-left:3px solid var(--green)}.toast.error{border-left:3px solid var(--red)}
 @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -1218,7 +1225,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
 </main>
 
 <!-- Toast -->
-<div class="toast-container" id="toastContainer"></div>
+<div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <!-- Methodology modal -->
 <div class="modal-overlay" id="methodModal">
@@ -2269,7 +2276,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
   }, { passive: true });
 })();
 </script>
-<script src="../assets/mfc-offer.js?v=3380" defer></script>
+<script src="../assets/mfc-offer.js?v=4050" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -2285,7 +2292,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="../assets/mfc-chrome.js?v=3410"></script>
+<script defer src="../assets/mfc-chrome.js?v=4050"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

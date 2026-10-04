@@ -692,7 +692,7 @@
       reset: '<svg' + SVGA + '><path d="M3 12a9 9 0 103-6.7"/><path d="M3 4v5h5"/></svg>'
     };
     function toolBtn(act, label) {
-      return '<button type="button" class="ctool" data-act="' + act + '"' + (act === 'pin' ? ' aria-pressed="false"' : '') + '>' +
+      return '<button type="button" class="ctool" data-act="' + act + '">' +
         ICON[act] + '<span class="t">' + label + '</span></button>';
     }
     var tools = d.createElement('div');
@@ -704,10 +704,20 @@
     host.parentNode.insertBefore(tools, host.nextSibling);
     var bShare = tools.querySelector('[data-act="share"]'), bPin = tools.querySelector('[data-act="pin"]'),
         bCsv = tools.querySelector('[data-act="csv"]');
+    // V40.5 — what a tool did is SAID as well as shown. A changed button label is
+    // not reliably announced (VoiceOver stays silent), so a polite live region
+    // follows the row — after it, not in it, where it would be a flex item with a
+    // gap. The pin is a plain button whose label says what a press will do
+    // ("Unpin"); it was also aria-pressed, which read as "Unpin, pressed".
+    var sr = d.createElement('p');
+    sr.className = 'sr-only'; sr.setAttribute('role', 'status'); sr.setAttribute('aria-live', 'polite');
+    host.parentNode.insertBefore(sr, tools.nextSibling);
+    var srT;
+    function say(msg) { clearTimeout(srT); sr.textContent = ''; srT = setTimeout(function () { sr.textContent = msg; }, 80); }
 
     function flash(btn, text, ms, done) {
       var t = btn.querySelector('.t'), was = btn._label || (btn._label = t.textContent);
-      btn.classList.toggle('done', !!done); t.textContent = text;
+      btn.classList.toggle('done', !!done); t.textContent = text; say(text);
       clearTimeout(btn._t);
       btn._t = setTimeout(function () { btn.classList.remove('done'); t.textContent = was; }, ms || 2200);
     }
@@ -725,8 +735,9 @@
     bPin.addEventListener('click', function () {
       if (pinned) { pinned = null; }
       else if (lastOut && lastOut.fig) { pinned = { k: lastOut.fig.k, v: lastOut.fig.v }; }
-      bPin.setAttribute('aria-pressed', String(!!pinned));
+      bPin.classList.toggle('is-on', !!pinned);
       bPin.querySelector('.t').textContent = pinned ? 'Unpin' : 'Pin to compare';
+      say(pinned ? 'Pinned ' + pinned.k + ': ' + pinned.v + '. Change an input to compare.' : 'Unpinned');
       if (lastOut) afterRender(lastOut);
     });
     function csvCell(s) { s = String(s == null ? '' : s); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
@@ -765,8 +776,9 @@
     });
     tools.querySelector('[data-act="reset"]').addEventListener('click', function () {
       if (cfg.modes) { mode = cfg.modes.options[0].k; syncModeBar(); }
-      pinned = null; bPin.setAttribute('aria-pressed', 'false'); bPin.querySelector('.t').textContent = 'Pin to compare';
+      pinned = null; bPin.classList.remove('is-on'); bPin.querySelector('.t').textContent = 'Pin to compare';
       build(); run(); fitTicks(form);
+      say('Reset to the starting values');
       // the address bar too, or a refresh would quietly undo the reset
       try { w.history.replaceState(null, '', w.location.pathname); } catch (e) {}
     });
