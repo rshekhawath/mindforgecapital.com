@@ -2946,6 +2946,44 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .skip-link:focus{ top:0; outline:none; }
 @media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
 </style>
+<!-- V41.0 — C1: THE NAV SAYS WHO IS LOOKING.
+     The nav carried "My Account", "Sign out" and the "Member Dashboard" badge for
+     everyone, so a prospect in the sample (?demo) and a visitor on the signed-out
+     "Sign in to your dashboard" screen were both offered "Sign out" — and neither
+     got a way forward. Three states, set here, before the nav paints:
+       member  a token on this device ........ unchanged
+       demo    ?demo=1|2|pinned|restricted .... Pricing + "Start free"
+       out     no token anywhere .............. "Sign in"
+     This guess mirrors DEMO_MODES and readDashToken() (cookie → localStorage →
+     sessionStorage). The page script re-asserts the state from the real `isDemo`
+     and `token` constants, so a wrong guess corrects itself. With no attribute at
+     all (script blocked) the member nav shows, exactly as before. -->
+<script id="mf-v410-navstate">
+(function(){try{
+  var q=location.search, d=/[?&]demo=(?:1|2|pinned|restricted)(?:&|$)/.test(q),
+      t=/[?&]token=[^&]/.test(q) || /(?:^|;\s*)mfc_dash_token=[^;]/.test(document.cookie);
+  if(!d && !t){ try{ t=!!(localStorage.getItem('mfc_dash_token')||sessionStorage.getItem('mfc_dash_token')); }catch(e){} }
+  document.documentElement.setAttribute('data-nav', d ? 'demo' : (t ? 'member' : 'out'));
+}catch(e){}})();
+</script>
+<style id="mf-v410-navstate-css">
+/* `.nav-links a` sets display:inline-flex, which beats the UA [hidden] rule
+   (project_hidden_attribute_overruled) — so the states hide with !important. */
+html[data-nav="demo"] [data-nav-for="member"],
+html[data-nav="out"]  [data-nav-for="member"],
+html:not([data-nav="demo"]) [data-nav-for="demo"],
+html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
+/* "Start free" is the homepage's .nav-cta, which this page never defined. The
+   shared sheet (mfc-finish.css) already sizes it on touch and >=1025px, paints its
+   dark gradient, and the <=1024 drawer rule below centres it full-width. */
+.nav-cta{ background:var(--accent); color:#fff; font-size:14px; font-weight:600;
+  padding:10px 22px; border-radius:var(--r-sm); transition:all .2s ease;
+  flex-shrink:0; position:relative; overflow:hidden; }
+.nav-links a.nav-cta{ color:#fff; font-weight:600; }
+.nav-cta:hover{ background:#2a5ef5; transform:translateY(-1px); }
+.nav-links a.nav-cta:hover{ color:#fff; }
+@media (prefers-reduced-motion: reduce){ .nav-cta, .nav-cta:hover{ transition:none; transform:none; } }
+</style>
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -2964,9 +3002,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
       <a href="strategies.html">Strategies</a>
       <a href="index.html#your-month" style="color:var(--text2);">How it works</a>
       <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
-      <a href="login.html" style="color:var(--text2);">My Account</a>
-      <a href="login.html" id="nav-signout" style="color:var(--text2);">Sign out</a>
-      <span class="nav-badge">Member Dashboard</span>
+      <a href="login.html" style="color:var(--text2);" data-nav-for="member">My Account</a>
+      <a href="login.html" id="nav-signout" style="color:var(--text2);" data-nav-for="member">Sign out</a>
+      <a href="/#pricing" style="color:var(--text2);" data-nav-for="demo">Pricing</a>
+      <a href="login.html" style="color:var(--text2);" data-nav-for="out">Sign in</a>
+      <span class="nav-badge" data-nav-for="member">Member Dashboard</span>
+      <a href="/signup.html?strategy=multiasset" class="nav-cta" data-nav-for="demo">Start free</a>
     </div>
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
@@ -5496,6 +5537,9 @@ const demoMode = new URLSearchParams(window.location.search).get('demo');
 // unrecognised ?demo= value must still take the real path, not a blank dashboard.
 const DEMO_MODES = ['1', '2', 'pinned', 'restricted'];   // V39.1 — 'pinned' is the test-only state ?demo=1 used to be; V39.5 — 'restricted' is the career-safe test state
 const isDemo = DEMO_MODES.indexOf(demoMode) > -1;
+// V41.0 — C1: the authoritative nav state. The <head> guess (mf-v410-navstate)
+// mirrors this from the URL and storage; this line is the one that decides.
+try { document.documentElement.setAttribute('data-nav', isDemo ? 'demo' : (token ? 'member' : 'out')); } catch (e) {}
 
 /* V30.4 — THE BACK/FORWARD CACHE. This is the Safari fix; the nonce above is not.
    MEASURED, in Safari 26.5.2 via safaridriver against the live origin:
@@ -7630,7 +7674,9 @@ function _kbCapNote() {
   var amt = escapeHtml(fmtMoney(currentCapital));
   // The basket's own button(s) already say "enter your amount" and route to the
   // field, so the note offers only the other answer: keep the recommended size.
-  return '<span class="kb-capnote"><b>Sized for ' + amt + ' — the recommended amount, not one you entered.</b> ' +
+  // V41.0 — C2: "the recommended amount" → "the starting amount". It is the field's
+  // starting value, and the site no longer calls any capital figure "recommended".
+  return '<span class="kb-capnote"><b>Sized for ' + amt + ' — the starting amount, not one you entered.</b> ' +
          '<button type="button" class="kb-capbtn" onclick="confirmCapital()">Use ' + amt + '</button></span> ';
 }
 
@@ -9109,7 +9155,7 @@ function refreshActionBar(){
       if (lab) lab.textContent = 'Enter your amount';
       if (amt) amt.textContent = 'sized for ' + shortMoney(currentCapital);
       if (cta){ cta.onclick = abarEditCapital;
-                cta.setAttribute('aria-label', 'Enter your amount first. The orders are sized for the recommended ' +
+                cta.setAttribute('aria-label', 'Enter your amount first. The orders are sized for the starting amount, ' +
                   fmtMoney(currentCapital) + ', which you have not entered'); }
     } else if (canSend){
       var many = plan.total > 1;
@@ -13366,7 +13412,7 @@ function renderProfitHeadline(){
     (window._capEntered
       ? '. On your ' + fmtMoney(currentCapital) + _rsOut + ' that is <strong>' + absSign + absStr + '</strong>.'
       // V39.3 — B4: never "your" for an amount the member did not set.
-      : '. On ' + fmtMoney(currentCapital) + ', the recommended size rather than an amount you entered, that is <strong>' +
+      : '. On ' + fmtMoney(currentCapital) + ', the starting amount rather than one you entered, that is <strong>' +
         absSign + absStr + '</strong>. <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter yours</button>');
   var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
   var br = document.getElementById('pc-breakdown');
