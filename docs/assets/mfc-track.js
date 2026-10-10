@@ -27,6 +27,8 @@
       so it cannot join one visit to another.
     * Viewport width is bucketed, not exact — an exact width is a fingerprint.
     * Referrer is reduced to its HOST and only when it is off-site.
+    * V40.7: or, for a visit that arrived by one of the owner's own ?ref= links,
+      a two-letter tag from a fixed list (see REF_TAGS) — never free text.
 
     OPT-OUTS ARE HONOURED BEFORE ANYTHING ELSE RUNS
     Do Not Track and Global Privacy Control both disable the module completely.
@@ -96,6 +98,34 @@
     } catch (e) { return ""; }
   }
 
+  /* V40.7 — B2: WHERE A VISIT CAME FROM WHEN THE BROWSER WILL NOT SAY.
+     WhatsApp's in-app browser and most messengers send no referrer, so a link a
+     colleague forwards was recorded as "direct", and a LinkedIn post could not be
+     told from a WhatsApp forward. The owner's own posted links carry ?ref=<tag>
+     from the FIXED list below; the tag is kept for this tab only and sent in the
+     same `r` field the referrer host uses (handleTrack stores any text of up to
+     80 characters, so the backend needs no change). Free text never reaches the
+     sheet: a tag outside the list is ignored. The parameter is then removed from
+     the address bar, so a bookmark or a re-share is untagged. A member link (one
+     that carries `token`) is never touched. privacy.html §2 says all of this. */
+  var REF_TAGS = { li: 1, wa: 1, x: 1, ig: 1, fb: 1, yt: 1, em: 1, qr: 1 };
+  var campaign = (function () {
+    try {
+      var q = new URLSearchParams(location.search);
+      if (q.has("token")) return "";
+      if (q.has("ref")) {
+        var tag = String(q.get("ref") || "").toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(REF_TAGS, tag)) {
+          try { sessionStorage.setItem("mfc_ref", "ref:" + tag); } catch (e) {}
+        }
+        q["delete"]("ref");
+        var qs = q.toString();
+        try { history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : "") + location.hash); } catch (e) {}
+      }
+      try { return sessionStorage.getItem("mfc_ref") || ""; } catch (e) { return ""; }
+    } catch (e) { return ""; }
+  })();
+
   function flush(sync) {
     if (!queue.length) return;
     var batch = queue.splice(0, MAX_BATCH);
@@ -126,7 +156,7 @@
         p: page(),
         l: label == null ? "" : String(label).slice(0, 80),
         v: (typeof value === "number" && isFinite(value)) ? value : "",
-        s: sid(), r: refHost(), w: vwBucket()
+        s: sid(), r: campaign || refHost(), w: vwBucket()
       });
       if (queue.length >= FLUSH_AT) flush(false);
       else if (!timer) timer = setTimeout(function () { flush(false); }, FLUSH_MS);

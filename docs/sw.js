@@ -808,7 +808,14 @@
 // their sparklines and repeated bars, one-slice "Where this fits", the FAQ in
 // four groups, three trust cards) and login.html (an expired free book starts
 // again at ₹0 instead of a WhatsApp renewal). No shared asset moved.
-const CACHE = 'mfc-v117';
+// V40.7 -> mfc-v118. index.html is precached and changed (its head, share card
+// and footer line in the reader's words, the "Getting started" phone showing the
+// first-month-free steps, "Model portfolios" in the proof strip, a tips-group
+// FAQ). Three shared assets moved: assets/mfc-track.js 10 -> 11 (whitelisted
+// ?ref= campaign tags), so assets/mfc-chrome.js 4050 -> 4060 on every page that
+// loads it and in the strategy-page template; and assets/mfc-calc.css 405 -> 406
+// on the sixteen calculator pages (the bridge's "How a month works" link).
+const CACHE = 'mfc-v118';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -47,7 +47,7 @@
     if (!me || !me.src) return;                     // nothing to resolve against
     window.__mfcTrackLoaded = 1;
     var s = document.createElement('script');
-    s.src = new URL('mfc-track.js?v=10', me.src).href;
+    s.src = new URL('mfc-track.js?v=11', me.src).href;
     s.defer = true;
     (document.head || document.documentElement).appendChild(s);
   } catch (e) { /* analytics must never break the chrome below */ }
