@@ -135,9 +135,9 @@
   // Growth, it sits ALONGSIDE the headline Integrity Score (Quality × Value),
   // which is unchanged — momentum is a trading lens, not a measure of integrity.
   var MOMENTUM = [
-    { key: "_p2s200", label: "Price vs 200-DMA", dir: "high", unit: "%", d: 1, hint: "% above the 200-day average",
+    { key: "_p2s200", label: "Price vs 200‑DMA", dir: "high", unit: "%", d: 1, hint: "% above the 200-day average",
       fn: function (d) { return (isNum(d.current_price) && isNum(d.sma_200) && d.sma_200 > 0) ? (d.current_price / d.sma_200 - 1) * 100 : null; } },
-    { key: "_p2s50",  label: "Price vs 50-DMA",  dir: "high", unit: "%", d: 1, hint: "% above the 50-day average",
+    { key: "_p2s50",  label: "Price vs 50‑DMA",  dir: "high", unit: "%", d: 1, hint: "% above the 50-day average",
       fn: function (d) { return (isNum(d.current_price) && isNum(d.sma_50) && d.sma_50 > 0) ? (d.current_price / d.sma_50 - 1) * 100 : null; } },
     { key: "52w_from_high_pct", label: "Proximity to 52W High", dir: "high", unit: "%", d: 1, hint: "Closer to 0 = nearer the year's high" },
   ];

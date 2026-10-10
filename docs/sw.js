@@ -824,7 +824,16 @@
 // under the free-book card on a desktop). One shared asset moved:
 // assets/mfc-calc.css 406 -> 407 on the sixteen calculator pages (the "How a month
 // works →" link's arrow runs on after its last word instead of standing alone).
-const CACHE = 'mfc-v121';
+// V41.0 -> mfc-v121 (logged here afterwards). index.html is precached and changed
+// ("Recommended ₹X" became "Close to the model from ₹X"; the sample dashboard's nav
+// speaks to visitors). No shared asset moved.
+// V41.1 -> mfc-v122. index.html is precached and changed (device QA pass: step-number
+// and free-tag contrast, separators and units bound to their words, disclosure
+// summaries balance their lines). Two shared assets moved: assets/mfc-calc.css
+// 407 -> 408 on the sixteen calculator pages (the result pill's label wraps instead
+// of clipping its horizon) and scores/scores-engine.js 3960 -> 3970 on both pages
+// that load it ("200-DMA" uses a non-breaking hyphen).
+const CACHE = 'mfc-v122';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

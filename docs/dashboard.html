@@ -1884,7 +1884,7 @@ html[data-theme="dark"] .state-box::before{
    padlock and the signal glyph on screen at once. Same reason #error-retry needs
    its own: it carries `margin-top` from an id rule. */
 .state-box .icon[hidden], #error-retry[hidden]{ display:none; }
-.state-box h3{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:8px;}
+.state-box h3, .state-box h1{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:24px;color:var(--white);margin-bottom:8px;}
 .state-box p{color:var(--text2);font-size:15px;max-width:480px;margin:0 auto;}
 .spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 22px;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -3044,7 +3044,7 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     <div class="icon" id="error-icon-net" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.8a16 16 0 0 1 20 0"/><path d="M5 12.4a11 11 0 0 1 14 0"/><path d="M8.5 16a6 6 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor" stroke="none"/><path d="M3 3l18 18"/></svg>
     </div>
-    <h3 id="error-title">Access Denied</h3>
+    <h1 id="error-title">Access Denied</h1>
     <p id="error-msg">This link is invalid or your subscription has expired.</p>
     <!-- V40.3 — C8 / B2.3. The way back, as a button, for the two states that have
          one: no session on this device ("Sign in to your dashboard" → a one-time
@@ -4515,7 +4515,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="cs-head">
           <div>
             <h2 id="cs-title">Your employer's trading rules</h2>
-            <p class="cs-lead">For a job that comes with a trading code. Set it once &mdash; every order on this page follows it.</p>
+            <p class="cs-lead">For a job that comes with a trading code. Set it once&nbsp;&mdash; every order on this page follows it.</p>
           </div>
           <span class="cs-status" id="cs-status">None set</span>
         </div>
@@ -4540,7 +4540,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           </div>
           <div class="cs-block">
             <h3>Minimum holding period</h3>
-            <p class="cs-help">If your code says a purchase must be held for a set number of days, each sale waits until then &mdash; counted from the day you ticked the buy as placed.</p>
+            <p class="cs-help">If your code says a purchase must be held for a set number of days, each sale waits until then&nbsp;&mdash; counted from the day you ticked the buy as placed.</p>
             <div class="cs-hold">
               <label for="cs-hold-sel">Hold each purchase for at least</label>
               <select id="cs-hold-sel" class="cs-sel">
@@ -5841,6 +5841,7 @@ function _demoData(mode) {
         // current book is told nothing) while ?demo=1 exercises the positive one.
         run_id: steady ? steadyRun + 'MA' : '20260831_090000_MA',
         duration_months: steady ? 12 : 1,
+        notify: steady ? 'on' : 'off',   // V41.1 — as apps_script.gs sets it: on for every plan longer than a month
         expires_at: exp.toISOString(), subscribed_at: sub0.toISOString(), status: 'active'
       },
       stocks: etfs
@@ -5857,6 +5858,7 @@ function _demoData(mode) {
       // and it is also the state that branch exists for.
       run_id: steady ? steadyRun + 'LM' : '20260731_090000_LM',
       duration_months: steady ? 12 : 1,
+      notify: steady ? 'on' : 'off',   // V41.1 — see the MultiAsset fixture above
       expires_at: exp.toISOString(), subscribed_at: sub0.toISOString(), status: 'active'
     },
     stocks: stocks
@@ -10358,13 +10360,13 @@ function renderWhy25() {
 
     var terms = [
       '<b>One fixed universe.</b><span>Scored against ' + UNIVERSE + ' — the same list every month, set before the run, never widened after the fact.</span>',
-      '<b>Ranked, not picked.</b><span>Every candidate gets a multi-factor score built from price and volume history alone. No fundamentals, no analyst view, no discretionary override — the ranking decides the book.</span>'
+      '<b>Ranked, not picked.</b><span>Every candidate gets a multi-factor score built from price and volume history alone. No fundamentals, no analyst view, no discretionary override — the ranking decides the book.</span>'
     ];
     if (code !== 'ma') {
       terms.push('<b>Capped at 2 per industry.</b><span>A sector that dominates the ranking still cannot dominate your portfolio. Diversification is enforced by the rules, not promised.</span>');
     }
     terms.push(sizing);
-    terms.push('<b>Held for the full month.</b><span>The book is re-scored and rebalanced on the same monthly beat as the backtest — no intra-month trading, no reacting to headlines.</span>');
+    terms.push('<b>Held for the full month.</b><span>The book is re-scored and rebalanced on the same monthly beat as the backtest — no intra-month trading, no reacting to headlines.</span>');
 
     body.innerHTML =
       '<div class="why25-chain">' +
@@ -11448,6 +11450,7 @@ function _setNotifUI(on, email) {
     if (row) row.style.display = 'none';
     if (ok) ok.style.display = 'none';
   }
+  try { _setHowToStep4(); } catch (e) {}   // V41.1 — step 4 says what the switch says
 }
 // V35.2 — step 4 of "How to invest" is the only place on the page that tells a
 // member what happens at the next rebalance, and it named a control that half the
@@ -11472,7 +11475,7 @@ function _setHowToStep3(orders){
   var nB = orders.buys.length, nS = orders.sells.length;
   if (!nB && !nS){
     p.textContent = isWeightedBook(stocksData)
-      ? 'No names change this cycle — bring each holding to the Allocation shown above and you are done.' + base
+      ? 'No names change this cycle — bring each holding to the Allocation shown above and you are done.' + base
       : 'Nothing to place this cycle. Hold what you already own.';
     return;
   }
@@ -11513,8 +11516,13 @@ function _setHowToStep4(){
     p.textContent = "This free registration was set up as a single month, so its picks stay fixed. Re-register for free (₹0) and the new registration updates itself on the 1st, with an email when each new set lands.";
     return;
   }
+  /* V41.1 — every plan longer than a month starts with notifications ON (apps_script.gs
+     notifyFlag), so "Turn on rebalance notifications" told most members to switch on
+     something that was already on. The sentence now follows the switch. */
   p.textContent = months > 1
-    ? "Your book updates automatically on the 1st — the picks here are always the current set, for as long as your subscription runs. Turn on rebalance notifications " + where + " and we'll email you the moment a new set lands."
+    ? "Your book updates automatically on the 1st\u00A0— the picks here are always the current set, for as long as your subscription runs. " +
+      (_notifOn ? "Rebalance notifications are on, so we'll email you the moment a new set lands; the switch is " + where + "."
+                : "Turn on rebalance notifications " + where + " and we'll email you the moment a new set lands.")
     : "Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it. Automatic monthly updates and email alerts come with the 3-month plan and longer.";
 }
 
@@ -12385,7 +12393,7 @@ function renderCycleCost(){
             : cell('Short-term tax', '&mdash;', 'needs last cycle&rsquo;s price for each trimmed ETF', true))
         : !gainKnown
         ? cell('Short-term tax', '&mdash;',
-               goneNow.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
+               goneNow.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
         : gain > 0.5
           ? cell('Short-term tax', '~' + fmtMoney(Math.round(tax)),
                  '20% on ' + fmtMoney(Math.round(gain)) + ' realised')
@@ -12864,7 +12872,7 @@ function renderBookChange(diff, stocks){
     } else {
       holdBody = chips(diff.held);
     }
-    var holdLabel = moved.length ? 'Rebalance · weights moved (' + moved.length + ')'
+    var holdLabel = moved.length ? 'Rebalance · weights moved (' + moved.length + ')'
                                  : 'Hold · carried over (' + nHold + ')';
     var mtIn   = nIn  === 0 ? ' is-empty' : '';
     var mtOut  = nOut === 0 ? ' is-empty' : '';
@@ -13947,7 +13955,7 @@ function renderTrackRecord(){
         cm *= 1 + r.live / 100;
         if (r.bench == null) hasB = false; else cb *= 1 + r.bench / 100;
       });
-      sub.textContent += ' · compounded ' + fmtPct((cm - 1) * 100) +
+      sub.textContent += '\u00a0· compounded ' + fmtPct((cm - 1) * 100) +
         (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (rows[rows.length - 1].benchName || 'the index') : '');
     }
   }
@@ -18692,6 +18700,26 @@ html[data-theme="dark"] .cs-nudge a{ color:#9dbcff; }
 .itr-acts .itr-hide{ margin-left:0; }
 @media (pointer:coarse){ .itr-hide{ min-height:44px; } }
 @media print{ .itr-acts{ display:none; } }
+</style>
+<!-- V41.1 — device QA pass. Two layout fixes the sweep measured on this page.
+     1. At <=359px the sort select sat beside the broker picker, whose auto width
+        is its longest option ("Another broker"), leaving the select 117px: "Model
+        order" (92px) had 53px between the sort icon and the chevron and read
+        "Model (". Below 360px each control takes the full row.
+     2. "What changed this cycle": a row's ticker and quantity share a wrapping
+        flex line, so on an iPad or phone a short ticker kept its quantity beside
+        it ("LT 17 shares") while a long one dropped it underneath ("RELIANCE" /
+        "22 shares"), and the Buy column looked unlike the Sell column next to it.
+        Below the desktop layout (1200px) every row stacks the same way; at
+        1200px and up the longest ticker and quantity fit on one line. -->
+<style id="mf-v411-qa">
+@media (max-width:359.98px){
+  .table-actions > .msort,
+  .table-actions > .broker-picker{ flex:1 1 100%; }
+}
+@media (max-width:1199.98px){
+  .chg-sell-id{ flex-direction:column; align-items:flex-start; gap:2px; }
+}
 </style>
 </body>
 </html>
