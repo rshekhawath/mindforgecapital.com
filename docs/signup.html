@@ -189,7 +189,10 @@ input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.10)
 .phone-prefix{padding:13px 14px;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink3);font-size:15px;font-weight:600;color:var(--text2);white-space:nowrap;flex-shrink:0;}
 .phone-row input{flex:1;}
 .phone-hint{font-size:11px;color:var(--text3);margin-top:5px;}
-select{width:100%;padding:13px 16px;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink3);font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+/* V40.9 — the right padding keeps the label off the chevron (drawn at right 14px, 16px wide). At 16px
+   right padding a paid plan's name ran under it on every phone, and the chevron vanished; a label that
+   still does not fit now ends in an ellipsis instead of a cut glyph. */
+select{width:100%;padding:13px 40px 13px 16px;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;border:0.5px solid var(--border2);border-radius:var(--r-sm);background:var(--ink3);font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;font-size:15px;color:var(--white);outline:none;transition:border-color .2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
 select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.10);}
 .strategy-note{font-size:12px;color:var(--text3);margin-top:6px;padding:10px 14px;background:rgba(37,99,235,0.04);border-radius:8px;border:0.5px solid var(--border);display:none;}
 .btn{width:100%;padding:14px;border-radius:var(--r-sm);border:none;background:var(--accent);color:#fff;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.01em;}
@@ -556,9 +559,9 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <label for="reg-strategy">Strategy</label>
         <select id="reg-strategy" name="strategy" required onchange="onStrategyChange()">
           <option value="" disabled selected>Select a strategy</option>
-          <option value="MindForge MultiAsset">MindForge MultiAsset — FREE</option>
-          <option value="MindForge LargeMidcap 250">MindForge LargeMidcap 250 — ₹999/month</option>
-          <option value="MindForge SmallMicro 500">MindForge SmallMicro 500 — ₹1,499/month</option>
+          <option value="MindForge MultiAsset">MultiAsset — FREE</option>
+          <option value="MindForge LargeMidcap 250">LargeMidcap 250 — ₹999/mo</option>
+          <option value="MindForge SmallMicro 500">SmallMicro 500 — ₹1,499/mo</option>
         </select>
         <div class="strategy-note" id="strategy-note"></div>
       </div>
@@ -877,19 +880,35 @@ function onStrategyChange() {
 
   // Rewrite each Duration <option> label so it shows the actual total for this plan.
   if (durSel) {
+    /* V40.9 — "★ Best value" only where the closed field can show it. On a phone
+       "1 year — ₹14,390 (20% off)  ★ Best value" is ~300px against ~260px of room, so
+       the field showed it cut mid-word; there the total and the discount keep the
+       room and the tag is left off. A hidden field (the free book) measures 0 and
+       keeps the tag, which nobody sees. */
+    var fitsField = (function () {
+      var room = durSel.clientWidth, cs, cx;
+      try { cx = document.createElement('canvas').getContext('2d'); } catch (e) {}
+      if (!room || !cx) return function () { return true; };
+      cs = getComputedStyle(durSel);
+      cx.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      room -= parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      return function (t) { return cx.measureText(t).width <= room; };
+    })();
     ['1','3','6','12'].forEach(function(key){
       var opt = durSel.querySelector('option[value="' + key + '"]');
       var d   = DURATIONS[key];
       if (!opt || !d) return;
-      var bv = (key === '12') ? '  ★ Best value' : '';
+      var bv = (key === '12') ? '  ★ Best value' : '', base;
       if (isFree) {
         opt.textContent = d.label + ' — FREE';
       } else if (m) {
         var total = Math.round(m.monthly * d.months * (1 - d.disc));
         var pct   = Math.round(d.disc * 100);
-        opt.textContent = d.label + ' — ' + inr(total) + (pct > 0 ? ' (' + pct + '% off)' : '') + bv;
+        base = d.label + ' — ' + inr(total) + (pct > 0 ? ' (' + pct + '% off)' : '');
+        opt.textContent = base + (bv && fitsField(base + bv) ? bv : '');
       } else {
-        opt.textContent = d.label + (d.disc > 0 ? ' — ' + Math.round(d.disc * 100) + '% off' : '') + bv;
+        base = d.label + (d.disc > 0 ? ' — ' + Math.round(d.disc * 100) + '% off' : '');
+        opt.textContent = base + (bv && fitsField(base + bv) ? bv : '');
       }
     });
   }

@@ -2543,6 +2543,19 @@ h1, h2, h3, h4, th,
    "up pointing triangle plus one point two zero percent" (the same reasoning
    export_static.py records for the directory cards). */
 .px-line{display:inline-flex;align-items:baseline;gap:7px;white-space:nowrap}
+/* V40.9 — but never past the cell on a phone card (the ≤600px layout below). There
+   the Price cell is ~110px and "₹1,804.6 ▼−1.60%" needs ~120: half the cards ran the
+   move into the Intrinsic value beside it ("▼−2.06%₹1,467.96"), and at 360px they
+   overlapped it. When the pair does not fit, the move drops under the price. Not on
+   the table: there the column sizes itself to the line, and a wrap would let it
+   shrink and fold every row. Inline boxes rather than flex-wrap, because a wrapping
+   flex row is sized without its gap here, which folded even pairs that fit; the
+   price's right margin is the gap and simply ends the line when the move wraps. */
+@media(max-width:600px){
+  .px-line{display:inline-block;white-space:normal}
+  .px-line > *{display:inline-block;white-space:nowrap}
+  .px-line > .num{margin-right:7px}
+}
 .px-chg{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em}
 .px-chg-a{font-size:8px;margin-right:1px;vertical-align:1px}
 .px-chg.is-up{color:var(--data-strong)}

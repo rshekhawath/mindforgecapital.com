@@ -1085,6 +1085,9 @@ html[data-theme="dark"] .pe-line{stroke:var(--accent3);}
 .sc-demoflag{color:var(--data-weak);font-weight:600;}
 @media (prefers-reduced-motion: reduce){.sc-shimmer{animation:none;}}
 @media(max-width:560px){.sc-plot{height:224px;}.sc-price{font-size:25px;}.sc-tab{padding:6px 10px;font-size:12px;}.sc-head{padding:16px 16px 0;}}
+/* V40.9 — eight 44px timeframe buttons need ~366px of row; a phone card gives ~325, so
+   seven fitted and "Max" wrapped onto a line of its own. Two even rows of four instead. */
+@media(max-width:460px){.sc-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}}
 </style>
 <script id="mf-v129-chart-js">
 (function(){
@@ -1937,10 +1940,13 @@ function renderOverview(){
     ["Net Margin",D.net_margin!=null?`${fmtN(D.net_margin,1)}%`:"—"],
     ["Payout Ratio",D.payout_ratio!=null?`${fmtN(D.payout_ratio,1)}%`:"—"],
   ].map(([l,v])=>`<tr><th scope="row">${l}</th><td>${v}</td></tr>`).join("");
+  // V40.9 — earnings_q_growth is the latest quarter against the same quarter a year
+  // earlier (the Scanner's definition and the Integrity Score factor's); both rows
+  // that show it said "QoQ", beside a YoY row carrying the same number.
   document.getElementById("growthTable").innerHTML=[
     ["Revenue Growth (YoY)",D.revenue_growth!=null?`<span class="${clsPct(D.revenue_growth)}">${fmtPct(D.revenue_growth)}</span>`:"—"],
     ["Earnings Growth (YoY)",D.earnings_growth!=null?`<span class="${clsPct(D.earnings_growth)}">${fmtPct(D.earnings_growth)}</span>`:"—"],
-    ["Earnings Growth (QoQ)",D.earnings_q_growth!=null?`<span class="${clsPct(D.earnings_q_growth)}">${fmtPct(D.earnings_q_growth)}</span>`:"—"],
+    ["Quarterly Earnings Growth (YoY)",D.earnings_q_growth!=null?`<span class="${clsPct(D.earnings_q_growth)}">${fmtPct(D.earnings_q_growth)}</span>`:"—"],
   ].map(([l,v])=>`<tr><th scope="row">${l}</th><td>${v}</td></tr>`).join("");
   document.getElementById("plSummary").innerHTML=[
     {l:"Revenue",v:fmtCr(D.revenue)},{l:"Gross Profit",v:fmtCr(D.gross_profit),cls:clsPct(D.gross_profit)},
@@ -1966,7 +1972,7 @@ function renderRatios(){
   ].join("");
   document.getElementById("ratioGrowth").innerHTML=[
     rI("Rev Growth (YoY)",D.revenue_growth!=null?fmtPct(D.revenue_growth):"—"),rI("Earn Growth (YoY)",D.earnings_growth!=null?fmtPct(D.earnings_growth):"—"),
-    rI("Earn Growth (QoQ)",D.earnings_q_growth!=null?fmtPct(D.earnings_q_growth):"—"),
+    rI("Qtr Earn Growth (YoY)",D.earnings_q_growth!=null?fmtPct(D.earnings_q_growth):"—","Latest quarter vs a year earlier"),
   ].join("");
   document.getElementById("ratioLiq").innerHTML=[
     rI("Current Ratio",D.current_ratio?fmtN(D.current_ratio,2):"—"),rI("Quick Ratio",D.quick_ratio?fmtN(D.quick_ratio,2):"—"),

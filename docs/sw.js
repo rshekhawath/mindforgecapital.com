@@ -819,7 +819,12 @@
 // "Getting started" step 02 say the free book's link comes in minutes — FREE_INSTANT
 // is on; the hidden LinkedIn placeholder is gone from the footer, and WhatsApp's
 // hover follows it to the 4th slot). No shared asset moved.
-const CACHE = 'mfc-v119';
+// V40.9 -> mfc-v120. index.html is precached and changed (the pricing cards' "Learn
+// more →" keeps its space on a phone and an iPad; "Start it free tonight" centres
+// under the free-book card on a desktop). One shared asset moved:
+// assets/mfc-calc.css 406 -> 407 on the sixteen calculator pages (the "How a month
+// works →" link's arrow runs on after its last word instead of standing alone).
+const CACHE = 'mfc-v120';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
