@@ -815,7 +815,11 @@
 // ?ref= campaign tags), so assets/mfc-chrome.js 4050 -> 4060 on every page that
 // loads it and in the strategy-page template; and assets/mfc-calc.css 405 -> 406
 // on the sixteen calculator pages (the bridge's "How a month works" link).
-const CACHE = 'mfc-v118';
+// V40.8 -> mfc-v119. index.html is precached and changed (the MultiAsset card and
+// "Getting started" step 02 say the free book's link comes in minutes — FREE_INSTANT
+// is on; the hidden LinkedIn placeholder is gone from the footer, and WhatsApp's
+// hover follows it to the 4th slot). No shared asset moved.
+const CACHE = 'mfc-v119';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

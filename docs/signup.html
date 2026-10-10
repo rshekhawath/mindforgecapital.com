@@ -469,7 +469,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <div id="step-form">
       <div class="brand-eyebrow"><span class="brand-dot"></span>MindForge Capital</div>
       <h1 id="reg-h1">Get started</h1>
-      <p class="desc" id="reg-desc">Choose a strategy and register. Your dashboard link arrives by email within 24 hours; for a paid plan we confirm payment details with you on WhatsApp.</p>
+      <p class="desc" id="reg-desc">Choose a strategy and register. The free book’s dashboard link arrives by email in a minute or two; a paid plan’s within 24 hours, and we confirm its payment details with you on WhatsApp.</p>
 
       <!-- ══ V34.8 · YOU ARE ALREADY A THIRD OF THE WAY IN ═══════════════════
            People finish what they have started far more reliably than they
@@ -708,8 +708,12 @@ var FIRST_MONTH_FREE = true;
    the page can never claim an instant link the server did not send — a daily cap
    or an older deployment falls back to the 24-hour wording on its own.
    The homepage's MultiAsset card carries the same promise in static text
-   (index.html, .strat-sla under the MultiAsset card): change both together. */
-var FREE_INSTANT = false;
+   (index.html, .strat-sla under the MultiAsset card): change both together.
+   V40.8 — ON. Proven in production: a real free MultiAsset signup at 19:17 IST on
+   27 Sep 2026 auto-activated (the admin lead email reads "FREE (₹0) · AUTO-ACTIVATED,
+   dashboard link emailed"), and its "Your MindForge Capital dashboard is active" email
+   left in the same minute. The homepage card and walkthrough step 02 flipped with it. */
+var FREE_INSTANT = true;
 
 /* The free book's "Get dashboard access" step, written from the state the
    backend is actually in: 'sending' while the save is in flight (only when the
@@ -1290,7 +1294,9 @@ function resetForm() {
             (FREE_INSTANT ? 'in a minute or two' : 'within 24 hours') + '. No card, no payment, no chat.'
           : 'Your strategy is locked in. Two short steps left — your details, then your dashboard link arrives by email within 24 hours.' +
             (FIRST_MONTH_FREE ? ' Month one is free; we confirm payment details with you on WhatsApp before month two.' : ' We confirm payment details with you on WhatsApp.'))
-      : 'Choose a strategy and register. Your dashboard link arrives by email within 24 hours; for a paid plan we confirm payment details with you on WhatsApp.';
+      : (FREE_INSTANT   // V40.8 — the static #reg-desc above says the same; keep the two in step
+          ? 'Choose a strategy and register. The free book\u2019s dashboard link arrives by email in a minute or two; a paid plan\u2019s within 24 hours, and we confirm its payment details with you on WhatsApp.'
+          : 'Choose a strategy and register. Your dashboard link arrives by email within 24 hours; for a paid plan we confirm payment details with you on WhatsApp.');
     var _sla = document.getElementById('chip-sla');                     // V39.3 — B1
     if (_sla) _sla.textContent = (_free && FREE_INSTANT) ? 'Access in minutes' : 'Activated in 24 hours';
     var _chip = document.getElementById('chip-wa');
