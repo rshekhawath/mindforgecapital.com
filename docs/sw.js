@@ -833,7 +833,10 @@
 // 407 -> 408 on the sixteen calculator pages (the result pill's label wraps instead
 // of clipping its horizon) and scores/scores-engine.js 3960 -> 3970 on both pages
 // that load it ("200-DMA" uses a non-breaking hyphen).
-const CACHE = 'mfc-v122';
+// V41.2 -> mfc-v123. index.html and login.html are precached and changed (the hero's
+// button opens the free book's form; monthly savings on the homepage and a new FAQ;
+// the account page offers the stock books to a free-only member). No shared asset moved.
+const CACHE = 'mfc-v123';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

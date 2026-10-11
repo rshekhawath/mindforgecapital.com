@@ -3262,6 +3262,15 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
         <button type="button" class="cyc-cal-btn" id="cyc-cal-ics" onclick="addCycleToCalendar()">Apple / Outlook (.ics)</button>
         <button type="button" class="cyc-cal-btn" id="cyc-cal-atx" onclick="addAdvanceTaxToCalendar()">Advance-tax dates (.ics)</button>
       </div>
+      <!-- V41.2 — B3. The site is an installable web app (manifest standalone, and
+           login.html sends an installed app with a session straight here), and no page
+           ever offered it. Shown by mf-v412-dash-js only to a real member, only where
+           the browser can add it, and never once it is already on the home screen. -->
+      <div class="cyc-home" id="cyc-home" hidden>
+        <span class="cyc-home-k">Keep it one tap away:</span>
+        <button type="button" class="cyc-cal-btn" id="cyc-home-add">Add to home screen</button>
+        <button type="button" class="cyc-home-x" id="cyc-home-x">Not now</button>
+      </div>
     </div>
     <style>
     .cyc-card{display:block;margin:0 0 22px;padding:16px 20px 15px;border-radius:16px;background:#fff;
@@ -4024,6 +4033,9 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="cc-grid" id="cc-grid"></div>
         <p class="cc-note" id="cc-note"></p>
       </div>
+      <!-- V41.2 — A6. Shown only once the member has set a monthly amount in Add money
+           ("Use this every month"). Rendered by the Adjust-your-book script. -->
+      <p class="chg-monthly" id="chg-monthly" hidden><span id="chg-monthly-txt"></span> <button type="button" class="chg-monthly-go" id="chg-monthly-go">split it across the picks&nbsp;<span aria-hidden="true">→</span></button></p>
     </div>
 
     <!-- POSITION SIZING -->
@@ -4464,6 +4476,8 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               <button type="button" class="adj-chip" data-amt="200000">₹2L</button>
             </div>
           </div>
+          <!-- V41.2 — A6. A member who adds from salary each month sets the amount once (this device only). -->
+          <label class="adj-monthly" id="adj-add-monthly-wrap" hidden><input type="checkbox" id="adj-add-monthly"> Use this every month</label>
           <p class="adj-hint" id="adj-add-hint"></p>
           <div class="adj-out" id="adj-add-out" aria-live="polite"></div>
         </div>
@@ -4792,6 +4806,20 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="trk-rows" id="trk-rows"></div>
         <p class="trk-foot" id="trk-foot"></p>
       </div>
+      <!-- V41.2 — B1. The homepage tells this reader to start with the free book and judge
+           it for a few months before paying; the free book's dashboard never mentioned
+           the two stock books. No figure, price or offer wording here: this page can
+           read none of them, and a typed copy would drift. Shown by mf-v412-dash-js. -->
+      <section class="nb-card" id="next-book" aria-labelledby="nb-title" hidden>
+        <span class="nb-eyebrow">When you're ready</span>
+        <h3 id="nb-title">Two stock books run on this same dashboard</h3>
+        <p class="nb-lede">MultiAsset is built as the core. If a few months of it have earned stocks a place, LargeMidcap&nbsp;250 and SmallMicro&nbsp;500 arrive here on the same 1st and sit in the strategy switcher above.</p>
+        <ul class="nb-rows">
+          <li class="nb-row"><b>LargeMidcap&nbsp;250</b> — large and mid-cap names, in the part of the market your funds already hold. <a href="/largemidcap.html" data-nb="lm">Its live record and plan&nbsp;<span aria-hidden="true">→</span></a></li>
+          <li class="nb-row"><b>SmallMicro&nbsp;500</b> — small and micro-cap names, built to be sized smallest. <a href="/smallmicro.html" data-nb="sm">Its live record and plan&nbsp;<span aria-hidden="true">→</span></a></li>
+        </ul>
+        <div class="nb-foot"><span>Your free book carries on either way.</span><button type="button" class="nb-hide" data-nb="hide">Hide this</button></div>
+      </section>
       <style>
       /* One divergent axis, gains right and losses left, on a single scale
          shared by every row — the idiom V35.1 established for the Model/Index
@@ -5462,6 +5490,7 @@ function syncStrategiesFromServer(activeStrategy){
         if (before[name] !== tok) added++;
       });
       if (added) setupStrategySwitcher(activeStrategy);   // menu fills itself in place
+      try { if (window.mfcV412Refresh) window.mfcV412Refresh(); } catch (e) {}   // V41.2 — B1
       return added > 0;
     })
     .catch(function(){ return false; });
@@ -5865,10 +5894,27 @@ function _demoData(mode) {
   };
 }
 
+/* V41.2 — C2. Every sample link on the site opens ?demo=1, LargeMidcap 250's screen, and
+   its banner and ending promised the free book as "this screen". The free book is
+   MultiAsset's ETF screen (?demo=2, whose words stay as they were). */
+function _v412SampleCopy(){
+  var go = 'Start free with MultiAsset \u2014 the same dashboard, its own ETFs <span aria-hidden="true">\u2192</span>';
+  var lm = 'LargeMidcap\u00A0250, the book shown here <span aria-hidden="true">\u2192</span>';
+  ['demo-banner', 'demo-end'].forEach(function(id){
+    var box = document.getElementById(id); if (!box) return;
+    var a = box.querySelectorAll('.demo-banner-cta');
+    if (a[0]) a[0].innerHTML = go;
+    if (a[1]) { a[1].innerHTML = lm; a[1].setAttribute('href', '/largemidcap.html'); }
+  });
+  var t = document.querySelector('#demo-end .demo-banner-txt');
+  if (t) t.innerHTML = '<b>That\u2019s the whole month.</b> The free book, MultiAsset, runs on this same dashboard with its own ETFs; LargeMidcap\u00A0250, shown here, is a paid book.';
+}
+
 async function init() {
   if (isDemo) {
     try { var db = document.getElementById('demo-banner'); if (db) db.hidden = false; } catch (e) {}
     try { var de = document.getElementById('demo-end'); if (de) de.hidden = false; } catch (e) {}   // V40.7 — B3
+    if (demoMode !== '2') { try { _v412SampleCopy(); } catch (e) {} }                                 // V41.2 — C2
     const d = _demoData(demoMode);
     stocksData = d.stocks;
     renderDashboard(d.subscription, d.stocks);
@@ -6888,6 +6934,7 @@ function renderDashboard(sub, stocks) {
   // same paint would report an empty diff) and published on window so the row
   // renderer can badge the new names without recomputing it.
   renderBookChange(window._bookDiff, stocks);
+  try { if (window.mfcV412Refresh) window.mfcV412Refresh(); } catch (e) {}   // V41.2 — B1, B3
 
   // Reveal fade-up entrance
   requestAnimationFrame(() => {
@@ -17650,6 +17697,34 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
   var $ = function(id){ return document.getElementById(id); };
   var state = { tab:'add', addAmt:0, takeAmt:0, syncText:'', syncRan:false, sentAdj:{} };
 
+  /* V41.2 — A6. A monthly amount the member sets once ("Use this every month"), kept on
+     this device only. It never places or sizes anything by itself: it prefills Add
+     money, and puts one line under the month's orders. "Use as my capital" stays the
+     member's tap. The sample carries a fixed amount in memory and stores nothing. */
+  var demoMonthly = (typeof isDemo !== 'undefined' && isDemo) ? (demoMode === '1' ? 50000 : demoMode === '2' ? 10000 : 0) : 0;
+  function monthlyKey(){
+    var sk = String((typeof currentStrategy !== 'undefined' && currentStrategy) || '').replace(/\u00A0/g, ' ').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    return _devKey('mfc_monthly_add::' + sk);
+  }
+  function getMonthly(){
+    if (typeof isDemo !== 'undefined' && isDemo) return demoMonthly;
+    if (!(typeof currentStrategy !== 'undefined' && currentStrategy)) return 0;
+    try { var n = Number(localStorage.getItem(monthlyKey())); return n > 0 ? Math.floor(n) : 0; } catch(e){ return 0; }
+  }
+  function setMonthly(n){
+    n = n > 0 ? Math.floor(Math.min(n, 1e9)) : 0;
+    if (typeof isDemo !== 'undefined' && isDemo){ demoMonthly = n; return; }
+    try { if (n) localStorage.setItem(monthlyKey(), String(n)); else localStorage.removeItem(monthlyKey()); } catch(e){}
+  }
+  function trackMon(l){ try { if (typeof window.mfcTrack === 'function') window.mfcTrack('monthly_add', l); } catch(e){} }
+  function renderMonthlyLine(){
+    var line = $('chg-monthly'), txt = $('chg-monthly-txt');
+    if (!line || !txt) return;
+    var mon = getMonthly(), show = mon > 0 && stocks().length > 0;
+    line.hidden = !show;
+    if (show) txt.innerHTML = 'Your monthly <b>' + esc(money(mon)) + '</b> &mdash; after these orders,';
+  }
+
   function stocks(){ try { return (typeof stocksData !== 'undefined' && stocksData) ? stocksData : []; } catch(e){ return []; } }
   function money(v){ try { return fmtMoney(Math.round(v)); } catch(e){ return '₹' + Math.round(v); } }
   function esc(v){ try { return escapeHtml(String(v)); } catch(e){ return String(v).replace(/[&<>"]/g,''); } }
@@ -17958,8 +18033,12 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     var box = $('adj-add-out'), hint = $('adj-add-hint');
     var amt = state.addAmt;
     document.querySelectorAll('#adj-add-chips .adj-chip').forEach(function(b){ b.classList.toggle('is-on', Number(b.dataset.amt) === amt); });
+    var mon = getMonthly(), mw = $('adj-add-monthly-wrap'), mc = $('adj-add-monthly');   // V41.2 — A6
+    if (mw && mc){ mw.hidden = !(amt > 0); mc.checked = amt > 0 && amt === mon; }
     if (!(amt > 0)){ box.innerHTML = ''; hint.textContent = ''; lastAdd = null; return; }
     var p = planAdd(amt); lastAdd = p;
+    var monSent = mon > 0 && amt === mon && !state.monApplied &&
+      Object.keys(state.sentAdj).some(function(k){ return k.indexOf('add:') === 0; });   // V41.2 — A6
     var basis = p.live === p.n ? 'live prices' : (p.live ? 'live prices where available, recommended prices otherwise' : 'recommended prices (live prices have not loaded)');
     hint.textContent = 'Sized at ' + basis + '.';
     if (!p.orders.length){
@@ -17985,8 +18064,8 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
       '<div class="adj-acts">' +
         '<button type="button" class="adj-btn" data-adj-copy="add">Copy order list</button>' +
         '<button type="button" class="adj-btn" data-adj-csv="add">Download CSV</button>' +
-        '<button type="button" class="adj-btn" data-adj-apply="add">Use ' + esc(money((Number(currentCapital) || 0) + amt)) + ' as my capital</button>' +
-      '</div>';
+        '<button type="button" class="adj-btn' + (monSent ? ' adj-btn-primary' : '') + '" data-adj-apply="add">Use ' + esc(money((Number(currentCapital) || 0) + amt)) + ' as my capital</button>' +
+      '</div>' + (monSent ? '<p class="adj-monthly-note">So next month\u2019s orders are sized to what you now hold.</p>' : '');
   }
   var lastTake = null;
   function renderTake(){
@@ -18089,7 +18168,14 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
   function render(){
     var list = stocks();
     card.hidden = !list.length;
+    renderMonthlyLine();                                   // V41.2 — A6
     if (!list.length) return;
+    /* V41.2 — A6: once per page, open Add money at the member's monthly amount. */
+    if (!state.monPrefilled && (typeof currentStrategy !== 'undefined' && currentStrategy)){
+      state.monPrefilled = true;
+      var mon0 = getMonthly();
+      if (mon0 > 0 && !(state.addAmt > 0)){ state.addAmt = mon0; try { $('adj-add-amt').value = fmtNum(mon0); } catch(e){ $('adj-add-amt').value = mon0; } }
+    }
     renderAdd(); renderSync(); renderTake();
   }
   window.adjRefresh = function(){ try { render(); } catch(e){} };
@@ -18175,9 +18261,30 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
       var next = which === 'take' ? Math.max(0, (Number(currentCapital) || 0) - state.takeAmt)
                                   : (Number(currentCapital) || 0) + state.addAmt;
       try { setCapital(next); showToast('Capital set to ' + money(next)); } catch(e2){}
+      if (which === 'add') state.monApplied = true;        // V41.2 — A6: the emphasis has done its job
       render();
     }
   });
+  /* V41.2 — A6 wiring: the checkbox, and the line under the month's orders. */
+  var monChk = $('adj-add-monthly');
+  if (monChk) monChk.addEventListener('change', function(){
+    if (monChk.checked && state.addAmt > 0){ setMonthly(state.addAmt); trackMon('set'); }
+    else if (!monChk.checked && state.addAmt === getMonthly()){ setMonthly(0); }
+    render();
+  });
+  var monGo = $('chg-monthly-go');
+  if (monGo) monGo.addEventListener('click', function(){
+    var mon = getMonthly(); if (!(mon > 0)) return;
+    setTab('add');
+    state.addAmt = mon; state.monApplied = false;
+    try { amtIn.value = fmtNum(mon); } catch(e){ amtIn.value = mon; }
+    renderAdd();
+    trackMon('used');
+    var reduce = false; try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+    try { card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } catch(e){ card.scrollIntoView(); }
+    try { $('adj-tab-add').focus({ preventScroll: true }); } catch(e){}
+  });
+
   /* This script runs after the dashboard's own init() has already rendered the
      book, so the render hooks inside renderTable / paintLivePrices may have fired
      before window.adjRefresh existed. Draw once now. */
@@ -18721,5 +18828,189 @@ html[data-theme="dark"] .cs-nudge a{ color:#9dbcff; }
   .chg-sell-id{ flex-direction:column; align-items:flex-start; gap:2px; }
 }
 </style>
+<!-- ═════════════════════════════════════════════════════════════════
+     V41.2 · MONTH TWO — the monthly amount (A6), the way to a stock book from the
+     free one (B1) and the dashboard on the home screen (B3). Front end only.
+     ═════════════════════════════════════════════════════════════════ -->
+<style id="mf-v412-dash">
+/* A6 — the monthly amount, and its line under the month's orders. */
+.adj-monthly{ display:inline-flex; align-items:center; gap:9px; min-height:44px; margin:6px 0 0;
+  font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; }
+.adj-monthly[hidden]{ display:none; }
+.adj-monthly input{ width:18px; height:18px; margin:0; accent-color:var(--accent); cursor:pointer; }
+.adj-monthly-note{ font-size:12px; line-height:1.55; color:var(--text3); margin:8px 0 0; }
+.chg-monthly{ display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin:14px 0 0; padding:6px 14px;
+  border-radius:12px; font-size:13.5px; line-height:1.5; color:var(--text2);
+  background:rgba(37,99,235,.05); border:0.5px solid var(--border2); }
+.chg-monthly[hidden]{ display:none; }
+.chg-monthly b{ color:var(--white); font-variant-numeric:tabular-nums; }
+.chg-monthly-go{ font:inherit; font-weight:700; color:var(--ink-link,#0951c6); background:none; border:0; padding:0;
+  min-height:44px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; text-align:left; }
+.chg-monthly-go:hover{ text-decoration:underline; }
+.chg-monthly-go:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+html[data-theme="dark"] .chg-monthly{ background:rgba(120,160,240,.07); }
+html[data-theme="dark"] .chg-monthly-go{ color:#9dbcff; }
+#adj-card{ scroll-margin-top:88px; }
+
+/* B1 — the way from the free book to a stock book (the track record's look). */
+.nb-card{ margin-top:18px; padding:20px 22px; border-radius:var(--r); background:var(--ink2);
+  border:0.5px solid var(--border2); box-shadow:var(--shadow-sm); }
+.nb-card[hidden]{ display:none; }
+.nb-eyebrow{ display:block; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); }
+.nb-card h3{ font-size:16px; font-weight:700; color:var(--text); margin:6px 0 6px; line-height:1.3; }
+.nb-lede{ font-size:13.5px; line-height:1.6; color:var(--text2); margin:0; max-width:70ch; }
+.nb-rows{ list-style:none; margin:14px 0 0; padding:0; display:grid; gap:10px; max-width:760px; }
+.nb-row{ padding:10px 14px 4px; border-radius:12px; font-size:13.5px; line-height:1.55; color:var(--text2);
+  background:rgba(37,99,235,.04); border:0.5px solid var(--border2); }
+.nb-row b{ color:var(--text); }
+.nb-row a{ display:flex; width:fit-content; align-items:center; gap:4px; min-height:44px; font-weight:700;
+  color:var(--ink-link,#0951c6); text-decoration:none; }   /* its own line: a 44px inline link stretched one line of the sentence */
+.nb-row a:hover{ text-decoration:underline; }
+.nb-foot{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px;
+  margin-top:8px; font-size:12.5px; color:var(--text3); max-width:760px; }
+.nb-hide{ font:inherit; font-size:12.5px; font-weight:700; color:var(--text3); background:none; border:0;
+  padding:0 2px; min-height:44px; cursor:pointer; text-decoration:underline; }
+.nb-row a:focus-visible, .nb-hide:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+html[data-theme="dark"] .nb-row{ background:rgba(120,160,240,.06); }
+html[data-theme="dark"] .nb-row a{ color:#9dbcff; }
+@media (max-width:600px){ .nb-card{ padding:18px 16px; } }
+
+/* B3 — the home-screen offer, under "Remind me". */
+.cyc-home{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; margin-top:10px;
+  padding-top:10px; border-top:0.5px solid rgba(37,99,235,.10); }
+.cyc-home[hidden]{ display:none; }
+.cyc-home-k{ font-size:12.5px; font-weight:700; color:var(--text2); margin-right:2px; }
+.cyc-home-x{ font:inherit; font-size:12.5px; font-weight:600; color:var(--text3); background:none; border:0;
+  padding:0 6px; min-height:36px; cursor:pointer; text-decoration:underline; }
+.cyc-home-x:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+html[data-theme="dark"] .cyc-home{ border-top-color:rgba(120,160,240,.14); }
+@media (pointer:coarse){ .cyc-home .cyc-cal-btn, .cyc-home-x{ min-height:44px; } }
+@media (max-width:600px){ .cyc-home-k{ flex:1 1 100%; } }   /* the label above, the two buttons together */
+.hs-steps{ margin:4px 0 12px; padding-left:20px; font-size:14px; line-height:1.7; color:var(--text2); }
+.hs-steps b{ color:var(--white); }
+button.dks-go{ border:0; cursor:pointer; font-family:inherit; }
+</style>
+<script id="mf-v412-dash-js">
+/* V41.2 — B1 and B3. Front end only; nothing here talks to the backend. */
+(function(){
+  'use strict';
+  function track(ev, l){ try { if (typeof window.mfcTrack === 'function') window.mfcTrack(ev, l); } catch(e){} }
+  function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+
+  /* ── B1 — shown on the free book's dashboard while the member holds no stock book. */
+  var NB_HIDE = 'mfc_nextbook_hide', NB_DAYS = 180, nbHideMem = false;
+  function hasStockBook(){
+    var reg = {}; try { reg = readStratRegistry() || {}; } catch(e){}
+    return Object.keys(reg).some(function(k){ return /largemidcap|smallmicro/i.test(String(k).replace(/ /g, ' ')); });
+  }
+  function nbHidden(){
+    if (isDemo) return nbHideMem;
+    var t = Number(lsGet(NB_HIDE));
+    return t > 0 && (Date.now() - t) < NB_DAYS * 864e5;
+  }
+  function nbShouldShow(){
+    if (isDemo) return demoMode === '2' && !nbHidden();
+    var sub = window._currentSub || null;
+    if (!token || !sub) return false;
+    return _subIsFree(sub) && !hasStockBook() && !nbHidden();
+  }
+  function nbRefresh(){
+    var c = document.getElementById('next-book'); if (!c) return;
+    var show = false; try { show = nbShouldShow(); } catch(e){}
+    c.hidden = !show;
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('#next-book [data-nb]');
+    if (!a) return;
+    var k = a.getAttribute('data-nb');
+    if (k === 'hide'){
+      if (isDemo) nbHideMem = true; else lsSet(NB_HIDE, String(Date.now()));
+      track('next_book', 'hide'); nbRefresh(); return;
+    }
+    track('next_book', k);
+  });
+
+  /* ── B3 — "Add to home screen", only where it can work. */
+  var HS_HIDE = 'mfc_home_hide', HS_OFFERED = 'mfc_home_offered', deferred = null;
+  function standalone(){
+    try { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+    catch(e){ return false; }
+  }
+  function isIOS(){
+    var ua = navigator.userAgent || '';
+    return /iP(hone|ad|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  /* A phone or tablet only: desktop Chrome can install the site too, but "home screen"
+     is a phone's idea, and the 1st happens on a phone for this reader. */
+  function coarse(){ try { return !!(window.matchMedia && matchMedia('(pointer:coarse)').matches); } catch(e){ return false; } }
+  function hsRefresh(){
+    var row = document.getElementById('cyc-home'); if (!row) return;
+    var show = !isDemo && !!token && coarse() && !standalone() && !lsGet(HS_HIDE) && (!!deferred || isIOS());
+    row.hidden = !show;
+    if (show && !lsGet(HS_OFFERED)){ lsSet(HS_OFFERED, '1'); track('home_screen', 'offered'); }
+  }
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; hsRefresh(); });
+  window.addEventListener('appinstalled', function(){
+    deferred = null; lsSet(HS_HIDE, 'installed'); hsRefresh();
+    try { showToast('Added — it opens straight to your dashboard'); } catch(e){}
+  });
+  function closeSheet(){
+    var sh = document.getElementById('home-sheet');
+    if (!sh || sh.hidden) return;
+    sh.hidden = true;
+    document.documentElement.classList.remove('dks-open');
+    try { if (sh._opener && sh._opener.focus) sh._opener.focus(); } catch(e){}
+  }
+  function openSheet(opener){
+    var sh = document.getElementById('home-sheet');
+    if (!sh){
+      sh = document.createElement('div');
+      sh.id = 'home-sheet'; sh.className = 'dks'; sh.hidden = true;
+      sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-modal', 'true');
+      sh.setAttribute('aria-labelledby', 'hs-h'); sh.setAttribute('aria-describedby', 'hs-p');
+      sh.innerHTML = '<div class="dks-panel">' +
+        '<h2 id="hs-h">Add this dashboard to your home screen</h2>' +
+        '<ol class="hs-steps"><li>Tap <b>Share</b> — the square with an arrow.</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>' +
+        '<p id="hs-p">It is this website, not a download. It opens straight to your dashboard; the first time, you sign in once with an emailed code.</p>' +
+        '<div class="dks-acts"><button type="button" class="dks-go hs-ok">Done</button></div></div>';
+      document.body.appendChild(sh);
+      sh.addEventListener('click', function(e){ if (e.target === sh) closeSheet(); });
+      sh.querySelector('.hs-ok').addEventListener('click', closeSheet);
+      document.addEventListener('keydown', function(e){
+        var s = document.getElementById('home-sheet');
+        if (!s || s.hidden) return;
+        if (e.key === 'Escape'){ e.preventDefault(); closeSheet(); return; }
+        if (e.key === 'Tab'){ e.preventDefault(); s.querySelector('.hs-ok').focus(); }   // one control: Tab stays on it
+      });
+    }
+    sh._opener = opener || document.activeElement;
+    sh.hidden = false;
+    document.documentElement.classList.add('dks-open');
+    setTimeout(function(){ var g = sh.querySelector('.hs-ok'); if (g) g.focus(); }, 30);
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('#cyc-home-add, #cyc-home-x');
+    if (!b) return;
+    if (b.id === 'cyc-home-x'){ lsSet(HS_HIDE, String(Date.now())); track('home_screen', 'dismissed'); hsRefresh(); return; }
+    if (deferred){
+      var ev = deferred; deferred = null;
+      try { ev.prompt(); } catch(e2){}
+      Promise.resolve(ev.userChoice).then(function(c){
+        if (c && c.outcome === 'accepted'){
+          lsSet(HS_HIDE, 'installed'); track('home_screen', 'accepted');
+          try { showToast('Added — it opens straight to your dashboard'); } catch(e3){}
+        } else { track('home_screen', 'dismissed'); }
+        hsRefresh();
+      }).catch(function(){ hsRefresh(); });
+      return;
+    }
+    if (isIOS()){ openSheet(b); track('home_screen', 'ios_steps'); }
+  });
+
+  window.mfcV412Refresh = function(){ nbRefresh(); hsRefresh(); };
+  window.mfcV412Refresh();
+})();
+</script>
 </body>
 </html>

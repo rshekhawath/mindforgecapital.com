@@ -671,7 +671,18 @@ function renderSubscriptions(subs) {
       '</div>' +
       '<div class="sub-go">Open →</div>' +
     '</a>';
-  }).join('');
+  }).join('') +
+  /* V41.2 — B2. A member who holds only the free book is sent back to the homepage to
+     find the two stock books. One row, in the same style, when neither is in the list
+     (active or expired). Not a token link; no price or offer wording. */
+  (subs.some(function(sub){ return /largemidcap|smallmicro/i.test(String(sub.strategy || '').replace(/\u00A0/g, ' ')); }) ? '' :
+    '<a class="sub-row sub-add" href="/strategies.html" style="text-decoration:none;" onclick="try{if(window.mfcTrack)window.mfcTrack(\'next_book\',\'account\')}catch(e){}">' +
+      '<div>' +
+        '<div class="sub-name">Add a stock book</div>' +
+        '<div class="sub-meta">LargeMidcap&nbsp;250 or SmallMicro&nbsp;500, on the same dashboard</div>' +
+      '</div>' +
+      '<div class="sub-go">See both →</div>' +
+    '</a>');
   var activeCount = subs.filter(function(s){ return new Date(s.expires_at) >= new Date(); }).length;
   var expiredCount = subs.length - activeCount;
   var desc = 'Found ' + subs.length + ' subscription' + (subs.length > 1 ? 's' : '') + ' for ' + _email + '.';
@@ -885,6 +896,10 @@ input:focus-visible{
 
 /* Sub-row "Renew" pill — green accent for expired entries */
 .sub-row[href*="wa.me"] .sub-go{ font-weight: 700; }
+/* V41.2 — the rows' "Open →" / "See both →" ink was --accent on the dark card: 2.72:1 measured
+   on pixels. The site's dark link ink instead. */
+html[data-theme="dark"] .sub-go{ color:#9dbcff; }
+.sub-go{ white-space:nowrap; flex-shrink:0; }   /* "See both →" broke over two lines at 390px; the text beside it wraps instead */
 
 @media (prefers-reduced-motion: reduce){
   .page::after{ opacity: .35; }
