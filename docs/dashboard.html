@@ -220,7 +220,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 #error-retry{ margin-top:22px; }
 /* V40.3 — C8 / B2.3: the primary way back on the sign-in and access-ended states.
    Same fixed stops as .err-retry-btn below, for the contrast reason it records. */
-.err-act{ margin-top:22px; }
+/* V41.3 — written as .err-act it lost to `.state-box p{margin:0 auto}` (0,1,1 over 0,1,0), so
+   the 22px never applied and the button sat flush under the sentence on every device. */
+.state-box .err-act{ margin-top:22px; }
 .err-act-btn{ font-size:14.5px; font-weight:700; text-decoration:none;
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   min-height:44px; padding:0 22px; border-radius:12px; color:#fff;
@@ -3073,7 +3075,7 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
       <div id="error-strats-list" class="err-strats-list"></div>
     </div>
     <br>
-    <p style="font-size:13px;color:var(--text3);"><a href="login.html" class="state-lnk">Sign in again →</a> &nbsp;·&nbsp; Lost your link? <a href="recover.html" class="state-lnk">Recover dashboard access →</a></p>
+    <p style="font-size:13px;color:var(--text3);"><a href="login.html" class="state-lnk">Sign in again →</a> &nbsp;·&nbsp; Lost your link? <a href="recover.html" class="state-lnk">Recover&nbsp;dashboard&nbsp;access&nbsp;→</a></p>
   </div>
 </div>
 
@@ -3361,6 +3363,13 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     .pc-left{flex:1;min-width:210px}
     .pc-label{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748b;margin-bottom:7px;display:flex;align-items:center;gap:7px}
     .pc-label .pc-livedot{width:7px;height:7px;border-radius:50%;background:#059669;box-shadow:0 0 0 0 rgba(5,150,105,.5);animation:pc-pulse 2.2s ease-out infinite}
+    /* V41.3 — the label was two flex items, the words and the date, so on a phone each one
+       wrapped inside its own column ("LIVE PROFIT SINCE / REBALANCE" beside "· / 30 SEPT 2026").
+       One text run now (.pc-label-t) with the "·" bound to the word before it, and the dot
+       sits on the first line's baseline instead of floating between two lines. */
+    .pc-label{align-items:baseline}
+    /* V41.3 — a minus before ₹ is a legal break point, so "that is −" ended one line and "₹35" began the next. */
+    .pc-sub .pc-amt{white-space:nowrap}
     .profit-card.is-down .pc-label .pc-livedot{background:#dc2626}
     @keyframes pc-pulse{0%{box-shadow:0 0 0 0 rgba(5,150,105,.45)}70%{box-shadow:0 0 0 7px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
     @media(prefers-reduced-motion:reduce){.pc-livedot{animation:none}}
@@ -3490,7 +3499,7 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     </div>
     <div class="profit-card fade-up" id="profit-card" style="display:none;">
       <div class="pc-left">
-        <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span>Live profit since rebalance <span id="pc-rebal-date"></span></div>
+        <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span><span class="pc-label-t">Live profit since rebalance<span id="pc-rebal-date"></span></span></div>
         <div class="pc-main"><span class="pc-pct" id="pc-pct">—</span></div>
         <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
         <div class="pc-today" id="pc-today" hidden></div>
@@ -9188,7 +9197,7 @@ function refreshActionBar(){
       // Several baskets: say which one the button is about to open. With one
       // basket (or another broker) the split is the more useful fact.
       if (isKite && plan.total > 1) subBits = [nextB ? 'basket ' + nextB.pos + ' of ' + plan.total + ' next' : 'all ' + plan.total + ' baskets sent'];
-      if (sEl) sEl.textContent = subBits.filter(Boolean).join(' · ');
+      if (sEl) sEl.textContent = subBits.filter(Boolean).join('\u00a0· ');
     } else {
       if (nEl) nEl.textContent = nRw + ' to re-weight';
       if (sEl) sEl.textContent = 'no names change';
@@ -10274,7 +10283,7 @@ function csRender(){
   var st = document.getElementById('cs-status'), bits = [];
   if (R.r.length) bits.push(R.r.length + (R.r.length === 1 ? ' name restricted' : ' names restricted'));
   if (R.h > 0) bits.push(R.h + '-day minimum hold');
-  if (st){ st.textContent = bits.length ? bits.join(' · ') : 'None set'; st.classList.toggle('is-set', bits.length > 0); }
+  if (st){ st.textContent = bits.length ? bits.join('\u00a0· ') : 'None set'; st.classList.toggle('is-set', bits.length > 0); }
   // V40.3 — C5: closed to one line while no rule is set (see the markup note).
   var csWant = bits.length > 0 || !!card._csOpen || (location.hash || '') === '#cs-card';
   card.classList.toggle('is-collapsed', !csWant);
@@ -10946,7 +10955,7 @@ function refreshKiteBasket() {
                      '<span class="kbsk-b-head">Basket ' + b.pos + ' of ' + plan.total + stateHtml + '</span>' +
                      '<span class="kbsk-b-sub"><b>' + b.open.length + '</b> order' + (b.open.length === 1 ? '' : 's') +
                        ' · <b>' + escapeHtml(fmtMoney(tot)) + '</b></span>' +
-                     '<span class="kbsk-b-names" title="' + escapeHtml(names.join(', ')) + '">' + escapeHtml(names.join(' · ')) + '</span>' +
+                     '<span class="kbsk-b-names" title="' + escapeHtml(names.join(', ')) + '">' + escapeHtml(names.join('\u00a0· ')) + '</span>' +
                    '</span>' +
                    '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" ' +
                      'onclick="sendKiteBasket(' + b.pos + ')" ' +
@@ -12607,7 +12616,7 @@ function refreshOrdersTile(animate){
   var left = leftIn + leftOut, placed = n - left;
   var sides = function(b, s){
     return [b ? b + (b === 1 ? ' buy' : ' buys') : '', s ? s + (s === 1 ? ' sell' : ' sells') : '']
-      .filter(Boolean).join(' · ');
+      .filter(Boolean).join('\u00a0· ');
   };
   if (animate) _animateCount(oVal, left, {});
   else if (String(oVal.textContent) !== String(left)) { oVal._acTok = null; oVal.textContent = left; }
@@ -12909,7 +12918,7 @@ function renderBookChange(diff, stocks){
           '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(r.t) + '</span>' +
             '<span class="chg-sell-q">' + escapeHtml(lbl) + '</span></span>' +
           '<span class="chg-rot-d ' + (flat ? 'is-flat' : up ? 'is-up' : 'is-dn') + '">' +
-            (flat ? '&mdash;' : (up ? '+' : '−') + Math.abs(r.d).toFixed(1) + ' pp') + '</span>' +
+            (flat ? '&mdash;' : (up ? '+' : '−') + Math.abs(r.d).toFixed(1) + '\u00a0pp') + '</span>' +
           (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
                  escapeHtml(bk.name) + ' &rarr;</a>' : '') +
         '</div>';
@@ -13120,7 +13129,7 @@ function startPricePolling(){
 }
 function setProfitLoading(rebal){
   var d = document.getElementById('pc-rebal-date');
-  if (d) d.textContent = rebal ? ('· ' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'})) : '';
+  if (d) d.textContent = rebal ? ('\u00a0· ' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'})) : '';   // V41.3 — "·" trails
   var pct = document.getElementById('pc-pct'); if (pct){ pct.innerHTML = '<span class="skel-bar pc-skel-num" role="status" aria-label="Calculating your live profit since the rebalance"></span>'; pct.className = 'pc-pct pc-flat'; }
   var sub = document.getElementById('pc-sub'); if (sub) sub.textContent = 'Fetching live prices for your holdings…';
   var br = document.getElementById('pc-breakdown'); if (br) br.innerHTML = '';
@@ -13155,7 +13164,9 @@ function _retPct(rec, live){ return rec > 0 ? ((live - rec) / rec * 100) : null;
 // matching the KPI count-ups). Only the FIRST render per load animates — capital
 // tweaks re-render instantly. Reduced-motion / hidden-tab safe.
 function _animatePct(el, target){
-  var fmt = function(v){ return (v > 0 ? '+' : '') + v.toFixed(2) + '%'; };
+  /* V41.3 — the sign follows the PRINTED figure (V37.4's rule for the 1D line): a book down
+     0.0035% read "-0.00%" in the headline, a signed zero, beside "net −0.00%" below it. */
+  var fmt = function(v){ var s = v.toFixed(2); if (parseFloat(s) === 0) s = (0).toFixed(2); return (parseFloat(s) > 0 ? '+' : '') + s + '%'; };
   /* V30.2 — the tween owned no handle, so a second call inside its 750ms window
      could not stop it: the new value was written, and the frames still queued
      from the OLD run overwrote it and settled on the OLD number. Reproduced by
@@ -13465,9 +13476,9 @@ function renderProfitHeadline(){
   sub.innerHTML = (_nRs ? 'The model’s weighted return across ' : 'Weighted return across ') + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
     (rebal ? ' on <strong>' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
     (window._capEntered
-      ? '. On your ' + fmtMoney(currentCapital) + _rsOut + ' that is <strong>' + absSign + absStr + '</strong>.'
+      ? '. On your ' + fmtMoney(currentCapital) + _rsOut + ' that is <strong class="pc-amt">' + absSign + absStr + '</strong>.'
       // V39.3 — B4: never "your" for an amount the member did not set.
-      : '. On ' + fmtMoney(currentCapital) + ', the starting amount rather than one you entered, that is <strong>' +
+      : '. On ' + fmtMoney(currentCapital) + ', the starting amount rather than one you entered, that is <strong class="pc-amt">' +
         absSign + absStr + '</strong>. <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter yours</button>');
   var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
   var br = document.getElementById('pc-breakdown');
@@ -13559,9 +13570,9 @@ function renderAttribution(rows, wSum, port){
   var gross = lift - drag;                       // drag is negative
   if (!(gross > 0.0001)) { card.style.display = 'none'; return; }
 
-  var fmtPP = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2); };
-  document.getElementById('at-lift').textContent = fmtPP(lift) + ' pp';
-  document.getElementById('at-drag').textContent = drag < 0 ? fmtPP(drag) + ' pp' : '0.00 pp';
+  var fmtPP = function(v){ var s = Math.abs(v).toFixed(2); return (s === '0.00' ? '' : v > 0 ? '+' : '−') + s; };   // V41.3 — no signed zero
+  document.getElementById('at-lift').textContent = fmtPP(lift) + '\u00a0pp';
+  document.getElementById('at-drag').textContent = drag < 0 ? fmtPP(drag) + '\u00a0pp' : '0.00\u00a0pp';
 
   // ── the split. Both segments on ONE track, so the headline reads as a net.
   var liftShare = (lift / gross) * 100;
@@ -13592,14 +13603,14 @@ function renderAttribution(rows, wSum, port){
     net.innerHTML =
       'Nothing in this book is up since the rebalance &mdash; <b>' + nDown + '</b> of <b>' +
       pp.length + '</b> priced holding' + (pp.length === 1 ? '' : 's') + ' cost you <b>' +
-      Math.abs(drag).toFixed(2) + ' pp</b> between them.';
+      Math.abs(drag).toFixed(2) + '\u00a0pp</b> between them.';
   } else {
     var concWord = conc >= 75 ? 'concentrated in' : conc >= 50 ? 'led by' : 'spread beyond';
     net.innerHTML =
       'The gain is <b>' + conc + '%</b> ' + concWord + ' the top ' + Math.min(3, pp.length) +
       ' of ' + pp.length + ' holdings' +
       (nDown ? ', and <b>' + nDown + '</b> holding' + (nDown === 1 ? '' : 's') +
-               ' cost you <b>' + Math.abs(drag).toFixed(2) + ' pp</b>.' : '.');
+               ' cost you <b>' + Math.abs(drag).toFixed(2) + '\u00a0pp</b>.' : '.');
   }
 
   // ── the ladder. Held on window so the Holding / Industry toggle can redraw
@@ -13622,7 +13633,7 @@ function _atRenderLadder(){
   var st = window._atState; if (!st || !st.pp) return;
   var pp = st.pp, port = st.port;
   var card = document.getElementById('attrib-card');
-  var fmtPP = function(v){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2); };
+  var fmtPP = function(v){ var s = Math.abs(v).toFixed(2); return (s === '0.00' ? '' : v > 0 ? '+' : '−') + s; };   // V41.3 — no signed zero
   var list = stocksData || [];
   var byT = {}; list.forEach(function(s){ byT[String(s.ticker)] = s; });
 
@@ -13725,10 +13736,10 @@ function _atRenderLadder(){
          strings the reader actually sees, not on the values behind them. */
       var loS = fmtPP(lo), hiS = fmtPP(hi);
       base += (hidden === 1)
-        ? ' The one not listed contributed ' + loS + ' pp.'
+        ? ' The one not listed contributed ' + loS + '\u00a0pp.'
         : (loS === hiS)
-          ? ' The ' + hidden + ' not listed each contributed ' + loS + ' pp.'
-          : ' The ' + hidden + ' not listed each contributed between ' + loS + ' and ' + hiS + ' pp.';
+          ? ' The ' + hidden + ' not listed each contributed ' + loS + '\u00a0pp.'
+          : ' The ' + hidden + ' not listed each contributed between ' + loS + ' and ' + hiS + '\u00a0pp.';
     }
   }
   if (rowsEl) rowsEl.innerHTML = html;
@@ -18006,8 +18017,8 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
         '<span class="kbsk-b-n" aria-hidden="true">' + (i + 1) + '</span>' +
         '<span class="kbsk-b-main"><span class="kbsk-b-head">' + (total > 1 ? 'Basket ' + (i + 1) + ' of ' + total : 'Kite basket') +
           (sent ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' : (isNext && total > 1 ? '<span class="kbsk-b-state is-next">Next</span>' : '')) + '</span>' +
-          '<span class="kbsk-b-sub"><b>' + c.length + '</b> order' + (c.length === 1 ? '' : 's') + ' · <b>' + esc(money(val)) + '</b></span>' +
-          '<span class="kbsk-b-names">' + esc(c.map(function(o){ return (o.side === 'SELL' ? 'sell ' : '') + o.ticker + ' ×' + o.qty; }).join(' · ')) + '</span></span>' +
+          '<span class="kbsk-b-sub"><b>' + c.length + '</b> order' + (c.length === 1 ? '' : 's') + '\u00a0· <b>' + esc(money(val)) + '</b></span>' +
+          '<span class="kbsk-b-names">' + esc(c.map(function(o){ return (o.side === 'SELL' ? 'sell\u00a0' : '') + o.ticker + '\u00a0×' + o.qty; }).join('\u00a0· ')) + '</span></span>' +
         '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" data-adj-send="' + key + ':' + i + '" ' +
           'aria-label="' + esc(lbl + (total > 1 ? ': basket ' + (i + 1) + ' of ' + total : '') + ', ' + c.length + ' orders, ' + money(val)) + '">' + lbl + '</button>' +
       '</li>';
@@ -18170,12 +18181,9 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     card.hidden = !list.length;
     renderMonthlyLine();                                   // V41.2 — A6
     if (!list.length) return;
-    /* V41.2 — A6: once per page, open Add money at the member's monthly amount. */
-    if (!state.monPrefilled && (typeof currentStrategy !== 'undefined' && currentStrategy)){
-      state.monPrefilled = true;
-      var mon0 = getMonthly();
-      if (mon0 > 0 && !(state.addAmt > 0)){ state.addAmt = mon0; try { $('adj-add-amt').value = fmtNum(mon0); } catch(e){ $('adj-add-amt').value = mon0; } }
-    }
+    /* V41.3 — the monthly amount no longer pre-fills Add money on load: on every visit, even
+       mid-month, it listed a whole set of orders nobody had asked for (13 rows and two baskets
+       in the sample). The line under "What changed this cycle" fills it on the member's tap. */
     renderAdd(); renderSync(); renderTake();
   }
   window.adjRefresh = function(){ try { render(); } catch(e){} };

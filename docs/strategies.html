@@ -2023,10 +2023,8 @@ html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
           </div>
         </div>
         <div class="ph-kpi-foot">
-          <span>Backtest windows shown per strategy</span>
-          <span>·</span>
-          <span>Updated Sep&nbsp;2026</span>
-          <span class="ph-kpi-cycle-foot" data-live-wrap>· LIVE since the <b data-live="rebal">—</b> rebalance</span>
+          <span>Backtest windows shown per&nbsp;strategy&nbsp;·</span>
+          <span>Updated Sep&nbsp;2026</span><span class="ph-kpi-cycle-foot" data-live-wrap>&nbsp;· LIVE&nbsp;since&nbsp;the&nbsp;<b data-live="rebal">—</b>&nbsp;rebalance</span>
         </div>
       </div>
     </div>
@@ -3883,6 +3881,16 @@ html[data-theme="dark"] .ph-spark .mf179-dot{ filter:drop-shadow(0 0 3px rgba(12
 .ph-kpi-card:has(.ph-kpi-cycle.live-ready) .ph-kpi-live-lv{ display:inline-flex; }
 .ph-kpi-foot .ph-kpi-cycle-foot{ display:none; }
 .ph-kpi-foot .ph-kpi-cycle-foot.live-ready{ display:inline; }
+/* V41.3 — the footer was a flex row of four spans, so from 1024px up each span wrapped inside
+   its own narrow column ("Backtest windows shown / per strategy", "Updated / Sep 2026"), and on a
+   phone the "·" spans wrapped as items: one alone at the end of line 1, one opening line 3.
+   One centred run of text now in three units that wrap only after a "·": the backtest note,
+   "Updated <month> ·" and the live clause, so a phone reads one fact per line and 1024px+ two.
+   No text-wrap:balance — it split the first unit to even the lines out. The "Updated" span
+   keeps its exact markup because inject_site_stats rewrites the month by matching
+   `<span>Updated `, so it is held together here rather than with an &nbsp; or a class. */
+.ph-kpi-foot{ display:block; text-align:center; }
+.ph-kpi-foot > span:nth-child(2){ white-space:nowrap; }
 
 /* (A2) per-strategy ps-perf card — V26.1: "Live this cycle" is the focus.
    The live-chip becomes a prominent accent block with a big number; the backtest

@@ -368,6 +368,9 @@ nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop
 .card:hover{box-shadow:0 1px 2px rgba(15,23,42,.04),0 16px 36px -18px rgba(26,80,216,.2)}
 .card-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 14px;border-bottom:0.5px solid var(--border);background:linear-gradient(180deg,var(--ink3) 0%,rgba(255,255,255,0) 100%)}
 .card-title{font-size:13px;font-weight:700;color:var(--white);letter-spacing:-.01em}
+/* V41.3 — a header with a subtitle wraps instead of splitting into two columns: on a phone "Valuation trend · P/E"
+   and its date range each broke over two lines side by side. Measured: only that header moves, and only below 768px. */
+.card-header{flex-wrap:wrap;column-gap:12px;row-gap:4px}
 .card-body{padding:18px 20px}
 .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
 @media(max-width:960px){.two-col{grid-template-columns:1fr}}
@@ -1321,7 +1324,7 @@ function renderHistTrend(sym){
       const y=v=>H-pad-(H-2*pad)*((v-mn)/rng);
       let dline="",started=false,first=null,last=null;
       vals.forEach((v,i)=>{if(v==null)return;dline+=(started?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)+" ";started=true;if(first==null)first=v;last=v;});
-      sub.textContent=`${dates[0]} → ${dates[dates.length-1]} · ${pts.length} days`;
+      sub.textContent=`${dates[0]}\u00a0→ ${dates[dates.length-1]}\u00a0· ${pts.length}\u00a0days`;   // V41.3 — "77 / days" split at 390px
       host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:108px;display:block" role="img" aria-label="P/E trend ${first!=null?first.toFixed(1):""} to ${last!=null?last.toFixed(1):""}"><path class="pe-line" d="${dline}" fill="none" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-top:5px"><span>P/E ${first!=null?first.toFixed(1):"—"}</span><span style="color:var(--white,#0c1831);font-weight:700">now ${last!=null?last.toFixed(1):"—"}</span></div>`;
     }).catch(()=>{});

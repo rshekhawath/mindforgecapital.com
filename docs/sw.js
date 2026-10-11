@@ -836,7 +836,10 @@
 // V41.2 -> mfc-v123. index.html and login.html are precached and changed (the hero's
 // button opens the free book's form; monthly savings on the homepage and a new FAQ;
 // the account page offers the stock books to a free-only member). No shared asset moved.
-const CACHE = 'mfc-v123';
+// V41.3 -> mfc-v124. index.html and login.html are precached and changed (device QA pass:
+// the strategy cards' labels no longer tear below 360px; the account page's ended rows drop
+// their opacity for a checked ink). No shared asset moved.
+const CACHE = 'mfc-v124';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

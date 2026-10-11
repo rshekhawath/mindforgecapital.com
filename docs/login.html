@@ -634,14 +634,14 @@ function renderSubscriptions(subs) {
     var safeStrat = String(sub.strategy || 'Strategy').replace(/[<>&"']/g, function(c){
       return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
     });
-    var dateStr = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+    var dateStr = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}).replace(/\s+/g, '\u00a0');   // V41.3 — one unit
     if (expired && /multiasset/i.test(String(sub.strategy || '').replace(/ /g, ' '))) {
       // V40.3 — B2.3: the free book is not renewed on WhatsApp; there is nothing to
       // pay. It starts again at ₹0 from the same signup the homepage uses.
-      return '<a class="sub-row" href="signup.html?strategy=multiasset" style="opacity:0.7;text-decoration:none;">' +
+      return '<a class="sub-row sub-ended" href="signup.html?strategy=multiasset" style="text-decoration:none;">' +
         '<div>' +
           '<div class="sub-name">' + safeStrat + '</div>' +
-          '<div class="sub-meta" style="color:var(--data-bad);">Ended on ' + dateStr + ' · Start it again, still ₹0</div>' +
+          '<div class="sub-meta" style="color:var(--data-bad);">Ended on ' + dateStr + '\u00a0· Start it again, still ₹0</div>' +
         '</div>' +
         '<div class="sub-go" style="color:var(--data-strong);">Start again →</div>' +
       '</a>';
@@ -651,7 +651,7 @@ function renderSubscriptions(subs) {
       // straight to WhatsApp to renew, with strategy + email pre-filled.
       var waText = encodeURIComponent('Hi MindForge Capital — I would like to renew my ' + (sub.strategy||'') + ' subscription. Email: ' + (sub.email||_email||'') + '.');
       var waUrl  = 'https://wa.me/917601032082?text=' + waText;
-      return '<a class="sub-row" href="' + waUrl + '" target="_blank" rel="noopener noreferrer" style="opacity:0.7;text-decoration:none;">' +
+      return '<a class="sub-row sub-ended" href="' + waUrl + '" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">' +
         '<div>' +
           '<div class="sub-name">' + safeStrat + '</div>' +
           // V27.4: these two were baked light hexes written straight into an inline
@@ -659,7 +659,7 @@ function renderSubscriptions(subs) {
           // light card and #dc2626 fell to ~3.4:1 on the dark one. A var() inside an
           // inline style re-resolves on a data-theme flip by itself, so the tokens fix
           // both themes with no re-render and no observer.
-          '<div class="sub-meta" style="color:var(--data-bad);">Expired on ' + dateStr + ' · Renew on WhatsApp</div>' +
+          '<div class="sub-meta" style="color:var(--data-bad);">Expired on ' + dateStr + '\u00a0· Renew on WhatsApp</div>' +
         '</div>' +
         '<div class="sub-go" style="color:var(--data-strong);">Renew →</div>' +
       '</a>';
@@ -826,6 +826,11 @@ document.addEventListener('keydown', function(e) {
 .btn:hover:not(:disabled){ transform:translateY(-2px); background-position:100% 0; box-shadow:0 18px 40px -12px rgba(26,80,216,.6) !important; }
 .btn.btn-ghost{ background:rgba(255,255,255,.65) !important; color:#2563eb !important; border:1px solid rgba(37,99,235,.22) !important; box-shadow:none !important; }
 .btn.btn-ghost:hover{ transform:translateY(-2px); background:rgba(255,255,255,.92) !important; border-color:rgba(37,99,235,.45) !important; }
+/* V41.3 — the two rules above are !important and light-only, so they beat mfc-finish.css's dark
+   ghost button: "Sign in with a different email" was #2563eb on a 65% white fill over the dark card,
+   2.3:1. The shared dark values, at the same weight. */
+html[data-theme="dark"] .btn.btn-ghost{ background:rgba(120,160,240,.08) !important; color:var(--accent3) !important; border-color:var(--border2) !important; }
+html[data-theme="dark"] .btn.btn-ghost:hover{ background:rgba(120,160,240,.16) !important; border-color:var(--accent3) !important; }
 .card{ box-shadow:0 1px 2px rgba(12,24,49,.04), 0 18px 48px -22px rgba(26,80,216,.22), 0 44px 84px -52px rgba(26,80,216,.18) !important; }
 @media (prefers-reduced-motion: reduce){ .btn,.btn.btn-ghost{transition:none !important;} .btn:hover,.btn.btn-ghost:hover{transform:none !important;} }
 </style>
@@ -900,6 +905,11 @@ input:focus-visible{
    on pixels. The site's dark link ink instead. */
 html[data-theme="dark"] .sub-go{ color:#9dbcff; }
 .sub-go{ white-space:nowrap; flex-shrink:0; }   /* "See both →" broke over two lines at 390px; the text beside it wraps instead */
+/* V41.3 — an ended or expired row was dimmed with an inline opacity:0.7 over the whole row, which
+   took its red date line to 3.28:1 and "Renew →" to 2.92:1 on the light card (AA wants 4.5).
+   The row now steps its name down to the secondary ink instead; the coloured line and the
+   action keep their own checked tokens at full strength. */
+.sub-row.sub-ended .sub-name{ color:var(--text2); }
 
 @media (prefers-reduced-motion: reduce){
   .page::after{ opacity: .35; }

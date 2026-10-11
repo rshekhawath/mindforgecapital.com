@@ -3077,6 +3077,21 @@ function openRegModal(strategyName, price, strategyId){
 <style id="mf-v99-strat">
 /* (1) stat-tile accent bars */
 .stats-bar .stat-card{ position:relative; overflow:hidden; }
+/* V41.3 — the stat-card labels tore at their narrowest. "Backtested CAGR ·" is 125px of 11px
+   uppercase, and two bands give a label less: the six-across row mfc-live.js switches on above
+   960px (102-125px wide until 1120px) and the two-up phone grid below 350px (112px). Chrome then
+   broke inside the bound words ("BACKTESTED CAG / R", "LARGEMIDCAP 25 / 0") or opened a line
+   with the "·" - on all three pages, 18 widths each. Three across in the first band; one size
+   smaller in the second. The date pill usually wraps under its label, where a 10px left margin
+   set it 5px right of centre; 4px still parts it from the words when it sits beside them. */
+.stats-bar .stat-card .sl .updated-badge{ margin-left:4px; }
+@media (min-width:961px) and (max-width:1119px){
+  .stats-bar.has-live[data-live-host]{ grid-template-columns:repeat(3,1fr); }
+}
+@media (max-width:349px){
+  .stats-bar .stat-card .sl{ font-size:10px; letter-spacing:.03em; }
+  .stats-bar .stat-card .sl .updated-badge{ margin-left:0; padding-left:8px; padding-right:8px; }
+}
 .mf99-sbar{
   position:absolute; top:0; left:0; right:0; height:2.5px; z-index:2;
   background:linear-gradient(90deg,#1a50d8 0%,#2563eb 45%,#0891b2 80%,#2dd4bf 100%);
