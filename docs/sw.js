@@ -839,7 +839,11 @@
 // V41.3 -> mfc-v124. index.html and login.html are precached and changed (device QA pass:
 // the strategy cards' labels no longer tear below 360px; the account page's ended rows drop
 // their opacity for a checked ink). No shared asset moved.
-const CACHE = 'mfc-v124';
+// V41.4 -> mfc-v125. index.html is precached and changed (the "Getting started" phone:
+// the site's logo in its app bar, a hand that taps, screens that push, the keyboard's
+// email suggestion). Two assets moved, both loaded only by index.html:
+// assets/mfc-walk.css 1 -> 2 and assets/mfc-walk.js 1 -> 2.
+const CACHE = 'mfc-v125';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

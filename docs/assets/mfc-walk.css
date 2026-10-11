@@ -8,6 +8,14 @@
    stays sharp at any density, follows the light/dark theme and costs a few KB.
    Behaviour (autoplay, pause, prices read from the page) is in mfc-walk.js.
    Tokens fall back to the light values; html[data-theme="dark"] redefines them.
+
+   V41.4 — the phone carries the site's own logo, a hand taps like a person
+   (reach, press, release, ease off, with a ripple where it touched), screens
+   push like an app instead of cross-fading two pages of text over each other,
+   and the sign-up step fills the email from the keyboard's suggestion. The
+   section no longer jumps when the step changes (mfc-walk.js reserves the
+   tallest step's height), and below 360px the whole phone is scaled instead of
+   shortened, which had hidden two of the eight orders under the Kite button.
    ════════════════════════════════════════════════════════════════════════════ */
 .mfw{ padding:64px 0; border-top:0.5px solid var(--border,rgba(37,99,235,.10)); position:relative; }
 .mfw-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:56px; align-items:center; }
@@ -15,6 +23,8 @@
 .mfw-desc{ font-size:17px; color:var(--text2,#1e3a5f); font-weight:300; line-height:1.7; max-width:520px; margin:0; }
 
 /* ── the steps ───────────────────────────────────────────────────────────── */
+/* min-height is set by mfc-walk.js to the tallest of the three states, so the
+   phone and everything after it stay put when the active step changes */
 .mfw-steps{ list-style:none; margin:28px 0 0; padding:0; max-width:540px; }
 .mfw-step{ position:relative; border-bottom:0.5px solid var(--border2,rgba(37,99,235,.20)); border-radius:14px;
   transition:background .25s ease, box-shadow .25s ease, border-color .25s ease; }
@@ -48,56 +58,83 @@
 .mfw-device{ position:relative; z-index:1; width:288px; margin:0 auto; }
 .mfw-phone{ position:relative; width:288px; height:588px; padding:10px; border-radius:44px; background:#0f1b33;
   box-shadow:0 34px 64px -34px rgba(12,24,49,.6), inset 0 0 0 1px rgba(255,255,255,.07); }
+/* contain:strict — the screen is a fixed box, so nothing that changes inside it
+   (frames, typing, the keyboard, the hand) asks the rest of the page to lay out.
+   isolation:isolate — WebKit can let a moving (composited) child escape a parent's
+   rounded overflow clip; the hand rises from below the screen's bottom corners */
 .mfw-screen{ position:relative; height:100%; border-radius:34px; overflow:hidden; background:var(--ink2,#fff); color:var(--text,#0c1831);
-  font-size:12px; line-height:1.4; }
-.mfw-island{ position:absolute; top:9px; left:50%; width:86px; height:24px; margin-left:-43px; border-radius:14px; background:#0f1b33; z-index:4; }
+  font-size:12px; line-height:1.4; contain:strict; isolation:isolate; }
+.mfw-island{ position:absolute; top:9px; left:50%; width:86px; height:24px; margin-left:-43px; border-radius:14px; background:#0f1b33; z-index:8; }
 .mfw-status{ display:flex; justify-content:space-between; align-items:center; height:38px; padding:8px 24px 0 26px;
   font-size:12px; font-weight:700; color:var(--white,#0c1831); }
 .mfw-status svg{ width:44px; height:12px; }
-.mfw-appbar{ display:flex; align-items:center; gap:8px; height:40px; padding:0 16px; border-bottom:0.5px solid var(--border2,rgba(37,99,235,.20));
-  font-size:13px; font-weight:800; letter-spacing:-.01em; color:var(--white,#0c1831); }
-.mfw-appbar .mfw-logo{ width:20px; height:20px; border-radius:6px; display:grid; place-items:center; color:#fff; font-size:11px; font-weight:800;
-  background:linear-gradient(135deg,#1a50d8,#0e7490); }
-.mfw-appbar .mfw-ctx{ margin-left:auto; font-size:10.5px; font-weight:600; color:var(--text3,#475569); }
-.mfw-view{ position:absolute; top:78px; left:0; right:0; bottom:0; }
-.mfw-fr{ position:absolute; inset:0; padding:14px 14px 16px; opacity:0; visibility:hidden; transform:translateX(16px);
-  transition:opacity .35s ease, transform .35s ease, visibility 0s linear .35s; overflow:hidden; }
-.mfw-fr.on{ opacity:1; visibility:visible; transform:none; transition:opacity .35s ease, transform .35s ease, visibility 0s; }
-.mfw-fr.out{ transform:translateX(-16px); }
+/* the app bar is the site's own header in miniature: the logo, the page, the menu */
+.mfw-appbar{ display:flex; align-items:center; gap:10px; height:42px; padding:0 14px 0 12px; border-bottom:0.5px solid var(--border2,rgba(37,99,235,.20)); }
+.mfw-brand{ display:block; flex:0 0 auto; width:38px; height:31px; }
+.mfw-ctx{ margin-left:auto; font-size:10.5px; font-weight:700; color:var(--text3,#475569); }
+.mfw-menu{ flex:0 0 auto; display:flex; flex-direction:column; justify-content:space-between; width:15px; height:11px; }
+.mfw-menu i{ display:block; height:1.6px; border-radius:2px; background:var(--white,#0c1831); }
+.mfw-view{ position:absolute; top:80px; left:0; right:0; bottom:0; }
+
+/* screens push like an app: the new one slides in from the right on an opaque
+   background while the old one drifts left under a shade. V40.6 cross-faded two
+   transparent screens, so every change showed both pages' text on top of each other. */
+.mfw-fr{ position:absolute; inset:0; padding:14px 14px 16px; overflow:hidden; background:var(--ink2,#fff);
+  transform:translateX(100%); visibility:hidden;
+  transition:transform .42s cubic-bezier(.22,.8,.24,1), visibility 0s linear .42s; }
+.mfw-fr.on{ transform:none; visibility:visible; z-index:2; transition:transform .42s cubic-bezier(.22,.8,.24,1), visibility 0s; }
+.mfw-fr.out{ transform:translateX(-30%); z-index:1; }
+.mfw-fr::after{ content:""; position:absolute; inset:0; z-index:9; background:rgba(12,24,49,.16); opacity:0; pointer-events:none; transition:opacity .42s ease; }
+.mfw-fr.out::after{ opacity:1; }
+.mfw-now, .mfw-now::after{ transition:none !important; }
+/* without JavaScript the phone still shows its first screen */
+.mfw:not(.mfw-js) .mfw-fr[data-f="books"]{ transform:none; visibility:visible; }
 
 /* screen parts */
 .mfw-k{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3,#475569); margin:2px 0 8px; }
 .mfw-h{ font-size:15px; font-weight:800; letter-spacing:-.01em; color:var(--white,#0c1831); margin:0 0 4px; }
 .mfw-s{ font-size:11.5px; color:var(--text3,#475569); margin:0 0 12px; }
 .mfw-card{ border:1px solid var(--border2,rgba(37,99,235,.20)); border-radius:13px; padding:10px 11px; margin:0 0 9px; background:var(--ink2,#fff);
-  transition:border-color .2s, box-shadow .2s, background .2s; }
+  transition:border-color .2s, box-shadow .2s, background-color .12s, transform .12s; }
 .mfw-card.is-picked{ border-color:var(--accent3,#3b82f6); box-shadow:0 0 0 2px rgba(59,130,246,.22); }
 .mfw-row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
 .mfw-name{ font-size:12.5px; font-weight:800; color:var(--white,#0c1831); }
 .mfw-meta{ font-size:10.5px; color:var(--text3,#475569); margin-top:3px; }
 .mfw-price{ font-size:12px; font-weight:800; color:var(--white,#0c1831); white-space:nowrap; font-variant-numeric:tabular-nums; }
 .mfw-free{ font-size:10px; font-weight:800; letter-spacing:.05em; color:#047857; background:rgba(5,150,105,.12); border-radius:999px; padding:3px 8px; }
-.mfw-btn{ display:flex; align-items:center; justify-content:center; height:38px; border-radius:11px; font-size:12.5px; font-weight:800; color:#fff;
+.mfw-btn{ position:relative; display:flex; align-items:center; justify-content:center; height:38px; border-radius:11px; font-size:12.5px; font-weight:800; color:#fff;
   /* fixed colours, not the theme tokens: dark's --accent2 is #5b8def, under which
      white text measured 3.0-3.5:1 on real pixels */
   background:linear-gradient(135deg,#1a50d8,#2563eb); box-shadow:0 10px 18px -12px rgba(26,80,216,.8);
-  transition:transform .15s ease, filter .15s ease; }
-.mfw-btn.is-picked{ transform:scale(.97); filter:brightness(1.08); }
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease; }
+/* what a finger does to a control: pressed while it is down, then the result */
+.mfw-btn.is-down{ transform:scale(.96); filter:brightness(.88); box-shadow:0 4px 10px -8px rgba(26,80,216,.8); }
+.mfw-card.is-down, .mfw-chip.is-down{ transform:scale(.98); background-color:rgba(37,99,235,.07); }
+.mfw-check.is-down .mfw-box{ transform:scale(.85); }
+.mfw-input.is-down{ border-color:var(--accent3,#3b82f6); }
+/* the sign-up button waits for the server for a moment, as the real form does: its
+   label gives way to a spinner drawn here, so the button's own text and markup stay as they were */
+.mfw-btn.is-busy{ color:transparent; }
+.mfw-btn.is-busy::after{ content:""; position:absolute; left:50%; top:50%; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.35); border-top-color:#fff; box-sizing:border-box; animation:mfw-spin .7s linear infinite; }
+@keyframes mfw-spin{ to{ transform:rotate(360deg); } }
 .mfw-field{ margin:0 0 9px; }
 .mfw-field .mfw-lab{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3,#475569); margin:0 0 4px; }
 .mfw-input{ display:flex; align-items:center; height:32px; padding:0 10px; border-radius:9px; border:1px solid var(--border2,rgba(37,99,235,.20));
-  font-size:12px; color:var(--white,#0c1831); background:var(--ink,#f0f5ff); overflow:hidden; white-space:nowrap; }
+  font-size:12px; color:var(--white,#0c1831); background:var(--ink,#f0f5ff); overflow:hidden; white-space:nowrap; transition:border-color .12s, box-shadow .12s; }
 .mfw-input.is-live{ border-color:var(--accent3,#3b82f6); box-shadow:0 0 0 2px rgba(59,130,246,.18); }
-.mfw-caret{ display:inline-block; width:1.5px; height:14px; margin-left:1px; background:var(--accent2,#2563eb); vertical-align:middle; }
+.mfw-caret{ display:inline-block; width:1.5px; height:14px; margin-left:1px; background:var(--accent2,#2563eb); vertical-align:middle;
+  animation:mfw-blink 1s steps(1) infinite; }
 .mfw-input:not(.is-live) .mfw-caret{ display:none; }
+@keyframes mfw-blink{ 50%{ opacity:0; } }
 .mfw-chips{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
 .mfw-chip{ border:1px solid var(--border2,rgba(37,99,235,.20)); border-radius:9px; padding:6px 8px; font-size:10.5px; color:var(--text2,#1e3a5f);
-  background:var(--ink2,#fff); transition:border-color .2s, background .2s, color .2s; }
+  background:var(--ink2,#fff); transition:border-color .2s, background-color .12s, color .2s, transform .12s; }
 .mfw-chip b{ display:block; font-size:11.5px; color:var(--white,#0c1831); }
-.mfw-chip.is-picked{ border-color:var(--accent3,#3b82f6); background:rgba(59,130,246,.10); }
+.mfw-chip.is-picked{ border-color:var(--accent3,#3b82f6); background-color:rgba(59,130,246,.10); }
 .mfw-check{ display:flex; gap:8px; align-items:flex-start; font-size:10.5px; color:var(--text2,#1e3a5f); margin:10px 0 12px; }
 .mfw-box{ flex:0 0 auto; width:15px; height:15px; border-radius:4px; border:1.5px solid var(--text3,#475569); display:grid; place-items:center;
-  color:#fff; font-size:10px; line-height:1; transition:background .2s, border-color .2s; }
+  color:#fff; font-size:10px; line-height:1; transition:background .2s, border-color .2s, transform .12s; }
 .mfw-box::after{ content:""; }
 .mfw-check.is-picked .mfw-box{ background:var(--accent2,#2563eb); border-color:var(--accent2,#2563eb); }
 .mfw-check.is-picked .mfw-box::after{ content:"\2713"; }
@@ -132,13 +169,43 @@
 .mfw-fr.is-open .mfw-scrim{ opacity:1; }
 .mfw-grip{ width:36px; height:4px; border-radius:4px; background:var(--border2,rgba(37,99,235,.20)); margin:0 auto 10px; }
 
-/* the simulated finger */
-.mfw-tap{ position:absolute; left:0; top:0; z-index:5; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; pointer-events:none;
-  background:rgba(12,24,49,.20); border:2px solid rgba(255,255,255,.9); box-shadow:0 3px 10px rgba(12,24,49,.25);
-  opacity:0; transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .2s ease; }
-.mfw-tap.is-on{ opacity:1; }
-.mfw-tap.is-press{ animation:mfw-press .32s ease; }
-@keyframes mfw-press{ 0%{ scale:1; } 45%{ scale:.72; } 100%{ scale:1; } }
+/* the phone's keyboard: a suggestion bar (the email, as phones offer it) and
+   four rows of keys, which mfc-walk.js writes so the page carries none of them */
+.mfw-kbd{ position:absolute; left:0; right:0; bottom:0; z-index:3; padding:0 0 8px; background:#d4d8df;
+  transform:translateY(102%); transition:transform .32s cubic-bezier(.2,.8,.2,1); }
+.mfw-fr.is-kbd .mfw-kbd{ transform:none; }
+.mfw-kbar{ display:flex; align-items:center; justify-content:space-between; height:32px; padding:0 6px; background:#e3e6eb;
+  border-bottom:0.5px solid rgba(12,24,49,.12); }
+.mfw-sug{ font-size:11px; font-weight:700; color:#0c1831; padding:5px 10px; border-radius:8px; transition:background-color .12s; }
+.mfw-sug.is-down{ background-color:rgba(12,24,49,.10); }
+.mfw-kdone{ font-size:11.5px; font-weight:800; color:#1a50d8; padding:5px 8px; border-radius:8px; transition:background-color .12s; }
+.mfw-kdone.is-down{ background-color:rgba(26,80,216,.12); }
+.mfw-keys{ padding:2px 3px 0; }
+.mfw-kr{ display:flex; justify-content:center; gap:3px; margin-top:6px; }
+.mfw-kr span{ flex:0 0 21.5px; height:27px; border-radius:5px; background:#fff; box-shadow:0 1px 0 rgba(12,24,49,.28);
+  display:grid; place-items:center; font-size:11px; color:#0c1831; }
+.mfw-kr .mfw-kw{ flex-basis:31px; font-size:9px; background:#b3b9c4; }
+.mfw-kr .mfw-ksp{ flex-basis:104px; font-size:9px; }
+.mfw-kr .mfw-kret{ flex-basis:46px; }
+/* shift and delete drawn, not typed: no font can show them as a missing glyph */
+.mfw-kshift::before, .mfw-kdel::before{ content:""; display:block; width:10px; height:10px; background:currentColor; }
+.mfw-kshift::before{ clip-path:polygon(50% 0,100% 52%,72% 52%,72% 100%,28% 100%,28% 52%,0 52%); }
+.mfw-kdel::before{ width:13px; height:9px; clip-path:polygon(32% 0,100% 0,100% 100%,32% 100%,0 50%); }
+
+/* the hand, and the ripple where it touched. Both are written by mfc-walk.js
+   (a transform each frame, nothing that lays out); the forearm fades into the
+   bottom of the screen instead of ending in a cut. */
+.mfw-hand{ position:absolute; left:0; top:0; z-index:7; width:46px; height:74.75px; pointer-events:none; opacity:0;
+  transform-origin:16.17px 2.88px; will-change:transform;
+  -webkit-mask-image:linear-gradient(to bottom,#000 70%,transparent 96%); mask-image:linear-gradient(to bottom,#000 70%,transparent 96%); }
+.mfw-hand.is-on{ opacity:1; }
+.mfw-hand svg{ display:block; width:100%; height:100%; overflow:visible;
+  filter:drop-shadow(0 6px 6px rgba(10,20,40,.28)) drop-shadow(0 1px 1px rgba(10,20,40,.22)); }
+.mfw-hand .skin{ fill:#fff; stroke:#1e293b; }
+.mfw-hand .nail{ fill:#e7ecf3; stroke:#1e293b; stroke-opacity:.35; }
+.mfw-hand .crease{ fill:none; stroke:#1e293b; stroke-opacity:.28; stroke-linecap:round; }
+.mfw-ripple{ position:absolute; left:0; top:0; z-index:6; width:44px; height:44px; margin:-22px 0 0 -22px; border-radius:50%; pointer-events:none;
+  border:2px solid rgba(37,99,235,.55); background:rgba(37,99,235,.14); opacity:0; }
 
 /* controls beside the phone */
 .mfw-ctrl{ position:absolute; z-index:2; top:50%; left:calc(50% - 144px - 66px); transform:translateY(-62%); display:flex; flex-direction:column; gap:10px; }
@@ -148,6 +215,9 @@
 .mfw-cb:hover{ border-color:var(--accent3,#3b82f6); }
 .mfw-cb:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; }
 .mfw-cb[aria-pressed="true"]{ background:#2563eb; border-color:#2563eb; color:#fff; }
+/* [hidden] on its own loses to display:grid above, so the pause button that
+   mfc-walk.js hides under reduced motion stayed on screen in V40.6 */
+.mfw-cb[hidden]{ display:none; }
 .mfw-cb .ic-play{ display:none; }
 .mfw-cb[aria-pressed="true"] .ic-play{ display:block; }
 .mfw-cb[aria-pressed="true"] .ic-pause{ display:none; }
@@ -156,14 +226,27 @@
 /* ── dark theme: the app's own colours that are not tokens ─────────────── */
 html[data-theme="dark"] .mfw-phone{ background:#050a14; box-shadow:0 34px 64px -34px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.10); }
 html[data-theme="dark"] .mfw-island{ background:#050a14; }
+/* the same re-inked mark the site's header uses in dark (mfc-finish.css V26.4) */
+html[data-theme="dark"] .mfw-brand{ content:url("LogoNav-dark.png?v=b1f0c2"); }
 html[data-theme="dark"] .mfw-free, html[data-theme="dark"] .mfw-gift{ color:#34d399; background:rgba(52,211,153,.14); }
 html[data-theme="dark"] .mfw-ord .buy{ color:#34d399; background:rgba(52,211,153,.14); }
 html[data-theme="dark"] .mfw-ord .sell{ color:#f87171; background:rgba(248,113,113,.14); }
 html[data-theme="dark"] .mfw-stage::before{ background:linear-gradient(160deg,rgba(91,141,239,.14),rgba(45,212,191,.10)); }
 html[data-theme="dark"] .mfw-step.is-on{ box-shadow:0 0 0 1px var(--border2), 0 14px 32px -22px rgba(0,0,0,.7); }
 html[data-theme="dark"] .mfw-scrim{ background:rgba(0,0,0,.5); }
+html[data-theme="dark"] .mfw-fr::after{ background:rgba(0,0,0,.32); }
 html[data-theme="dark"] .mfw-btn{ background:linear-gradient(135deg,#2f5fe0,#1a50d8); }
 html[data-theme="dark"] .mfw-cb[aria-pressed="true"]{ background:#2f5fe0; border-color:#2f5fe0; }
+html[data-theme="dark"] .mfw-kbd{ background:#1c2333; }
+html[data-theme="dark"] .mfw-kbar{ background:#242c3e; border-bottom-color:rgba(255,255,255,.08); }
+html[data-theme="dark"] .mfw-sug{ color:#e6ebf5; }
+html[data-theme="dark"] .mfw-sug.is-down{ background-color:rgba(255,255,255,.12); }
+html[data-theme="dark"] .mfw-kdone{ color:#8fb3ff; }
+html[data-theme="dark"] .mfw-kr span{ background:#3a4357; color:#e6ebf5; box-shadow:0 1px 0 rgba(0,0,0,.5); }
+html[data-theme="dark"] .mfw-kr .mfw-kw{ background:#2a3245; }
+html[data-theme="dark"] .mfw-hand .skin{ stroke:#0b1220; }
+html[data-theme="dark"] .mfw-hand svg{ filter:drop-shadow(0 6px 6px rgba(0,0,0,.5)) drop-shadow(0 1px 1px rgba(0,0,0,.4)); }
+html[data-theme="dark"] .mfw-ripple{ border-color:rgba(143,179,255,.7); background:rgba(143,179,255,.16); }
 
 /* ── narrower screens ───────────────────────────────────────────────────── */
 @media (max-width:1080px){ .mfw-grid{ gap:36px; } .mfw-h2{ font-size:36px; } }
@@ -185,17 +268,20 @@ html[data-theme="dark"] .mfw-cb[aria-pressed="true"]{ background:#2f5fe0; border
   .mfw-bar{ left:14px; right:14px; }
   .mfw-cta .btn-primary{ width:100%; text-align:center; justify-content:center; }
 }
+/* below 360px the whole phone is drawn at 90%, so every screen keeps the layout
+   it was designed at (V40.6 shortened the phone instead, and the Kite button
+   then covered the last two orders) */
 @media (max-width:359px){
-  .mfw-device, .mfw-phone{ width:260px; }
-  .mfw-phone{ height:540px; }
-  .mfw-ctrl{ left:auto; }
+  .mfw-device{ width:260px; height:531px; }
+  .mfw-phone{ transform:scale(.9028); transform-origin:0 0; }
 }
 @media (pointer:coarse){ .mfw-cb{ width:44px; height:44px; } }
 
-/* still screens for anyone who asked for less motion: no finger, no slides */
+/* still screens for anyone who asked for less motion: no hand, no slides */
 @media (prefers-reduced-motion: reduce){
-  .mfw-fr, .mfw-fr.on, .mfw-sheet, .mfw-tap, .mfw-ord .mfw-done, .mfw-step, .mfw-btn, .mfw-chip, .mfw-card{ transition:none !important; }
-  .mfw-tap{ display:none; }
-  .mfw-fr.out{ transform:none; }
+  .mfw-fr, .mfw-fr.on, .mfw-fr::after, .mfw-sheet, .mfw-kbd, .mfw-ord .mfw-done, .mfw-step, .mfw-btn, .mfw-chip, .mfw-card, .mfw-box, .mfw-input{ transition:none !important; }
+  .mfw-hand, .mfw-ripple{ display:none; }
+  .mfw-fr.out{ transform:translateX(100%); }
+  .mfw-caret, .mfw-btn.is-busy::after{ animation:none; }
 }
 @media print{ .mfw-stage, .mfw-bar{ display:none !important; } .mfw-step:not(.is-on) .mfw-d{ width:auto; height:auto; clip-path:none; white-space:normal; padding:0 18px 12px 47px; } }
