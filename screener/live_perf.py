@@ -29,6 +29,9 @@ mapping in IP/shared/benchmark.py (reconstructed LargeMidcap 250 / Smallcap 250
 Coverage guard: if fewer than 80% of a strategy's names return prices, that
 strategy publishes null rather than a half-measured number.
 
+Prices are Yahoo's closes. A pick Yahoo has not priced on the measuring day takes
+NSE's official close for that exact day (V41.8, see main()).
+
 Run: python3 screener/live_perf.py        (wired into refresh-stocks.command +
 commands/refresh-stocks.command, so it refreshes with every data cycle)
 """
@@ -188,6 +191,65 @@ def main() -> None:
 
     covered = [d for d in (latest_covered(p) for p in picks_by_key.values()) if d is not None]
     common = min(covered) if covered else None
+
+    # V41.8 — one download per benchmark leg, read by the measuring-day check
+    # below and by the benchmark figures further down, so both see the same bars.
+    bench_cache = {}
+
+    def bench_series(tkr):
+        if tkr not in bench_cache:
+            b = yf.download(tkr, start=(rebal_ts - pd.Timedelta(days=12)).date(),
+                            auto_adjust=True, progress=False)["Close"]
+            if isinstance(b, pd.DataFrame):
+                b = b.iloc[:, 0]
+            b = b.dropna()
+            if getattr(b.index, "tz", None) is not None:
+                b.index = b.index.tz_localize(None)
+            bench_cache[tkr] = completed(b)
+        return bench_cache[tkr]
+
+    # V41.8 — A PICK YAHOO HAS NOT PRICED ON THE MEASURING DAY TAKES NSE'S CLOSE
+    # FOR THAT DAY. Yahoo's ETF bars do not only land late in the morning: at
+    # 17:40 IST on Saturday 17 Oct 2026 it had Friday's close for every
+    # LargeMidcap and SmallMicro stock but for only two of MultiAsset's eight
+    # ETFs, so the rule above held all three books at Thursday's close. NSE's own
+    # bhavcopy carried all eight, and on the Thursday both sources had, its
+    # closes equalled Yahoo's to the paisa.
+    #
+    # So a session newer than the one above is measured when, counting NSE's
+    # official close for exactly that day wherever Yahoo has none, every book the
+    # rule above measured reaches the same 80%, and every benchmark leg has its
+    # own Yahoo bar for that day (indices are not in the bhavcopy, and measuring
+    # the picks a session past their benchmark is the mismatch V39.3 removed).
+    # Yahoo's close wins wherever it exists. NSE's close for any other day is
+    # never borrowed. A failed NSE fetch leaves the date where Yahoo alone put it.
+    if common is not None:
+        legs = {t for k in STRATS for t in REAL_BENCHMARKS[STRAT_TO_BENCHKEY[k]]["tickers"]}
+        books = {k: p for k, p in picks_by_key.items() if latest_covered(p) is not None}
+        for day in sorted((d for d in close.index if d > common), reverse=True):
+            if not all(day in bench_series(t).index for t in legs):
+                continue
+            yahoo = {s for s in close.columns if pd.notna(close.at[day, s])}
+            try:
+                nse = {r["yahoo"]: nse_close_on(r["yahoo"], day.date())
+                       for p in books.values() for r in p if r["yahoo"] not in yahoo}
+            except Exception as e:                   # the fallback must never stop a run
+                print(f"  !! NSE close for {day.date()} unavailable ({e}); "
+                      f"measuring through {common.date()}")
+                break
+            nse = {s: v for s, v in nse.items() if v}
+            if all(sum(r["yahoo"] in yahoo or r["yahoo"] in nse for r in p) / len(p) >= 0.8
+                   for p in books.values()):
+                for s, v in nse.items():
+                    close.loc[day, s] = v
+                for k, p in books.items():
+                    from_nse = sorted(r["yahoo"] for r in p if r["yahoo"] in nse)
+                    if from_nse:
+                        print(f"  ↺  {k}: {len(from_nse)}/{len(p)} picks have no Yahoo close for "
+                              f"{day.date()}; NSE's official close for that day: {', '.join(from_nse)}")
+                common = day
+                break
+
     if common is not None:
         close = close.loc[:common]
         print(f"  measuring every figure through the {common.date()} close")
@@ -244,14 +306,7 @@ def main() -> None:
         bcfg = REAL_BENCHMARKS[STRAT_TO_BENCHKEY[key]]
         b_ret, b_ok, legs = 0.0, True, []
         for tkr, wt in bcfg["tickers"].items():
-            b = yf.download(tkr, start=(rebal_ts - pd.Timedelta(days=12)).date(),
-                            auto_adjust=True, progress=False)["Close"]
-            if isinstance(b, pd.DataFrame):
-                b = b.iloc[:, 0]
-            b = b.dropna()
-            if getattr(b.index, "tz", None) is not None:
-                b.index = b.index.tz_localize(None)
-            b = completed(b)
+            b = bench_series(tkr)
             if common is not None:
                 b = b.loc[:common]
             b0 = b.loc[:rebal_ts]
