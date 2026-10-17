@@ -3448,3 +3448,22 @@ html.mfc-fab-hold .fab-wa{
 /* No print rule here on purpose: V30.1's block above already hides .fab-wa,
    .mfc-btt, #back-to-top and .back-to-top on paper, and a second copy would be
    one more place to keep in step with the first. */
+
+/* ==========================================================================
+   V41.7 — THE OPEN MENU PANEL IS OPAQUE
+   --------------------------------------------------------------------------
+   Every page's open menu (.nav-links.open, at 1024px and below) is a fixed panel
+   inside the sticky <nav>, painted rgba(…, 0.98) with backdrop-filter:blur(20px).
+   The <nav> carries its own backdrop-filter, which makes it a backdrop root: the
+   panel's blur can only see inside the nav, so it never frosted the page under
+   it. In Chromium the page's headline and lede showed through behind the menu
+   links, crisp (measured on the live site and on 20 pages here, light and dark).
+   An opaque panel in the same two colours ends it. The menu links, dividers and
+   button are untouched; only the panel's own fill changes.
+   ========================================================================== */
+html body nav .nav-links.open,
+html body nav #primary-nav.open{ background-color:rgb(240, 245, 255); }
+/* the id form outranks the V22.x dark drawer rule above
+   (html[data-theme="dark"] #primary-nav.open), which is where the 0.98 came from */
+html[data-theme="dark"] body nav .nav-links.open,
+html[data-theme="dark"] body nav #primary-nav.open{ background-color:rgb(11, 18, 34); }

@@ -846,7 +846,10 @@
 // V41.6 -> mfc-v126. index.html is precached and changed (its title, FAQ 7 and FAQ 14,
 // and the verified-accounts section without the figures the pricing cards repeat).
 // No shared asset moved.
-const CACHE = 'mfc-v126';
+// V41.7 -> mfc-v127. Device QA pass: two shared assets moved (assets/mfc-finish.css
+// 3940 -> 3950, the opaque open-menu panel; assets/mfc-calc.css 408 -> 409, the
+// stacked bridge links on touch), and the precached index.html changed with them.
+const CACHE = 'mfc-v127';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

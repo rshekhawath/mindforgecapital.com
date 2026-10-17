@@ -2933,7 +2933,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3940">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3950">
 <style id="mf-v317-skip">
 /* V31.7 — WCAG 2.4.1 (Bypass Blocks), the same rule the rest of the site
    carries. Page-local like every other copy, so no shared asset moves. */
@@ -6095,6 +6095,11 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   if (!isFinite(daysLeft) || !isFinite(daysToReb)) { card.style.display = 'none'; return; }
 
   var fmt = function(d){ return mfDate(d, {day:'numeric', month:'short'}); };
+  /* V41.7 — the access date carries its year when it is not this year's. A 12-month
+     member read "Access runs to 5 May." beside "active until 5 May 2027", and on the
+     day they joined, "Access runs to 17 Oct." read as today. */
+  var fmtX = function(d){ return mfDate(d, (d && d.getFullYear && d.getFullYear() !== now.getFullYear())
+    ? {day:'numeric', month:'short', year:'numeric'} : {day:'numeric', month:'short'}); };
   var dayWord = function(n){ return n + ' day' + (n === 1 ? '' : 's'); };
   // Shared axis. Both bars are drawn against the SAME denominator, so a longer bar
   // always means a later date. Guard the degenerate both-zero case (bars would be
@@ -6109,7 +6114,7 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
 
   var vExp = document.getElementById('cyc-val-exp');
   var vReb = document.getElementById('cyc-val-reb');
-  if (vExp) vExp.innerHTML = fmt(expiry) + ' · <b>' + dayWord(daysLeft) + '</b>';
+  if (vExp) vExp.innerHTML = fmtX(expiry) + ' · <b>' + dayWord(daysLeft) + '</b>';
   if (vReb) vReb.innerHTML = fmt(nextReb) + ' · <b>' + dayWord(daysToReb) + '</b>';
 
   var covered = daysLeft >= daysToReb;          // access reaches the next rebalance
@@ -6126,7 +6131,7 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   if (foot && card.classList.contains('is-calm')) {
     // Calm: one line, about the next set of picks rather than about billing.
     foot.innerHTML = 'Your next set of picks lands on <b>' + fmt(nextReb) + '</b> — ' +
-      dayWord(daysToReb) + '. Access runs to ' + fmt(expiry) + '.';
+      dayWord(daysToReb) + '. Access runs to ' + fmtX(expiry) + '.';
   } else if (foot) {
     // V35.2 — the retired "Subscription" tile carried the words "Renew anytime on
     // WhatsApp" at every day count, while the status pill only grows a renew BUTTON
@@ -6137,9 +6142,9 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
     foot.innerHTML = (covered && _subIsPinned())
       ? (_subIsFree()
           ? 'This free registration was set up as a single month, so its picks stay fixed. Re-register (₹0) and the new one updates itself: the <b>' + fmt(nextReb) + '</b> set will reach you.'
-          : 'Your access runs to <b>' + fmt(expiry) + '</b>, but a 1-month plan is one book: the <b>' + fmt(nextReb) + '</b> set needs a renewal.')
+          : 'Your access runs to <b>' + fmtX(expiry) + '</b>, but a 1-month plan is one book: the <b>' + fmt(nextReb) + '</b> set needs a renewal.')
       : covered
-      ? 'Your access runs to <b>' + fmt(expiry) + '</b>, so the <b>' + fmt(nextReb) +
+      ? 'Your access runs to <b>' + fmtX(expiry) + '</b>, so the <b>' + fmt(nextReb) +
         '</b> rebalance is included' + (gap ? ' with <b>' + dayWord(gap) + '</b> to spare' : '') + '.'
       : daysLeft === 0
         ? 'Your access has ended — renew to receive the <b>' + fmt(nextReb) + '</b> picks.'
