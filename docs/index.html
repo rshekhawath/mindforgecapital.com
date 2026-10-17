@@ -377,6 +377,11 @@ html[data-theme="dark"] .hv-tip { background: var(--ink2); border-color: var(--b
 }
 .hv-period { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; }
 .hv-legend { display: flex; gap: 16px; margin-bottom: 14px; }
+/* V41.9 — C1. At 340px and below the LargeMidcap legend pair ("MindForge LargeMidcap 250",
+   "Nifty LargeMidcap 250", each bound by a no-break space) is 10px wider than SmallMicro's
+   was, and as the card's widest row it widened the hero column, re-wrapping the lede beside
+   it. A 10px tighter gap there keeps the column exactly as wide as before the default moved. */
+@media (max-width: 340px) { .hv-legend { gap: 6px; } }
 .hv-leg { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text3); }
 .hv-leg-mark { width: 14px; height: 2px; border-radius: 2px; }
 .hv-leg.strat .hv-leg-mark { background: linear-gradient(90deg, var(--accent), #2dd4bf); }
@@ -3962,22 +3967,27 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
           </div>
           <div class="hv-tabs" id="hv-tabs" role="group" aria-label="Choose a strategy">
             <button type="button" class="hv-tab" data-hv="ma" aria-pressed="false">MultiAsset</button>
-            <button type="button" class="hv-tab" data-hv="lm" aria-pressed="false">LargeMidcap</button>
-            <button type="button" class="hv-tab active" data-hv="sm" aria-pressed="true">SmallMicro</button>
+            <button type="button" class="hv-tab active" data-hv="lm" aria-pressed="true">LargeMidcap</button>
+            <button type="button" class="hv-tab" data-hv="sm" aria-pressed="false">SmallMicro</button>
           </div>
           <!-- V24.2 pivot: the LIVE cycle figure is the card's primary stat. Hidden
                until /live-perf.json lands (data-live-wrap → .live-ready), so a failed
                fetch degrades to the backtest-first layout that shipped before. The
-               sm:* data-live slots give the DEFAULT tab its values even if the hero
-               script never runs; tab switches re-fill them from window.MFCLive. -->
+               lm:* data-live slots give the DEFAULT tab its values even if the hero
+               script never runs; tab switches re-fill them from window.MFCLive.
+               V41.9 — C1. The card opens on LargeMidcap 250 (it opened on SmallMicro
+               500, the book the page says to size smallest, at a 46.1% backtest). The
+               box below it compares LargeMidcap with the fund this reader holds, so
+               the first two figures on the page now argue the same thing. The other
+               two books are one tap away, unchanged. -->
           <div class="hv-live" data-live-wrap data-live-new aria-live="polite">
             <div class="hv-live-top">
               <span class="hv-live-badge"><span class="hv-live-dot"></span><span id="hv-live-tag">LIVE</span></span>
-              <span class="hv-live-val flat" id="hv-live-val" data-live="sm:live">—</span>
+              <span class="hv-live-val flat" id="hv-live-val" data-live="lm:live">—</span>
               <span class="hv-live-cyc" id="hv-live-cyc">this cycle</span>
             </div>
-            <div class="hv-live-sub">vs <span id="hv-live-benchname" data-live="sm:benchname">benchmark</span>
-              <span class="hv-live-bench flat" id="hv-live-bench" data-live="sm:bench">—</span>
+            <div class="hv-live-sub">vs <span id="hv-live-benchname" data-live="lm:benchname">benchmark</span>
+              <span class="hv-live-bench flat" id="hv-live-bench" data-live="lm:bench">—</span>
               · <span id="hv-live-span">model portfolio since <strong data-live="rebal">the last rebalance</strong></span></div>
             <!-- V40.1 — A8. While a new book has no completed session, mfc-live.js
                  adds .is-new: the zeros are hidden and this line says why.
@@ -3990,20 +4000,20 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
           </div>
           <div class="hv-nums" aria-live="polite">
             <div class="hv-num">
-              <div class="val" id="hv-cagr"><!--MFSTAT:sm:cagr_posttax-->46.1%<!--/MFSTAT--></div>
-              <div class="lbl" id="hv-cagr-lbl">SmallMicro&nbsp;· backtest&nbsp;CAGR, after&nbsp;tax</div>
+              <div class="val" id="hv-cagr"><!--MFSTAT:lm:cagr_posttax-->20.5%<!--/MFSTAT--></div>
+              <div class="lbl" id="hv-cagr-lbl">LargeMidcap&nbsp;· backtest&nbsp;CAGR, after&nbsp;tax</div>
               <span class="hv-nbar" aria-hidden="true"><i class="hv-nbar-fill" id="hv-nbar-strat"></i></span>
             </div>
             <div class="hv-vs">vs</div>
             <div class="hv-num bench">
-              <div class="val" id="hv-bench"><!--MFSTAT:sm:bench_cagr_posttax-->13.39%<!--/MFSTAT--></div>
+              <div class="val" id="hv-bench"><!--MFSTAT:lm:bench_cagr_posttax-->9.77%<!--/MFSTAT--></div>
               <div class="lbl">Benchmark&nbsp;· backtest, after&nbsp;tax</div>
               <span class="hv-nbar" aria-hidden="true"><i class="hv-nbar-fill is-bench" id="hv-nbar-bench"></i></span>
             </div>
           </div>
           <div class="hv-legend">
-            <span class="hv-leg strat"><span class="hv-leg-mark"></span><span id="hv-leg-strat">MindForge SmallMicro&nbsp;500</span></span>
-            <span class="hv-leg bench"><span class="hv-leg-mark"></span><span id="hv-leg-bench">Nifty Smallcap&nbsp;250</span></span>
+            <span class="hv-leg strat"><span class="hv-leg-mark"></span><span id="hv-leg-strat">MindForge LargeMidcap&nbsp;250</span></span>
+            <span class="hv-leg bench"><span class="hv-leg-mark"></span><span id="hv-leg-bench">Nifty LargeMidcap&nbsp;250</span></span>
           </div>
           <div class="hv-chart-wrap">
             <svg class="hv-chart" viewBox="0 0 400 130" preserveAspectRatio="none" aria-hidden="true" focusable="false">
@@ -4044,7 +4054,7 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
             </svg>
           </div>
           <div class="hv-foot">
-            <span class="hv-alpha" id="hv-alpha"><!--MFSTAT:sm:alpha_posttax-->+32.66%<!--/MFSTAT--> annual alpha&nbsp;· backtest, after&nbsp;tax</span>
+            <span class="hv-alpha" id="hv-alpha"><!--MFSTAT:lm:alpha_posttax-->+10.73%<!--/MFSTAT--> annual alpha&nbsp;· backtest, after&nbsp;tax</span>
             <span class="hv-period" id="hv-period">2021–2026&nbsp;· Backtest, compounded at the CAGR</span>
           </div>
         </div>
@@ -5886,7 +5896,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         cagr: cN, bench: bN
       };
     });
-    if (!DATA.sm) return;
+    if (!DATA.lm) return;   // V41.9 — C1: the default book must have its figures
 
     var TOP = 12, BOT = 120, LEFT = 2, RIGHT = 398, N = 5;
     function compound(r, t) { return Math.pow(1 + r / 100, t); }
@@ -6083,12 +6093,12 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
     }
     document.addEventListener('mfc-live-ready', function () {
       card.classList.add('has-live');
-      fillLive(card._hvKey || 'sm');
+      fillLive(card._hvKey || 'lm');
     });
     // V40.2 — the new-book gap: the last sealed cycle takes the figure's place
     document.addEventListener('mfc-live-last', function () {
       card.classList.add('has-live');
-      fillLive(card._hvKey || 'sm');
+      fillLive(card._hvKey || 'lm');
     });
     // V28.1 — see the note in select(): keeps the two polite regions quiet for the
     // duration of the count-up so one switch produces one announcement.
@@ -6138,14 +6148,14 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
       card._hvKey = key;
     }
 
-    setColors('sm'); card._hvKey = 'sm'; // default: keep static numbers + the CSS first-draw
+    setColors('lm'); card._hvKey = 'lm'; // default: keep static numbers + the CSS first-draw (V41.9 — C1: LargeMidcap)
     /* V33.5 — select() is not called on load (the static numbers are already
        correct), so the bars have to be sized here or they would sit at width 0
        until the first tab click. A frame late, on purpose: setting width in the
        same frame as the initial style would land at the final value with no
        transition to run, which is the V23.5 dead-bar bug. */
-    if (window.requestAnimationFrame) requestAnimationFrame(function () { sizeBars(DATA.sm); });
-    else sizeBars(DATA.sm);
+    if (window.requestAnimationFrame) requestAnimationFrame(function () { sizeBars(DATA.lm); });
+    else sizeBars(DATA.lm);
     tabs.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('.hv-tab') : null; if (!b) return;
       var key = b.getAttribute('data-hv');
@@ -6197,7 +6207,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         wrap.appendChild(live);
 
         var show = function (i) {
-          var key = card._hvKey || 'sm', m = META[key] || META.sm, c = COLORS[key] || COLORS.sm;
+          var key = card._hvKey || 'lm', m = META[key] || META.lm, c = COLORS[key] || COLORS.lm;
           var P = ptsFor(key), rect = wrap.getBoundingClientRect();
           if (!rect.width) return;
           i = Math.max(0, Math.min(N, i));

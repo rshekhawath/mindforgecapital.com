@@ -3969,6 +3969,56 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
       .chg-rot .chg-sell-lnk{ grid-column:2 / -1; justify-self:start; }
     }
     @media print{ .chg-rot-dir, .chg-rot-d{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; } }
+/* V41.9 — A1. A SIZED RE-WEIGHT IS AN ORDER. The rotation row gains the sell
+   row's tick in a first column and the share count beside its target, and once
+   ticked it is struck through like a placed sale. The done state changes colour
+   and adds a line-through rather than fading the row (an opacity-muted row fails
+   contrast, measured on this codebase before). */
+    .chg-rot.has-cb{ grid-template-columns:auto auto minmax(0,1fr) auto auto; }
+    .chg-rot.is-done{ background:rgba(15,23,42,.04); border-color:var(--border); }
+    html[data-theme="dark"] .chg-rot.is-done{ background:rgba(255,255,255,.04); }
+    .chg-rot.is-done .chg-sell-t, .chg-rot.is-done .chg-rot-q{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text3); }
+    .chg-rot-q{ font-size:11.5px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .chg-rot-q.is-none{ font-weight:700; color:var(--text3); }
+    @media (max-width:460px){
+      .chg-rot.has-cb{ grid-template-columns:auto auto minmax(0,1fr) auto; }
+      .chg-rot.has-cb .chg-sell-lnk{ grid-column:3 / -1; }
+    }
+    /* An inline button inside running text: the shared touch rule (html button{min-height:44px;
+       display:inline-flex}) would make its line 44px tall and open a gap in the sentence. The
+       class outranks it; the 44px hit area comes from the ::before pad below instead. */
+    .chg-hint-btn{ font:inherit; font-weight:700; color:var(--accent); background:none; border:0; padding:0; margin:0;
+      cursor:pointer; text-decoration:underline; text-underline-offset:2px; min-height:0; display:inline; vertical-align:baseline; }
+    html[data-theme="dark"] .chg-hint-btn{ color:#9dbcff; }
+    .chg-hint-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+    @media (pointer:coarse){ .chg-hint-btn{ position:relative; }
+      .chg-hint-btn::before{ content:''; position:absolute; left:-4px; right:-4px; top:50%; height:44px; transform:translateY(-50%); } }
+/* V41.9 — A1. The picks table's and phone cards' re-weight slots. The tick is its
+   own class (rw-cb), drawn like .bought-cb: that class is read by select-all and
+   by the bare-ticker sync, and a re-weight's key is RW:<ticker>. */
+    .rw-slot{ display:contents; }
+    .rw-slot .rw-cb{ appearance:none; -webkit-appearance:none; width:22px; height:22px; margin:0; border-radius:6px;
+      cursor:pointer; border:1.5px solid rgba(15,23,42,.5); background:var(--ink2); position:relative; flex-shrink:0;
+      transition:all .15s ease; vertical-align:middle; }
+    html[data-theme="dark"] .rw-slot .rw-cb{ border-color:rgba(255,255,255,.45); }
+    .rw-slot .rw-cb:hover{ border-color:var(--accent); }
+    .rw-slot .rw-cb:checked{ background:linear-gradient(135deg,var(--green),#10b981); border-color:transparent; }
+    .rw-slot .rw-cb:checked::after{ content:''; position:absolute; left:6px; top:2px; width:6px; height:11px;
+      border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+    .rw-slot .rw-cb::before{ content:''; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
+    .rw-slot .rw-cb:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+    .rw-tag{ display:inline-block; margin-left:7px; vertical-align:middle;
+      font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+      line-height:1; padding:4px 6px; border-radius:5px; white-space:nowrap;
+      color:var(--accent); background:rgba(37,99,235,.08); border:0.5px solid rgba(37,99,235,.28); }
+    html[data-theme="dark"] .rw-tag{ color:#9dbcff; background:rgba(120,160,240,.12); border-color:rgba(120,160,240,.32); }
+    .rw-tag.is-none, .rw-tag.is-hold{ color:var(--text3); background:rgba(15,23,42,.05); border-color:var(--border); }
+    html[data-theme="dark"] .rw-tag.is-none, html[data-theme="dark"] .rw-tag.is-hold{ background:rgba(255,255,255,.06); }
+    tr.rw-done td.company .company-link, tr.rw-done td.company{ text-decoration:line-through; text-decoration-thickness:1px; }
+    .sc-rw-q{ font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .sc-rw-q::before{ content:'\00b7'; margin:0 6px 0 0; font-weight:600; color:var(--text3); }   /* the label's flex gap is the left space */
+    .stock-card.rw-done .sc-rw-q{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text3); }
+    @media print{ .rw-tag{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; } }
     .chg-hint{ font-size:11.5px; color:var(--text3); line-height:1.55; margin-top:8px; }
     @media (max-width:400px){
       .chg-sell{ grid-template-columns:auto minmax(0,1fr); }
@@ -7972,6 +8022,7 @@ function refreshSizeSummary() {
   _recordCurQty();
   renderCycleCost();  // V35.3 — the cost of the turnover is a function of capital
   refreshChgBuySizes();  // V36.5 — and so are the buy rows in the change card
+  refreshRwRows();       // V41.9 — A1: and the re-weight orders, wherever they show
 }
 
 // V28.4 — "what your capital actually buys".
@@ -8600,6 +8651,7 @@ function renderTable(stocks) {
   // V12.5: per-stock allocation is weight-proportional (see allocBudget()).
   const copyIco = '<svg class="copy-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
   const bought = loadBought(currentStrategy);
+  const _ocT = cycleOrders();   // V41.9 — A1: the re-weight orders the rows below show
   // V11.3: colour each holding's industry pill with its sector colour — the same
   // map the donut & legend use, so the table reads as one visual system. Built from
   // the canonical `stocksData` (not the possibly-sorted `stocks` arg) so a column
@@ -8650,19 +8702,22 @@ function renderTable(stocks) {
     const movePP = held ? heldMovePP(s.ticker) : null;   // …and re-weighted, or not
     const isBought = !rs && !held && !!bought[s.ticker];
     const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known);
+    // V41.9 — A1: a re-weighted row carries its order in slots (see _rwSlot)
+    const rwT = movePP != null ? escapeHtml(String(s.ticker || '').toUpperCase()) : '';
+    const rwDone = !!rwT && (_ocT.rw || []).some(o => o.ticker === String(s.ticker || '').toUpperCase()) && !!bought['RW:' + String(s.ticker || '').toUpperCase()];
     const rowCls = [isBought ? 'row-bought' : '', held ? 'row-held' : '',
                     movePP != null ? 'row-reweighted' : '',
-                    isNew ? 'row-new' : '', rs ? 'row-restricted' : ''].filter(Boolean).join(' ');
+                    isNew ? 'row-new' : '', rs ? 'row-restricted' : '', rwDone ? 'rw-done' : ''].filter(Boolean).join(' ');
     // data-row carries the CANONICAL stocksData index (not the sorted position) so
     // filterStocks/applySectorFilter/updateAllocationCells — which look up
     // stocksData[data-row] — stay correct after a column sort reorders the rows.
     const ci = stocksData.indexOf(s);
     const hr = HW.read(s, amt);
-    return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
-      <td class="bought-col">${rs ? _csLockMark(s) : held ? heldMark(s, movePP)
+    return `<tr data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}"${rwT ? ` data-rw="${rwT}"` : ''} class="${rowCls}" style="animation-delay:${Math.min(i*30, 600)}ms;">
+      <td class="bought-col">${rs ? _csLockMark(s) : held ? (rwT ? `<span class="rw-slot" data-rwslot="tcb" data-rwt="${rwT}">${_rwSlot('tcb', s, _ocT, bought)}</span>` : heldMark(s, movePP))
         : `<input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}>`}</td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}</td>
+      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}${rwT ? `<span class="rw-slot" data-rwslot="ttag" data-rwt="${rwT}">${_rwSlot('ttag', s, _ocT, bought)}</span>` : ''}</td>
       <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${rs ? '' : brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(groupName(s))}">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></td>
       <td class="price right"><span class="px-rec">${fmtPrice(entry)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
@@ -8690,8 +8745,11 @@ function renderTable(stocks) {
     const movePP = held ? heldMovePP(s.ticker) : null;
     const isBought = !rs && !held && !!bought[s.ticker];
     const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known);
+    // V41.9 — A1: same slots as the desktop row
+    const rwT = movePP != null ? escapeHtml(String(s.ticker || '').toUpperCase()) : '';
+    const rwDone = !!rwT && (_ocT.rw || []).some(o => o.ticker === String(s.ticker || '').toUpperCase()) && !!bought['RW:' + String(s.ticker || '').toUpperCase()];
     const cardCls = 'stock-card' + (isBought ? ' row-bought' : '') + (held ? ' row-held' : '') +
-                    (movePP != null ? ' row-reweighted' : '') + (isNew ? ' row-new' : '') + (rs ? ' row-restricted' : '');
+                    (movePP != null ? ' row-reweighted' : '') + (isNew ? ' row-new' : '') + (rs ? ' row-restricted' : '') + (rwDone ? ' rw-done' : '');
     const ci = stocksData.indexOf(s);   // canonical index — keep filters/cell-updates correct after sort
     // V25.2: same stagger the desktop <tr> above gets, so the phone's holdings
     // cascade instead of popping. Capped lower (360ms) than the row's 600ms —
@@ -8721,7 +8779,7 @@ function renderTable(stocks) {
        may cover it without taking a tap from anything. */
     const hwR = HWM.read(s, amt);
     const wLbl = heldLabel(s, hwR, w);
-    return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}" style="animation-delay:${Math.min(i*45, 360)}ms;">
+    return `<div class="${cardCls}" data-row="${ci}" data-ticker="${escapeHtml(s.ticker)}"${rwT ? ` data-rw="${rwT}"` : ''} style="animation-delay:${Math.min(i*45, 360)}ms;">
       <div class="sc-header">
         <div class="sc-num">${i+1}</div>
         <div class="sc-name-wrap">
@@ -8748,9 +8806,8 @@ function renderTable(stocks) {
         <div class="sc-bought-row">${rs
           ? `<span class="sc-held cs-rs-foot">${_csLockMark(s)}On your restricted list &mdash; not sized, not traded</span>`
           : held
-          ? `<span class="sc-held">${heldMark(s, movePP)}${movePP != null
-               ? `Re-weighted &mdash; adjust to ${fmtAmt(amt)}`
-               : 'Held &mdash; carried over'}</span>`
+          ? (rwT ? `<span class="rw-slot" data-rwslot="foot" data-rwt="${rwT}">${_rwSlot('foot', s, _ocT, bought, amt)}</span>`
+                 : `<span class="sc-held">${heldMark(s, movePP)}Held &mdash; carried over</span>`)
           : `<label><input type="checkbox" class="bought-cb" aria-label="Order placed: ${escapeHtml(s.ticker)}" onchange="toggleBought(this)" ${isBought?'checked':''}>Order placed</label>`}</div>
         ${rs ? '' : brokerLink(s)}
       </div>
@@ -8820,7 +8877,113 @@ function boughtStorageKey(strategy) {
    sold in June — and within a cycle a name is either joining or leaving, never
    both. Prefixing the sells keeps the BUY key a bare ticker, which is what the
    table rows' data-ticker already writes, so nothing about the picks table changes. */
-function orderKey(o){ return (o && o.side === 'SELL' ? 'SELL:' : '') + (o ? o.ticker : ''); }
+function orderKey(o){ return (o && o.rw) ? 'RW:' + o.ticker : (o && o.side === 'SELL' ? 'SELL:' : '') + (o ? o.ticker : ''); }
+/* V41.9 — A1. A re-weight is one task per name, whichever way it goes, so it has
+   one key: RW:<ticker>. It cannot collide with a buy (the bare ticker) or a sale
+   (SELL:<ticker>), and the server merges it like any other key. Every surface
+   that shows the same re-weight carries data-okey="RW:<ticker>"; this keeps them
+   ticked together: the change card's row, the picks table's row and phone card,
+   and the order sheet. */
+function _rwSyncTicks(key, on){
+  try {
+    if (!key || key.indexOf('RW:') !== 0) return;
+    var t = key.slice(3), sel = key.replace(/"/g, '\\"');
+    document.querySelectorAll('input[data-okey="' + sel + '"]').forEach(function(x){ x.checked = on; });
+    document.querySelectorAll('.chg-rot[data-t="' + t.replace(/"/g, '\\"') + '"]').forEach(function(el){ el.classList.toggle('is-done', on); });
+    document.querySelectorAll('[data-rw="' + t.replace(/"/g, '\\"') + '"]').forEach(function(el){ el.classList.toggle('rw-done', on); });
+  } catch (e) {}
+}
+/* V41.9 — A1. The way to exact orders when the dashboard cannot size the
+   re-weights itself: open Adjust your book on its Match tab, at the paste box. */
+function _rwOpenMatch(){
+  try {
+    var card = document.getElementById('adj-card'), tab = document.getElementById('adj-tab-sync');
+    if (!card || card.hidden || !tab) return;
+    if (tab.getAttribute('aria-selected') !== 'true') tab.click();
+    var prev = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = 'auto';
+    card.scrollIntoView({ block: 'start' });
+    document.documentElement.style.scrollBehavior = prev;
+    var box = document.getElementById('adj-sync-in');
+    if (box) try { box.focus({ preventScroll: true }); } catch (e) { box.focus(); }
+  } catch (e) {}
+}
+/* V41.9 — A1. The picks table's and phone cards' re-weight bits, as SLOTS. A
+   re-weight's quantity is a function of the capital, and updateAllocationCells()
+   rewrites the Shares cells in place on every capital change, so these live in
+   their own spans (data-rwslot) that refreshRwRows() refills without rebuilding
+   the table. Kinds: 'tcb' the table's tick column (a tick, or the held mark),
+   'ttag' a tag after the company name, 'foot' the phone card's foot. */
+function _rwSlot(kind, s, oc, map, amt){
+  var movePP = heldMovePP(s.ticker);
+  var o = (oc && oc.rwKnown && movePP != null) ? _rwOrderFor(s.ticker, oc) : null;
+  var tk = escapeHtml(s.ticker || '');
+  var act = !!(o && !o.hold && o.qty > 0), key = act ? orderKey(o) : '', done = act && !!(map && map[key]);
+  var verb = act ? (o.side === 'SELL' ? 'sell' : 'buy') : '';
+  var cb = function(){
+    return '<input type="checkbox" class="rw-cb" data-okey="' + escapeHtml(key) + '"' + (done ? ' checked' : '') +
+           ' aria-label="Mark the ' + tk + ' re-weight as placed: ' + verb + ' ' + o.qty + '" onchange="toggleOrder(this)">';
+  };
+  var holdTxt = (o && o.hold) ? 'Sell\u00a0' + o.hold.qty + ' on or after ' + mfDate(o.hold.until, { day:'numeric', month:'short' }) : '';
+  var noneTxt = (o && !o.hold && !(o.qty > 0)) ? 'No order \u2014 still ' + o.to + '\u00a0share' + (o.to === 1 ? '' : 's') : '';
+  if (kind === 'tcb') return act ? cb() : heldMark(s, movePP);
+  if (kind === 'ttag'){
+    return act ? '<span class="rw-tag">' + verb + '\u00a0' + o.qty + '</span>'
+         : holdTxt ? '<span class="rw-tag is-hold">' + escapeHtml(holdTxt) + '</span>'
+         : noneTxt ? '<span class="rw-tag is-none">no order</span>' : '';
+  }
+  if (kind === 'foot'){
+    if (act) return '<label class="sc-rw">' + cb() + 'Order placed<span class="sc-rw-q">' + verb + '\u00a0' + o.qty + '</span></label>';
+    return '<span class="sc-held">' + heldMark(s, movePP) +
+      (holdTxt || noneTxt ? escapeHtml(holdTxt || noneTxt) : 'Re-weighted &mdash; adjust to ₹' + fmtINR(amt || 0)) + '</span>';
+  }
+  return '';
+}
+/* What the re-weight surfaces currently show, as one string: a capital change
+   that moves no quantity changes nothing on screen. */
+function _rwSig(oc){
+  if (!oc || !oc.rwKnown) return oc && oc.rwUnknown ? 'unknown' : '';
+  return (oc.rw || []).map(function(o){ return o.ticker + o.side + o.qty; }).join(',') + '|' +
+         (oc.rwFlat || []).map(function(o){ return o.ticker + o.to; }).join(',') + '|' +
+         (oc.holdBack || []).filter(function(h){ return h.rw; }).map(function(h){ return h.ticker + h.qty; }).join(',');
+}
+/* Called on every capital change (refreshSizeSummary). When the re-weight orders
+   moved, refill the table's slots in place and redraw the change card (its rows,
+   the tiles, the hero line and the cost card all read the same orders). Debounced:
+   typing a capital moves the quantities on every keystroke. */
+function refreshRwRows(){
+  try {
+    clearTimeout(window._rwTimer);
+    window._rwTimer = setTimeout(function(){
+      try {
+        var oc = cycleOrders(), sig = _rwSig(oc);
+        if (sig === (window._rwSigShown || '')) return;
+        window._rwSigShown = sig;
+        var map = loadBought(currentStrategy) || {}, byT = {};
+        (stocksData || []).forEach(function(s){ byT[String(s.ticker || '').toUpperCase()] = s; });
+        document.querySelectorAll('[data-rwslot]').forEach(function(el){
+          var s = byT[el.getAttribute('data-rwt')]; if (!s) return;
+          el.innerHTML = _rwSlot(el.getAttribute('data-rwslot'), s, oc, map, sharesFor(s) * (Number(s.recommended_price) || 0));
+        });
+        document.querySelectorAll('[data-rw]').forEach(function(el){
+          el.classList.toggle('rw-done', !!map['RW:' + el.getAttribute('data-rw')] &&
+            (oc.rw || []).some(function(o){ return o.ticker === el.getAttribute('data-rw'); }));
+        });
+        if (window._bookDiff && window._bookDiff.known) renderBookChange(window._bookDiff, stocksData);
+        refreshBoughtProgress();
+      } catch (e) {}
+    }, 300);
+  } catch (e) {}
+}
+/* The re-weight order for one ticker this cycle, or null: the trim or add, the
+   zero-share move (no order), or a trim waiting for the holding period. */
+function _rwOrderFor(ticker, oc){
+  oc = oc || cycleOrders();
+  var T = String(ticker || '').toUpperCase(), hit = null;
+  (oc.rw || []).concat(oc.rwFlat || []).forEach(function(o){ if (o.ticker === T) hit = o; });
+  if (!hit) (oc.holdBack || []).forEach(function(h){ if (h.rw && h.ticker === T) hit = { hold:h, ticker:T }; });
+  return hit;
+}
 
 /* V35.4 — IS THIS ROW SOMETHING THE MEMBER ALREADY OWNS?
    V35.3 taught the ORDER surfaces about the diff and left the ones that reason
@@ -9130,6 +9293,7 @@ function applyBoughtToDom() {
       cb.checked = on;
       const host = cb.closest('.chg-sell');
       if (host) host.classList.toggle('is-done', on);
+      if (k.indexOf('RW:') === 0) _rwSyncTicks(k, on);   // V41.9 — A1
     });
   } catch (e) {}
   try { refreshBoughtProgress(); } catch (e) {}   // re-derives renderMyPosition too
@@ -9219,7 +9383,9 @@ function refreshActionBar(){
     var placed  = loadBought(currentStrategy) || {};
     var pending = orders.all.filter(function(o){ return !placed[orderKey(o)]; });
     // A weight-rotation month has no buys and no sells and plenty to do.
-    var nRw = (stocksData || []).filter(function(s){ return heldMovePP(s.ticker) != null; }).length;
+    // V41.9 — A1: once its re-weights are sized they are ordinary pending orders
+    // (and, all placed, nothing is left); this fallback is for a month that cannot be sized.
+    var nRw = orders.rwKnown ? 0 : (stocksData || []).filter(function(s){ return heldMovePP(s.ticker) != null; }).length;
     if (!pending.length && !nRw) return hide();
 
     /* V37.5 — the bar reads the same basket PLAN the band draws. `send` is the
@@ -9418,6 +9584,7 @@ function toggleOrder(cb){
   saveBought(currentStrategy, map);
   var host = cb.closest('.chg-sell');
   if (host) host.classList.toggle('is-done', cb.checked);
+  _rwSyncTicks(key, cb.checked);   // V41.9 — A1: a re-weight shows in three places
   refreshBoughtProgress();
 }
 
@@ -9944,6 +10111,10 @@ function resetBought() {
   // one map; it has to clear both renderings of it.
   document.querySelectorAll('.chg-sell-cb').forEach(cb => { cb.checked = false; });
   document.querySelectorAll('.chg-sell.is-done').forEach(el => el.classList.remove('is-done'));
+  // V41.9 — A1: the re-weight ticks and their rows, in the card and the table
+  document.querySelectorAll('.rw-cb').forEach(cb => { cb.checked = false; });
+  document.querySelectorAll('.chg-rot.is-done').forEach(el => el.classList.remove('is-done'));
+  document.querySelectorAll('.rw-done').forEach(el => el.classList.remove('rw-done'));
   refreshBoughtProgress();
   /* V30.2 — `checked = false` does NOT clear `indeterminate`; the two are
      independent properties and the dash wins in the rendering. So after ticking
@@ -9985,10 +10156,12 @@ function markAllPlaced(){
   // Sells are not table rows — they are ticked in "What changed" as SELL:<ticker>
   // (toggleOrder). Without them "placed them all" left every sell outstanding.
   try {
-    var map = loadBought(currentStrategy) || {}, changed = false;
+    var map = loadBought(currentStrategy) || {}, changed = false, rwKeys = [];
     (cycleOrders().all || []).forEach(function (o) {
-      if (!o || o.side !== 'SELL') return;
+      // V41.9 — A1: a re-weight is not a table row either, in either direction
+      if (!o || (o.side !== 'SELL' && !o.rw)) return;
       var k = orderKey(o);
+      if (o.rw) rwKeys.push(k);
       if (!map[k]) { map[k] = true; changed = true; }
     });
     if (changed) {
@@ -9997,6 +10170,7 @@ function markAllPlaced(){
         cb.checked = true;
         var h = cb.closest('.chg-sell'); if (h) h.classList.add('is-done');
       });
+      rwKeys.forEach(function (k) { _rwSyncTicks(k, true); });
       refreshBoughtProgress();
     }
   } catch (e) {}
@@ -10890,12 +11064,14 @@ function renderOrderSheet(){
 function toggleSheetOrder(cb){
   var key = cb.getAttribute('data-okey'); if (!key) return;
   var map = loadBought(currentStrategy);
-  // a BUY key is the bare ticker, and records {p,q,t} exactly as the table's tick does
-  if (cb.checked) map[key] = key.indexOf('SELL:') === 0 ? true : boughtValueFor(key, map[key]);
+  // a BUY key is the bare ticker, and records {p,q,t} exactly as the table's tick does;
+  // a sale and a re-weight (V41.9) record `true`, the convention the sell rows use
+  if (cb.checked) map[key] = (key.indexOf('SELL:') === 0 || key.indexOf('RW:') === 0) ? true : boughtValueFor(key, map[key]);
   else delete map[key];
   saveBought(currentStrategy, map);
   document.querySelectorAll('[data-ticker="' + key.replace(/"/g, '\\"') + '"] .bought-cb, input[data-okey="' + key.replace(/"/g, '\\"') + '"]').forEach(function(x){ if (x !== cb) x.checked = cb.checked; });
   document.querySelectorAll('[data-ticker="' + key.replace(/"/g, '\\"') + '"]').forEach(function(el){ el.classList.toggle('row-bought', cb.checked); });
+  _rwSyncTicks(key, cb.checked);
   refreshBoughtProgress();
 }
 function copyOrderSheet(){
@@ -11065,7 +11241,8 @@ function refreshHowto() {
     // Buys only: a sell returns money rather than deploying it, and netting the
     // two into one figure would make "still to deploy" mean neither.
     var toDeploy = 0;
-    orders.buys.forEach(function(o){
+    // V41.9 — A1: a re-weight's add puts money into a position, like a buy
+    orders.buys.concat(orders.adds || []).forEach(function(o){
       if (map[orderKey(o)]) return;
       if (!(o.price > 0)) return;
       toDeploy += Math.round(o.qty * o.price);
@@ -11403,6 +11580,18 @@ function visibleStocks() {
    the paste cannot be read as a list of buys. */
 function copyAllTickers() {
   const orders = cycleOrders();
+  /* V41.9 — A1: with the re-weights sized, the copy carries them with their
+     quantities (a held name needs the number, not just the ticker). */
+  if (orders.known && (orders.rw || []).length) {
+    const lines = [], q = o => o.ticker + ' ' + o.qty;
+    if (orders.sells.length) lines.push('SELL: ' + orders.sells.map(o => o.ticker).join(', '));
+    if (orders.trims.length) lines.push('TRIM: ' + orders.trims.map(q).join(', '));
+    if (orders.buys.length)  lines.push('BUY: '  + orders.buys.map(o => o.ticker).join(', '));
+    if (orders.adds.length)  lines.push('ADD: '  + orders.adds.map(q).join(', '));
+    const n = orders.all.length;
+    copyText(lines.join('\n')).then(() => showToast('Copied ' + n + ' order' + (n === 1 ? '' : 's')));
+    return;
+  }
   if (orders.known && (orders.buys.length || orders.sells.length)) {
     const parts = [];
     if (orders.buys.length)  parts.push('BUY: '  + orders.buys.map(o => o.ticker).join(', '));
@@ -11449,6 +11638,15 @@ function exportCSV() {
   const addSet = {}; if (known) diff.added.forEach(t => { addSet[t] = 1; });
   const header = ['Action','#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
   const lines = [header.join(',')];
+  // V41.9 — A1: a sized re-weight says which way and how many, in the Action
+  // column (the header, and every other row, stay exactly as they were).
+  const ocCsv = known ? cycleOrders() : null;
+  const rwAction = t => {
+    const o = (ocCsv && ocCsv.rwKnown) ? _rwOrderFor(t, ocCsv) : null;
+    if (!o) return 'REWEIGHT';
+    if (o.hold) return 'REWEIGHT: SELL ' + o.hold.qty + ' ON OR AFTER ' + _csIso(o.hold.until);
+    return o.qty > 0 ? 'REWEIGHT: ' + o.side + ' ' + o.qty : 'REWEIGHT: NO ORDER';
+  };
   rowsOut.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
@@ -11461,7 +11659,7 @@ function exportCSV() {
     const mv = known ? heldMovePP(s.ticker) : null;
     const row = [
       _isRestricted(s.ticker) ? 'RESTRICTED' :   // V39.5 — B1: never sized, never traded
-      known ? (addSet[s.ticker] ? 'BUY' : (mv != null ? 'REWEIGHT' : 'HOLD')) : 'BUY',
+      known ? (addSet[s.ticker] ? 'BUY' : (mv != null ? rwAction(s.ticker) : 'HOLD')) : 'BUY',
       i+1,
       JSON.stringify(s.company_name||''),
       JSON.stringify(s.ticker||''),
@@ -11576,6 +11774,24 @@ function _setHowToStep3(orders){
     return;
   }
   var nB = orders.buys.length, nS = orders.sells.length;
+  /* V41.9 — A1: with the re-weights sized, step 3 is a list like any other. */
+  var rwL = orders.rw || [];
+  if (rwL.length){
+    var nT = rwL.filter(function(o){ return o.side === 'SELL'; }).length, nA = rwL.length - nT;
+    var tot = nB + nS + rwL.length;
+    var other = (BROKERS[getBroker()] || {}).copy === true;
+    var rwBits = [];
+    if (nS) rwBits.push('sell the ' + nS + (nS === 1 ? ' name' : ' names') + ' leaving');
+    if (nT) rwBits.push('trim ' + nT);
+    if (nB) rwBits.push('buy the ' + nB + ' new ' + (nB === 1 ? 'one' : 'ones'));
+    if (nA) rwBits.push('top up ' + nA);
+    p.textContent = (nB || nS ? 'Only ' + tot + ' order' + (tot === 1 ? '' : 's') + ' this cycle'
+                              : 'No names change this cycle \u2014 ' + tot + ' order' + (tot === 1 ? '' : 's') + ' bring each holding to its new weight') +
+      ': ' + rwBits.join(', then ') + ', at the quantities marked above.' +
+      (other ? ' The order sheet below lists them in order, one ticket per line.'
+             : (getBroker() === 'kite' ? ' On Zerodha they go in ' + (tot > KITE_BASKET_MAX ? 'Kite baskets' : 'one Kite basket') + '.' : '')) + base;
+    return;
+  }
   if (!nB && !nS){
     p.textContent = isWeightedBook(stocksData)
       ? 'No names change this cycle — bring each holding to the Allocation shown above and you are done.' + base
@@ -12250,7 +12466,52 @@ function cycleOrders(){
      arrived; and the sells are the model saying "get out of these", which makes
      them the orders that should sit longest if any must. Selling first is also
      what any human would do by hand. */
-  out.all = out.sells.concat(out.buys);
+  /* V41.9 — A1. THE RE-WEIGHTS, AS ORDERS.
+     A held name whose model weight moved still has work in it: the name stays,
+     the size changes. Until now nothing here made an order for it, so MultiAsset,
+     which keeps the same eight ETFs every month and only rotates their weights,
+     never produced a basket after month one. The member got "8 to re-weight" and
+     a chart link, and did the subtraction by hand against their broker. The
+     answer was already on this page: target = the Shares column's own
+     expression, held = the quantity this dashboard recorded last cycle (the same
+     record that sizes a stock book's sell tickets). The difference is a trim
+     (sell) or an add (buy).
+     All or nothing: if any moved name has no recorded quantity, there are no
+     re-weight orders this cycle and `rwUnknown` says so; a half-sized basket is
+     worse than none, and Match my holdings computes them from a pasted file.
+     The employer rules apply exactly as they do to a sale: no order for a
+     restricted name, and a trim inside the holding period waits in holdBack.
+     An equal-weight book in an ordinary cycle has no moved names, so its orders
+     are byte-identical to before. */
+  out.trims = []; out.adds = []; out.rw = []; out.rwFlat = [];
+  out.rwKnown = false; out.rwUnknown = false;
+  var moved = diff.held.filter(function(t){ return heldMovePP(t) != null && !_isRestricted(t); });
+  if (moved.length){
+    var sized = cap > 0 && moved.every(function(t){ var p = pp[t]; return !!(p && Number(p.qty) > 0 && byTicker[t]); });
+    if (!sized) out.rwUnknown = true;
+    else {
+      out.rwKnown = true;
+      moved.forEach(function(t){
+        var s = byTicker[t], p = pp[t];
+        var price = Number(s.recommended_price) || 0;
+        var target = price > 0 ? Math.floor(allocBudget(s, list, cap) / price) : 0;
+        var held = Number(p.qty) || 0, d = target - held;
+        var T = String(t).toUpperCase();
+        var o = { side: d < 0 ? 'SELL' : 'BUY', ticker:T, name:s.company_name || p.n || t,
+                  y:s.yahoo_ticker || p.y || '', price:price, qty:Math.abs(d), stock:s,
+                  rw:true, from:held, to:target };
+        if (!d){ out.rwFlat.push(o); return; }
+        if (d < 0){
+          var until = _csHoldUntil(t);
+          if (until){ out.holdBack.push({ ticker:T, name:o.name, qty:o.qty, until:until, rw:true }); return; }
+          out.trims.push(o);
+        } else out.adds.push(o);
+      });
+      out.rw = out.trims.concat(out.adds);
+    }
+  }
+  // Names leaving, then trims, then new names, then adds: every sale funds a buy.
+  out.all = out.sells.concat(out.trims, out.buys, out.adds);
   return out;
 }
 
@@ -12258,24 +12519,44 @@ function cycleOrders(){
    book and handing it the equity fixture would print a nonsense 8-in / 10-out cycle
    — the exact stale-fixture failure V33.9 called out, where demo mode stops
    exercising the branch it exists to exercise.
-     ?demo=1  four of the ten equity names swapped -> 4 in / 4 out / 6 held
+     ?demo=1  LargeMidcap's median month: half of MFTURN:lm:median names swapped
+              in each direction (V41.9: 6 in / 6 out / 9 held at the 12-order median)
 
               V38.7 — THIS USED TO BE 2 IN / 2 OUT, AND THAT WAS THE LIGHTEST
               MONTH IN THE WHOLE RECORD SHOWN AS THE TYPICAL ONE. The sample
-              dashboard is what a prospect judges the workload by, and its
-              headline read "4 orders to place this cycle ... the other 8 of your
-              10 carry over untouched". Measured off LargeMidcap's own 61-month
-              backtest (results.csv Turnover, = |old △ new| / N), the order count
-              is median 8, mean 8.2, range 4-14 — a 4-order cycle happened THREE
-              times in sixty-one. The fixture now sits on the median. It still
-              reads light, because 8 orders is one Kite basket, and it is the
-              month the member actually meets in month two.
+              dashboard is what a prospect judges the workload by. The rule set
+              then: the fixture sits on LargeMidcap's measured median month.
+              V41.9 — A2. THAT RULE BROKE WHEN THE BOOK GREW. The median was 8
+              for a ten-name book; V40.0 made it fifteen names, the fixture was
+              widened to fifteen but kept 4 in / 4 out, and the real median became
+              12 (MFTURN:lm:median, printed on the homepage as "typically ... 12
+              on LargeMidcap 250"). The sample showed two-thirds of a real month
+              and one Kite basket where the real month needs two. The swap count
+              is now READ from that marker (#mfrisk, rewritten every publish), so
+              a typed count cannot drift from it again; the pools below are long
+              enough for a median of 14, and the numbers gate checks that they
+              stay long enough.
      ?demo=2  the ETF sleeve is fixed and only its WEIGHTS rotate, which is what
               MultiAsset actually does -> 0 in / 0 out / 8 held, i.e. the
               "nothing to trade" branch, which nothing else here would reach. */
+// Current-fixture names that can be "new this cycle", and last month's names that
+// leave, each in the order they are used. Both books stay within two per industry
+// for every swap count up to seven (COALINDIA pairs with HINDALCO in Metals &
+// Mining; ONGC and GRASIM fill industries the current book's new names vacate).
+var _DEMO_LM_NEW   = ['RELIANCE','BHARTIARTL','SUNPHARMA','LT','NTPC','POWERGRID','ULTRACEMCO'];
+var _DEMO_LM_LEAVE = ['TITAN','ASIANPAINT','NESTLEIND','HINDUNILVR','COALINDIA','ONGC','GRASIM'];
+function _demoSwapN(){
+  var m = 0;
+  try { var el = document.querySelector('#mfrisk [data-k="lm:median"]'); m = parseInt(el && el.textContent, 10) || 0; } catch (e) {}
+  if (!(m > 0)) m = 12;
+  return Math.max(1, Math.min(_DEMO_LM_NEW.length, _DEMO_LM_LEAVE.length, Math.round(m / 2)));
+}
 function _demoPrevTickers(){
   if (demoMode === '2') return ['MON100','HDFCSML250','JUNIORBEES','MID150BEES','EBBETF0431','GOLDBEES','SILVERBEES','NIFTYBEES'];
-  return ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','BAJFINANCE','ULTRACEMCO','NTPC','POWERGRID','HINDALCO','TITAN','ASIANPAINT','NESTLEIND','HINDUNILVR'];
+  var k = _demoSwapN(), gone = _DEMO_LM_NEW.slice(0, k);
+  var cur = (stocksData || []).map(function(s){ return String(s.ticker || ''); }).filter(Boolean);
+  if (!cur.length) cur = ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','RELIANCE','BHARTIARTL','SUNPHARMA','LT','BAJFINANCE','ULTRACEMCO','NTPC','POWERGRID','HINDALCO'];
+  return cur.filter(function(t){ return gone.indexOf(t) === -1; }).concat(_DEMO_LM_LEAVE.slice(0, k));
 }
 /* V35.3 — the previous cycle's POSITIONS for the fixture, so ?demo exercises the
    sell basket, the realised-gain arithmetic and the cost row rather than only the
@@ -12293,25 +12574,33 @@ function _demoPrevPos(){
   // fixture's. MultiAsset's whole cycle IS the weight rotation, so a fixture whose
   // previous weights matched today's would show zero turnover and never exercise
   // the rebalance leg of the cost row.
+  // V41.9 — A1: the quantities are what LAST cycle's weights bought at this sample's
+  // own ₹1,00,000 — floor(1,00,000 × w / price) — because the re-weight orders are
+  // target minus this. (They were sized for no single capital, which would have
+  // shown a nonsense sale of hundreds of shares.) At ₹1,00,000 the sample's month
+  // is 7 orders, one basket: trims of JUNIORBEES 2, MID150BEES 10, EBBETF0431 2 and
+  // NIFTYBEES 7, then adds of MON100 13, HDFCSML250 15 and GOLDBEES 7; SILVERBEES
+  // moves +0.2 pp and stays at 20 shares.
   if (demoMode === '2') return mk([
-    ['MON100',     291.44,  514, 24.80, 'NASDAQ ETF'],
-    ['HDFCSML250', 176.12,  916, 13.05, 'Nifty SmallCap 250 ETF'],
-    ['JUNIORBEES', 812.30,  128, 12.90, 'Nifty Next 50 ETF'],
-    ['MID150BEES', 233.05,  535, 14.62, 'Nifty Midcap 150 ETF'],
-    ['EBBETF0431', 1432.10,  57, 11.44, 'Bharat Bond ETF'],
-    ['GOLDBEES',   112.68, 1540, 15.90, 'Gold ETF'],
-    ['SILVERBEES', 198.44,  215,  4.05, 'Silver ETF'],
-    ['NIFTYBEES',  274.90,   40,  3.24, 'Nifty 50 ETF']
+    ['MON100',     291.44,   85, 24.80, 'NASDAQ ETF'],
+    ['HDFCSML250', 176.12,   74, 13.05, 'Nifty SmallCap 250 ETF'],
+    ['JUNIORBEES', 812.30,   15, 12.90, 'Nifty Next 50 ETF'],
+    ['MID150BEES', 233.05,   62, 14.62, 'Nifty Midcap 150 ETF'],
+    ['EBBETF0431', 1432.10,   7, 11.44, 'Bharat Bond ETF'],
+    ['GOLDBEES',   112.68,  141, 15.90, 'Gold ETF'],
+    ['SILVERBEES', 198.44,   20,  4.05, 'Silver ETF'],
+    ['NIFTYBEES',  274.90,   11,  3.24, 'Nifty 50 ETF']
   ]);
   // Quantities are floor(66,666 / price) — what a 10,00,000 book at 6.67% a name
   // actually buys (V40.0: fifteen names, was ten at 10%) — so the demo's sell tickets
-  // reconcile against its own Shares column. Eleven of these fifteen carry into the
-  // current fixture; TITAN, ASIANPAINT,
-  // NESTLEIND and HINDUNILVR leave, and RELIANCE, BHARTIARTL, SUNPHARMA and LT
-  // join. The leavers are paired inside their own industries so the previous book
-  // also honours the 2-per-industry cap, which the old fixture did not (it held
-  // INFY, TCS and WIPRO — three IT Services names).
-  return mk([
+  // reconcile against its own Shares column. V41.9 — A2: this is every name last
+  // month's book can hold; _demoPrevTickers() picks the book for the median swap
+  // count (at the 12-order median: the nine that carry over, and TITAN, ASIANPAINT,
+  // NESTLEIND, HINDUNILVR, COALINDIA and ONGC leaving), and only those positions
+  // are returned. The previous book honours the 2-per-industry cap at every count.
+  var keep = {};
+  _demoPrevTickers().forEach(function(t){ keep[t] = 1; });
+  var all = mk([
     ['INFY',        1498.00,   44, 6.67, 'Infosys'],
     ['TCS',         3755.00,   17, 6.67, 'Tata Consultancy Services'],
     ['HDFCBANK',    1640.50,   40, 6.67, 'HDFC Bank'],
@@ -12326,8 +12615,14 @@ function _demoPrevPos(){
     ['TITAN',       3402.00,   19, 6.67, 'Titan Company'],
     ['ASIANPAINT',  2410.00,   27, 6.67, 'Asian Paints'],
     ['NESTLEIND',   2240.00,   29, 6.67, 'Nestle India'],
-    ['HINDUNILVR',  2378.00,   28, 6.67, 'Hindustan Unilever']
+    ['HINDUNILVR',  2378.00,   28, 6.67, 'Hindustan Unilever'],
+    ['COALINDIA',    385.40,  172, 6.67, 'Coal India'],
+    ['ONGC',         246.30,  270, 6.67, 'Oil and Natural Gas Corporation'],
+    ['GRASIM',      2652.00,   25, 6.67, 'Grasim Industries']
   ]);
+  var out = {};
+  Object.keys(all).forEach(function(t){ if (keep[t]) out[t] = all[t]; });
+  return out;
 }
 
 /* ── V35.3 · THE COST OF THE TURNOVER THE PAGE INSTRUCTS ──────────────────────
@@ -12434,6 +12729,22 @@ function renderCycleCost(){
   });
   if (wSeen && wSeen === diff.held.length){ rebKnown = true; rebFrac = wDelta / 200; }
   var rebVal = rebKnown ? rebFrac * cap : 0;
+  /* V41.9 — A1. Once the re-weights are sized they are real orders, so the leg is
+     their value, both sides, the way the buys and sells above are counted: "X% of
+     your capital changes hands" then means the same thing on every book. Their
+     trims are sales, so their gains are taxed below. An ordinary cycle has none. */
+  var ocC = cycleOrders(), rwC = ocC.rw || [], rwTrims = ocC.trims || [];
+  var rwSold = 0, rwBought = 0;
+  if (rwC.length){
+    rwC.forEach(function(o){ var v = o.qty * (o.price || 0); if (o.side === 'SELL') rwSold += v; else rwBought += v; });
+    rebVal = rwSold + rwBought;
+    if (key !== 'ma') rwTrims.forEach(function(o){
+      var p = pp[o.ticker] || {}, rec = Number(p.rec) || 0;
+      var q = px[p.y || o.y], live = (q && Number(q.price) > 0) ? Number(q.price) : 0;
+      if (!(rec > 0) || !live){ gainKnown = false; return; }
+      gain += o.qty * (live - rec);
+    });
+  }
 
   var traded  = buyVal + sellVal + rebVal;
   if (traded <= 0){ box.hidden = true; return; }
@@ -12444,7 +12755,20 @@ function renderCycleCost(){
   // weight fell gives up (w_prev - w_new)% of the capital; the gain on that slice
   // is its share of the move since the price it was recorded at. Rated per ETF.
   var maTax = null;
-  if (key === 'ma' && rebKnown && rebVal > 0){
+  if (key === 'ma' && rwC.length){
+    // V41.9 — A1: the trims ARE the sales, in shares, each rated by its own ETF
+    var slab = _taxSlab(), eqGain = 0, slGain = 0, unknown = 0;
+    rwTrims.forEach(function(o){
+      var p = pp[o.ticker] || {}, cls = MA_TAX_CLASS[String(o.ticker).replace(/\.NS$/, '')];
+      var q = px[p.y || o.y], live = (q && Number(q.price) > 0) ? Number(q.price) : (Number(o.price) || 0);
+      var rec = Number(p.rec) || 0;
+      if (!cls || !(live > 0) || !(rec > 0)){ unknown++; return; }
+      var g = o.qty * (live - rec);
+      if (cls === 'eq') eqGain += g; else slGain += g;
+    });
+    maTax = { known: unknown === 0, noTrims: !rwTrims.length, eqGain: eqGain, slGain: slGain, slab: slab,
+              tax: Math.max(0, eqGain) * STCG_RATE + Math.max(0, slGain) * (slab / 100) * 1.04 };
+  } else if (key === 'ma' && rebKnown && rebVal > 0){
     var slab = _taxSlab(), eqGain = 0, slGain = 0, unknown = 0, trimmed = 0;
     diff.held.forEach(function(t){
       var s = byTicker[t], p = pp[t];
@@ -12479,14 +12803,19 @@ function renderCycleCost(){
     var legs = [];
     if (buyVal  > 0) legs.push(fmtMoney(Math.round(buyVal))  + ' bought');
     if (sellVal > 0) legs.push(fmtMoney(Math.round(sellVal)) + ' sold');
-    if (rebVal  > 0) legs.push(fmtMoney(Math.round(rebVal))  + ' rebalanced');
+    if (rwC.length){                                   // V41.9 — A1
+      if (rwSold   > 0) legs.push(fmtMoney(Math.round(rwSold))   + ' trimmed');
+      if (rwBought > 0) legs.push(fmtMoney(Math.round(rwBought)) + ' added');
+    } else if (rebVal  > 0) legs.push(fmtMoney(Math.round(rebVal))  + ' rebalanced');
     grid.innerHTML =
       cell('Value traded', fmtMoney(Math.round(traded)), legs.join(' &middot; ')) +
       cell('Estimated charges', '~' + fmtMoney(Math.round(charges)),
            cost.bps + '&nbsp;bps a side, ' + (cost.src === 'modelled'
              ? 'the figure the published backtest is net&nbsp;of'
              : 'assumed for liquid&nbsp;ETFs')) +
-      (maTax
+      (maTax && maTax.noTrims
+        ? cell('Short-term tax', fmtMoney(0), 'nothing sold this cycle', true)
+        : maTax
         ? (maTax.known
             ? (maTax.tax > 0.5
                 ? cell('Short-term tax', '~' + fmtMoney(Math.round(maTax.tax)),
@@ -12496,7 +12825,7 @@ function renderCycleCost(){
             : cell('Short-term tax', '&mdash;', 'needs last cycle&rsquo;s price for each trimmed ETF', true))
         : !gainKnown
         ? cell('Short-term tax', '&mdash;',
-               goneNow.length ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
+               (goneNow.length || rwTrims.length) ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
         : gain > 0.5
           ? cell('Short-term tax', '~' + fmtMoney(Math.round(tax)),
                  '20% on ' + fmtMoney(Math.round(gain)) + ' realised')
@@ -12583,6 +12912,31 @@ function renderHeroJob(){
   total = memberBook(stocksData || []).length || total;
   var orders = nIn + nOut;
   var plural = function(n, one, many){ return n + '\u00a0' + (n === 1 ? one : many); };
+  /* V41.9 — A1. A cycle with re-weight orders says how many are left and which
+     way they go, from the same list and tick map as the basket. (Every order
+     placed is the "Everything this cycle is placed" line above.) An ordinary
+     cycle has none, so the lines below are reached exactly as before. */
+  var _rw = _ocH.rw || [];
+  if (_rw.length){
+    var _m = loadBought(currentStrategy) || {};
+    var _lIn  = _ocH.buys.filter(function(o){ return !_m[orderKey(o)]; }).length;
+    var _lOut = _ocH.sells.filter(function(o){ return !_m[orderKey(o)]; }).length;
+    var _lRw  = _rw.filter(function(o){ return !_m[orderKey(o)]; });
+    var _lTr  = _lRw.filter(function(o){ return o.side === 'SELL'; }).length, _lAd = _lRw.length - _lTr;
+    var _hbTxt = nHb ? ' ' + (nHb === 1 ? 'One sale waits' : nHb + '\u00a0sales wait') + ' for your holding period.' : '';
+    if (!orders){
+      el.textContent = 'No names change this cycle \u2014 ' + plural(_lRw.length, 'order', 'orders') +
+        (_lRw.length < _rw.length ? ' left' : '') + ' to bring your holdings to the new weights: ' +
+        [_lTr ? plural(_lTr, 'trim', 'trims') : '', _lAd ? plural(_lAd, 'add', 'adds') : ''].filter(Boolean).join(', then ') +
+        '.' + _hbTxt;
+    } else {
+      var _parts = [_lIn ? _lIn + '\u00a0to buy' : '', _lOut ? _lOut + '\u00a0to sell' : '', _lRw.length ? _lRw.length + '\u00a0to re-weight' : '']
+        .filter(Boolean);
+      el.textContent = plural(_lIn + _lOut + _lRw.length, 'order', 'orders') + ' to place this cycle \u2014 ' +
+        (_parts.length > 1 ? _parts.slice(0, -1).join(', ') + ' and ' + _parts[_parts.length - 1] : _parts[0]) + '.' + _hbTxt;
+    }
+    return;
+  }
   if (!orders && nHb){
     var _first = _ocH.holdBack.map(function(h){ return h.until; }).sort(function(a, b){ return a - b; })[0];
     el.textContent = 'Nothing to place today \u2014 ' + (nHb === 1 ? 'one sale waits' : nHb + '\u00a0sales wait') +
@@ -12674,16 +13028,34 @@ function refreshOrdersTile(animate){
   var map = loadBought(currentStrategy) || {};
   var leftIn  = oc.buys.filter(function(o){ return !map[orderKey(o)]; }).length;
   var leftOut = oc.sells.filter(function(o){ return !map[orderKey(o)]; }).length;
-  var left = leftIn + leftOut, placed = n - left;
+  // V41.9 — A1: a re-weight is an order too, counted and ticked like the rest
+  var rwAll = oc.rw || [], leftRw = rwAll.filter(function(o){ return !map[orderKey(o)]; });
+  var left = leftIn + leftOut + leftRw.length, placed = n - left;
   var sides = function(b, s){
     return [b ? b + (b === 1 ? ' buy' : ' buys') : '', s ? s + (s === 1 ? ' sell' : ' sells') : '']
+      .filter(Boolean).join('\u00a0· ');
+  };
+  var rwSides = function(list){
+    var tr = list.filter(function(o){ return o.side === 'SELL'; }).length, ad = list.length - tr;
+    return [tr ? tr + (tr === 1 ? ' trim' : ' trims') : '', ad ? ad + (ad === 1 ? ' add' : ' adds') : '']
       .filter(Boolean).join('\u00a0· ');
   };
   if (animate) _animateCount(oVal, left, {});
   else if (String(oVal.textContent) !== String(left)) { oVal._acTok = null; oVal.textContent = left; }
 
   var first = !oc.known;
-  if (!placed){
+  if (rwAll.length){
+    var nameSide = function(b, s){ return (b || s) ? sides(b, s) + '\u00a0· ' : ''; };
+    if (!placed){
+      oSub.textContent = (oc.buys.length || oc.sells.length)
+        ? nameSide(oc.buys.length, oc.sells.length) + rwSides(rwAll)
+        : rwSides(rwAll) + ' — no names change';
+    } else if (left){
+      oSub.textContent = 'left of ' + n + ' · ' + nameSide(leftIn, leftOut) + rwSides(leftRw);
+    } else {
+      oSub.textContent = 'all ' + n + ' placed — done for this cycle';
+    }
+  } else if (!placed){
     oSub.textContent = first ? 'the full book — your first tracked cycle'
                              : sides(oc.buys.length, oc.sells.length);
   } else if (left){
@@ -12763,7 +13135,9 @@ function renderBookChange(diff, stocks){
   var tileN = orders || nMoved;
   // V37.6 — a cycle with orders is counted by refreshOrdersTile(), which reads
   // the tick map; the rotation and no-trade wordings below are unchanged.
-  if (!(orders && refreshOrdersTile(true))){
+  // V41.9 — A1: so is a cycle whose only orders are re-weights.
+  var rwOrdersN = (cycleOrders().rw || []).length;
+  if (!((orders || rwOrdersN) && refreshOrdersTile(true))){
     if (oVal) _animateCount(oVal, tileN, {});
     if (oSub) oSub.textContent = orders
       ? (nIn + (nIn === 1 ? ' buy' : ' buys') + ' · ' + nOut + (nOut === 1 ? ' sell' : ' sells'))
@@ -12795,6 +13169,17 @@ function renderBookChange(diff, stocks){
   if (hbN) csBits.push('<strong>' + hbN + '</strong> sale' + (hbN === 1 ? ' waits' : 's wait') + ' for your holding period');
   var csSentence = csBits.length ? ' Your rules: ' + csBits.join(' and ') + '.' : '';
   var ordersNow = csBits.length ? ocB.all.length : orders;
+  /* V41.9 — A1: re-weight orders are part of "that is N orders to place", and a
+     re-weight-only cycle says how many and which way. Empty on an ordinary cycle,
+     so its sentence is unchanged. */
+  var rwNow = ocB.rw || [];
+  if (rwNow.length) ordersNow = ocB.all.length;
+  var rwTrimN = rwNow.filter(function(o){ return o.side === 'SELL'; }).length, rwAddN = rwNow.length - rwTrimN;
+  var rwSentence = rwNow.length
+    ? ' That is <strong>' + rwNow.length + '</strong> order' + (rwNow.length === 1 ? '' : 's') + ': ' +
+      [rwTrimN ? rwTrimN + (rwTrimN === 1 ? ' trim' : ' trims') : '', rwAddN ? rwAddN + (rwAddN === 1 ? ' add' : ' adds') : '']
+        .filter(Boolean).join(', then ') + '.'
+    : '';
   // "…of YOUR n carry over" is the member's book once names are taken out — the hero
   // line above says the same, so the two cannot give different counts for one thing.
   var yourHold = rsN ? diff.held.filter(function(t){ return !_isRestricted(t); }).length : nHold;
@@ -12837,14 +13222,14 @@ function renderBookChange(diff, stocks){
       : ('<strong>' + yourHold + '</strong> of your ' + yourTotal + ' carry over untouched');
     line.innerHTML = orders === 0
       ? (nMoved
-          ? 'The model kept the <strong>same ' + total + '</strong> holdings and re-scored their weights. Nothing is bought or sold outright this cycle — you are <strong>rebalancing between them</strong>.' + rotSentence
+          ? 'The model kept the <strong>same ' + total + '</strong> holdings and re-scored their weights. Nothing is bought or sold outright this cycle — you are <strong>rebalancing between them</strong>.' + rotSentence + rwSentence
           : weighted
             ? 'The model kept the <strong>same ' + total + '</strong> holdings and re-scored their weights. Nothing is bought or sold outright this cycle — you are <strong>rebalancing between them</strong>; the Allocation column below is the target.'
             : 'The model re-scored the universe and arrived at the <strong>same ' + total + '</strong> names. <strong>Nothing to trade this cycle</strong> — hold what you have.')
       : ('<strong>' + nOut + '</strong> ' + (nOut === 1 ? 'name leaves' : 'names leave') +
          ' the book and <strong>' + nIn + '</strong> ' + (nIn === 1 ? 'joins' : 'join') + ' it; ' + carryPhrase +
          '.' + csSentence + ' That is <strong>' + ordersNow + '</strong> order' +
-         (ordersNow === 1 ? '' : 's') + ' to place, not ' + yourTotal + '.' + rotSentence);
+         (ordersNow === 1 ? '' : 's') + ' to place' + (ordersNow !== yourTotal ? ', not ' + yourTotal : '') + '.' + rotSentence);
   }
   var box = document.getElementById('chg-groups');
   if (box){
@@ -12968,24 +13353,49 @@ function renderBookChange(diff, stocks){
     var holdBody;
     if (moved.length){
       rot.sort(function(a,b){ return Math.abs(b.d) - Math.abs(a.d); });
+      /* V41.9 — A1. When this cycle's re-weights could be sized (cycleOrders()
+         .rwKnown), each moved row carries its order: the share count, a tick
+         (RW:<ticker>, the same key the basket and the table use) and, for a trim
+         inside the holding period, its date. A zero-share move says so. */
+      var rwOn = !!ocB.rwKnown;
       holdBody = '<div class="chg-sells">' + rot.map(function(r){
         var up = r.d >= 0, flat = Math.abs(r.d) < 0.05;
         var url = ''; try { url = bk.link({ ticker:r.t }) || ''; } catch(e){}
         var lbl = flat ? 'unchanged at ' + r.now.toFixed(1) + '%'
                        : (up ? 'add to ' : 'trim to ') + r.now.toFixed(1) + '% from ' + r.was.toFixed(1) + '%';
-        return '<div class="chg-rot" data-t="' + escapeHtml(r.t) + '">' +
+        var o = (rwOn && !flat) ? _rwOrderFor(r.t, ocB) : null;
+        var hold = o && o.hold, act = !!(o && !o.hold && o.qty > 0);
+        var key = act ? orderKey(o) : '', done = act && !!placed[key];
+        var qtyHtml = !o ? ''
+          : hold ? '<span class="chg-rot-q">sell\u00a0' + hold.qty + ' on or after ' +
+                   escapeHtml(mfDate(hold.until, { day:'numeric', month:'short' })) + '</span>'
+          : act  ? '<span class="chg-rot-q">' + (o.side === 'SELL' ? 'sell' : 'buy') + '\u00a0' + o.qty + '</span>'
+                 : '<span class="chg-rot-q is-none">no order \u2014 still ' + o.to + '\u00a0share' + (o.to === 1 ? '' : 's') + '</span>';
+        return '<div class="chg-rot' + (act ? ' has-cb' : '') + (done ? ' is-done' : '') + '" data-t="' + escapeHtml(r.t) + '">' +
+          (act ? '<input type="checkbox" class="chg-sell-cb rw-cb"' + (done ? ' checked' : '') +
+                   ' data-okey="' + escapeHtml(key) + '" onchange="toggleOrder(this)"' +
+                   ' aria-label="Mark the ' + escapeHtml(r.t) + ' re-weight as placed: ' + (o.side === 'SELL' ? 'sell ' : 'buy ') + o.qty + '">' : '') +
           '<span class="chg-rot-dir ' + (flat ? 'is-flat' : up ? 'is-up' : 'is-dn') + '" aria-hidden="true">' +
             (flat ? '=' : up ? '&uarr;' : '&darr;') + '</span>' +
           '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(r.t) + '</span>' +
-            '<span class="chg-sell-q">' + escapeHtml(lbl) + '</span></span>' +
+            '<span class="chg-sell-q">' + escapeHtml(lbl) + '</span>' + qtyHtml + '</span>' +
           '<span class="chg-rot-d ' + (flat ? 'is-flat' : up ? 'is-up' : 'is-dn') + '">' +
             (flat ? '&mdash;' : (up ? '+' : '−') + Math.abs(r.d).toFixed(1) + '\u00a0pp') + '</span>' +
-          (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
+          (hold ? '<button type="button" class="chg-sell-lnk cs-cal" onclick="csHoldToCalendar(\'' + escapeHtml(hold.ticker) + '\')">Remind me</button>'
+           : url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
                  escapeHtml(bk.name) + ' &rarr;</a>' : '') +
         '</div>';
       }).join('') + '</div>' +
-      '<div class="chg-hint">The model re-scored these. Bring each one to the Allocation shown in the table below &mdash; ' +
-      'no name is bought or sold outright.</div>';
+      (rwOn
+        ? '<div class="chg-hint">Sized from the quantities your dashboard recorded last month. If your broker shows different holdings, ' +
+          '<button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> gives exact orders. ' +
+          'Tick each one once it is placed.</div>'
+        : '<div class="chg-hint">The model re-scored these. Bring each one to the Allocation shown in the table below &mdash; ' +
+          'no name is bought or sold outright.' +
+          (ocB.rwUnknown
+            ? ' Your dashboard has no record of last month&rsquo;s quantities on this device. Paste your holdings into ' +
+              '<button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> to get the exact orders.'
+            : '') + '</div>');
     } else {
       holdBody = chips(diff.held);
     }
@@ -13007,6 +13417,7 @@ function renderBookChange(diff, stocks){
   if (window._livePx) { try { paintLivePrices(); } catch(e){} }
   renderCycleCost();   // V35.3 — what the turnover named above actually costs
   renderHeroJob();     // V37.3 — and what the hero line has to say about it
+  window._rwSigShown = _rwSig(ocB);   // V41.9 — A1: what refreshRwRows() compares against
   card.style.display = '';
 }
 

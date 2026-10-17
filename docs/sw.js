@@ -849,7 +849,10 @@
 // V41.7 -> mfc-v127. Device QA pass: two shared assets moved (assets/mfc-finish.css
 // 3940 -> 3950, the opaque open-menu panel; assets/mfc-calc.css 408 -> 409, the
 // stacked bridge links on touch), and the precached index.html changed with them.
-const CACHE = 'mfc-v127';
+// V41.9 -> mfc-v128. The precached index.html changed (the hero card opens on
+// LargeMidcap 250); dashboard.html, strategies.html and multiasset.html changed too.
+// No shared asset moved.
+const CACHE = 'mfc-v128';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
