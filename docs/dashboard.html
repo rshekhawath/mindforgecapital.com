@@ -3241,7 +3241,8 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
            run predates the latest published rebalance. -->
       <div class="cyc-newer" id="cyc-newer" hidden></div>
       <!-- V39.1 — B5. Only for a member who joined inside this cycle with a
-           rebalance under a week away. See renderCycleRail(). -->
+           rebalance under a week away. See renderCycleRail().
+           V41.6 — A3: for the whole first cycle from the 5th; see _lateJoinState(). -->
       <p class="cyc-join" id="cyc-join" hidden></p>
       <!-- V35.2 — the renewal affordance the retired "Subscription" tile used to
            carry. It is a .renew-cta, the same class (and therefore the same
@@ -4822,10 +4823,14 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       <section class="nb-card" id="next-book" aria-labelledby="nb-title" hidden>
         <span class="nb-eyebrow">When you're ready</span>
         <h3 id="nb-title">Two stock books run on this same dashboard</h3>
-        <p class="nb-lede">MultiAsset is built as the core. If a few months of it have earned stocks a place, LargeMidcap&nbsp;250 and SmallMicro&nbsp;500 arrive here on the same 1st and sit in the strategy switcher above.</p>
+        <!-- V41.6 — B1. The lede used to ask whether a few months of MultiAsset had "earned
+             stocks a place": it sits directly under MultiAsset's own record, so it asked the
+             reader to judge two stock books by an ETF book's figures. Each book keeps its own.
+             The links open pages that show the cycle in progress, the backtest and the plan. -->
+        <p class="nb-lede">MultiAsset is built as the core, and the record above is its own. LargeMidcap&nbsp;250 and SmallMicro&nbsp;500 hold different things and keep their own records; added, they arrive here on the same 1st and sit in the strategy switcher above.</p>
         <ul class="nb-rows">
-          <li class="nb-row"><b>LargeMidcap&nbsp;250</b> — large and mid-cap names, in the part of the market your funds already hold. <a href="/largemidcap.html" data-nb="lm">Its live record and plan&nbsp;<span aria-hidden="true">→</span></a></li>
-          <li class="nb-row"><b>SmallMicro&nbsp;500</b> — small and micro-cap names, built to be sized smallest. <a href="/smallmicro.html" data-nb="sm">Its live record and plan&nbsp;<span aria-hidden="true">→</span></a></li>
+          <li class="nb-row"><b>LargeMidcap&nbsp;250</b> — large and mid-cap names, in the part of the market your funds already hold. <a href="/largemidcap.html" data-nb="lm">Its live figure and plan&nbsp;<span aria-hidden="true">→</span></a></li>
+          <li class="nb-row"><b>SmallMicro&nbsp;500</b> — small and micro-cap names, built to be sized smallest. <a href="/smallmicro.html" data-nb="sm">Its live figure and plan&nbsp;<span aria-hidden="true">→</span></a></li>
         </ul>
         <div class="nb-foot"><span>Your free book carries on either way.</span><button type="button" class="nb-hide" data-nb="hide">Hide this</button></div>
       </section>
@@ -6032,6 +6037,58 @@ function _mfData(k){
   return n ? n.textContent.trim() : '';
 }
 
+/* V41.6 — A3. THE FIRST EVENING, ANY DAY OF THE MONTH. V39.1's late-joiner line
+   showed only in the last 7 days before a rebalance, so a member who joined on the
+   17th read "Place them in your broker and you're done for the month" fifteen days
+   before about a dozen more orders. ONE state, computed here and read by both the
+   cycle card (#cyc-join) and the first line (renderHeroJob), so the two cannot
+   disagree. Shown when ALL hold:
+     · a real member (never the sample);
+     · a stock book — MFTURN carries a median for it (MultiAsset re-weights, it
+       does not swap names, so it has none);
+     · joined within this cycle, and this device has no previous book (a first cycle);
+     · from the 5th of the month, with at least a day to the next 1st — around the
+       1st the book is new and placing it now IS starting on the rebalance;
+     · not a pinned 1-month plan (it cannot start on the next set without renewing);
+     · no order of this cycle ticked yet (once one is, the member has chosen).
+   The words are V39.1's, except the first sentence: "You joined N days before a
+   rebalance" was measured from NOW, which over a wider window misstates the join. */
+function _lateJoinState(now){
+  var st = { show: false };
+  try {
+    now = now || new Date();
+    var su = window._currentSub || {};
+    var key = _strategyPerfKey(String(su.strategy || currentStrategy || ''));
+    var med = key ? _mfData(key + ':median') : '';
+    var joined = su.subscribed_at ? new Date(su.subscribed_at) : null;
+    var nextReb = nextRebalanceDate(now);
+    var daysToReb = Math.max(0, daysBetween(now, nextReb));
+    var cycStart = new Date(nextReb.getTime()); cycStart.setMonth(cycStart.getMonth() - 1);
+    var firstCycle = !(window._bookDiff && window._bookDiff.known);
+    var ticked = false;
+    try {
+      var bm = loadBought(currentStrategy) || {};
+      ticked = cycleOrders().all.map(orderKey).some(function(k){ return !!bm[k]; });
+    } catch (e) {}
+    st = { nextReb: nextReb, daysToReb: daysToReb, med: med,
+           show: !!(!isDemo && med && joined && !isNaN(joined.getTime()) && joined >= cycStart && firstCycle &&
+                    now.getDate() >= 5 && daysToReb >= 1 && !_subIsPinned(su) && !ticked) };
+  } catch (e) {}
+  return st;
+}
+function _renderLateJoin(){
+  var jn = document.getElementById('cyc-join');
+  if (!jn) return;
+  var s = _lateJoinState();
+  if (!s.show){ jn.hidden = true; jn.innerHTML = ''; return; }
+  var d = mfDate(s.nextReb, { day: 'numeric', month: 'short' });
+  var days = s.daysToReb + '\u00a0day' + (s.daysToReb === 1 ? '' : 's');
+  jn.innerHTML = 'The next book lands on <b>' + d + '</b>, in <b>' + days + '</b>. Buying now means the orders below today, ' +
+    'then about <b>' + s.med + '</b> more on <b>' + d + '</b>, when roughly half the book changes. ' +
+    'Starting on ' + d + ' means one set of orders. The backtest enters on rebalance days — which to do is your call.';
+  jn.hidden = false;
+}
+
 function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
   var card = document.getElementById('cyc-card');
   if (!card) return;
@@ -6124,25 +6181,10 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
      to escape. Neutral arithmetic, both options, no recommendation. The median is
      MFTURN (machine-written); MultiAsset has none (it re-weights, it does not
      swap names) and a pinned 1-month plan cannot "start on" the next set without
-     renewing, so neither sees it. */
-  try {
-    var jn = document.getElementById('cyc-join');
-    if (jn){
-      jn.hidden = true; jn.innerHTML = '';
-      var su = window._currentSub || {};
-      var jkey = _strategyPerfKey(String(su.strategy || currentStrategy || ''));
-      var med = jkey ? _mfData(jkey + ':median') : '';
-      var joined = su.subscribed_at ? new Date(su.subscribed_at) : null;
-      var cycStart = new Date(nextReb.getTime()); cycStart.setMonth(cycStart.getMonth() - 1);
-      if (!isDemo && med && joined && !isNaN(joined.getTime()) && joined >= cycStart &&
-          daysToReb > 0 && daysToReb <= 7 && !_subIsPinned(su)){
-        jn.innerHTML = 'You joined <b>' + dayWord(daysToReb) + '</b> before a rebalance. Buying now means the orders below today, ' +
-          'then about <b>' + med + '</b> more on <b>' + fmt(nextReb) + '</b>, when roughly half the book changes. ' +
-          'Starting on ' + fmt(nextReb) + ' means one set of orders. The backtest enters on rebalance days — which to do is your call.';
-        jn.hidden = false;
-      }
-    }
-  } catch (e) {}
+     renewing, so neither sees it.
+     V41.6 — A3: the whole first cycle from the 5th, not only its last 7 days; the
+     state and the words now live in _lateJoinState() / _renderLateJoin(). */
+  try { _renderLateJoin(); } catch (e) {}
 
   // V37.5 — calendar reminders for the next rebalance and the access end date.
   try {
@@ -12495,6 +12537,9 @@ var HERO_SUB_DEFAULT = "Here are this cycle\u2019s picks for your strategy. Plac
 function renderHeroJob(){
   var el = document.getElementById('dash-subtitle');
   if (!el) return;
+  // V41.6 — A3: every caller of this line (render, book change, each tick) also
+  // re-decides the cycle card's late-joiner line, so a first tick removes it.
+  try { _renderLateJoin(); } catch (e) {}
   /* V39.1 — B7. A DASHBOARD THAT ENDS. Once every order this cycle is ticked, the
      first line on the page says there is nothing to do, and until when — the
      state a time-poor member is actually trying to reach. */
@@ -12510,7 +12555,18 @@ function renderHeroJob(){
   } catch (e) {}
   var diff  = window._bookDiff;
   var total = (stocksData || []).length;
-  if (!diff || !diff.known || !total){ el.textContent = HERO_SUB_DEFAULT; return; }
+  if (!diff || !diff.known || !total){
+    /* V41.6 — A3. A first cycle joined mid-month is not "done for the month": the
+       next set lands within weeks, and the cycle card sets out the choice. Every
+       other unknown-diff case (a fresh book, a new device, MultiAsset, a pinned
+       plan, the sample) keeps the original sentence verbatim. */
+    var _lj = _lateJoinState();
+    el.textContent = _lj.show
+      ? 'Here are this cycle’s picks. The next set lands on ' + mfDate(_lj.nextReb, { day: 'numeric', month: 'short' }) +
+        ' — the card below sets out placing them now or then.'
+      : HERO_SUB_DEFAULT;
+    return;
+  }
 
   /* V39.5 — B1/B2: counted from the member's order list, not the raw diff — a
      restricted name gets no order and a held-back sale is not today's. With no

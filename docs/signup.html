@@ -20,7 +20,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="MindForge Capital">
-<title>Get Started — Subscribe to a MindForge Quant Strategy</title>
+<title>Start a MindForge book: MultiAsset is free</title>
 <!-- V40.7 — A1/A3: the hand-typed "Rs 999/mo … Rs 1,499/mo" left the head (a price
      typed beside the machine-written STRAT table drifts), and "quant strategy" with it.
      "a paid book's first month is free too" mirrors FIRST_MONTH_FREE: if the offer
@@ -568,7 +568,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
       <div class="form-group">
         <label for="reg-duration">Duration</label>
+        <!-- V41.6 — A4. No plan length is chosen for the reader. "1 month" used to be
+             selected on every paid path (it was simply the first option), and a 1-month
+             plan is ONE book: the set current on the day it starts. handleSubmit() asks
+             for a choice; a homepage toggle the reader actually used still arrives in
+             &duration=N and is honoured. -->
         <select id="reg-duration" name="duration" required onchange="onStrategyChange()">
+          <option value="" disabled selected>Choose how long</option>
           <option value="1">1 month</option>
           <option value="3">3 months — 5% off</option>
           <option value="6">6 months — 10% off</option>
@@ -770,6 +776,23 @@ function phoneNeeded(){
    with the same constant in index.html and the "How the plans differ" FAQ. */
 var MONTHLY_PLAN_UPDATES = false;
 
+/* V41.6 — A1. THE PLAN NOTE KNOWS THE DATE. "The set current when your access
+   starts" is exact on the 1st and misleading on the 17th: started then, a 1-month
+   plan holds a book the model replaces in about two weeks. The next book's date is
+   the 1st of next month, as the dashboard's nextRebalanceDate() has it, and the day
+   count is its daysBetween(). Said only from the 5th to two days before the 1st —
+   around the 1st, when the new book is published decides which book "current" means.
+   Returns '' outside that window, so the sentence before it stands alone. */
+function _replacedSoon(){
+  try {
+    var now = new Date(), nx = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    var days = Math.ceil((nx.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (now.getDate() < 5 || days < 2) return '';
+    var d = nx.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).replace(/\s+/g, '\u00a0');
+    return ' Started today, that is the set the model replaces on <b>' + d + '</b>, in <b>' + days + '\u00a0days</b>.';
+  } catch (e) { return ''; }
+}
+
 function priceFor(strategy, durKey){
   var m = STRATEGY_META[strategy]; if (!m) return null;
   var d = DURATIONS[durKey] || DURATIONS['1'];
@@ -842,8 +865,9 @@ function onStrategyChange() {
         return durSel.querySelector('option[value="' + key + '"]');
       }).filter(Boolean);
     }
+    var _ph = (durSel.options[0] && durSel.options[0].value === '') ? 1 : 0;   // V41.6 — keep "Choose how long" first
     durSel._shortOpts.forEach(function(o, i){
-      if (o.parentNode !== durSel) durSel.insertBefore(o, durSel.options[i] || null);
+      if (o.parentNode !== durSel) durSel.insertBefore(o, durSel.options[i + _ph] || null);
     });
   }
   /* V39.1 — A1. "FREE PERMANENTLY" MUST NOT BE SOLD AS 30 DAYS. The free book had
@@ -853,8 +877,17 @@ function onStrategyChange() {
      the backend serves the latest run to, with rebalance emails on. */
   if (durSel) {
     var durGroup = durSel.closest('.form-group');
-    if (isFree) { durSel.value = '12'; if (durGroup) durGroup.style.display = 'none'; }
-    else if (durGroup) durGroup.style.display = '';
+    /* V41.6 — A4. The free book posts 12 months by itself. That value is the page's,
+       not the reader's: switching on to a paid book used to leave "1 year" chosen
+       for them. Put back what they had picked for a paid book, or nothing. */
+    if (isFree) {
+      if (!durSel._autoTerm) durSel._paidVal = durSel.value;
+      durSel.value = '12'; durSel._autoTerm = true;
+      if (durGroup) durGroup.style.display = 'none';
+    } else {
+      if (durSel._autoTerm) { durSel.value = durSel._paidVal || ''; durSel._autoTerm = false; }
+      if (durGroup) durGroup.style.display = '';
+    }
   }
   // V40.7 — C1: no mobile number for the free book (see phoneNeeded()).
   var phEl = document.getElementById('reg-phone');
@@ -863,16 +896,23 @@ function onStrategyChange() {
     phEl.required = phoneNeeded();
     if (phGroup) phGroup.style.display = phoneNeeded() ? '' : 'none';
   }
-  var durKey = (durSel || {}).value || '1';
-  /* V39.1 — A2. WHAT THE PLAN BUYS, UNDER THE DURATION. A 1-month plan is pinned
+  var durKey = (durSel || {}).value || '';        // V41.6 — A4: '' until the reader chooses
+  /* V41.6 — A1/A4: with no length chosen yet, both lines below show, and the
+     1-month line carries the date (see _replacedSoon()).
+     V39.1 — A2. WHAT THE PLAN BUYS, UNDER THE DURATION. A 1-month plan is pinned
      to the run current at activation (no next book, no email); 3/6/12-month plans
      are served each new run. MONTHLY_PLAN_UPDATES flips with the backend (D1). */
   var dn = document.getElementById('duration-note');
   if (dn) {
     if (isFree || !sel) { dn.style.display = 'none'; dn.textContent = ''; }
     else {
-      dn.innerHTML = (durKey === '1' && !MONTHLY_PLAN_UPDATES)
-        ? '<b>One book.</b> A 1-month plan is the set of picks current when your access starts; it does not change during the month, and the next month\u2019s set needs a renewal.'
+      dn.innerHTML = !durKey
+        ? (MONTHLY_PLAN_UPDATES
+            ? '<b>Every plan:</b> a new book on the 1st, automatically, with an email when it lands.'
+            : '<b>1 month:</b> one book, the set current when your access starts.' + _replacedSoon() +
+              ' <b>3 months or longer:</b> a new book on the 1st, automatically, with an email when it lands.')
+        : (durKey === '1' && !MONTHLY_PLAN_UPDATES)
+        ? '<b>One book.</b> A 1-month plan is the set of picks current when your access starts; it does not change during the month, and the next month\u2019s set needs a renewal.' + _replacedSoon()
         : '<b>A new book on the 1st, automatically</b>, with an email when it lands, for the whole ' + (durKey === '1' ? 'month' : 'term') + '.';
       dn.style.display = 'block';
     }
@@ -914,7 +954,7 @@ function onStrategyChange() {
   }
 
   if (sel && m) {
-    var p = priceFor(sel, durKey);
+    var p = priceFor(sel, durKey || '1');
     if (isFree) {
       note.innerHTML = osHTML({
         pill: 'Free', pillFree: true,
@@ -922,6 +962,15 @@ function onStrategyChange() {
         per: 'no end date',
         save: 'No payment · a new book on the 1st, with an email', saveFree: true,
         desc: m.desc
+      });
+    } else if (!durKey) {
+      // V41.6 — A4: no length chosen, so no plan total — the monthly base only.
+      note.innerHTML = osHTML({
+        pill: '',
+        total: inr(m.monthly),
+        per: 'a month',
+        save: '',
+        desc: 'Choose how long below; the longer plans cost less a month. ' + m.desc
       });
     } else {
       var pct = Math.round(p.disc * 100);
@@ -1006,6 +1055,13 @@ async function handleSubmit() {
   if (!email || !email.includes('@')){ showError('Please enter a valid email address.'); return; }
   if (needPhone && rawPhone.length !== 10) { showError('Please enter a valid 10-digit mobile number.'); return; }
   if (!strategy)                     { showError('Please select a strategy.'); return; }
+  // V41.6 — A4: a paid plan's length is the reader's choice; nothing picks it for them.
+  var _durPick = document.getElementById('reg-duration');
+  if (!(STRATEGY_META[strategy] || {}).free && _durPick && !_durPick.value) {
+    showError('Please choose how long your plan runs.');
+    try { _durPick.focus(); } catch (e) {}
+    return;
+  }
 
   hideError();
   setBtn(true);
@@ -1230,6 +1286,9 @@ function resetForm() {
       /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(val('reg-email'))
     ];
     if (typeof phoneNeeded !== 'function' || phoneNeeded()) parts.push(/^[0-9]{10}$/.test(val('reg-phone')));
+    // V41.6 — A4: a paid plan's length is chosen here too (phoneNeeded() is true
+    // exactly when the book is not the free one).
+    if (typeof phoneNeeded !== 'function' || phoneNeeded()) parts.push(!!val('reg-duration'));
     parts.push(!!(tnc && tnc.checked));
     return parts;
   }

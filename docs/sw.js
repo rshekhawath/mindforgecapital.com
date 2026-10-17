@@ -843,7 +843,10 @@
 // the site's logo in its app bar, a hand that taps, screens that push, the keyboard's
 // email suggestion). Two assets moved, both loaded only by index.html:
 // assets/mfc-walk.css 1 -> 2 and assets/mfc-walk.js 1 -> 2.
-const CACHE = 'mfc-v125';
+// V41.6 -> mfc-v126. index.html is precached and changed (its title, FAQ 7 and FAQ 14,
+// and the verified-accounts section without the figures the pricing cards repeat).
+// No shared asset moved.
+const CACHE = 'mfc-v126';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
