@@ -38,6 +38,13 @@ DB_PATH = _resolve_db_path()
 # refresh_data.py checks that file on every run and names any new rename.
 # V37.9a: removed AURIGROW, JBCHEPHARM, WIMPLAST (off NSE's EQUITY_L.csv with
 # no symbol change; Yahoo price frozen since Jul/Jun 2026).
+# V41.5: HEG->HEGAM (renamed 22-SEP-2026; HEG published at a frozen 248.50 for
+# 19 sessions, and by 2026-10-17 Yahoo had no quote for HEG.NS at all).
+# Checked the same day and deliberately KEPT, all off EQUITY_L with no rename:
+# CCAVENUE (trading suspended from 13-Oct for a 10:1 consolidation; Yahoo's
+# 138.50 is already the post-consolidation price), LASA and SELMC (no trade
+# since 12-Oct; LASA suspended by the exchange). Their published price is the
+# true last trade. Remove only if they stay frozen for weeks (the V37.9a rule).
 # ──────────────────────────────────────────────────────────────────────────────
 NSE_EQUITY_UNIVERSE = [
     "20MICRONS","21STCENMGM","360ONE","3BBLACKBIO","3IINFOLTD","3MINDIA","3PLAND","5PAISA","63MOONS","A2ZINFRA",
@@ -117,7 +124,7 @@ NSE_EQUITY_UNIVERSE = [
     "GUJALKALI","GUJAPOLLO","GUJENERGY","GUJRAFFIA","GUJTHEM","GULFOILLUB","GULFPETRO","GULPOLY","GVPIL","GVPTECH",
     "GVT&D","HAL","HALDER","HALDYNGL","HALEOSLABS","HAPPSTMNDS","HAPPYFORGE","HARDWYN","HARIOMPIPE","HARRMALAYA",
     "HARSHA","HATHWAY","HATSUN","HAVELLS","HAVISHA","HAWKINCOOK","HBESD","HBLENGINE","HCC","HCG",
-    "HCL-INSYS","HCLTECH","HDBFS","HDFCAMC","HDFCBANK","HDFCLIFE","HEADSUP","HEALTHX","HECPROJECT","HEG",
+    "HCL-INSYS","HCLTECH","HDBFS","HDFCAMC","HDFCBANK","HDFCLIFE","HEADSUP","HEALTHX","HECPROJECT","HEGAM",
     "HEIDELBERG","HEMIPROP","HERANBA","HERITGFOOD","HEROMOTOCO","HESTERBIO","HEXATRADEX","HEXT","HFCL","HGINFRA",
     "HGM","HGS","HIKAL","HIMATSEIDE","HINDALCO","HINDCOMPOS","HINDCOPPER","HINDOILEXP","HINDPETRO","HINDUNILVR",
     "HINDWAREAP","HINDZINC","HIRECT","HISARMETAL","HITECH","HLEGLAS","HLVLTD","HMAAGRO","HMVL","HNDFDS",
@@ -762,8 +769,59 @@ def fetch_stock_info(symbol):
         short_rat  = sr(i.get("shortRatio"), 2)
 
         # ── Dividend ─────────────────────────────────────────────────────
+        # V41.5 (2026-10-16) — THE RATE IS SUMMED FROM THE DIVIDEND EVENTS, FOR EVERY ROW.
+        # Yahoo stopped returning `dividendRate` for NSE listings between the
+        # 2026-10-14 and 2026-10-15 refreshes: coverage 60.8% -> 2.0%, and the
+        # coverage gate held both publishes. Measured at the raw API, below
+        # yfinance, across all 2,119 listings on 2026-10-16:
+        #   * `dividendRate` arrives for 40.
+        #   * `trailingAnnualDividendRate` is no substitute. It is > 0 for 140,
+        #     reads 0.0 for payers whose dividends are on file (AXISBANK, ITC,
+        #     20MICRONS) and is in DOLLARS for INFY (0.52).
+        #   * `dividendYield` (Yahoo's forward rate / price) still arrives, but
+        #     at 0.01-pt precision: yield x price lands within 5% of the lost
+        #     rate for only 92% of payers (APARINDS 55.82 against 60.00), so
+        #     rebuilding the rate from it would publish invented digits.
+        #   * The dividend EVENTS all of these are computed from are intact:
+        #     AXISBANK 1.00 on 2026-07-10, ITC 6.50 + 8.00, 20MICRONS 1.25.
+        # So the rate is the sum of the dividends that went ex in the last 365
+        # days: a TRAILING basis where Yahoo's rate was forward (last dividend x
+        # frequency: TCS 12 x 4 = 48), and a figure anyone can check against the
+        # record dates. Specials count, as in any trailing yield: TCS's 57.00 of
+        # January 2026 (46.00 of it special) makes 112.00.
+        # Do not reconcile it against Yahoo's payoutRatio. Payout x EPS lands
+        # within 5% of the rate for under half the payers on EITHER basis (514
+        # of 1,084 trailing, 527 of 1,105 forward), and payout reads 0 for
+        # AXISBANK, SIEMENS and INDUSTOWER, all three of which paid.
+        # It is applied to every row, not only to the holes: scores-engine.js
+        # percentile-ranks dividend_yield, which export_static derives from this
+        # rate, so the pool must share one basis (the V36.6 ROE/ROA rule).
+        # Two known edges of a trailing window, both the vendor convention: a
+        # payer whose ex-date moves earlier year on year counts both payments
+        # until the older one ages out (HCLTECH on 2026-10-16: five quarterlies,
+        # 72 against 60), and a dividend Yahoo has no event for reads as none.
+        # Cost: one chart request per symbol; .info and the frames are unchanged.
         div_yield  = sp(i.get("dividendYield"))
-        div_rate   = sr(i.get("dividendRate"), 2)
+        div_rate   = None
+        try:
+            _px_hist = ticker.history(period="1y", interval="1d", actions=True)
+            # No bars means the request failed, which says nothing about
+            # dividends: leave the rate unknown and Yahoo's yield as the
+            # hole-filler, so a failed batch shows up at the coverage gate
+            # instead of being published as "no dividend".
+            if _px_hist is not None and not _px_hist.empty:
+                _ttm = 0.0
+                if "Dividends" in _px_hist.columns:
+                    _since = datetime.now(_px_hist.index.tz) - timedelta(days=365)
+                    _ttm = float(_px_hist["Dividends"][_px_hist.index > _since].sum())
+                if _ttm > 0:
+                    div_rate = sr(_ttm, 2)
+                else:
+                    # Bars arrived and nothing went ex in a year: the trailing
+                    # yield is 0, not Yahoo's forward figure for a lapsed one.
+                    div_yield = 0.0
+        except Exception:
+            pass   # never let the dividend lookup cost the stock its whole row
         payout     = sp(i.get("payoutRatio"))
 
         data = {
