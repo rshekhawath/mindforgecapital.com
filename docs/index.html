@@ -1807,6 +1807,16 @@ html[data-theme="dark"] .vcard-bt-alpha{ background:rgba(120,160,240,.12); borde
   .strat-grid { grid-template-columns: minmax(0, 460px) !important; justify-content: center; }
 }
 
+/* V42.0 — iPad portrait and landscape phones: two footer columns, not one. The two
+   rules above stack the four columns at 900px and below, the right call on a phone;
+   at 601–900px it left a stack 876–912px tall whose short links filled about a third
+   of the width. Two columns measure 584px at every width in the band. The link rows
+   keep their boxes (V31.9), and the credential chip lives in .footer-bottom, outside
+   this grid, so its width and its line breaks do not move. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .footer-inner { grid-template-columns: 1fr 1fr !important; gap: 28px 40px; }
+}
+
 @media (max-width: 480px) {
   /* Criteria pills - 2 col on small phones */
   .criteria-row { grid-template-columns: repeat(2, 1fr) !important; }
@@ -6554,7 +6564,12 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
 .fit-tbl th:first-child, .fit-tbl td:first-child{ text-align:left; }
 .fit-tbl thead th{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text3); }
 .fit-tbl tbody td:first-child{ color:var(--white); font-weight:600; }
-.fit-tbl tbody td{ color:var(--data-strong); font-weight:600; }
+/* V42.0 — every figure in this column is a LOSS, and since V38.7 it was printed in
+   --data-strong, the page's gain green: "−₹28,875" read as money made. The amount
+   now takes the loss ink the deepest-fall figures above already use (--data-bad,
+   AA in both themes); the "—" an empty corpus prints stays neutral. */
+.fit-tbl tbody td{ color:var(--text2); font-weight:600; }
+.fit-tbl .fit-loss{ color:var(--data-bad); }
 .fit-tbl tbody tr:last-child td{ border-bottom:none; }
 .fit-dd{ font-size:11px; color:var(--text3); font-weight:500; display:block; margin-top:2px; }
 /* V40.1 — A6: the fee on the slice under each loss, or the floor it falls below */
@@ -6776,7 +6791,7 @@ html[data-theme="dark"] .fit-chip[aria-pressed="true"]{ color:#fff; background:#
             else if (monthly > 0) sub = '<span class="fit-sub">fee ' + (monthly * 12 / slice * 100).toFixed(1) + '% a year</span>';
             else if (monthly === 0) sub = '<span class="fit-sub">no fee</span>';
           }
-          if (tds[1]) tds[1].innerHTML = corpus > 0 ? '−₹' + inr(loss) + sub : '—';
+          if (tds[1]) tds[1].innerHTML = corpus > 0 ? '<span class="fit-loss">−₹' + inr(loss) + '</span>' + sub : '—';
         })(SHARE);
       });
     }

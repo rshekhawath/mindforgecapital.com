@@ -13361,8 +13361,17 @@ function renderBookChange(diff, stocks){
       holdBody = '<div class="chg-sells">' + rot.map(function(r){
         var up = r.d >= 0, flat = Math.abs(r.d) < 0.05;
         var url = ''; try { url = bk.link({ ticker:r.t }) || ''; } catch(e){}
+        /* V42.0 — the pp figure is the difference of the two weights AS PRINTED. It
+           was r.d, the unrounded move, so "add to 4.3% from 4.0%" sat beside "+0.2 pp"
+           and "trim to 8.3% from 11.4%" beside "−3.2 pp": three of the sample's eight
+           rows did not add up on the screen. Two decimals only where both weights
+           round to the same tenth (a move under 0.1 pp). Rounding keeps the order, so
+           the sign and the arrow are unchanged. */
+        var dp = (!flat && r.now.toFixed(1) === r.was.toFixed(1)) ? 2 : 1;
+        var nowS = r.now.toFixed(dp), wasS = r.was.toFixed(dp);
+        var dS = Math.abs(Number(nowS) - Number(wasS)).toFixed(dp);
         var lbl = flat ? 'unchanged at ' + r.now.toFixed(1) + '%'
-                       : (up ? 'add to ' : 'trim to ') + r.now.toFixed(1) + '% from ' + r.was.toFixed(1) + '%';
+                       : (up ? 'add to ' : 'trim to ') + nowS + '% from ' + wasS + '%';
         var o = (rwOn && !flat) ? _rwOrderFor(r.t, ocB) : null;
         var hold = o && o.hold, act = !!(o && !o.hold && o.qty > 0);
         var key = act ? orderKey(o) : '', done = act && !!placed[key];
@@ -13380,7 +13389,7 @@ function renderBookChange(diff, stocks){
           '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(r.t) + '</span>' +
             '<span class="chg-sell-q">' + escapeHtml(lbl) + '</span>' + qtyHtml + '</span>' +
           '<span class="chg-rot-d ' + (flat ? 'is-flat' : up ? 'is-up' : 'is-dn') + '">' +
-            (flat ? '&mdash;' : (up ? '+' : '−') + Math.abs(r.d).toFixed(1) + '\u00a0pp') + '</span>' +
+            (flat ? '&mdash;' : (up ? '+' : '−') + dS + '\u00a0pp') + '</span>' +
           (hold ? '<button type="button" class="chg-sell-lnk cs-cal" onclick="csHoldToCalendar(\'' + escapeHtml(hold.ticker) + '\')">Remind me</button>'
            : url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
                  escapeHtml(bk.name) + ' &rarr;</a>' : '') +

@@ -852,7 +852,11 @@
 // V41.9 -> mfc-v128. The precached index.html changed (the hero card opens on
 // LargeMidcap 250); dashboard.html, strategies.html and multiasset.html changed too.
 // No shared asset moved.
-const CACHE = 'mfc-v128';
+// V42.0 -> mfc-v129. Device QA pass: the precached index.html changed (the corpus
+// table's losses take the loss ink; two footer columns at 601-900px), and so did
+// dashboard.html, strategies.html and calculators/mindforge-vs-fund.html.
+// No shared asset moved.
+const CACHE = 'mfc-v129';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
