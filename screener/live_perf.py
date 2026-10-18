@@ -30,7 +30,10 @@ Coverage guard: if fewer than 80% of a strategy's names return prices, that
 strategy publishes null rather than a half-measured number.
 
 Prices are Yahoo's closes. A pick Yahoo has not priced on the measuring day takes
-NSE's official close for that exact day (V41.8, see main()).
+NSE's official close for that exact day (V41.8, see main()). Each pick's baseline
+is checked against the price it was published at (the book's file, where it has
+one) or NSE's official close for that day, and the reference wins when Yahoo's bar
+disagrees by more than 0.5% (V42.1, see main()).
 
 Run: python3 screener/live_perf.py        (wired into refresh-stocks.command +
 commands/refresh-stocks.command, so it refreshes with every data cycle)
@@ -85,7 +88,14 @@ def load_picks(folder: str, suffix: str) -> list[dict]:
                 w = float(row.get("Weight %", "0") or 0)
             except ValueError:
                 w = 0.0
-            rows.append({"yahoo": bare + suffix, "w": w or 1.0})
+            # V42.1 — the price the run recorded for the pick, where the book's own
+            # file carries one ("Current Price"; the stock books' files do not). It is
+            # the close the pick was published at, so it is the baseline members see.
+            try:
+                pub = float(row.get("Current Price", "") or 0) or None
+            except ValueError:
+                pub = None
+            rows.append({"yahoo": bare + suffix, "w": w or 1.0, "pub": pub})
     return rows
 
 
@@ -282,11 +292,37 @@ def main() -> None:
             return n_rec, n_live
         return (rec or n_rec), (live or n_live)
 
+    # V42.1 — THE BASELINE IS THE PRICE MEMBERS WERE GIVEN, NOT YAHOO'S CURRENT
+    # RECORD OF THAT DAY. A Yahoo bar for the baseline day can change after the
+    # publish. On 18 Oct 2026 one ETF's 30 Sep bar read about 4% above both NSE's
+    # official close and the price members had been given, which took 0.31 points
+    # off the free book's public figure while every member dashboard measured from
+    # the right price. Each pick's Yahoo baseline is now checked against a
+    # reference: the price in the book's own file where it has one, else NSE's
+    # official close for the baseline day. Beyond BASE_TOL the reference is the
+    # baseline and the run says so. With no reference (no file price, NSE
+    # unreachable or the pick not in its file) Yahoo's close stands, as before.
+    BASE_TOL = 0.005
+    nse_base = {"ok": True}
+
+    def base_ref(r):
+        if r.get("pub"):
+            return r["pub"], "the published price"
+        if not nse_base["ok"]:
+            return None, ""
+        try:
+            v = nse_close_on(r["yahoo"], base)
+        except Exception as e:                   # the check must never stop a run
+            print(f"  !! NSE close for {base} unavailable ({e}); Yahoo's baselines unchecked")
+            nse_base["ok"] = False
+            return None, ""
+        return (v or None), "NSE's official close"
+
     strategies, as_of = {}, None
     for key, (folder, suffix, name, curr) in STRATS.items():
         picks = picks_by_key[key]
         w_sum = w_ret = 0.0
-        priced = 0
+        priced = checked = moved = 0
         for r in picks:
             rec, live = px(r["yahoo"], rebal_ts), px(r["yahoo"])
             if not rec or not live:
@@ -295,9 +331,19 @@ def main() -> None:
                       f"{base} → {measured}: " + ("priced" if rec and live else "still missing"))
             if not rec or not live:
                 continue
+            ref, src = base_ref(r)
+            if ref:
+                checked += 1
+                if abs(rec / ref - 1.0) > BASE_TOL:
+                    print(f"  ↺  {key}: {r['yahoo']} Yahoo's {base} close {rec:.2f} differs from "
+                          f"{src} {ref:.2f}; measuring from {ref:.2f}")
+                    rec = ref
+                    moved += 1
             priced += 1
             w_sum += r["w"]
             w_ret += r["w"] * (live / rec - 1.0)
+        print(f"  {key}: baseline checked for {checked}/{priced} priced picks"
+              + (f", {moved} measured from the reference" if moved else ""))
         ok = picks and priced / len(picks) >= 0.8 and w_sum > 0
         live_pct = round(w_ret / w_sum * 100, 2) if ok else None
         if not ok:

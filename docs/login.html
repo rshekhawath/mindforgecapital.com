@@ -336,6 +336,23 @@ var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);e
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
 <link rel="stylesheet" href="assets/mfc-finish.css?v=3950">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
+<script>
+/* V42.1 — A4. A signed-in member who opens "My Account" is not a new member: the
+   "1st month FREE for all new members" bar and the "Get Started" button are hidden
+   for them on this page (page-inline; mfc-offer.js is a shared asset and untouched). */
+try {
+  if (/(?:^|;\s*)mfc_dash_token=[^;]/.test(document.cookie) || localStorage.getItem('mfc_dash_token'))
+    document.documentElement.classList.add('mf-member');
+} catch (e) {}
+</script>
+<style>
+html.mf-member #mfc-offer-bar{ display:none !important; }
+html.mf-member nav .nav-links a.nav-cta{ display:none !important; }
+/* V42.1 — A4: the member's books, under "Continue to your dashboard" */
+.resume-books-h{ margin:20px 0 10px; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--text3); }
+#resume-books{ display:grid; gap:10px; }
+#resume-books .sub-row{ width:100%; text-align:left; font:inherit; }
+</style>
 </head>
 <body class="mfc-ambient">
 <script>
@@ -421,6 +438,15 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            the same test that reveals this block. -->
       <div id="resume-session" style="display:none;margin:22px 0 24px;">
         <a class="btn" id="resume-btn" href="dashboard.html" style="display:block;text-align:center;text-decoration:none;">Continue to your dashboard →</a>
+        <!-- V42.1 — A4. "My Account" for a signed-in member was a sign-in form: the list of
+             books appeared only after a one-time code. The books are read with one
+             my_strategies call on the stored session (the call the dashboard makes on every
+             load). "Open" hands the book's token to the dashboard through sessionStorage, as
+             its own switcher does; no token is ever written into an href. -->
+        <div id="resume-books-wrap" hidden>
+          <div class="resume-books-h">Your books</div>
+          <div id="resume-books"></div>
+        </div>
         <div class="hint" style="text-align:center;margin-top:14px;">or sign in with a different email below</div>
         <hr class="divider">
       </div>
@@ -777,6 +803,43 @@ document.addEventListener('keydown', function(e) {
   var s = document.getElementById('signin-steps');
   if (h) h.textContent = 'Welcome back';
   if (d) d.textContent = "You're already signed in on this device — continue straight to your dashboard.";
+  // V42.1 — A4: the member's books, from the session this device already holds
+  try {
+    var tok = '';
+    var cm, re = /(?:^|;\s*)mfc_dash_token=([^;]*)/g;
+    while ((cm = re.exec(document.cookie)) !== null) tok = decodeURIComponent(cm[1]);
+    if (!tok) { try { tok = localStorage.getItem('mfc_dash_token') || ''; } catch (e) {} }
+    if (tok) fetch(APPS_SCRIPT_URL + '?action=my_strategies&token=' + encodeURIComponent(tok) + '&_=' + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var rows = (data && Array.isArray(data.strategies) ? data.strategies : [])
+          .filter(function (b) { return b && b.strategy && b.token && !isRetiredStrategy(b.strategy); });
+        if (!rows.length) return;
+        rows.sort(function (a, b) { return String(a.strategy).localeCompare(String(b.strategy)); });
+        var toks = rows.map(function (b) { return String(b.token); });
+        var esc = function (x) { return String(x == null ? '' : x).replace(/[<>&"']/g, function (c) {
+          return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+        var list = document.getElementById('resume-books');
+        list.innerHTML = rows.map(function (b, i) {
+          var exp = new Date(b.expires_at), when = isNaN(exp) ? '' :
+            exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\s+/g, '\u00a0');
+          return '<button type="button" class="sub-row" data-i="' + i + '">' +
+            '<div><div class="sub-name">' + esc(b.strategy) + '</div>' +
+            (when ? '<div class="sub-meta">Access to ' + when + '</div>' : '') + '</div>' +
+            '<div class="sub-go">Open &rarr;</div></button>';
+        }).join('');
+        list.addEventListener('click', function (ev) {
+          var btn = ev.target && ev.target.closest ? ev.target.closest('button[data-i]') : null;
+          if (!btn) return;
+          var t = toks[Number(btn.getAttribute('data-i'))];
+          if (!t) return;
+          try { sessionStorage.setItem('mfc_dash_switch', t); } catch (e) {}
+          location.href = 'dashboard.html?sw=' + Date.now();
+        });
+        document.getElementById('resume-books-wrap').hidden = false;
+      })
+      .catch(function () {});
+  } catch (e) {}
   if (s){
     s.style.display = 'none';
     var srp = s.nextElementSibling;

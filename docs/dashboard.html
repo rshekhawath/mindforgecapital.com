@@ -223,6 +223,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
 /* V41.3 — written as .err-act it lost to `.state-box p{margin:0 auto}` (0,1,1 over 0,1,0), so
    the 22px never applied and the button sat flush under the sentence on every device. */
 .state-box .err-act{ margin-top:22px; }
+/* V42.1 — A3: the prospect's way in, under the sign-in button (no-token state only) */
+.state-box .err-prospect{ margin-top:16px; font-size:13.5px; line-height:1.6; color:var(--text2); }
+@media (pointer:coarse){ .state-box .err-prospect a{ display:inline-block; padding:11px 2px; } }
 .err-act-btn{ font-size:14.5px; font-weight:700; text-decoration:none;
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   min-height:44px; padding:0 22px; border-radius:12px; color:#fff;
@@ -287,6 +290,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(240,245,255,0.96);backdrop
   background:linear-gradient(135deg,var(--accent),var(--teal)); box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
 .strat-opt.is-active .strat-opt-dot{ box-shadow:0 0 0 3px rgba(37,99,235,0.2); }
 .strat-opt-name{ flex:1 1 auto; white-space:nowrap; }
+/* V42.1 — A4: the book's access end, under its name */
+.strat-opt-sub{ display:block; margin-top:2px; font-size:11.5px; font-weight:600; color:var(--text3); white-space:nowrap; }
+/* --text3 measured 4.45:1 on the dark menu's active-row tint (QA, pixels); one step lighter there */
+html[data-theme="dark"] .strat-opt-sub{ color:var(--text2); }
 .strat-opt-check{ display:inline-flex; width:15px; height:15px; flex:0 0 auto; color:var(--accent); }
 .strat-opt-check svg{ width:100%; height:100%; }
 /* V29.6 — the "Find my other strategies" escape hatch. Visually a sibling of the
@@ -3053,6 +3060,11 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
          code) and access that has ended (renew, or start the free book again).
          Written by showError({action}); hidden for every other state. -->
     <p class="err-act" id="error-action" hidden><a class="err-act-btn" id="error-action-link" href="login.html"></a></p>
+    <!-- V42.1 — A3. THE ADDRESS A COLLEAGUE MENTIONS. Someone who types dashboard.html with
+         no session met a sign-in card and nothing else: no way to the sample, none to the
+         free book. Shown ONLY by init()'s no-token branch; showError() hides it for every
+         other state (expired, auth failure, connection error), and ?demo never reaches it. -->
+    <p class="err-prospect" id="error-prospect" hidden>New here? <a href="/dashboard.html?demo=1" class="state-lnk">See a sample dashboard&nbsp;&rarr;</a> &nbsp;&middot;&nbsp; <a href="/signup.html?strategy=multiasset" class="state-lnk">Start the free book&nbsp;&rarr;</a></p>
     <!-- V35.2 — THE WAY FORWARD, not just the way out. A network blip surfaces here
          as "Connection Error", and until now the only things offered were "Sign in
          again" and "Recover dashboard access" — both of them the wrong action for a
@@ -3975,6 +3987,15 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
    and adds a line-through rather than fading the row (an opacity-muted row fails
    contrast, measured on this codebase before). */
     .chg-rot.has-cb{ grid-template-columns:auto auto minmax(0,1fr) auto auto; }
+    /* V42.1 — B7. The target line ("trim to 6.7% from 10.0%") is a .chg-sell-q, which the
+       sell rows keep on one line. In a re-weight row that shares the card with populated
+       Buy and Sell groups (a 304px row at a 1,152px viewport) the nowrap line ran under
+       the "−3.3 pp" figure in every row. Here it may wrap inside its own column. */
+    .chg-rot .chg-sell-q{ white-space:normal; }
+    /* The buy rows had the same overlap ("5148 shares · ₹66,667" under the broker link at
+       608-656 and 864-928px, on the live site too). The quantity may wrap now, and only after
+       its dot: _buyQtyText keeps the number with its unit. */
+    .chg-buy .chg-sell-q{ white-space:normal; }
     .chg-rot.is-done{ background:rgba(15,23,42,.04); border-color:var(--border); }
     html[data-theme="dark"] .chg-rot.is-done{ background:rgba(255,255,255,.04); }
     .chg-rot.is-done .chg-sell-t, .chg-rot.is-done .chg-rot-q{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text3); }
@@ -3983,6 +4004,25 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     @media (max-width:460px){
       .chg-rot.has-cb{ grid-template-columns:auto auto minmax(0,1fr) auto; }
       .chg-rot.has-cb .chg-sell-lnk{ grid-column:3 / -1; }
+    }
+    /* V42.1 — B7, the rest of it, found by the width sweep (every 16px, 320-1,440). Where the card
+       sets its three groups side by side (864-1,248px) a re-weight row is 211-330px wide; five
+       columns left the ticker and target a 5-73px column, the target still ran under the figure,
+       and below 1,200px (where the ticker block stacks) a ten-letter ticker spilled out of it. A
+       row 400px wide or less now gives the text the row's width and puts the figure and the
+       broker link on a line under it, judged by the row's own width, not the viewport's. The
+       groups are sized by flex basis, never by their content, so the container moves nothing
+       else. After the 460px rules on purpose: same specificity, so the later rule wins. */
+    .chg-group.is-rot .chg-sells{ container-type:inline-size; }
+    @container (max-width:400px){
+      .chg-rot{ grid-template-columns:auto auto minmax(0,1fr); }
+      .chg-rot > .chg-sell-id{ grid-column:2 / -1; }
+      .chg-rot > .chg-rot-d{ grid-row:2; grid-column:2; }
+      .chg-rot > .chg-sell-lnk{ grid-row:2; grid-column:3; justify-self:start; }
+      .chg-rot.has-cb{ grid-template-columns:auto auto auto minmax(0,1fr); }
+      .chg-rot.has-cb > .chg-sell-id{ grid-column:3 / -1; }
+      .chg-rot.has-cb > .chg-rot-d{ grid-column:3; }
+      .chg-rot.has-cb > .chg-sell-lnk{ grid-column:4; }
     }
     /* An inline button inside running text: the shared touch rule (html button{min-height:44px;
        display:inline-flex}) would make its line 44px tall and open a gap in the sentence. The
@@ -5553,7 +5593,15 @@ function syncStrategiesFromServer(activeStrategy){
         recordStrat(name, tok);
         if (before[name] !== tok) added++;
       });
-      if (added) setupStrategySwitcher(activeStrategy);   // menu fills itself in place
+      // V42.1 — A4: keep each held book's access end for the switcher's rows
+      var exp = _stratExpRead(), expChanged = false;
+      data.strategies.forEach(function(s){
+        var nm = _stratNameKey(s && s.strategy);
+        if (!nm || isRetiredStrategy(nm) || !(s && s.expires_at)) return;
+        if (exp[nm] !== s.expires_at){ exp[nm] = s.expires_at; expChanged = true; }
+      });
+      if (expChanged) _stratExpWrite(exp);
+      if (added || expChanged) setupStrategySwitcher(activeStrategy);   // menu fills itself in place
       try { if (window.mfcV412Refresh) window.mfcV412Refresh(); } catch (e) {}   // V41.2 — B1
       return added > 0;
     })
@@ -5989,6 +6037,8 @@ async function init() {
     // opening a bookmark on a new device. Same state, the reader's words.
     showError('Sign in to your dashboard', 'We’ll email you a one-time code — no password needed.',
               { action: { href: 'login.html', label: 'Email me a code →' } });
+    // V42.1 — A3: and, for someone who is not a member yet, the way in
+    try { var _pros = document.getElementById('error-prospect'); if (_pros) _pros.hidden = false; } catch (e) {}
     return;
   }
   try {
@@ -6401,6 +6451,21 @@ const _DEMO_STRATS = {
   'MindForge MultiAsset':      '2'
 };
 let _stratMenuWired = false;
+/* V42.1 — A4. EACH BOOK'S ACCESS END, BESIDE ITS NAME IN THE SWITCHER. A member with
+   two or three books saw three names and nothing else: not which book's access ends
+   when. my_strategies already returns `expires_at` for every held book on each load
+   (syncStrategiesFromServer), so it is kept per device beside the switcher's list of
+   books — never in a URL — and the current book's date comes from its own subscription. */
+var _STRAT_EXP_KEY = 'mfc_dash_strat_exp';
+function _stratNameKey(n){ return String(n == null ? '' : n).replace(/\u00A0/g, ' ').trim(); }
+function _stratExpRead(){ try { return JSON.parse(localStorage.getItem(_devKey(_STRAT_EXP_KEY)) || '{}') || {}; } catch (e) { return {}; } }
+function _stratExpWrite(m){ try { localStorage.setItem(_devKey(_STRAT_EXP_KEY), JSON.stringify(m)); } catch (e) {} }
+function _stratExpLabel(iso){
+  if (!iso) return '';
+  var d = new Date(iso); if (isNaN(d)) return '';
+  return (d < new Date() ? 'Access ended ' : 'Access to ') + mfDate(d, { day:'numeric', month:'short', year:'numeric' });
+}
+
 function setupStrategySwitcher(activeStrategy){
   const pill = document.getElementById('pill-strategy');
   if (!pill) return;
@@ -6483,15 +6548,20 @@ function setupStrategySwitcher(activeStrategy){
       return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[ch];
     });
   }
+  const _exp = isDemo ? {} : _stratExpRead();             // V42.1 — A4
   menu.innerHTML =
     '<div class="strat-menu-head">Your strategies</div>' +
     entries.map(function(e){
       const active = (e.name === activeStrategy);
+      const expLbl = e.kind === 'token'
+        ? _stratExpLabel(_exp[_stratNameKey(e.name)] || (active && window._currentSub && window._currentSub.expires_at))
+        : '';
       return '<button type="button" class="strat-opt' + (active ? ' is-active' : '') + '" role="option"' +
              ' aria-selected="' + (active ? 'true' : 'false') + '"' +
              ' data-kind="' + e.kind + '" data-value="' + encodeURIComponent(e.value) + '">' +
              '<span class="strat-opt-dot" aria-hidden="true"></span>' +
-             '<span class="strat-opt-name">' + _esc(e.name) + '</span>' +
+             '<span class="strat-opt-name">' + _esc(e.name) +
+               (expLbl ? '<span class="strat-opt-sub">' + _esc(expLbl) + '</span>' : '') + '</span>' +
              '<span class="strat-opt-check" aria-hidden="true">' +
                (active ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') +
              '</span></button>';
@@ -9554,7 +9624,7 @@ function _buyQtyText(s){
     if (price <= 0 || cap <= 0) return '';
     var qty = Math.floor(allocBudget(s, stocksData, cap) / price);
     if (!(qty > 0)) return '';
-    return qty + ' share' + (qty === 1 ? '' : 's') + ' \u00b7 ' + fmtMoney(Math.round(qty * price));
+    return qty + '\u00a0share' + (qty === 1 ? '' : 's') + '\u00a0\u00b7 ' + fmtMoney(Math.round(qty * price));
   }catch(e){ return ''; }
 }
 /* The capital box moves every one of those quantities, so the buy rows are
@@ -11263,7 +11333,8 @@ function refreshHowto() {
     var now3 = total > 0 && left > 0;
     var lines = {
       1: capital > 0
-           ? '<b>' + fmtMoney(capital) + '</b> entered' +
+           // V42.1 — B6: "entered" only for an amount the member typed
+           ? '<b>' + fmtMoney(capital) + '</b>' + (window._capEntered ? ' entered' : ', the starting amount, not one you entered') +
              (perStock && perStock !== '—' ? '<span class="hs-sep">·</span>' + perStock + ' per stock' : '')
            : '',
       2: (brokerName && total)
@@ -11685,7 +11756,7 @@ function exportCSV() {
       lines.push([
         until ? 'SELL ON OR AFTER ' + _csIso(until) : 'SELL', rowsOut.length + j + 1,
         JSON.stringify(p.n || t), JSON.stringify(t), JSON.stringify('—'),
-        (Number(p.rec)||0).toFixed(2), '0.00', '0.00', (Number(p.qty)||0)
+        (Number(p.rec)||0).toFixed(2), '0.00', '0.00', (Number(p.qty)||'')   // V42.1 — B5: blank, never a guessed zero
       ].join(','));
     });
   }
@@ -11955,6 +12026,8 @@ function showError(title, msg, opts) {
       else { actA.removeAttribute('target'); actA.removeAttribute('rel'); }
     }
   }
+  var pros = document.getElementById('error-prospect');   // V42.1 — A3: only the no-token branch shows it
+  if (pros) pros.hidden = true;
   var retry = !!opts.retry;
   var rBox = document.getElementById('error-retry');
   var lock = document.getElementById('error-icon-lock');
@@ -12339,8 +12412,27 @@ function _recordCurQty(){
       var q = (price > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / price) : 0;
       if (p.qty !== q){ p.qty = q; dirty = true; }
     });
+    /* V42.1 — B5. WHAT THE QUANTITIES WERE SIZED FROM. A quantity recorded at the
+       starting amount is not a holding: the member never said they hold it. Until
+       now nothing said which it was, so next cycle "N shares held", every trim and
+       the realised gain or loss were computed from a default nobody entered — and
+       the default moves (LargeMidcap's was ₹15,00,000 in September, ₹10,00,000 in
+       October). The cycle record now carries the amount and whether it was typed;
+       bookDiff() trusts last cycle's quantities only when it was. */
+    var ent = !!window._capEntered;          // the sample's amount counts as entered (V39.3 B4: _capEntered = isDemo || saved)
+    if (slot.cur.cap !== cap || slot.cur.entered !== ent){ slot.cur.cap = cap; slot.cur.entered = ent; dirty = true; }
     if (dirty) _saveBookHist(hist);
   } catch(e){}
+}
+
+/* V42.1 — B5. Was this cycle record sized at an amount the member entered?
+   Records written from V42.1 say so (`entered`). Older ones cannot: they count as
+   entered only if this device holds an amount the member typed for the book, which
+   is exactly the case in which the old code was right. */
+function _histEntered(rec, sub){
+  if (!rec) return false;
+  if (typeof rec.entered === 'boolean') return rec.entered;
+  return loadSavedCapital(sub && sub.strategy) > 0;
 }
 
 /* Returns {known, added[], removed[], held[], prevKey, prevWhen, prevPos} and, as
@@ -12361,9 +12453,9 @@ function bookDiff(sub, stocks){
   // in local testing. Seeds a plausible previous cycle instead of the real one —
   // on every load (V40.0), so the sample always shows its own fixture's diff.
   if (isDemo){
-    slot = { cur:{ key:key, tickers:tickers, pos:pos, when:new Date().toISOString() },
+    slot = { cur:{ key:key, tickers:tickers, pos:pos, when:new Date().toISOString(), entered:true },
              prev:{ key:'demo-prev', tickers:_demoPrevTickers(), pos:_demoPrevPos(),
-                    when:new Date(Date.now()-31*864e5).toISOString() } };
+                    when:new Date(Date.now()-31*864e5).toISOString(), entered:true } };
   } else if (!slot.cur){
     slot.cur = { key:key, tickers:tickers, pos:pos, when:new Date().toISOString() };
   } else if (slot.cur.key !== key){
@@ -12392,6 +12484,21 @@ function bookDiff(sub, stocks){
   out.prevKey = slot.prev.key;
   out.prevWhen= slot.prev.when || null;
   out.prevPos = slot.prev.pos || null;
+  // V42.1 — B5: last cycle's quantities are the member's holdings only if they were
+  // sized at an amount the member entered. Otherwise every reader below sees them
+  // blank, and the existing unknown-quantity paths take over: a sale with no number
+  // (placed by hand, never basketed), V41.9's rwUnknown and its Match line, and a
+  // cost card that cannot compute a realised gain. Weights and prices stay.
+  out.prevQtyKnown = isDemo || _histEntered(slot.prev, sub);
+  if (!out.prevQtyKnown && out.prevPos){
+    var _blank = {};
+    Object.keys(out.prevPos).forEach(function(t){
+      var q = out.prevPos[t] || {}, c = {};
+      Object.keys(q).forEach(function(k){ c[k] = q[k]; });
+      c.qty = 0; _blank[t] = c;
+    });
+    out.prevPos = _blank;
+  }
   out.added   = tickers.filter(function(t){ return !prevSet[t]; });
   out.held    = tickers.filter(function(t){ return  prevSet[t]; });
   out.removed = prev.filter(function(t){ return !curSet[t]; });
@@ -12803,6 +12910,9 @@ function renderCycleCost(){
     var legs = [];
     if (buyVal  > 0) legs.push(fmtMoney(Math.round(buyVal))  + ' bought');
     if (sellVal > 0) legs.push(fmtMoney(Math.round(sellVal)) + ' sold');
+    // V42.1 — B5: a sale with no known quantity is not in the total; say so
+    var _unsz = diff.prevQtyKnown === false ? goneNow.length : 0;
+    if (_unsz) legs.push(_unsz + (_unsz === 1 ? ' sale' : ' sales') + ' not sized');
     if (rwC.length){                                   // V41.9 — A1
       if (rwSold   > 0) legs.push(fmtMoney(Math.round(rwSold))   + ' trimmed');
       if (rwBought > 0) legs.push(fmtMoney(Math.round(rwBought)) + ' added');
@@ -12823,6 +12933,9 @@ function renderCycleCost(){
                        (maTax.slab * 1.04).toFixed(1).replace(/\.0$/, '') + '% on ' + fmtMoney(Math.round(Math.max(0, maTax.slGain))))
                 : cell('Short-term tax', fmtMoney(0), 'the trims realise no net gain', true))
             : cell('Short-term tax', '&mdash;', 'needs last cycle&rsquo;s price for each trimmed ETF', true))
+        : (!gainKnown && diff.prevQtyKnown === false && (goneNow.length || rwTrims.length || ocC.rwUnknown))
+        ? cell('Short-term tax', '&mdash;',      // V42.1 — B5: needs holdings, not prices
+               'needs your holdings: <button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> works it out', true)
         : !gainKnown
         ? cell('Short-term tax', '&mdash;',
                (goneNow.length || rwTrims.length) ? 'needs a live price for each sale' : 'nothing sold this cycle', true)
@@ -12836,7 +12949,8 @@ function renderCycleCost(){
   }
   var note = document.getElementById('cc-note');
   if (note){
-    note.innerHTML = 'Estimates, at the capital you entered. Charges are a single ' + cost.bps +
+    // V42.1 — B6: "you entered" only when they did (V39.3 B4's words otherwise)
+    note.innerHTML = (window._capEntered ? 'Estimates, at the capital you entered.' : 'Estimates, at the starting amount, not one you entered.') + ' Charges are a single ' + cost.bps +
       '&nbsp;bps-a-side assumption; your broker’s plan, STT, stamp duty, exchange and SEBI fees and GST are not itemised. ' +
       (key === 'ma'
         ? 'Tax: the Indian equity ETFs pay the 20% short-term rate; the Nasdaq-100, gold, silver and bond ETFs pay your ' +
@@ -12963,10 +13077,10 @@ function renderHeroJob(){
         ' holdings carry over unchanged — you are already done for the month.';
     } else if (nMoved === 1){
       el.textContent = 'No names change this cycle — one holding needs its weight adjusted, ' +
-        'and the other ' + (total - 1) + ' carry over untouched.';
+        (total - 1 === 1 ? 'and the other one carries over untouched.' : 'and the other ' + (total - 1) + ' carry over untouched.');   // V42.1 — one, not "1 carry"
     } else {
       el.textContent = 'No names change this cycle — ' + nMoved + '\u00a0holdings need their weights adjusted' +
-        (nMoved < total ? ', and the other ' + (total - nMoved) + ' carry over untouched.' : ' to this cycle\u2019s targets.');
+        (nMoved < total ? (total - nMoved === 1 ? ', and the other one carries over untouched.' : ', and the other ' + (total - nMoved) + ' carry over untouched.') : ' to this cycle\u2019s targets.');   // V42.1 — one, not "1 carry"
     }
     return;
   }
@@ -13004,8 +13118,12 @@ function renderHeroJob(){
   } else {
     lead = plural(leftOut, 'sell order', 'sell orders') + ' to place this cycle';
   }
+  // V42.1 — B5: when the re-weights cannot be sized, those holdings are not "untouched".
+  var _nUnk = _ocH.rwUnknown ? diff.held.filter(function(t){ return heldMovePP(t) != null && !_isRestricted(t); }).length : 0;
   el.textContent = lead + '. ' +
-    (nHold ? 'The other ' + nHold + ' of your ' + total + ' carry over untouched.'
+    (_nUnk ? 'The other ' + nHold + ' of your ' + total + ' stay with new weights; Match my holdings, below, sizes ' +
+             (_nUnk === 1 ? 'that order.' : 'those orders.')
+     : nHold ? 'The other ' + nHold + ' of your ' + total + ' carry over untouched.'
            : 'Everything else is already in place.') +
     (nHb ? ' ' + (nHb === 1 ? 'One sale waits' : nHb + '\u00a0sales wait') + ' for your holding period.' : '');
 }
@@ -13304,7 +13422,14 @@ function renderBookChange(diff, stocks){
                  escapeHtml(bk.name) + ' &rarr;</a>' : _csCopyBtn(t, qty)) +
         '</div>';
       }).join('') + '</div>' +
-      '<div class="chg-hint">Tick each one once the sell order is placed.' +
+      '<div class="chg-hint">' +
+        // V42.1 — B5: no quantity because none was entered last month, not a missing price
+        (diff.prevQtyKnown === false && list.some(function(t){ return !_isRestricted(t) && !hbBy[String(t).toUpperCase()]; })
+          ? 'Sell your whole holding of each. Last month&rsquo;s quantities were sized at the starting amount, not one you entered, ' +
+            'so your dashboard cannot size these; <button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> ' +
+            'works them out from your broker&rsquo;s list. '
+          : '') +
+        'Tick each one once the sell order is placed.' +
         (unknownN ? ' No purchase date is recorded for ' + (unknownN === 1 ? 'one of these' : unknownN + ' of these') +
           ' &mdash; if you bought ' + (unknownN === 1 ? 'it' : 'any') + ' within your ' + window._mfRules.h +
           '-day holding period, hold ' + (unknownN === 1 ? 'it' : 'those') + ' until the period ends.' : '') + '</div>';
@@ -13402,7 +13527,9 @@ function renderBookChange(diff, stocks){
         : '<div class="chg-hint">The model re-scored these. Bring each one to the Allocation shown in the table below &mdash; ' +
           'no name is bought or sold outright.' +
           (ocB.rwUnknown
-            ? ' Your dashboard has no record of last month&rsquo;s quantities on this device. Paste your holdings into ' +
+            ? (diff.prevQtyKnown === false
+                ? ' Last month&rsquo;s quantities were sized at the starting amount, not one you entered, so your dashboard cannot size these. Paste your holdings into '
+                : ' Your dashboard has no record of last month&rsquo;s quantities on this device. Paste your holdings into ') +
               '<button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> to get the exact orders.'
             : '') + '</div>');
     } else {
@@ -14085,10 +14212,20 @@ function renderAttribution(rows, wSum, port){
       'Nothing in this book is up since the rebalance &mdash; <b>' + nDown + '</b> of <b>' +
       pp.length + '</b> priced holding' + (pp.length === 1 ? '' : 's') + ' cost you <b>' +
       Math.abs(drag).toFixed(2) + '\u00a0pp</b> between them.';
+  } else if (port < -0.05) {
+    /* V42.1 — B8. V30.2 handled "nothing up". With something up and the book still
+       down it read "The gain is 100% concentrated in the top 3 of 8 holdings" on a
+       −1.23% card: there is no gain, and only one holding rose. Say what happened. */
+    var nUp = pp.filter(function(x){ return x.c > 0; }).length;
+    net.innerHTML =
+      'This book is down: <b>' + nDown + '</b> of <b>' + pp.length + '</b> priced holding' + (pp.length === 1 ? '' : 's') +
+      ' cost it <b>' + Math.abs(drag).toFixed(2) + '\u00a0pp</b>, and <b>' + nUp + '</b> added <b>' +
+      Math.abs(lift).toFixed(2) + '\u00a0pp</b>.';
   } else {
     var concWord = conc >= 75 ? 'concentrated in' : conc >= 50 ? 'led by' : 'spread beyond';
+    var nRose = pp.filter(function(x){ return x.c > 0; }).length;   // V42.1 — never a "top N" larger than what rose
     net.innerHTML =
-      'The gain is <b>' + conc + '%</b> ' + concWord + ' the top ' + Math.min(3, pp.length) +
+      'The gain is <b>' + conc + '%</b> ' + concWord + ' the top ' + Math.max(1, Math.min(3, pp.length, nRose)) +
       ' of ' + pp.length + ' holdings' +
       (nDown ? ', and <b>' + nDown + '</b> holding' + (nDown === 1 ? '' : 's') +
                ' cost you <b>' + Math.abs(drag).toFixed(2) + '\u00a0pp</b>.' : '.');
@@ -14294,7 +14431,9 @@ function renderRiskLine(port){
   if (!neg || !months) return;
   el.innerHTML = 'A losing month is part of this book: <b>' + neg + ' of ' + months + '</b> backtested months were negative' +
     (worst ? ', the worst <b>' + worst.replace('-', '\u2212') + '</b>' : '') +
-    ', and the model\u2019s rules do not change in a falling one. <span class="pc-risk-basis">Backtest, before tax.</span>';
+    ', and the model\u2019s rules do not change in a falling one. ' +
+    // V42.1 — A5: the window's limit, said where the member decides whether to hold
+    'Its backtest held no crash like 2008\u2019s or 2020\u2019s, so a real one can go deeper. <span class="pc-risk-basis">Backtest, before tax.</span>';
   el.hidden = false;
 }
 
