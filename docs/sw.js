@@ -860,7 +860,10 @@
 // member's books on My Account; the risk box and the calculator's window line), and
 // so did dashboard.html, strategies.html and the three strategy pages.
 // No shared asset moved.
-const CACHE = 'mfc-v130';
+// V42.2 -> mfc-v131. Device QA fixes in strategies.html, the three strategy pages, fii-dii,
+// scores and screener. No precached document and no shared asset changed; the bump clears an
+// installed app's runtime copies of those pages.
+const CACHE = 'mfc-v131';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

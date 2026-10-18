@@ -2514,15 +2514,23 @@ html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
       .fit-panel-stats{ display:flex; gap:28px; flex-wrap:wrap; margin-bottom:18px; }
       .fit-panel-stats b{ display:block; font-size:22px; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums;
         transition:transform .32s cubic-bezier(.22,.8,.2,1); }
-      .fit-panel.is-active .fit-panel-stats b:first-child{
-        background:linear-gradient(110deg,var(--fit-g1,#1a50d8),var(--fit-g2,#3b82f6));
-        -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--fit-g1,#1a50d8);
+      /* V42.2 — `b:first-child` matched BOTH figures (each <b> is the first child of its own
+         <div>), so the max drawdown wore the panel's gain ramp: -11.6% in green, -23.1% in blue,
+         and SmallMicro's +46.1% CAGR and -24.2% fall both in red. The ramps also ended on stops
+         white cannot carry (#34d399 1.9:1, #f0736a 2.7:1), and LargeMidcap's began at 2.5:1 in
+         dark. The CAGR alone now takes the shared, theme-aware readable ramps the KPI tiles use
+         (--dg-*, mfc-finish.css), SmallMicro in its gold as on every other surface, and the
+         fall takes the loss ink. */
+      .fit-panel.is-active .fit-panel-stats > div:first-child b{
+        background-image:var(--fit-g);
+        -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--fit-c);
         animation:fitPop .38s cubic-bezier(.22,.8,.2,1) .05s both; }
       @keyframes fitPop{ from{ transform:scale(.9); } to{ transform:scale(1); } }
-      @media (prefers-reduced-motion:reduce){ .fit-panel.is-active .fit-panel-stats b:first-child{ animation:none; } }
-      #fit-panel-ma{ --fit-g1:#059669; --fit-g2:#34d399; }
-      #fit-panel-lm{ --fit-g1:#1a50d8; --fit-g2:#3b82f6; }
-      #fit-panel-sm{ --fit-g1:#dc2626; --fit-g2:#f0736a; }
+      @media (prefers-reduced-motion:reduce){ .fit-panel.is-active .fit-panel-stats > div:first-child b{ animation:none; } }
+      #fit-panel-ma{ --fit-g:var(--dg-grn-sm, linear-gradient(110deg,#047857,#0f766e)); --fit-c:#047857; }
+      #fit-panel-lm{ --fit-g:var(--dg-blu, linear-gradient(110deg,#1a50d8,#2563eb)); --fit-c:#1a50d8; }
+      #fit-panel-sm{ --fit-g:var(--dg-gld, linear-gradient(110deg,#a16207,#b45309)); --fit-c:#b45309; }
+      .fit-panel-stats > div + div b{ color:var(--data-bad,#c92020); }
       .fit-panel-stats span{ display:block; font-size:11px; color:var(--text3); margin-top:2px; }
       .fit-panel-row{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
       .fit-cta{ font-size:13px; font-weight:600; color:var(--accent2); }
