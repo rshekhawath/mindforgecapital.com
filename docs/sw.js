@@ -863,7 +863,11 @@
 // V42.2 -> mfc-v131. Device QA fixes in strategies.html, the three strategy pages, fii-dii,
 // scores and screener. No precached document and no shared asset changed; the bump clears an
 // installed app's runtime copies of those pages.
-const CACHE = 'mfc-v131';
+// V42.3 -> mfc-v132. The website and dashboard restructure: the precached index.html and
+// login.html changed (the homepage's new order and the site-wide nav), shared assets moved
+// (mfc-chrome.js 4070 with the tool-page ribbon, mfc-track.js 12 with visit events) and four
+// new ones arrived (mfc-insight.js/css for the dashboard, mfc-deep.js/css for the six new pages).
+const CACHE = 'mfc-v132';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
@@ -906,6 +910,13 @@ self.addEventListener('fetch', (e) => {
   // is useless to anyone who should see it and a liability to everyone else.
   // A failed fetch falls back to the offline shell rather than to a stale book.
   if (url.pathname === '/dashboard.html' || url.pathname.endsWith('/dashboard.html')) {
+    e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
+    return;
+  }
+  // V42.3 — the same rule for the Factor Report's one-click unsubscribe link
+  // (/learn/?unsub=<key>, from every report e-mail): the key must never become a
+  // cache key, so that navigation goes to the network only.
+  if (url.searchParams.has('unsub')) {
     e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
     return;
   }

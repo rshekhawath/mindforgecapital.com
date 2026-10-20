@@ -1,0 +1,143 @@
+/* MindForge dashboard — insight layer (V42.3)
+   The two modes ("This month's orders" / "How it's going") and the cards that
+   explain a book: the month in one paragraph, is-this-normal, ahead or behind
+   the index, market weather, what could move the book, you and the model, the
+   record in numbers, the analyst's note and the renewal review.
+   Built on the dashboard's own tokens (--ink2 / --border2 / --r / --text*) and
+   the contrast-tested data inks from mfc-finish.css (--data-strong / --data-bad),
+   so both themes come for free. */
+
+/* ── modes ──────────────────────────────────────────────────────────────── */
+html[data-dmode="insight"] [data-mfm="orders"],
+html[data-dmode="orders"] [data-mfm="insight"]{ display:none !important; }
+
+.mi-modes{ position:relative; z-index:2; display:flex; gap:6px; padding:5px; margin:0 0 20px;
+  border-radius:14px; background:var(--ink2); border:0.5px solid var(--border2); box-shadow:var(--shadow-sm); }
+.mi-modes button{ flex:1 1 0%; min-width:0; min-height:44px; display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; padding:8px 12px; border:0; border-radius:10px; background:transparent; color:var(--text2);
+  font:inherit; font-size:14px; font-weight:650; line-height:1.2; cursor:pointer; text-align:center;
+  transition:background .2s ease, color .2s ease; }
+.mi-modes button:hover{ color:var(--text); background:rgba(37,99,235,.06); }
+.mi-modes button[aria-pressed="true"]{ color:#fff; background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);
+  box-shadow:0 6px 16px -8px rgba(26,80,216,.6); }
+.mi-modes button:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; }
+.mi-modes .mi-cnt{ display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 7px;
+  border-radius:11px; font-size:12px; font-weight:800; background:rgba(37,99,235,.12); color:var(--accent); }
+.mi-modes button[aria-pressed="true"] .mi-cnt{ background:rgba(255,255,255,.22); color:#fff; }
+html[data-theme="dark"] .mi-modes .mi-cnt{ background:rgba(131,170,255,.16); color:#bcd0ff; }
+.mi-modes .mi-short{ display:none; }
+@media (max-width:480px){
+  .mi-modes .mi-long{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .mi-modes .mi-short{ display:inline; }
+}
+@media (max-width:360px){ .mi-modes button{ font-size:13px; padding:8px 6px; } }
+
+/* ── card base ─────────────────────────────────────────────────────────── */
+.mi-card{ background:var(--ink2); border:0.5px solid var(--border2); border-radius:var(--r);
+  padding:22px 24px; margin:0 0 18px; position:relative; z-index:1; box-shadow:var(--shadow-sm); }
+@media (max-width:640px){ .mi-card{ padding:18px 16px; } }
+.mi-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px 12px; flex-wrap:wrap; margin:0 0 10px; }
+.mi-head h2{ font-size:16px; font-weight:700; color:var(--text); margin:0; line-height:1.3; }
+.mi-sub{ font-size:12px; color:var(--text3); line-height:1.4; }
+.mi-badge{ display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:800;
+  letter-spacing:.06em; text-transform:uppercase; vertical-align:2px; background:rgba(217,119,6,.14); color:#8a4b05; }
+html[data-theme="dark"] .mi-badge{ background:rgba(251,191,36,.16); color:#fbd38d; }
+.mi-p{ font-size:14.5px; line-height:1.65; color:var(--text2); margin:0 0 10px; max-width:70ch; }
+.mi-p:last-child{ margin-bottom:0; }
+.mi-p b{ color:var(--text); }
+.mi-note{ font-size:12px; line-height:1.55; color:var(--text3); margin:12px 0 0; max-width:80ch; }
+.mi-up{ color:var(--data-strong,#047454); font-weight:700; }
+.mi-down{ color:var(--data-bad,#c92020); font-weight:700; }
+.mi-flat{ color:var(--text2); font-weight:700; }
+.mi-link{ color:var(--ink-link,#0951c6); font-weight:650; text-decoration:underline; text-underline-offset:2px; }
+.mi-learn{ margin:12px 0 0; font-size:12.5px; color:var(--text3); }
+.mi-learn > summary{ cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px; min-height:32px;
+  color:var(--ink-link,#0951c6); font-weight:650; }
+.mi-learn > summary::-webkit-details-marker{ display:none; }
+.mi-learn > summary::before{ content:"i"; display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+  border-radius:50%; border:1.5px solid currentColor; font-size:10px; font-weight:800; font-style:italic; }
+.mi-learn > summary:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; border-radius:6px; }
+.mi-learn p{ margin:6px 0 0; line-height:1.6; max-width:80ch; }
+
+/* ── the month in one paragraph ─────────────────────────────────────────── */
+.mi-narr .mi-p{ font-size:15px; }
+.mi-narr .mi-p a{ color:inherit; text-decoration:underline; text-decoration-color:rgba(37,99,235,.35); text-underline-offset:3px; }
+
+/* ── is this normal? — the range bar ───────────────────────────────────── */
+.mi-range{ position:relative; height:46px; margin:20px 6px 8px; }
+.mi-range .mi-rtrack{ position:absolute; left:0; right:0; top:18px; height:8px; border-radius:4px; background:rgba(37,99,235,.10); }
+html[data-theme="dark"] .mi-range .mi-rtrack{ background:rgba(131,170,255,.14); }
+.mi-range .mi-rband{ position:absolute; top:18px; height:8px; border-radius:4px; background:rgba(37,99,235,.32); }
+html[data-theme="dark"] .mi-range .mi-rband{ background:rgba(131,170,255,.38); }
+.mi-range .mi-rtick{ position:absolute; top:13px; width:2px; height:18px; margin-left:-1px; background:var(--text3); border-radius:1px; }
+.mi-range .mi-rdot{ position:absolute; top:12px; width:20px; height:20px; margin-left:-10px; border-radius:50%;
+  border:3px solid var(--ink2); box-shadow:0 0 0 1.5px currentColor; background:currentColor; }
+.mi-range .mi-rlbl{ position:absolute; top:34px; font-size:11px; color:var(--text3); white-space:nowrap; transform:translateX(-50%); }
+.mi-range .mi-rlbl.mi-l0{ transform:none; left:0 !important; }
+.mi-range .mi-rlbl.mi-l1{ transform:none; right:0; left:auto !important; }
+.mi-range .mi-rcap{ position:absolute; top:-6px; font-size:11px; font-weight:700; white-space:nowrap; transform:translateX(-50%); }
+.mi-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin:4px 0 0; font-size:12px; color:var(--text3); }
+.mi-legend i{ display:inline-block; width:12px; height:8px; border-radius:3px; margin-right:6px; vertical-align:0; background:rgba(37,99,235,.32); }
+.mi-legend i.mi-lk-tick{ width:2px; height:12px; background:var(--text3); }
+
+/* ── chips, rows, tables ───────────────────────────────────────────────── */
+.mi-chips{ display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; }
+.mi-chip{ display:inline-flex; align-items:baseline; gap:6px; padding:6px 10px; border-radius:10px; font-size:13px;
+  background:rgba(37,99,235,.06); border:0.5px solid var(--border2); color:var(--text2); max-width:100%; }
+.mi-chip b{ color:var(--text); font-weight:700; }
+.mi-chip .mi-cx{ font-size:11.5px; color:var(--text3); }
+.mi-k{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); margin:14px 0 4px; }
+.mi-rows{ display:grid; gap:10px; margin:6px 0 0; }
+.mi-row{ display:grid; grid-template-columns:minmax(0,190px) minmax(0,1fr); gap:4px 16px; align-items:baseline;
+  padding:10px 0 0; border-top:0.5px solid var(--border); }
+.mi-row:first-child{ border-top:0; padding-top:0; }
+.mi-row > span:first-child{ font-size:12px; font-weight:750; letter-spacing:.02em; color:var(--text3); text-transform:uppercase; }
+.mi-row > span:last-child{ font-size:14px; line-height:1.55; color:var(--text2); min-width:0; }
+.mi-row b{ color:var(--text); }
+@media (max-width:560px){ .mi-row{ grid-template-columns:1fr; } }
+.mi-split{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin:10px 0 0; }
+.mi-stat{ padding:12px 14px; border-radius:12px; background:rgba(37,99,235,.05); border:0.5px solid var(--border); }
+.mi-stat .mi-sv{ font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.15; }
+.mi-stat .mi-sl{ font-size:12px; color:var(--text3); margin-top:3px; line-height:1.4; }
+@media (max-width:420px){ .mi-split{ grid-template-columns:1fr; } }
+.mi-tbl-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:10px 0 0; }
+.mi-tbl{ width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
+.mi-tbl th, .mi-tbl td{ padding:8px 8px; text-align:right; border-bottom:0.5px solid var(--border); white-space:nowrap; }
+.mi-tbl th:first-child, .mi-tbl td:first-child{ text-align:left; white-space:normal; min-width:150px; }
+.mi-tbl th{ font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--text3); }
+.mi-tbl td{ color:var(--text2); }
+.mi-more{ margin:12px 0 0; }
+.mi-more > summary{ cursor:pointer; min-height:36px; display:inline-flex; align-items:center; gap:6px; font-size:13px;
+  font-weight:700; color:var(--ink-link,#0951c6); list-style:none; }
+.mi-more > summary::-webkit-details-marker{ display:none; }
+.mi-more > summary::after{ content:"▾"; font-size:12px; }
+.mi-more[open] > summary::after{ content:"▴"; }
+.mi-more > summary:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; border-radius:6px; }
+
+/* ── market weather ────────────────────────────────────────────────────── */
+.mi-pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800;
+  background:rgba(37,99,235,.10); color:var(--accent); }
+html[data-theme="dark"] .mi-pill{ background:rgba(131,170,255,.16); color:#bcd0ff; }
+.mi-pill.is-falling, .mi-pill.is-rebound{ background:rgba(201,32,32,.10); color:var(--data-bad,#c92020); }
+.mi-pill.is-rising-calm{ background:rgba(4,116,84,.10); color:var(--data-strong,#047454); }
+.mi-styles{ display:flex; flex-wrap:wrap; gap:6px 14px; }
+.mi-styles span{ white-space:nowrap; }
+
+/* ── analyst note ──────────────────────────────────────────────────────── */
+.mi-notecard{ border-left:3px solid var(--accent); }
+.mi-notecard h3{ font-size:17px; font-weight:750; color:var(--text); margin:2px 0 8px; line-height:1.3; }
+.mi-sign{ font-size:13px; color:var(--text3); margin-top:10px; }
+
+/* ── record strip inside #trk-card ─────────────────────────────────────── */
+.mi-trk{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr)); gap:10px; margin:4px 0 14px; }
+.mi-trk .mi-stat .mi-sv{ font-size:19px; }
+.mi-trk-warn{ font-size:12.5px; color:var(--text3); margin:-4px 0 14px; line-height:1.5; }
+
+/* ── context for the names that changed (inside #chg-card) ─────────────── */
+.mi-ctx{ margin:14px 0 0; padding:12px 0 0; border-top:0.5px solid var(--border); }
+.mi-ctx-list{ display:grid; gap:6px; margin:8px 0 0; }
+.mi-ctx-row{ display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; font-size:13px; color:var(--text2); }
+.mi-ctx-row b{ color:var(--text); min-width:96px; }
+.mi-ctx-row .mi-cx{ color:var(--text3); }
+
+@media print{ .mi-modes, .mi-learn{ display:none !important; } }

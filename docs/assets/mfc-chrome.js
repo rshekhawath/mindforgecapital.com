@@ -47,10 +47,50 @@
     if (!me || !me.src) return;                     // nothing to resolve against
     window.__mfcTrackLoaded = 1;
     var s = document.createElement('script');
-    s.src = new URL('mfc-track.js?v=11', me.src).href;
+    s.src = new URL('mfc-track.js?v=12', me.src).href;
     s.defer = true;
     (document.head || document.documentElement).appendChild(s);
   } catch (e) { /* analytics must never break the chrome below */ }
+})();
+
+/* ── V42.3 — THE SIDE-DOOR RIBBON ────────────────────────────────────────────
+   The calculators, the Scanner, the Integrity Score, the FII/DII tracker and the
+   Factor Report draw most of the site's search traffic, and a reader who lands on
+   one has no idea what MindForge is. One slim line under the nav says, and points
+   to the two things worth a second visit: how the service works, and the Factor
+   Report by e-mail. Deliberately not a sales banner: no price, no plan, no CTA
+   button (markdowns/website_restructure.md §4.8).
+   SECOND IN THE FILE, for the reason the loader above is first: the chrome IIFE
+   below returns early on most of these pages. Self-contained, its own small style
+   block, fails silent. */
+(function () {
+  try {
+    var P = location.pathname || '/';
+    if (!/^\/(calculators\/|calculator\.html|screener\/|scores\/|fii-dii\/|factor-report\/)/.test(P)) return;
+    var build = function () {
+      if (document.getElementById('mf-ribbon')) return;
+      var nav = document.querySelector('body > nav') || document.querySelector('nav');
+      if (!nav || !nav.parentNode) return;
+      if (!document.getElementById('mf-ribbon-style')) {
+        var st = document.createElement('style');
+        st.id = 'mf-ribbon-style';
+        st.textContent = '.mf-ribbon{position:relative;z-index:2;max-width:1100px;margin:12px auto 0;padding:9px 16px;border-radius:12px;' +
+          'display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 14px;text-align:center;' +
+          'background:rgba(37,99,235,.06);border:0.5px solid rgba(37,99,235,.18);font-size:13.5px;line-height:1.5;color:var(--text2,#1e3a5f)}' +
+          '.mf-ribbon a{color:var(--ink-link,#0951c6);font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}' +
+          'html[data-theme="dark"] .mf-ribbon{background:rgba(131,170,255,.08);border-color:rgba(131,170,255,.2)}' +
+          '@media (max-width:640px){.mf-ribbon{margin:10px 12px 0}}@media print{.mf-ribbon{display:none!important}}';
+        (document.head || document.documentElement).appendChild(st);
+      }
+      var r = document.createElement('p');
+      r.id = 'mf-ribbon';
+      r.className = 'mf-ribbon';
+      r.innerHTML = '<span>MindForge publishes a researched stock portfolio every month: about ten minutes on the 1st, in your own broker.</span>' +
+        '<a href="/how-it-works/">How it works</a><a href="/learn/#fr-h-learn">The Factor Report by e-mail</a>';
+      nav.parentNode.insertBefore(r, nav.nextSibling);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+  } catch (e) { /* a ribbon must never break the page */ }
 })();
 
 (function () {

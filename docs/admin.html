@@ -747,6 +747,35 @@ html[data-theme="dark"] #passcode-input:focus { background: var(--card) !importa
       <tbody id="leads-tbody"></tbody>
     </table>
   </div>
+  <!-- V42.3 — two owner tools behind the same passcode: the warm free members (get_pql) and
+       the Factor Report send (fr_broadcast). Both POST the passcode in the body, never the URL. -->
+  <section class="v423-tools" style="margin-top:28px;display:grid;gap:18px;">
+    <div style="background:#fff;border:1px solid #dbeafe;border-radius:14px;padding:18px 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <h2 style="margin:0;font-size:17px;color:#0c1831;">Warm free members</h2>
+        <button type="button" class="btn-activate" id="btn-pql" onclick="loadPql()" style="padding:9px 16px;">Load the list</button>
+      </div>
+      <p style="margin:6px 0 0;font-size:13px;color:#64748b;line-height:1.55;">Free MultiAsset members who came back in two or more months, or ticked their orders. Built from the dashboard visit dates (at most one a member every six hours) and their order ticks.</p>
+      <div id="pql-out" style="margin-top:12px;font-size:13.5px;"></div>
+    </div>
+    <div style="background:#fff;border:1px solid #dbeafe;border-radius:14px;padding:18px 20px;">
+      <h2 style="margin:0;font-size:17px;color:#0c1831;">Send the Factor Report</h2>
+      <p style="margin:6px 0 10px;font-size:13px;color:#64748b;line-height:1.55;">Mails a published report to everyone on the Factor Report list, once per report: run it again for the same link and it skips everyone already sent it. Try a dry run first.</p>
+      <div style="display:grid;gap:8px;max-width:620px;">
+        <label style="font-size:12.5px;font-weight:700;color:#334155;">Report link (a https://mindforgecapital.com/factor-report/ page)
+          <input id="fr-url" type="url" value="https://mindforgecapital.com/factor-report/" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px;"></label>
+        <label style="font-size:12.5px;font-weight:700;color:#334155;">Title
+          <input id="fr-title" type="text" value="India Factor Report" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px;"></label>
+        <label style="font-size:12.5px;font-weight:700;color:#334155;">One-line intro (optional)
+          <input id="fr-intro" type="text" placeholder="e.g. Value led again; momentum fell furthest." style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px;"></label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+          <button type="button" class="btn-modal-cancel" onclick="sendFr(true)" style="padding:9px 14px;">Dry run</button>
+          <button type="button" class="btn-activate" onclick="sendFr(false)" style="padding:9px 16px;">Send</button>
+        </div>
+        <p id="fr-out" style="margin:4px 0 0;font-size:13.5px;color:#334155;"></p>
+      </div>
+    </div>
+  </section>
 </main>
 
 <!-- Activate Modal -->
@@ -1090,7 +1119,7 @@ function renderTable(leads) {
       '<td><div class="td-email">' + esc(lead.email || '—') + '</div>' +
           '<div class="td-phone">' + esc(lead.phone || '') + '</div></td>' +
       '<td class="td-strategy"><span class="' + stratClass + '">' + esc(lead.strategy || '—') + '</span></td>' +
-      '<td>' + esc(lead.price || '—') + '</td>' +
+      '<td>' + esc(lead.price || '—') + (lead.capital_band ? '<div style="font-size:11.5px;color:#64748b;margin-top:2px;">plans to put in ' + esc(lead.capital_band) + '</div>' : '') + '</td>' +   // V42.3
       '<td class="td-time">' + timeStr + '</td>' +
       '<td>' + statusBadge + '</td>' +
       '<td>' + actionCell + '</td>' +
@@ -1518,6 +1547,43 @@ function showError(msg) {
     '<div class="icon" style="color:var(--orange);">' + ICON_WARN + '</div><p>' + esc(msg) + '</p>';
   document.getElementById('table-state').style.display = 'block';
   document.getElementById('leads-table').style.display = 'none';
+}
+
+// ── V42.3 · warm free members and the Factor Report send ─────────────────────
+function v423Post(body) {
+  body.admin_secret = getAdminSecret();
+  return fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json(); });
+}
+function loadPql() {
+  var out = document.getElementById('pql-out');
+  out.textContent = 'Loading…';
+  v423Post({ action: 'get_pql' }).then(function (d) {
+    if (maybeReauthOn401(d)) return;
+    if (!d || d.status !== 'ok') { out.textContent = 'Could not load: ' + ((d && d.error) || 'unknown error') + '. If it says "Unknown action", the backend has not been redeployed yet.'; return; }
+    var m = d.members || [];
+    if (!m.length) { out.textContent = 'No free member has come back in two or more months yet.'; return; }
+    out.innerHTML = '<table style="width:100%;border-collapse:collapse;"><thead><tr>' +
+      ['Name', 'Email', 'Months seen', 'Visits', 'Ticks', 'Last seen'].map(function (h) { return '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e2e8f0;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;">' + h + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + m.map(function (x) {
+        var td = function (v) { return '<td style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">' + esc(v == null ? '' : String(v)) + '</td>'; };
+        return '<tr>' + td(x.name) + td(x.email) + td(x.months) + td(x.visits) + td(x.ticks) + td(String(x.last_seen || '').slice(0, 10)) + '</tr>';
+      }).join('') + '</tbody></table>';
+  }).catch(function () { out.textContent = 'Network error. Try again.'; });
+}
+function sendFr(dry) {
+  var out = document.getElementById('fr-out');
+  var url = (document.getElementById('fr-url').value || '').trim();
+  if (!dry && !confirm('Send ' + url + ' to everyone on the Factor Report list who has not had it yet?')) return;
+  out.textContent = dry ? 'Counting…' : 'Sending… (this can take a minute for a long list)';
+  v423Post({ action: 'fr_broadcast', url: url, title: document.getElementById('fr-title').value, intro: document.getElementById('fr-intro').value, dry: !!dry })
+    .then(function (d) {
+      if (maybeReauthOn401(d)) return;
+      if (!d || d.status !== 'ok') { out.textContent = 'Not sent: ' + ((d && d.error) || 'unknown error'); return; }
+      out.textContent = dry
+        ? d.pending + ' would be sent; ' + d.already_sent + ' already had this report.'
+        : 'Sent ' + d.sent + '; ' + d.already_sent + ' already had it; ' + d.pending + ' still to send' + (d.stopped_for_quota ? ' (the day\'s mail quota ran out — send again tomorrow).' : '.');
+    }).catch(function () { out.textContent = 'Network error. Try again.'; });
 }
 
 function esc(str) {

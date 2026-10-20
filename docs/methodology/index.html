@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- V42.3 — one of the six deep pages (markdowns/website_restructure.md §5). Chrome from
+     mfc-calc.css, the calculator family's sheet; components from mfc-deep.css. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<script>/* clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){document.documentElement.style.display='none';window.top.location=window.self.location;}}catch(e){}})();</script>
+<meta name="color-scheme" content="light">
+<title>How a MindForge book is built, and how it is tested | MindForge Capital</title>
+<meta name="description" content="How a MindForge model portfolio is built each month, from a whole index to fifteen names, what the model looks at, when this kind of model struggles, and how the backtests are run.">
+<link rel="canonical" href="https://mindforgecapital.com/methodology/">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png">
+<link rel="shortcut icon" href="/assets/favicon-32.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MindForge Capital">
+<meta name="theme-color" content="#1a50d8">
+<link rel="manifest" href="/manifest.json">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="MindForge Capital">
+<meta property="og:title" content="How a MindForge book is built, and how it is tested | MindForge Capital">
+<meta property="og:description" content="How a MindForge model portfolio is built each month, from a whole index to fifteen names, what the model looks at, when this kind of model struggles, and how the backtests are run.">
+<meta property="og:image" content="https://mindforgecapital.com/assets/og/home.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MindForge Capital: a researched stock portfolio, every month. About ten minutes on the 1st, in your own broker.">
+<meta property="og:url" content="https://mindforgecapital.com/methodology/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@MindForgeCap">
+<meta name="twitter:title" content="How a MindForge book is built, and how it is tested | MindForge Capital">
+<meta name="twitter:description" content="How a MindForge model portfolio is built each month, from a whole index to fifteen names, what the model looks at, when this kind of model struggles, and how the backtests are run.">
+<meta name="twitter:image" content="https://mindforgecapital.com/assets/og/home.png">
+
+<link rel="stylesheet" href="/assets/mfc-calc.css?v=409">
+<script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
+(function(){var D=document,R=D.documentElement;
+function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
+function apply(t){var _d=t==='dark';R.setAttribute('data-theme',_d?'dark':'light');try{var _m=D.querySelector('meta[name="theme-color"]');if(_m)_m.setAttribute('content',_d?'#080d1a':'#1a50d8');}catch(e){}}
+apply(get());
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+function build(){if(D.getElementById('mfc-theme-toggle'))return;
+var inner=D.querySelector('nav .nav-inner')||D.querySelector('nav');if(!inner)return;
+var b=D.createElement('button');b.id='mfc-theme-toggle';b.className='mfc-theme-toggle';b.type='button';
+b.setAttribute('aria-label','Toggle dark mode');b.title='Toggle light / dark';
+function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MOON;b.setAttribute('aria-pressed',t==='dark'?'true':'false');}
+sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
+var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
+if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
+<link rel="stylesheet" href="/assets/mfc-finish.css?v=3950">
+<link rel="stylesheet" href="/assets/mfc-deep.css?v=1">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://mindforgecapital.com/methodology/#page",
+      "url": "https://mindforgecapital.com/methodology/",
+      "name": "How a MindForge book is built, and how it is tested | MindForge Capital",
+      "description": "How a MindForge model portfolio is built each month, from a whole index to fifteen names, what the model looks at, when this kind of model struggles, and how the backtests are run.",
+      "inLanguage": "en-IN",
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "MindForge Capital",
+        "url": "https://mindforgecapital.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "MindForge Capital",
+          "item": "https://mindforgecapital.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "How a book is built",
+          "item": "https://mindforgecapital.com/methodology/"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body class="dp-page">
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="mf-scroll-prog" id="scrollProg"></div>
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="logo" aria-label="MindForge Capital — Home">
+      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
+    </a>
+    <div class="nav-links" id="primary-nav">
+      <a href="/how-it-works/">How it works</a>
+      <a href="/strategies.html">Strategies</a>
+      <a href="/track-record/">Track record</a>
+      <details class="nav-group has-active"><summary>Learn</summary><div class="nav-group-menu"><a href="/learn/">Learn hub</a><a href="/methodology/" class="active" aria-current="page">How a book is built</a><a href="/risk/">Risks</a><a href="/compare/">Compare</a><a href="/factor-report/">Factor Report</a><a href="/fii-dii/">FII/DII activity</a><a href="/screener/">Stock Scanner</a><a href="/scores/">Integrity Score</a><a href="/calculator.html">Calculators</a></div></details>
+      <a href="/index.html#strategies">Pricing</a>
+      <a href="/login.html">Sign In</a>
+      <a href="/signup.html?strategy=multiasset" class="nav-cta">Start free</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<main class="wrap" id="main-content">
+
+  <section class="chero">
+    <p class="chero-crumb"><a href="/">Home</a> <span aria-hidden="true">›</span> How a book is built</p>
+    <span class="chero-badge fade-up">Rules, not opinions</span>
+    <h1 class="fade-up">How a book is built, and <span class="grad">how we test it</span></h1>
+    <p class="chero-sub fade-up">The same disciplined steps every month, with no overrides. Here is what they are, what they look at, and where they are weakest.</p>
+  </section>
+
+  <div class="dp-short fade-up"><p class="dp-short-k">In short</p><ul><li>Rules, not opinions: a fixed universe is <b>ranked, capped at two names per industry, sized and held</b> for the month. No one overrides the list.</li><li>The model reads <b>price and volume history only</b>: no fundamentals, no analyst views, no news.</li><li>Backtests are run after costs and after tax, and <b>the three places the simulation flatters us</b> are published.</li></ul></div>
+
+  <section class="dp-sec fade-up" aria-labelledby="pipe-h">
+    <h2 id="pipe-h">From a whole universe to what you actually hold</h2>
+    <p>Both equity strategies run the same disciplined pipeline each month — no overrides, no gut calls. Here's the path from index to portfolio. <span class="bf-lead-note">(MultiAsset rotates eight ETFs by score instead — there is no universe to rank.)</span></p>
+    <ol><li><b>The universe.</b> Every eligible name in the index — a broad, rules-defined starting field.</li><li><b>Multi-factor score.</b> Each stock scored on peer-reviewed factors — momentum, trend, volatility &amp; liquidity.</li><li><b>Ranked by conviction.</b> Sorted highest-first, so only the strongest signals make the cut.</li><li><b>Sector-capped.</b> No more than two names per industry — diversification is structural, not promised.</li><li><b>Your portfolio.</b> The top names, held equal-weight until next month's rebalance.</li></ol>
+    <h3>How the list narrows, this month</h3>
+    <div class="dp-fun"><div class="dp-fun-col"><h3>SmallMicro&nbsp;500</h3><p class="dp-fun-sub">Nifty Smallcap&nbsp;250 + Microcap 250</p><div class="dp-fun-step"><span>Eligible universe</span><b><!--MFFUN:sm:universe-->500<!--/MFFUN--></b></div><div class="dp-fun-step"><span>Priced for a full year, so scorable</span><b><!--MFFUN:sm:scored-->492<!--/MFFUN--></b></div><div class="dp-fun-step"><span>Still standing after the ≤2-per-industry cap</span><b><!--MFFUN:sm:capped-->41<!--/MFFUN--></b></div><div class="dp-fun-step is-held"><span>Held, equal-weight</span><b><!--MFFUN:sm:held-->15<!--/MFFUN--></b></div><p class="dp-fun-cost">The cap displaced <b data-fun="displaced"><!--MFFUN:sm:displaced-->5<!--/MFFUN--></b> of the <!--MFFUN:sm:held-->15<!--/MFFUN--> highest-scoring names.</p></div><div class="dp-fun-col"><h3>LargeMidcap&nbsp;250</h3><p class="dp-fun-sub">Nifty LargeMidcap&nbsp;250</p><div class="dp-fun-step"><span>Eligible universe</span><b><!--MFFUN:lm:universe-->250<!--/MFFUN--></b></div><div class="dp-fun-step"><span>Priced for a full year, so scorable</span><b><!--MFFUN:lm:scored-->241<!--/MFFUN--></b></div><div class="dp-fun-step"><span>Still standing after the ≤2-per-industry cap</span><b><!--MFFUN:lm:capped-->37<!--/MFFUN--></b></div><div class="dp-fun-step is-held"><span>Held, equal-weight</span><b><!--MFFUN:lm:held-->15<!--/MFFUN--></b></div><p class="dp-fun-cost">The cap displaced <b data-fun="displaced"><!--MFFUN:lm:displaced-->3<!--/MFFUN--></b> of the <!--MFFUN:lm:held-->15<!--/MFFUN--> highest-scoring names.</p></div></div>
+    <p class="dp-note">All four counts come from this month's run. MultiAsset is not shown: it holds all 8 of its ETFs and only changes their weights, so there is nothing to narrow.</p>
+  </section>
+
+  <section class="dp-sec fade-up" aria-labelledby="look-h">
+    <h2 id="look-h">What the model looks at</h2>
+    <p>Each candidate gets one score built from four families of signals that are well documented in the research: <b>momentum, trend, volatility and liquidity</b> &mdash; all of them read from prices and traded volumes. The exact signals and how they are weighted are MindForge&rsquo;s own and are not published; what is published is the method around them:</p>
+    <ul>
+      <li><b>Monthly.</b> The books are re-scored once a month, on the same beat as their backtests. Nothing trades in between.</li>
+      <li><b>Equal weight in the stock books.</b> Every holding is the same size, so no single name decides a month. MultiAsset weights its ETFs by score instead, because it allocates across asset classes rather than picking names.</li>
+      <li><b>At most two per industry.</b> A sector that dominates the ranking still cannot dominate the book.</li>
+      <li><b>No discretion.</b> No name is added, removed or resized by hand.</li>
+    </ul>
+  </section>
+
+  <section class="dp-sec fade-up" aria-labelledby="struggle-h">
+    <h2 id="struggle-h">When this kind of model struggles</h2>
+    <p>Books that rank stocks on their recent trends tend to do best when markets rise steadily and leadership persists. They have historically done worst in <b>sharp rebounds after a fall</b>, when the previous quarter&rsquo;s laggards lead the bounce &mdash; the pattern documented by Kent Daniel and Tobias Moskowitz in &ldquo;Momentum Crashes&rdquo; (Journal of Financial Economics, 2016). In a broad fall most stocks fall together, and a book of recent leaders usually falls too.</p>
+    <p>Members see the market each book is moving in on their dashboard&rsquo;s &ldquo;Market weather&rdquo; card, and anyone can see it on the <a href="/learn/">Learn hub</a>. None of it changes the model; it explains the month.</p>
+  </section>
+
+  <section class="dp-sec fade-up" aria-labelledby="sci-h">
+    <h2 id="sci-h">Built on fifty years of research</h2>
+    <p>Factor investing is not a trend — it is peer-reviewed finance that has held up for fifty years. Every signal these models use has to clear five tests: <b>persistent, pervasive, robust, investable, intuitive.</b></p>
+    <div class="dp-tiles"><div class="dp-tile"><span class="dp-tv" style="font-size:18px">Persistent</span><span class="dp-tl">Holds across decades</span></div><div class="dp-tile"><span class="dp-tv" style="font-size:18px">Pervasive</span><span class="dp-tl">Holds across markets</span></div><div class="dp-tile"><span class="dp-tv" style="font-size:18px">Robust</span><span class="dp-tl">Not one formulation</span></div><div class="dp-tile"><span class="dp-tv" style="font-size:18px">Investable</span><span class="dp-tl">Works after costs</span></div><div class="dp-tile"><span class="dp-tv" style="font-size:18px">Intuitive</span><span class="dp-tl">Logical explanation</span></div></div>
+    <h3>The fifty years, in four steps</h3>
+    <ul><li><b>1964 &mdash; CAPM — The first model.</b> Sharpe, Lintner &amp; Treynor showed that the only risk earning a return is market beta — undiversifiable systematic risk. This became the universal benchmark for separating genuine skill from factor exposure.</li><li><b>1992 &mdash; Beyond CAPM — the multi-factor era.</b> Nobel laureate Eugene Fama and Kenneth French proved CAPM was incomplete. Additional return factors were shown to systematically explain stock returns that market beta could not. The multi-factor era of academic finance began.</li><li><b>1997 &mdash; The factor zoo expands.</b> Over the following decades, researchers including Jegadeesh, Titman and Carhart documented further factor premia in equity markets, each surviving rigorous out-of-sample testing. Multi-factor models became the dominant framework for explaining cross-sectional returns.</li><li><b>2026 &mdash; MindForge — Applied to India.</b> We apply academically validated factors to Indian listed equities and ETFs. Every strategy is built on factors that are persistent, pervasive, robust, investable and intuitive.</li></ul>
+  </section>
+
+  <section class="dp-sec fade-up" aria-labelledby="bt-h">
+    <h2 id="bt-h">How the backtests are run</h2>
+    <p>Each book is simulated month by month over its own window: the same universe, the same ranking, the same cap and the same sizing as today, with a cost on every trade and 20% short-term tax on every month that books a gain. The strategies page sets out the steps and the three places the simulation flatters us; the disclosures page has the full method.</p>
+    <ul>
+      <li><a href="/strategies.html#find-fit">The strategies page: each book&rsquo;s backtest beside its index</a></li>
+      <li><a href="/disclosures.html#backtest-methodology">Backtest methodology, in full</a></li>
+    </ul>
+    <p class="dp-note">A backtest is a simulation, not a record. Every simulated figure on this site says &ldquo;backtest&rdquo; where it appears; only the live record is measured from published picks.</p>
+  </section>
+
+  <nav class="dp-next fade-up" aria-label="Read next"><a class="dp-tile" href="/risk/"><span class="dp-tk">Read next</span><span class="dp-tv" style="font-size:18px">What can go wrong</span><span class="dp-tl">How far each book has fallen, and what its backtest could not see.</span></a><a class="dp-tile" href="/track-record/"><span class="dp-tk">Read next</span><span class="dp-tv" style="font-size:18px">Every cycle so far</span><span class="dp-tl">The live record, measured from published prices.</span></a><a class="dp-tile" href="/compare/"><span class="dp-tk">Read next</span><span class="dp-tv" style="font-size:18px">Compared with what you have</span><span class="dp-tl">Funds, PMS, smallcases and tips groups, side by side.</span></a></nav>
+
+  <aside class="dp-ask fade-up" aria-label="Still deciding?">
+    <div><p class="dp-ask-t">Still deciding?</p><p class="dp-ask-s">Ask a question on WhatsApp, or ask for a 15-minute walkthrough of how the month works. It is about the process, never personal advice.</p></div>
+    <div class="dp-ask-btns">
+      <a class="dp-btn is-primary" data-track="wa_click" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20I%20am%20reading%20the%20How%20a%20book%20is%20built%20page%20and%20have%20a%20question." target="_blank" rel="noopener">Ask on WhatsApp</a>
+      <a class="dp-btn is-ghost" data-track="call_book" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%20%E2%80%94%20I%20would%20like%20a%2015-minute%20walkthrough%20of%20how%20the%20month%20works." target="_blank" rel="noopener">Book a 15-minute walkthrough</a>
+    </div>
+  </aside>
+
+</main>
+
+<footer class="cfoot">
+  <div class="cfoot-in">
+    <nav class="cfoot-nav" aria-label="Footer">
+      <a href="/">Home</a><a href="/how-it-works/">How it works</a><a href="/strategies.html">Strategies</a><a href="/track-record/">Track record</a><a href="/methodology/">How a book is built</a><a href="/risk/">Risks</a><a href="/compare/">Compare</a><a href="/learn/">Learn</a><a href="/factor-report/">Factor Report</a><a href="/calculator.html">Calculators</a><a href="/disclosures.html">Disclosures</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a>
+    </nav>
+    <div class="cfoot-legal">
+      <p class="cfoot-cred">Research is published by Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor&nbsp;Charter</a></p>
+      <p>Investments in the securities market are subject to market risks. Read all the related documents carefully before investing.<span class="cfoot-copy">© 2026 MindForge Capital. All rights reserved.</span></p>
+      <p class="dis">Educational information about the method. Backtest figures are simulated, not live trading. Not investment advice.</p>
+    </div>
+  </div>
+</footer>
+
+<a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%20want%20to%20learn%20more%20about%20your%20quant%20strategies."
+   target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="12" fill="#25d366"/>
+    <path fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round" d="M12 4.5c-4.14 0-7.5 3.36-7.5 7.5 0 1.34.35 2.6.98 3.69L4.5 19.5l3.92-.92c1.06.58 2.28.92 3.58.92 4.14 0 7.5-3.36 7.5-7.5S16.14 4.5 12 4.5z"/>
+    <path fill="#fff" d="M15.5 14.3c-.2-.1-1.17-.58-1.36-.65-.18-.07-.31-.1-.45.1-.13.2-.51.65-.63.78-.11.13-.23.15-.43.05-.2-.1-.85-.31-1.62-.99-.6-.53-1-1.19-1.12-1.39-.11-.2-.01-.31.09-.41.09-.09.2-.23.3-.35.1-.12.13-.2.2-.33.07-.13.03-.25-.02-.35-.05-.1-.45-1.08-.62-1.48-.16-.39-.33-.34-.45-.34-.12 0-.25-.02-.38-.02-.13 0-.35.05-.53.25-.18.2-.7.68-.7 1.67 0 .98.72 1.93.82 2.07.1.13 1.4 2.14 3.4 3 .47.2.84.32 1.13.41.48.15.91.13 1.25.08.38-.06 1.17-.48 1.34-.94.17-.46.17-.86.12-.94-.05-.08-.18-.13-.38-.23z"/>
+  </svg>
+</a>
+
+<script src="/assets/mfc-deep.js?v=1" defer></script>
+<script src="/assets/mfc-offer.js?v=4050" defer></script>
+<script defer src="/assets/mfc-chrome.js?v=4070"></script>
+<link rel="stylesheet" href="/assets/mfc-chrome.css?v=10">
+<script>
+/* the scroll-progress bar this page declares in its own markup (the same v3.4
+   control every other page carries, so mfc-chrome.js never injects a second) */
+(function(){
+  var b = document.getElementById('scrollProg'); if (!b) return;
+  var t = false;
+  function upd(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    b.style.width = (h > 0 ? Math.min(100, window.scrollY / h * 100) : 0) + '%';
+    t = false;
+  }
+  window.addEventListener('scroll', function(){ if (!t) { t = true; requestAnimationFrame(upd); } }, {passive:true});
+  window.addEventListener('resize', upd, {passive:true});
+  upd();
+})();
+(function(){
+  var ham = document.querySelector('.nav-hamburger'), links = document.getElementById('primary-nav');
+  if (!ham || !links) return;
+  ham.addEventListener('click', function(){
+    var open = links.classList.toggle('open');
+    ham.classList.toggle('open', open);
+    ham.setAttribute('aria-expanded', String(open));
+  });
+})();
+</script>
+</body>
+</html>

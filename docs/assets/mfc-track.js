@@ -170,6 +170,21 @@
   /* ── 1 · page view ──────────────────────────────────────────────────────── */
   track("page_view");
 
+  /* ── 1b · V42.3 — a first visit or a return one ───────────────────────────
+     The website plan's main measure for a first-time reader is whether they come
+     back. Counted on THIS device only: a per-device counter in localStorage, read
+     once per browser session; the event carries a bucket (1, 2, 3-4, 5+), never a
+     count that could single a reader out, and nothing leaves the device but the
+     bucket. Off with the rest of this module under Do Not Track / GPC. */
+  try {
+    if (!sessionStorage.getItem("mfc_visit_seen")) {
+      sessionStorage.setItem("mfc_visit_seen", "1");
+      var vn = (parseInt(localStorage.getItem("mfc_visits"), 10) || 0) + 1;
+      localStorage.setItem("mfc_visits", String(vn));
+      track(vn === 1 ? "first_visit" : "return_visit", vn === 1 ? "1" : (vn === 2 ? "2" : (vn <= 4 ? "3-4" : "5+")));
+    }
+  } catch (e) {}
+
   /* ── 2 · scroll depth ───────────────────────────────────────────────────── */
   /* Milestones, not a continuous stream: four events per visit answers "how far
      down does anyone get" and nothing beyond that is worth a request. Measured

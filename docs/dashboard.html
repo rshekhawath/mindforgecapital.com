@@ -3009,8 +3009,9 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
       <a href="strategies.html">Strategies</a>
-      <a href="index.html#your-month" style="color:var(--text2);">How it works</a>
-      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
+      <a href="how-it-works/" style="color:var(--text2);">How it works</a>
+      <a href="track-record/" style="color:var(--text2);">Track record</a>
+      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);" data-nav-for="member">My Account</a>
       <a href="login.html" id="nav-signout" style="color:var(--text2);" data-nav-for="member">Sign out</a>
       <a href="/#pricing" style="color:var(--text2);" data-nav-for="demo">Pricing</a>
@@ -6076,6 +6077,7 @@ async function init() {
       return;
     }
     stocksData = data.stocks || [];
+    window._mfNote = (data && data.note) || null;   // V42.3 — M10: the analyst's latest note for this book, if any
     // V38.7 — awaited, and ONLY on a device with no history of its own: see
     // bookHistSyncLoad(). On every other load it resolves synchronously-fast
     // without a request, so this costs a first paint nothing in the normal case
@@ -7111,6 +7113,7 @@ function renderDashboard(sub, stocks) {
   // renderer can badge the new names without recomputing it.
   renderBookChange(window._bookDiff, stocks);
   try { if (window.mfcV412Refresh) window.mfcV412Refresh(); } catch (e) {}   // V41.2 — B1, B3
+  try { if (window.mfcInsight) window.mfcInsight.refresh('book'); } catch (e) {}   // V42.3 — the two modes and the insight cards
 
   // Reveal fade-up entrance
   requestAnimationFrame(() => {
@@ -9426,6 +9429,7 @@ function toggleBought(cb) {
   });
   refreshBoughtProgress();
   syncBoughtAllHeader();
+  try { if (window.mfcInsight) window.mfcInsight.refresh('ticks'); } catch (e) {}   // V42.3
 }
 
 /* ── V35.5 · THE STICKY ACTION BAR ────────────────────────────────────────────
@@ -10152,6 +10156,7 @@ function toggleBoughtAll(headerCb) {
   // 25 were selected while the progress card correctly read "3 of 25"); and
   // after a reload it read unchecked even with marks restored.
   syncBoughtAllHeader();
+  try { if (window.mfcInsight) window.mfcInsight.refresh('ticks'); } catch (e) {}   // V42.3
   showToast(headerCb.checked ? 'Marked all visible picks bought' : 'Cleared all marks');
 }
 
@@ -10195,6 +10200,7 @@ function resetBought() {
      indeterminate:true, rowsChecked:0}. This is the one mutation path that
      never re-synced the header; syncBoughtAllHeader sets both flags. */
   syncBoughtAllHeader();
+  try { if (window.mfcInsight) window.mfcInsight.refresh('ticks'); } catch (e) {}   // V42.3
   showToast('Cleared all marks');
 }
 /* ── V31.3 — THE ONE TRANSITION THAT NEVER REPAINTED WAS THE RETURN TO ZERO ──
@@ -12162,6 +12168,7 @@ async function refreshDashboard() {
     }
     if (!data.subscription) { showToast('Refresh failed'); return; }
     stocksData = data.stocks || [];
+    window._mfNote = (data && data.note) || null;   // V42.3 — M10: the analyst's latest note for this book, if any
     // V38.7 — awaited, and ONLY on a device with no history of its own: see
     // bookHistSyncLoad(). On every other load it resolves synchronously-fast
     // without a request, so this costs a first paint nothing in the normal case
@@ -14119,6 +14126,7 @@ function renderProfitHeadline(){
   try { renderRiskLine(port); } catch (e) {}   // V39.1 — B3
   // V27.9: benchmark row. Non-blocking — the headline never waits on it.
   loadBenchPerf().then(function(){ try { renderBenchCompare(port); } catch (e) {} });
+  try { if (window.mfcInsight) window.mfcInsight.refresh('prices'); } catch (e) {}   // V42.3 — insight cards read the same prices
 }
 
 /* V37.6 — the book's day move, on the line under the since-rebalance headline.
@@ -17276,7 +17284,10 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
   else document.addEventListener('DOMContentLoaded', boot);
 })();
 </script>
-<script defer src="assets/mfc-chrome.js?v=4060"></script>
+<script defer src="assets/mfc-chrome.js?v=4070"></script>
+<!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
+     so this page only gains the hook calls above. -->
+<script defer src="assets/mfc-insight.js?v=1"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -17296,6 +17307,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      to the page's own body styles. Measured — moving it to the head took
      .vfy-card on the dashboard from 16px to 18px of phone padding. -->
 <link rel="stylesheet" href="assets/mfc-chrome.css?v=10">
+<link rel="stylesheet" href="assets/mfc-insight.css?v=1">
 
 <!-- ============================================================================
      V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.

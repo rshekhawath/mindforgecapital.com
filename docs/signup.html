@@ -453,13 +453,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
+      <a href="how-it-works/" style="color:var(--text2);">How it works</a>
       <a href="strategies.html">Strategies</a>
-      <a href="index.html#your-month" style="color:var(--text2);">How it works</a>
+      <a href="track-record/" style="color:var(--text2);">Track record</a>
+      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="factor-report/">Factor Report</a><a href="fii-dii/">FII/DII activity</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="calculator.html">Calculators</a></div></details>
       <a href="index.html#strategies" style="color:var(--text2);">Pricing</a>
-      <a href="dashboard.html?demo=1" style="color:var(--text2);">Sample dashboard</a>
-      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
-      <a href="signup.html" class="nav-cta">Get Started</a>
+      <a href="signup.html?strategy=multiasset" class="nav-cta">Start free</a>
     </div>
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
@@ -581,6 +581,21 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <option value="12">1 year — 20% off ★ Best value</option>
         </select>
         <div class="strategy-note" id="duration-note" style="display:none;"></div>
+      </div>
+
+      <!-- V42.3 — the capital band (markdowns/website_restructure.md §5.7). Optional, paid
+           books only, shown with the mobile field. It helps whoever answers on WhatsApp
+           answer well; it changes nothing about the plan, the price or the book. -->
+      <div class="form-group" id="band-group">
+        <label for="reg-band">Roughly how much would you put into this book? <span style="font-weight:500;color:var(--text3)">(optional)</span></label>
+        <select id="reg-band" name="capital_band">
+          <option value="">Prefer not to say</option>
+          <option value="lt1l">Under &#8377;1 lakh</option>
+          <option value="1to5l">&#8377;1&ndash;5 lakh</option>
+          <option value="5to15l">&#8377;5&ndash;15 lakh</option>
+          <option value="15lplus">&#8377;15 lakh or more</option>
+        </select>
+        <div class="phone-hint">It helps us answer you well, and changes nothing about your plan or price.</div>
       </div>
 
       <!-- ── REQUIRED RISK + T&C ACKNOWLEDGEMENT ── -->
@@ -896,6 +911,9 @@ function onStrategyChange() {
     phEl.required = phoneNeeded();
     if (phGroup) phGroup.style.display = phoneNeeded() ? '' : 'none';
   }
+  // V42.3 — the optional capital band travels with the mobile field: paid books only
+  var bandGroup = document.getElementById('band-group');
+  if (bandGroup) bandGroup.style.display = phoneNeeded() ? '' : 'none';
   var durKey = (durSel || {}).value || '';        // V41.6 — A4: '' until the reader chooses
   /* V41.6 — A1/A4: with no length chosen yet, both lines below show, and the
      1-month line carries the date (see _replacedSoon()).
@@ -1143,6 +1161,7 @@ async function handleSubmit() {
       price: price,
       duration_months: p.months,
       duration_label: p.label,
+      capital_band: (phoneNeeded() && document.getElementById('reg-band')) ? document.getElementById('reg-band').value : '',   // V42.3
       agreement: true
     })
   }).then(function(r){ return r.json(); })
@@ -1755,7 +1774,7 @@ html[data-theme="dark"] .card::after{
   .card::after{ animation:none; }
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=4060"></script>
+<script defer src="assets/mfc-chrome.js?v=4070"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

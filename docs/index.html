@@ -3898,6 +3898,68 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
    FAQ orphan is bound with &nbsp; in its own question instead. */
 main details:not(.faq-item) > summary > span{ text-wrap:balance; }
 </style>
+<link rel="stylesheet" href="assets/mfc-deep.css?v=1">
+<!-- V42.3 — PERF FLAGS (markdowns/website_restructure.md §4.4 and §7.2). A module behind a flag
+     stays in the page: its machine-written markers keep updating at every publish and the
+     numbers gate keeps checking them; the flag only decides whether it is SHOWN. Flip one to
+     true to bring a module back. The same script sends old links to the sections that moved
+     to their own pages. -->
+<script id="mf-v423-flags">(function(){
+  var PERF_HERO = false;   // the hero's performance card (live figure, backtest pair, chart)
+  var PERF_CARDS = false;  // the pricing cards' backtest pair and live line, the return ladder, the fund box
+  var R = document.documentElement;
+  R.setAttribute('data-perf-hero', PERF_HERO ? 'on' : 'off');
+  R.setAttribute('data-perf-cards', PERF_CARDS ? 'on' : 'off');
+  var MOVED = { '#your-month': 'how-it-works/', '#how': 'methodology/', '#how-built': 'methodology/', '#vproof-h': 'track-record/' };
+  try { var to = MOVED[location.hash]; if (to) location.replace(to); } catch (e) {}
+})();</script>
+<style id="mf-v423-home">
+/* the product card that now leads the hero (the performance card is behind PERF_HERO) */
+html[data-perf-hero="off"] .hero-visual .hv-card{ display:none !important; }
+html[data-perf-hero="on"] .hero-visual .hvp{ display:none !important; }
+/* PERF_CARDS: the cards keep role, holdings, deepest fall, floor and price */
+html[data-perf-cards="off"] .strat-card .strat-metrics,
+html[data-perf-cards="off"] .strat-card .perf-line,
+html[data-perf-cards="off"] #trade-off,
+html[data-perf-cards="off"] .notwhat-vs{ display:none !important; }
+html[data-perf-cards="off"] .notwhat-card{ grid-template-columns:minmax(0,1fr); }
+/* Frozen-wording pin (owner order, 2026-10-10): the hero lede carries the frozen credential wording,
+   and its line breaks must stay as they were. Under 327px the old performance card held the single
+   hero column at 290.141px; with that card hidden the column narrowed and the lede re-wrapped at
+   320px. This keeps the lede at the old measure there, and only there. Lift it with the wording sweep. */
+@media (max-width:326px){ .hero-desc{ min-width:290.141px; } }
+.hvp{ position:relative; background:linear-gradient(160deg, rgba(255,255,255,0.88) 0%, var(--ink2) 60%); border:0.5px solid var(--border2);
+  border-radius:22px; padding:24px; box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 28px 60px -28px rgba(26,80,216,0.22); }
+html[data-theme="dark"] .hvp{ background:var(--ink2); }
+.hvp-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.hvp-k{ font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); }
+.hvp-tag{ font-size:11px; font-weight:700; color:var(--text3); }
+.hvp-rows{ display:grid; gap:8px; }
+.hvp-row{ display:grid; grid-template-columns:52px minmax(0,1fr) auto; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
+  background:rgba(37,99,235,.045); border:0.5px solid var(--border); font-size:14px; color:var(--text2); }
+.hvp-side{ font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; text-align:center; padding:3px 0; border-radius:6px; }
+.hvp-side.is-buy{ color:var(--data-strong); background:rgba(4,116,84,.10); }
+.hvp-side.is-sell{ color:var(--data-bad); background:rgba(201,32,32,.08); }
+.hvp-nm{ font-weight:700; color:var(--white); min-width:0; }
+.hvp-q{ font-size:13px; color:var(--text3); font-variant-numeric:tabular-nums; }
+.hvp-sum{ margin:14px 0 0; padding:12px 14px; border-radius:12px; font-size:14px; line-height:1.5; color:var(--text2);
+  background:linear-gradient(120deg,rgba(26,80,216,.08),rgba(8,145,178,.06)); }
+.hvp-sum b{ color:var(--white); }
+.hvp-links{ display:flex; flex-wrap:wrap; gap:6px 16px; margin:12px 0 0; font-size:14px; }
+.hvp-links a{ color:var(--ink-link,#0951c6); font-weight:700; text-decoration:underline; text-underline-offset:2px; }
+.hvp-note{ margin:10px 0 0; font-size:12px; color:var(--text3); line-height:1.5; }
+/* small phones: at 320px the name column was ~50px and "Stock A" broke in two */
+@media (max-width:360px){
+  .hvp{ padding:18px 16px; }
+  .hvp-row{ grid-template-columns:44px minmax(0,1fr) auto; gap:8px; padding:9px 10px; }
+  .hvp-nm, .hvp-q{ white-space:nowrap; }
+}
+/* the two new homepage bands */
+.proof-tiles, .notready{ padding:56px 0; border-top:0.5px solid var(--border); position:relative; }
+.proof-tiles h2, .notready h2{ font-size:34px; color:var(--white); margin-bottom:10px; letter-spacing:-.02em; }
+.notready .nr-desc, .proof-tiles .pt-desc{ font-size:16.5px; color:var(--text2); font-weight:300; line-height:1.7; max-width:62ch; margin-bottom:14px; }
+@media (max-width:600px){ .proof-tiles, .notready{ padding:40px 0; } .proof-tiles h2, .notready h2{ font-size:26px; } }
+</style>
 </head>
 <body>
 
@@ -3909,13 +3971,13 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   <div class="nav-inner">
     <a href="index.html" class="logo" aria-label="MindForge Capital — Home" style="gap:0;"><img src="assets/LogoNav.png?v=b1f0c2" width="98" height="80" alt="MindForge Capital" fetchpriority="high" decoding="async"></a>
     <div class="nav-links" id="primary-nav">
+      <a href="how-it-works/" style="color:var(--text2);">How it works</a>
       <a href="strategies.html">Strategies</a>
-      <a href="#your-month" style="color:var(--text2);">How it works</a>
+      <a href="track-record/" style="color:var(--text2);">Track record</a>
+      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="factor-report/">Factor Report</a><a href="fii-dii/">FII/DII activity</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="calculator.html">Calculators</a></div></details>
       <a href="#strategies" style="color:var(--text2);">Pricing</a>
-      <a href="dashboard.html?demo=1" style="color:var(--text2);">Sample dashboard</a>
-      <details class="nav-group"><summary>Free tools</summary><div class="nav-group-menu"><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="fii-dii/">FII/DII activity</a><a href="factor-report/">Factor Report</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
-      <a href="signup.html" class="nav-cta">Get Started</a>
+      <a href="signup.html?strategy=multiasset" class="nav-cta">Start free</a>
     </div>
 
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
@@ -3929,6 +3991,7 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
      hero <section> onto a real <main> that opens in exactly the same place and
      closes before the footer, so the skip link lands where it always did. -->
 <main id="main-content">
+<div id="dp-since-root" hidden></div>
 <section class="hero">
   <div class="hero-bg"></div>
   <canvas id="hero-particles" aria-hidden="true"></canvas>
@@ -3970,6 +4033,18 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
       </div>
 
       <div class="hero-visual">
+        <div class="hvp" role="group" aria-label="What a member's dashboard shows on the 1st (placeholder stocks)">
+          <div class="hvp-head"><span class="hvp-k">On the 1st, on your dashboard</span><span class="hvp-tag">Placeholder stocks</span></div>
+          <div class="hvp-rows">
+            <div class="hvp-row"><span class="hvp-side is-sell">Sell</span><span class="hvp-nm">Stock A</span><span class="hvp-q">19 shares held</span></div>
+            <div class="hvp-row"><span class="hvp-side is-sell">Sell</span><span class="hvp-nm">Stock B</span><span class="hvp-q">27 shares held</span></div>
+            <div class="hvp-row"><span class="hvp-side is-buy">Buy</span><span class="hvp-nm">Stock C</span><span class="hvp-q">22 shares</span></div>
+            <div class="hvp-row"><span class="hvp-side is-buy">Buy</span><span class="hvp-nm">Stock D</span><span class="hvp-q">42 shares</span></div>
+          </div>
+          <p class="hvp-sum">A typical month on LargeMidcap&nbsp;250 is about <b><!--MFTURN:lm:median-->12<!--/MFTURN--> orders</b>, sent to Zerodha as Kite baskets: about <b>ten minutes</b>, then nothing until the next list.</p>
+          <p class="hvp-links"><a href="dashboard.html?demo=1">See the sample dashboard&nbsp;&rarr;</a><a href="track-record/">Every cycle we&rsquo;ve published&nbsp;&rarr;</a></p>
+          <p class="hvp-note">An illustration of the screen, not MindForge&rsquo;s picks or a recommendation.</p>
+        </div>
         <div class="hv-card tilt-host" role="group" aria-label="Backtested performance by strategy">
           <div class="hv-head">
             <span class="hv-title">Portfolio Performance</span>
@@ -4072,6 +4147,152 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
     </div>
   </div>
 </section>
+
+<section class="mfw" id="get-started" aria-labelledby="mfw-h">
+  <div class="container">
+    <div class="mfw-grid">
+      <div class="mfw-copy">
+        <div class="section-label">Getting started</div>
+        <h2 class="mfw-h2 fade-up" id="mfw-h">From here to your first orders, in three steps</h2>
+        <p class="mfw-desc fade-up">Choose a book, sign up, and on the 1st place the orders. The phone plays each step the way the site shows it.</p>
+        <ol class="mfw-steps">
+          <li class="mfw-step is-on">
+            <button type="button" class="mfw-sbtn" aria-current="step"><span class="mfw-n">01</span><span class="mfw-t">Choose a book</span></button>
+            <p class="mfw-d">MultiAsset is free; LargeMidcap 250 and SmallMicro 500 are monthly plans. Most people need one book &mdash; if you are unsure, start with the free one.</p>
+            <span class="mfw-bar" aria-hidden="true"><i></i></span>
+          </li>
+          <li class="mfw-step">
+            <button type="button" class="mfw-sbtn"><span class="mfw-n">02</span><span class="mfw-t">Sign up</span></button>
+            <p class="mfw-d">Your email, the book and, for a paid plan, how long. The free book&rsquo;s dashboard link arrives by email in minutes; a paid plan&rsquo;s within 24 hours, its payment is set up with you on WhatsApp, and its first month is free.</p>
+            <span class="mfw-bar" aria-hidden="true"><i></i></span>
+          </li>
+          <li class="mfw-step">
+            <button type="button" class="mfw-sbtn"><span class="mfw-n">03</span><span class="mfw-t">Place the month&rsquo;s orders</span></button>
+            <p class="mfw-d">On the 1st your dashboard lists the orders for your capital. Send them to Zerodha as a basket, or work down the list in any broker, and tick each one off. You place every order; we never touch your money.</p>
+            <span class="mfw-bar" aria-hidden="true"><i></i></span>
+          </li>
+        </ol>
+        <div class="mfw-cta">
+          <a class="btn-primary" href="signup.html?strategy=multiasset">Start the free book &rarr;</a>
+          <a class="mfw-more" href="dashboard.html?demo=1">See the sample dashboard</a>
+        </div>
+      </div>
+
+      <div class="mfw-stage">
+        <div class="mfw-device">
+          <div class="mfw-phone" aria-hidden="true">
+            <div class="mfw-screen">
+              <span class="mfw-island"></span>
+              <div class="mfw-status"><span>9:41</span><svg viewBox="0 0 44 12" focusable="false"><g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="5.5" width="3" height="6.5" rx="1"/><rect x="9" y="3" width="3" height="9" rx="1"/><rect x="13.5" y="0.5" width="3" height="11.5" rx="1"/><path d="M21.5 4.6a8.4 8.4 0 0 1 10 0l-1.3 1.5a6.4 6.4 0 0 0-7.4 0zM24 7.4a4.8 4.8 0 0 1 5 0L26.5 10.4z"/><rect x="35" y="1.5" width="8.5" height="9" rx="2.2" opacity=".35"/><rect x="36" y="2.5" width="6.5" height="7" rx="1.4"/></g></svg></div>
+              <div class="mfw-appbar"><img class="mfw-brand" src="assets/LogoNav.png?v=b1f0c2" width="142" height="116" alt="" loading="lazy" decoding="async"><span class="mfw-ctx">Strategies</span><span class="mfw-menu"><i></i><i></i><i></i></span></div>
+              <div class="mfw-view">
+
+                <div class="mfw-fr" data-f="books" data-ctx="Strategies">
+                  <p class="mfw-k">Three books</p>
+                  <p class="mfw-h">Pick the one that fits</p>
+                  <p class="mfw-s">Most people need one. Unsure? Start free.</p>
+                  <div class="mfw-card" data-mfw-t="ma"><div class="mfw-row"><span class="mfw-name">MultiAsset</span><span class="mfw-free">FREE</span></div><div class="mfw-meta">ETFs: equity, gold, bonds &amp; global</div></div>
+                  <div class="mfw-card" data-mfw-t="lm"><div class="mfw-row"><span class="mfw-name">LargeMidcap 250</span><span class="mfw-price" data-mfw-month="lm">&#8377;999/month</span></div><div class="mfw-meta">Large &amp; midcap stocks</div></div>
+                  <div class="mfw-card" data-mfw-t="sm"><div class="mfw-row"><span class="mfw-name">SmallMicro 500</span><span class="mfw-price" data-mfw-month="sm">&#8377;1,499/month</span></div><div class="mfw-meta">Small &amp; microcap stocks</div></div>
+                </div>
+
+                <div class="mfw-fr" data-f="book" data-ctx="Strategies">
+                  <p class="mfw-k">Core-plus &middot; large &amp; midcap</p>
+                  <p class="mfw-h">MindForge LargeMidcap 250</p>
+                  <p class="mfw-s">Equal weight, rebalanced on the 1st.</p>
+                  <div class="mfw-sum"><div><span>Plan</span><b data-mfw-month="lm">&#8377;999/month</b></div><div><span>Rebalance</span><b>Monthly</b></div></div>
+                  <p class="mfw-gift">Month one is free: new members pay from month two.</p>
+                  <span class="mfw-btn" data-mfw-t="choose">Choose this plan &rarr;</span>
+                </div>
+
+                <div class="mfw-fr" data-f="form" data-ctx="Sign up">
+                  <p class="mfw-k">Get started</p>
+                  <p class="mfw-h">Register</p>
+                  <div class="mfw-field"><span class="mfw-lab">Email</span><span class="mfw-input" data-mfw-t="email"><span data-mfw-typed></span><i class="mfw-caret"></i></span></div>
+                  <div class="mfw-field"><span class="mfw-lab">Strategy</span><span class="mfw-input">LargeMidcap 250 &middot;&nbsp;<span data-mfw-month="lm">&#8377;999/month</span></span></div>
+                  <div class="mfw-field"><span class="mfw-lab">How long</span>
+                    <div class="mfw-chips">
+                      <span class="mfw-chip"><b>1 month</b><span data-mfw-term="lm:1">&#8377;999</span></span>
+                      <span class="mfw-chip"><b>3 months</b><span data-mfw-term="lm:3">&#8377;2,847</span> &middot; <span data-mfw-off="3">5% off</span></span>
+                      <span class="mfw-chip"><b>6 months</b><span data-mfw-term="lm:6">&#8377;5,395</span> &middot; <span data-mfw-off="6">10% off</span></span>
+                      <span class="mfw-chip" data-mfw-t="dur12"><b>1 year</b><span data-mfw-term="lm:12">&#8377;9,590</span> &middot; <span data-mfw-off="12">20% off</span></span>
+                    </div>
+                  </div>
+                  <div class="mfw-check" data-mfw-t="agree"><span class="mfw-box" data-mfw-aim></span><span>I have read the Terms and accept the investment risks.</span></div>
+                  <span class="mfw-btn" data-mfw-t="register">Register &rarr;</span>
+                  <div class="mfw-kbd"><div class="mfw-kbar"><span class="mfw-sug" data-mfw-t="suggest">you@example.com</span><span class="mfw-kdone" data-mfw-t="kdone">Done</span></div><div class="mfw-keys"></div></div>
+                </div>
+
+                <div class="mfw-fr" data-f="done" data-ctx="Sign up">
+                  <div class="mfw-ok">&#10003;</div>
+                  <p class="mfw-h">You&rsquo;re registered</p>
+                  <p class="mfw-s">What happens next:</p>
+                  <!-- V40.7 — C2: this list mirrors signup.html's FIRST_MONTH_FREE branch
+                       (the `offer` case of the success steps: "Nothing to pay today …
+                       there is nothing to pay first … the payment link on WhatsApp about a
+                       week before your first bill"). V40.6 drew the pay-first list here
+                       while the offer was live, so the homepage showed a step the product
+                       does not take. If the offer ends, change this too: Confirm on
+                       WhatsApp → Pay by UPI → your dashboard link within 24 hours of payment. -->
+                  <ol class="mfw-list">
+                    <li class="mfw-li"><span class="mfw-i">1</span><span><b>Nothing to pay today</b> &mdash; WhatsApp is there for questions.</span></li>
+                    <li class="mfw-li"><span class="mfw-i">2</span><span><b>Your dashboard link</b> &mdash; by email, within 24 hours.</span></li>
+                    <li class="mfw-li"><span class="mfw-i">3</span><span><b>Before month two</b> &mdash; the payment link comes on WhatsApp; cancel before then and you&rsquo;re never charged.</span></li>
+                  </ol>
+                </div>
+
+                <div class="mfw-fr" data-f="dash" data-ctx="Dashboard">
+                  <p class="mfw-k">This month&rsquo;s book &middot; LargeMidcap 250</p>
+                  <p class="mfw-h">8 orders to place</p>
+                  <p class="mfw-s">4 to buy, 4 to sell. The rest carry over untouched.</p>
+                  <div class="mfw-sum"><div><span>Capital</span><b>&#8377;10,00,000</b></div><div><span>Orders</span><b>8</b></div></div>
+                  <div class="mfw-ords">
+                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company A</span><span class="mfw-q">47</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company B</span><span class="mfw-q">120</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company C</span><span class="mfw-q">18</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company D</span><span class="mfw-q">63</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company E</span><span class="mfw-q">35</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company F</span><span class="mfw-q">210</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company G</span><span class="mfw-q">14</span><span class="mfw-done">&#10003;</span></div>
+                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company H</span><span class="mfw-q">52</span><span class="mfw-done">&#10003;</span></div>
+                  </div>
+                  <div class="mfw-dock"><span class="mfw-btn" data-mfw-t="review">Review 8 on Kite</span></div>
+                  <div class="mfw-scrim"></div>
+                  <div class="mfw-sheet">
+                    <div class="mfw-grip"></div>
+                    <p class="mfw-h">Your Zerodha basket</p>
+                    <p class="mfw-s">8 orders, checked by you and placed by you.</p>
+                    <span class="mfw-btn" data-mfw-t="placeall">Place 8 orders</span>
+                  </div>
+                </div>
+
+                <div class="mfw-fr" data-f="placed" data-ctx="Dashboard">
+                  <div class="mfw-ok">&#10003;</div>
+                  <p class="mfw-h">All 8 orders placed</p>
+                  <p class="mfw-s">Ticked off on your dashboard. The next book lands on the 1st; only what changed needs an order.</p>
+                  <ul class="mfw-list">
+                    <li class="mfw-li"><span class="mfw-i">&#8377;</span><span><b>Your money stays in your account.</b> We never hold it, and never trade for you.</span></li>
+                    <li class="mfw-li"><span class="mfw-i">&#8635;</span><span><b>Once a month,</b> on the 1st. The rest of the month asks nothing of you.</span></li>
+                  </ul>
+                </div>
+
+              </div>
+              <span class="mfw-ripple"></span>
+              <span class="mfw-hand"><svg viewBox="0 0 64 104" focusable="false"><path class="skin" stroke-width="2.4" stroke-linejoin="round" d="M15 40V11.5a7.5 7.5 0 0 1 15 0V36.5a5.6 5.6 0 0 1 11.2 0V39a5.2 5.2 0 0 1 10.4 0v3.5a4.6 4.6 0 0 1 9.2 0V55c0 9-3.8 16-8.8 21L51 104H22l-.5-26.5C17 73 12.5 66.5 8.5 60 5.5 55 3 50.5 4.6 47.6c1.8-3.2 6-2.1 8.4.9L15 51z"/><path class="nail" stroke-width="1.2" d="M17.6 13a4.9 4.9 0 0 1 9.8 0v5.2a1.6 1.6 0 0 1-1.6 1.6h-6.6a1.6 1.6 0 0 1-1.6-1.6z"/><path class="crease" stroke-width="1.3" d="M18.2 27.5q4.3 1.6 8.6 0M30 49v-6M41.2 50v-5.6M51.6 52v-5"/></svg></span>
+            </div>
+          </div>
+        </div>
+        <div class="mfw-ctrl" role="group" aria-label="Walkthrough controls">
+          <button type="button" class="mfw-cb" data-act="prev" aria-label="Previous step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 15l6-6 6 6"/></svg></button>
+          <button type="button" class="mfw-cb" data-act="pause" aria-pressed="false" aria-label="Pause the walkthrough"><svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg><svg class="ic-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></button>
+          <button type="button" class="mfw-cb" data-act="next" aria-label="Next step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>
+        </div>
+        <p class="mfw-note">An illustration. The member, company names, amounts and orders are placeholders &mdash; not MindForge&rsquo;s picks, a recommendation or investment advice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <script id="mf-v403-hero-fee">
 /* V40.3 — A1. THE PRICE IN THE FIRST SCREEN — BUILT, AND SWITCHED OFF.
    After "what is it", a busy buyer asks "what does it cost", and the answer was
@@ -4194,28 +4415,9 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
         </div>
         <p class="notwhat-p">Delivery equity and ETFs, bought with your own money, held in your own demat. Nobody
         messages you at 9:20&nbsp;am. <b>You can lose what you put in, never more</b> — there is no margin call.
-        <!-- V42.1 — A1. This sentence used to read "Your worst case is the drawdown column below",
-             which took the worst case from a backtest window with no crash in it: the
-             small-cap index fell far deeper in 2008-09 and 2018-20 than anything the column
-             shows. The contrast it was drawing (no margin call, unlike F&O) stays, stated as
-             the fact it is; the column is described as what it is. No figure added. -->
-        The drawdown column below is the deepest fall inside each book's backtest, and those were largely
-        rising years: the crashes of 2008 and 2020 went deeper, and small caps fell furthest.
-        <!-- V39.1 — the reader came here to "earn money on the side". Nothing on the
-             page said this is not an income, or how long money has to be able to sit.
-             The months are MFRISK, written from the same backtest curve as the
-             drawdown, so the sentence cannot outlive the data.
-             V42.1 — but that curve cannot see a crash, and the small-cap index took years,
-             not months, to regain its 2008 and 2018 highs. So the months stay as a fact
-             about the backtest, the advice is FAQ 11's own "within the next few years", and
-             the horizon itself is the owner's to set. -->
-        It is not an income either: nothing is paid out each month, and every gain it books is taxed in the
-        year it is booked. In its backtest SmallMicro&nbsp;500 once spent <b><!--MFRISK:sm:underwater-->16<!--/MFRISK-->&nbsp;months
-        below a previous high</b>, and after a crash small caps have taken years to recover — money you will
-        need within the next few years does not belong here.
-        <!-- V39.5 — B4. The hero names a reader whose career comes first; their
-             employer's trading code comes first too. One sentence, not a chip:
-             the five pills above are count-coupled. -->
+        <!-- V42.3 — the rest of this paragraph (the backtest window, the months below a previous high, the
+             horizon) moved word for word to /risk/, which this sentence now links. -->
+        <a href="risk/">What can go wrong, and how badly&nbsp;&rarr;</a>
         Work under an employee trading code? <a href="#faq-employer">Here is how the dashboard respects it&nbsp;&rarr;</a></p>
       </div>
       <div class="notwhat-vs">
@@ -4599,198 +4801,8 @@ html[data-theme="dark"] .mm-year{ background:rgba(120,160,240,.07); }
      from .strat-universe — so a retired or renamed strategy cannot leave a stale
      row here. If fewer than two cards parse, the whole section removes itself
      and the page is as it was. ── -->
-<section class="member-month" id="your-month">
-  <div class="container">
-    <div class="section-label">Your month</div>
-    <h2 class="mm-h2 fade-up">Ten minutes on the 1st. Then nothing.</h2>
-    <p class="mm-desc fade-up">Every strategy rebalances once a month. The model does the re-scoring; you place the resulting orders in your own broker, in your own time. Here is the whole of it.</p>
 
-    <div class="mm-card fade-up" id="mm-card" hidden>
-      <div class="mm-head">
-        <span class="mm-title">One calendar month, per strategy</span>
-        <span class="mm-key">
-          <span class="mm-k"><i class="k-act" aria-hidden="true"></i>You place orders</span>
-          <span class="mm-k"><i class="k-sig" aria-hidden="true"></i>We review — nothing for you</span>
-          <span class="mm-k"><i class="k-idle" aria-hidden="true"></i>Nothing to do</span>
-        </span>
-      </div>
-
-      <div class="mm-rows" id="mm-rows"></div>
-
-      <div class="mm-axis" aria-hidden="true">
-        <span class="mm-ax-sp"></span>
-        <span class="mm-ticks"><span>Day 1</span><span>Day 8</span><span>Day 15</span><span>Day 22</span><span>Month end</span></span>
-      </div>
-
-      <div class="mm-flow">
-        <span class="mm-step"><b>1</b>The new list lands on your dashboard</span>
-        <span class="mm-step"><b>2</b>Copy the tickers, enter your capital</span>
-        <span class="mm-step"><b>3</b>Place the orders in your broker</span>
-        <span class="mm-step"><b>4</b>Hold until the next rebalance</span>
-      </div>
-
-      <!-- V38.7 — THESE FOUR USED TO LEAD WITH "15 ORDERS IN MONTH ONE", WHICH
-           READS AS "AND FEWER AFTER THAT". The models say otherwise. Turnover is
-           written by every backtest run (|old △ new| / N) and over 61 months it
-           is median 14 orders a month on SmallMicro 500 and 8 on LargeMidcap 250
-           — about half the book, every month, for as long as you hold it. The
-           lightest month in five years was six. A prospect whose one binding
-           constraint is time met that in month two and found it out from their
-           own broker screen.
-           "1× Rebalance a month" comes off: the section's own subtitle already
-           says it twice. The two facts that replace it are the ones that decide
-           whether this is ten minutes or an evening — how many orders, and how
-           many confirmations they collapse into. Both are injected from the run,
-           not typed, so a TOP_N change or a quieter market moves them. -->
-      <div class="mm-facts">
-        <div class="mm-fact"><span class="mm-fv">~<!--MFTURN:sm:median-->14<!--/MFTURN--></span><span class="mm-fl">Orders in a typical month&nbsp;· SmallMicro&nbsp;500</span></div>
-        <div class="mm-fact"><span class="mm-fv"><!--MFTURN:sm:baskets-->2<!--/MFTURN--></span><span class="mm-fl">Kite baskets to confirm them</span></div>
-        <div class="mm-fact"><span class="mm-fv">~10 min</span><span class="mm-fl">Of your time, per cycle</span></div>
-        <div class="mm-fact"><span class="mm-fv mm-fv-zero">0</span><span class="mm-fl">Orders we place for you</span></div>
-      </div>
-
-      <!-- V40.3 — B4. "~10 min a month" was the only time figure on the site; the
-           return and the instalments it adds to a salaried reader's year lived in
-           one FAQ answer. The whole year, once, beside the month it extends. -->
-      <p class="mm-year"><b>Your year, with one book:</b> twelve sessions of about ten minutes on the 1st. ITR-2 instead of ITR-1 &mdash; your broker's Tax P&amp;L carries the detail. Advance tax, if this year's tax beyond your salary TDS reaches &#8377;10,000: up to four payments, and the dashboard works out each one. On a 12-month plan, one renewal. Adding from your salary each month? The same session takes it: the dashboard's Add money splits the month's amount across the picks, as one more Kite basket.</p>
-
-      <!-- V40.3 — A3. The routine stays open; the evidence behind it is one tap away.
-           The histogram and the two long paragraphs below are unchanged word for
-           word — they moved into this disclosure because, open, they put the
-           pricing a further 1.2 phone screens down for a reader with five minutes.
-           The MFTURN / MFTURNBARS markers inside resolve as before. -->
-      <details class="tl-more tl-keep mm-more">
-        <summary><span>How the ten minutes add up</span><i aria-hidden="true"></i></summary>
-
-      <!-- The distribution behind the median, because one number is a claim and
-           sixty-one is a record. Bars are rebuilt from results.csv on every
-           publish (MFTURNBARS), so the shape cannot drift from the figure above. -->
-      <figure class="tdist">
-        <figcaption class="tdist-cap">Orders a month, SmallMicro 500 · every one of the <!--MFTURN:sm:months-->61<!--/MFTURN--> backtested months</figcaption>
-        <div class="tdist-plot" role="img" aria-label="Distribution of monthly order counts across the backtest: median 14, range 6 to 22, and 28 of 61 months at 15 orders or more.">
-          <!--MFTURNBARS:sm-->
-          <div class="tdist-col"><div class="tdist-bar" style="--h:7%"><span class="tdist-n">1</span></div><div class="tdist-x">6</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:21%"><span class="tdist-n">3</span></div><div class="tdist-x">8</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:43%"><span class="tdist-n">6</span></div><div class="tdist-x">10</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:79%"><span class="tdist-n">11</span></div><div class="tdist-x">12</div></div>
-          <div class="tdist-col is-med"><div class="tdist-bar" style="--h:100%"><span class="tdist-n">14</span></div><div class="tdist-x">14</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:7%"><span class="tdist-n">1</span></div><div class="tdist-x">15</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:50%"><span class="tdist-n">7</span></div><div class="tdist-x">16</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:79%"><span class="tdist-n">11</span></div><div class="tdist-x">18</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:43%"><span class="tdist-n">6</span></div><div class="tdist-x">20</div></div>
-          <div class="tdist-col"><div class="tdist-bar" style="--h:7%"><span class="tdist-n">1</span></div><div class="tdist-x">22</div></div>
-        <!--/MFTURNBARS-->
-        </div>
-        <p class="tdist-foot">Bar height is how many months landed on that order count; the number above each bar is that count of months, the number below is the orders. The highlighted column is the median, <!--MFTURN:sm:median-->14<!--/MFTURN-->. Backtest, <!--MFTURN:sm:months-->61<!--/MFTURN--> months.</p>
-      </figure>
-
-      <p class="mm-foot">The ten minutes are genuinely yours: MindForge never holds your funds, never has access to your broker and never executes a trade on your behalf — <b>you place every order</b>. Month one is the full list. After that you trade only what changed — which, over five years of backtest, has been <b>about half the book</b>: typically <!--MFTURN:sm:median-->14<!--/MFTURN--> orders a month on SmallMicro&nbsp;500 and <!--MFTURN:lm:median-->12<!--/MFTURN--> on LargeMidcap&nbsp;250, and never fewer than <!--MFTURN:sm:lo-->6<!--/MFTURN-->. The dashboard groups them into Zerodha baskets, so that is <b>two confirmations, not fourteen</b> — and ten minutes is two basket confirmations, not ten minutes of deciding anything. On Zerodha you can do it at night: orders placed in the evening are queued as after-market orders for the next morning's open. On Groww or Upstox it is one tap per name; on any other broker — including the bank brokers many salary accounts come with — it is one order ticket per name, worked down a numbered list the dashboard builds for you. On a 3-, 6- or 12-month plan, skip a month and nothing breaks — the next list is waiting when you come back.</p>
-      <!-- ══ V38.9 · A3 · THE SALARIED MOTION, NAMED ═════════════════════════
-           This page had no word for how its reader actually invests. Every
-           figure on the site assumed a corpus that arrives once; "SIP" appeared
-           zero times; and the dashboard tool built for exactly this — Add
-           money, which splits new cash across the picks at model weights, in
-           whole shares, and sweeps the rounding residue into the most
-           underweight names — sat behind the paywall where no prospect could
-           see it existed. A reader who saves ₹40,000 a month could not tell
-           whether this product had anywhere to put it. ═════════════════════ -->
-      <p class="mm-foot mm-foot-add">If you invest from a salary, you will not arrive with a lump sum and stop. You start with what you
-      have and add what you save each month — so the dashboard has a tool for exactly that:
-      <b>Add money</b> takes the amount, splits it across the picks at their model weights in whole shares at
-      today's prices, and puts the cash the rounding leaves over into the most underweight names. It is the same
-      ten minutes, and it is on the sample screen below. And when you need some of it back — a down payment,
-      school fees, a sabbatical — <b>Take money out</b> does the reverse: it lists the sales that leave the rest
-      of the book as close to the model as whole shares allow.</p>
-      </details>
-      <!-- V37.5 — the ten minutes, shown rather than described. The member dashboard
-           has a sample mode (placeholder stocks and prices, clearly bannered as a
-           sample on arrival), and nothing on the public site pointed at it, so a
-           prospect had to subscribe to find out what "place the resulting orders"
-           actually looks like: the order list, the Kite baskets, the add-money and
-           match-my-holdings tools. -->
-      <a class="mm-demo" href="/dashboard.html?demo=1">
-        <span class="mm-demo-t"><b>See a sample dashboard</b><span>The exact screen members place their orders from, including Add money and Match my holdings — with placeholder stocks.</span></span>
-        <span class="mm-demo-arr" aria-hidden="true">→</span>
-      </a>
-    </div>
-  </div>
-</section>
-<script id="mf-v286-member-month-js">
-/* V40.3 — A2. This section now sits ABOVE the pricing (the reader asks "what does
-   it ask of me" before "what does it cost"), and it reads its rows off the
-   strategy cards — which, at parse time, no longer exist yet. So the build waits
-   for the document; everything inside it is unchanged. */
-(function(){
-  function mmBuild(){
-  try{
-    var card = document.getElementById('mm-card'),
-        rowsEl = document.getElementById('mm-rows');
-    if (!card || !rowsEl) return;
-
-    // ── Read the strategies off their own cards, never a second copy of them.
-    // .strat-universe is one line of the form "15 stocks · <universe> · Monthly
-    // rebalance". A row is only built when BOTH a name and a holdings count parse.
-    var rows = [];
-    document.querySelectorAll('.strat-card').forEach(function(c){
-      var nmEl = c.querySelector('.strat-name'), uEl = c.querySelector('.strat-universe');
-      if (!nmEl || !uEl) return;
-      var nm = (nmEl.textContent || '').replace(/\s+/g,' ').trim();
-      var u  = (uEl.textContent  || '').replace(/\s+/g,' ').trim();
-      var m  = u.match(/(\d+)\s+(?:stocks?|assets?)/i);
-      if (!nm || !m) return;
-      rows.push({ name: nm, n: parseInt(m[1], 10) });
-    });
-    if (rows.length < 2) return;          // fail-soft: the section never appears
-
-    // V28.9 — the biweekly portfolio review, the same on every book. Two marks,
-    // spaced a fortnight apart from the day-1 rebalance, so the axis ticks the
-    // module already prints (Day 15) line up with one of them by construction.
-    var REVIEW = [15, 29];
-    var SUB = 'We review it twice\u00A0· nothing for\u00A0you';
-    rowsEl.innerHTML = rows.map(function(r){
-      var cells = '';
-      for (var d = 1; d <= 30; d++){
-        var cls = 'mm-day';
-        if (d === 1) cls += ' is-act';
-        else if (REVIEW.indexOf(d) > -1) cls += ' is-sig';
-        cells += '<i class="' + cls + '" aria-hidden="true"></i>';
-      }
-      var right = r.n + ' orders<em>then hold</em>';
-      return '<div class="mm-row">' +
-               '<span class="mm-nm"><b>' + r.name + '</b><span>' + SUB + '</span></span>' +
-               '<span class="mm-track" role="img" aria-label="' + r.name + ': ' + r.n +
-                 ' orders on day one, then two portfolio reviews by MindForge and nothing for you to do">' + cells + '</span>' +
-               '<span class="mm-n">' + right + '</span>' +
-             '</div>';
-    }).join('');
-
-    // V38.7 — the orders fact is no longer "the largest book on the page". It is
-    // the MEDIAN month from the backtest, injected at publish time by
-    // inject_site_stats (MFTURN), because the book size is what month one costs
-    // and the median is what every month after it costs. Nothing to set here.
-
-    card.hidden = false;
-
-    // Grow the day-cells once the card is actually on screen. Same idiom as every
-    // other bar on this site (painted at zero, set later) — with a timer fallback
-    // because IntersectionObserver callbacks do not fire in some headless harnesses.
-    var lit = false, light = function(){ if (lit) return; lit = true; card.classList.add('mm-in'); };
-    if ('IntersectionObserver' in window){
-      var io = new IntersectionObserver(function(es){
-        es.forEach(function(e){ if (e.isIntersecting){ light(); io.disconnect(); } });
-      }, { threshold: 0.15 });
-      io.observe(card);
-    } else { light(); }
-    setTimeout(function(){
-      var r = card.getBoundingClientRect();
-      if (r.top < (window.innerHeight || 0) && r.bottom > 0) light();
-    }, 900);
-  }catch(e){ /* the section simply stays hidden */ }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mmBuild);
-  else mmBuild();
-})();
-</script>
+<!-- V42.3 — "Your month" now lives on /how-it-works/ with its markers. -->
 
 
 
@@ -4990,39 +5002,15 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
      contrast-measured (V30.0) and prints as a solid block with the glyphs gone
      (V30.1).
      ══════════════════════════════════════════════════════════════════════════ -->
-<section class="vproof-section" aria-labelledby="vproof-h">
+<section class="proof-tiles" aria-labelledby="proof-h">
   <div class="container">
-    <div class="vstrip fade-up">
-      <div class="vstrip-head">
-        <span class="vstrip-eyebrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>Broker-verified</span>
-        <h2 class="vstrip-title" id="vproof-h">Two strategies. Two accounts. Two records we don&rsquo;t write.</h2>
-        <p class="vstrip-sub">Each paid strategy is traded in its own Zerodha account, and Zerodha publishes that account&rsquo;s realised P&amp;L&nbsp;&mdash; closed trades only, over the account&rsquo;s whole history &mdash; on its own verified page. The figures on this page are ours; the record behind each link is not.</p>
-      </div>
-      <div class="vstrip-grid">
-        <div class="vcard">
-          <span class="vcard-top">
-            <span class="vcard-name">LargeMidcap&nbsp;250</span>
-            <span class="vcard-acct">Account 1</span>
-          </span>
-          <span class="vcard-since" data-dedicated="lm" hidden></span>
-          <a class="vcard-cta" href="https://console.zerodha.com/verified/ddd3611c" target="_blank" rel="noopener"
-             aria-label="MindForge LargeMidcap 250 — verified live P&L on Zerodha (opens in a new tab)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View the verified P&amp;L<span class="pnl-arr" aria-hidden="true">↗</span></a>
-        </div>
-        <div class="vcard">
-          <span class="vcard-top">
-            <span class="vcard-name">SmallMicro&nbsp;500</span>
-            <span class="vcard-acct">Account 2</span>
-          </span>
-          <span class="vcard-since" data-dedicated="sm" hidden></span>
-          <a class="vcard-cta" href="https://console.zerodha.com/verified/9eafe0ef" target="_blank" rel="noopener"
-             aria-label="MindForge SmallMicro 500 — verified live P&L on Zerodha (opens in a new tab)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.4 12.4l2.5 2.5 4.7-5.2"/></svg>View the verified P&amp;L<span class="pnl-arr" aria-hidden="true">↗</span></a>
-        </div>
-      </div>
-      <!-- V41.6 — C2. The live figure and the backtest pair used to sit in these two cards as
-           well; the pricing cards a screen or two below carry the same numbers, so the
-           section keeps what only it has: the two accounts and their links. The footnote
-           is the old two-part explanation's own sentences about the link. -->
-      <p class="vstrip-foot">The link: <b>Zerodha&rsquo;s own record</b> of the account&rsquo;s closed trades. How to read it: its total counts every closed trade since the account opened, including any made before the account was given to its strategy, and it shows no open positions and no percentage return. Past performance is not indicative of future returns. MultiAsset is free and is not traded in a dedicated account.</p>
+    <div class="section-label">Proof you can check</div>
+    <h2 class="fade-up" id="proof-h">Three things to check before you trust us.</h2>
+    <p class="pt-desc fade-up">None of them asks you to take our word for anything.</p>
+    <div class="dp-tiles fade-up">
+      <a class="dp-tile" href="track-record/"><span class="dp-tk">The live record</span><span class="dp-tv" style="font-size:19px">Every cycle, none rewritten</span><span class="dp-tl">Each book against its own index since 31&nbsp;Aug 2026. Closed cycles are final.</span><span class="dp-ta">See every cycle&nbsp;&rarr;</span></a>
+      <a class="dp-tile" href="track-record/#vproof-h"><span class="dp-tk">Broker-verified</span><span class="dp-tv" style="font-size:19px">Two accounts we don&rsquo;t write</span><span class="dp-tl">Each paid book trades in its own Zerodha account, whose realised P&amp;L Zerodha publishes.</span><span class="dp-ta">Open the two records&nbsp;&rarr;</span></a>
+      <a class="dp-tile" href="methodology/"><span class="dp-tk">The method</span><span class="dp-tv" style="font-size:19px">How a book is built and tested</span><span class="dp-tl">The steps, what the model looks at, and the three places the backtest flatters us.</span><span class="dp-ta">Read the method&nbsp;&rarr;</span></a>
     </div>
   </div>
 </section>
@@ -5556,7 +5544,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">Built as a satellite — the highest-conviction book we run, and the one to size smallest. Equal weight, rebalanced on the 1st. The backtest shows <!--MFSTAT:sm:alpha_posttax-->+32.66%<!--/MFSTAT--> a year over the Nifty Smallcap&nbsp;250, after tax.</p>
+        <p class="strat-desc">Built as a satellite — the highest-conviction book we run, and the one to size smallest. Equal weight, rebalanced on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:sm:alpha_posttax-->+32.66%<!--/MFSTAT--> a year over the Nifty Smallcap&nbsp;250, after tax.</span></p>
         <div class="strat-footer">
           <!-- V38.9 — "WORKS FROM" REACHES THE PAGE WHERE THE DECISION IS MADE.
                V38.7 computed this floor and published it on strategies.html and
@@ -5629,7 +5617,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">Built as a core-plus — fifteen large and mid-cap names, in the part of the market you already own through funds. Equal weight, rebalanced on the 1st. The backtest shows <!--MFSTAT:lm:alpha_posttax-->+10.73%<!--/MFSTAT--> a year over the Nifty LargeMidcap&nbsp;250, after tax.</p>
+        <p class="strat-desc">Built as a core-plus — fifteen large and mid-cap names, in the part of the market you already own through funds. Equal weight, rebalanced on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:lm:alpha_posttax-->+10.73%<!--/MFSTAT--> a year over the Nifty LargeMidcap&nbsp;250, after tax.</span></p>
         <div class="strat-footer">
           <div class="strat-min">
             <span class="strat-works">Works from <span><!--MFMIN:lm:capital-->₹6,85,000<!--/MFMIN--></span></span>
@@ -5695,7 +5683,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">Built as a core — eight ETFs across equity, gold, silver and debt, rebalanced on the 1st, and free. The backtest shows <!--MFSTAT:ma:alpha_posttax-->+6.61%<!--/MFSTAT--> a year over the Nifty&nbsp;50, after tax. <a class="mf-slab" href="disclosures.html#ma-slab">At a 30% tax slab the real after-tax figure is lower&nbsp;— why&nbsp;&rarr;</a></p>
+        <p class="strat-desc">Built as a core — eight ETFs across equity, gold, silver and debt, rebalanced on the 1st, and free. <span class="perf-line">The backtest shows <!--MFSTAT:ma:alpha_posttax-->+6.61%<!--/MFSTAT--> a year over the Nifty&nbsp;50, after tax. <a class="mf-slab" href="disclosures.html#ma-slab">At a 30% tax slab the real after-tax figure is lower&nbsp;— why&nbsp;&rarr;</a></span></p>
         <div class="strat-footer">
           <div class="strat-min">
             <span class="strat-works">Works from <span><!--MFMIN:ma:capital-->₹20,000<!--/MFMIN--></span></span>
@@ -6358,150 +6346,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
      screens push instead of cross-fading, and the email is filled from the
      keyboard's suggestion. The keys are written by mfc-walk.js.
      ═══════════════════════════════════════════════════════════════════════ -->
-<section class="mfw" id="get-started" aria-labelledby="mfw-h">
-  <div class="container">
-    <div class="mfw-grid">
-      <div class="mfw-copy">
-        <div class="section-label">Getting started</div>
-        <h2 class="mfw-h2 fade-up" id="mfw-h">From here to your first orders, in three steps</h2>
-        <p class="mfw-desc fade-up">Choose a book, sign up, and on the 1st place the orders. The phone plays each step the way the site shows it.</p>
-        <ol class="mfw-steps">
-          <li class="mfw-step is-on">
-            <button type="button" class="mfw-sbtn" aria-current="step"><span class="mfw-n">01</span><span class="mfw-t">Choose a book</span></button>
-            <p class="mfw-d">MultiAsset is free; LargeMidcap 250 and SmallMicro 500 are monthly plans. Most people need one book &mdash; if you are unsure, start with the free one.</p>
-            <span class="mfw-bar" aria-hidden="true"><i></i></span>
-          </li>
-          <li class="mfw-step">
-            <button type="button" class="mfw-sbtn"><span class="mfw-n">02</span><span class="mfw-t">Sign up</span></button>
-            <p class="mfw-d">Your email, the book and, for a paid plan, how long. The free book&rsquo;s dashboard link arrives by email in minutes; a paid plan&rsquo;s within 24 hours, its payment is set up with you on WhatsApp, and its first month is free.</p>
-            <span class="mfw-bar" aria-hidden="true"><i></i></span>
-          </li>
-          <li class="mfw-step">
-            <button type="button" class="mfw-sbtn"><span class="mfw-n">03</span><span class="mfw-t">Place the month&rsquo;s orders</span></button>
-            <p class="mfw-d">On the 1st your dashboard lists the orders for your capital. Send them to Zerodha as a basket, or work down the list in any broker, and tick each one off. You place every order; we never touch your money.</p>
-            <span class="mfw-bar" aria-hidden="true"><i></i></span>
-          </li>
-        </ol>
-        <div class="mfw-cta">
-          <a class="btn-primary" href="signup.html?strategy=multiasset">Start the free book &rarr;</a>
-          <a class="mfw-more" href="dashboard.html?demo=1">See the sample dashboard</a>
-        </div>
-      </div>
 
-      <div class="mfw-stage">
-        <div class="mfw-device">
-          <div class="mfw-phone" aria-hidden="true">
-            <div class="mfw-screen">
-              <span class="mfw-island"></span>
-              <div class="mfw-status"><span>9:41</span><svg viewBox="0 0 44 12" focusable="false"><g fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="4.5" y="5.5" width="3" height="6.5" rx="1"/><rect x="9" y="3" width="3" height="9" rx="1"/><rect x="13.5" y="0.5" width="3" height="11.5" rx="1"/><path d="M21.5 4.6a8.4 8.4 0 0 1 10 0l-1.3 1.5a6.4 6.4 0 0 0-7.4 0zM24 7.4a4.8 4.8 0 0 1 5 0L26.5 10.4z"/><rect x="35" y="1.5" width="8.5" height="9" rx="2.2" opacity=".35"/><rect x="36" y="2.5" width="6.5" height="7" rx="1.4"/></g></svg></div>
-              <div class="mfw-appbar"><img class="mfw-brand" src="assets/LogoNav.png?v=b1f0c2" width="142" height="116" alt="" loading="lazy" decoding="async"><span class="mfw-ctx">Strategies</span><span class="mfw-menu"><i></i><i></i><i></i></span></div>
-              <div class="mfw-view">
-
-                <div class="mfw-fr" data-f="books" data-ctx="Strategies">
-                  <p class="mfw-k">Three books</p>
-                  <p class="mfw-h">Pick the one that fits</p>
-                  <p class="mfw-s">Most people need one. Unsure? Start free.</p>
-                  <div class="mfw-card" data-mfw-t="ma"><div class="mfw-row"><span class="mfw-name">MultiAsset</span><span class="mfw-free">FREE</span></div><div class="mfw-meta">ETFs: equity, gold, bonds &amp; global</div></div>
-                  <div class="mfw-card" data-mfw-t="lm"><div class="mfw-row"><span class="mfw-name">LargeMidcap 250</span><span class="mfw-price" data-mfw-month="lm">&#8377;999/month</span></div><div class="mfw-meta">Large &amp; midcap stocks</div></div>
-                  <div class="mfw-card" data-mfw-t="sm"><div class="mfw-row"><span class="mfw-name">SmallMicro 500</span><span class="mfw-price" data-mfw-month="sm">&#8377;1,499/month</span></div><div class="mfw-meta">Small &amp; microcap stocks</div></div>
-                </div>
-
-                <div class="mfw-fr" data-f="book" data-ctx="Strategies">
-                  <p class="mfw-k">Core-plus &middot; large &amp; midcap</p>
-                  <p class="mfw-h">MindForge LargeMidcap 250</p>
-                  <p class="mfw-s">Equal weight, rebalanced on the 1st.</p>
-                  <div class="mfw-sum"><div><span>Plan</span><b data-mfw-month="lm">&#8377;999/month</b></div><div><span>Rebalance</span><b>Monthly</b></div></div>
-                  <p class="mfw-gift">Month one is free: new members pay from month two.</p>
-                  <span class="mfw-btn" data-mfw-t="choose">Choose this plan &rarr;</span>
-                </div>
-
-                <div class="mfw-fr" data-f="form" data-ctx="Sign up">
-                  <p class="mfw-k">Get started</p>
-                  <p class="mfw-h">Register</p>
-                  <div class="mfw-field"><span class="mfw-lab">Email</span><span class="mfw-input" data-mfw-t="email"><span data-mfw-typed></span><i class="mfw-caret"></i></span></div>
-                  <div class="mfw-field"><span class="mfw-lab">Strategy</span><span class="mfw-input">LargeMidcap 250 &middot;&nbsp;<span data-mfw-month="lm">&#8377;999/month</span></span></div>
-                  <div class="mfw-field"><span class="mfw-lab">How long</span>
-                    <div class="mfw-chips">
-                      <span class="mfw-chip"><b>1 month</b><span data-mfw-term="lm:1">&#8377;999</span></span>
-                      <span class="mfw-chip"><b>3 months</b><span data-mfw-term="lm:3">&#8377;2,847</span> &middot; <span data-mfw-off="3">5% off</span></span>
-                      <span class="mfw-chip"><b>6 months</b><span data-mfw-term="lm:6">&#8377;5,395</span> &middot; <span data-mfw-off="6">10% off</span></span>
-                      <span class="mfw-chip" data-mfw-t="dur12"><b>1 year</b><span data-mfw-term="lm:12">&#8377;9,590</span> &middot; <span data-mfw-off="12">20% off</span></span>
-                    </div>
-                  </div>
-                  <div class="mfw-check" data-mfw-t="agree"><span class="mfw-box" data-mfw-aim></span><span>I have read the Terms and accept the investment risks.</span></div>
-                  <span class="mfw-btn" data-mfw-t="register">Register &rarr;</span>
-                  <div class="mfw-kbd"><div class="mfw-kbar"><span class="mfw-sug" data-mfw-t="suggest">you@example.com</span><span class="mfw-kdone" data-mfw-t="kdone">Done</span></div><div class="mfw-keys"></div></div>
-                </div>
-
-                <div class="mfw-fr" data-f="done" data-ctx="Sign up">
-                  <div class="mfw-ok">&#10003;</div>
-                  <p class="mfw-h">You&rsquo;re registered</p>
-                  <p class="mfw-s">What happens next:</p>
-                  <!-- V40.7 — C2: this list mirrors signup.html's FIRST_MONTH_FREE branch
-                       (the `offer` case of the success steps: "Nothing to pay today …
-                       there is nothing to pay first … the payment link on WhatsApp about a
-                       week before your first bill"). V40.6 drew the pay-first list here
-                       while the offer was live, so the homepage showed a step the product
-                       does not take. If the offer ends, change this too: Confirm on
-                       WhatsApp → Pay by UPI → your dashboard link within 24 hours of payment. -->
-                  <ol class="mfw-list">
-                    <li class="mfw-li"><span class="mfw-i">1</span><span><b>Nothing to pay today</b> &mdash; WhatsApp is there for questions.</span></li>
-                    <li class="mfw-li"><span class="mfw-i">2</span><span><b>Your dashboard link</b> &mdash; by email, within 24 hours.</span></li>
-                    <li class="mfw-li"><span class="mfw-i">3</span><span><b>Before month two</b> &mdash; the payment link comes on WhatsApp; cancel before then and you&rsquo;re never charged.</span></li>
-                  </ol>
-                </div>
-
-                <div class="mfw-fr" data-f="dash" data-ctx="Dashboard">
-                  <p class="mfw-k">This month&rsquo;s book &middot; LargeMidcap 250</p>
-                  <p class="mfw-h">8 orders to place</p>
-                  <p class="mfw-s">4 to buy, 4 to sell. The rest carry over untouched.</p>
-                  <div class="mfw-sum"><div><span>Capital</span><b>&#8377;10,00,000</b></div><div><span>Orders</span><b>8</b></div></div>
-                  <div class="mfw-ords">
-                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company A</span><span class="mfw-q">47</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company B</span><span class="mfw-q">120</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company C</span><span class="mfw-q">18</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side buy">BUY</span><span class="mfw-co">Company D</span><span class="mfw-q">63</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company E</span><span class="mfw-q">35</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company F</span><span class="mfw-q">210</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company G</span><span class="mfw-q">14</span><span class="mfw-done">&#10003;</span></div>
-                    <div class="mfw-ord"><span class="mfw-side sell">SELL</span><span class="mfw-co">Company H</span><span class="mfw-q">52</span><span class="mfw-done">&#10003;</span></div>
-                  </div>
-                  <div class="mfw-dock"><span class="mfw-btn" data-mfw-t="review">Review 8 on Kite</span></div>
-                  <div class="mfw-scrim"></div>
-                  <div class="mfw-sheet">
-                    <div class="mfw-grip"></div>
-                    <p class="mfw-h">Your Zerodha basket</p>
-                    <p class="mfw-s">8 orders, checked by you and placed by you.</p>
-                    <span class="mfw-btn" data-mfw-t="placeall">Place 8 orders</span>
-                  </div>
-                </div>
-
-                <div class="mfw-fr" data-f="placed" data-ctx="Dashboard">
-                  <div class="mfw-ok">&#10003;</div>
-                  <p class="mfw-h">All 8 orders placed</p>
-                  <p class="mfw-s">Ticked off on your dashboard. The next book lands on the 1st; only what changed needs an order.</p>
-                  <ul class="mfw-list">
-                    <li class="mfw-li"><span class="mfw-i">&#8377;</span><span><b>Your money stays in your account.</b> We never hold it, and never trade for you.</span></li>
-                    <li class="mfw-li"><span class="mfw-i">&#8635;</span><span><b>Once a month,</b> on the 1st. The rest of the month asks nothing of you.</span></li>
-                  </ul>
-                </div>
-
-              </div>
-              <span class="mfw-ripple"></span>
-              <span class="mfw-hand"><svg viewBox="0 0 64 104" focusable="false"><path class="skin" stroke-width="2.4" stroke-linejoin="round" d="M15 40V11.5a7.5 7.5 0 0 1 15 0V36.5a5.6 5.6 0 0 1 11.2 0V39a5.2 5.2 0 0 1 10.4 0v3.5a4.6 4.6 0 0 1 9.2 0V55c0 9-3.8 16-8.8 21L51 104H22l-.5-26.5C17 73 12.5 66.5 8.5 60 5.5 55 3 50.5 4.6 47.6c1.8-3.2 6-2.1 8.4.9L15 51z"/><path class="nail" stroke-width="1.2" d="M17.6 13a4.9 4.9 0 0 1 9.8 0v5.2a1.6 1.6 0 0 1-1.6 1.6h-6.6a1.6 1.6 0 0 1-1.6-1.6z"/><path class="crease" stroke-width="1.3" d="M18.2 27.5q4.3 1.6 8.6 0M30 49v-6M41.2 50v-5.6M51.6 52v-5"/></svg></span>
-            </div>
-          </div>
-        </div>
-        <div class="mfw-ctrl" role="group" aria-label="Walkthrough controls">
-          <button type="button" class="mfw-cb" data-act="prev" aria-label="Previous step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 15l6-6 6 6"/></svg></button>
-          <button type="button" class="mfw-cb" data-act="pause" aria-pressed="false" aria-label="Pause the walkthrough"><svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><rect x="6.5" y="5" width="4" height="14" rx="1.2"/><rect x="13.5" y="5" width="4" height="14" rx="1.2"/></svg><svg class="ic-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></button>
-          <button type="button" class="mfw-cb" data-act="next" aria-label="Next step"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button>
-        </div>
-        <p class="mfw-note">An illustration. The member, company names, amounts and orders are placeholders &mdash; not MindForge&rsquo;s picks, a recommendation or investment advice.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ════════════════════════════════════════════════════════════════════════
      V38.7 — WHERE THIS FITS
@@ -7202,227 +7047,9 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 }
 @media (prefers-reduced-motion: reduce){ .fun-track i{ transition: none; } }
 </style>
-<section class="how" id="how">
-  <div class="container">
-    <div class="section-label">The science</div>
-    <h2 class="fade-up">Built on 50&nbsp;years of academic research.</h2>
-    <p class="how-desc fade-up">Factor investing is not a trend — it is peer-reviewed finance that has held up for fifty years. Every signal these models use has to clear five tests: <b>persistent, pervasive, robust, investable, intuitive.</b></p>
 
-    <!-- V38.7 — THE TIMELINE IS NOW OPT-IN.
-         Four dated entries on CAPM, Fama–French and the factor zoo sat above the
-         price, on a page whose reader has told us in so many words that studying
-         markets is the thing they do not have time for. Read in that order it
-         does not say "this is rigorous", it says "you will need a finance degree
-         to follow this" — the opposite of the promise the hero just made.
-         Nothing is deleted and nothing is hidden from a crawler: a native
-         <details> keeps all four entries in the DOM, readable with JS off, and
-         keyboard and screen-reader behaviour comes for free, exactly as the FAQ
-         below does it. The five pillars, which ARE the argument, stay open. -->
-    <details class="tl-more fade-up">
-      <summary><span>The fifty years, in four steps</span><i aria-hidden="true"></i></summary>
-    <div class="timeline">
-      <div class="tl-item">
-        <div class="tl-year">1964</div>
-        <div class="tl-content">
-          <div class="tl-title">CAPM — The first model</div>
-          <div class="tl-desc">Sharpe, Lintner &amp; Treynor showed that the only risk earning a return is market beta — undiversifiable systematic risk. This became the universal benchmark for separating genuine skill from factor exposure.</div>
-        </div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-year">1992</div>
-        <div class="tl-content">
-          <div class="tl-title">Beyond CAPM — the multi-factor era</div>
-          <div class="tl-desc">Nobel laureate Eugene Fama and Kenneth French proved CAPM was incomplete. Additional return factors were shown to systematically explain stock returns that market beta could not. The multi-factor era of academic finance began.</div>
-        </div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-year">1997</div>
-        <div class="tl-content">
-          <div class="tl-title">The factor zoo expands</div>
-          <div class="tl-desc">Over the following decades, researchers including Jegadeesh, Titman and Carhart documented further factor premia in equity markets, each surviving rigorous out-of-sample testing. Multi-factor models became the dominant framework for explaining cross-sectional returns.</div>
-        </div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-year">2026</div>
-        <div class="tl-content">
-          <div class="tl-title">MindForge — Applied to India</div>
-          <div class="tl-desc">We apply academically validated factors to Indian listed equities and ETFs. Every strategy is built on factors that are persistent, pervasive, robust, investable and intuitive.</div>
-        </div>
-      </div>
-    </div>
-    </details>
 
-    <!-- 5 criteria pills -->
-    <div class="criteria-row fade-up">
-      <div class="crit-pill">
-        <div class="crit-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </div>
-        <div class="crit-name">Persistent</div>
-        <div class="crit-tiny">Holds across decades</div>
-      </div>
-      <div class="crit-pill">
-        <div class="crit-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        </div>
-        <div class="crit-name">Pervasive</div>
-        <div class="crit-tiny">Holds across markets</div>
-      </div>
-      <div class="crit-pill">
-        <div class="crit-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div class="crit-name">Robust</div>
-        <div class="crit-tiny">Not one formulation</div>
-      </div>
-      <div class="crit-pill">
-        <div class="crit-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>
-        </div>
-        <div class="crit-name">Investable</div>
-        <div class="crit-tiny">Works after costs</div>
-      </div>
-      <div class="crit-pill">
-        <div class="crit-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21h6"/><path d="M12 17v4"/><path d="M5.5 11A6.5 6.5 0 1112 17.5 6.5 6.5 0 015.5 11z"/><path d="M9 11h6"/></svg>
-        </div>
-        <div class="crit-name">Intuitive</div>
-        <div class="crit-tiny">Logical explanation</div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<section class="build-flow" id="how-built">
-  <div class="container">
-    <div class="section-label">The process</div>
-    <h2 class="fade-up">From a whole universe to what you actually hold.</h2>
-    <!-- V28.9: said "Every strategy runs the same disciplined pipeline". Stages 01,
-         03 and 04 describe ranking a stock universe and capping it by industry, and
-         MultiAsset does none of that — it rotates eight ETFs by composite score with
-         no universe to rank and no sector cap. The narrowing rail below already
-         says so in its footnote; the lead above it was still claiming all three.
-         Scoped to the two equity books, which is what the five stages describe. -->
-    <p class="bf-lead fade-up">Both equity strategies run the same disciplined pipeline each month — no overrides, no gut calls. Here's the path from index to portfolio. <span class="bf-lead-note">(MultiAsset rotates eight ETFs by score instead — there is no universe to rank.)</span></p>
-    <!-- V39.1 — C4: the pipeline is auditor content; one closed disclosure on
-         desktop. No tl-keep: #how-built is inside the phone accordion, so at
-         <=600px this flattens and the accordion does the folding. -->
-    <details class="tl-more bf-pipe-d fade-up">
-      <summary><span>The five steps, drawn out</span><i aria-hidden="true"></i></summary>
-    <div class="bf-pipeline">
-      <div class="bf-stage fade-up reveal-stagger" data-step="01" style="--reveal-delay:0ms;--sc:#1a50d8;--sc2:#2563eb;--scd:#1a50d8">
-        <div class="bf-num">01</div>
-        <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></div>
-        <div class="bf-title">The universe</div>
-        <div class="bf-desc">Every eligible name in the index — a broad, rules-defined starting field.</div>
-        <!-- V28.8: was "Up to 750 stocks", which is LargeMidcap's 250-name universe
-             added to SmallMicro's 500 — a field no pipeline has ever started from.
-             The rail below re-derives this from the widest universe it parses; the
-             static text is that value today, so the chip is right either way. -->
-        <span class="bf-chip" id="bf-chip-uni">Up to 500 stocks</span>
-      </div>
-      <div class="bf-sep" style="--sc:#2563eb;animation-delay:0.0s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="02" style="--reveal-delay:80ms;--sc:#2563eb;--sc2:#0d84c3;--scd:#2563eb">
-        <div class="bf-num">02</div>
-        <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M12 12l4-3"/><path d="M3 12h2M12 3v2M19 6l-1.5 1.5"/></svg></div>
-        <div class="bf-title">Multi-factor score</div>
-        <!-- V28.9: said "value, quality, momentum & more". No strategy has a value
-             or a quality factor — or any fundamentals input at all; every input in
-             all three models is price- or volume-derived. (The Integrity Score
-             screener DOES grade quality and value — different product, and its
-             pages are correct.) The four families named below are the ones all
-             three models share, and are as specific as this site goes.
-             V29.6: the per-strategy factor lists that used to be spelled out in
-             this comment were removed along with the published weight modules —
-             an HTML comment is served to every visitor. Do not put the factor set
-             back on any public surface; check shared/config.py instead. -->
-        <div class="bf-desc">Each stock scored on peer-reviewed factors — momentum, trend, volatility &amp; liquidity.</div>
-        <!-- V28.8: "Academically Validated" needed 141px in a 138px content box at
-             1280 and wrapped to two lines. The desc directly above already says
-             "peer-reviewed", so the chip carries the shorter half of the claim. -->
-        <span class="bf-chip">Peer-reviewed</span>
-      </div>
-      <div class="bf-sep" style="--sc:#0d84c3;animation-delay:0.3s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="03" style="--reveal-delay:160ms;--sc:#0d84c3;--sc2:#0891b2;--scd:#0e6ea3">
-        <div class="bf-num">03</div>
-        <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg></div>
-        <div class="bf-title">Ranked by conviction</div>
-        <div class="bf-desc">Sorted highest-first, so only the strongest signals make the cut.</div>
-        <span class="bf-chip">Strongest First</span>
-      </div>
-      <div class="bf-sep" style="--sc:#0891b2;animation-delay:0.6s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="04" style="--reveal-delay:240ms;--sc:#0891b2;--sc2:#0d9488;--scd:#0e7490">
-        <div class="bf-num">04</div>
-        <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
-        <div class="bf-title">Sector-capped</div>
-        <div class="bf-desc">No more than two names per industry — diversification is structural, not promised.</div>
-        <span class="bf-chip">≤ 2 Per Industry</span>
-      </div>
-      <div class="bf-sep" style="--sc:#0d9488;animation-delay:0.8999999999999999s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
-      <div class="bf-stage fade-up reveal-stagger" data-step="05" style="--reveal-delay:320ms;--sc:#0d9488;--sc2:#2dd4bf;--scd:#0f766e">
-        <div class="bf-num">05</div>
-        <div class="bf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9l6.5 3.75"/><circle cx="12" cy="12" r="9"/></svg></div>
-        <div class="bf-title">Your portfolio</div>
-        <div class="bf-desc">The top names, held equal-weight until next month's rebalance.</div>
-        <span class="bf-chip" id="bf-chip-held">10&ndash;15, equal-weight</span>
-      </div>
-    </div>
-    </details>
-
-    <!-- ── V28.8 · THE NARROWING — see the CSS block above for why this exists.
-         Counts live in MFFUN markers rewritten monthly by
-         runner/inject_site_stats.py; the bars are drawn from the rendered
-         numbers, so bar and figure cannot disagree. ── -->
-    <!-- V38.9 — THE NARROWING IS COLLAPSED BY DEFAULT. 500 → 500 → 42 → 15, and
-         "the cap displaced 4 of the 15 highest-scoring names", is the most
-         precise thing on this page about how the model actually works — and it
-         is written for a reader auditing a factor model, not for the one this
-         page sells to, who has told us they do not want to learn the market.
-         It stays in full, one click away, beside the fifty-years timeline that
-         was collapsed for the same reason in V38.7. Nothing is deleted; the
-         page simply stops spending a screen of a time-poor reader's attention
-         on an answer to a question they did not ask. -->
-    <details class="bf-fun-d tl-more fade-up" id="bf-fun-d" hidden>
-      <summary><span>How the list narrows, step by step</span><i aria-hidden="true"></i></summary>
-    <div class="bf-fun fade-up" id="bf-fun" hidden>
-      <div class="fun-head">
-        <div class="fun-title">The narrowing</div>
-        <div class="fun-key" aria-hidden="true">
-          <span><i class="k-in"></i>Still in</span>
-          <span><i class="k-out"></i>Removed at this step</span>
-        </div>
-      </div>
-      <div class="fun-grid" id="fun-grid">
-        <div class="fun-col" data-fun-col>
-          <div class="fun-name">SmallMicro&nbsp;500</div>
-          <div class="fun-sub">Nifty Smallcap&nbsp;250 + Microcap 250</div>
-          <div class="fun-step"><span class="fun-lbl">Eligible universe</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="universe"><!--MFFUN:sm:universe-->500<!--/MFFUN--></span></div>
-          <div class="fun-step"><span class="fun-lbl">Priced for a full year, so scorable</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="scored"><!--MFFUN:sm:scored-->492<!--/MFFUN--></span></div>
-          <div class="fun-step"><span class="fun-lbl">Still standing after the ≤2-per-industry cap</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="capped"><!--MFFUN:sm:capped-->41<!--/MFFUN--></span></div>
-          <div class="fun-step is-held"><span class="fun-lbl">Held, equal-weight</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="held"><!--MFFUN:sm:held-->15<!--/MFFUN--></span></div>
-          <div class="fun-cost" data-fun-cost>The cap displaced <b data-fun="displaced"><!--MFFUN:sm:displaced-->5<!--/MFFUN--></b> of the 15 highest-scoring names.</div>
-        </div>
-        <div class="fun-col" data-fun-col>
-          <div class="fun-name">LargeMidcap&nbsp;250</div>
-          <div class="fun-sub">Nifty LargeMidcap&nbsp;250</div>
-          <div class="fun-step"><span class="fun-lbl">Eligible universe</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="universe"><!--MFFUN:lm:universe-->250<!--/MFFUN--></span></div>
-          <div class="fun-step"><span class="fun-lbl">Priced for a full year, so scorable</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="scored"><!--MFFUN:lm:scored-->241<!--/MFFUN--></span></div>
-          <div class="fun-step"><span class="fun-lbl">Still standing after the ≤2-per-industry cap</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="capped"><!--MFFUN:lm:capped-->37<!--/MFFUN--></span></div>
-          <div class="fun-step is-held"><span class="fun-lbl">Held, equal-weight</span><span class="fun-track" aria-hidden="true"><i class="fun-gone"></i><i class="fun-in"></i></span><span class="fun-val" data-fun="held"><!--MFFUN:lm:held-->15<!--/MFFUN--></span></div>
-          <div class="fun-cost" data-fun-cost>The cap displaced <b data-fun="displaced"><!--MFFUN:lm:displaced-->3<!--/MFFUN--></b> of the 10 highest-scoring names.</div>
-        </div>
-      </div>
-      <div class="fun-foot" id="fun-foot">All four counts come from this month's run. MultiAsset is not shown: it holds all 8 of its ETFs and only changes their weights, so there is nothing to narrow.</div>
-    </div>
-    </details>
-
-    <div class="bf-summary fade-up">
-      <span id="bf-sum-uni">Up to <b>500</b> candidates</span><span class="bf-dot"></span>
-      <span>Scored, Ranked &amp; Capped into <b>Equal Weighted</b> Holdings</span><span class="bf-dot"></span>
-      <span>Rebalanced <b>every month</b>, Published in full.</span>
-    </div>
-  </div>
-</section>
 
 
 <!-- WHY MINDFORGE -->
@@ -8251,6 +7878,28 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
     ]
   }
 </script>
+<section class="notready" aria-labelledby="nr-h">
+  <div class="container">
+    <div class="section-label">Not ready yet?</div>
+    <h2 class="fade-up" id="nr-h">Take the free reading instead.</h2>
+    <p class="nr-desc fade-up">The monthly India Factor Report by e-mail, today&rsquo;s market weather, and tools refreshed every market day. None of them needs an account.</p>
+    <div class="dp-fr fade-up" style="margin-top:6px">
+      <form data-fr novalidate>
+        <label class="sr-only" for="fr-email-home">E-mail address</label>
+        <input type="email" id="fr-email-home" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+        <button type="submit">Send me the Factor Report</button>
+        <p class="dp-fr-msg" role="status" aria-live="polite"></p>
+      </form>
+      <p class="dp-fr-fine">One e-mail each time a new report is published; one-click unsubscribe. We use the address only to send it. <a href="privacy.html">Privacy policy</a>.</p>
+    </div>
+    <div class="dp-tiles fade-up">
+      <a class="dp-tile" href="learn/"><span class="dp-tk">Today</span><span class="dp-tv" style="font-size:18px">Market weather</span><span class="dp-tl">Trend, breadth, volatility, flows and which styles are leading.</span></a>
+      <a class="dp-tile" href="factor-report/"><span class="dp-tk">Monthly</span><span class="dp-tv" style="font-size:18px">The Factor Report</span><span class="dp-tl">Value, momentum, quality and low volatility, through NSE&rsquo;s factor indices.</span></a>
+      <a class="dp-tile" href="screener/"><span class="dp-tk">Every market day</span><span class="dp-tv" style="font-size:18px">Stock Scanner</span><span class="dp-tl">2,000+ NSE stocks on 40+ fundamentals.</span></a>
+      <a class="dp-tile" href="fii-dii/"><span class="dp-tk">Every market day</span><span class="dp-tv" style="font-size:18px">FII / DII activity</span><span class="dp-tl">Who bought and sold, and the futures positioning behind it.</span></a>
+    </div>
+  </div>
+</section>
 <!-- FOOTER -->
 </main>
 <footer>
@@ -9543,6 +9192,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 <script src="assets/mfc-member.js?v=1" defer></script>
 <script src="assets/mfc-live.js?v=4020" defer></script>
 <script src="assets/mfc-walk.js?v=2" defer></script>
+<script src="assets/mfc-deep.js?v=1" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -10811,7 +10461,7 @@ h1, h2, h3, h4, th,
      handler in the second is written to coexist with a page's own — the open
      fallback fires only when nothing else moved aria-expanded, and the drawer
      sizing writes the same measured value this page already writes. -->
-<script defer src="assets/mfc-chrome.js?v=4060"></script>
+<script defer src="assets/mfc-chrome.js?v=4070"></script>
 <style id="mf-v377-foot">
 /* ── V37.7 · THE FOOTER CREDENTIAL BLOCK ─────────────────────────────────────
    Reported by the owner: "fix the way it looks". Measured at 1440 before:
