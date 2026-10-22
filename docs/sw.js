@@ -870,7 +870,10 @@
 // V42.4 -> mfc-v133. A seventh deep page, /fees-and-tax/, and a "Fees and tax" link in the Learn
 // menu of every page: the precached index.html and login.html changed with it. No shared asset
 // moved; the bump re-installs the offline shell with the new menu.
-const CACHE = 'mfc-v133';
+// V42.7 -> mfc-v134. The precached index.html changed: the hero leads with the three books' live
+// and backtested figures, and a "why this, not a fund or an index" table sits under it. No shared
+// asset moved.
+const CACHE = 'mfc-v134';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

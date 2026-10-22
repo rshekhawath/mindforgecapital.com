@@ -3905,18 +3905,31 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
      true to bring a module back. The same script sends old links to the sections that moved
      to their own pages. -->
 <script id="mf-v423-flags">(function(){
-  var PERF_HERO = false;   // the hero's performance card (live figure, backtest pair, chart)
-  var PERF_CARDS = false;  // the pricing cards' backtest pair and live line, the return ladder, the fund box
+  // V42.7 — the owner brought the numbers back to the front (2026-10-22): all three books side
+  // by side in the hero, live first and backtest second, then "why this, not a fund or an index".
+  var PERF_HERO = true;    // the hero's numbers card (.hvn); off = the product card leads the hero
+  var PERF_CARDS = true;   // the pricing cards' backtest pair and live line, the return ladder, the fund box
+  var PERF_WHY = true;     // the "why this, not a fund or an index" table under the hero (.whyb)
   var R = document.documentElement;
   R.setAttribute('data-perf-hero', PERF_HERO ? 'on' : 'off');
   R.setAttribute('data-perf-cards', PERF_CARDS ? 'on' : 'off');
+  R.setAttribute('data-perf-why', PERF_WHY ? 'on' : 'off');
   var MOVED = { '#your-month': 'how-it-works/', '#how': 'methodology/', '#how-built': 'methodology/', '#vproof-h': 'track-record/' };
   try { var to = MOVED[location.hash]; if (to) location.replace(to); } catch (e) {}
 })();</script>
 <style id="mf-v423-home">
-/* the product card that now leads the hero (the performance card is behind PERF_HERO) */
-html[data-perf-hero="off"] .hero-visual .hv-card{ display:none !important; }
+/* V42.7 — the V42.2 performance card (.hv-card) is retired: PERF_HERO now shows the numbers card
+   (.hvn) and moves the product card under the "why this" table (.hvp-band). Its markup stays
+   because the hero script and mfc-live.js still address it; its MFSTAT markers keep updating. */
+.hero-visual .hv-card{ display:none !important; }
 html[data-perf-hero="on"] .hero-visual .hvp{ display:none !important; }
+html[data-perf-hero="off"] .hvn,
+html[data-perf-hero="off"] .hvp-band{ display:none !important; }
+/* PERF_WHY: the comparison table; while it shows, the LargeMidcap-only fund box in "What this is
+   not" would repeat one of its rows, so it stands down */
+html[data-perf-why="off"] .whyb{ display:none !important; }
+html[data-perf-why="on"] .notwhat-vs{ display:none !important; }
+html[data-perf-why="on"] .notwhat-card{ grid-template-columns:minmax(0,1fr); }
 /* PERF_CARDS: the cards keep role, holdings, deepest fall, floor and price */
 html[data-perf-cards="off"] .strat-card .strat-metrics,
 html[data-perf-cards="off"] .strat-card .perf-line,
@@ -3959,6 +3972,101 @@ html[data-theme="dark"] .hvp{ background:var(--ink2); }
 .proof-tiles h2, .notready h2{ font-size:34px; color:var(--white); margin-bottom:10px; letter-spacing:-.02em; }
 .notready .nr-desc, .proof-tiles .pt-desc{ font-size:16.5px; color:var(--text2); font-weight:300; line-height:1.7; max-width:62ch; margin-bottom:14px; }
 @media (max-width:600px){ .proof-tiles, .notready{ padding:40px 0; } .proof-tiles h2, .notready h2{ font-size:26px; } }
+</style>
+<style id="mf-v427-nums">
+/* ── V42.7 · THE NUMBERS, BACK AT THE FRONT (owner's brief, 2026-10-22) ──────────────────────────
+   A first-time visitor asks "why this, and not something else?", and the V42.3 product-led hero
+   gave no figure to answer it with. Three blocks, each on its own switch (head script):
+   .hvn       the hero card: the three books as rows, LIVE since the record began first, then the
+              backtest a year after tax. Every backtest figure is an MFSTAT marker; the live column
+              is filled from live-history.json (the track record page's own arithmetic) and hidden
+              until it lands, so a failed fetch leaves a backtest-only card (the fail-soft rule).
+   .whyb      each book against its index and the best fund in its category, same months, after tax
+              (MFSTAT + MFPEER markers: the injector rewrites them, the numbers gate checks them).
+   .hvp-band  the product card, moved under the table while the numbers lead the hero. */
+.hvn{ position:relative; background:linear-gradient(160deg, rgba(255,255,255,0.88) 0%, var(--ink2) 60%); border:0.5px solid var(--border2);
+  border-radius:22px; padding:22px 22px 18px; box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 28px 60px -28px rgba(26,80,216,0.22); }
+html[data-theme="dark"] .hvn{ background:var(--ink2); }
+.hvn-head{ display:flex; align-items:baseline; justify-content:space-between; gap:6px 12px; flex-wrap:wrap; margin-bottom:10px; }
+.hvn-k{ font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--text3); }
+.hvn-more{ font-size:13px; font-weight:700; color:var(--ink-link,#0951c6); text-decoration:underline; text-underline-offset:2px; }
+.hvn-t{ width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.hvn-t th, .hvn-t td{ text-align:left; vertical-align:top; padding:11px 8px; border-top:0.5px solid var(--border); }
+.hvn-t tr > :first-child{ padding-left:0; }
+.hvn-t tr > :last-child{ padding-right:0; }
+.hvn-t thead th{ border-top:0; padding-top:0; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text3); vertical-align:bottom; }
+.hvn-t thead small{ display:block; font-size:11.5px; font-weight:500; letter-spacing:0; text-transform:none; margin-top:2px; }
+.hvn-t tbody th{ font-size:14px; font-weight:750; color:var(--white); line-height:1.3; }
+.hvn-t tbody th small{ display:block; font-size:11.5px; font-weight:500; color:var(--text3); margin-top:2px; }
+.hvn-t td b{ display:block; font-size:22px; font-weight:800; line-height:1.15; color:var(--white); letter-spacing:-.01em; white-space:nowrap; }
+.hvn-t td b.is-up{ color:var(--data-strong); }
+.hvn-t td b.is-down{ color:var(--data-bad); }
+.hvn-i{ display:block; font-size:12px; color:var(--text3); margin-top:3px; }
+.hvn-gap{ display:block; font-size:12px; font-weight:700; margin-top:2px; }
+.hvn-gap.is-up{ color:var(--data-strong); }
+.hvn-gap.is-down{ color:var(--data-bad); }
+.hvn-badge{ display:inline-flex; align-items:center; gap:5px; color:var(--data-strong); }
+.hvn-dot{ width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px rgba(4,116,84,.16); }
+/* fail-soft: the live column and its note exist only once live-history.json has landed */
+.hvn.is-pending .hvn-live{ display:none; }
+.hvn-note{ margin:12px 0 0; font-size:12px; line-height:1.55; color:var(--text3); }
+/* The hero column must never be widened by this card: in the single-column hero, any grid item's
+   min-content sets the track, and the track sets the frozen lede's line breaks (owner order,
+   2026-10-10). A first draft did exactly that at 320-375px. min-width:0 takes the card out of the
+   track's sizing; the phone rules below make it actually fit (min-content about 270px). */
+.hero-visual{ min-width:0; }
+@media (max-width:420px){
+  .hvn{ padding:18px 16px 14px; }
+  .hvn-t th, .hvn-t td{ padding:10px 6px; }
+  .hvn-t td b{ font-size:20px; }
+  .hvn-t tbody th{ font-size:13.5px; }
+}
+@media (max-width:360px){
+  .hvn{ padding:16px 14px 12px; }
+  .hvn-t th, .hvn-t td{ padding:9px 5px; }
+  .hvn-t td b{ font-size:18px; }
+  .hvn-t tbody th{ font-size:13px; }
+}
+
+.whyb{ padding:52px 0 26px; position:relative; }
+.whyb-h2{ font-size:34px; color:var(--white); letter-spacing:-.02em; line-height:1.15; margin:0 0 10px; }
+.whyb-desc{ font-size:16.5px; color:var(--text2); font-weight:300; line-height:1.7; max-width:66ch; margin:0 0 18px; }
+.whyb-wrap{ border-radius:16px; border:0.5px solid var(--border2); background:var(--ink2); overflow:hidden; }
+.whyb-t{ width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+.whyb-t th, .whyb-t td{ text-align:left; vertical-align:top; padding:14px 16px; border-top:0.5px solid var(--border);
+  font-size:15px; color:var(--text2); line-height:1.4; }
+.whyb-t thead th{ border-top:0; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--text3); background:rgba(37,99,235,.04); vertical-align:bottom; }
+.whyb-t thead small{ display:block; font-size:11.5px; font-weight:500; letter-spacing:0; text-transform:none; margin-top:2px; }
+.whyb-t tbody th{ font-weight:750; color:var(--white); }
+.whyb-t small{ display:block; font-size:12px; color:var(--text3); font-weight:500; margin-top:3px; }
+.whyb-t td.is-us{ background:rgba(37,99,235,.05); }
+.whyb-us{ font-size:20px; font-weight:800; color:var(--white); }
+.whyb-note{ font-size:12.5px; color:var(--text3); line-height:1.65; max-width:96ch; margin:12px 0 0; }
+.whyb-links{ display:flex; flex-wrap:wrap; gap:6px 20px; margin:12px 0 0; font-size:14px; }
+.whyb-links a{ color:var(--ink-link,#0951c6); font-weight:700; text-decoration:underline; text-underline-offset:2px; }
+/* phones and small tablets: six columns cannot fit, so each book becomes a card with labelled rows */
+@media (max-width:760px){
+  .whyb{ padding:38px 0 18px; }
+  .whyb-h2{ font-size:26px; }
+  .whyb-desc{ font-size:15px; }
+  .whyb-wrap{ border:0; border-radius:0; background:none; overflow:visible; }
+  .whyb-t, .whyb-t tbody, .whyb-t tr, .whyb-t th, .whyb-t td{ display:block; }
+  .whyb-t thead{ display:none; }
+  .whyb-t tr{ margin:0 0 12px; border-radius:14px; border:0.5px solid var(--border2); background:var(--ink2); overflow:hidden; }
+  .whyb-t tbody th{ padding:13px 16px 9px; font-size:16px; border-top:0; }
+  .whyb-t td{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; align-items:baseline; padding:9px 16px; }
+  .whyb-t td::before{ content:attr(data-l); font-size:13px; color:var(--text3); font-weight:600; }
+  .whyb-t td > small{ grid-column:1 / -1; text-align:right; margin-top:0; }
+  .whyb-t td.is-us{ background:rgba(37,99,235,.05); }
+}
+
+.hvp-band{ padding:18px 0 8px; }
+.hvp-band-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,470px); gap:22px 56px; align-items:center; }
+.hvp-band-h{ font-size:30px; color:var(--white); letter-spacing:-.02em; line-height:1.15; margin:0 0 10px; }
+.hvp-band-p{ font-size:16px; color:var(--text2); font-weight:300; line-height:1.7; max-width:56ch; margin:0; }
+@media (max-width:900px){ .hvp-band-grid{ grid-template-columns:minmax(0,1fr); } .hvp-band-h{ font-size:26px; } }
 </style>
 </head>
 <body>
@@ -4033,6 +4141,39 @@ html[data-theme="dark"] .hvp{ background:var(--ink2); }
       </div>
 
       <div class="hero-visual">
+        <!-- V42.7 — THE NUMBERS LEAD AGAIN (owner, 2026-10-22): all three books, live first and
+             backtest second. The live column is filled by the script after the "why this" section,
+             from live-history.json with the track record page's own arithmetic, and stays hidden
+             until the data lands. Every backtest figure is an MFSTAT marker. -->
+        <div class="hvn is-pending" id="hvn" role="group" aria-labelledby="hvn-k">
+          <div class="hvn-head"><span class="hvn-k" id="hvn-k">The three books, live and backtested</span><a class="hvn-more" href="track-record/">Every cycle&nbsp;&rarr;</a></div>
+          <table class="hvn-t">
+            <caption class="sr-only">Each MindForge book: the live model portfolio since the live record began, against its index, then the backtested return a year after tax, against its index</caption>
+            <thead><tr>
+              <th scope="col"><span class="sr-only">Book</span></th>
+              <th scope="col" class="hvn-live"><span class="hvn-badge"><span class="hvn-dot" aria-hidden="true"></span>Live</span> since <span data-hvn="since">31&nbsp;Aug</span><small>model portfolio</small></th>
+              <th scope="col">Backtest, a&nbsp;year<small>after tax</small></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <th scope="row">LargeMidcap 250<small>Core-plus</small></th>
+                <td class="hvn-live"><b data-hvn="lm:live">&mdash;</b><span class="hvn-i">index <span data-hvn="lm:bench">&mdash;</span></span><span class="hvn-gap" data-hvn="lm:gap"></span></td>
+                <td><b><!--MFSTAT:lm:cagr_posttax-->20.5%<!--/MFSTAT--></b><span class="hvn-i">index <!--MFSTAT:lm:bench_cagr_posttax-->9.77%<!--/MFSTAT--></span></td>
+              </tr>
+              <tr>
+                <th scope="row">SmallMicro 500<small>Satellite</small></th>
+                <td class="hvn-live"><b data-hvn="sm:live">&mdash;</b><span class="hvn-i">index <span data-hvn="sm:bench">&mdash;</span></span><span class="hvn-gap" data-hvn="sm:gap"></span></td>
+                <td><b><!--MFSTAT:sm:cagr_posttax-->46.1%<!--/MFSTAT--></b><span class="hvn-i">index <!--MFSTAT:sm:bench_cagr_posttax-->13.39%<!--/MFSTAT--></span></td>
+              </tr>
+              <tr>
+                <th scope="row">MultiAsset<small>Free&nbsp;· core</small></th>
+                <td class="hvn-live"><b data-hvn="ma:live">&mdash;</b><span class="hvn-i">index <span data-hvn="ma:bench">&mdash;</span></span><span class="hvn-gap" data-hvn="ma:gap"></span></td>
+                <td><b><!--MFSTAT:ma:cagr_posttax-->14.2%<!--/MFSTAT--></b><span class="hvn-i">index <!--MFSTAT:ma:bench_cagr_posttax-->7.60%<!--/MFSTAT--></span></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="hvn-note"><span class="hvn-live" data-hvn="note"></span> Backtests are simulated, not live trading; their months, and the best fund over the same months, are in the table below.</p>
+        </div>
         <div class="hvp" role="group" aria-label="What a member's dashboard shows on the 1st (placeholder stocks)">
           <div class="hvp-head"><span class="hvp-k">On the 1st, on your dashboard</span><span class="hvp-tag">Placeholder stocks</span></div>
           <div class="hvp-rows">
@@ -4145,6 +4286,61 @@ html[data-theme="dark"] .hvp{ background:var(--ink2); }
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- V42.7 — WHY THIS, NOT A FUND OR AN INDEX (owner, 2026-10-22: "why exactly this and not something
+     else is the biggest question for first-time visitors"). Each book beside its own index and the
+     best fund in its category over the SAME months, after tax. MFSTAT (stats.json) and MFPEER (AMFI
+     NAVs, runner/peer_window.py) markers only: the injector rewrites them at every publish and the
+     numbers gate checks them, so no figure here is typed. The fund figures are REAL returns and are
+     never labelled backtest; ours always are. Where a fund beat a book, the table simply shows it. -->
+<section class="whyb" id="why-this" aria-labelledby="whyb-h">
+  <div class="container">
+    <div class="section-label">The numbers, side by side</div>
+    <h2 class="whyb-h2" id="whyb-h">Why this, and not a fund or an index</h2>
+    <p class="whyb-desc">Each book against its own index and the best fund in its category, over the same months and after tax. The funds&rsquo; figures are their real returns; ours are backtests, so read the note under the table.</p>
+    <div class="whyb-wrap">
+      <table class="whyb-t">
+        <caption class="sr-only">Each MindForge book: its backtested return a year after tax, the same after its fee, its index over the same months, the best fund in its category over the same months, and the deepest fall of the book and of its index</caption>
+        <thead><tr>
+          <th scope="col">Book<small>and its months</small></th>
+          <th scope="col">MindForge, a&nbsp;year<small>backtest, after tax</small></th>
+          <th scope="col">After our fee<small>at the capital shown</small></th>
+          <th scope="col">Its index<small>same months, after tax</small></th>
+          <th scope="col">Best fund in its category<small>real return, after tax</small></th>
+          <th scope="col">Deepest fall<small>the book, then its index</small></th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <th scope="row">LargeMidcap&nbsp;250<small><!--MFPEER:lm:span-->Sep&nbsp;2021 → Sep&nbsp;2026<!--/MFPEER--></small></th>
+            <td class="is-us" data-l="MindForge, a year (backtest)"><span class="whyb-us"><!--MFSTAT:lm:cagr_posttax-->20.5%<!--/MFSTAT--></span></td>
+            <td data-l="After our fee"><!--MFSTAT:lm:cagr_posttax_postfee-->19.7%<!--/MFSTAT--><small>at <!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></small></td>
+            <td data-l="Its index"><!--MFSTAT:lm:bench_cagr_posttax-->9.77%<!--/MFSTAT--></td>
+            <td data-l="Best fund in its category"><!--MFPEER:lm:best_post-->16.5%<!--/MFPEER--><small><!--MFPEER:lm:best_name-->Motilal Oswal Large &amp; Midcap<!--/MFPEER--></small></td>
+            <td data-l="Deepest fall"><!--MFSTAT:lm:max_dd-->-23.1%<!--/MFSTAT--><small>index <!--MFSTAT:lm:bench_max_dd-->-18.4%<!--/MFSTAT--></small></td>
+          </tr>
+          <tr>
+            <th scope="row">SmallMicro&nbsp;500<small><!--MFPEER:sm:span-->Sep&nbsp;2021 → Sep&nbsp;2026<!--/MFPEER--></small></th>
+            <td class="is-us" data-l="MindForge, a year (backtest)"><span class="whyb-us"><!--MFSTAT:sm:cagr_posttax-->46.1%<!--/MFSTAT--></span></td>
+            <td data-l="After our fee"><!--MFSTAT:sm:cagr_posttax_postfee-->45.3%<!--/MFSTAT--><small>at <!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></small></td>
+            <td data-l="Its index"><!--MFSTAT:sm:bench_cagr_posttax-->13.39%<!--/MFSTAT--></td>
+            <td data-l="Best fund in its category"><!--MFPEER:sm:best_post-->18.3%<!--/MFPEER--><small><!--MFPEER:sm:best_name-->Quant Small&nbsp;Cap<!--/MFPEER--></small></td>
+            <td data-l="Deepest fall"><!--MFSTAT:sm:max_dd-->-24.2%<!--/MFSTAT--><small>index <!--MFSTAT:sm:bench_max_dd-->-24.8%<!--/MFSTAT--></small></td>
+          </tr>
+          <tr>
+            <th scope="row">MultiAsset<small><!--MFPEER:ma:span-->Mar&nbsp;2023 → Sep&nbsp;2026<!--/MFPEER--></small></th>
+            <td class="is-us" data-l="MindForge, a year (backtest)"><span class="whyb-us"><!--MFSTAT:ma:cagr_posttax-->14.2%<!--/MFSTAT--></span></td>
+            <td data-l="After our fee">Free<small>no fee</small></td>
+            <td data-l="Its index"><!--MFSTAT:ma:bench_cagr_posttax-->7.60%<!--/MFSTAT--></td>
+            <td data-l="Best fund in its category"><!--MFPEER:ma:best_post-->20.5%<!--/MFPEER--><small><!--MFPEER:ma:best_name-->Quant Multi&nbsp;Asset<!--/MFPEER--></small></td>
+            <td data-l="Deepest fall"><!--MFSTAT:ma:max_dd-->-11.6%<!--/MFSTAT--><small>index <!--MFSTAT:ma:bench_max_dd-->-14.8%<!--/MFSTAT--></small></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="whyb-note">How to read it: MindForge figures are backtests, with monthly rebalancing simulated after a 10&nbsp;bps cost on each side and 20% short-term tax on every gain booked; they are not live trading. Index and fund figures are bought and held, taxed once at exit at the 12.5% long-term rate; the funds&rsquo; are their real Direct Plan returns, measured from AMFI&rsquo;s published NAVs over the same months. &ldquo;After our fee&rdquo; takes the subscription out at the capital shown; MultiAsset is free. Past returns, real or simulated, do not promise future ones, and nothing here recommends any fund.</p>
+    <p class="whyb-links"><a href="track-record/">The live record, cycle by cycle&nbsp;&rarr;</a><a href="strategies.html#performance">Every fund in each category&nbsp;&rarr;</a><a href="calculators/mindforge-vs-fund.html">Your fund against a book&nbsp;&rarr;</a><a href="methodology/">How the backtests are run&nbsp;&rarr;</a></p>
   </div>
 </section>
 
@@ -4292,6 +4488,64 @@ html[data-theme="dark"] .hvp{ background:var(--ink2); }
     </div>
   </div>
 </section>
+
+<section class="hvp-band" aria-labelledby="hvpb-h">
+  <div class="container">
+    <div class="hvp-band-grid">
+      <div>
+        <div class="section-label">On the 1st</div>
+        <h2 class="hvp-band-h" id="hvpb-h">What lands on your dashboard</h2>
+        <p class="hvp-band-p">The month&rsquo;s list as a short set of orders, sized to the capital you enter. You place them in your own broker, tick each one off, and hold until the next list.</p>
+      </div>
+      <div id="hvp-slot"></div>
+    </div>
+  </div>
+</section>
+<script id="mf-v427-nums-js">(function () {
+  var R = document.documentElement;
+  // the product card has one home at a time: under the table while the numbers lead the hero
+  try {
+    if (R.getAttribute('data-perf-hero') === 'on') {
+      var c = document.querySelector('.hero-visual .hvp'), s = document.getElementById('hvp-slot');
+      if (c && s) s.appendChild(c);
+    }
+  } catch (e) {}
+  // the hero's live column: every cycle compounded per book, as /track-record/ does it
+  var card = document.getElementById('hvn');
+  if (!card || !window.fetch || R.getAttribute('data-perf-hero') !== 'on') return;
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  function day(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? Number(m[3]) + ' ' + MONTHS[Number(m[2]) - 1] : ''; }
+  function sgn(v) { var s = Math.abs(v).toFixed(2); return Number(s) === 0 ? '0.00%' : (v > 0 ? '+' : '−') + s + '%'; }
+  function tone(v) { return v > 0.05 ? 'is-up' : (v < -0.05 ? 'is-down' : ''); }
+  function put(key, text, cls) {
+    var e = card.querySelector('[data-hvn="' + key + '"]');
+    if (!e) return;
+    e.textContent = text;
+    if (cls != null) e.className = cls;
+  }
+  fetch('/live-history.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (h) {
+    var cycles = h && h.cycles;
+    if (!cycles || !cycles.length) return;
+    var shown = 0;
+    ['lm', 'sm', 'ma'].forEach(function (k) {
+      var cyc = cycles.filter(function (c) { var x = c.strategies && c.strategies[k]; return x && x.live_pct != null && x.bench_pct != null; });
+      if (!cyc.length) return;
+      var m = 1, b = 1;
+      cyc.forEach(function (c) { var x = c.strategies[k]; m *= 1 + x.live_pct / 100; b *= 1 + x.bench_pct / 100; });
+      var live = (m - 1) * 100, bench = (b - 1) * 100, gap = live - bench;
+      put(k + ':live', sgn(live), tone(live));
+      put(k + ':bench', sgn(bench));
+      put(k + ':gap', Math.abs(gap) <= 0.05 ? 'level with its index' : Math.abs(gap).toFixed(2) + ' pts ' + (gap > 0 ? 'ahead' : 'behind'), 'hvn-gap ' + tone(gap));
+      shown++;
+    });
+    if (shown < 3) return;                     // all three books or none: a half-filled column misleads
+    var sealed = cycles.filter(function (c) { return c.sealed; }).length, last = cycles[cycles.length - 1];
+    put('since', day(cycles[0].rebalance_date));
+    put('note', 'Live: the model portfolio to the ' + day(last.data_through) + ' close, before tax, not client returns; ' +
+      cycles.length + (cycles.length === 1 ? ' cycle' : ' cycles') + ' (' + sealed + ' closed), far too few to judge a strategy.');
+    card.classList.remove('is-pending');
+  }).catch(function () {});
+})();</script>
 
 <script id="mf-v403-hero-fee">
 /* V40.3 — A1. THE PRICE IN THE FIRST SCREEN — BUILT, AND SWITCHED OFF.
