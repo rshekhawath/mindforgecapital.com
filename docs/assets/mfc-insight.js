@@ -5,7 +5,8 @@
      · WHY the book moved, measured against its own index;
      · whether this month is NORMAL for this book;
      · how closely the member's own book FOLLOWS the model.
-   Plan: markdowns/dashboard_updates.md (M1–M13).
+   Plan: markdowns/dashboard_updates.md (M1–M13). V42.5 adds M12's "what happened
+   today" card; the weekly e-mail half of M12 is a backend job, not this file.
 
    HOW IT FITS THE PAGE
    · Two modes. "This month's orders" holds the order machinery; "How it's going"
@@ -873,6 +874,235 @@
       '<p class="mi-note">The model’s record, not your account’s: your broker’s Tax P&amp;L has your own trades and charges. <a class="mi-link" href="#trk-card">Every cycle so far</a></p>');
   }
 
+  // ── M12 · what happened today ────────────────────────────────────────────
+  // A dated card on a session in which the book moved more than ±2.5% against
+  // its previous close, or a holding more than ±8%: did it move with the market
+  // (the book's own index), with its industry (the book's OTHER holdings in it —
+  // no file this page loads carries an industry's day move), or on its own?
+  // The book's figure is the profit card's 1D row, same set and arithmetic, so
+  // the two can never disagree; every split is printed from PRINTED figures, so
+  // its halves add up to that row. Context, not a cause, and nothing in ?demo.
+  function istLocal() {
+    try { var d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })); return isNaN(d.getTime()) ? null : d; } catch (e) { return null; }
+  }
+  function pxEq(a, b) { return a > 0 && b > 0 && Math.abs(a - b) <= Math.max(0.011, b * 0.0005); }
+  function two(v) { return Number(Number(v).toFixed(2)); }
+  function abs2(v) { return Math.abs(v).toFixed(2); }
+  function moved(v) { return v < 0 ? 'fell' : 'rose'; }
+  function cap1(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+
+  // Which session do the quotes belong to? The prices endpoint carries no time,
+  // so they are matched against the official closes file (Yahoo's daily closes
+  // equal NSE's bhavcopy closes to the paisa). A date that cannot be placed —
+  // a holiday inside a lagging file — withholds the card rather than guessing.
+  function sessionOf(rows, closes) {
+    var now = istLocal(); if (!now) return null;
+    var today = iso(now), dow = now.getDay(), mins = now.getHours() * 60 + now.getMinutes();
+    var Dd = closes && closes.dates, R = closes && closes.rows;
+    var share = function (fn) {
+      var n = 0, k = 0;
+      rows.forEach(function (x) { var r = R[String(x.t).toUpperCase()]; if (!r) return; n++; if (fn(x, r)) k++; });
+      return n >= 2 ? k / n : 0;
+    };
+    var prevOf = function () {
+      if (!Dd || !R) return null;
+      for (var j = Dd.length - 1; j >= Math.max(0, Dd.length - 6); j--) { if (share(function (x, r) { return pxEq(x.prev, r[j]); }) >= 0.6) return Dd[j]; }
+      return null;
+    };
+    // (a) the quotes ARE a session in the file: price and previous close equal two consecutive closes
+    if (Dd && R && Dd.length > 2) {
+      for (var k = Dd.length - 1; k >= Math.max(1, Dd.length - 6); k--) {
+        if (share(function (x, r) { return pxEq(x.price, r[k]) && pxEq(x.prev, r[k - 1]); }) >= 0.6) return { day: Dd[k], prevDay: Dd[k - 1], live: false };
+      }
+    }
+    if (typeof W._nseIsOpen === 'function' && W._nseIsOpen()) return { day: today, prevDay: prevOf(), live: true };
+    if (!Dd || !R || !Dd.length) return null;
+    // the newest session these quotes can be: today once the bell has gone, else the weekday before
+    var last = Dd[Dd.length - 1], cand = [], cur = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (!(dow >= 1 && dow <= 5 && mins >= 15 * 60 + 30)) cur.setDate(cur.getDate() - 1);
+    for (var g = 0; g < 14 && iso(cur) > last; g++) { var wd = cur.getDay(); if (wd >= 1 && wd <= 5) cand.push(iso(cur)); cur.setDate(cur.getDate() - 1); }
+    if (!cand.length) return null;
+    // (b) the previous close is the file's last close: the one session after it — unless a holiday hides which
+    if (share(function (x, r) { return pxEq(x.prev, r[Dd.length - 1]); }) >= 0.6) return cand.length === 1 ? { day: cand[0], prevDay: last, live: false } : null;
+    // (c) the file lags by more than a session: the newest weekday
+    return cand.length >= 2 ? { day: cand[0], prevDay: null, live: false } : null;
+  }
+
+  // The book's index over the same session: the legs the benchmark pill already
+  // priced (their previous closes, kept by _benchLive), else market.json's d1
+  // when that file is dated to this very session. Never a second-hand window.
+  function indexDay(s, mk, ses) {
+    if (typeof W.loadBenchPerf !== 'function' || !s.key) return Promise.resolve(null);
+    return W.loadBenchPerf().then(function (d) {
+      var b = d && d.strategies && d.strategies[s.key], legs = b && Array.isArray(b.bench_legs) ? b.bench_legs : [];
+      if (!legs.length) return null;
+      var name = b.bench_name || 'its index';
+      var blend = function (get) {
+        var r = 0;
+        for (var i = 0; i < legs.length; i++) { var q = get(legs[i].t), w = Number(legs[i].w); if (q == null || !isFinite(q) || !isFinite(w)) return null; r += w * q; }
+        return r;
+      };
+      var viaFile = function () {
+        if (!mk || !mk.indices || mk.as_of !== ses.day) return null;
+        var byT = {};
+        Object.keys(mk.indices).forEach(function (k) { var ix = mk.indices[k]; if (ix && ix.t) byT[ix.t] = ix; });
+        var r = blend(function (t) { var ix = byT[t]; return ix && ix.d1 != null ? Number(ix.d1) : null; });
+        return r == null ? null : { d: r, name: name };
+      };
+      var live = typeof W._benchLive === 'function' ? W._benchLive(s.key, b) : Promise.resolve(null);
+      return live.then(function () {
+        var bp = W._benchPx;
+        if (bp && bp.key === s.key && bp.px) {
+          var r = blend(function (t) { var q = bp.px[t]; return q && q.price > 0 && q.prev > 0 ? (q.price / q.prev - 1) * 100 : null; });
+          if (r != null) return { d: r, name: name };
+        }
+        return viaFile();
+      }, viaFile);
+    }).catch(function () { return null; });
+  }
+
+  // earlier sessions, from official closes at today's model weights (the M5 series)
+  function histOf(s, closes, ses) {
+    if (!closes || !closes.rows || !closes.dates || closes.dates.length < 21) return null;
+    var stocks = (s.stocks || []).filter(function (x) { return Number(x.weight_pct) > 0; });
+    var tot = stocks.reduce(function (a, x) { return a + Number(x.weight_pct); }, 0);
+    if (!(tot > 0)) return null;
+    var out = { book: [], rows: {}, n: 0 };
+    for (var d = 1; d < closes.dates.length && closes.dates[d] < ses.day; d++) {
+      var wr = 0, ws = 0;
+      stocks.forEach(function (x) {
+        var t = String(x.ticker).toUpperCase(), r = closes.rows[t];
+        if (!r || !(r[d] > 0) || !(r[d - 1] > 0)) return;
+        var ret = (r[d] / r[d - 1] - 1) * 100;
+        if (Math.abs(ret) > 35) return;                               // a split or bonus, not a move
+        (out.rows[t] = out.rows[t] || []).push(ret);
+        wr += Number(x.weight_pct) * ret; ws += Number(x.weight_pct);
+      });
+      if (ws / tot >= 0.8) { out.book.push(wr / ws); out.n++; }
+    }
+    return out;
+  }
+
+  var todayTok = 0;
+  function renderToday(s, closes, sig, mk) {
+    var el = card('mi-today', 'insight', 'mi-today');
+    before(el, D.getElementById('mi-review') || D.getElementById('mi-narr') || D.getElementById('profit-card'));
+    if (s.demo) { hide('mi-today'); return; }
+    // exactly the 1D row's set: priced = a published price and a quote; the day = those with a previous close
+    var px = W._livePx || {}, rows = [], nPriced = 0, dw = 0, dwr = 0, odd = false;
+    (s.stocks || []).forEach(function (x) {
+      var rec = Number(x.recommended_price) || 0, p = px[x.yahoo_ticker];
+      if (!rec || !p) return;
+      nPriced++;
+      var price = Number(p.price), pv = Number(p.prev) || 0;
+      if (!(pv > 0) || !(price > 0)) return;
+      var w = Number(x.weight_pct) || 0, dd = (price - pv) / pv * 100;
+      dw += w; dwr += w * dd;
+      if (Math.abs(dd) > 35) odd = true;
+      rows.push({ t: String(x.ticker), w: w, d: dd, price: price, prev: pv, g: typeof W.groupKeyOf === 'function' ? W.groupKeyOf(x) : (x.industry || '') });
+    });
+    var bookOk = dw > 0 && rows.length >= 2 && rows.length >= Math.ceil(nPriced * 0.8);
+    var v = bookOk ? two(dwr / dw) : null;
+    var bookHit = bookOk && !odd && Math.abs(v) > 2.5;                // a split in the set makes the book figure a non-move
+    var hits = rows.filter(function (x) { return Math.abs(two(x.d)) > 8 && Math.abs(x.d) <= 35; })
+      .sort(function (a, b) { return Math.abs(b.d) - Math.abs(a.d); });
+    if (!bookHit && !hits.length) { hide('mi-today'); return; }
+    var ses = sessionOf(rows, closes);
+    if (!ses) { hide('mi-today'); return; }
+    var tok = ++todayTok;
+    indexDay(s, mk, ses).then(function (ix) {
+      if (tok !== todayTok) return;                                   // a newer price refresh owns the card
+      try { paintToday(el, s, rows, dw, v, bookHit, hits, ses, ix, closes, sig); }
+      catch (e) { hide('mi-today'); if (W.console && console.warn) console.warn('mfc-insight:', e && e.message); }
+    });
+  }
+
+  function paintToday(el, s, rows, dw, v, bookHit, hits, ses, ix, closes, sig) {
+    var kind = (typeof W.isAssetClassBook === 'function' && W.isAssetClassBook(s.stocks)) ? 'asset class' : 'industry';
+    var B = ix ? two(ix.d) : null;
+    var half = function (a, mv) { return a != null && a * mv > 0 && Math.abs(a) >= Math.abs(mv) / 2; };
+    var hist = histOf(s, closes, ses), lines = [], marketDay = false;
+    if (bookHit) {
+      var lbl = B == null ? '' : (half(B, v) ? 'a market-wide day' : 'mostly its own names');
+      marketDay = lbl === 'a market-wide day';
+      var txt = '';
+      if (B != null) {
+        var o = two(v - B);                                             // index + the book's own = the 1D figure
+        txt = 'Its index, the ' + esc(ix.name) + ', ' + moved(B) + ' ' + abs2(B) + '%' +
+          (B * v > 0 && Math.abs(B) > Math.abs(v) ? '; the book ' + moved(v) + ' ' + abs2(o) + ' points less.'
+            : (B * v >= 0 ? '; the other ' + abs2(o) + ' points were the book’s own.'
+              : ' — the book’s own names moved it ' + abs2(o) + ' points the other way.'));
+      }
+      if (!marketDay) {
+        var side = rows.filter(function (x) { return x.w > 0 && x.d * v > 0; })
+          .map(function (x) { return { t: x.t, d: x.d, c: x.w * x.d / dw }; })
+          .sort(function (a, b) { return Math.abs(b.c) - Math.abs(a.c); });
+        var sideTot = two(side.reduce(function (a, x) { return a + x.c; }, 0)), top = [], acc = 0;
+        for (var i = 0; i < side.length && top.length < 3; i++) { top.push(side[i]); acc += side[i].c; if (Math.abs(acc) >= Math.abs(sideTot) * 0.5) break; }
+        if (top.length && Math.abs(sideTot) > 0.005) {
+          var other = two(v - sideTot);                                 // the other side, so the two net to the 1D figure
+          var nm = top.map(function (x) { return '<b>' + esc(x.t) + '</b> (' + span(x.d, sgn(x.d)) + ')'; });
+          var who = nm.length > 1 ? nm.slice(0, -1).join(', ') + ' and ' + nm[nm.length - 1] : nm[0];
+          txt += (txt ? ' ' : '') + who + (v < 0
+            ? ' took ' + abs2(acc) + ' of the ' + abs2(sideTot) + ' points the falling holdings took away' + (Math.abs(other) >= 0.005 ? '; the rising ones added ' + abs2(other) + ' back.' : '.')
+            : ' added ' + abs2(acc) + ' of the ' + abs2(sideTot) + ' points the rising holdings added' + (Math.abs(other) >= 0.005 ? '; the falling ones took ' + abs2(other) + ' away.' : '.'));
+        }
+      }
+      if (hist && hist.n >= 20) {
+        var nb = hist.book.filter(function (r) { return Math.abs(r) >= Math.abs(v); }).length;
+        txt += (txt ? ' ' : '') + 'At today’s weights the book moved this much on ' + (nb || 'none') + ' of the ' + hist.n + ' sessions before it.';
+      }
+      lines.push('<div class="mi-tline"><p class="mi-th">Your book ' + span(v, sgn(v)) + (lbl ? ' <span class="mi-tlbl">— ' + lbl + '</span>' : '') + '</p>' + (txt ? '<p class="mi-p">' + txt + '</p>' : '') + '</div>');
+    }
+    var also = [], alsoMkt = true, shown = 0;
+    hits.forEach(function (h) {
+      var d = two(h.d);
+      var peers = rows.filter(function (x) { return x.t !== h.t && x.g && x.g === h.g && x.w > 0; });
+      var pw = peers.reduce(function (a, x) { return a + x.w; }, 0);
+      var P = pw > 0 ? two(peers.reduce(function (a, x) { return a + x.w * x.d; }, 0) / pw) : null;
+      var rest = rows.filter(function (x) { return x.t !== h.t && x.w > 0; }), rw = rest.reduce(function (a, x) { return a + x.w; }, 0);
+      var Rr = rw > 0 ? two(rest.reduce(function (a, x) { return a + x.w * x.d; }, 0) / rw) : null;
+      var lbl = half(B, d) ? 'with the market'
+        : (P != null && half(P, d) ? 'with its ' + kind : (B == null && half(Rr, d) ? 'with the rest of the book' : 'on its own'));
+      // on a market-wide day the names that simply fell with it are one line, not fifteen paragraphs
+      if ((marketDay && lbl === 'with the market') || shown >= 3) {
+        if (lbl !== 'with the market') alsoMkt = false;
+        also.push('<b>' + esc(h.t) + '</b> ' + span(d, sgn(d)));
+        return;
+      }
+      shown++;
+      var bits = [];
+      if (B != null) bits.push('its index ' + moved(B) + ' ' + abs2(B) + '%');
+      else if (Rr != null) bits.push('the rest of the book ' + moved(Rr) + ' ' + abs2(Rr) + '%');
+      if (P != null) bits.push(peers.length === 1
+        ? 'the book’s other ' + esc(h.g) + ' holding, ' + esc(peers[0].t) + ', ' + moved(P) + ' ' + abs2(P) + '%'
+        : 'the book’s ' + peers.length + ' other ' + esc(h.g) + ' holdings ' + moved(P) + ' ' + abs2(P) + '% (weighted)');
+      var txt = bits.length ? cap1(bits.join(', and ')) + '.' : '';
+      // the 52-week position only when the snapshot shares a close with this move
+      var sr = sig && sig.rows ? (sig.rows[h.t.toUpperCase()] || sig.rows[h.t]) : null;
+      if (sr && sr[3] != null && sig.as_of) {
+        var fh = sig.as_of === ses.day ? Number(sr[3])
+          : (ses.prevDay && sig.as_of === ses.prevDay ? ((1 + Number(sr[3]) / 100) * (1 + h.d / 100) - 1) * 100 : null);
+        if (fh != null && isFinite(fh)) txt += (txt ? ' ' : '') + (fh >= -0.05 ? 'That is a new 52-week high.' : 'It is now ' + Math.round(Math.abs(fh)) + '% below its 52-week high.');
+      }
+      var hr = hist && hist.rows[h.t.toUpperCase()];
+      if (hr && hr.length >= 20) {
+        var nh = hr.filter(function (r) { return Math.abs(r) >= 8; }).length;
+        txt += (txt ? ' ' : '') + 'It has moved 8% or more in a day on ' + (nh || 'none') + ' of the ' + hr.length + ' sessions before it.';
+      }
+      lines.push('<div class="mi-tline"><p class="mi-th"><b>' + esc(h.t) + '</b> ' + span(d, sgn(d)) + ' <span class="mi-tlbl">— ' + lbl + '</span></p>' + (txt ? '<p class="mi-p">' + txt + '</p>' : '') + '</div>');
+    });
+    if (also.length) lines.push('<p class="mi-p mi-also">' + (alsoMkt && marketDay ? 'Also with the market: ' : 'Also past 8%: ') + also.join(' · ') + '.</p>');
+    var now = istLocal(), isToday = !!now && ses.day === iso(now), d0 = dt(ses.day);
+    show(el, '<div class="mi-head"><h2>' + (isToday ? 'What happened today' : 'What happened on ' + esc(dshort(d0))) + '</h2>' +
+      '<span class="mi-sub">' + (isToday ? esc(dshort(d0)) + ' · ' : '') + (ses.live ? 'Live prices' : 'Closing prices') + ' against the ' +
+        (ses.prevDay ? esc(dshort(dt(ses.prevDay))) + ' close' : 'previous close') + '</span></div>' +
+      '<div class="mi-tday">' + lines.join('') + '</div>' +
+      learn(['This card appears only on a session in which your book moved more than 2.5%, or a holding more than 8%, against its previous close: the same figures as the 1D line on the profit card. A move of more than 35% in a day is treated as a split or bonus, not a move.',
+             '“With the market” means the book’s index moved the same way by at least half as much; “with its ' + kind + '” means the book’s other holdings in the same ' + kind + ' did; “on its own” means neither did. It is context, not a cause: the page does not know why a price moved.',
+             'Counts of earlier sessions use official NSE closes at today’s model weights.']));
+  }
+
   // ── orchestration ────────────────────────────────────────────────────────
   var pending = null;
   function renderInsight() {
@@ -889,6 +1119,7 @@
       safe(function () { renderNormal(s, lb, bm, hist); });            // first: the narrative reads its counts
       safe(function () { renderNarrative(s, lb, bench, mk); });
       safe(function () { renderReview(s, hist); });
+      safe(function () { renderToday(s, closes, sig, mk); });        // after the review: it sits above it
       safe(function () { renderNote(s); });
       safe(function () { renderVsIndex(s, lb, bench, mk, ba, closes); });
       safe(function () { renderWeather(s, mk, s.key === 'ma' ? closes : null); });

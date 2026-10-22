@@ -14730,6 +14730,7 @@ function _benchLive(key, s){
   _benchLiveKey = key; _benchLiveAt = Date.now();
   _benchLiveP = _fetchPricesBatch(legs.map(function(l){ return l.t; })).then(function(px){
     if (!px) return null;
+    window._benchPx = { key: key, px: px };   // V42.5 · M12 — the legs' previous closes, for mfc-insight.js's day card (no second request)
     var r = 0;
     for (var i = 0; i < legs.length; i++){
       var l = legs[i], q = px[l.t], base = Number(l.base), w = Number(l.w);
@@ -17287,7 +17288,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4070"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=1"></script>
+<script defer src="assets/mfc-insight.js?v=2"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -17307,7 +17308,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      to the page's own body styles. Measured — moving it to the head took
      .vfy-card on the dashboard from 16px to 18px of phone padding. -->
 <link rel="stylesheet" href="assets/mfc-chrome.css?v=10">
-<link rel="stylesheet" href="assets/mfc-insight.css?v=1">
+<link rel="stylesheet" href="assets/mfc-insight.css?v=2">
 
 <!-- ============================================================================
      V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.
