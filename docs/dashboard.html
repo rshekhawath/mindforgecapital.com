@@ -4791,7 +4791,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
 
       <!-- REBALANCE NOTIFICATIONS -->
       <div id="notif-section" class="notif-card">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+        <div id="notif-rebal-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
           <div>
             <div style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Rebalance notifications</div>
             <div style="font-size:13px;color:var(--text2);">Get an email the moment next month's portfolio is published — it replaces this one on your dashboard automatically.</div>
@@ -4830,6 +4830,36 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <style>#notif-email-input{ min-height:44px; min-width:0 !important; }
           @media (max-width:420px){ #notif-email-row input{ flex:1 1 100% !important; } #notif-email-row button{ flex:1 1 100%; min-height:44px; } }</style>
         <div id="notif-success" style="display:none;margin-top:12px;font-size:13px;color:var(--data-strong,#047454);">✓ You'll be emailed when next month's picks are published.</div>
+        <!-- V42.6 · M12 — the weekly e-mail. Hidden until get_progress lists 'digest' (a
+             backend without set_digest must never be offered a switch that does nothing),
+             and off until the member switches it on. Monthly plans get no rebalance
+             e-mail, so for them this card carries this switch alone (.digest-only). -->
+        <div id="digest-row" class="digest-row" hidden>
+          <div class="digest-txt">
+            <div class="digest-title">Weekly e-mail</div>
+            <div class="digest-desc">Your book this week, explained: about 120 words each Saturday morning on how it moved against its index and what kind of market it has been. Off unless you switch it on.</div>
+          </div>
+          <div class="digest-ctl">
+            <button type="button" class="notif-switch" id="digest-switch" role="switch"
+                    aria-checked="false" aria-label="Weekly e-mail" onclick="toggleDigest()">
+              <span class="notif-knob"></span>
+            </button>
+            <span id="digest-label" aria-hidden="true">Off</span>
+          </div>
+          <p id="digest-note" class="digest-note" role="status" hidden></p>
+        </div>
+        <style>
+          .digest-row{ display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px 16px; }
+          .digest-row[hidden]{ display:none; }
+          .notif-card:not(.digest-only) .digest-row{ margin-top:20px; padding-top:20px; border-top:0.5px solid var(--border2); }
+          .notif-card.digest-only #notif-rebal-head{ display:none !important; }
+          .digest-txt{ flex:1 1 240px; min-width:0; }
+          .digest-title{ font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size:16px; font-weight:700; color:var(--white); margin-bottom:4px; }
+          .digest-desc{ font-size:13px; color:var(--text2); line-height:1.55; }
+          .digest-ctl{ display:flex; align-items:center; gap:10px; font-size:14px; color:var(--text2); }
+          .digest-note{ flex:1 1 100%; margin:0; font-size:13px; color:var(--data-strong,#047454); }
+          .digest-note.is-err{ color:var(--data-bad,#c92020); }
+        </style>
       </div>
 
       <!-- HOW TO INVEST -->
@@ -7872,6 +7902,8 @@ function capitalSyncLoad(strategy) {
     .then(function (d) {
       if (!d || d.status !== 'ok' || !d.progress) return null;
       window._capServer = Array.isArray(d.features) && d.features.indexOf('capital') >= 0;
+      window._digestServer = Array.isArray(d.features) && d.features.indexOf('digest') >= 0;   // V42.6 · M12
+      try { _digestRestore(); } catch (e) {}
       if (Object.keys(d.progress).length) {
         var g = document.getElementById('hero-greet');
         if (g) g.textContent = 'Welcome back';
@@ -11931,6 +11963,7 @@ function restoreNotifState() {
   if ((sub.duration_months || 1) <= 1) {
     if (sec) sec.style.display = 'none';
     _setHowToStep4();
+    try { _digestRestore(); } catch (e) {}   // V42.6 — the weekly e-mail is for monthly plans too
     return;
   }
   if (sec) sec.style.display = '';
@@ -11941,6 +11974,49 @@ function restoreNotifState() {
   var email = (pref && pref.email) || sub.email || '';
   if (serverDefined) _saveNotifPref(on, email);   // keep the device cache in sync with the server
   _setNotifUI(on, email);
+  try { _digestRestore(); } catch (e) {}
+}
+/* V42.6 · M12 — THE WEEKLY E-MAIL SWITCH ("your book this week, explained").
+   Shown only once get_progress lists 'digest', so a backend without set_digest is never
+   offered a switch that does nothing; until then the card is exactly as it was. The
+   server's column Q is the only record of the choice — no device copy to drift from it.
+   Its own action, set_digest: an older backend answers "Invalid action" to it rather
+   than flipping the rebalance flag that set_notify writes. */
+window._digestServer = false;   // set by capitalSyncLoad() from get_progress's `features`
+var DIGEST_ON_NOTE = 'On. It arrives on Saturday mornings; the e-mail has a one-click way to stop it.';
+function _setDigestUI(on, note, isErr) {
+  var sw = document.getElementById('digest-switch'), lbl = document.getElementById('digest-label'), nt = document.getElementById('digest-note');
+  if (!sw) return;
+  sw.classList.toggle('on', !!on);
+  sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  if (lbl) lbl.textContent = on ? 'On' : 'Off';
+  if (nt) { nt.textContent = note || ''; nt.hidden = !note; nt.className = 'digest-note' + (isErr ? ' is-err' : ''); }
+}
+function _digestRestore() {
+  var sec = document.getElementById('notif-section'), row = document.getElementById('digest-row');
+  if (!sec || !row) return;
+  var sub = window._currentSub || {};
+  var monthly = (sub.duration_months || 1) <= 1;
+  var ok = !!window._digestServer && !isDemo && !!token;
+  row.hidden = !ok;
+  sec.classList.toggle('digest-only', monthly && ok);
+  if (monthly) sec.style.display = ok ? '' : 'none';
+  if (ok) _setDigestUI(String(sub.digest || '').toLowerCase() === 'on');
+}
+function toggleDigest() {
+  var sw = document.getElementById('digest-switch');
+  if (!sw || isDemo || !token) return;
+  var turningOn = !sw.classList.contains('on');
+  _setDigestUI(turningOn, turningOn ? DIGEST_ON_NOTE : '');
+  var fail = function () { _setDigestUI(!turningOn, 'That did not save. Please try again in a minute.', true); };
+  fetch(APPS_SCRIPT_URL + '?action=set_digest&token=' + encodeURIComponent(token) + '&on=' + (turningOn ? '1' : '0') + '&_=' + Date.now())
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || d.status !== 'ok' || (d.digest !== 'on' && d.digest !== 'off')) return fail();
+      try { (window._currentSub || {}).digest = d.digest; } catch (e) {}
+      _setDigestUI(d.digest === 'on', d.digest === 'on' ? DIGEST_ON_NOTE : '');
+    })
+    .catch(fail);
 }
 function toggleNotif() {
   var turningOn = !_notifOn;
@@ -17288,7 +17364,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4070"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=2"></script>
+<script defer src="assets/mfc-insight.js?v=3"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -17308,7 +17384,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      to the page's own body styles. Measured — moving it to the head took
      .vfy-card on the dashboard from 16px to 18px of phone padding. -->
 <link rel="stylesheet" href="assets/mfc-chrome.css?v=10">
-<link rel="stylesheet" href="assets/mfc-insight.css?v=2">
+<link rel="stylesheet" href="assets/mfc-insight.css?v=3">
 
 <!-- ============================================================================
      V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.

@@ -6,7 +6,8 @@
      · whether this month is NORMAL for this book;
      · how closely the member's own book FOLLOWS the model.
    Plan: markdowns/dashboard_updates.md (M1–M13). V42.5 adds M12's "what happened
-   today" card; the weekly e-mail half of M12 is a backend job, not this file.
+   today" card; V42.6 the one-click unsubscribe landing for M12's weekly e-mail
+   (the e-mail itself is runner/apps_script.gs).
 
    HOW IT FITS THE PAGE
    · Two modes. "This month's orders" holds the order machinery; "How it's going"
@@ -1142,6 +1143,35 @@
       pending = setTimeout(renderInsight, stage === 'prices' ? 30 : 120);
     }
   }
+
+  // ── M12 · the weekly e-mail's one-click unsubscribe (?wunsub=<key>) ──────────
+  // The e-mail's link lands on this page: it is never cached (sw.js) and sends no
+  // referrer, and this file loads nowhere else, so no shared asset moves for it. The
+  // key is posted from script rather than acted on by the link itself, so a mail
+  // scanner that fetches every link cannot switch anyone off; it leaves the address
+  // bar at once. Works signed in or not: the notice sits above whichever state shows.
+  function unsubscribeWeekly() {
+    var m = /[?&]wunsub=([a-f0-9]{16,64})(?:&|$)/i.exec(location.search || '');
+    if (!m) return;
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+    var url = ''; try { url = APPS_SCRIPT_URL; } catch (e) {}
+    var box = D.createElement('div'); box.className = 'container mi-unsub-wrap';
+    box.innerHTML = '<p class="mi-unsub" role="status">Turning the weekly e-mail off…</p>';
+    var at = D.getElementById('main-content');
+    if (at && at.parentNode) at.parentNode.insertBefore(box, at.nextSibling); else D.body.insertBefore(box, D.body.firstChild);
+    var say = function (t) { box.firstChild.textContent = t; };
+    var failed = 'That did not go through. Please open the link again in a minute, or reply to any of our e-mails with “unsubscribe”.';
+    if (!url) { say(failed); return; }
+    fetch(url, { method: 'POST', body: JSON.stringify({ action: 'digest_unsubscribe', key: m[1] }) })
+      .then(function (r) { return r.json(); })
+      .then(function (r) {
+        say(r && r.status === 'ok' && r.unsubscribed
+          ? 'Done: the weekly e-mail is off. You can switch it back on from the notification card on your dashboard.'
+          : 'That link did not match a weekly e-mail. If one keeps arriving, reply to it with “unsubscribe”.');
+      })
+      .catch(function () { say(failed); });
+  }
+  try { unsubscribeWeekly(); } catch (e) {}
 
   W.mfcInsight = { refresh: refresh };
   if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', function () { refresh('load'); });
