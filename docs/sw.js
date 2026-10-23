@@ -878,7 +878,9 @@
 // index.html changed (two bound labels in the "why this" table).
 // V42.8, second push -> mfc-v136. The precached index.html changed again: the "why this" table's
 // fund names wrap evenly (text-wrap:balance). No shared asset moved.
-const CACHE = 'mfc-v136';
+// V43.0 -> mfc-v137. The precached index.html changed: the hero's three-books card and the "why
+// this" table draw their figures as bars on a shared scale. No shared asset moved.
+const CACHE = 'mfc-v137';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

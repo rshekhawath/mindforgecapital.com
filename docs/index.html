@@ -4071,6 +4071,66 @@ html[data-theme="dark"] .hvn{ background:var(--ink2); }
 .hvp-band-p{ font-size:16px; color:var(--text2); font-weight:300; line-height:1.7; max-width:56ch; margin:0; }
 @media (max-width:900px){ .hvp-band-grid{ grid-template-columns:minmax(0,1fr); } .hvp-band-h{ font-size:26px; } }
 </style>
+<style id="mf-v430-bars">
+/* ── V43.0 · THE TWO NEWEST SURFACES GET THEIR SCALE BACK ───────────────────
+   V33.5 drew every book-against-index pair on this page as bars on one scale,
+   because bare figures leave the reader to do the division. The V42.7 hero card
+   (.hvn) and the "why this" table (.whyb) replaced the surfaces that carried
+   those bars and printed bare text again. mf-v430-bars-js restores the idiom:
+   .hvn   a scale per column (live and backtest measure different things): the
+          book is a bar from a zero line, its index a tick.
+   .whyb  the four return columns share ONE scale, so a book, its index and the
+          best fund compare across the row; the deepest fall has its own.
+   Fills start at scaleX(0) and grow once (the site's grow-on-reveal idiom: a
+   bar painted at its final size has a dead transition); reduced motion draws
+   them at rest. Decorative (aria-hidden): every figure stays text. No bar box
+   has an intrinsic width, so none can widen a column or move a line break. */
+.hvn-bar{ position:relative; display:block; height:6px; margin:8px 0 7px; border-radius:3px; background:rgba(37,99,235,.09); }
+.hvn-bar > i{ position:absolute; display:block; }
+.hvn-bar-f{ top:0; bottom:0; border-radius:3px; transform:scaleX(0); transition:transform .9s cubic-bezier(.22,1,.36,1); }
+.hvn-bar-f.is-up{ background:var(--data-strong); }
+.hvn-bar-f.is-down{ background:var(--data-bad); }
+.hvn-bar-f.is-flat{ background:var(--text3); }
+.hvn-bar-f.is-bt{ background:linear-gradient(90deg, #1a50d8, #0d9488); }
+.hvn-bar-z{ top:-3px; bottom:-3px; width:1px; margin-left:-.5px; background:var(--text3); }
+.hvn-bar-t{ top:-4px; bottom:-4px; width:3px; margin-left:-1.5px; border-radius:2px; background:var(--white); box-shadow:0 0 0 1.5px var(--ink2); opacity:0; transition:opacity .35s ease .55s; }
+.hvn-bars-in .hvn-bar-f{ transform:scaleX(1); }
+.hvn-bars-in .hvn-bar-t{ opacity:1; }
+.hvn-key{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin:12px 0 0; font-size:11.5px; line-height:1.4; color:var(--text3); }
+.hvn-key span{ display:inline-flex; align-items:center; gap:6px; }
+.hvn-key i{ display:inline-block; flex:none; }
+.hvn-key .k-bar{ width:16px; height:6px; border-radius:3px; background:var(--text3); }
+.hvn-key .k-tick{ width:3px; height:12px; border-radius:2px; background:var(--white); }
+.whyb-bar{ position:relative; display:block; width:min(var(--whyb-track, 100%), 100%); height:6px; margin:9px 0 3px; border-radius:3px; background:rgba(37,99,235,.09); }
+.whyb-bar > i{ position:absolute; top:0; bottom:0; display:block; border-radius:3px; transform:scaleX(0); transition:transform .9s cubic-bezier(.22,1,.36,1); }
+.whyb-bar.is-us > i{ background:linear-gradient(90deg, #1a50d8, #0d9488); }
+.whyb-bar.is-idx > i{ background:#64748b; }
+.whyb-bar.is-fund > i{ background:#b45309; }
+.whyb-bar.is-dd{ height:auto; background:none; }
+.whyb-dd-r{ position:relative; display:block; height:5px; border-radius:3px; background:rgba(37,99,235,.09); }
+.whyb-dd-r + .whyb-dd-r{ margin-top:3px; }
+.whyb-dd-r > i{ position:absolute; left:0; top:0; bottom:0; display:block; border-radius:3px; transform:scaleX(0); transform-origin:0 50%; transition:transform .9s cubic-bezier(.22,1,.36,1); }
+.whyb-dd-r > i.is-book{ background:var(--data-bad); }
+.whyb-dd-r > i.is-idx{ background:#64748b; }
+.whyb-in .whyb-bar > i, .whyb-in .whyb-dd-r > i{ transform:scaleX(1); }
+.whyb-key{ font-size:12px; line-height:1.55; color:var(--text3); margin:10px 0 0; }
+html[data-theme="dark"] .hvn-bar, html[data-theme="dark"] .whyb-bar, html[data-theme="dark"] .whyb-dd-r{ background:rgba(150,180,240,.13); }
+html[data-theme="dark"] .whyb-bar.is-dd{ background:none; }
+html[data-theme="dark"] .hvn-bar-f.is-bt, html[data-theme="dark"] .whyb-bar.is-us > i{ background:linear-gradient(90deg, #60a5fa, #2dd4bf); }
+html[data-theme="dark"] .whyb-bar.is-idx > i, html[data-theme="dark"] .whyb-dd-r > i.is-idx{ background:#94a3b8; }
+html[data-theme="dark"] .whyb-bar.is-fund > i{ background:#f0a836; }
+@media (max-width:760px){
+  .whyb-bar{ grid-column:1 / -1; width:100%; margin:5px 0 2px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .hvn-bar-f, .hvn-bar-t, .whyb-bar > i, .whyb-dd-r > i{ transition:none; }
+}
+@media print{
+  .hvn-bar, .hvn-bar > i, .hvn-key i, .whyb-bar, .whyb-bar > i, .whyb-dd-r, .whyb-dd-r > i{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .hvn-bar-f, .whyb-bar > i, .whyb-dd-r > i{ transform:none; transition:none; }
+  .hvn-bar-t{ opacity:1; transition:none; }
+}
+</style>
 </head>
 <body>
 
@@ -4549,6 +4609,144 @@ html[data-theme="dark"] .hvn{ background:var(--ink2); }
     card.classList.remove('is-pending');
   }).catch(function () {});
 })();</script>
+
+<script id="mf-v430-bars-js">
+/* V43.0 — the bars for the hero card and the "why this" table (styles: mf-v430-bars).
+   Every value is read back from the text the cells already print, so the bars can
+   never disagree with the figures: the MFSTAT / MFPEER markers in both tables, and
+   the live column that mf-v427-nums-js fills. Anything that does not parse leaves
+   that bar (or that whole column) undrawn rather than drawn wrong. */
+(function () {
+  function num(t) {
+    var m = /(-?)(\d+(?:\.\d+)?)\s*%/.exec(String(t || '').replace(/−/g, '-'));
+    return m ? parseFloat(m[1] + m[2]) : null;
+  }
+  // one domain per scale: it always holds zero, so a bar starts at a visible zero line
+  function scale(vals) {
+    var lo = Math.min.apply(null, vals.concat([0])), hi = Math.max.apply(null, vals.concat([0]));
+    var pad = (hi - lo || 1) * 0.06;
+    if (lo < 0) lo -= pad;
+    if (hi > 0) hi += pad;
+    return function (v) { return (v - lo) / (hi - lo) * 100; };
+  }
+  function el(tag, cls) { var e = document.createElement(tag); e.className = cls; return e; }
+  function grow(host, cls) { void host.offsetWidth; host.classList.add(cls); }
+
+  // ── the hero card: the book is a bar from zero, its index a tick; a scale per column
+  var card = document.getElementById('hvn');
+  function drawHero() {
+    if (!card || card.__mf430 || card.classList.contains('is-pending')) return false;
+    var rows = card.querySelectorAll('tbody tr'), cols = [[], []];
+    for (var r = 0; r < rows.length; r++) {
+      var tds = rows[r].querySelectorAll('td');
+      for (var c = 0; c < 2; c++) {
+        var td = tds[c], b = td && td.querySelector('b'), ix = td && td.querySelector('.hvn-i');
+        if (b && ix) cols[c].push({ b: b, v: num(b.textContent), x: num(ix.textContent) });
+      }
+    }
+    var made = 0;
+    cols.forEach(function (col, c) {
+      if (col.length !== 3 || col.some(function (o) { return o.v === null || o.x === null; })) return;
+      var vals = [];
+      col.forEach(function (o) { vals.push(o.v, o.x); });
+      var pos = scale(vals), z = pos(0);
+      col.forEach(function (o) {
+        var bar = el('span', 'hvn-bar'), p = pos(o.v);
+        var f = el('i', 'hvn-bar-f ' + (c === 1 ? 'is-bt' : o.v > 0.05 ? 'is-up' : o.v < -0.05 ? 'is-down' : 'is-flat'));
+        f.style.left = Math.min(z, p) + '%';
+        f.style.width = Math.abs(p - z) + '%';
+        f.style.transformOrigin = (p < z ? '100%' : '0%') + ' 50%';
+        var zl = el('i', 'hvn-bar-z'); zl.style.left = z + '%';
+        var tk = el('i', 'hvn-bar-t'); tk.style.left = pos(o.x) + '%';
+        bar.setAttribute('aria-hidden', 'true');
+        bar.appendChild(f); bar.appendChild(zl); bar.appendChild(tk);
+        o.b.parentNode.insertBefore(bar, o.b.nextSibling);
+        made++;
+      });
+    });
+    if (!made) return true;
+    card.__mf430 = true;
+    var key = el('p', 'hvn-key'), note = card.querySelector('.hvn-note');
+    key.setAttribute('aria-hidden', 'true');
+    key.innerHTML = '<span><i class="k-bar"></i>the book</span><span><i class="k-tick"></i>its index</span><span>each column on its own scale</span>';
+    card.insertBefore(key, note);
+    setTimeout(function () { grow(card, 'hvn-bars-in'); }, 60);
+    return true;
+  }
+  if (card && !drawHero() && window.MutationObserver) {
+    var mo = new MutationObserver(function () { if (drawHero()) mo.disconnect(); });
+    mo.observe(card, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // ── the "why this" table: the four return columns on ONE scale, the deepest fall on its own
+  var wt = document.querySelector('.whyb-t'), wrap = wt && wt.closest('.whyb-wrap');
+  if (!wt || !wrap) return;
+  var COLS = [['MindForge, a year (backtest)', 'is-us'], ['After our fee', 'is-us'],
+              ['Its index', 'is-idx'], ['Best fund in its category', 'is-fund']];
+  var ret = [], dd = [], vals = [], ddv = [];
+  [].forEach.call(wt.querySelectorAll('tbody tr'), function (tr) {
+    COLS.forEach(function (k, i) {
+      var td = tr.querySelector('td[data-l="' + k[0] + '"]'), v = td ? num(td.textContent) : null;
+      if (v === null) return;                            // "Free": no figure, no bar
+      ret.push({ td: td, v: v, cls: k[1], i: i });
+      vals.push(v);
+    });
+    var t = tr.querySelector('td[data-l="Deepest fall"]'), s = t && t.querySelector('small');
+    var a = t ? num(t.textContent) : null, b = s ? num(s.textContent) : null;   // the book's fall prints first
+    if (a !== null && b !== null) { dd.push({ td: t, a: a, b: b }); ddv.push(Math.abs(a), Math.abs(b)); }
+  });
+  if (!ret.length) return;
+  var pos = scale(vals), z = pos(0), deep = Math.max.apply(null, ddv.concat([0])) * 1.06 || 1;
+  function place(td, bar) {
+    var sm = td.querySelector(':scope > small');
+    td.insertBefore(bar, sm || null);
+  }
+  ret.forEach(function (o) {
+    var bar = el('span', 'whyb-bar ' + o.cls), f = el('i', ''), p = pos(o.v);
+    f.style.left = Math.min(z, p) + '%';
+    f.style.width = Math.abs(p - z) + '%';
+    f.style.transformOrigin = (p < z ? '100%' : '0%') + ' 50%';
+    f.style.transitionDelay = o.i * 70 + 'ms';
+    bar.setAttribute('aria-hidden', 'true');
+    bar.appendChild(f);
+    place(o.td, bar);
+  });
+  dd.forEach(function (o) {
+    var bar = el('span', 'whyb-bar is-dd');
+    [['is-book', o.a], ['is-idx', o.b]].forEach(function (k, i) {
+      var row = el('span', 'whyb-dd-r'), f = el('i', k[0]);
+      f.style.width = Math.abs(k[1]) / deep * 100 + '%';
+      f.style.transitionDelay = 280 + i * 70 + 'ms';
+      row.appendChild(f);
+      bar.appendChild(row);
+    });
+    bar.setAttribute('aria-hidden', 'true');
+    place(o.td, bar);
+  });
+  var key = el('p', 'whyb-key');
+  key.setAttribute('aria-hidden', 'true');
+  key.textContent = 'The bars draw the four return columns to one scale, so each row reads at a glance; the deepest fall has a scale of its own.';
+  wrap.parentNode.insertBefore(key, wrap.nextSibling);
+  // equal tracks across columns of different widths: the narrowest figure cell sets the length
+  function track() {
+    var first = wt.querySelector('tbody tr'), w = Infinity;
+    if (!first || getComputedStyle(wt).display !== 'table') { wt.style.removeProperty('--whyb-track'); return; }
+    [].forEach.call(first.querySelectorAll('td'), function (td) {
+      var cs = getComputedStyle(td);
+      w = Math.min(w, td.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+    });
+    if (isFinite(w)) wt.style.setProperty('--whyb-track', Math.max(40, Math.min(132, Math.floor(w))) + 'px');
+  }
+  track();
+  var tmr;
+  window.addEventListener('resize', function () { clearTimeout(tmr); tmr = setTimeout(track, 120); });
+  if (!('IntersectionObserver' in window)) { grow(wt, 'whyb-in'); return; }
+  var io = new IntersectionObserver(function (es) {
+    if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); grow(wt, 'whyb-in'); }
+  }, { threshold: 0, rootMargin: '0px 0px -12% 0px' });
+  io.observe(wrap);
+})();
+</script>
 
 <script id="mf-v403-hero-fee">
 /* V40.3 — A1. THE PRICE IN THE FIRST SCREEN — BUILT, AND SWITCHED OFF.
