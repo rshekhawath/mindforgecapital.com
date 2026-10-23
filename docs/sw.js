@@ -876,7 +876,9 @@
 // V42.8 -> mfc-v135. Device QA fixes: mfc-deep.css 2 (tables become cards up to 900px; the weather
 // pill's ink and dark colours) and mfc-insight.css 4 (the same pill on the dashboard); the precached
 // index.html changed (two bound labels in the "why this" table).
-const CACHE = 'mfc-v135';
+// V42.8, second push -> mfc-v136. The precached index.html changed again: the "why this" table's
+// fund names wrap evenly (text-wrap:balance). No shared asset moved.
+const CACHE = 'mfc-v136';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
