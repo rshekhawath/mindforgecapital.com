@@ -45,6 +45,10 @@ DB_PATH = _resolve_db_path()
 # 138.50 is already the post-consolidation price), LASA and SELMC (no trade
 # since 12-Oct; LASA suspended by the exchange). Their published price is the
 # true last trade. Remove only if they stay frozen for weeks (the V37.9a rule).
+# V42.9: ICICIPRULI->ICICILIFE (renamed 23-OCT-2026 with the company's new name,
+# ICICI Life Insurance Limited; same ISIN INE726G01019). Flagged by the check on
+# the morning it took effect, so ICICIPRULI's last published price (431.00, the
+# 22-Oct close) was never a frozen one.
 # ──────────────────────────────────────────────────────────────────────────────
 NSE_EQUITY_UNIVERSE = [
     "20MICRONS","21STCENMGM","360ONE","3BBLACKBIO","3IINFOLTD","3MINDIA","3PLAND","5PAISA","63MOONS","A2ZINFRA",
@@ -129,7 +133,7 @@ NSE_EQUITY_UNIVERSE = [
     "HGM","HGS","HIKAL","HIMATSEIDE","HINDALCO","HINDCOMPOS","HINDCOPPER","HINDOILEXP","HINDPETRO","HINDUNILVR",
     "HINDWAREAP","HINDZINC","HIRECT","HISARMETAL","HITECH","HLEGLAS","HLVLTD","HMAAGRO","HMVL","HNDFDS",
     "HOMEFIRST","HONASA","HONAUT","HONDAPOWER","HPAL","HPIL","HPL","HSCL","HTMEDIA","HUBTOWN",
-    "HUDCO","HUHTAMAKI","HYBRIDFIN","HYUNDAI","ICDSLTD","ICEMAKE","ICICIAMC","ICICIBANK","ICICIGI","ICICIPRULI",
+    "HUDCO","HUHTAMAKI","HYBRIDFIN","HYUNDAI","ICDSLTD","ICEMAKE","ICICIAMC","ICICIBANK","ICICIGI","ICICILIFE",
     "ICIL","ICRA","IDBI","IDEA","IDFCFIRSTB","IEX","IFBIND","IFCI","IFGLEXPOR","IGARASHI",
     "IGCL","IGIL","IGL","IGPL","IIFL","IIFLCAPS","IITL","IKIO","IKS","IMAGICAA",
     "IMFA","IMPAL","INA","INCREDIBLE","INDBANK","INDGN","INDHOTEL","INDIACEM","INDIAGLYCO","INDIAMART",
