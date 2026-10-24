@@ -218,6 +218,18 @@ select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.10
 .step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
 .step-text{font-size:14px;color:var(--text2);line-height:1.5;}
 .step-text strong{display:block;color:var(--white);margin-bottom:2px;}
+/* V43.1 — A2: "Before the 1st" on the success step */
+.b1st{margin:20px 0 4px;padding:16px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--ink2);}
+.b1st-k{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 8px;}
+.b1st-list{list-style:none;margin:0;padding:0;display:grid;gap:10px;}
+.b1st-list li{font-size:14px;line-height:1.55;color:var(--text2);}
+.b1st-list b{color:var(--white);}
+.b1st-list a:not(.b1st-btn){color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:2px;}
+.b1st-cal{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.b1st-btn{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;border:0.5px solid var(--border2);background:var(--ink3);color:var(--accent);font:inherit;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;}
+.b1st-btn:hover{border-color:var(--accent);}
+.b1st-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+@media (pointer:coarse){.b1st-btn{min-height:44px;}}
 .wa-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border-radius:var(--r-sm);border:none;background:#107f39;color:#fff;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.01em;text-decoration:none;}
 .wa-btn:hover{background:#0d682e;transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,211,102,0.3);}
 .wa-btn svg{flex-shrink:0;}
@@ -694,7 +706,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
         <div class="step-num" id="ss-access-num">3</div>
         <div class="step-text">
           <strong id="ss-s3-title">Get dashboard access</strong>
-          <span id="ss-access-text">Within 24 hours of payment confirmation, your personalised dashboard link will be emailed to you.</span>
+          <span id="ss-access-text">Within 24 hours of payment confirmation, your dashboard link will be emailed to you.</span>
         </div>
       </div>
 
@@ -703,6 +715,24 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           Open WhatsApp
         </a>
+      </div>
+
+      <!-- V43.1 — A2. THE 1ST, INTO THE CALENDAR, AT THE MOMENT OF MOST INTENT.
+           The routine has one date. Until now the only reminders sat deep in the
+           dashboard's cycle card; a reader who signs up at 10 pm is never more
+           likely to put the 1st in a calendar than right here. Filled by
+           fillBeforeFirst() from the plan just chosen: the free book and 3/6/12
+           months get the 1st every month (they update themselves), a 1-month plan
+           one date (it renews to get the next list). No token or e-mail address
+           goes into either link. -->
+      <div class="b1st" id="b1st" hidden>
+        <p class="b1st-k">Before the 1st</p>
+        <ul class="b1st-list">
+          <li><b id="b1st-cal-h">Put the 1st in your calendar.</b> <span id="b1st-cal-t">A reminder every month, in the evening: orders placed then go in at the next morning&rsquo;s open.</span>
+            <span class="b1st-cal"><a class="b1st-btn" id="b1st-g" href="#" target="_blank" rel="noopener noreferrer">Google Calendar</a><button type="button" class="b1st-btn" id="b1st-ics">Apple / Outlook (.ics)</button></span></li>
+          <li><b>Selling will need your demat&rsquo;s OK</b> &mdash; a DDPI given to your broker once, or your depository&rsquo;s TPIN and an OTP on the day you sell. <a href="/how-it-works/#sec-selling">How it works</a></li>
+          <li><b>On the dashboard, enter your amount.</b> It sizes every order to it.</li>
+        </ul>
       </div>
 
       <hr class="divider">
@@ -756,7 +786,7 @@ function freeAccessCopy(state, email){
     t.textContent = 'Emailing your dashboard link now \u2014 no payment needed.';
   } else {
     if (s3) s3.textContent = 'Get dashboard access';
-    t.textContent = 'Within 24 hours, your personalised dashboard link will be emailed to you \u2014 no payment needed.';
+    t.textContent = 'Within 24 hours, your dashboard link will be emailed to you \u2014 no payment needed.';
   }
 }
 
@@ -1128,7 +1158,7 @@ async function handleSubmit() {
       'Nothing to pay today. WhatsApp is there if you want to ask us anything.';
     if (s2Title) s2Title.textContent = 'Get dashboard access';
     if (s2Text)  s2Text.textContent  =
-      'Within 24 hours your personalised dashboard link is emailed to you. Month one costs nothing — there is nothing to pay first.';
+      'Within 24 hours your dashboard link is emailed to you. Month one costs nothing — there is nothing to pay first.';
     if (s3Title) s3Title.textContent = 'Set up payment before month two';
     if (accessText) accessText.textContent =
       'We\u2019ll send the payment link on WhatsApp about a week before your first bill. Cancel before then and you were never charged.';
@@ -1144,7 +1174,7 @@ async function handleSubmit() {
     if (s2Text)  s2Text.textContent  = "We'll share a UPI QR code and payment details on WhatsApp.";
     if (s3Title) s3Title.textContent = 'Get dashboard access';
     if (accessText) accessText.textContent =
-      'Within 24 hours of payment confirmation, your personalised dashboard link will be emailed to you.';
+      'Within 24 hours of payment confirmation, your dashboard link will be emailed to you.';
   }
 
   // Save lead to sheet (fire-and-forget — don't block UX on network).
@@ -1202,6 +1232,8 @@ async function handleSubmit() {
                               : (offer ? ' Say hello on WhatsApp (optional)' : ' Open WhatsApp');
   }
 
+  try { fillBeforeFirst(isFree, p.months); } catch (e) {}   // V43.1 — A2
+
   // Show success; open WhatsApp only where a human still has to take a payment.
   document.getElementById('step-form').style.display = 'none';
   document.getElementById('step-success').style.display = 'block';
@@ -1220,6 +1252,55 @@ async function handleSubmit() {
   btn.addEventListener('click', function() { var open = btn.classList.toggle('open'); links.classList.toggle('open'); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu'); });
   links.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { btn.classList.remove('open'); links.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', 'Open menu'); }); });
 })();
+
+/* V43.1 — A2. The reminder links for the plan just chosen. The next 1st is
+   always the first one: whatever the day of signing up, this month's list is on
+   the dashboard as soon as it opens. A plan that updates itself repeats monthly
+   for its months (the free book's row runs 12); a 1-month plan is one date, worded
+   for the renewal it needs. Evening alarm (19:00) in the .ics; Google's template
+   link carries no alarm of its own. */
+function fillBeforeFirst(isFree, months) {
+  var box = document.getElementById('b1st'); if (!box) return;
+  var m = isFree ? 12 : (Number(months) || 1);
+  var recur = isFree || m > 1;
+  var now = new Date(), d0 = new Date(now.getFullYear(), now.getMonth() + 1, 1), d1 = new Date(d0.getFullYear(), d0.getMonth(), 2);
+  var ymd = function (d) { return d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); };
+  var url = 'https://mindforgecapital.com/dashboard.html';
+  var title = recur ? 'MindForge: this month\u2019s orders (about 10 min)' : 'MindForge: the next list is out today';
+  var desc = recur ? 'The month\u2019s list is on your dashboard today. Open it, send the orders and tick them off: ' + url
+                   : 'The next month\u2019s list is published today. A 1-month plan renews to get it: ' + url;
+  var rrule = recur ? 'FREQ=MONTHLY;BYMONTHDAY=1;COUNT=' + m : '';
+  var h = document.getElementById('b1st-cal-h'), t = document.getElementById('b1st-cal-t');
+  if (h) h.textContent = recur ? 'Put the 1st in your calendar.' : 'Put the next 1st in your calendar.';
+  if (t) t.textContent = recur
+    ? 'A reminder on the 1st of each month, in the evening: orders placed then go in at the next morning\u2019s open.'
+    : 'The next list is out that day, and a 1-month plan renews to get it.';
+  var g = document.getElementById('b1st-g');
+  if (g) g.href = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + encodeURIComponent(title) + '&dates=' + ymd(d0) + '/' + ymd(d1) +
+    '&details=' + encodeURIComponent(desc) + (rrule ? '&recur=' + encodeURIComponent('RRULE:' + rrule) : '');
+  var ics = document.getElementById('b1st-ics');
+  if (ics) ics.onclick = function () {
+    try {
+      var esc = function (x) { return String(x).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); };
+      var stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//MindForge Capital//Sign-up//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+        'BEGIN:VEVENT', 'UID:mfc-signup-' + ymd(d0) + '-' + (recur ? 'monthly' : 'once') + '@mindforgecapital.com', 'DTSTAMP:' + stamp,
+        'DTSTART;VALUE=DATE:' + ymd(d0), 'DTEND;VALUE=DATE:' + ymd(d1)];
+      if (rrule) lines.push('RRULE:' + rrule);
+      lines.push('SUMMARY:' + esc(title), 'DESCRIPTION:' + esc(desc), 'URL:' + url, 'TRANSP:TRANSPARENT',
+        'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(title), 'TRIGGER:PT19H', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR');
+      // RFC 5545 3.1: fold lines longer than 75 octets (CRLF + one space)
+      var fold = function (l) { var o = [], first = true; while (l.length > (first ? 73 : 72)) { var n = first ? 73 : 72; o.push(l.slice(0, n)); l = l.slice(n); first = false; } o.push(l); return o.join('\r\n '); };
+      var blob = new Blob([lines.map(fold).join('\r\n') + '\r\n'], { type: 'text/calendar;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'mindforge-reminder-' + ymd(d0) + '.ics';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    } catch (e) {}
+  };
+  box.hidden = false;
+}
 
 function resetForm() {
   document.getElementById('reg-name').value = '';

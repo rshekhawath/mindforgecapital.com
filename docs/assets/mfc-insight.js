@@ -194,6 +194,9 @@
   function tagCards() {
     ORDERS.forEach(function (q) { D.querySelectorAll(q).forEach(function (el) { el.setAttribute('data-mfm', 'orders'); }); });
     INSIGHT.forEach(function (q) { D.querySelectorAll(q).forEach(function (el) { el.setAttribute('data-mfm', 'insight'); }); });
+    // V43.1 — B2: the four KPI tiles restate the orders view's own first sentence; they read
+    // with "How it's going" instead. ORDERS_CALM (dashboard.html) is the switch.
+    if (W.ORDERS_CALM !== false) D.querySelectorAll('#state-dashboard .stats-row').forEach(function (el) { el.setAttribute('data-mfm', 'insight'); });
   }
   function setMode(m, s, remember) {
     D.documentElement.setAttribute('data-dmode', m);
@@ -1106,6 +1109,51 @@
 
   // ── orchestration ────────────────────────────────────────────────────────
   var pending = null;
+  // ── V43.1 · B3 — the month first, the rest one tap away ───────────────────
+  // The paragraph at the top already says how the book did, against what, why and
+  // whether that is normal. The detail cards (attribution, the index split, market
+  // weather, what could move the book, why these names, the sector mix) are for a
+  // reader who wants to study the market, so they fold under one button placed
+  // after "Is this normal?". They are NOT moved: every render re-anchors them with
+  // before()/after(), so the fold is a class on <html>, screen only (print as before).
+  var INSIGHT_FOLD = true;
+  var FOLD = [['attrib-card', 'what moved your number'], ['mi-vs', 'the index'], ['mi-weather', 'the market'],
+              ['mi-risk', 'what could move it'], ['why25', 'why these names'], ['alloc-card', 'the mix'], ['pmap-card', 'the map']];
+  function foldKey(s) { return 'mfc_insight_more' + (s && s.demo ? '::demo' : ''); }
+  function shown(el) { return el && !el.hidden && el.style.display !== 'none' && (el.textContent || '').trim() ? el : null; }
+  function renderFold(s) {
+    var root = D.documentElement, t = D.getElementById('mi-more');
+    var present = INSIGHT_FOLD ? FOLD.filter(function (f) { return shown(D.getElementById(f[0])); }) : [];
+    if (!present.length) { root.classList.remove('mi-folded'); if (t) t.hidden = true; return; }
+    var open = false; try { open = localStorage.getItem(foldKey(s)) === '1'; } catch (e) {}
+    if (!t) {
+      t = D.createElement('button');
+      t.type = 'button'; t.id = 'mi-more'; t.className = 'mi-more';
+      t.setAttribute('data-mfm', 'insight');
+      t.addEventListener('click', function () {
+        var opening = root.classList.contains('mi-folded');
+        try { localStorage.setItem(foldKey(st()), opening ? '1' : '0'); } catch (e) {}
+        renderFold(st());
+        if (opening) {
+          var first = null;
+          FOLD.some(function (f) { first = shown(D.getElementById(f[0])); return !!first; });
+          var h = first && first.querySelector('h2, h3');
+          if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (e) {} }
+          try { W.dispatchEvent(new Event('resize')); } catch (e) {}
+        }
+      });
+    }
+    var anchor = shown(D.getElementById('mi-normal')) || shown(D.getElementById('profit-card')) || shown(D.getElementById('mi-narr'));
+    if (anchor) after(t, anchor); else before(t, D.getElementById(present[0][0]));
+    root.classList.toggle('mi-folded', !open);
+    t.hidden = false;
+    t.setAttribute('aria-expanded', open ? 'true' : 'false');
+    var names = present.map(function (f) { return f[1]; });
+    t.innerHTML = open
+      ? '<span>Less about this month</span>'
+      : '<span>More about this month<small>' + esc(names.join(' · ')) + '</small></span>';
+  }
+
   function renderInsight() {
     var s = st();
     if (!s.key || !(s.stocks || []).length) return;
@@ -1127,6 +1175,7 @@
       safe(function () { renderRisk(s, mk, ba, sig, closes); });
       safe(function () { renderYou(s, lb, closes); });
       safe(function () { renderRecord(s, hist); });
+      safe(function () { renderFold(s); });                           // V43.1 — B3: after every card has painted
     });
   }
   function refresh(stage) {

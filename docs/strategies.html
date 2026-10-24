@@ -1988,7 +1988,7 @@ html[data-theme="dark"] .ptx-vs{ border-top-color:rgba(120,160,240,.24); }
       <div>
         <div class="section-label">Three strategies</div>
         <h1>Three books. <span class="accent-text">Most people need one.</span></h1>
-        <p class="sub">A free multi-asset book, a large-and-midcap book, and a small-cap book to size smallest. If you are unsure, start with the free one. Select a strategy below to explore its approach, backtest results, and how to get started.</p>
+        <p class="sub">A free multi-asset book, a large-and-midcap book, and a small-cap book to size smallest. If you are unsure, start with the free one.<span class="ma-honest" data-ma-honest hidden></span> Select a strategy below to explore its approach, backtest results, and how to get started.</p>
       </div>
       <!-- V26.1: LIVE leads this card (owner request). Each tile shows the strategy's
            LIVE since-rebalance move as the hero figure via data-live; the 5Y backtest
@@ -3086,7 +3086,7 @@ function openRegModal(strategyName, price, strategyId){
      for the reg-modal + vs-MF calculator that still use it. -->
 
 <!-- Floating WhatsApp CTA + auto-popping invite bubble (V5.7) -->
-<a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%20want%20to%20learn%20more%20about%20your%20quant%20strategies."
+<a class="fab-wa" href="https://wa.me/917601032082?text=Hi%20MindForge%20Capital%2C%20I%27d%20like%20to%20know%20more%20about%20MindForge."
    target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <circle cx="12" cy="12" r="12" fill="#25d366"/>
@@ -4584,5 +4584,37 @@ h1, h2, h3, h4, th,
      fallback fires only when nothing else moved aria-expanded, and the drawer
      sizing writes the same measured value this page already writes. -->
 <script defer src="assets/mfc-chrome.js?v=4070"></script>
+<script id="mf-v431-ma-honest">
+/* V43.1 — C1. THE FREE BOOK'S HONEST LINE. Three sentences tell an unsure reader to
+   "start with the free one"; the table on the same page shows that, after tax,
+   MultiAsset's backtest trails the best multi-asset fund over the same months.
+   The reader this site is written for came because funds return too little, so
+   the page says what the free book is for. Every figure and the fund's name are
+   read from the machine-written MFSTAT/MFPEER markers already printed on this page
+   (a republish moves them); nothing prints unless the fund is actually ahead. */
+(function () {
+  function mark(key) {
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_COMMENT), n;
+    while ((n = w.nextNode())) {
+      if (n.nodeValue.trim() === key) {
+        var t = n.nextSibling;
+        return t && t.nodeType === 3 ? t.nodeValue.replace(/\u00a0/g, ' ').trim() : '';
+      }
+    }
+    return '';
+  }
+  try {
+    var us = mark('MFSTAT:ma:cagr_posttax'), fund = mark('MFPEER:ma:best_post'), name = mark('MFPEER:ma:best_name');
+    var u = parseFloat(us), f = parseFloat(fund);
+    if (!(isFinite(u) && isFinite(f) && name && f > u)) return;
+    document.querySelectorAll('[data-ma-honest]').forEach(function (el) {
+      el.textContent = ' It is the book to learn the routine on, not the one to beat a fund with: after tax its backtest, ' +
+        us + ' a year, trails the best multi-asset fund over the same months, ' + name + ' at ' + fund +
+        '. The two stock books are the ones built for that.';
+      el.hidden = false;
+    });
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>

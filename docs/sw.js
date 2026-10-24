@@ -882,7 +882,11 @@
 // this" table draw their figures as bars on a shared scale. No shared asset moved.
 // V43.0, second push -> mfc-v138. The precached index.html changed again: the table's key line
 // wraps without a stranded last word, and the hero key's copied text keeps its spaces.
-const CACHE = 'mfc-v138';
+// V43.1 -> mfc-v139. The precached index.html changed: FAQ 4 says how a sale is approved (DDPI or
+// TPIN), the free book's "start here" lines say what it is for, the FII/DII tile drops "futures",
+// and the WhatsApp button's text is plain words on every page. No shared asset moved
+// (mfc-insight.js/css are the dashboard's own and carry their own ?v).
+const CACHE = 'mfc-v139';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

@@ -3172,6 +3172,14 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
       </div>
     </div>
 
+    <!-- V43.1 — B1. "SET UP ONCE". The routine is ten minutes on the 1st; the set-up it
+         needs was spread over six places on a long page (the amount in the sizing card,
+         reminders in the cycle card, the e-mail switch at the foot, selling nowhere).
+         One card, filled by mfcSetupRefresh() (mf-v431-dash-js) from state the page
+         already holds, until every item is done or the member hides it. Shown in the
+         samples too: that is how a prospect learns what the first evening involves. -->
+    <section class="su-card" id="su-card" aria-labelledby="su-h" hidden></section>
+
     <!-- STATS -->
     <div class="stats-row fade-up">
       <div class="stat-card">
@@ -3274,6 +3282,7 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
           Remind me
         </span>
+        <span class="cyc-cal-rec" id="cyc-cal-rec" hidden></span>
         <a class="cyc-cal-btn" id="cyc-cal-g" target="_blank" rel="noopener noreferrer" href="#">Google Calendar</a>
         <button type="button" class="cyc-cal-btn" id="cyc-cal-ics" onclick="addCycleToCalendar()">Apple / Outlook (.ics)</button>
         <button type="button" class="cyc-cal-btn" id="cyc-cal-atx" onclick="addAdvanceTaxToCalendar()">Advance-tax dates (.ics)</button>
@@ -3316,6 +3325,7 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     .cyc-cal-k{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800;
       letter-spacing:.07em; text-transform:uppercase; color:var(--text3); margin-right:4px; }
     .cyc-cal-k svg{ width:14px; height:14px; }
+    .cyc-cal-rec{ font-size:11.5px; color:var(--text3); }   /* V43.1 — A2: "every 1st, to 10 Jul 2027" */
     .cyc-cal-btn{ font:inherit; font-size:12.5px; font-weight:700; display:inline-flex; align-items:center;
       min-height:36px; padding:0 12px; border-radius:9px; cursor:pointer; text-decoration:none;
       color:var(--accent); background:rgba(37,99,235,.05); border:0.5px solid rgba(37,99,235,.28); }
@@ -4061,6 +4071,14 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
     .stock-card.rw-done .sc-rw-q{ text-decoration:line-through; text-decoration-thickness:1px; color:var(--text3); }
     @media print{ .rw-tag{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; } }
     .chg-hint{ font-size:11.5px; color:var(--text3); line-height:1.55; margin-top:8px; }
+    /* V43.1 — A1: the sell-approval note (DDPI / TPIN), shown until ticked off */
+    .chg-auth{ font-size:12px; color:var(--text2); line-height:1.55; margin-top:8px; padding:8px 10px; border-radius:10px;
+      background:rgba(26,80,216,.06); border:1px solid rgba(26,80,216,.16); }
+    .chg-auth b{ color:var(--text); font-weight:700; }
+    .chg-auth a{ color:var(--ink-link, var(--accent)); font-weight:700; text-underline-offset:2px; }
+    html[data-theme="dark"] .chg-auth{ background:rgba(157,188,255,.08); border-color:rgba(157,188,255,.22); }
+    html[data-theme="dark"] .chg-auth a{ color:#9dbcff; }
+    .kbsk-note [data-sellauth]{ display:inline; }
     @media (max-width:400px){
       .chg-sell{ grid-template-columns:auto minmax(0,1fr); }
       .chg-sell-lnk{ grid-column:2; justify-self:start; }
@@ -6333,8 +6351,14 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
       g.href = 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
         '&text=' + encodeURIComponent(reb.title) +
         '&dates=' + reb.d0 + '/' + reb.d1 +
-        '&details=' + encodeURIComponent(reb.desc);
-      g.setAttribute('aria-label', 'Add the ' + fmt(nextReb) + ' rebalance to Google Calendar (opens in a new tab)');
+        '&details=' + encodeURIComponent(reb.desc) +
+        (reb.rrule ? '&recur=' + encodeURIComponent('RRULE:' + reb.rrule) : '');   // V43.1 — A2
+      g.setAttribute('aria-label', reb.rrule
+        ? 'Add every 1st to ' + fmtX(expiry) + ' to Google Calendar (opens in a new tab)'
+        : 'Add the ' + fmt(nextReb) + ' rebalance to Google Calendar (opens in a new tab)');
+      /* V43.1 — A2: say what the buttons add, once it is more than one date */
+      var rec = document.getElementById('cyc-cal-rec');
+      if (rec) { rec.textContent = reb.rrule ? 'every 1st, to ' + fmtX(expiry) : ''; rec.hidden = !reb.rrule; }
       cal.hidden = false;
     }
   } catch (e) {}
@@ -6369,8 +6393,16 @@ function _cycCalEvents(){
     out.push({ title:title, desc:desc, d0:_cycYmd(date), d1:_cycYmd(next),
                uid:'mfc-' + uidTag + '-' + _cycYmd(date) + '-' + strat.replace(/[^a-z0-9]+/gi, '').toLowerCase() + '@mindforgecapital.com' });
   };
-  mk(dd.reb, strat + ': new picks published',
-     'Your next set of picks is published today. Open your dashboard to see what changed and place the orders: ' + url, 'rebalance');
+  /* V43.1 — A2. A plan that updates itself (the free book, 3/6/12 months) gets the
+     1st EVERY month to its access end, in the evening: ten minutes after work,
+     and orders confirmed then go in at the next morning's open. A 1-month plan
+     is pinned to one book, so it keeps the single date. No token goes in a
+     calendar: the URL is the bare dashboard. */
+  var recur = dd.reb && dd.exp && !isNaN(dd.exp.getTime()) && dd.exp > dd.reb && !_subIsPinned(sub);
+  mk(dd.reb, recur ? strat + ': this month\u2019s orders (about 10 min)' : strat + ': new picks published',
+     recur ? 'The month\u2019s list is on your dashboard today. Open it, send the orders and tick them off: ' + url
+           : 'Your next set of picks is published today. Open your dashboard to see what changed and place the orders: ' + url, 'rebalance');
+  if (recur && out.length) { out[0].rrule = 'FREQ=MONTHLY;BYMONTHDAY=1;UNTIL=' + _cycYmd(dd.exp); out[0].alarm = 'PT19H'; }
   mk(dd.exp, strat + ': subscription access ends',
      'Your MindForge access ends today. Renew to keep receiving new picks: ' + url, 'expiry');
   return out;
@@ -6393,7 +6425,9 @@ function _downloadIcs(ev, fileTag, noun){
     var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//MindForge Capital//Member dashboard//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
     ev.forEach(function(e){
       lines.push('BEGIN:VEVENT', 'UID:' + e.uid, 'DTSTAMP:' + now,
-        'DTSTART;VALUE=DATE:' + e.d0, 'DTEND;VALUE=DATE:' + e.d1,
+        'DTSTART;VALUE=DATE:' + e.d0, 'DTEND;VALUE=DATE:' + e.d1);
+      if (e.rrule) lines.push('RRULE:' + e.rrule);   // V43.1 — A2
+      lines.push(
         'SUMMARY:' + esc(e.title), 'DESCRIPTION:' + esc(e.desc), 'URL:https://mindforgecapital.com/dashboard.html',
         'TRANSP:TRANSPARENT',
         'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(e.title), 'TRIGGER:' + (e.alarm || 'PT9H'), 'END:VALARM',
@@ -7143,6 +7177,7 @@ function renderDashboard(sub, stocks) {
   // renderer can badge the new names without recomputing it.
   renderBookChange(window._bookDiff, stocks);
   try { if (window.mfcV412Refresh) window.mfcV412Refresh(); } catch (e) {}   // V41.2 — B1, B3
+  try { if (window.mfcV431Refresh) window.mfcV431Refresh(); } catch (e) {}   // V43.1 — B1, B2
   try { if (window.mfcInsight) window.mfcInsight.refresh('book'); } catch (e) {}   // V42.3 — the two modes and the insight cards
 
   // Reveal fade-up entrance
@@ -7839,6 +7874,29 @@ function normaliseCapital(v) {
    The sample's first-visit path is exactly this reader's path to subscribing.
    Every per-device preference the sample can touch now goes through _devKey(). */
 function _devKey(k) { return isDemo ? k + '::demo' : k; }
+/* V43.1 — A1. A SALE NEEDS THE DEMAT'S OWN APPROVAL, AND NOTHING SAID SO.
+   Without a DDPI given to the broker once, every selling day stops at the
+   depository's TPIN and an OTP — mid-basket, for a member who was told "about
+   ten minutes". Said once, beside the first sales a member meets (the sell group,
+   the re-weight trims, the Kite band), until they tick it off here or in
+   "Set up once" (B1), which reads the same per-device key. */
+function _sellAuthDone() { try { return localStorage.getItem(_devKey('mfc_sellauth_ok')) === '1'; } catch (e) { return false; } }
+function _sellAuthNote(withBtn) {
+  if (_sellAuthDone()) return '';
+  return '<div class="chg-auth" data-sellauth><b>Selling needs your demat&rsquo;s OK</b> &mdash; a DDPI given to your broker once, or your depository&rsquo;s TPIN and an OTP on the day you sell. ' +
+    '<a href="/how-it-works/#sec-selling" target="_blank" rel="noopener">How it works&nbsp;&rarr;</a>' +
+    (withBtn ? ' <button type="button" class="chg-hint-btn" onclick="_sellAuthOk()">Got it</button>' : '') + '</div>';
+}
+function _sellAuthInline(hasSells) {
+  if (!hasSells || _sellAuthDone()) return '';
+  return ' <span data-sellauth><b>Selling needs your demat&rsquo;s OK</b> &mdash; a DDPI given to your broker once, or a TPIN and an OTP on the day. ' +
+    '<a href="/how-it-works/#sec-selling" target="_blank" rel="noopener">How it works&nbsp;&rarr;</a></span>';
+}
+function _sellAuthOk() {
+  try { localStorage.setItem(_devKey('mfc_sellauth_ok'), '1'); } catch (e) {}
+  document.querySelectorAll('[data-sellauth]').forEach(function (el) { el.remove(); });
+  try { if (typeof window.mfcSetupRefresh === 'function') window.mfcSetupRefresh(); } catch (e) {}
+}
 function capitalStorageKey(strategy) {
   return 'mfc_capital_' + (isDemo ? 'demo_' : '') + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
 }
@@ -11260,7 +11318,8 @@ function refreshKiteBasket() {
               : '') +
           'Opens Zerodha’s own order screen with the quantities pre-filled. ' +
           'You sign in there and confirm; nothing is placed until you do, and you can ' +
-          'change quantity, order type or price on that screen first.';
+          'change quantity, order type or price on that screen first.' +
+          _sellAuthInline(b.sellVal > 0);   // V43.1 — A1
       }
     } else {
       /* SEVERAL BASKETS — the list IS the action. One row per basket with its
@@ -11305,7 +11364,8 @@ function refreshKiteBasket() {
               (plan.next.pos < plan.total ? 'the next one. ' : 'any you closed without confirming. ')
             : 'Every basket has been opened on Kite from this device — tick each order once it fills. ') +
           'Each opens Zerodha’s own order screen with the quantities pre-filled; nothing is placed until you confirm there, ' +
-          'and you can change quantity, order type or price first.';
+          'and you can change quantity, order type or price first.' +
+          _sellAuthInline(plan.sellVal > 0);   // V43.1 — A1
       }
     }
     wrap.hidden = false;
@@ -11324,6 +11384,7 @@ function refreshKiteBasket() {
        after the member had switched to Groww and after they had ticked
        everything off. */
     refreshActionBar();
+    try { if (window.mfcV431Refresh) window.mfcV431Refresh(); } catch (e) {}   // V43.1 — B1 amount, B2 fold
   }
 }
 
@@ -11861,6 +11922,7 @@ function _setNotifUI(on, email) {
     if (ok) ok.style.display = 'none';
   }
   try { _setHowToStep4(); } catch (e) {}   // V41.1 — step 4 says what the switch says
+  try { if (window.mfcV431Refresh) window.mfcV431Refresh(); } catch (e) {}   // V43.1 — B1 e-mail item
 }
 // V35.2 — step 4 of "How to invest" is the only place on the page that tells a
 // member what happens at the next rebalance, and it named a control that half the
@@ -13515,7 +13577,9 @@ function renderBookChange(diff, stocks){
         'Tick each one once the sell order is placed.' +
         (unknownN ? ' No purchase date is recorded for ' + (unknownN === 1 ? 'one of these' : unknownN + ' of these') +
           ' &mdash; if you bought ' + (unknownN === 1 ? 'it' : 'any') + ' within your ' + window._mfRules.h +
-          '-day holding period, hold ' + (unknownN === 1 ? 'it' : 'those') + ' until the period ends.' : '') + '</div>';
+          '-day holding period, hold ' + (unknownN === 1 ? 'it' : 'those') + ' until the period ends.' : '') + '</div>' +
+        // V43.1 — A1: only beside a sale the member will actually place
+        (list.some(function(t){ return !_isRestricted(t) && !hbBy[String(t).toUpperCase()]; }) ? _sellAuthNote(true) : '');
     };
     /* V35.4 — ON A WEIGHT-ROTATING BOOK, "HOLD" IS NOT "DO NOTHING".
        MultiAsset keeps the same eight ETFs every month and re-scores their
@@ -13606,7 +13670,8 @@ function renderBookChange(diff, stocks){
       (rwOn
         ? '<div class="chg-hint">Sized from the quantities your dashboard recorded last month. If your broker shows different holdings, ' +
           '<button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> gives exact orders. ' +
-          'Tick each one once it is placed.</div>'
+          'Tick each one once it is placed.</div>' +
+          ((ocB.trims || []).length ? _sellAuthNote(true) : '')   // V43.1 — A1: a trim is a sale too
         : '<div class="chg-hint">The model re-scored these. Bring each one to the Allocation shown in the table below &mdash; ' +
           'no name is bought or sold outright.' +
           (ocB.rwUnknown
@@ -17364,7 +17429,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4070"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=3"></script>
+<script defer src="assets/mfc-insight.js?v=4"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -17384,7 +17449,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      to the page's own body styles. Measured — moving it to the head took
      .vfy-card on the dashboard from 16px to 18px of phone padding. -->
 <link rel="stylesheet" href="assets/mfc-chrome.css?v=10">
-<link rel="stylesheet" href="assets/mfc-insight.css?v=4">
+<link rel="stylesheet" href="assets/mfc-insight.css?v=5">
 
 <!-- ============================================================================
      V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.
@@ -19727,6 +19792,219 @@ button.dks-go{ border:0; cursor:pointer; font-family:inherit; }
 
   window.mfcV412Refresh = function(){ nbRefresh(); hsRefresh(); };
   window.mfcV412Refresh();
+})();
+</script>
+<style id="mf-v431-dash">
+/* V43.1 — B1: "Set up once" (the cycle card's skin) */
+.su-card{display:block;margin:0 0 22px;padding:16px 20px 16px;border-radius:16px;background:#fff;
+  border:0.5px solid rgba(37,99,235,0.16);box-shadow:0 1px 2px rgba(15,23,42,.04),0 10px 28px -18px rgba(26,80,216,.18)}
+.su-card[hidden]{display:none}
+html[data-theme="dark"] .su-card{background:var(--ink2)}
+.su-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.su-h{font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--text);margin:0}
+.su-n{font-size:12px;font-weight:700;color:var(--text3);font-variant-numeric:tabular-nums}
+.su-hide{margin-left:auto;font:inherit;font-size:12.5px;font-weight:700;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;min-height:0;display:inline;position:relative}
+html[data-theme="dark"] .su-hide{color:#9dbcff}
+@media (pointer:coarse){.su-hide::before{content:'';position:absolute;left:-10px;right:-10px;top:50%;height:44px;transform:translateY(-50%)}}
+.su-lede{font-size:13px;line-height:1.5;color:var(--text3);margin:4px 0 12px}
+.su-list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.su-i{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:start}
+.su-ck{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(37,99,235,.35);margin-top:1px;position:relative}
+.su-i.is-done .su-ck{background:#047857;border-color:#047857}
+.su-i.is-done .su-ck::after{content:'';position:absolute;left:5.5px;top:2px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+html[data-theme="dark"] .su-ck{border-color:rgba(157,188,255,.45)}
+html[data-theme="dark"] .su-i.is-done .su-ck{background:#10b981;border-color:#10b981}
+.su-ih{font-size:14px;font-weight:700;color:var(--text);margin:0;line-height:1.4}
+.su-i.is-done .su-ih{color:var(--text2)}
+.su-it{font-size:13px;line-height:1.5;color:var(--text2);margin:2px 0 0;max-width:70ch}
+.su-i.is-done .su-it{color:var(--text3)}
+.su-it a{color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+html[data-theme="dark"] .su-it a{color:#9dbcff}
+.su-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.su-acts:empty{display:none}
+.su-btn{display:inline-flex;align-items:center;min-height:36px;padding:0 13px;border-radius:999px;border:0.5px solid rgba(37,99,235,.28);
+  background:rgba(26,80,216,.05);color:var(--accent);font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap}
+.su-btn:hover{border-color:var(--accent)}
+.su-btn:focus-visible,.su-hide:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html[data-theme="dark"] .su-btn{color:#9dbcff;border-color:rgba(157,188,255,.3);background:rgba(157,188,255,.06)}
+@media (pointer:coarse){.su-btn{min-height:44px}}
+@media (max-width:600px){.su-card{padding:15px 16px 14px}}
+@media print{.su-card{display:none !important}}
+
+/* V43.1 — B2: a returning member's holdings list folds under this month's orders.
+   Screen only: print shows the whole list, as before. */
+.hold-fold{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;margin:0 0 16px;padding:12px 18px;
+  border-radius:14px;border:0.5px solid rgba(37,99,235,.22);background:#fff;color:var(--text);font:inherit;font-size:14.5px;font-weight:700;
+  text-align:left;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.hold-fold[hidden]{display:none}
+.hold-fold small{display:block;font-size:12.5px;font-weight:500;color:var(--text3);margin-top:2px}
+.hold-fold::after{content:'';flex:none;width:9px;height:9px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:-5px 4px 0 0}
+.hold-fold[aria-expanded="true"]::after{transform:rotate(-135deg);margin:5px 4px 0 0}
+.hold-fold:hover{border-color:var(--accent)}
+.hold-fold:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html[data-theme="dark"] .hold-fold{background:var(--ink2);border-color:rgba(157,188,255,.24)}
+html[data-theme="dark"] .hold-fold::after{border-color:#9dbcff}
+html[data-dmode="insight"] .hold-fold{display:none !important}
+@media screen{
+  .table-section.is-hfold > .table-header,
+  .table-section.is-hfold > #sector-chips,
+  .table-section.is-hfold > #buy-prog-card,
+  .table-section.is-hfold > #sess,
+  .table-section.is-hfold > .table-wrap,
+  .table-section.is-hfold > #stock-cards-mobile,
+  .table-section.is-hfold > #weightCap{display:none !important}
+}
+@media print{.hold-fold{display:none !important}}
+</style>
+<script id="mf-v431-dash-js">
+/* ══ V43.1 — B1 "SET UP ONCE" · B2 "ONE LIST, ONE BUTTON" ═══════════════════════
+   B1: the set-up a first month needs (the amount, a reminder on the 1st, how the
+   demat approves sales, the e-mail when the list lands), in one card. Each item
+   reads state the page already holds; device keys go through _devKey(), so the
+   samples never touch a member's. Gone for good once every item was done before
+   a visit began, or once the member hides it.
+   B2: for a RETURNING member (V40.3 C6's test: ticks in the previous cycle's map,
+   never a sample) whose "What changed this cycle" card already lists the orders,
+   the holdings list below it folds under one button. The card's ticks, the sticky
+   bar and the Kite band stay. The KPI tiles move to "How it's going"
+   (mfc-insight.js reads ORDERS_CALM). First month and every sample: as before. */
+var SETUP_CARD = true;
+var ORDERS_CALM = true;
+(function () {
+  var D = document;
+  function ls(k, v) {
+    try { if (v === undefined) return localStorage.getItem(_devKey(k)); localStorage.setItem(_devKey(k), v); } catch (e) {}
+    return null;
+  }
+  function e(t) { return escapeHtml(String(t == null ? '' : t)); }
+  function returning() {
+    try {
+      var bd = window._bookDiff;
+      if (isDemo || !bd || !bd.known || !bd.prevKey) return false;
+      var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
+               String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
+      var pm = JSON.parse(localStorage.getItem(pk) || '{}');
+      return !!pm && Object.keys(pm).length > 0;
+    } catch (x) { return false; }
+  }
+
+  // ── B1 ────────────────────────────────────────────────────────────────────
+  var shownThisVisit = false;
+  function items() {
+    var sub = window._currentSub || {}, out = [];
+    var cap = !!window._capEntered;
+    var amt = ''; try { amt = shortMoney(currentCapital); } catch (x) {}
+    out.push({ k: 'amount', done: cap, h: 'Your amount',
+      t: cap ? 'Every order is sized to ' + e(amt) + '.' : 'Enter what you will put into this book. Every order is sized to it.',
+      a: cap ? '' : '<button type="button" class="su-btn" data-su="amount">Enter my amount</button>' });
+    var cal = ls('mfc_setup_cal') === '1';
+    var g = D.getElementById('cyc-cal-g'), rec = D.getElementById('cyc-cal-rec');
+    var gh = g ? g.getAttribute('href') : '', every = rec && !rec.hidden ? rec.textContent : '';
+    out.push({ k: 'cal', done: cal, h: 'A reminder on the 1st',
+      t: every ? 'In your calendar ' + e(every) + ', with an evening alert: orders placed after work go in at the next morning’s open.'
+               : 'The day the next list lands, in your calendar.',
+      a: cal ? '' : ((gh && gh !== '#') ? '<a class="su-btn" data-su="cal" href="' + e(gh) + '" target="_blank" rel="noopener noreferrer">Google Calendar</a>' : '') +
+                    '<button type="button" class="su-btn" data-su="ics">Apple / Outlook (.ics)</button>' });
+    var sell = _sellAuthDone();
+    out.push({ k: 'sell', done: sell, h: 'How your demat approves sales',
+      t: 'A DDPI given to your broker once, or your depository’s TPIN and an OTP on the day you sell. ' +
+         '<a href="/how-it-works/#sec-selling" target="_blank" rel="noopener">How it works</a>',
+      a: sell ? '' : '<button type="button" class="su-btn" data-su="sell">My DDPI is on</button>' +
+                     '<button type="button" class="su-btn" data-su="sell">I’ll use the TPIN</button>' });
+    var ns = D.getElementById('notif-section');
+    if (!_subIsPinned(sub) && ns && ns.style.display !== 'none') {
+      var on = (typeof _notifOn !== 'undefined') && !!_notifOn;
+      out.push({ k: 'mail', done: on, h: 'The e-mail when the new list lands',
+        t: on ? 'On: it arrives the day the list changes.' : 'Off for now. It is the switch in the notification card.',
+        a: on ? '' : '<button type="button" class="su-btn" data-su="mail">Go to the switch</button>' });
+    }
+    return out;
+  }
+  function renderSetup() {
+    var box = D.getElementById('su-card');
+    if (!box) return;
+    if (!SETUP_CARD || ls('mfc_setup_hide') === '1' || !window._currentSub) { box.hidden = true; return; }
+    var list = items(), done = list.filter(function (i) { return i.done; }).length, all = done === list.length;
+    if (all && !shownThisVisit) { box.hidden = true; return; }
+    shownThisVisit = true;
+    if (all) {
+      box.innerHTML = '<div class="su-top"><h2 class="su-h" id="su-h">Set up: all done</h2>' +
+        '<button type="button" class="su-hide" data-su="hide">Hide</button></div>' +
+        '<p class="su-lede" style="margin-bottom:0">The 1st is the only date now.</p>';
+    } else {
+      box.innerHTML = '<div class="su-top"><h2 class="su-h" id="su-h">Set up once</h2>' +
+        '<span class="su-n">' + done + ' of ' + list.length + ' done</span>' +
+        '<button type="button" class="su-hide" data-su="hide">Hide</button></div>' +
+        '<p class="su-lede">A few minutes, once. After that the 1st is the only date.</p>' +
+        '<ol class="su-list">' + list.map(function (i) {
+          return '<li class="su-i' + (i.done ? ' is-done' : '') + '" data-k="' + i.k + '"><span class="su-ck" aria-hidden="true"></span>' +
+            '<div><p class="su-ih">' + i.h + (i.done ? '<span class="sr-only"> (done)</span>' : '') + '</p>' +
+            '<p class="su-it">' + i.t + '</p><div class="su-acts">' + i.a + '</div></div></li>';
+        }).join('') + '</ol>';
+    }
+    box.hidden = false;
+  }
+  D.addEventListener('click', function (ev) {
+    var t = ev.target && ev.target.closest && ev.target.closest('[data-su], #cyc-cal-g, #cyc-cal-ics');
+    if (!t) return;
+    var k = t.getAttribute('data-su');
+    if (!k) { ls('mfc_setup_cal', '1'); setTimeout(renderSetup, 0); return; }   // the cycle card's own reminder buttons
+    if (k === 'hide') { ls('mfc_setup_hide', '1'); renderSetup(); return; }
+    if (k === 'amount') { try { abarEditCapital(); } catch (x) {} return; }
+    if (k === 'cal') { ls('mfc_setup_cal', '1'); setTimeout(renderSetup, 0); return; }
+    if (k === 'ics') { try { addCycleToCalendar(); } catch (x) {} ls('mfc_setup_cal', '1'); renderSetup(); return; }
+    if (k === 'sell') { _sellAuthOk(); return; }
+    if (k === 'mail') {
+      var ns = D.getElementById('notif-section'), sw = D.getElementById('notif-switch');
+      if (ns) {
+        var prev = D.documentElement.style.scrollBehavior;
+        D.documentElement.style.scrollBehavior = 'auto';
+        ns.scrollIntoView({ block: 'center' });
+        D.documentElement.style.scrollBehavior = prev;
+      }
+      if (sw) { try { sw.focus({ preventScroll: true }); } catch (x) {} }
+    }
+  });
+
+  // ── B2 ────────────────────────────────────────────────────────────────────
+  function renderFold() {
+    var sec = D.querySelector('.table-section');
+    if (!sec) return;
+    var btn = D.getElementById('hold-fold');
+    var chg = D.getElementById('chg-card');
+    var on = ORDERS_CALM && returning() && chg && chg.style.display !== 'none';
+    if (!on) { sec.classList.remove('is-hfold'); if (btn) btn.hidden = true; return; }
+    if (!btn) {
+      btn = D.createElement('button');
+      btn.type = 'button'; btn.id = 'hold-fold'; btn.className = 'hold-fold';
+      sec.insertBefore(btn, sec.firstChild);
+      btn.addEventListener('click', function () {
+        var opening = sec.classList.contains('is-hfold');
+        ls('mfc_hold_open', opening ? '1' : '0');
+        renderFold();
+        if (opening) {
+          try { window.dispatchEvent(new Event('resize')); } catch (x) {}
+          var h = sec.querySelector('.table-header h2');
+          if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (x) {} }
+        }
+      });
+    }
+    var open = ls('mfc_hold_open') === '1';
+    var n = 0;
+    try { n = D.querySelectorAll('#stock-cards-mobile .stock-card').length || Number((D.getElementById('stat-stocks') || {}).textContent) || 0; } catch (x) {}
+    sec.classList.toggle('is-hfold', !open);
+    btn.hidden = false;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.innerHTML = open
+      ? '<span>Hide the holdings list<small>The orders above are this month’s whole job.</small></span>'
+      : '<span>' + (n ? 'All ' + n + ' holdings' : 'All holdings') + ' &mdash; prices, weights, broker links' +
+        '<small>This month’s orders are all in the card above.</small></span>';
+  }
+
+  window.mfcSetupRefresh = renderSetup;
+  window.mfcV431Refresh = function () { renderSetup(); renderFold(); };
+  try { window.mfcV431Refresh(); } catch (x) {}
 })();
 </script>
 </body>
