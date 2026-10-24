@@ -886,7 +886,11 @@
 // TPIN), the free book's "start here" lines say what it is for, the FII/DII tile drops "futures",
 // and the WhatsApp button's text is plain words on every page. No shared asset moved
 // (mfc-insight.js/css are the dashboard's own and carry their own ?v).
-const CACHE = 'mfc-v139';
+// V43.2 -> mfc-v140. Device QA fixes: the precached index.html's "how to read it" note states each
+// book's own trading cost (10 bps LargeMidcap, 20 bps SmallMicro, none in MultiAsset's simulation),
+// as Disclosures does. mfc-finish.css 3950 -> 3960 on every page: on desktop the Learn label is the size of
+// the links beside it, and "Start free" is 600 everywhere (15px in the drawer).
+const CACHE = 'mfc-v140';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
