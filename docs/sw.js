@@ -890,7 +890,11 @@
 // book's own trading cost (10 bps LargeMidcap, 20 bps SmallMicro, none in MultiAsset's simulation),
 // as Disclosures does. mfc-finish.css 3950 -> 3960 on every page: on desktop the Learn label is the size of
 // the links beside it, and "Start free" is 600 everywhere (15px in the drawer).
-const CACHE = 'mfc-v140';
+// V43.3 -> mfc-v141. The precached index.html changed: "Already own a lot? Start with a map." after
+// the walkthrough, the repeated "What lands on your dashboard" band hidden, the free book pitched
+// fewer times, and the page ends on the map instead of four market feeds. New: /map/ with
+// assets/mfc-map.js (?v=1), /learn/how-many-holdings/, calculators/sip-vs-index.html.
+const CACHE = 'mfc-v141';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

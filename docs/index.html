@@ -3910,10 +3910,17 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   var PERF_HERO = true;    // the hero's numbers card (.hvn); off = the product card leads the hero
   var PERF_CARDS = true;   // the pricing cards' backtest pair and live line, the return ladder, the fund box
   var PERF_WHY = true;     // the "why this, not a fund or an index" table under the hero (.whyb)
+  // V43.3 — the reader who already owns a lot (47 holdings, no map). OFF = the V43.2 page.
+  var ALREADY = true;      // "Already own a lot? Start with a map." (#already), straight after the walkthrough
+  var HVP_BAND = false;    // "What lands on your dashboard": the walkthrough just above plays the same orders
+  var PERF_YEARS = false;  // C4, the owner's call: which calendar years SmallMicro's backtest return came from
   var R = document.documentElement;
   R.setAttribute('data-perf-hero', PERF_HERO ? 'on' : 'off');
   R.setAttribute('data-perf-cards', PERF_CARDS ? 'on' : 'off');
   R.setAttribute('data-perf-why', PERF_WHY ? 'on' : 'off');
+  R.setAttribute('data-already', ALREADY ? 'on' : 'off');
+  R.setAttribute('data-hvp-band', HVP_BAND ? 'on' : 'off');
+  R.setAttribute('data-perf-years', PERF_YEARS ? 'on' : 'off');
   var MOVED = { '#your-month': 'how-it-works/', '#how': 'methodology/', '#how-built': 'methodology/', '#vproof-h': 'track-record/' };
   try { var to = MOVED[location.hash]; if (to) location.replace(to); } catch (e) {}
 })();</script>
@@ -3941,6 +3948,16 @@ html[data-perf-cards="off"] .notwhat-card{ grid-template-columns:minmax(0,1fr); 
    hero column at 290.141px; with that card hidden the column narrowed and the lede re-wrapped at
    320px. This keeps the lede at the old measure there, and only there. Lift it with the wording sweep. */
 @media (max-width:326px){ .hero-desc{ min-width:290.141px; } }
+/* V43.3 — ALREADY, HVP_BAND and PERF_YEARS (mf-v423-flags). */
+html[data-hvp-band="off"] .hvp-band,
+html[data-already="off"] #already,
+html[data-perf-years="off"] .yrs-line{ display:none !important; }
+.already{ padding:56px 0; border-top:0.5px solid var(--border); position:relative; }
+.already h2{ font-size:34px; color:var(--white); margin-bottom:10px; letter-spacing:-.02em; }
+.already .al-desc{ font-size:16.5px; color:var(--text2); font-weight:300; line-height:1.7; max-width:62ch; margin-bottom:14px; }
+.already .al-fine{ font-size:13px; color:var(--text3); margin:10px 0 0; }
+@media (max-width:600px){ .already{ padding:40px 0; } .already h2{ font-size:26px; } }
+.yrs-line{ font-size:12.5px; line-height:1.5; color:var(--text2); margin:8px 0 0; }
 .hvp{ position:relative; background:linear-gradient(160deg, rgba(255,255,255,0.88) 0%, var(--ink2) 60%); border:0.5px solid var(--border2);
   border-radius:22px; padding:24px; box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 28px 60px -28px rgba(26,80,216,0.22); }
 html[data-theme="dark"] .hvp{ background:var(--ink2); }
@@ -4552,6 +4569,23 @@ html[data-theme="dark"] .whyb-bar.is-fund > i{ background:#f0a836; }
   </div>
 </section>
 
+<!-- V43.3 — A1. The first section that speaks to someone who already invests: until now the page
+     assumed a blank slate until the FAQ. No figure here; the "past a point" sentence rests on
+     /learn/how-many-holdings/ (docs/learn/holdings-curve.json). Off with ALREADY in mf-v423-flags. -->
+<section class="already" id="already" aria-labelledby="al-h">
+  <div class="container">
+    <div class="section-label">Already investing?</div>
+    <h2 class="fade-up" id="al-h">Already own a lot? Start with a map.</h2>
+    <p class="al-desc fade-up">If you have invested for a few years, the list grew the usual way: the SIP a friend suggested, the bank your family trusts, the sector everyone was buying, the fund with last year&rsquo;s best return. None of that is careless. But a list is not a plan, and past a point each new line adds something to watch, not much safety.</p>
+    <div class="dp-tiles fade-up">
+      <a class="dp-tile" href="map/"><span class="dp-tk">Private &middot; no account</span><span class="dp-tv" style="font-size:19px">Map what you own</span><span class="dp-tl">Paste your broker&rsquo;s holdings and get one page: how much is large, mid and small, which sectors carry the money, and how much sits in holdings too small to move your result. It runs in your browser; nothing is sent or kept.</span><span class="dp-ta">Map my holdings&nbsp;&rarr;</span></a>
+      <a class="dp-tile" href="learn/how-many-holdings/"><span class="dp-tk">From the data</span><span class="dp-tv" style="font-size:19px">How many is enough?</span><span class="dp-tl">What the prices of India&rsquo;s large and mid-cap stocks say about adding the 15th, the 30th and the 50th, and why two funds in one category can be the same fund.</span><span class="dp-ta">Read it&nbsp;&rarr;</span></a>
+      <a class="dp-tile" href="#faq-switch"><span class="dp-tk">Nothing to sell</span><span class="dp-tv" style="font-size:19px">Keep what you hold</span><span class="dp-tl">A book asks you to sell nothing you own today. You can run it on new money only, and when you match your demat to it you can mark the shares that were yours before: the dashboard never sells those.</span><span class="dp-ta">Do I have to sell my funds?&nbsp;&rarr;</span></a>
+    </div>
+    <p class="al-fine">General information about portfolios, not advice on yours.</p>
+  </div>
+</section>
+
 <section class="hvp-band" aria-labelledby="hvpb-h">
   <div class="container">
     <div class="hvp-band-grid">
@@ -4868,6 +4902,7 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
           <span class="notwhat-pill"><i>✕</i>No intraday</span>
           <span class="notwhat-pill"><i>✕</i>No margin</span>
           <span class="notwhat-pill"><i>✕</i>No tips</span>
+          <span class="notwhat-pill"><i>✕</i>No daily alerts</span>
         </div>
         <p class="notwhat-p">Delivery equity and ETFs, bought with your own money, held in your own demat. Nobody
         messages you at 9:20&nbsp;am. <b>You can lose what you put in, never more</b> — there is no margin call.
@@ -5378,7 +5413,8 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
     <div class="gifts-header">
       <div class="section-label">Free, and not a trial</div>
       <h2 class="fade-up" id="gifts-h">The whole product, free, before you pay anything.</h2>
-      <p class="gifts-lede fade-up">We would rather you watched the process run than took our word for it. One of the three strategies is free permanently — the complete model portfolio, not a cut-down version of it. No countdown, no feature held back, no card.</p>
+      <!-- V43.3 — B2: the lede that stood here ("We would rather you watched the process run…")
+           said what the card below says; the free book is pitched enough times above the price. -->
     </div>
 
     <!-- V38.7 — FOUR CARDS BECAME ONE, AND THE HEADING CHANGED ITS MIND.
@@ -5411,9 +5447,10 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
       <p class="gift-start-note">&#8377;0 &middot; no card &middot; the full MultiAsset book</p>
     </div>
 
-    <p class="gift-more fade-up">Three more free tools if you like to dig, none of which ask who you are:
-      <a href="screener/">Stock Scanner</a>, <a href="scores/">Integrity Score</a> and the
-      <a href="fii-dii/">FII/DII tracker</a> with its monthly <a href="factor-report/">Factor Report</a>.</p>
+    <!-- V43.3 — B2: the "Three more free tools if you like to dig" line moved out. The free tool a
+         reader with a portfolio needs is the map (#already, above); the Scanner, Integrity Score and
+         FII/DII tracker stay one tap away in the Learn menu on every page. -->
+
     <!-- V40.3 — C3: the "What we don't ask for" row is gone. It repeated the
          sentence above it ("No countdown, no feature held back, no card") and
          the tags under the card. -->
@@ -5479,7 +5516,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <div class="section-label">Three strategies</div>
         <h2 class="fade-up">Three books. Most people need one.</h2>
       </div>
-      <p class="fade-up" style="font-size:15px;color:var(--text2);font-weight:300;line-height:1.7;">A free multi-asset book, a large-and-midcap book, and a small-cap book to size smallest. If you are unsure, start with the free one.<span class="ma-honest" data-ma-honest hidden></span></p>
+      <p class="fade-up" style="font-size:15px;color:var(--text2);font-weight:300;line-height:1.7;">A free multi-asset book, a large-and-midcap book, and a small-cap book to size smallest.</p>
     </div>
 
     <!-- ── V28.3 · THE TRADE-OFF STRIP ──────────────────────────────────────────
@@ -6001,6 +6038,10 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
         <p class="strat-desc">Built as a satellite — the highest-conviction book we run, and the one to size smallest. Equal weight, rebalanced on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:sm:alpha_posttax-->+32.66%<!--/MFSTAT--> a year over the Nifty Smallcap&nbsp;250, after tax.</span></p>
+        <!-- V43.3 — C4, OFF (PERF_YEARS): the calendar years the backtest's return came from, read from
+             screener/backtest-months.json at run time. A performance figure: the owner's and the
+             adviser's call. Full calendar years only. -->
+        <p class="yrs-line" data-yrs="sm" hidden></p>
         <div class="strat-footer">
           <!-- V38.9 — "WORKS FROM" REACHES THE PAGE WHERE THE DECISION IS MADE.
                V38.7 computed this floor and published it on strategies.html and
@@ -8337,8 +8378,8 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 <section class="notready" aria-labelledby="nr-h">
   <div class="container">
     <div class="section-label">Not ready yet?</div>
-    <h2 class="fade-up" id="nr-h">Take the free reading instead.</h2>
-    <p class="nr-desc fade-up">The monthly India Factor Report by e-mail, today&rsquo;s market weather, and tools refreshed every market day. None of them needs an account.</p>
+    <h2 class="fade-up" id="nr-h">Start with what you own.</h2>
+    <p class="nr-desc fade-up">A private map of what you already hold, and what the data says about how many holdings is enough. Or the monthly India Factor Report by e-mail. None of them needs an account.</p>
     <div class="dp-fr fade-up" style="margin-top:6px">
       <form data-fr novalidate>
         <label class="sr-only" for="fr-email-home">E-mail address</label>
@@ -8348,11 +8389,11 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
       </form>
       <p class="dp-fr-fine">One e-mail each time a new report is published; one-click unsubscribe. We use the address only to send it. <a href="privacy.html">Privacy policy</a>.</p>
     </div>
+    <!-- V43.3 — B3: two tiles, both about the reader's own money. The four market feeds that stood
+         here (weather, the Factor Report, the Scanner, FII/DII) are in the Learn menu on every page. -->
     <div class="dp-tiles fade-up">
-      <a class="dp-tile" href="learn/"><span class="dp-tk">Today</span><span class="dp-tv" style="font-size:18px">Market weather</span><span class="dp-tl">Trend, breadth, volatility, flows and which styles are leading.</span></a>
-      <a class="dp-tile" href="factor-report/"><span class="dp-tk">Monthly</span><span class="dp-tv" style="font-size:18px">The Factor Report</span><span class="dp-tl">Value, momentum, quality and low volatility, through NSE&rsquo;s factor indices.</span></a>
-      <a class="dp-tile" href="screener/"><span class="dp-tk">Every market day</span><span class="dp-tv" style="font-size:18px">Stock Scanner</span><span class="dp-tl">2,000+ NSE stocks on 40+ fundamentals.</span></a>
-      <a class="dp-tile" href="fii-dii/"><span class="dp-tk">Every market day</span><span class="dp-tv" style="font-size:18px">FII / DII activity</span><span class="dp-tl">Who bought and sold, and how much.</span></a>
+      <a class="dp-tile" href="map/"><span class="dp-tk">Private &middot; no account</span><span class="dp-tv" style="font-size:18px">Map my holdings</span><span class="dp-tl">Size, sectors, and the holdings too small to move your result. Nothing you paste leaves your browser.</span></a>
+      <a class="dp-tile" href="learn/how-many-holdings/"><span class="dp-tk">From the data</span><span class="dp-tv" style="font-size:18px">How many holdings is enough?</span><span class="dp-tl">What adding the 15th, the 30th and the 50th stock did to the typical swing.</span></a>
     </div>
   </div>
 </section>
@@ -11109,6 +11150,39 @@ if (INDEX_HISTORY_LINE) { document.querySelectorAll('[data-idx-line]').forEach(f
       el.hidden = false;
     });
   } catch (e) {}
+})();
+</script>
+<script id="mf-v433-years">
+/* V43.3 — C4, built OFF (PERF_YEARS in mf-v423-flags). A reader who bought a small-cap fund in
+   2023 because its returns looked great will ask where SmallMicro's backtest return came from.
+   When the owner switches this on, the line under its card names the full calendar years from the
+   monthly backtest the strategy page's calendar prints (screener/backtest-months.json), compounded
+   and rounded to whole points (the calendar's one-decimal totals round to the same figures: checked
+   at V43.3 for 2022 to 2025).
+   Part years (the first and the last) are left out. */
+(function () {
+  if (document.documentElement.getAttribute('data-perf-years') !== 'on') return;
+  var el = document.querySelector('.yrs-line[data-yrs="sm"]');
+  if (!el || !window.fetch) return;
+  fetch('screener/backtest-months.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    var m = d && d.books && d.books.sm && d.books.sm.months;
+    if (!m || !m.length) return;
+    var yr = {}, n = {};
+    m.forEach(function (row) {
+      var y = String(row[0]).slice(0, 4), r = Number(row[1]);
+      if (!isFinite(r)) return;
+      yr[y] = (yr[y] || 1) * (1 + r / 100); n[y] = (n[y] || 0) + 1;
+    });
+    var full = Object.keys(yr).filter(function (y) { return n[y] === 12; }).sort();
+    if (full.length < 2) return;
+    var pct = function (y) { var v = Math.round((yr[y] - 1) * 100); return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v) + '%'; };
+    var top = full.slice().sort(function (a, b) { return yr[b] - yr[a]; }).slice(0, 2).sort();
+    var rest = full.filter(function (y) { return top.indexOf(y) < 0; });
+    el.textContent = 'Where the backtest’s return came from: ' + top.map(function (y) { return y + ' ' + pct(y); }).join(' and ') +
+      (rest.length ? '; ' + rest.map(function (y) { return y + ' ' + pct(y); }).join(', ') : '') +
+      ' (full calendar years, before tax).';
+    el.hidden = false;
+  }).catch(function () {});
 })();
 </script>
 </body>

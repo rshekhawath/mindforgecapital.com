@@ -4604,11 +4604,11 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         </div>
 
         <div class="adj-panel" role="tabpanel" id="adj-panel-sync" aria-labelledby="adj-tab-sync" hidden>
-          <p class="adj-desc">Joined mid-cycle, missed a month, had a partial fill or a bonus issue? Paste what your broker says you hold. This works out exactly what to buy and sell so the account matches the model at your capital.</p>
+          <p class="adj-desc">Joined mid-cycle, missed a month, had a partial fill or a bonus issue? Paste what your broker says you hold. This works out exactly what to buy and sell so the account matches the model at your capital. Held some of these shares before you started the book? Tick the box below and say how many: those are never counted as the book&rsquo;s, and never sold here.</p>
           <label class="adj-lbl" for="adj-sync-in">Your holdings</label>
           <textarea id="adj-sync-in" class="adj-text" rows="6" spellcheck="false" autocomplete="off" aria-describedby="adj-sync-help"
             placeholder="Paste a holdings CSV (Kite, Console, Groww, Upstox…) or one per line:&#10;SHILPAMED 105&#10;WELCORP 163"></textarea>
-          <p class="adj-hint" id="adj-sync-help">Kite: <b>Holdings → download CSV</b>, open it and paste, or upload the file. Only a symbol and a quantity column are read; nothing leaves this page.</p>
+          <p class="adj-hint" id="adj-sync-help">Kite: <b>Holdings → download CSV</b>, open it and paste, or upload the file. Only a symbol and a quantity column are read; nothing leaves this page. <a href="/map/" target="_blank" rel="noopener">A map of everything in it&nbsp;&rarr;</a></p>
           <div class="adj-sync-bar">
             <button type="button" class="adj-btn adj-btn-primary" id="adj-sync-go">Work out my orders</button>
             <label class="adj-btn adj-file">
@@ -4616,6 +4616,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               Upload CSV
             </label>
             <label class="adj-check"><input type="checkbox" id="adj-sync-others"> Also sell holdings that aren't in this strategy</label>
+            <label class="adj-check" id="adj-sync-before-wrap"><input type="checkbox" id="adj-sync-before"> Some of these shares were mine before I started this book</label>
           </div>
           <div class="adj-out" id="adj-sync-out" aria-live="polite"></div>
         </div>
@@ -11514,6 +11515,8 @@ function refreshHowto() {
                    String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
           var pm = JSON.parse(localStorage.getItem(pk) || '{}');
           returning = !!pm && Object.keys(pm).length > 0;
+        } else if (isDemo && window.SAMPLE_CALM !== false && bd && bd.known && bd.prevKey) {
+          returning = true;                                 // V43.3 — B5: the sample opens like a second month
         }
       } catch (e) { returning = false; }
       hcard.classList.toggle('is-collapsed', returning && !hcard._hsOpen);
@@ -13572,7 +13575,7 @@ function renderBookChange(diff, stocks){
       '<div class="chg-hint">' +
         // V42.1 — B5: no quantity because none was entered last month, not a missing price
         (diff.prevQtyKnown === false && list.some(function(t){ return !_isRestricted(t) && !hbBy[String(t).toUpperCase()]; })
-          ? 'Sell your whole holding of each. Last month&rsquo;s quantities were sized at the starting amount, not one you entered, ' +
+          ? 'Sell the shares you bought for this book; any you held before you started it stay yours. Last month&rsquo;s quantities were sized at the starting amount, not one you entered, ' +
             'so your dashboard cannot size these; <button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> ' +
             'works them out from your broker&rsquo;s list. '
           : '') +
@@ -18476,6 +18479,43 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
 }
 @media print{ .adj-card{ display:none !important; } }
 </style>
+<script id="mf-v433-pre">
+/* V43.3 — A5. "SOME OF THESE SHARES WERE MINE BEFORE I STARTED THIS BOOK."
+   Match my holdings counted every share of a book's name in the demat as the book's, so a member
+   whose demat also holds what they owned before (a parent's bank shares, an old IT stock) was
+   told to trim them to the book's weight, or to sell them outright when the name left the book:
+   long-term gains sold short-term, and shares nobody asked us about. With the box ticked, the
+   member says how many of each name were theirs before; those are never counted toward a target
+   and never sold here, and a name left blank gets no order until it is answered. Kept on this
+   device, per book (samples scoped by _devKey). Defined before mf-v375-adjust-js, which reads it. */
+var HELD_BEFORE = true;
+function _preheldKey(){ return _devKey('mfc_preheld_' + String(currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_')); }
+function _preheldGet(){
+  try {
+    var m = JSON.parse(localStorage.getItem(_preheldKey()) || '{}') || {};
+    return { on: !!m.on, q: (m.q && typeof m.q === 'object') ? m.q : {} };
+  } catch (e) { return { on: false, q: {} }; }
+}
+function _preheldSet(m){ try { localStorage.setItem(_preheldKey(), JSON.stringify({ on: !!m.on, q: m.q || {} })); } catch (e) {} }
+function _preheldForm(p){
+  var m = _preheldGet(), rows = (p.model || []).concat(p.left || []).filter(function(r){ return r.heldAll > 0; });
+  if (!rows.length) return '<div class="adj-pre"><p class="adj-pre-s">None of this book&rsquo;s names are in your paste, so there is nothing to keep apart.</p></div>';
+  var nAsk = (p.ask || []).length;
+  return '<div class="adj-pre" role="group" aria-labelledby="adj-pre-h">' +
+    '<p class="adj-pre-h" id="adj-pre-h">Shares that were yours before this book</p>' +
+    '<p class="adj-pre-s">For each name, how many of the shares in your demat were there before you started the book? ' +
+    'Those are never counted toward its target and never sold here. 0 means every share is the book&rsquo;s; a name left blank gets no order until you fill it in.' +
+    (nAsk ? ' <b>' + nAsk + ' still to answer.</b>' : '') + '</p>' +
+    '<div class="adj-pre-g">' + rows.map(function(r){
+      var k = r.key || String(r.ticker).toUpperCase(), id = 'adj-pre-' + k.replace(/[^A-Za-z0-9]/g, '_'), v = m.q[k];
+      return '<label class="adj-pre-r' + (v == null ? ' is-ask' : '') + '" for="' + id + '"><span class="adj-tk">' + escapeHtml(r.ticker) + '</span>' +
+        '<input type="text" inputmode="numeric" autocomplete="off" id="' + id + '" data-pre="' + escapeHtml(k) + '" value="' + (v == null ? '' : escapeHtml(String(v))) +
+        '" placeholder="?" aria-label="' + escapeHtml(r.ticker) + ': shares held before this book, of ' + r.heldAll + ' in your demat">' +
+        '<span class="adj-pre-of">of ' + r.heldAll + '</span></label>';
+    }).join('') + '</div>' +
+    '<button type="button" class="adj-pre-clear" data-pre-clear>Clear these numbers</button></div>';
+}
+</script>
 <script id="mf-v375-adjust-js">
 (function(){
   'use strict';
@@ -18702,11 +18742,16 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     });
     return { rows:rows, px:px, matched:matched, count:Object.keys(parsed.rows).length };
   }
-  function planSync(parsedIn, includeOthers){
+  function planSync(parsedIn, includeOthers, preheld){
     var list = stocks(), cap = Number(currentCapital) || 0;
     var parsed = resolveRows(parsedIn);
+    /* V43.3 — A5. preheld (null = the member has not said) maps a symbol to the shares that were the
+       member's BEFORE this book. They are never the book's: never counted toward a target, never sold
+       here. A name in the paste the member has not answered for gets NO order until they do. */
+    var pre = preheld || null;
+    var beforeOf = function(k, held){ return !pre ? 0 : (pre[k] == null ? null : Math.max(0, Math.min(held, Math.round(pre[k])))); };
     var out = { model:[], left:[], other:[], restricted:[], orders:[], buyVal:0, sellVal:0, unpriced:0, onTarget:0, cap:cap,
-                matched:parsed.matched, count:parsed.count };
+                matched:parsed.matched, count:parsed.count, ask:[] };
     if (!list.length) return out;
     var modelSet = {};
     // V39.5 — B1: a restricted name is KEPT, never bought or sold from here — not even
@@ -18719,9 +18764,14 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
       modelSet[k] = 1;
       var p = priceOf(s);
       var target = (p.v > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / p.v) : 0;
-      var held = parsed.rows[k] || 0;
+      var heldAll = parsed.rows[k] || 0, before = heldAll ? beforeOf(k, heldAll) : 0;
+      if (before == null){
+        var ask = { key:k, ticker:String(s.ticker), held:heldAll, heldAll:heldAll, before:null, target:target, delta:0, px:p.v, ask:true };
+        out.model.push(ask); out.ask.push(ask); return;
+      }
+      var held = heldAll - before;
       var d = target - held;
-      var row = { ticker:String(s.ticker), held:held, target:target, delta:d, px:p.v };
+      var row = { key:k, ticker:String(s.ticker), held:held, heldAll:heldAll, before:before, target:target, delta:d, px:p.v };
       out.model.push(row);
       if (d > 0){ out.orders.push({ side:'BUY', ticker:row.ticker, qty:d, price:p.v }); out.buyVal += d * p.v; }
       else if (d < 0){ out.orders.push({ side:'SELL', ticker:row.ticker, qty:-d, price:p.v }); out.sellVal += -d * p.v; }
@@ -18737,16 +18787,22 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
         var pp = prevPos[leftSet[k]] || {}, live = window._livePx || {};
         px = (pp.y && live[pp.y] && Number(live[pp.y].price) > 0) ? Number(live[pp.y].price) : (Number(pp.rec) || 0);
       }
-      var row = { ticker:k, held:held, px:px };
+      var row = { key:k, ticker:k, held:held, heldAll:held, px:px };
       if (leftSet[k]){
+        var bf = beforeOf(k, held);
+        if (bf == null){ row.ask = true; row.before = null; out.left.push(row); out.ask.push(row); return; }
+        var q = held - bf; row.before = bf; row.sellQty = q;
         out.left.push(row);
-        out.orders.unshift({ side:'SELL', ticker:k, qty:held, price:px });
-        if (px > 0) out.sellVal += held * px; else out.unpriced++;
+        if (q > 0){
+          out.orders.unshift({ side:'SELL', ticker:k, qty:q, price:px });
+          if (px > 0) out.sellVal += q * px; else out.unpriced++;
+        }
       } else {
         out.other.push(row);
-        if (includeOthers){
-          out.orders.unshift({ side:'SELL', ticker:k, qty:held, price:px });
-          if (px > 0) out.sellVal += held * px; else out.unpriced++;
+        var keepO = (pre && pre[k] != null) ? Math.max(0, Math.min(held, Math.round(pre[k]))) : 0;
+        if (includeOthers && held - keepO > 0){
+          out.orders.unshift({ side:'SELL', ticker:k, qty:held - keepO, price:px });
+          if (px > 0) out.sellVal += (held - keepO) * px; else out.unpriced++;
         }
       }
     });
@@ -18904,26 +18960,35 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
         (parsed.bad.length ? ' Unread: ' + esc(parsed.bad.slice(0, 3).join(' | ')) : '') + '</div>';
       lastSync = null; return;
     }
-    var p = planSync(parsed, $('adj-sync-others').checked); lastSync = p;
+    var beforeOn = HELD_BEFORE && $('adj-sync-before') && $('adj-sync-before').checked;
+    var pre = beforeOn ? _preheldGet().q : null;
+    var p = planSync(parsed, $('adj-sync-others').checked, pre); lastSync = p;
     /* The guard against a wrong paste. If the account shares NOTHING with this
        strategy, the arithmetic below is "buy the whole book" — correct for an
        empty account, and a costly duplicate for a member who pasted the wrong
        file or a different strategy's account. Say so before the orders. */
     var mismatch = p.count >= 3 && p.matched === 0;
-    var tr = function(side, cls, tk, held, target, qty, val){
+    var tr = function(side, cls, tk, held, target, qty, val, before){
       return '<tr><td><span class="adj-tk">' + esc(tk) + '</span></td>' +
-             '<td class="r adj-ht">' + held + '<span class="adj-arr" aria-hidden="true"> → </span><span class="adj-sr">, target </span>' + (target == null ? '—' : '<b>' + target + '</b>') + '</td>' +
+             '<td class="r adj-ht">' + held + (before > 0 ? '<small class="adj-bf"> + ' + before + ' yours, kept</small>' : '') +
+             '<span class="adj-arr" aria-hidden="true"> → </span><span class="adj-sr">, target </span>' + (target == null ? '—' : '<b>' + target + '</b>') + '</td>' +
              '<td class="adj-o"><span class="adj-side ' + cls + '">' + side + '</span>' + (qty ? ' <span class="adj-q">' + qty + '</span>' : '') + '</td>' +
              '<td class="r adj-v">' + (val == null ? '<span class="adj-muted">—</span>' : esc(money(val))) + '</td></tr>';
     };
     var body = '<tr class="adj-grp"><td colspan="4">In this strategy · ' + p.model.length + '</td></tr>' +
       p.model.map(function(r){
-        return r.delta > 0 ? tr('BUY', 'buy', r.ticker, r.held, r.target, r.delta, r.delta * r.px)
-             : r.delta < 0 ? tr('SELL', 'sell', r.ticker, r.held, r.target, -r.delta, -r.delta * r.px)
-             : tr('ON TARGET', 'ok', r.ticker, r.held, r.target, 0, null);
+        return r.ask ? tr('SAY ABOVE', 'ok', r.ticker, r.held, r.target, 0, null)
+             : r.delta > 0 ? tr('BUY', 'buy', r.ticker, r.held, r.target, r.delta, r.delta * r.px, r.before)
+             : r.delta < 0 ? tr('SELL', 'sell', r.ticker, r.held, r.target, -r.delta, -r.delta * r.px, r.before)
+             : tr('ON TARGET', 'ok', r.ticker, r.held, r.target, 0, null, r.before);
       }).join('');
     if (p.left.length) body += '<tr class="adj-grp"><td colspan="4">Left the model this cycle · ' + p.left.length + '</td></tr>' +
-      p.left.map(function(r){ return tr('SELL', 'sell', r.ticker, r.held, 0, r.held, r.px ? r.held * r.px : null); }).join('');
+      p.left.map(function(r){
+        if (r.ask) return tr('SAY ABOVE', 'ok', r.ticker, r.held, 0, 0, null);
+        var q = r.sellQty == null ? r.held : r.sellQty;
+        return q > 0 ? tr('SELL', 'sell', r.ticker, r.held - (r.before || 0), 0, q, r.px ? q * r.px : null, r.before)
+                     : tr('KEEP', 'ok', r.ticker, 0, 0, 0, null, r.before);
+      }).join('');
     if (p.other.length) body += '<tr class="adj-grp"><td colspan="4">Not in this strategy · ' + p.other.length + '</td></tr>' +
       p.other.map(function(r){
         return $('adj-sync-others').checked ? tr('SELL', 'sell', r.ticker, r.held, null, r.held, r.px ? r.held * r.px : null)
@@ -18933,7 +18998,8 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
       ' &mdash; kept, never traded here</td></tr>' +
       p.restricted.map(function(r){ return tr('KEEP', 'ok', r.ticker, r.held, null, 0, null); }).join('');
     var nB = p.orders.filter(function(o){ return o.side === 'BUY'; }).length, nS = p.orders.length - nB;
-    box.innerHTML =
+    var askHtml = beforeOn ? _preheldForm(p) : '';
+    box.innerHTML = askHtml +
       (mismatch ? '<div class="adj-warn"><b>None of the ' + p.count + ' holdings you pasted are in this strategy.</b> ' +
         'If this account already follows it, check that the file uses NSE symbols (or company names) and that it is the right account — ' +
         'otherwise the orders below would buy the whole book again.</div>' : '') +
@@ -19017,6 +19083,32 @@ html[data-theme="dark"] .adj-warn{ color:#fbbf24; background:rgba(251,191,36,.08
     var out = $('adj-sync-out'); if (out && out.firstChild) try { out.scrollIntoView({ block:'nearest' }); } catch(e){}
   });
   $('adj-sync-others').addEventListener('change', function(){ if (state.syncRan) renderSync(); });
+  // V43.3 — A5: the "held before this book" box, and the numbers typed into it
+  (function(){
+    var cb = $('adj-sync-before'), wrap = $('adj-sync-before-wrap');
+    if (!cb) return;
+    if (!HELD_BEFORE){ if (wrap) wrap.hidden = true; return; }
+    cb.checked = !!_preheldGet().on;
+    cb.addEventListener('change', function(){ var m = _preheldGet(); m.on = cb.checked; _preheldSet(m); if (state.syncRan) renderSync(); });
+    var t = null;
+    $('adj-sync-out').addEventListener('input', function(e){
+      var f = e.target && e.target.closest && e.target.closest('[data-pre]');
+      if (!f) return;
+      var m = _preheldGet(), k = f.getAttribute('data-pre'), v = String(f.value).replace(/[^0-9]/g, '');
+      if (v === '') delete m.q[k]; else m.q[k] = Number(v);
+      _preheldSet(m);
+      clearTimeout(t); t = setTimeout(function(){
+        var id = f.id, pos = null; try { pos = f.selectionStart; } catch (x) {}
+        renderSync();
+        var g = document.getElementById(id); if (g){ try { g.focus({ preventScroll:true }); if (pos != null) g.setSelectionRange(pos, pos); } catch (x) {} }
+      }, 350);
+    });
+    $('adj-sync-out').addEventListener('click', function(e){
+      var c = e.target && e.target.closest && e.target.closest('[data-pre-clear]');
+      if (!c) return;
+      var m = _preheldGet(); m.q = {}; _preheldSet(m); renderSync();
+    });
+  })();
   $('adj-sync-file').addEventListener('change', function(){
     var f = this.files && this.files[0]; if (!f) return;
     if (f.size > 2 * 1024 * 1024){ showToast('That file is too large to be a holdings export'); return; }
@@ -19883,7 +19975,8 @@ var ORDERS_CALM = true;
   function returning() {
     try {
       var bd = window._bookDiff;
-      if (isDemo || !bd || !bd.known || !bd.prevKey) return false;
+      if (!bd || !bd.known || !bd.prevKey) return false;
+      if (isDemo) return window.SAMPLE_CALM !== false;    // V43.3 — B5: the sample reads like a member's second month
       var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
                String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
       var pm = JSON.parse(localStorage.getItem(pk) || '{}');
@@ -19898,7 +19991,9 @@ var ORDERS_CALM = true;
     var cap = !!window._capEntered;
     var amt = ''; try { amt = shortMoney(currentCapital); } catch (x) {}
     out.push({ k: 'amount', done: cap, h: 'Your amount',
-      t: cap ? 'Every order is sized to ' + e(amt) + '.' : 'Enter what you will put into this book. Every order is sized to it.',
+      t: cap ? 'Every order is sized to ' + e(amt) + '.' : 'Enter what you will put into this book. Every order is sized to it.' +
+         // V43.3 — A6: a demat that already holds things is this reader's usual case, not an edge case
+         (typeof HELD_BEFORE !== 'undefined' && HELD_BEFORE ? '<span class="su-also">Already hold shares in this demat? <button type="button" class="su-link" data-su="match">Match my holdings</button> counts them first, and never sells the ones you mark as yours from before.</span>' : ''),
       a: cap ? '' : '<button type="button" class="su-btn" data-su="amount">Enter my amount</button>' });
     var cal = ls('mfc_setup_cal') === '1';
     var g = D.getElementById('cyc-cal-g'), rec = D.getElementById('cyc-cal-rec');
@@ -19957,7 +20052,9 @@ var ORDERS_CALM = true;
     if (k === 'cal') { ls('mfc_setup_cal', '1'); setTimeout(renderSetup, 0); return; }
     if (k === 'ics') { try { addCycleToCalendar(); } catch (x) {} ls('mfc_setup_cal', '1'); renderSetup(); return; }
     if (k === 'sell') { _sellAuthOk(); return; }
+    if (k === 'match') { try { _rwOpenMatch(); } catch (x) {} return; }
     if (k === 'mail') {
+      try { if (window.mfcFootOpen) window.mfcFootOpen(); } catch (x) {}
       var ns = D.getElementById('notif-section'), sw = D.getElementById('notif-switch');
       if (ns) {
         var prev = D.documentElement.style.scrollBehavior;
@@ -20007,6 +20104,132 @@ var ORDERS_CALM = true;
   window.mfcSetupRefresh = renderSetup;
   window.mfcV431Refresh = function () { renderSetup(); renderFold(); };
   try { window.mfcV431Refresh(); } catch (x) {}
+})();
+</script>
+<style id="mf-v433-dash">
+/* V43.3 — A5 "held before this book" (Match my holdings) */
+.adj-pre{margin:0 0 14px;padding:14px 16px;border-radius:14px;background:rgba(37,99,235,.05);border:0.5px solid rgba(37,99,235,.2)}
+.adj-pre-h{font-size:14.5px;font-weight:800;color:var(--white);margin:0 0 4px}
+.adj-pre-s{font-size:13.5px;line-height:1.55;color:var(--text2);margin:0 0 10px;max-width:72ch}
+.adj-pre-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:8px 14px}
+.adj-pre-r{display:flex;align-items:center;gap:8px;min-width:0}
+.adj-pre-r .adj-tk{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.adj-pre-r input{width:84px;flex:none;min-height:40px;padding:6px 10px;font:inherit;font-size:16px;font-weight:700;border-radius:10px;border:1px solid rgba(37,99,235,.35);background:var(--ink2);color:var(--white)}
+.adj-pre-r.is-ask input{border-color:#b45309}
+.adj-pre-r input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.adj-pre-of{flex:none;font-size:12.5px;color:var(--text3);white-space:nowrap}
+.adj-pre-clear{margin-top:10px;background:none;border:0;padding:0;font:inherit;font-size:13px;font-weight:700;color:var(--accent);text-decoration:underline;cursor:pointer;min-height:0;display:inline;position:relative}
+.adj-pre-clear::before{content:'';position:absolute;inset:-12px -6px}
+.adj-bf{display:block;font-size:11.5px;font-weight:600;color:var(--text3);white-space:nowrap}
+html[data-theme="dark"] .adj-pre{background:rgba(131,170,255,.07);border-color:rgba(157,188,255,.24)}
+html[data-theme="dark"] .adj-pre-r.is-ask input{border-color:#fbbf24}
+html[data-theme="dark"] .adj-pre-clear{color:#9dbcff}
+@media (pointer:coarse){ .adj-pre-r input{min-height:44px} }
+/* V43.3 — A6 the set-up card's line for a demat that already holds things */
+.su-also{display:block;margin-top:6px;font-size:13.5px;color:var(--text3)}
+.su-link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--accent);text-decoration:underline;cursor:pointer;min-height:0;display:inline;position:relative}
+.su-link::before{content:'';position:absolute;inset:-12px -6px}
+html[data-theme="dark"] .su-link{color:#9dbcff}
+/* V43.3 — B4: no day moves on the orders screen; "How it's going" keeps every one */
+html.no-day[data-dmode="orders"] .px-day{display:none !important}
+/* V43.3 — B6: one "Settings and help" fold at the foot (screen only; print unfolds) */
+.foot-fold{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;margin:0 0 16px;padding:12px 18px;
+  border-radius:16px;border:0.5px solid rgba(37,99,235,.24);background:var(--ink2);color:var(--white);font:inherit;font-size:15px;font-weight:700;text-align:left;cursor:pointer}
+.foot-fold[hidden]{display:none}
+.foot-fold small{display:block;font-size:12.5px;font-weight:500;color:var(--text3);margin-top:2px}
+.foot-fold::after{content:'';flex:none;width:9px;height:9px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin:-5px 4px 0 0}
+.foot-fold[aria-expanded="true"]::after{transform:rotate(-135deg);margin:5px 4px 0 0}
+.foot-fold:hover{border-color:var(--accent)}
+.foot-fold:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+html[data-theme="dark"] .foot-fold{border-color:rgba(157,188,255,.24)}
+html[data-theme="dark"] .foot-fold::after{border-color:#9dbcff}
+html[data-dmode="insight"] .foot-fold{display:none !important}
+@media screen{
+  html.ft-folded[data-dmode="orders"] #cs-card,
+  html.ft-folded[data-dmode="orders"] #track-more,
+  html.ft-folded[data-dmode="orders"] #notif-section,
+  html.ft-folded[data-dmode="orders"] #vfy-card{display:none !important}
+}
+@media print{.foot-fold{display:none !important}}
+</style>
+<script id="mf-v433-dash-js">
+/* ══ V43.3 — B4 "NO DAY MOVES ON THE ORDERS SCREEN" · B5 "THE SAMPLE IS A SECOND MONTH" · B6 "SETTINGS AND HELP" ══
+   B4: the orders view is for placing the month's orders; a day's move on every row is the broker-app
+   habit this site is the opposite of. "How it's going" keeps every 1D figure. Class no-day on <html>.
+   B5: lives in the two returning() tests (V40.3 C6, V43.1 B2): a sample reads like a member's second
+   month, so the holdings list and the four steps fold under their buttons, which stay visible.
+   B6: for a returning member and every sample, four cards at the foot of the orders view (the
+   trading code, how closely you track the model, the e-mails, the real account) fold under one
+   button. Never while the e-mail switch needs the member (off on a 3/6/12-month plan). The 1:1 call
+   card stays out of it: it carries the credential wording that may not be hidden or moved.
+   Same mechanism as V43.1: a class on <html>, screen only, nothing moved. */
+var ORDERS_NO_DAY = true;
+var SAMPLE_CALM = true;
+var FOOT_FOLD = true;
+(function () {
+  var D = document, R = D.documentElement;
+  if (ORDERS_NO_DAY) R.classList.add('no-day');
+  var IDS = ['cs-card', 'track-more', 'notif-section', 'vfy-card'];
+  function ls(k, v) {
+    try { if (v === undefined) return localStorage.getItem(_devKey(k)); localStorage.setItem(_devKey(k), v); } catch (e) {}
+    return null;
+  }
+  function returning() {
+    try {
+      var bd = window._bookDiff;
+      if (!bd || !bd.known || !bd.prevKey) return false;
+      if (isDemo) return SAMPLE_CALM;
+      var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
+               String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
+      var pm = JSON.parse(localStorage.getItem(pk) || '{}');
+      return !!pm && Object.keys(pm).length > 0;
+    } catch (x) { return false; }
+  }
+  function needsMember() {
+    try {
+      var ns = D.getElementById('notif-section');
+      return !isDemo && ns && ns.style.display !== 'none' && typeof _notifOn !== 'undefined' && !_notifOn &&
+             !(typeof _subIsPinned === 'function' && _subIsPinned(window._currentSub || {}));
+    } catch (x) { return false; }
+  }
+  function renderFoot() {
+    var first = D.getElementById('cs-card'), btn = D.getElementById('foot-fold');
+    var any = IDS.map(function (i) { return D.getElementById(i); })
+      .filter(function (el) { return el && el.style.display !== 'none' && !el.hidden; });
+    var on = FOOT_FOLD && first && any.length && returning() && !needsMember();
+    if (!on) { R.classList.remove('ft-folded'); if (btn) btn.hidden = true; return; }
+    if (!btn) {
+      btn = D.createElement('button');
+      btn.type = 'button'; btn.id = 'foot-fold'; btn.className = 'foot-fold';
+      first.parentNode.insertBefore(btn, first);
+      btn.addEventListener('click', function () {
+        var opening = R.classList.contains('ft-folded');
+        ls('mfc_foot_open', opening ? '1' : '0');
+        renderFoot();
+        if (opening) { try { window.dispatchEvent(new Event('resize')); } catch (x) {} }
+      });
+    }
+    var open = ls('mfc_foot_open') === '1';
+    R.classList.toggle('ft-folded', !open);
+    btn.hidden = false;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.innerHTML = open ? '<span>Settings and help</span>'
+      : '<span>Settings and help<small>e-mails &middot; your trading rules &middot; the verified account</small></span>';
+  }
+  window.mfcFootOpen = function () {
+    if (!R.classList.contains('ft-folded')) return;
+    ls('mfc_foot_open', '1'); renderFoot();
+  };
+  window.mfcV433Refresh = function () { try { renderFoot(); } catch (x) {} };
+  // the hooks V43.1 already has: after the dashboard renders, and when the notification switch moves
+  var t = null;
+  function soon() { clearTimeout(t); t = setTimeout(window.mfcV433Refresh, 60); }
+  if (typeof window.mfcV431Refresh === 'function') {
+    var prev = window.mfcV431Refresh;
+    window.mfcV431Refresh = function () { try { return prev.apply(this, arguments); } finally { soon(); } };
+  }
+  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', soon); else soon();
+  window.addEventListener('load', soon);
 })();
 </script>
 </body>
