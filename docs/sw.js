@@ -894,7 +894,10 @@
 // the walkthrough, the repeated "What lands on your dashboard" band hidden, the free book pitched
 // fewer times, and the page ends on the map instead of four market feeds. New: /map/ with
 // assets/mfc-map.js (?v=1), /learn/how-many-holdings/, calculators/sip-vs-index.html.
-const CACHE = 'mfc-v141';
+// V43.4 -> mfc-v142. Device QA fixes: the precached index.html's "Already own a lot?" tiles are
+// shorter; mfc-deep.css 2 -> 3 on 11 pages (fold summaries 44px on touch); mfc-map.js 1 -> 2 (dates
+// as the site writes them).
+const CACHE = 'mfc-v142';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

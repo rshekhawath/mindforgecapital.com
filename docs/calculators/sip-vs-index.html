@@ -451,8 +451,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
           stats: [
             { k: 'The Nifty 50, same dates', v: isFinite(ix) ? pct(ix * 100, 1) : '—', s: 'its XIRR on the same instalments' },
             { k: 'The same rupees in it', v: inr(iv), s: 'value on ' + isoDay(endT) },
-            { k: isFinite(gap) && gap >= 0 ? 'Ahead of the index' : 'Behind the index', v: isFinite(gap) ? (gap >= 0 ? '+' : '−') + Math.abs(gap).toFixed(1) + ' pts' : '—',
-              tone: isFinite(gap) ? (gap >= 0 ? 'pos' : 'neg') : '', s: 'a year, XIRR against XIRR' },
+            (isFinite(gap) && Math.abs(gap) < 0.05
+              ? { k: 'Level with the index', v: '0.0 pts', s: 'a year, XIRR against XIRR' }
+              : { k: isFinite(gap) && gap >= 0 ? 'Ahead of the index' : 'Behind the index', v: isFinite(gap) ? (gap >= 0 ? '+' : '−') + Math.abs(gap).toFixed(1) + ' pts' : '—',
+                  tone: isFinite(gap) ? (gap >= 0 ? 'pos' : 'neg') : '', s: 'a year, XIRR against XIRR' }),
             { k: 'You put in', v: inr(paid), s: n + ' monthly instalments' }
           ],
           split: up && v.value > paid ? { a: { k: 'You put in', v: paid }, b: { k: 'Growth', v: v.value - paid } } : null,

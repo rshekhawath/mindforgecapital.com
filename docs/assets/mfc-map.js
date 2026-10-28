@@ -149,6 +149,8 @@
   function pc(x, dp){ if (!isFinite(x)) return '—'; var f = Math.pow(10, dp == null ? 1 : dp); return (Math.round(x * f) / f).toFixed(dp == null ? 1 : dp) + '%'; }
   function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function plural(n, one, many){ return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function day(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? (+m[3]) + '&nbsp;' + MON[+m[2] - 1] + '&nbsp;' + m[1] : 'the last refresh'; }
 
   /* ── data (fetched once, only after "Map it") ───────────────────────────── */
   var DATA = null;
@@ -302,8 +304,8 @@
       '<li>The stocks inside your funds, and how much your funds overlap.</li>' +
       '<li>Your returns, your tax, or when you bought anything.</li>' +
       '<li>Whether any of it suits you. That is your decision, and a qualified adviser&rsquo;s.</li></ul>' +
-      '<p class="dp-note">A description of the list you pasted and general information, not advice on what to hold, buy or sell. Prices: NSE closes to ' + esc(data.asOf || 'the last refresh') +
-      (E ? '; ETFs to ' + esc(data.etfAsOf || 'the last refresh') : '') + ', where your paste had no price.</p></section>');
+      '<p class="dp-note">A description of the list you pasted and general information, not advice on what to hold, buy or sell. Prices: NSE closes to ' + day(data.asOf) +
+      (E ? '; ETFs to ' + day(data.etfAsOf) : '') + ', where your paste had no price.</p></section>');
     return h.join('');
   }
 

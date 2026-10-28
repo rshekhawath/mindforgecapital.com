@@ -223,7 +223,8 @@ def markers(doc):
         'n_names': str(doc['universe']['n_names']), 'draws': f'{doc["draws"]:,}',
         'v1': _pct(v[at[1]]), 'v15': _pct(v[at[15]]), 'v30': _pct(v[at[30]]), 'v50': _pct(v[at[50]]),
         'vall': _pct(doc['all']['vol']), 'vidx': _pct(doc['index']['vol']),
-        'mdd1': _pct(d[at[1]]), 'mdd15': _pct(d[at[15]]), 'mdd50': _pct(d[at[50]]),
+        'mdd1': _pct(d[at[1]]), 'mdd15': _pct(d[at[15]]), 'mdd30': _pct(d[at[30]]), 'mdd50': _pct(d[at[50]]),
+        'mddall': _pct(doc['all']['mdd']),
         'mddidx': _pct(doc['index']['mdd']), 'trough': _my(doc['index']['mdd_trough']),
         'n80': str(doc['n80']),
     }
