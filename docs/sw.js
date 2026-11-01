@@ -897,7 +897,10 @@
 // V43.4 -> mfc-v142. Device QA fixes: the precached index.html's "Already own a lot?" tiles are
 // shorter; mfc-deep.css 2 -> 3 on 11 pages (fold summaries 44px on touch); mfc-map.js 1 -> 2 (dates
 // as the site writes them).
-const CACHE = 'mfc-v142';
+// V43.5 -> mfc-v143. The October 2026 publish: the precached index.html carries the re-run backtest
+// figures, the funds measured over the new window (Oct 2021 -> Oct 2026) and the rolled-forward
+// window attributes. The fifteen charts carry new ?v= tokens from their content. No shared asset moved.
+const CACHE = 'mfc-v143';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

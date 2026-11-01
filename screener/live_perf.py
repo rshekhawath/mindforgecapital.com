@@ -149,8 +149,18 @@ def baseline_day(published: datetime) -> date:
     after the close (31 Aug 2026, 20:36) is priced off that day's close; one
     published before it is priced off the previous session's. The public figure
     has to start from the same close or it measures a different cycle from the
-    one members see."""
-    return last_complete_day(published)
+    one members see.
+
+    V43.5 — a book published on a weekend is priced off the Friday close, so the
+    baseline steps back over Saturday and Sunday, as publish.py's preflight does.
+    The 1 Nov 2026 publish (a Sunday, before 16:00) would otherwise have dated its
+    baseline Saturday 31 Oct: NSE has no close for that day to check a baseline
+    against, and the sealing check below would have reported sessions "in no
+    cycle" that never traded."""
+    day = last_complete_day(published)
+    while day.weekday() >= 5:              # no Saturday or Sunday session
+        day -= timedelta(days=1)
+    return day
 
 
 def main() -> None:

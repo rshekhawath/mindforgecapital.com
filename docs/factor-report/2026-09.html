@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- V11.4 security hardening (additive): restrict resource origins to self + the Apps Script backend, block plugins & base-tag injection.
+     V28.7: frame-ancestors dropped from the policy. A meta-delivered CSP cannot carry that directive, so every browser ignored it
+     and logged a Content-Security-Policy error on every page load of every page here, and GitHub Pages cannot send the response
+     header that would make it real. Nothing is lost: the clickjacking guard below is the script that actually refuses framing. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://script.google.com https://*.googleusercontent.com; form-action 'self' https://script.google.com; frame-src 'none'; media-src 'none'; worker-src 'self'; manifest-src 'self'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=(), browsing-topics=(), serial=(), bluetooth=(), hid=(), midi=(), idle-detection=(), display-capture=(), autoplay=(), screen-wake-lock=(), xr-spatial-tracking=()">
+<script>/* V11.4 clickjacking guard: refuse cross-origin framing */(function(){try{if(window.self===window.top)return;var s=false;try{s=window.top.location.origin===window.location.origin;}catch(e){s=false;}if(!s){try{window.top.location.replace(window.location.href);}catch(e){document.documentElement.style.visibility="hidden";}}}catch(e){}})();</script>
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MindForge Capital">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<title>India Factor Report — September 2026 · MindForge Capital</title>
+<meta name="description" content="India factor report, September 2026: Value led a fourth month at +6.2%, momentum held second at +5.1% and all four factors beat a -6.9% Nifty 50. Trailing 1-year returns for every NSE factor index.">
+<meta name="robots" content="noindex,follow">
+<!-- V38.5 — was a SELF-referencing canonical sitting beside noindex, which is a
+     contradiction: noindex says "drop this URL", a self-canonical says "index
+     THIS one". The archive is deliberately noindex so only the live hub ranks
+     (see the template note in factor-report/index.html), so the canonical now
+     points at the hub — one consistent signal instead of two opposed ones. -->
+<link rel="canonical" href="https://mindforgecapital.com/factor-report/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_IN">
+<meta property="og:site_name" content="MindForge Capital">
+<meta property="og:title" content="India Factor Report — September 2026 | MindForge Capital">
+<meta property="og:description" content="India factor report, September 2026: Value led a fourth month at +6.2%, momentum held second at +5.1% and all four factors beat a -6.9% Nifty 50. Trailing 1-year returns for every NSE factor index.">
+<meta property="og:url" content="https://mindforgecapital.com/factor-report/2026-09.html">
+<meta property="og:image" content="https://mindforgecapital.com/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MindForge Capital — systematic, factor-based investing for India">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@MindForgeCap">
+<meta name="twitter:title" content="Monthly Factor Report — India | MindForge Capital">
+<meta name="twitter:description" content="India factor report, September 2026: Value led a fourth month at +6.2%, momentum held second at +5.1% and all four factors beat a -6.9% Nifty 50. Trailing 1-year returns for every NSE factor index.">
+<meta name="twitter:image" content="https://mindforgecapital.com/assets/og-card.png">
+<meta name="theme-color" content="#1a50d8">
+<link rel="icon" href="/assets/favicon-32.png" type="image/png">
+<style>
+.mf-scroll-prog{position:fixed;top:0;left:0;width:0%;height:3px;z-index:9999;pointer-events:none;background:linear-gradient(90deg,#1a50d8,#2563eb,#0891b2,#2dd4bf);transition:width .1s linear}
+</style>
+<style>
+:root{
+  --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
+  --white:#0c1831;
+  --accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;
+  --gold:#d97706;--teal:#0891b2;--green:#059669;--red:#dc2626;
+  --text:#0c1831;--text2:#1e3a5f;--text3:#475569;
+  --border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);
+  --r:16px;--r-sm:10px;--r-lg:22px;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.04);
+  --green-bg:rgba(5,150,105,0.08);--red-bg:rgba(220,38,38,0.07);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 900px 600px at 70% -10%,rgba(37,99,235,0.08) 0%,transparent 60%),radial-gradient(ellipse 500px 400px at 5% 25%,rgba(45,212,191,0.05) 0%,transparent 60%),radial-gradient(ellipse 700px 500px at 95% 75%,rgba(45,212,191,0.03) 0%,transparent 60%)}
+/* V30.0 — ambient depth parity. This page had the static base glow but never the
+   V16.2 layer every other marketing page has carried since: the glow breathes and
+   three soft brand orbs drift behind the content. z-index:-1 on the orbs because
+   the sections here are non-positioned — a fixed layer at 0 would paint over them.
+   Pointer-inert, print-hidden, motionless under prefers-reduced-motion. */
+body::after{content:'';position:fixed;inset:-6%;pointer-events:none;z-index:-1;
+  background:radial-gradient(420px 420px at 86% 6%,rgba(45,212,191,0.13) 0%,transparent 70%),
+             radial-gradient(380px 380px at 4% 92%,rgba(37,99,235,0.11) 0%,transparent 70%),
+             radial-gradient(300px 300px at 50% 120%,rgba(8,145,178,0.07) 0%,transparent 70%)}
+@media(prefers-reduced-motion:no-preference){
+  body::before{animation:v162-drift 30s ease-in-out infinite;will-change:transform}
+  body::after{animation:v162-orbs 24s ease-in-out infinite;will-change:transform}
+}
+@keyframes v162-drift{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(1.2%,-1%,0) scale(1.05)}}
+@keyframes v162-orbs{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-2.2%,1.8%,0) scale(1.06)}}
+@media print{body::before,body::after{display:none!important}}
+h1,h2,h3,h4{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV (site standard) ── */
+nav{position:sticky;top:0;z-index:200;background:rgba(240,245,255,0.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:0.5px solid var(--border2);box-shadow:0 1px 16px rgba(37,99,235,0.05);padding:0 32px}
+.nav-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;height:64px;gap:26px}
+.logo{display:flex;align-items:center;flex-shrink:0}
+.logo img{height:44px;width:auto;display:block}
+@media(max-width:768px){.logo img{height:36px}}
+.nav-links{display:flex;gap:26px;align-items:center;margin-left:auto}
+.nav-links a{font-size:14px;font-weight:400;color:var(--text2);transition:color .2s;white-space:nowrap;display:inline-flex;align-items:center;height:40px;line-height:1;position:relative}
+.nav-links a:hover{color:var(--white)}
+.nav-links a.active{color:var(--white)}
+.nav-links a:not(.nav-cta)::after{content:'';position:absolute;left:0;right:0;bottom:6px;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent),#2dd4bf);transform:scaleX(0);transform-origin:center;transition:transform .3s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+.nav-links a:not(.nav-cta).active::after,.nav-links a:not(.nav-cta):hover::after{transform:scaleX(1)}
+.nav-links a.nav-cta{color:#fff}
+.nav-hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:8px;margin-left:auto;z-index:300}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .3s}
+.nav-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.open span:nth-child(2){opacity:0}
+.nav-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.nav-cta{background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0891b2 100%);background-size:170% 170%;color:#fff;font-size:14px;font-weight:600;padding:10px 22px;border-radius:var(--r-sm);transition:transform .25s cubic-bezier(.22,.8,.2,1),box-shadow .25s,background-position .55s;white-space:nowrap;box-shadow:0 6px 16px -8px rgba(26,80,216,.55)}
+.nav-cta:hover{transform:translateY(-2px);background-position:100% 0;box-shadow:0 10px 22px -8px rgba(26,80,216,.7),0 0 0 4px rgba(45,212,191,.10)}
+@media(max-width:1024px){
+  nav{padding:0 16px}
+  .nav-inner{gap:12px;height:56px}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;position:fixed;top:56px;left:0;right:0;margin-left:0;background:rgba(240,245,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:0.5px solid var(--border2);flex-direction:column;align-items:stretch;padding:18px 22px 26px;gap:2px;z-index:250;box-shadow:0 8px 32px rgba(26,80,216,0.10)}
+  .nav-links.open{display:flex}
+  .nav-links a{font-size:16px;padding:12px 2px;width:100%;height:auto;border-bottom:0.5px solid var(--border);white-space:nowrap;text-align:left}
+  .nav-links a:hover,.nav-links a.active{background:none}
+  .nav-links a:not(.nav-cta)::after{display:none}
+  .nav-links a.nav-cta{margin-top:14px;text-align:center;padding:15px 28px;font-size:15px;border-bottom:none;border-radius:var(--r-sm)}
+}
+
+.wrap{max-width:1000px;margin:0 auto;padding:0 28px 70px;position:relative;z-index:1}
+@media(max-width:600px){.wrap{padding:0 16px 56px}}
+
+/* ── HERO ── */
+.hero{padding:46px 0 14px;text-align:center;position:relative}
+/* V29.1 — --accent2 on this pill's own blue/teal wash measured 4.23:1 at
+   12px. --data-mid is the same blue one step deeper and theme-aware. */
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--data-mid);background:linear-gradient(135deg,rgba(26,80,216,.08),rgba(8,145,178,.07));border:0.5px solid var(--border2);padding:7px 15px;border-radius:999px;margin-bottom:18px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(5,150,105,.5);animation:pulseDot 2.2s infinite}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(5,150,105,.45)}70%{box-shadow:0 0 0 7px rgba(5,150,105,0)}100%{box-shadow:0 0 0 0 rgba(5,150,105,0)}}
+.hero h1{font-size:clamp(28px,5vw,46px);color:var(--white);margin-bottom:12px}
+.hero h1 .grad{background:linear-gradient(120deg,#1a50d8,#2563eb 40%,#0891b2 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p.sub{font-size:clamp(15px,2vw,18px);color:var(--text2);max-width:680px;margin:0 auto 18px;line-height:1.55}
+.updated{display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center;font-size:13px;color:var(--text3);background:var(--ink2);border:0.5px solid var(--border);padding:7px 16px;border-radius:999px;box-shadow:var(--shadow-sm)}
+.updated b{color:var(--text);font-weight:600}
+.updated .sep{width:1px;height:13px;background:var(--border2)}
+@media(max-width:600px){.updated .sep{display:none}}
+
+/* ── SECTIONS / CARDS ── */
+.card{background:var(--ink2);border:0.5px solid var(--border);border-radius:var(--r-lg);box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 44px -26px rgba(26,80,216,.18);padding:28px 30px;margin-top:26px}
+.card h2{font-size:clamp(19px,3vw,25px);color:var(--white);margin-bottom:6px}
+.card .lead{font-size:14px;color:var(--text3);margin-bottom:20px}
+@media(max-width:600px){.card{padding:22px 18px}}
+
+/* ── FACTOR LEADERBOARD ── */
+.fr-board{display:flex;flex-direction:column;gap:2px}
+.fr-row{display:grid;grid-template-columns:26px 1.15fr 1.5fr 82px;align-items:center;gap:14px;padding:14px 6px;border-bottom:1px solid var(--border)}
+.fr-row:last-child{border-bottom:none}
+.fr-rank{font-size:13px;font-weight:800;color:var(--text3);text-align:center;font-variant-numeric:tabular-nums}
+/* V27.1: the un-ranked baseline row — clearly "no rank", not a stray glyph */
+/* V35.6 — was opacity:.6 on top of an already-muted ink, which put this marker
+   at 2.88:1. The dash IS the datum for an unranked row; mute it with a token that
+   has been contrast-checked instead of with alpha. */
+.fr-rank-base{font-weight:600;color:var(--text3);letter-spacing:-.02em}
+.fr-name{display:flex;flex-direction:column;gap:2px}
+.fr-name b{font-size:15px;color:var(--white);font-weight:700}
+.fr-name span{font-size:11.5px;color:var(--text3)}
+.fr-bar-wrap{position:relative;height:26px;background:linear-gradient(90deg,rgba(220,38,38,.05),rgba(37,99,235,.03) 50%,rgba(5,150,105,.05));border-radius:7px;overflow:hidden}
+.fr-bar-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);z-index:1}
+/* ── V32.2 — THE SCOREBOARD NOW SAYS WHAT ITS BARS MEAN ─────────────────────
+   This is a diverging bar chart and it shipped without an axis. `.fr-bar-mid`
+   drew the zero line at 1px of --border2 (rgba(37,99,235,.20)) — the faintest
+   token on the site — and there was no number anywhere saying what the ends of
+   the track are worth, so the reader could see that Value's bar is ~4x Low
+   Volatility's but had no way to read either off the chart; only the figure in
+   the right-hand column carried the value, which makes the bar decoration
+   rather than data. The axis below is DERIVED at runtime from the bars
+   themselves (|value| x 50 / inline width% — the half-track is the largest
+   |return| in the month), never hand-typed, so a new month's publish cannot
+   leave the labels disagreeing with the geometry. The zero line gets enough
+   ink to actually read as an axis. */
+.fr-bar-mid{width:1px;background:var(--fr-zero,rgba(12,24,49,.30))}
+[data-theme="dark"] .fr-bar-mid{--fr-zero:rgba(215,228,255,.34)}
+.fr-axis{display:grid;grid-template-columns:26px 1.15fr 1.5fr 82px;gap:14px;padding:2px 6px 0;margin-top:-2px}
+.fr-axis-track{grid-column:3;position:relative;height:19px}
+.fr-axis-track::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;
+  border-left:1px solid var(--border2);border-right:1px solid var(--border2)}
+.fr-axis-t{position:absolute;top:5px;font-size:10.5px;font-weight:700;color:var(--text3);
+  font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.01em}
+.fr-axis-l{left:0}
+.fr-axis-r{right:0}
+.fr-axis-c{left:50%;transform:translateX(-50%)}
+.fr-axis-c::before{content:'';position:absolute;left:50%;top:-5px;width:1px;height:4px;
+  background:var(--fr-zero,rgba(12,24,49,.30))}
+@media(max-width:640px){
+  .fr-axis{grid-template-columns:minmax(0,1fr);padding:0 8px 0;margin-top:-3px}
+  .fr-axis-track{grid-column:1}
+}
+.fr-bar{position:absolute;top:4px;bottom:4px;border-radius:5px}
+.fr-bar.pos{left:50%;background:linear-gradient(90deg,rgba(5,150,105,.55),var(--green))}
+.fr-bar.neg{right:50%;background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red))}
+.fr-val{font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.fr-val.up{color:var(--ink-pos)} .fr-val.down{color:var(--ink-neg)}
+
+/* V33.9 — MONTH-OVER-MONTH DELTA. The board ranked the factors but said nothing
+   about which way each had moved, which is the one thing a monthly report is
+   for: the commentary underneath spends two paragraphs describing a rotation the
+   scoreboard itself did not show. Each row carries last month's figure in
+   data-prev and the chip below is DERIVED from it, so the arrow, the sign, the
+   colour and the magnitude can never disagree with the number above them — the
+   only thing to maintain each month is the one attribute. Third line of the
+   existing .fr-name flex column, so no grid column is added and the ≤640px
+   layout is untouched. */
+.fr-delta{font-size:11px;font-weight:700;letter-spacing:.01em;display:inline-flex;
+  align-items:center;gap:4px;width:fit-content;padding:1px 6px;border-radius:5px;
+  font-variant-numeric:tabular-nums;margin-top:1px}
+.fr-delta.up{color:#047857;background:var(--green-bg)}
+.fr-delta.down{color:#b91c1c;background:var(--red-bg)}
+.fr-delta.flat{color:var(--text3);background:rgba(120,140,180,.12)}
+.fr-delta i{font-style:normal;font-size:9px;line-height:1}
+/* V35.6 — was an inline opacity:.75 on top of a coloured chip, which put it at
+   3.25:1 dark / 3.80:1 light. The chip's own ink is already contrast-checked in
+   both themes; inheriting it and letting the WEIGHT carry the de-emphasis keeps
+   the hierarchy without spending contrast on it. */
+.fr-delta .fr-delta-vs{ color: inherit; font-weight: 600; }
+[data-theme="dark"] .fr-delta.up{color:#6ee7b7;background:rgba(5,150,105,.18)}
+[data-theme="dark"] .fr-delta.down{color:#fca5a5;background:rgba(220,38,38,.20)}
+[data-theme="dark"] .fr-delta.flat{color:var(--text3);background:rgba(160,180,220,.14)}
+@media print{ .fr-delta{background:none !important;border:1px solid #999} }
+
+.fr-lead-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#047857;background:var(--green-bg);padding:2px 7px;border-radius:5px;margin-left:7px;vertical-align:middle}
+.fr-lag-tag{color:#b91c1c;background:var(--red-bg)}
+/* V21.9: scoreboard upgrade — JS-computed "vs Nifty 50" alpha chips, leader/laggard
+   row washes and the leadership-spread footline. All values are derived from the FR
+   rows at runtime, so publishing a new month needs no extra edits here. */
+.fr-alpha{display:inline-flex;align-items:center;gap:3px;width:max-content;font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.01em;padding:2px 8px;border-radius:999px;margin-top:4px}
+.fr-alpha.pos{color:#047857;background:var(--green-bg)}
+.fr-alpha.neg{color:#b91c1c;background:var(--red-bg)}
+.fr-row.is-leader{background:linear-gradient(90deg,rgba(5,150,105,.055),transparent 62%);border-radius:10px}
+.fr-row.is-laggard{background:linear-gradient(90deg,rgba(220,38,38,.045),transparent 62%);border-radius:10px}
+/* V23.3 — the scoreboard comes alive: the diverging bars grow out from the
+   centre line on reveal (the site's bar-draw idiom — every other bar viz already
+   animates in; this flagship monthly board was the last static one), and a
+   row-hover brightens that factor's bar (a focus affordance, matching the
+   dashboard's data-row hover). The collapse is applied by JS ONLY, so no-JS /
+   reduced-motion keep the full inline widths (the board always stays readable). */
+.fr-bar{transition:transform .85s cubic-bezier(.22,1,.36,1),filter .2s ease}
+.fr-bar.pos{transform-origin:left center}
+.fr-bar.neg{transform-origin:right center}
+.fr-board.fr-anim .fr-bar{transform:scaleX(0)}
+.fr-board.fr-anim.fr-in .fr-bar{transform:scaleX(1)}
+.fr-row:hover .fr-bar{filter:brightness(1.09) saturate(1.06)}
+@media(prefers-reduced-motion:reduce){.fr-bar{transition:none}}
+.fr-spread{display:flex;align-items:flex-start;gap:10px;margin-top:16px;padding:13px 16px;border:0.5px dashed var(--border2);border-radius:12px;background:linear-gradient(135deg,rgba(37,99,235,.04),rgba(45,212,191,.03));font-size:13.5px;color:var(--text2);line-height:1.55}
+.fr-spread svg{flex:0 0 auto;margin-top:2px;color:var(--accent2)}
+.fr-spread b{color:var(--white)}
+/* V25.2 — the scoreboard keeps its scoreboard on a phone.
+   Until now ≤640px simply did `.fr-bar-wrap{display:none}`: the diverging bar
+   AND its centre zero-line — the only at-a-glance "who is above/below flat"
+   cue on the page — vanished, leaving a plain name/number list, and the V23.3
+   bar-draw reveal animated five invisible elements. Same DOM, restacked: the
+   row becomes two grid rows (identity + value on top, a FULL-WIDTH diverging
+   bar beneath), so mobile gains the visual instead of losing it. */
+@media(max-width:640px){
+  .fr-row{
+    grid-template-columns:22px minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    column-gap:10px;row-gap:7px;
+    padding:13px 8px;
+  }
+  .fr-rank{grid-column:1;grid-row:1;align-self:start;padding-top:2px}
+  .fr-name{grid-column:2;grid-row:1;min-width:0}
+  .fr-val{grid-column:3;grid-row:1;align-self:start}
+  .fr-bar-wrap{
+    display:block;                 /* was display:none — the whole point */
+    grid-column:1/-1;grid-row:2;
+    height:20px;border-radius:6px;
+  }
+  .fr-bar{top:3px;bottom:3px;border-radius:4px}
+}
+
+/* ── COMMENTARY ── */
+.fr-note{font-size:15px;color:var(--text2);line-height:1.7;margin-bottom:14px}
+.fr-note:last-child{margin-bottom:0}
+.fr-note b{color:var(--white)}
+.fr-callout{border-left:3px solid var(--accent);background:linear-gradient(135deg,rgba(37,99,235,.05),rgba(45,212,191,.04));border-radius:0 12px 12px 0;padding:16px 18px;margin:18px 0;font-size:14.5px;color:var(--text2);line-height:1.65}
+
+/* ── HOW WE USE IT ── */
+.fr-use-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:4px}
+.fr-use{border:0.5px solid var(--border);border-radius:14px;padding:16px 18px;background:#fff}
+.fr-use b{display:block;color:var(--white);font-size:14.5px;margin-bottom:4px}
+.fr-use span{font-size:13px;color:var(--text3);line-height:1.55}
+/* V31.3 — full-ramp CTA: unlike .nav-cta above it has no background-size,
+   so the whole ramp is on screen and its last third carried white type on
+   #0891b2 (3.68:1). Measured 4.22:1; ends on #0e7490 (5.36:1) now. */
+.fr-cta{display:inline-flex;align-items:center;gap:8px;margin-top:20px;background:linear-gradient(135deg,#1a50d8 0%,#2563eb 46%,#0e7490 100%);color:#fff;font-weight:700;font-size:14.5px;padding:13px 26px;border-radius:var(--r-sm);box-shadow:0 10px 26px -12px rgba(26,80,216,.6);transition:transform .2s,box-shadow .2s}
+.fr-cta:hover{transform:translateY(-2px);box-shadow:0 16px 34px -12px rgba(26,80,216,.7)}
+@media(max-width:600px){.fr-use-grid{grid-template-columns:1fr}}
+
+/* ── METHODOLOGY / SOURCES ── */
+.fr-meth{font-size:13px;color:var(--text3);line-height:1.7}
+.fr-meth b{color:var(--text2)}
+.fr-meth a{color:var(--accent);font-weight:600}
+.fr-meth ul{margin:10px 0 0 18px}
+.fr-meth li{margin-bottom:5px}
+
+/* ── ARCHIVE ── */
+.fr-archive-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.fr-arch-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:0.5px solid var(--border);border-radius:12px;padding:14px 18px;background:#fff;transition:transform .2s,box-shadow .2s,border-color .2s}
+.fr-arch-item.current{border-color:var(--border2);background:linear-gradient(135deg,rgba(37,99,235,.04),rgba(45,212,191,.03))}
+a.fr-arch-item:hover{transform:translateY(-2px);box-shadow:0 12px 26px -16px rgba(26,80,216,.3);border-color:var(--border2)}
+.fr-arch-item .m{font-weight:700;color:var(--white);font-size:15px}
+.fr-arch-item .d{font-size:12.5px;color:var(--text3)}
+.fr-arch-badge{font-size:11px;font-weight:700;color:var(--accent);background:rgba(37,99,235,.08);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.fr-arch-empty{font-size:13.5px;color:var(--text3);border:1px dashed var(--border2);border-radius:12px;padding:16px 18px;text-align:center}
+
+/* ── V30.0 · ENTRANCE CHOREOGRAPHY ─────────────────────────────────────────
+   The scoreboard's bars already grew on reveal (V23.3), but the five cards they
+   sit in did not — they were simply present, so the page's one piece of motion
+   read as an isolated twitch rather than as the section arriving. Same idiom and
+   same easing the rest of the site uses (.fade-up + .in), one observer, and the
+   full static layout is what no-JS and reduced-motion readers get. */
+.fade-up,.fade-seq>*{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .7s cubic-bezier(.22,1,.36,1);will-change:opacity,transform}
+.fade-up.in,.fade-seq.in>*{opacity:1;transform:none}
+/* the hero staggers off the SECTION, not off per-child classes: its <h1> lives
+   between <!--FR:month--> markers that are hand-rewritten every month, and a
+   class added inside a marker is a class that eventually gets published away. */
+.fade-seq>*:nth-child(1){transition-delay:.02s}
+.fade-seq>*:nth-child(2){transition-delay:.09s}
+.fade-seq>*:nth-child(3){transition-delay:.16s}
+.fade-seq>*:nth-child(4){transition-delay:.23s}
+@media(prefers-reduced-motion:reduce){
+  .fade-up,.fade-seq>*{opacity:1!important;transform:none!important;transition:none}
+}
+
+
+/* ── FOOTER ── */
+.site-foot{border-top:0.5px solid var(--border2);margin-top:44px;padding:26px 28px 34px;text-align:center;position:relative;z-index:1}
+.site-foot .links{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin-bottom:14px;font-size:13.5px}
+.site-foot .links a{color:var(--text2)}
+.site-foot .links a:hover{color:var(--accent)}
+.site-foot .meta{font-size:12px;color:var(--text3);line-height:1.6}
+.site-foot .sebi-line{color:var(--text2);font-weight:600}
+/* Dark mode — flip the #fff surfaces (cards already use var(--ink2)) */
+[data-theme="dark"] .fr-use,
+[data-theme="dark"] .fr-arch-item{ background:var(--ink2); border-color:var(--border2); }
+[data-theme="dark"] .fr-arch-item.current{ background:linear-gradient(135deg,rgba(70,120,245,.12),rgba(45,212,191,.06)); }
+[data-theme="dark"] a.fr-arch-item:hover{ border-color:var(--accent3); }
+[data-theme="dark"] .fr-val.up{ color:#34d399; }
+[data-theme="dark"] .fr-val.down{ color:#f87171; }
+[data-theme="dark"] .fr-lead-tag{ color:#6ee7b7; background:rgba(5,150,105,0.18); }
+[data-theme="dark"] .fr-lag-tag{ color:#fca5a5; background:rgba(220,38,38,0.18); }
+[data-theme="dark"] .fr-alpha.pos{ color:#6ee7b7; background:rgba(5,150,105,.18); }
+[data-theme="dark"] .fr-alpha.neg{ color:#fca5a5; background:rgba(220,38,38,.18); }
+[data-theme="dark"] .fr-row.is-leader{ background:linear-gradient(90deg,rgba(52,211,153,.09),transparent 62%); }
+[data-theme="dark"] .fr-row.is-laggard{ background:linear-gradient(90deg,rgba(248,113,113,.08),transparent 62%); }
+
+/* ── V22.2 — "How MindForge uses factors" pillar-tinted cards ──
+   Each card carries its factor's pillar colour (the Integrity Score palette:
+   momentum #7c3aed · low-vol #0891b2 · quality #059669 · multi-asset #d97706)
+   as an icon chip, a gradient top hairline and a whisper of surface tint;
+   hover lifts the card and brightens the hairline. Both themes. */
+.fr-use{ --fu:#2563eb; position:relative; overflow:hidden; display:grid;
+  grid-template-columns:40px 1fr; grid-column-gap:14px; align-items:start;
+  transition:transform .22s ease, box-shadow .25s ease, border-color .25s ease; }
+.fr-use b{ grid-column:2; }
+.fr-use span{ grid-column:2; }
+.fr-use::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, var(--fu), transparent);
+  opacity:.45; transition:opacity .25s ease; }
+.fr-use-ic{ grid-column:1; grid-row:1 / span 2; width:40px; height:40px; border-radius:11px;
+  display:flex; align-items:center; justify-content:center; color:var(--fu);
+  background:color-mix(in srgb, var(--fu) 10%, transparent);
+  border:1px solid color-mix(in srgb, var(--fu) 22%, transparent);
+  transition:transform .22s ease; }
+.fr-use-ic svg{ width:21px; height:21px; }
+.fr-use--mom{    --fu:#7c3aed; }
+.fr-use--lowvol{ --fu:#0891b2; }
+.fr-use--qv{     --fu:#059669; }
+.fr-use--ma{     --fu:#d97706; }
+.fr-use:hover{ transform:translateY(-3px);
+  border-color:color-mix(in srgb, var(--fu) 38%, transparent);
+  box-shadow:0 16px 32px -20px color-mix(in srgb, var(--fu) 55%, transparent); }
+.fr-use:hover::before{ opacity:1; }
+.fr-use:hover .fr-use-ic{ transform:scale(1.08) rotate(-4deg); }
+[data-theme="dark"] .fr-use-ic{ background:color-mix(in srgb, var(--fu) 16%, transparent);
+  border-color:color-mix(in srgb, var(--fu) 34%, transparent);
+  color:color-mix(in srgb, var(--fu) 60%, #dbe7ff); }
+[data-theme="dark"] .fr-use::before{ opacity:.6; }
+@supports not (background:color-mix(in srgb, red 10%, transparent)){
+  .fr-use-ic{ background:rgba(37,99,235,.08); border-color:var(--border); }
+}
+@media(max-width:600px){ .fr-use{ grid-template-columns:36px 1fr; } .fr-use-ic{ width:36px; height:36px; } }
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<!-- MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. -->
+<script>
+(function(){var R=document.documentElement;
+function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
+function apply(t){var _d=t==='dark';R.setAttribute('data-theme',_d?'dark':'light');try{var _m=document.querySelector('meta[name="theme-color"]');if(_m)_m.setAttribute('content',_d?'#080d1a':'#1a50d8');}catch(e){}}
+apply(get());
+window.__mfcThemeBoot=function(){
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+/* V27.8 — this page kept the original V17.3 injector, which parked the toggle
+   INSIDE .nav-links. That container is display:none from 1024px down, so on
+   every phone and every tablet the dark-mode control simply did not exist here
+   (it measured 0×0), while all 19 other pages placed it beside the hamburger.
+   Anchor on .nav-inner and insert before the hamburger, matching the site
+   standard; .nav-links stays as the fallback for a nav without one. */
+var inner=document.querySelector('nav .nav-inner')||document.querySelector('nav');if(!inner)return;
+if(inner.querySelector('.mfc-theme-toggle'))return;
+/* V27.8: no inline cssText. It hard-set background:none;border:0;40x40, which
+   beat the shared .mfc-theme-toggle component in mfc-finish.css by inline
+   specificity — so this page's toggle rendered as a bare borderless icon at a
+   different size from the bordered 38px control on all 19 other pages. */
+var b=document.createElement('button');b.type='button';b.id='mfc-theme-toggle';b.className='mfc-theme-toggle';
+b.setAttribute('aria-label','Toggle dark mode');b.title='Toggle light / dark';
+function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MOON;b.setAttribute('aria-pressed',t==='dark'?'true':'false');}
+sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
+var ham=inner.querySelector('.nav-hamburger');
+if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}};
+})();
+</script>
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3960">
+<link rel="stylesheet" href="../assets/mfc-deep.css?v=3">
+<!-- V25.6 — structured data: this page had none, so search engines had no
+     machine-readable statement of what the tool is, that it is free, or where it
+     sits in the site. WebApplication + BreadcrumbList, no rich-result gimmicks. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "@id": "https://mindforgecapital.com/factor-report/#app",
+      "name": "MindForge Monthly Factor Report",
+      "url": "https://mindforgecapital.com/factor-report/",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Any (web browser)",
+      "browserRequirements": "Requires JavaScript.",
+      "description": "A monthly read-out of how the major equity factors — momentum, low volatility, quality and value — performed across Indian markets, with the leaders and laggards of the month.",
+      "isAccessibleForFree": true,
+      "publisher": {
+        "@type": "Organization",
+        "name": "MindForge Capital",
+        "url": "https://mindforgecapital.com/"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "MindForge Capital",
+          "item": "https://mindforgecapital.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Factor Report"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<style id="mf-v317-skip">
+/* V31.7 — WCAG 2.4.1 (Bypass Blocks). Thirteen pages on this site have shipped a
+   skip link since the Round-5 a11y pass; the four free tools and the per-stock
+   page never got one, so a keyboard user reaching the Scanner had to tab the
+   9-item masthead, the theme toggle and the CTA before the first control —
+   and on the Scanner, then the whole filter sidebar. Same rule, same ink and
+   same slide as index.html's, kept page-local exactly like the other thirteen
+   so no shared asset (and therefore no ?v on 49 pages) has to move for it. */
+.skip-link{
+  position:absolute; top:-100px; left:16px;
+  background:var(--accent); color:#fff;
+  padding:14px 22px; font-size:14px; font-weight:600; text-decoration:none;
+  z-index:1000; border-radius:0 0 10px 10px;
+  box-shadow:0 8px 20px -8px rgba(26,80,216,0.55);
+  transition:top .2s ease;
+}
+.skip-link:focus{ top:0; outline:none; }
+@media (prefers-reduced-motion: reduce){ .skip-link{ transition:none; } }
+</style>
+<style>
+/* ── V32.2 — THE SCOREBOARD PRINTED AS FIVE EMPTY TRACKS ─────────────────────
+   Same seam as the per-stock report, and this page had it worse: the whole
+   chart is CSS background. Under emulated print media .fr-bar-wrap (the
+   red/blue/green diverging track), .fr-bar (the data bar itself) and
+   .fr-bar-mid (the zero line) all reported printColorAdjust "economy", so a
+   printed factor report carried the names and the numbers and five blank
+   rectangles. That also makes the new axis actively misleading — labelling the
+   ends of a track that prints with nothing in it — so the fix ships with it.
+   The two axis ticks are backgrounds too and are included; the leader/laggard
+   row washes and the alpha chips are decoration and are left to print flat. */
+@media print{
+  .fr-bar-wrap, .fr-bar, .fr-bar-mid,
+  .fr-axis-track::before, .fr-axis-c::before{
+    -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;
+  }
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<div class="mf-scroll-prog" id="scrollProg"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
+      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
+    </a>
+    <div class="nav-links" id="primary-nav">
+      <a href="https://mindforgecapital.com/how-it-works/">How it works</a>
+      <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+      <a href="https://mindforgecapital.com/track-record/">Track record</a>
+      <details class="nav-group has-active"><summary>Learn</summary><div class="nav-group-menu"><a href="../learn/">Learn hub</a><a href="../methodology/">How a book is built</a><a href="../risk/">Risks</a><a href="../compare/">Compare</a><a href="../fees-and-tax/">Fees and tax</a><a href="index.html" class="active">Factor Report</a><a href="../fii-dii/">FII/DII activity</a><a href="../screener/">Stock Scanner</a><a href="../scores/">Integrity Score</a><a href="../calculator.html">Calculators</a></div></details>
+      <a href="https://mindforgecapital.com/index.html#strategies">Pricing</a>
+      <a href="https://mindforgecapital.com/login.html">Sign In</a>
+      <a href="https://mindforgecapital.com/signup.html?strategy=multiasset" class="nav-cta">Start free</a>
+    </div>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="wrap" role="main" id="main-content">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MONTHLY FACTOR REPORT — reusable template
+       ───────────────────────────────────────────────────────────────────────
+       HOW TO PUBLISH NEXT MONTH (≈10 min, no build step):
+       1. Archive the outgoing edition: copy THIS file to  factor-report/YYYY-MM.html
+          (e.g. 2026-06.html), and in that copy set <meta name="robots"
+          content="noindex,follow"> so only the live /factor-report/ ranks.
+          ALSO leave the canonical pointing at the HUB (/factor-report/) rather
+          than rewriting it to the archive's own URL. V38.5 found both
+          existing archives carrying a SELF-canonical next to that noindex, which
+          is one directive saying "drop this URL" and another saying "index this
+          one". noindex wins, so nothing was lost — but the two signals should
+          agree, and the hub is the page this step exists to protect.
+       2. In THIS index.html, update — all clearly marked with FR: comment markers:
+            • the hero month + subtitle
+            • the "Data as of" date
+            • the five FR:factor rows (value, bar width %, up/down class, lead/lag tag)
+            • each row's data-prev= (LAST month's figure — the delta chip under
+              the index name is derived from it, so this is the only thing to
+              change; move the outgoing value straight into it)
+            • the commentary paragraphs
+            • the "Sources / as-of" line
+       3. Prepend a link to the just-archived month at the TOP of .fr-archive-list
+          (copy the commented <li> template there).
+       Bar width = |return| / (largest |return| this month) × 50, as a %.
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- HERO -->
+  <section class="hero fade-seq">
+    <span class="eyebrow"><span class="dot"></span>Monthly factor report&nbsp;· India</span>
+    <!--FR:month--><h1>India Factor Report&nbsp;— <span class="grad">September 2026</span></h1><!--/FR:month-->
+    <p class="sub">How the major equity <b>style factors</b> — value, momentum, quality and low volatility — are performing in India, tracked through their flagship NSE factor indices. Free, and updated every month.</p>
+    <div class="updated">
+      <span>Trailing 1-year total return</span><span class="sep"></span>
+      <!--FR:asof--><span>Data as of <b>29&nbsp;Sep&nbsp;2026</b></span><!--/FR:asof-->
+    </div>
+  </section>
+
+  <!-- V42.3 — the Factor Report by e-mail (markdowns/website_restructure.md §5.6): an address and
+       nothing else, sent once per new report, one-click unsubscribe. mfc-deep.js posts it. -->
+  <section class="dp-fr fade-up" aria-labelledby="fr-h-report" style="margin-top:8px">
+    <h2 id="fr-h-report">Get each new report by e-mail</h2>
+    <p>One e-mail each time a new report is published. No account, nothing to buy, one-click unsubscribe.</p>
+    <form data-fr novalidate>
+      <label class="sr-only" for="fr-email-report">E-mail address</label>
+      <input type="email" id="fr-email-report" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required>
+      <button type="submit">Send me the report</button>
+      <p class="dp-fr-msg" role="status" aria-live="polite"></p>
+    </form>
+    <p class="dp-fr-fine">We use the address only to send the report. <a href="../privacy.html">Privacy policy</a>.</p>
+  </section>
+
+  <!-- ── FACTOR LEADERBOARD ── -->
+  <section class="card fade-up">
+    <h2>The factor scoreboard</h2>
+    <p class="lead">Ranked by trailing 1-year total return. Each factor is represented by its flagship NSE index (tracked via a low-cost index fund, Direct Plan). Nifty&nbsp;50 is shown as the broad-market baseline.</p>
+    <div class="fr-board">
+      <!-- V35.1 — every non-zero bar carries `min-width:2px`. This is a diverging
+           chart whose track is half the row per side, so a small month resolves to
+           a sub-pixel fill: the baseline row's 0.3% painted 0.7px at 1440 and less
+           on a phone, leaving "-0.1%" beside an empty track. The floor is written
+           per bar rather than in CSS so that a genuine 0.0% month, authored without
+           it, still paints nothing — which is the honest state. Carry it forward
+           when these rows are updated. -->
+      <!--FR:factor value--><div class="fr-row" data-prev="19.2">
+        <div class="fr-rank">1</div>
+        <div class="fr-name"><b>Value <span class="fr-lead-tag">Leader</span></b><span>Nifty500 Value&nbsp;50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:44.9%;min-width:2px"></span></div>
+        <div class="fr-val up">+6.2%</div>
+      </div><!--/FR:factor-->
+      <!--FR:factor momentum--><div class="fr-row" data-prev="12.2">
+        <div class="fr-rank">2</div>
+        <div class="fr-name"><b>Momentum</b><span>Nifty500 Momentum&nbsp;50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar pos" style="width:37.0%;min-width:2px"></span></div>
+        <div class="fr-val up">+5.1%</div>
+      </div><!--/FR:factor-->
+      <!--FR:factor lowvol--><div class="fr-row" data-prev="2.9">
+        <div class="fr-rank">3</div>
+        <div class="fr-name"><b>Low Volatility</b><span>Nifty500 Low Volatility&nbsp;50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:26.8%;min-width:2px"></span></div>
+        <div class="fr-val down">−3.7%</div>
+      </div><!--/FR:factor-->
+      <!--FR:factor quality--><div class="fr-row" data-prev="2.1">
+        <div class="fr-rank">4</div>
+        <div class="fr-name"><b>Quality <span class="fr-lead-tag fr-lag-tag">Laggard</span></b><span>Nifty200 Quality&nbsp;30</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:43.5%;min-width:2px"></span></div>
+        <div class="fr-val down">−6.0%</div>
+      </div><!--/FR:factor-->
+      <!--FR:baseline--><div class="fr-row" data-prev="-0.1">
+        <!-- V27.1: the rank cell used to hold a bare "·", which read as a stray
+             typo sitting in the 1·2·3·4 rank column. It is now an em-dash with
+             an explicit label; .fr-rank-base is the marker the alpha-chip pass
+             below matches on (the "·" test is kept as a fallback). -->
+        <div class="fr-rank fr-rank-base" title="Not ranked — shown as the broad-market baseline" aria-label="not ranked">—</div>
+        <div class="fr-name"><b>Broad market <span style="font-weight:500;color:var(--text3)">(baseline)</span></b><span>Nifty&nbsp;50</span></div>
+        <div class="fr-bar-wrap"><span class="fr-bar-mid"></span><span class="fr-bar neg" style="width:50.0%;min-width:2px"></span></div>
+        <div class="fr-val down">−6.9%</div>
+      </div><!--/FR:baseline-->
+    </div>
+  </section>
+  <!-- V23.3: scoreboard bar-draw reveal — collapses the diverging bars before
+       paint, then grows them from the centre line when the board scrolls into
+       view. Progressive: no-JS / reduced-motion keep the full inline widths. -->
+  <script>
+  (function(){
+    try{
+      var board=document.querySelector('.fr-board');
+      if(!board||!('IntersectionObserver' in window)) return;
+      if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      board.classList.add('fr-anim');                 // collapse bars (scaleX 0) pre-paint
+      var reveal=function(){ board.classList.add('fr-in'); };
+      var io=new IntersectionObserver(function(es){
+        es.forEach(function(e){ if(e.isIntersecting){ reveal(); io.disconnect(); } });
+      },{threshold:0.25});
+      io.observe(board);
+      setTimeout(reveal,1600);                          // safety-net: never stay collapsed
+    }catch(e){}
+  })();
+  </script>
+
+
+<!-- V33.9 · derive each row's month-over-month move from data-prev. Fail-soft:
+     a row with no data-prev, or a value that will not parse, simply gets no
+     chip and is left exactly as authored. -->
+<script id="fr-delta-js">
+/* V40.2 — "pts", not "pp": the alpha chip beside this one already says
+   "+13.1 pts vs Nifty 50", and one row carried both spellings. */
+(function(){
+  try{
+    var MONTH='August';
+    document.querySelectorAll('.fr-board .fr-row[data-prev]').forEach(function(row){
+      var valEl=row.querySelector('.fr-val'), nameEl=row.querySelector('.fr-name');
+      if(!valEl||!nameEl) return;
+      if(nameEl.querySelector('.fr-delta')) return;
+      var now=parseFloat((valEl.textContent||'').replace(/[^0-9.\-]/g,'').replace(/^\./,'0.'));
+      if((valEl.textContent||'').indexOf('\u2212')===0||(valEl.textContent||'').indexOf('-')===0) now=-Math.abs(now);
+      var prev=parseFloat(row.getAttribute('data-prev'));
+      if(!isFinite(now)||!isFinite(prev)) return;
+      var d=Math.round((now-prev)*10)/10;
+      var cls=d>0.05?'up':(d<-0.05?'down':'flat');
+      var arrow=d>0.05?'\u25b2':(d<-0.05?'\u25bc':'\u2013');
+      var mag=Math.abs(d).toFixed(1);
+      var chip=document.createElement('span');
+      chip.className='fr-delta '+cls;
+      chip.innerHTML='<i aria-hidden="true">'+arrow+'</i>'+(cls==='flat'?'unchanged':mag+' pts')+
+                     ' <span style="font-weight:600" class="fr-delta-vs">vs '+MONTH+'</span>';
+      chip.setAttribute('aria-label',(cls==='up'?'up ':cls==='down'?'down ':'')+
+        (cls==='flat'?'unchanged':mag+' percentage points')+' versus '+MONTH);
+      nameEl.appendChild(chip);
+    });
+  }catch(e){}
+})();
+</script>
+
+  <!-- ── COMMENTARY ── -->
+  <section class="card fade-up">
+    <h2>What led, what lagged</h2>
+    <!--FR:commentary-->
+    <p class="fr-note"><b>Every style gave ground as the Nifty&nbsp;50 fell.</b> Over the trailing year to 29&nbsp;September the broad Nifty&nbsp;50 returned <b>−6.9%</b>, down from roughly flat (−0.1%) a month earlier, and all four factors gave back ground with it. Value still leads, for a fourth month running, at <b>+6.2%</b> — down from +19.2% — which puts it about <b>13 percentage points</b> ahead of the index, against 19 last month.</p>
+    <p class="fr-note"><b>The defensive styles turned negative.</b> Momentum held second place at <b>+5.1%</b> (from +12.2%), so value and momentum are the only two styles still in positive territory. Low Volatility slipped from +2.9% to <b>−3.7%</b> and Quality from +2.1% to <b>−6.0%</b>, which leaves Quality last of the four for a second month — though still ahead of the index.</p>
+    <div class="fr-callout">The one-line takeaway for September 2026: <b>value still led and momentum held second, the two defensive styles turned negative, and all four factors still finished ahead of a Nifty&nbsp;50 down&nbsp;6.9%.</b> Factor leadership rotates, which is why our books combine several signal families rather than bet on one style &mdash; whether that pays is what the published record is for.</div>
+    <!--/FR:commentary-->
+  </section>
+
+  <!-- ── HOW MINDFORGE USES FACTORS ── -->
+  <section class="card fade-up">
+    <h2>How MindForge uses factors</h2>
+    <!-- V40.1 — A9. This card used to claim quality and value tilts, and a volatility screen that changed weights. The equity books rank on price and volume only (no fundamentals) and hold every name at equal weight; the card also named signals more specifically than the family vocabulary the site allows. Corrected in every edition; the scoreboard figures are untouched. -->
+    <p class="lead">Two of the four styles above &mdash; momentum and low volatility &mdash; are in the same families as the signals our equity books rank on. Quality and value are not: the books use price and volume data only, no fundamentals. Every book is rebalanced monthly and holds its names in equal weight.</p>
+    <div class="fr-use-grid">
+      <div class="fr-use fr-use--mom"><i class="fr-use-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></i><b>Momentum &amp; trend</b><span>The main signal family behind LargeMidcap&nbsp;250 and SmallMicro&nbsp;500: how a stock&rsquo;s price has moved, and how steadily.</span></div>
+      <div class="fr-use fr-use--lowvol"><i class="fr-use-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2-5 3 10 3-14 3 9h6"/></svg></i><b>Volatility</b><span>Calmer names rank ahead of erratic ones, so the concentrated books lean away from blow-off moves; every name held still carries the same weight.</span></div>
+      <div class="fr-use fr-use--qv"><i class="fr-use-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6z"/><polyline points="9 12 11 14 15 9.5"/></svg></i><b>Liquidity</b><span>Trading volume is part of the ranking too, so the books stay in names that can actually be bought and sold.</span></div>
+      <div class="fr-use fr-use--ma"><i class="fr-use-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 22A10 10 0 0 1 2 12"/><circle cx="22" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="2" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></i><b>Multi-asset rotation</b><span>MultiAsset ranks its eight ETFs &mdash; Indian equity, the Nasdaq-100, gold, silver and bonds &mdash; on similar price-based signals each month.</span></div>
+    </div>
+    <a class="fr-cta" href="https://mindforgecapital.com/strategies.html">See the strategies these factors power →</a>
+  </section>
+
+  <!-- ── ARCHIVE ── -->
+  <section class="card fade-up">
+    <h2>Report archive</h2>
+    <p class="lead">Every month's edition, kept for the record.</p>
+    <ul class="fr-archive-list">
+      <li class="fr-arch-item current">
+        <div><div class="m">September 2026</div><div class="d">Value led a fourth month&nbsp;· the defensive styles turned negative</div></div>
+        <span class="fr-arch-badge">This edition</span>
+      </li>
+      <!-- V29.4: this row was an <a> sitting as a DIRECT child of the <ul>. Only <li>
+           may be a child of a list, so the archive rendered two rows while announcing
+           "list, 1 item" — the second edition was visible to sighted readers and
+           missing from the count everyone else gets. The <li> wrapper is the whole
+           fix; .fr-archive-list is a column flexbox, so the <li> takes the flex slot
+           and the <a> keeps its own display:flex and fills it. Nothing moves. -->
+      <li><a class="fr-arch-item" href="2026-08.html">
+        <div><div class="m">August 2026</div><div class="d">Value led again&nbsp;· momentum rebounded to second</div></div>
+        <span class="fr-arch-badge">Read →</span>
+      </a></li>
+      <li><a class="fr-arch-item" href="2026-07.html">
+        <div><div class="m">July 2026</div><div class="d">Value extended its lead&nbsp;· all four factors beat the index</div></div>
+        <span class="fr-arch-badge">Read →</span>
+      </a></li>
+      <li><a class="fr-arch-item" href="2026-06.html">
+        <div><div class="m">June 2026</div><div class="d">Value led&nbsp;· quality &amp; momentum lagged</div></div>
+        <span class="fr-arch-badge">Read →</span>
+      </a></li>
+      <!-- FR:archive template — when you archive a month, prepend a row like this
+           (the <li> matters — see the note above):
+      <li><a class="fr-arch-item" href="2026-06.html">
+        <div><div class="m">June 2026</div><div class="d">Value led · quality &amp; momentum lagged</div></div>
+        <span class="fr-arch-badge">Read →</span>
+      </a></li>
+      -->
+    </ul>
+    <!-- V29.4: "This is the first edition. Past reports will be archived here as new
+         months publish." used to print here. It was written when the archive held one
+         row and was never removed when V27.3 archived June 2026 — so the page listed
+         two editions and then told you underneath that there was only ever one. The
+         .fr-arch-empty style is kept above for the day the list is genuinely empty. -->
+  </section>
+
+  <!-- ── METHODOLOGY / SOURCES ── -->
+  <section class="card fade-up">
+    <h2>Methodology &amp; sources</h2>
+    <div class="fr-meth">
+      <p>Each factor is represented by its <b>flagship NSE factor index</b>, measured through a low-cost index fund tracking that index (Direct Plan). Returns are <b>trailing 1-year total returns</b> as of the date shown, so every factor is compared on the same clock. Nifty&nbsp;50 is the broad-market baseline.</p>
+      <ul>
+        <!--FR:sources-->
+        <li><b>Value</b> — Nifty500 Value&nbsp;50 (UTI Nifty&nbsp;500 Value 50 Index Fund)</li>
+        <li><b>Low Volatility</b> — Nifty500 Low Volatility&nbsp;50 (Nippon India Nifty&nbsp;500 Low Volatility 50 Index Fund)</li>
+        <li><b>Momentum</b> — Nifty500 Momentum&nbsp;50 (Nippon India Nifty&nbsp;500 Momentum 50 Index Fund)</li>
+        <li><b>Quality</b> — Nifty200 Quality&nbsp;30 (UTI Nifty200 Quality&nbsp;30 Index Fund)</li>
+        <li><b>Baseline</b> — Nifty&nbsp;50 (UTI Nifty&nbsp;50 Index Fund)</li>
+        <li>Trailing 1-year returns computed from official <b>AMFI</b> daily NAVs (Direct Plan, Growth) — 30&nbsp;Sep&nbsp;2025 → <b>29&nbsp;Sep&nbsp;2026</b>, the latest published NAV date.</li>
+        <!--/FR:sources-->
+      </ul>
+      <p style="margin-top:12px">Factor and index returns are historical and will change. This report is <b>educational commentary, not investment advice</b> or a recommendation of any index, fund or security. Past performance does not guarantee future results.</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="site-foot">
+  <div class="links">
+    <a href="https://mindforgecapital.com/">Home</a>
+    <a href="https://mindforgecapital.com/strategies.html">Strategies</a>
+    <a href="../screener/">Scanner</a>
+    <a href="../scores/">Integrity Score</a>
+    <a href="../fii-dii/">FII/DII</a>
+    <a href="../calculator.html">Fee Calculator</a>
+    <a href="https://mindforgecapital.com/privacy.html">Privacy</a>
+    <a href="https://mindforgecapital.com/terms.html">Terms</a>
+  </div>
+  <p class="meta"><span class="sebi-line">SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">INH-XXXXXXXXXXX</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor&nbsp;Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;max-width:32em;">Investments in the securities market are subject to market risks. Read all the related documents carefully before investing.</span><br>© 2026 MindForge Capital. All rights reserved. Educational information only — not investment advice.</p>
+</footer>
+
+<script>
+// nav hamburger
+(function(){
+  var btn=document.querySelector('.nav-hamburger'),links=document.getElementById('primary-nav');
+  if(!btn||!links)return;
+  function setHam(open){btn.classList.toggle('open',open);links.classList.toggle('open',open);btn.setAttribute('aria-expanded',open?'true':'false');btn.setAttribute('aria-label',open?'Close menu':'Open menu');}
+  btn.addEventListener('click',function(){setHam(!btn.classList.contains('open'));});
+  links.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){setHam(false);});});
+})();
+// scroll progress
+(function(){
+  var bar=document.getElementById('scrollProg');if(!bar)return;
+  window.addEventListener('scroll',function(){var s=document.documentElement.scrollTop;var h=document.documentElement.scrollHeight-document.documentElement.clientHeight;bar.style.width=(h>0?(s/h*100):0)+'%';},{passive:true});
+})();
+// theme toggle (inject into nav after DOM ready)
+if(window.__mfcThemeBoot)window.__mfcThemeBoot();
+// V21.9: scoreboard upgrade — derive each factor's spread vs the Nifty 50 baseline
+// ("alpha chip" under the index name), tint the leader/laggard rows, and append the
+// leadership-spread footline. Reads the numbers already in the FR rows, so a new
+// month publishes with zero extra edits; fails silently if the board changes shape.
+(function(){
+  try{
+    var rows=[].slice.call(document.querySelectorAll('.fr-board .fr-row'));
+    function num(r){var v=r.querySelector('.fr-val');if(!v)return null;
+      var n=parseFloat(v.textContent.replace(/[−–]/g,'-').replace(/[^0-9.\-]/g,''));return isNaN(n)?null:n;}
+    function fname(r){var b=r.querySelector('.fr-name b');if(!b)return'';
+      var c=b.cloneNode(true);[].slice.call(c.querySelectorAll('span')).forEach(function(s){s.remove();});
+      return c.textContent.trim();}
+    var base=null,factors=[];
+    rows.forEach(function(r){
+      var v=num(r);if(v==null)return;
+      var rank=(r.querySelector('.fr-rank')||{textContent:''}).textContent.trim();
+      var nameTxt=(r.querySelector('.fr-name')||{textContent:''}).textContent;
+      if(r.querySelector('.fr-rank-base')||rank==='·'||/baseline/i.test(nameTxt)){base={row:r,v:v};}
+      else factors.push({row:r,v:v,name:fname(r)});
+    });
+    if(!base||factors.length<2)return;
+    function fmtPct(v){return (v>=0?'+':'−')+Math.abs(v).toFixed(1)+'%';}
+    factors.forEach(function(f){
+      var a=f.v-base.v;
+      var chip=document.createElement('span');
+      chip.className='fr-alpha '+(a>=0?'pos':'neg');
+      chip.textContent=(a>=0?'+':'−')+Math.abs(a).toFixed(1)+' pts vs Nifty\u00A050';
+      chip.title=f.name+' minus the Nifty\u00A050 baseline, trailing 1-year total return';
+      var nm=f.row.querySelector('.fr-name');if(nm)nm.appendChild(chip);
+      if(f.row.querySelector('.fr-lead-tag')&&!f.row.querySelector('.fr-lag-tag'))f.row.classList.add('is-leader');
+      if(f.row.querySelector('.fr-lag-tag'))f.row.classList.add('is-laggard');
+    });
+    var hi=factors.reduce(function(a,b){return b.v>a.v?b:a;});
+    var lo=factors.reduce(function(a,b){return b.v<a.v?b:a;});
+    var spread=hi.v-lo.v;
+    if(hi!==lo&&spread>0){
+      var d=document.createElement('div');d.className='fr-spread';
+      d.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="15" y1="17" x2="3" y2="17"/></svg>'+
+        '<span>Leadership spread: <b>'+spread.toFixed(1)+' pts</b> separate <b>'+hi.name+'</b> ('+fmtPct(hi.v)+') from <b>'+lo.name+'</b> ('+fmtPct(lo.v)+') over the trailing year\u00a0— the gap a single-style bet had to get right.</span>';
+      var board=document.querySelector('.fr-board');
+      if(board&&board.parentNode)board.parentNode.insertBefore(d,board.nextSibling);
+    }
+
+    /* V32.2 — publish the axis this chart never had. Everything is read back
+       out of the rows that are already on the page: a bar's inline width is a
+       percentage of the WRAPPER and the positive half starts at 50%, so
+       half-track = |value| * 50 / width%. Derived from the widest bar (most
+       significant figures) and cross-checked against every other row; if any
+       row disagrees by more than 2% the board is not the shape this assumes and
+       the axis is simply not drawn. */
+    var scale=[];
+    rows.forEach(function(r){
+      var bar=r.querySelector('.fr-bar'), v=num(r);
+      if(!bar||v==null||!v)return;
+      var m=/width\s*:\s*([0-9.]+)%/.exec(bar.getAttribute('style')||'');
+      if(!m)return;
+      var w=parseFloat(m[1]); if(!isFinite(w)||w<=0)return;
+      scale.push({half:Math.abs(v)*50/w, w:w});
+    });
+    if(scale.length>=2){
+      scale.sort(function(a,b){return b.w-a.w;});
+      var half=scale[0].half;
+      var agree=scale.every(function(s){return Math.abs(s.half-half)/half<0.02;});
+      if(agree&&half>0){
+        var lab=half.toFixed(1)+'%';
+        var ax=document.createElement('div');
+        ax.className='fr-axis';
+        ax.innerHTML='<span></span><span></span>'
+          +'<div class="fr-axis-track" role="img" aria-label="Chart scale: the bars run from '
+          +'minus '+lab+' at the left edge, through zero at the centre line, to plus '+lab
+          +' at the right edge.">'
+          +'<span class="fr-axis-t fr-axis-l" aria-hidden="true">−'+lab+'</span>'
+          +'<span class="fr-axis-t fr-axis-c" aria-hidden="true">0</span>'
+          +'<span class="fr-axis-t fr-axis-r" aria-hidden="true">+'+lab+'</span>'
+          +'</div><span></span>';
+        var b2=document.querySelector('.fr-board');
+        if(b2&&b2.parentNode)b2.parentNode.insertBefore(ax,b2.nextSibling);
+      }
+    }
+  }catch(e){}
+})();
+</script>
+<!-- V16.4: site-wide "1st month FREE" launch strip — consistent with every other public page -->
+<!-- V30.0 — one observer reveals the hero stagger and the five cards.
+     Classes are already in the markup so the collapsed state is applied before
+     first paint (no flash of positioned content); this only adds `.in`. Two
+     safety valves, both deliberate: reduced-motion readers are opted straight
+     into the finished state, and a timeout reveals everything regardless, so a
+     browser without IntersectionObserver — or a card the observer somehow never
+     sees — can never leave the page's content stranded at opacity 0. -->
+<script>
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.fade-up,.fade-seq'));
+    if(!els.length) return;
+    var showAll=function(){ els.forEach(function(e){ e.classList.add('in'); }); };
+    if(!('IntersectionObserver' in window) ||
+       (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+      showAll(); return;
+    }
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    },{threshold:0.12,rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(e){ io.observe(e); });
+    setTimeout(showAll,2200);
+  }catch(e){
+    try{ [].slice.call(document.querySelectorAll('.fade-up,.fade-seq'))
+           .forEach(function(x){ x.classList.add('in'); }); }catch(_){}
+  }
+})();
+</script>
+<script src="../assets/mfc-offer.js?v=4050" defer></script>
+<script src="../assets/mfc-deep.js?v=1" defer></script>
+<script defer src="../assets/mfc-chrome.js?v=4070"></script>
+
+<!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
+     Mobile users reported too much scrolling. Every rule below is scoped to
+     600px, so the iPad (portrait 768-820, landscape 1024-1180) and desktop
+     layouts are untouched — that was the hard constraint on this release.
+
+     `section[class]` scores (0,1,1) and so outranks each page's own
+     `.whatever-section` (0,1,0) without needing !important, which keeps this
+     one block portable across pages that name their sections differently.
+
+     Whitespace first, then heading scale, then line-height. Body copy keeps a
+     comfortable 1.58 and nothing here goes below 12px, so the 10px floor the
+     contrast scanner enforces is never approached. ══════════════════════════ -->
+<!-- V36.6 — the 17-page phone-rhythm block, extracted to a shared
+     stylesheet. LINKED HERE, not in <head>: these rules sat at the end of
+     the body on purpose and a head link loses every equal-specificity tie
+     to the page's own body styles. Measured — moving it to the head took
+     .vfy-card on the dashboard from 16px to 18px of phone padding. -->
+<link rel="stylesheet" href="../assets/mfc-chrome.css?v=10">
+
+<!-- =========================================================================
+     V32.9 · WHERE A LINE IS ALLOWED TO BREAK
+     V32.6 appended ", after tax" to labels that were already at their width
+     limit, and the breaks landed in the wrong places: "· after tax" opening a
+     line, the word "tax" alone on a third, "+5.1" parted from "pts". Nothing
+     overflowed and nothing was clipped, so every structural probe read these
+     pages as clean — it is a defect only the eye catches.
+     The markup half of the fix binds the atoms with &nbsp; (the "·" separator,
+     "after tax", a number and its unit, a fund name). This is the other half,
+     for the case CSS *can* express: a paragraph that leaves one word alone on
+     the last line, or a short label that runs line one full and orphans the
+     remainder. Both properties are progressive — an engine that does not know
+     them ignores the declaration and renders exactly as it does today, so there
+     is no fallback to write and nothing to feature-detect.
+       pretty  … avoids the short last line. Meant for running prose.
+       balance … evens the lines instead. Chrome caps it at a few lines, which
+                 is precisely the label case and never the paragraph case.
+     ========================================================================= -->
+<style id="mf-v329-linebreak">
+p, li, dd, figcaption, blockquote,
+.bf-desc, .flow-sub, .fc-disclaimer, .ps-cta-side, .strat-desc, .fr-note,
+#cvg-note, #howto-broker-text, #weightCap, #dash-subtitle, #stat-stocks-sub{
+  text-wrap: pretty;
+}
+h1, h2, h3, h4, th,
+.lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel, .grad,
+.hv-alpha, .vcard-bt-lbl, .ps-perf-lbl, .ptx-keep-lbl, .ptx-vs-name{
+  text-wrap: balance;
+}
+</style>
+</body>
+</html>
