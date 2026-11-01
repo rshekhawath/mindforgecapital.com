@@ -760,10 +760,12 @@ html[data-theme="dark"] #passcode-input:focus { background: var(--card) !importa
     </div>
     <div style="background:#fff;border:1px solid #dbeafe;border-radius:14px;padding:18px 20px;">
       <h2 style="margin:0;font-size:17px;color:#0c1831;">Send the Factor Report</h2>
-      <p style="margin:6px 0 10px;font-size:13px;color:#64748b;line-height:1.55;">Mails a published report to everyone on the Factor Report list, once per report: run it again for the same link and it skips everyone already sent it. Try a dry run first.</p>
+      <p style="margin:6px 0 10px;font-size:13px;color:#64748b;line-height:1.55;">Mails a published report to everyone on the Factor Report list, once per report month: run it again for the same month and it skips everyone already sent it. Try a dry run first.</p>
       <div style="display:grid;gap:8px;max-width:620px;">
         <label style="font-size:12.5px;font-weight:700;color:#334155;">Report link (a https://mindforgecapital.com/factor-report/ page)
           <input id="fr-url" type="url" value="https://mindforgecapital.com/factor-report/" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px;"></label>
+        <label style="font-size:12.5px;font-weight:700;color:#334155;">Report month (read from the report at that link)
+          <input id="fr-issue" type="text" inputmode="numeric" placeholder="2026-10" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px;"></label>
         <label style="font-size:12.5px;font-weight:700;color:#334155;">Title
           <input id="fr-title" type="text" value="India Factor Report" style="width:100%;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;margin-top:4px;"></label>
         <label style="font-size:12.5px;font-weight:700;color:#334155;">One-line intro (optional)
@@ -1571,17 +1573,47 @@ function loadPql() {
       }).join('') + '</tbody></table>';
   }).catch(function () { out.textContent = 'Network error. Try again.'; });
 }
+// V43.6 — the backend sends each report once per MONTH (fr_broadcast's `issue`), not
+// once per link: the live report always sits at the same /factor-report/ link, so a
+// link-keyed check skipped every subscriber from the second month on. The month is
+// read from the report itself, its "India Factor Report — <Month YYYY>" heading,
+// whenever the link changes.
+var FR_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function frIssueFromReport() {
+  var urlEl = document.getElementById('fr-url'), issueEl = document.getElementById('fr-issue');
+  if (!urlEl || !issueEl) return;
+  var url = (urlEl.value || '').trim(), path = url.replace(/^https:\/\/mindforgecapital\.com(?=\/)/, '');
+  issueEl.value = '';
+  if (path.indexOf('/factor-report/') !== 0) return;
+  fetch(path, { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.text() : ''; })
+    .then(function (html) {
+      var h = new DOMParser().parseFromString(html, 'text/html').querySelector('h1 .grad');
+      var m = /^([A-Za-z]+)\s+(\d{4})$/.exec(h ? h.textContent.trim() : '');
+      var mi = m ? FR_MONTHS.indexOf(m[1]) : -1;
+      if (mi >= 0 && (urlEl.value || '').trim() === url) issueEl.value = m[2] + '-' + ('0' + (mi + 1)).slice(-2);
+    })
+    .catch(function () {});
+}
+document.addEventListener('DOMContentLoaded', function () {
+  var urlEl = document.getElementById('fr-url');
+  if (!urlEl) return;
+  urlEl.addEventListener('change', frIssueFromReport);
+  frIssueFromReport();
+});
 function sendFr(dry) {
   var out = document.getElementById('fr-out');
   var url = (document.getElementById('fr-url').value || '').trim();
-  if (!dry && !confirm('Send ' + url + ' to everyone on the Factor Report list who has not had it yet?')) return;
+  var issue = (document.getElementById('fr-issue').value || '').trim();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(issue)) { out.textContent = 'Enter the report\'s month as YYYY-MM, e.g. 2026-10. It fills in from the report at the link above.'; return; }
+  if (!dry && !confirm('Send the ' + issue + ' report (' + url + ') to everyone on the Factor Report list who has not had it yet?')) return;
   out.textContent = dry ? 'Counting…' : 'Sending… (this can take a minute for a long list)';
-  v423Post({ action: 'fr_broadcast', url: url, title: document.getElementById('fr-title').value, intro: document.getElementById('fr-intro').value, dry: !!dry })
+  v423Post({ action: 'fr_broadcast', url: url, issue: issue, title: document.getElementById('fr-title').value, intro: document.getElementById('fr-intro').value, dry: !!dry })
     .then(function (d) {
       if (maybeReauthOn401(d)) return;
       if (!d || d.status !== 'ok') { out.textContent = 'Not sent: ' + ((d && d.error) || 'unknown error'); return; }
       out.textContent = dry
-        ? d.pending + ' would be sent; ' + d.already_sent + ' already had this report.'
+        ? d.pending + ' would be sent; ' + d.already_sent + ' already had the ' + issue + ' report.'
         : 'Sent ' + d.sent + '; ' + d.already_sent + ' already had it; ' + d.pending + ' still to send' + (d.stopped_for_quota ? ' (the day\'s mail quota ran out — send again tomorrow).' : '.');
     }).catch(function () { out.textContent = 'Network error. Try again.'; });
 }
