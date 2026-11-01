@@ -58,7 +58,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3960">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=3970">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -434,6 +434,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 .vf-src tbody tr:last-child td, .vf-src tbody tr:last-child th{ border-bottom:none; }
 .vf-src-note{ font-size:12.5px; color:var(--text3); line-height:1.75; max-width:70ch; }
 .vf-src-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+/* V43.7 — the house edge cue (V34.0). On a phone this table hid 168-278px with nothing at its
+   right edge to say so; the class is on only while something is still hidden. */
+.vf-src-wrap.mfx-more-r{ -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);
+                                 mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent); }
 .vf-src-hint{ display:none; font-size:11.5px; color:var(--text3); text-align:center; margin:6px 0 10px; letter-spacing:.02em; }
 @media (max-width:640px){ .vf-src-hint{ display:block; } .vf-src{ min-width:430px; } }
 @media (max-width:640px){
@@ -689,7 +693,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 </script>
 <script src="../assets/mfc-cdir.js?v=2" defer></script>
 <script src="../assets/mfc-offer.js?v=4050" defer></script>
-<script defer src="../assets/mfc-chrome.js?v=4070"></script>
+<script defer src="../assets/mfc-chrome.js?v=4080"></script>
 <link rel="stylesheet" href="../assets/mfc-chrome.css?v=10">
 <script>
 /* the scroll-progress bar this page declares in its own markup (the same v3.4
@@ -714,6 +718,27 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     ham.classList.toggle('open', open);
     ham.setAttribute('aria-expanded', String(open));
   });
+})();
+</script>
+<!-- V43.7 · the edge cue for the sources table, byte-identical to /disclosures/ apart from
+     the selector. Fail-soft: any failure leaves the page as-is. -->
+<script id="mfc-scroll-cue">
+(function(){
+  try{
+    var els=[].slice.call(document.querySelectorAll('.vf-src-wrap'));
+    if(!els.length) return;
+    function sync(el){
+      var max=el.scrollWidth-el.clientWidth;
+      el.classList.toggle('mfx-more-r', max>8 && el.scrollLeft < max-4);
+    }
+    els.forEach(function(el){
+      var run=function(){ sync(el); };
+      el.addEventListener('scroll', run, {passive:true});
+      window.addEventListener('resize', run, {passive:true});
+      if(typeof MutationObserver==='function') new MutationObserver(run).observe(el,{childList:true,subtree:true});
+      run();
+    });
+  }catch(e){}
 })();
 </script>
 </body>

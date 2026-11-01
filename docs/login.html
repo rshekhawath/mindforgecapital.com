@@ -149,6 +149,9 @@ input[type=email]:focus,input[type=text]:focus{border-color:var(--accent);box-sh
 footer{text-align:center;padding:32px 16px;font-size:12px;color:var(--text3);position:relative;z-index:1;}
 @media(max-width:768px){.logo img{height:36px;}}
 @media(max-width:480px){.card{padding:32px 20px;}nav{padding:0 16px;}}
+/* V43.7 — on a phone the card was centred in calc(100vh - 64px) under a 117px offer bar and nav,
+   so ~140px of empty space sat above the form. Start it near the top instead. */
+@media(max-width:600px){.page{align-items:flex-start;min-height:0;padding:20px 16px 40px;}}
 
 /* ── Visual Polish v3 ── */
 body::after {
@@ -334,7 +337,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="assets/mfc-finish.css?v=3960">
+<link rel="stylesheet" href="assets/mfc-finish.css?v=3970">
 <link rel="stylesheet" href="assets/mfc-ambient.css?v=142">
 <script>
 /* V42.1 — A4. A signed-in member who opens "My Account" is not a new member: the
@@ -690,7 +693,7 @@ function renderSubscriptions(subs) {
         '<div class="sub-go" style="color:var(--data-strong);">Renew →</div>' +
       '</a>';
     }
-    return '<a class="sub-row" href="dashboard.html?token=' + encodeURIComponent(sub.token) + '" style="text-decoration:none;">' +
+    return '<a class="sub-row" href="dashboard.html?token=' + encodeURIComponent(sub.token) + '"' + (/^[A-Za-z0-9_\-]+$/.test(String(sub.token || '')) ? ' data-tok="' + sub.token + '"' : '') + ' style="text-decoration:none;">' +
       '<div>' +
         '<div class="sub-name">' + safeStrat + '</div>' +
         '<div class="sub-meta">Active until ' + dateStr + '</div>' +
@@ -709,6 +712,21 @@ function renderSubscriptions(subs) {
       '</div>' +
       '<div class="sub-go">See both →</div>' +
     '</a>');
+  /* V43.7 — hand the session over the way the dashboard's own strategy switch does
+     (V29.8): in sessionStorage, read and deleted on arrival, so the token never sits
+     in the address bar, a history entry or the server's request log. The ?token= href
+     stays as the fallback for a new tab, which sessionStorage does not reach, and for
+     a browser that blocks storage. */
+  list.querySelectorAll('a.sub-row[data-tok]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var tok = a.getAttribute('data-tok');
+      if (!tok) return;
+      try { sessionStorage.setItem('mfc_dash_switch', tok); } catch (err) { return; }
+      e.preventDefault();
+      window.location.href = 'dashboard.html';
+    });
+  });
   var activeCount = subs.filter(function(s){ return new Date(s.expires_at) >= new Date(); }).length;
   var expiredCount = subs.length - activeCount;
   var desc = 'Found ' + subs.length + ' subscription' + (subs.length > 1 ? 's' : '') + ' for ' + _email + '.';
@@ -1049,7 +1067,7 @@ html[data-theme="dark"] .card::after{
   .card::after{ animation:none; }
 }
 </style>
-<script defer src="assets/mfc-chrome.js?v=4070"></script>
+<script defer src="assets/mfc-chrome.js?v=4080"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

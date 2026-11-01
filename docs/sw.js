@@ -900,7 +900,11 @@
 // V43.5 -> mfc-v143. The October 2026 publish: the precached index.html carries the re-run backtest
 // figures, the funds measured over the new window (Oct 2021 -> Oct 2026) and the rolled-forward
 // window attributes. The fifteen charts carry new ?v= tokens from their content. No shared asset moved.
-const CACHE = 'mfc-v143';
+// V43.7 -> mfc-v144. Mobile pass: the precached login.html starts its form near the top on a phone and
+// hands a tapped book to the dashboard without a token in the URL; the precached index.html carries
+// mfc-chrome.js 4080 (ribbon links 44px on touch, floating buttons step aside at the footer) and
+// mfc-finish.css 3970. New: the strategy charts' 1200px -m.webp copies for phone screens.
+const CACHE = 'mfc-v144';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)

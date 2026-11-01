@@ -79,7 +79,11 @@
           'background:rgba(37,99,235,.06);border:0.5px solid rgba(37,99,235,.18);font-size:13.5px;line-height:1.5;color:var(--text2,#1e3a5f)}' +
           '.mf-ribbon a{color:var(--ink-link,#0951c6);font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}' +
           'html[data-theme="dark"] .mf-ribbon{background:rgba(131,170,255,.08);border-color:rgba(131,170,255,.2)}' +
-          '@media (max-width:640px){.mf-ribbon{margin:10px 12px 0}}@media print{.mf-ribbon{display:none!important}}';
+          '@media (max-width:640px){.mf-ribbon{margin:10px 12px 0}}@media print{.mf-ribbon{display:none!important}}' +
+          // V43.7 — on touch the two links were 27-34px tall, under the site's 44px standard. Real
+          // boxes, not pads: at 320 they wrap onto two rows, where stacked pads would fight.
+          '@media (hover:none) and (pointer:coarse){.mf-ribbon{padding-top:3px;padding-bottom:3px;row-gap:0}' +
+          '.mf-ribbon a{display:inline-flex;align-items:center;min-height:44px}}';
         (document.head || document.documentElement).appendChild(st);
       }
       var r = document.createElement('p');
@@ -578,6 +582,11 @@
   var D = document, W = window, root = D.documentElement;
   var HOLD_AT = 0.40;                     // fraction of the page scrolled
   var regions = [];
+  // V43.7 — and off the footer, on a phone. At the very end of 17 page states the
+  // buttons sat over the footer's last lines (the credential line, the market-risk
+  // disclaimer); with nowhere further to scroll, that text could not be read at all.
+  var legal = [];
+  var NARROW = W.matchMedia ? W.matchMedia("(max-width: 768px)") : null;
 
   function collect() {
     regions = [];
@@ -590,10 +599,11 @@
       if (ox !== "auto" && ox !== "scroll") continue;
       regions.push(el);
     }
+    legal = D.querySelectorAll("footer");
   }
 
   function fabs() {
-    return D.querySelectorAll(".fab-wa, .back-to-top, .mfc-btt");
+    return D.querySelectorAll(".fab-wa, .back-to-top, .mfc-btt, .mf-fab-top");
   }
 
   function hit(a, b) {
@@ -610,11 +620,19 @@
     // tuck: measure against the buttons' own boxes, so this follows whatever
     // offsets the page gives them rather than assuming a corner.
     var tuck = false;
-    if (regions.length) {
+    var onFoot = !!(NARROW && NARROW.matches && legal.length);
+    if (regions.length || onFoot) {
       var boxes = [], f = fabs();
       for (var i = 0; i < f.length; i++) {
         var r = f[i].getBoundingClientRect();
         if (r.width && r.height) boxes.push(r);
+      }
+      for (var m = 0; onFoot && m < legal.length && !tuck; m++) {
+        var fr = legal[m].getBoundingClientRect();
+        if (!fr.width || !fr.height || fr.bottom < 0 || fr.top > (W.innerHeight || 0)) continue;
+        for (var n = 0; n < boxes.length; n++) {
+          if (hit(fr, boxes[n])) { tuck = true; break; }
+        }
       }
       for (var j = 0; j < regions.length && !tuck; j++) {
         var rr = regions[j].getBoundingClientRect();
