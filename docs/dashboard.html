@@ -4513,27 +4513,43 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
              and 187px in step 4 at 1440, and 244px at 1180. A full-width band
              under the rail carries the same meaning, costs its siblings nothing,
              and gives the note somewhere to breathe on a wide screen. -->
+        <!-- V43.8 — what to place this month, asked before anything is sent: this
+             month's rebalance, the whole book again, or the stocks the member ticks.
+             The answer decides cycleOrders(), so the Kite band, the order sheet, the
+             table's ticks and the progress all follow it. Rendered by renderOrderMode(). -->
+        <div class="omode" id="omode" hidden>
+          <div class="om-eyebrow" id="om-eyebrow">What to place this month</div>
+          <p class="om-q" id="om-q" hidden>Do you still hold last month&rsquo;s book? Choose one, and your orders follow.</p>
+          <div class="om-opts" role="radiogroup" aria-labelledby="om-eyebrow">
+            <label class="om-opt" id="om-o-rebal">
+              <input type="radio" name="omode" value="rebal" onchange="setOrderMode('rebal')">
+              <span class="om-b"><span class="om-h"><b>Rebalance</b><span class="om-n" id="om-n-rebal"></span></span><span class="om-d" id="om-d-rebal"></span></span>
+            </label>
+            <label class="om-opt" id="om-o-fresh">
+              <input type="radio" name="omode" value="fresh" onchange="setOrderMode('fresh')">
+              <span class="om-b"><span class="om-h"><b>Buy all</b><span class="om-n" id="om-n-fresh"></span></span><span class="om-d" id="om-d-fresh"></span></span>
+            </label>
+            <label class="om-opt" id="om-o-pick">
+              <input type="radio" name="omode" value="pick" onchange="setOrderMode('pick')">
+              <span class="om-b"><span class="om-h"><b>Pick stocks</b><span class="om-n" id="om-n-pick"></span></span><span class="om-d" id="om-d-pick"></span></span>
+            </label>
+          </div>
+          <div class="om-pick" id="om-pick" hidden>
+            <div class="om-pick-head">
+              <span class="om-pick-count" id="om-pick-count" aria-live="polite"></span>
+              <span class="om-pick-acts">
+                <button type="button" class="om-pick-a" onclick="omPickAll(true)">Select all</button>
+                <button type="button" class="om-pick-a" onclick="omPickAll(false)">Clear</button>
+              </span>
+            </div>
+            <ul class="om-pick-list" id="om-pick-list"></ul>
+          </div>
+          <p class="om-note" id="om-note"></p>
+        </div>
         <div class="kbsk" id="kbsk" hidden>
           <div class="kbsk-txt">
             <div class="kbsk-eyebrow">Step 3, in one tap</div>
             <div class="kbsk-facts" id="kbsk-facts" aria-hidden="true"></div>
-            <!-- V43.7 — every order this cycle, or the ones the member chooses. The plan is
-                 built from the chosen ones (kiteBasketPlan), so the baskets, the sticky bar
-                 and the sent record follow the choice. Rendered by renderKbPick(). -->
-            <div class="kbsk-mode" id="kbsk-mode" role="group" aria-label="Orders to send to Kite" hidden>
-              <button type="button" class="kbsk-mode-b" id="kbsk-mode-all" aria-pressed="true" onclick="kbPickMode(false)">All orders</button>
-              <button type="button" class="kbsk-mode-b" id="kbsk-mode-pick" aria-pressed="false" onclick="kbPickMode(true)">Choose orders</button>
-            </div>
-            <div class="kbsk-pick" id="kbsk-pick" hidden>
-              <div class="kbsk-pick-head">
-                <span class="kbsk-pick-count" id="kbsk-pick-count" aria-live="polite"></span>
-                <span class="kbsk-pick-acts">
-                  <button type="button" class="kbsk-pick-a" onclick="kbPickAll(true)">Select all</button>
-                  <button type="button" class="kbsk-pick-a" onclick="kbPickAll(false)">Clear</button>
-                </span>
-              </div>
-              <ul class="kbsk-pick-list" id="kbsk-pick-list"></ul>
-            </div>
             <!-- V37.5 — one row per Kite basket when the cycle needs more than one.
                  Rendered by refreshKiteBasket(); see kiteBasketPlan(). -->
             <ol class="kbsk-list" id="kbsk-list" hidden></ol>
@@ -5267,48 +5283,78 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       @media (prefers-reduced-motion:reduce){ .kbsk-b-btn{ transition:none; } .kbsk-b-btn.is-primary:hover{ transform:none; } }
       .kbsk-note{ font-size:11.5px; line-height:1.55; color:var(--text3); margin:0; max-width:70ch; }
       .kbsk-note b{ color:var(--text2); font-weight:700; }
-      /* V43.7 — all of the cycle's orders, or the ones the member chooses. Two buttons
-         (aria-pressed), then a checklist the whole row of which is the label. */
-      .kbsk-mode{ display:inline-flex; gap:4px; padding:3px; margin:6px 0 10px; border-radius:12px;
-        background:rgba(15,23,42,.05); border:0.5px solid var(--border2); }
-      html[data-theme="dark"] .kbsk-mode{ background:rgba(255,255,255,.05); }
-      .kbsk-mode-b{ font:inherit; font-size:13px; font-weight:700; min-height:40px; padding:0 14px;
-        border-radius:9px; border:0; background:transparent; color:var(--text2); cursor:pointer; }
-      .kbsk-mode-b[aria-pressed="true"]{ background:var(--ink2); color:var(--accent);
-        box-shadow:0 1px 3px rgba(12,24,49,.14); }
-      html[data-theme="dark"] .kbsk-mode-b[aria-pressed="true"]{ color:#9dbcff; background:rgba(120,160,240,.16); }
-      .kbsk-mode-b:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-      .kbsk-pick{ margin:0 0 10px; border:0.5px solid var(--border2); border-radius:12px;
+      /* V43.8 — what to place this month. Three answers as radio cards (the whole card
+         is the label), then, for Pick stocks, a checklist whose whole row is the label. */
+      .omode{ margin:16px 0 0; padding:16px 18px; border-radius:var(--r);
+        background:
+          linear-gradient(135deg, rgba(37,99,235,.055) 0%, rgba(45,212,191,.045) 100%),
+          var(--ink2);
+        border:0.5px solid var(--border2); }
+      html[data-theme="dark"] .omode{
+        background:
+          linear-gradient(135deg, rgba(120,160,240,.10) 0%, rgba(45,212,191,.07) 100%),
+          var(--ink2); }
+      #omode{ scroll-margin-top:88px; }   /* the bar's jump lands below the sticky nav (V39.6) */
+      .om-eyebrow{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+        color:var(--accent2); margin:0 0 4px; }
+      html[data-theme="dark"] .om-eyebrow{ color:#9dbcff; }
+      .om-q{ margin:2px 0 0; font-size:15px; font-weight:700; line-height:1.45; color:var(--white); }
+      .om-opts{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; margin:12px 0 0; }
+      .om-opt{ display:flex; align-items:flex-start; gap:10px; min-height:44px; padding:12px 14px;
+        border:1px solid var(--border2); border-radius:12px; background:var(--ink2); cursor:pointer;
+        transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease; }
+      .om-opt[hidden]{ display:none; }
+      .om-opt:hover{ border-color:var(--accent3); }
+      .om-opt.is-on{ border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent);
+        background:linear-gradient(0deg, rgba(37,99,235,.06), rgba(37,99,235,.06)), var(--ink2); }
+      html[data-theme="dark"] .om-opt.is-on{ border-color:#9dbcff; box-shadow:inset 0 0 0 1px #9dbcff;
+        background:linear-gradient(0deg, rgba(120,160,240,.12), rgba(120,160,240,.12)), var(--ink2); }
+      .om-opt:focus-within{ outline:2px solid var(--accent); outline-offset:2px; }
+      .om-opt input{ flex:none; width:18px; height:18px; margin:2px 0 0; accent-color:var(--accent); cursor:pointer; }
+      .om-b{ flex:1 1 auto; min-width:0; }
+      .om-h{ display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:2px 8px; }
+      .om-h b{ font-size:15px; font-weight:800; color:var(--white); }
+      .om-n{ font-size:12.5px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; white-space:nowrap; }
+      html[data-theme="dark"] .om-n{ color:#9dbcff; }
+      .om-d{ display:block; margin-top:4px; font-size:13px; line-height:1.5; color:var(--text2); }
+      .om-note{ margin:10px 0 0; font-size:12.5px; line-height:1.55; color:var(--text3); max-width:80ch; }
+      .om-note:empty{ display:none; }
+      @media (max-width:860px){ .om-opts{ grid-template-columns:1fr; } }
+      @media (max-width:640px){ .omode{ padding:14px; } }
+      .om-pick{ margin:12px 0 0; border:0.5px solid var(--border2); border-radius:12px;
         background:var(--ink2); overflow:hidden; }
-      .kbsk-pick-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      .om-pick-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap;
         gap:4px 8px; padding:6px 8px 6px 12px; border-bottom:0.5px solid var(--border); }
-      .kbsk-pick-count{ font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums; }
-      .kbsk-pick-acts{ display:inline-flex; gap:2px; }
-      .kbsk-pick-a{ font:inherit; font-size:13px; font-weight:700; color:var(--ink-link,#0951c6);
+      .om-pick-count{ font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums; }
+      .om-pick-acts{ display:inline-flex; gap:2px; }
+      .om-pick-a{ font:inherit; font-size:13px; font-weight:700; color:var(--ink-link,#0951c6);
         background:none; border:0; min-height:40px; padding:0 10px; border-radius:8px; cursor:pointer; }
-      .kbsk-pick-a:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
-      html[data-theme="dark"] .kbsk-pick-a{ color:#9dbcff; }
-      .kbsk-pick-list{ list-style:none; margin:0; padding:0; }
-      .kbsk-pick-list li + li{ border-top:0.5px solid var(--border); }
-      .kbsk-pick-row{ display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center;
+      .om-pick-a:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+      html[data-theme="dark"] .om-pick-a{ color:#9dbcff; }
+      .om-pick-list{ list-style:none; margin:0; padding:0; }
+      .om-pick-list li + li{ border-top:0.5px solid var(--border); }
+      .om-row{ display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center;
         gap:2px 10px; min-height:48px; padding:6px 12px; cursor:pointer; }
-      .kbsk-pick-row input{ width:20px; height:20px; margin:0; accent-color:var(--accent); cursor:pointer; }
-      .kbsk-pick-side{ font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+      .om-row input{ width:20px; height:20px; margin:0; accent-color:var(--accent); cursor:pointer; }
+      .om-side{ font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
         padding:2px 7px; border-radius:6px; }
-      .kbsk-pick-side.is-buy{ color:var(--ink-pos,#047653); background:rgba(5,150,105,.10); }
-      .kbsk-pick-side.is-sell{ color:#a61b1b; background:rgba(220,38,38,.08); }
-      html[data-theme="dark"] .kbsk-pick-side.is-buy{ color:#6ee7b7; background:rgba(52,211,153,.12); }
-      html[data-theme="dark"] .kbsk-pick-side.is-sell{ color:#fca5a5; background:rgba(248,113,113,.13); }
-      .kbsk-pick-t{ font-size:14px; font-weight:700; color:var(--white); overflow-wrap:anywhere; }
-      .kbsk-pick-m{ font-size:12.5px; color:var(--text3); font-variant-numeric:tabular-nums;
+      .om-side.is-buy{ color:var(--ink-pos,#047653); background:rgba(5,150,105,.10); }
+      .om-side.is-sell{ color:#a61b1b; background:rgba(220,38,38,.08); }
+      html[data-theme="dark"] .om-side.is-buy{ color:#6ee7b7; background:rgba(52,211,153,.12); }
+      html[data-theme="dark"] .om-side.is-sell{ color:#fca5a5; background:rgba(248,113,113,.13); }
+      .om-t{ min-width:0; font-size:14px; font-weight:700; color:var(--white); overflow-wrap:anywhere; }
+      .om-t small{ display:block; font-size:12px; font-weight:500; color:var(--text3); }
+      .om-m{ font-size:12.5px; color:var(--text3); font-variant-numeric:tabular-nums;
         text-align:right; white-space:nowrap; }
-      .kbsk-pick-row.is-off .kbsk-pick-t{ color:var(--text3); font-weight:600; }
+      .om-row.is-off .om-t{ color:var(--text2); }
       @media (max-width:420px){
-        .kbsk-pick-row{ grid-template-columns:auto auto minmax(0,1fr); }
-        .kbsk-pick-m{ grid-column:3; text-align:left; }
+        /* two lines a row on a phone, not three: the reason sits beside the ticker */
+        .om-row{ grid-template-columns:auto auto minmax(0,1fr); }
+        .om-t small{ display:inline; margin-left:6px; }
+        .om-m{ grid-column:3; text-align:left; }
       }
       /* the site's 44px on touch: these classes outrank its bare `button` rule */
-      @media (hover:none) and (pointer:coarse){ .kbsk-mode-b, .kbsk-pick-a{ min-height:44px; } }
+      @media (hover:none) and (pointer:coarse){ .om-pick-a{ min-height:44px; } }
       @media (max-width:560px){
         .kbsk{ padding:14px 14px; gap:12px; }
         .kbsk-cta{ width:100%; justify-content:center; }
@@ -8926,7 +8972,7 @@ function renderTable(stocks) {
     const held = !rs && isHeldRow(s.ticker);        // V35.4 — carried over from last cycle
     const movePP = held ? heldMovePP(s.ticker) : null;   // …and re-weighted, or not
     const isBought = !rs && !held && !!bought[s.ticker];
-    const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known);
+    const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known) && _omAccent(s.ticker);   // V43.8
     // V41.9 — A1: a re-weighted row carries its order in slots (see _rwSlot)
     const rwT = movePP != null ? escapeHtml(String(s.ticker || '').toUpperCase()) : '';
     const rwDone = !!rwT && (_ocT.rw || []).some(o => o.ticker === String(s.ticker || '').toUpperCase()) && !!bought['RW:' + String(s.ticker || '').toUpperCase()];
@@ -8969,7 +9015,7 @@ function renderTable(stocks) {
     const held = !rs && isHeldRow(s.ticker);     // V35.4 — carried over from last cycle
     const movePP = held ? heldMovePP(s.ticker) : null;
     const isBought = !rs && !held && !!bought[s.ticker];
-    const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known);
+    const isNew = !rs && !held && !!(window._bookDiff && window._bookDiff.known) && _omAccent(s.ticker);   // V43.8
     // V41.9 — A1: same slots as the desktop row
     const rwT = movePP != null ? escapeHtml(String(s.ticker || '').toUpperCase()) : '';
     const rwDone = !!rwT && (_ocT.rw || []).some(o => o.ticker === String(s.ticker || '').toUpperCase()) && !!bought['RW:' + String(s.ticker || '').toUpperCase()];
@@ -9223,7 +9269,14 @@ function _rwOrderFor(ticker, oc){
 function isHeldRow(ticker){
   var d = window._bookDiff;
   if (!d || !d.known) return false;
-  return d.held.indexOf(String(ticker)) !== -1;
+  if (d.held.indexOf(String(ticker)) === -1) return false;
+  // V43.8 — only while the member says they hold last month's book. Buy all starts
+  // from none of it; Pick stocks turns a carried name into an order when its full
+  // buy is ticked.
+  var om = orderModeState();
+  if (om.m === 'fresh') return false;
+  if (om.m === 'pick' && om.p[String(ticker).toUpperCase()]) return false;
+  return true;
 }
 
 /* …and "held" is not one state but two. A carried-over holding whose model weight
@@ -9611,8 +9664,12 @@ function refreshActionBar(){
     // A weight-rotation month has no buys and no sells and plenty to do.
     // V41.9 — A1: once its re-weights are sized they are ordinary pending orders
     // (and, all placed, nothing is left); this fallback is for a month that cannot be sized.
-    var nRw = orders.rwKnown ? 0 : (stocksData || []).filter(function(s){ return heldMovePP(s.ticker) != null; }).length;
-    if (!pending.length && !nRw) return hide();
+    var nRw = (orders.rwKnown || orders.mode !== 'rebal') ? 0 : (stocksData || []).filter(function(s){ return heldMovePP(s.ticker) != null; }).length;
+    // V43.8 — Step 3 is waiting on the member: last month's book not answered yet, or
+    // Pick stocks with nothing ticked. Then the bar's job is to take them there.
+    var omSt = orderModeState();
+    var omWait = !omSt.m ? 'ask' : (omSt.m === 'pick' && !orders.all.length && pickCandidates().length ? 'none' : '');
+    if (!pending.length && !nRw && !omWait) return hide();
 
     /* V37.5 — the bar reads the same basket PLAN the band draws. `send` is the
        NEXT basket, not "the first ten of whatever is open": after basket 1 has
@@ -9628,7 +9685,10 @@ function refreshActionBar(){
     if (capEl) capEl.textContent = currentCapital > 0 ? shortMoney(currentCapital) : '—';
 
     var nEl = document.getElementById('abar-n'), sEl = document.getElementById('abar-sub');
-    if (pending.length){
+    if (omWait){
+      if (nEl) nEl.textContent = omWait === 'ask' ? 'This month' : 'Pick stocks';
+      if (sEl) sEl.textContent = omWait === 'ask' ? 'rebalance, buy all or pick' : 'nothing ticked yet';
+    } else if (pending.length){
       var nB = pending.filter(function(o){ return o.side === 'BUY'; }).length;
       var nS = pending.length - nB;
       if (nEl) nEl.textContent = pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left';
@@ -9648,7 +9708,14 @@ function refreshActionBar(){
     var lab = document.getElementById('abar-cta-label');
     var amt = document.getElementById('abar-amt');
     var cta = document.getElementById('abar-cta');
-    if (canSend && !isDemo && !window._capEntered){      // V39.3 — B4
+    if (omWait){
+      if (lab) lab.textContent = omWait === 'ask' ? 'Choose your orders' : 'Tick stocks';
+      if (amt) amt.textContent = omWait === 'ask' ? '3 options' : 'none ticked';
+      if (cta){ cta.onclick = abarGoToOrderMode;
+                cta.setAttribute('aria-label', omWait === 'ask'
+                  ? 'Choose what to place this month: rebalance, buy all, or pick stocks'
+                  : 'No stocks ticked yet. Jump to the list to tick what to buy or sell'); }
+    } else if (canSend && !isDemo && !window._capEntered){      // V39.3 — B4
       if (lab) lab.textContent = 'Enter your amount';
       if (amt) amt.textContent = 'sized for ' + shortMoney(currentCapital);
       if (cta){ cta.onclick = abarEditCapital;
@@ -9667,11 +9734,6 @@ function refreshActionBar(){
       if (lab) lab.textContent = 'Open the order sheet';
       if (amt) amt.textContent = pending.length + ' left';
       if (cta){ cta.onclick = abarGoToSheet; cta.setAttribute('aria-label', 'Jump to the order sheet: ' + pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left to place'); }
-    } else if (isKite && plan.pickOn && !plan.openN && plan.allOpen.length){
-      // V43.7 — choosing, and nothing chosen yet: the next job is the checklist.
-      if (lab) lab.textContent = 'Choose orders';
-      if (amt) amt.textContent = 'none chosen';
-      if (cta){ cta.onclick = abarGoToBasket; cta.setAttribute('aria-label', 'No orders chosen for Kite yet. Jump to the order checklist'); }
     } else if (isKite && plan.openN){
       // Every basket opened, orders not yet ticked: the next job is the tick-list.
       if (lab) lab.textContent = 'Tick what filled';
@@ -10385,6 +10447,20 @@ function resetBought() {
 /* V39.1 — B7: one tap for the member who placed everything on Kite. The table's
    own select-all does the work, so held rows are skipped exactly as there. */
 function markAllPlaced(){
+  // V43.8 — Pick stocks: exactly the orders the member ticked, not every row the
+  // table can tick (a joined name left unticked is not an order this month).
+  if (orderModeState().m === 'pick'){
+    try {
+      var pm = loadBought(currentStrategy) || {};
+      cycleOrders().all.forEach(function (o) {
+        var k = orderKey(o);
+        if (!pm[k]) pm[k] = (o.side === 'SELL' || o.rw) ? true : boughtValueFor(k, pm[k]);
+      });
+      saveBought(currentStrategy, pm);
+      _omApply();
+    } catch (e) {}
+    return;
+  }
   try { toggleBoughtAll({ checked: true }); } catch (e) {}
   // Sells are not table rows — they are ticked in "What changed" as SELL:<ticker>
   // (toggleOrder). Without them "placed them all" left every sell outstanding.
@@ -11017,79 +11093,204 @@ function _kbSentMark(orders){
   } catch (e) {}
 }
 
-/* ── V43.7 · ALL ORDERS, OR THE ONES THE MEMBER CHOOSES ───────────────────────
-   The owner asked for members to be able to send every order this cycle to Zerodha
-   from the dashboard, or only the ones they pick. Only the plan changes: while the
-   member is choosing, kiteBasketPlan() partitions the CHOSEN open orders, so the
-   10-per-basket split, sells first, the sent record, this band and the sticky bar
-   all follow the choice through the one code path they already share. The store
-   holds exclusions only (per device, strategy and cycle, and its own namespace in
-   the sample), so an order that appears later — a capital change that sizes a name
-   above zero — starts chosen rather than silently left out. */
-var KB_PICK_PREFIX = 'mfc_kbpick_';
-function _kbPickStoreKey(){
-  return _kbSentStoreKey().replace(KB_SENT_PREFIX, KB_PICK_PREFIX + (isDemo ? 'demo_' : ''));
+/* ── V43.8 · WHAT TO PLACE THIS MONTH: REBALANCE, BUY ALL, OR PICK STOCKS ──────
+   The owner, on V43.7: "The option to buy all again is not showing ... You're
+   assuming that the holdings from last month are as it is, fix that."
+   For a member past month one, every order surface took it as given that they still
+   held last month's book exactly as this page sized it: the names that stayed got no
+   order, and the names that left were sold at last month's quantity. Nothing asked.
+   Step 3 now asks, once a month, and the answer decides cycleOrders(), the one list
+   the basket band, the order sheet, the table's ticks and the progress all read:
+     · Rebalance  "I still hold last month's book": this month's changes, as before.
+     · Buy all    "starting again": every name at its Shares quantity.
+     · Pick       "only some of it": the member ticks what to buy or sell, from this
+                  month's changes and a full buy of any name they carry forward.
+   Until a member past month one answers, nothing can be sent: the band and the sheet
+   wait, and the sticky bar points here. The answer is kept per device, book and cycle;
+   a member who has already ticked or sent one of this month's rebalance orders has
+   answered it, and the sample shows Rebalance. In a first cycle there is no last month,
+   so there is no Rebalance either: the book is the order list (Buy all), or Pick. */
+var OM_PREFIX = 'mfc_omode_';
+var OM_MODES = { rebal: 1, fresh: 1, pick: 1 };
+function _omStoreKey(){
+  return _kbSentStoreKey().replace(KB_SENT_PREFIX, OM_PREFIX + (isDemo ? 'demo_' : ''));
 }
-function _kbPickLoad(){
-  try { var o = JSON.parse(localStorage.getItem(_kbPickStoreKey()) || '{}');
-        return { on: !!(o && o.on), ex: (o && o.ex && typeof o.ex === 'object') ? o.ex : {} }; }
-  catch (e) { return { on: false, ex: {} }; }
+function _omLoad(){
+  try { var o = JSON.parse(localStorage.getItem(_omStoreKey()) || '{}') || {};
+        return { m: OM_MODES[o.m] ? o.m : '', p: (o.p && typeof o.p === 'object') ? o.p : {} }; }
+  catch (e) { return { m: '', p: {} }; }
 }
-function _kbPickSave(p){
-  try { localStorage.setItem(_kbPickStoreKey(), JSON.stringify({ on: !!p.on, ex: p.ex || {} })); } catch (e) {}
+function _omSave(st){
+  try { localStorage.setItem(_omStoreKey(), JSON.stringify({ m: st.m, p: st.p || {} })); } catch (e) {}
 }
-function kbPickMode(on){
-  var p = _kbPickLoad(); p.on = !!on; _kbPickSave(p);
-  refreshKiteBasket();
-  var b = document.getElementById(on ? 'kbsk-mode-pick' : 'kbsk-mode-all');
-  if (b) { try { b.focus({ preventScroll: true }); } catch (e) {} }
+/* The member's answer, or the one their own actions have already given. */
+function orderModeState(){
+  var st = _omLoad(), d = window._bookDiff, known = !!(d && d.known);
+  if (st.m === 'rebal' && !known) st.m = 'fresh';     // no last month on record
+  if (st.m) return st;
+  st.auto = true;
+  if (!known) { st.m = 'fresh'; return st; }
+  if (isDemo) { st.m = 'rebal'; return st; }
+  try {
+    var bm = loadBought(currentStrategy) || {}, sent = _kbSentLoad();
+    if (rebalanceOrders().all.some(function (o) { var k = orderKey(o); return !!bm[k] || !!sent[k]; })) st.m = 'rebal';
+  } catch (e) {}
+  return st;
 }
-function kbPickToggle(cb){
+function needsOrderChoice(){ return !orderModeState().m; }
+/* Buy all: every name in the book at the Shares column's quantity. */
+function wholeBookOrders(){
+  var list = stocksData || [], cap = Number(currentCapital) || 0;
+  return list.filter(function (s) { return !_isRestricted(s && s.ticker); })
+             .map(function (s) { return _mkBuyOrder(s, list, cap); });
+}
+/* Pick: this month's changes (sells first), then a full buy of each name carried
+   forward that has no order of its own, for the member who does not hold it. */
+function pickCandidates(base){
+  base = base || rebalanceOrders();
+  var c = (base.sells || []).concat(base.trims || [], base.buys || [], base.adds || []).map(function (o) {
+    var x = {}; Object.keys(o).forEach(function (k) { x[k] = o[k]; });
+    x.why = o.rw ? 'rw' : (o.side === 'SELL' ? 'left' : (base.known ? 'joined' : 'book'));
+    return x;
+  });
+  if (base.known){
+    var have = {};
+    c.forEach(function (o) { have[o.ticker] = 1; });
+    (base.holdBack || []).forEach(function (h) { have[h.ticker] = 1; });
+    wholeBookOrders().forEach(function (o) { if (!have[o.ticker]) { o.why = 'held'; c.push(o); } });
+  }
+  return c.filter(function (o) { return o.qty >= 1; });
+}
+/* The table's accent rail marks the rows that need an order (V35.6): none under Buy
+   all, where every row does, and only the ticked ones under Pick. */
+function _omAccent(ticker){
+  var om = orderModeState();
+  if (om.m === 'fresh') return false;
+  if (om.m === 'pick') return !!om.p[String(ticker).toUpperCase()];
+  return true;
+}
+function setOrderMode(m){
+  if (!OM_MODES[m]) return;
+  var st = _omLoad(); st.m = m; _omSave(st);
+  _omApply();
+}
+function omPickToggle(cb){
   var k = cb.getAttribute('data-okey'); if (!k) return;
-  var p = _kbPickLoad(); p.on = true;
-  if (cb.checked) delete p.ex[k]; else p.ex[k] = 1;
-  _kbPickSave(p);
-  refreshKiteBasket();
+  var st = _omLoad(); st.m = 'pick';
+  if (cb.checked) st.p[k] = 1; else delete st.p[k];
+  _omSave(st);
+  _omApply();
   // the list is re-rendered; keep a keyboard user on the row they just changed
-  var boxes = document.querySelectorAll('#kbsk-pick-list input[data-okey]');
+  var boxes = document.querySelectorAll('#om-pick-list input[data-okey]');
   for (var i = 0; i < boxes.length; i++) {
     if (boxes[i].getAttribute('data-okey') === k) { try { boxes[i].focus({ preventScroll: true }); } catch (e) {} break; }
   }
 }
-function kbPickAll(sel){
-  var p = _kbPickLoad(); p.on = true; p.ex = {};
-  if (!sel) kiteBasketPlan().allOpen.forEach(function (o) { p.ex[orderKey(o)] = 1; });
-  _kbPickSave(p);
-  refreshKiteBasket();
+function omPickAll(sel){
+  var st = _omLoad(); st.m = 'pick'; st.p = {};
+  if (sel) pickCandidates().forEach(function (o) { st.p[orderKey(o)] = 1; });
+  _omSave(st);
+  _omApply();
 }
-function renderKbPick(plan){
-  var mode = document.getElementById('kbsk-mode'), box = document.getElementById('kbsk-pick');
-  if (!mode || !box) return;
-  var n = plan.allOpen.length;
-  if (n < 2) { mode.hidden = true; box.hidden = true; return; }   // nothing to choose between
-  mode.hidden = false;
-  var bAll = document.getElementById('kbsk-mode-all'), bPick = document.getElementById('kbsk-mode-pick');
-  if (bAll)  { bAll.setAttribute('aria-pressed', plan.pickOn ? 'false' : 'true'); bAll.textContent = 'All ' + n + ' orders'; }
-  if (bPick) bPick.setAttribute('aria-pressed', plan.pickOn ? 'true' : 'false');
-  box.hidden = !plan.pickOn;
-  if (!plan.pickOn) return;
-  var ex = _kbPickLoad().ex;
-  var cnt = document.getElementById('kbsk-pick-count');
-  if (cnt) cnt.textContent = (n - plan.skipped) + ' of ' + n + ' chosen';
-  var list = document.getElementById('kbsk-pick-list');
-  if (list) list.innerHTML = plan.allOpen.map(function (o) {
-    var k = orderKey(o), off = !!ex[k];
-    var meta = o.qty + ' share' + (o.qty === 1 ? '' : 's') + ' \u00b7 ' + fmtMoney(Math.round(o.qty * (o.price || 0)));
-    return '<li><label class="kbsk-pick-row' + (off ? ' is-off' : '') + '">' +
-      '<input type="checkbox" data-okey="' + escapeHtml(k) + '"' + (off ? '' : ' checked') + ' onchange="kbPickToggle(this)">' +
-      '<span class="kbsk-pick-side ' + (o.side === 'SELL' ? 'is-sell' : 'is-buy') + '">' + (o.side === 'SELL' ? 'Sell' : 'Buy') + '</span>' +
-      '<span class="kbsk-pick-t">' + escapeHtml(o.ticker) + '</span>' +
-      '<span class="kbsk-pick-m">' + escapeHtml(meta) + '</span>' +
-    '</label></li>';
-  }).join('');
+/* One re-render of everything the answer moves: the table (its held rows and ticks,
+   in the current sort and filter), the change card, then the progress chain, which
+   ends in the basket band, the order sheet, this block and the sticky bar. */
+function _omApply(){
+  try { applySort(); } catch (e) { try { renderTable(stocksData); reapplyViewState(); } catch (e2) {} }
+  try { if (window._bookDiff) renderBookChange(window._bookDiff, stocksData); } catch (e) {}
+  try { refreshBoughtProgress(); } catch (e) {}
 }
-function abarGoToBasket(){
-  var el = document.getElementById('kbsk');
+function renderOrderMode(){
+  var box = document.getElementById('omode');
+  if (!box) return;
+  if (!window._omSwept){            // V43.7's checklist store, retired with it
+    window._omSwept = true;
+    try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('mfc_kbpick_') === 0) localStorage.removeItem(k); }); } catch (e) {}
+  }
+  var list = stocksData || [];
+  if (!list.length || !(Number(currentCapital) > 0)) { box.hidden = true; return; }
+  var $ = function (id) { return document.getElementById(id); };
+  var setT = function (id, t) { var el = $(id); if (el) el.textContent = t; };
+  var d = window._bookDiff, known = !!(d && d.known);
+  var base = rebalanceOrders(), st = orderModeState();
+  var whole = wholeBookOrders().filter(function (o) { return o.qty >= 1; });
+  var cands = pickCandidates(base), pk = st.p || {};
+  var nTicked = cands.filter(function (o) { return !!pk[orderKey(o)]; }).length;
+  var pl = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
+
+  var oR = $('om-o-rebal');
+  if (oR) oR.hidden = !known;
+  if (known){
+    var nS = base.sells.length, nB = base.buys.length, nRw = (base.rw || []).length;
+    var nCarry = Math.max(0, d.held.filter(function (t) { return !_isRestricted(t); }).length - nRw);
+    var bits = [];
+    if (nS) bits.push('sell the ' + nS + ' that left');
+    if (nB) bits.push('buy the ' + nB + ' that joined');
+    if (nRw) bits.push('re-weight ' + nRw);
+    setT('om-n-rebal', base.all.length ? pl(base.all.length, 'order', 'orders') : 'nothing to place');
+    setT('om-d-rebal', 'I still hold last month’s book. ' +
+      (bits.length ? bits.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) : 'Nothing changes') +
+      (nCarry === 1 ? '; the other one carries forward.' : nCarry ? '; the other ' + nCarry + ' carry forward.' : '.'));
+  }
+  var wVal = whole.reduce(function (t, o) { return t + Math.round(o.qty * (o.price || 0)); }, 0);
+  setT('om-n-fresh', pl(whole.length, 'buy', 'buys') + (wVal > 0 ? ' · ' + shortMoney(wVal) : ''));
+  setT('om-d-fresh', known
+    ? 'Starting again: every name at your capital. Only if you hold none of last month’s book — otherwise you would own it twice.'
+    : 'Every name in this month’s book, at the Shares quantity.');
+  setT('om-n-pick', st.m === 'pick' ? nTicked + ' of ' + cands.length + ' ticked' : cands.length + ' to choose from');
+  setT('om-d-pick', known
+    ? 'Only some of it: tick what to buy or sell, from this month’s changes and the names that carry forward.'
+    : 'Tick the names to buy now.');
+
+  ['rebal', 'fresh', 'pick'].forEach(function (m) {
+    var r = box.querySelector('input[name="omode"][value="' + m + '"]');
+    if (r) r.checked = st.m === m;
+    var o = $('om-o-' + m);
+    if (o) o.classList.toggle('is-on', st.m === m);
+  });
+  var q = $('om-q');
+  if (q) q.hidden = !!st.m;
+
+  var pick = $('om-pick');
+  if (pick) pick.hidden = st.m !== 'pick';
+  if (st.m === 'pick'){
+    var placed = loadBought(currentStrategy) || {};
+    setT('om-pick-count', nTicked + ' of ' + cands.length + ' ticked');
+    var ul = $('om-pick-list');
+    if (ul) ul.innerHTML = cands.map(function (o) {
+      var k = orderKey(o), on = !!pk[k], done = !!placed[k];
+      var why = o.why === 'left' ? 'left the book' : o.why === 'joined' ? 'joined this month'
+              : o.why === 'held' ? 'carries forward · the whole position'
+              : o.why === 'rw' ? 're-weight, ' + o.from + ' → ' + o.to + ' shares' : 'in this month’s book';
+      var meta = pl(o.qty, 'share', 'shares') + ' · ' + fmtMoney(Math.round(o.qty * (o.price || 0)));
+      return '<li><label class="om-row' + (on ? '' : ' is-off') + '">' +
+        '<input type="checkbox" data-okey="' + escapeHtml(k) + '"' + (on ? ' checked' : '') + ' onchange="omPickToggle(this)">' +
+        '<span class="om-side ' + (o.side === 'SELL' ? 'is-sell' : 'is-buy') + '">' + (o.side === 'SELL' ? 'Sell' : 'Buy') + '</span>' +
+        '<span class="om-t">' + escapeHtml(o.ticker) + '<small>' + escapeHtml(why + (done ? ' · placed' : '')) + '</small></span>' +
+        '<span class="om-m">' + escapeHtml(meta) + '</span>' +
+      '</label></li>';
+    }).join('');
+  }
+
+  var note = $('om-note');
+  if (note){
+    var match = ' <button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button>';
+    note.innerHTML =
+      st.m === 'rebal' && known
+        ? (d.prevQtyKnown === false
+            ? 'Last month&rsquo;s quantities were sized at the starting amount, not one you entered, so the sales cannot be sized here;' + match + ' works them out from your broker&rsquo;s holdings file.'
+            : 'Sales use last month&rsquo;s quantities at your capital. Holding a different number?' + match + ' works out exact orders from your broker&rsquo;s holdings file.')
+      : st.m === 'fresh' && known
+        ? 'Nothing is sold: this starts from an account that holds none of the book.'
+      : st.m === 'pick'
+        ? (nTicked ? 'Quantities are this month&rsquo;s sizes at your capital; your broker shows every order before it is placed, and you can change any quantity there.'
+                   : 'Tick at least one stock to buy or sell; your orders follow.')
+      : '';
+  }
+  box.hidden = false;
+}
+function abarGoToOrderMode(){
+  var el = document.getElementById('omode');
   if (!el || el.hidden) return abarGoToPicks();
   var prev = document.documentElement.style.scrollBehavior;
   document.documentElement.style.scrollBehavior = 'auto';
@@ -11120,24 +11321,12 @@ function _kbRow(o){
      ready  — at least one open order has never been sent */
 function kiteBasketPlan(){
   var orders = cycleOrders();
-  var plan = { baskets: [], live: [], total: 0, openN: 0, buyVal: 0, sellVal: 0, next: null, unsized: 0,
-               allOpen: [], pickOn: false, skipped: 0 };
+  var plan = { baskets: [], live: [], total: 0, openN: 0, buyVal: 0, sellVal: 0, next: null, unsized: 0 };
   if (!orders.all.length || !(Number(currentCapital) > 0)) return plan;
   var placed = loadBought(currentStrategy) || {};
   var sent   = _kbSentLoad();
   var elig   = orders.all.filter(function (o) { return o.qty >= 1; });
   plan.unsized = orders.all.length - elig.length;
-  // V43.7 — when the member is choosing, the baskets hold the CHOSEN open orders only.
-  // A choice needs two open orders. renderKbPick() hides the checklist below that, so
-  // a choice left over from earlier (the one open order is the one left out) must not
-  // apply: the band would say "choose at least one" with nothing left to choose from.
-  plan.allOpen = elig.filter(function (o) { return !placed[orderKey(o)]; });
-  var pick = _kbPickLoad();
-  if (pick.on && plan.allOpen.length >= 2) {
-    plan.pickOn  = true;
-    elig         = elig.filter(function (o) { return !pick.ex[orderKey(o)]; });
-    plan.skipped = plan.allOpen.filter(function (o) { return pick.ex[orderKey(o)]; }).length;
-  }
   for (var i = 0; i < elig.length; i += KITE_BASKET_MAX){
     var chunk = elig.slice(i, i + KITE_BASKET_MAX);
     var b = { n: plan.baskets.length + 1, orders: chunk, open: [], buyVal: 0, sellVal: 0,
@@ -11282,6 +11471,12 @@ function sendKiteBasket(pos) {
     showToast('Enter your amount first — every quantity is sized to it');
     return;
   }
+  // V43.8 — and none before the member has said what to place this month.
+  if (needsOrderChoice()) {
+    abarGoToOrderMode();
+    showToast('Choose what to place this month first');
+    return;
+  }
   var plan = kiteBasketPlan();
   var b = (pos != null) ? plan.live[pos - 1] : (plan.next || null);
   if (!b || !b.open.length) {
@@ -11356,6 +11551,7 @@ function renderOrderSheet(){
   if (!sh) return;
   try {
     if ((BROKERS[getBroker()] || {}).copy !== true) { sh.hidden = true; return; }
+    if (needsOrderChoice()) { sh.hidden = true; return; }   // V43.8 — the sheet waits for the answer
     var oc = cycleOrders(), placed = loadBought(currentStrategy) || {};
     var rows = oc.all.filter(function(o){ return o.qty >= 1; });
     if (!rows.length) { sh.hidden = true; return; }
@@ -11417,14 +11613,15 @@ function abarGoToSheet(){
 }
 
 function refreshKiteBasket() {
+  try { renderOrderMode(); } catch (e) {}    // V43.8 — what to place this month (every broker)
   try { renderOrderSheet(); } catch (e) {}   // V39.5 — B7: the other brokers' step 3
   try {
     var wrap = document.getElementById('kbsk');
     if (!wrap) return;
     if (getBroker() !== 'kite') { wrap.hidden = true; return; }
+    if (needsOrderChoice()) { wrap.hidden = true; return; }   // V43.8 — nothing is sent before the answer
     var plan = kiteBasketPlan();
-    if (!plan.allOpen.length) { wrap.hidden = true; return; }   // V43.7 — was !plan.openN
-    renderKbPick(plan);
+    if (!plan.openN) { wrap.hidden = true; return; }
 
     var label = document.getElementById('kbsk-label');
     var note  = document.getElementById('kbsk-note');
@@ -11433,21 +11630,6 @@ function refreshKiteBasket() {
     var btn   = document.getElementById('kbsk-btn');
     var eyebrow = wrap.querySelector('.kbsk-eyebrow');
     var multi = plan.total > 1;
-    if (!plan.openN) {
-      /* V43.7 — the member is choosing and has chosen nothing: the checklist stays,
-         nothing can be sent, and the band says so instead of disappearing. */
-      if (facts) facts.innerHTML = '<span class="kbsk-fact">0<span>of ' + plan.allOpen.length + ' orders chosen</span></span>';
-      if (eyebrow) eyebrow.textContent = 'Step 3';
-      if (list) { list.hidden = true; list.innerHTML = ''; }
-      if (btn) btn.hidden = true;
-      if (note) note.innerHTML = '<b>Choose at least one order above</b> to send it to Kite, or switch back to all of them.';
-      wrap.hidden = false;
-      return;
-    }
-    var skipNote = (plan.pickOn && plan.skipped)
-      ? '<b>' + plan.skipped + ' order' + (plan.skipped === 1 ? ' is' : 's are') + ' not chosen</b> and stay' + (plan.skipped === 1 ? 's' : '') +
-        ' on your list — choose ' + (plan.skipped === 1 ? 'it' : 'them') + ' later, or place ' + (plan.skipped === 1 ? 'it' : 'them') + ' yourself. '
-      : '';
 
     /* The facts describe the WHOLE cycle — every open order and every rupee of
        it — in both modes. V35.3 split buys from sells (money going out and
@@ -11459,7 +11641,7 @@ function refreshKiteBasket() {
       if (plan.buyVal  > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.buyVal))  + '<span>to buy</span></span>');
       if (plan.sellVal > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.sellVal)) + '<span>to sell</span></span>');
       facts.innerHTML =
-        '<span class="kbsk-fact">' + plan.openN + '<span>' + (plan.pickOn && plan.skipped ? 'of ' + plan.allOpen.length + ' orders' : 'order' + (plan.openN === 1 ? '' : 's')) + '</span></span>' +
+        '<span class="kbsk-fact">' + plan.openN + '<span>order' + (plan.openN === 1 ? '' : 's') + '</span></span>' +
         (money.length ? '<i class="kbsk-dot"></i>' + money.join('<i class="kbsk-dot"></i>') : '') +
         (multi ? '<i class="kbsk-dot"></i><span class="kbsk-fact">' + plan.total + '<span>Kite baskets</span></span>' : '') +
         '<i class="kbsk-dot"></i>' +
@@ -11485,7 +11667,7 @@ function refreshKiteBasket() {
         if (btn) btn.onclick = abarEditCapital;
       }
       if (note) {
-        note.innerHTML = _kbCapNote() + skipNote + _kbHoursNote() +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() +
           (b.state === 'sent'
             ? '<b>Opened on Kite from this device.</b> Tick each order once it fills; send again only if you closed Kite without confirming. '
             : b.state === 'stale'
@@ -11532,8 +11714,8 @@ function refreshKiteBasket() {
         list.hidden = false;
       }
       if (note) {
-        note.innerHTML = _kbCapNote() + skipNote + _kbHoursNote() +
-          '<b>Kite accepts ten orders per basket, so ' + (plan.pickOn && plan.skipped ? 'the ' + plan.openN + ' chosen' : 'this cycle’s ' + plan.openN) + ' go in ' + plan.total + '.</b> ' +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() +
+          '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' +
           (plan.next
             ? 'Send basket ' + plan.next.pos + ', confirm it on Kite, then come back for ' +
               (plan.next.pos < plan.total ? 'the next one. ' : 'any you closed without confirming. ')
@@ -11981,7 +12163,11 @@ function exportCSV() {
      are appended as SELL rows with the quantity actually held. With no previous
      cycle recorded the diff is unknown, and there every row is honestly a BUY. */
   const diff = window._bookDiff;
-  const known = !!(diff && diff.known);
+  // V43.8 — the file follows Step 3: under Buy all every row is a BUY (the shape of a
+  // first cycle), and under Pick stocks only the ticked orders are marked.
+  const omC = orderModeState();
+  const known = !!(diff && diff.known) && omC.m !== 'fresh';
+  const pickC = omC.m === 'pick' ? (omC.p || {}) : null;
   const addSet = {}; if (known) diff.added.forEach(t => { addSet[t] = 1; });
   const header = ['Action','#','Company','Ticker','Industry','Recommended Price (INR)','Weight (%)','Allocation (INR)','Shares'];
   const lines = [header.join(',')];
@@ -12004,8 +12190,11 @@ function exportCSV() {
        there was nothing to do — the same "carried over means untouched"
        assumption the change card and the picks table were both carrying. */
     const mv = known ? heldMovePP(s.ticker) : null;
+    const T = String(s.ticker || '').toUpperCase();
     const row = [
       _isRestricted(s.ticker) ? 'RESTRICTED' :   // V39.5 — B1: never sized, never traded
+      pickC ? (pickC[T] ? 'BUY' : (mv != null && pickC['RW:' + T] ? rwAction(s.ticker)
+                                   : (known && !addSet[s.ticker] ? 'HOLD' : 'NOT CHOSEN'))) :
       known ? (addSet[s.ticker] ? 'BUY' : (mv != null ? rwAction(s.ticker) : 'HOLD')) : 'BUY',
       i+1,
       JSON.stringify(s.company_name||''),
@@ -12026,7 +12215,7 @@ function exportCSV() {
   if (known && diff.removed.length){
     const pp = diff.prevPos || {};
     // V39.5 — no row for a restricted name; a held-back sale carries its date.
-    diff.removed.filter(t => !_isRestricted(t)).forEach((t, j) => {
+    diff.removed.filter(t => !_isRestricted(t) && (!pickC || pickC['SELL:' + String(t).toUpperCase()])).forEach((t, j) => {
       const p = pp[t] || {};
       const until = _csHoldUntil(t);
       lines.push([
@@ -12117,6 +12306,15 @@ function _setHowToStep3(orders){
   var p = document.getElementById('hs3-copy');
   if (!p) return;
   var base = ' Limit orders near rec. price are fine on liquid names.';
+  // V43.8 — Pick stocks: the orders the member ticked, in the list below.
+  if (orders && orders.mode === 'pick'){
+    var pn = orders.all.length, pS = orders.sells.length + (orders.trims || []).length, pB = pn - pS;
+    p.textContent = pn
+      ? 'The ' + pn + ' order' + (pn === 1 ? '' : 's') + ' you ticked in the list below: ' +
+        [pS ? 'sell ' + pS : '', pB ? 'buy ' + pB : ''].filter(Boolean).join(', then ') + ', at the quantities shown there.' + base
+      : 'Tick the stocks to buy or sell in the list below, and the orders follow.' + base;
+    return;
+  }
   if (!orders || !orders.known){
     p.textContent = 'Use the Shares column as your quantity for each ticker.' + base;
     return;
@@ -12841,8 +13039,12 @@ function bookDiff(sub, stocks){
    Sell quantities come from the previous cycle's recorded position; a record
    without one yields a sell the member can tick and open at their broker but
    which cannot be basketed, because a basket row without a quantity is a
-   guess about how much of their money to move. */
-function cycleOrders(){
+   guess about how much of their money to move.
+   V43.8 — this is now the REBALANCE: the list for a member who still holds last
+   month's book. cycleOrders(), below it, applies what the member said in Step 3
+   (rebalance, buy all, or pick stocks), and is what every surface that acts reads.
+   The change card and the cost card describe the model's month, and read this. */
+function rebalanceOrders(){
   var out = { known:false, buys:[], sells:[], all:[], sellSized:0, sellUnsized:0 };
   var list = stocksData || [];
   if (!list.length) return out;
@@ -12851,12 +13053,7 @@ function cycleOrders(){
   var byTicker = {};
   list.forEach(function(s){ byTicker[String(s.ticker || '')] = s; });
 
-  var mkBuy = function(s){
-    var price = Number(s.recommended_price) || 0;
-    var qty   = (price > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / price) : 0;
-    return { side:'BUY', ticker:String(s.ticker || '').toUpperCase(), name:s.company_name || s.ticker,
-             y:s.yahoo_ticker || '', price:price, qty:qty, stock:s };
-  };
+  var mkBuy = function(s){ return _mkBuyOrder(s, list, cap); };
 
   // V39.5 — B1/B2. A restricted name gets no order on either side, ever; a sale
   // still inside the member's minimum holding period waits in `holdBack` (with its
@@ -12942,6 +13139,43 @@ function cycleOrders(){
   // Names leaving, then trims, then new names, then adds: every sale funds a buy.
   out.all = out.sells.concat(out.trims, out.buys, out.adds);
   return out;
+}
+/* One name, bought at the Shares column's own expression. */
+function _mkBuyOrder(s, list, cap){
+  var price = Number(s.recommended_price) || 0;
+  var qty   = (price > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / price) : 0;
+  return { side:'BUY', ticker:String(s.ticker || '').toUpperCase(), name:s.company_name || s.ticker,
+           y:s.yahoo_ticker || '', price:price, qty:qty, stock:s };
+}
+/* V43.8 — THE MEMBER'S ORDER LIST: the rebalance, the whole book, or what they ticked
+   (orderModeState). `mode` says which, for the sentences that describe it. Buy all has
+   the shape of a first cycle (known false, the book is the list, nothing to sell), so
+   every surface already says the right thing about it; Pick keeps the rebalance's
+   held-back sales and re-weight flags and carries only the ticked orders. */
+function cycleOrders(){
+  var base = rebalanceOrders();
+  var om = orderModeState();
+  if (om.m === 'fresh' && base.known){
+    var buys = wholeBookOrders();
+    return { known:false, mode:'fresh', buys:buys, sells:[], all:buys.slice(), sellSized:0, sellUnsized:0,
+             holdBack:[], trims:[], adds:[], rw:[], rwFlat:[], rwKnown:false, rwUnknown:false };
+  }
+  if (om.m === 'pick'){
+    var pk = om.p || {};
+    var chosen = pickCandidates(base).filter(function(o){ return !!pk[orderKey(o)]; });
+    var out = { known:base.known, mode:'pick', holdBack:base.holdBack || [], rwFlat:base.rwFlat || [],
+                rwKnown:!!base.rwKnown, rwUnknown:!!base.rwUnknown, sellSized:0, sellUnsized:0 };
+    out.sells = chosen.filter(function(o){ return o.side === 'SELL' && !o.rw; });
+    out.trims = chosen.filter(function(o){ return o.side === 'SELL' && !!o.rw; });
+    out.buys  = chosen.filter(function(o){ return o.side === 'BUY' && !o.rw; });
+    out.adds  = chosen.filter(function(o){ return o.side === 'BUY' && !!o.rw; });
+    out.rw    = out.trims.concat(out.adds);
+    out.sells.forEach(function(o){ if (o.qty > 0) out.sellSized++; else out.sellUnsized++; });
+    out.all   = out.sells.concat(out.trims, out.buys, out.adds);
+    return out;
+  }
+  base.mode = base.known ? 'rebal' : 'fresh';
+  return base;
 }
 
 /* The demo fixture's "last month". Per MODE, because ?demo=2 is the MultiAsset ETF
@@ -13162,7 +13396,7 @@ function renderCycleCost(){
      their value, both sides, the way the buys and sells above are counted: "X% of
      your capital changes hands" then means the same thing on every book. Their
      trims are sales, so their gains are taxed below. An ordinary cycle has none. */
-  var ocC = cycleOrders(), rwC = ocC.rw || [], rwTrims = ocC.trims || [];
+  var ocC = rebalanceOrders(), rwC = ocC.rw || [], rwTrims = ocC.trims || [];   // V43.8 — the model's month
   var rwSold = 0, rwBought = 0;
   if (rwC.length){
     rwC.forEach(function(o){ var v = o.qty * (o.price || 0); if (o.side === 'SELL') rwSold += v; else rwBought += v; });
@@ -13320,6 +13554,33 @@ function renderHeroJob(){
       var _nr = window._cycDates && window._cycDates.reb;
       el.textContent = 'Everything this cycle is placed. Nothing to do until ' +
         (_nr && !isNaN(_nr.getTime()) ? mfDate(_nr, { day:'numeric', month:'short' }) : 'the next rebalance') + '.';
+      return;
+    }
+  } catch (e) {}
+  /* V43.8 — the line follows the member's answer in Step 3. Unanswered, it says
+     what is being asked; Buy all and Pick stocks count their own lists. */
+  try {
+    var _omS = orderModeState(), _dkn = !!(window._bookDiff && window._bookDiff.known);
+    if (_dkn && !_omS.m){
+      el.textContent = 'This month\u2019s picks are in. Tell Step 3 whether you still hold last month\u2019s book, and it lists your orders.';
+      return;
+    }
+    if (_dkn && (_omS.m === 'fresh' || _omS.m === 'pick')){
+      var _oo = cycleOrders(), _mo = loadBought(currentStrategy) || {};
+      var _lft = _oo.all.filter(function(o){ return !_mo[orderKey(o)]; });
+      var _lb = _lft.filter(function(o){ return o.side === 'BUY'; }).length, _ls = _lft.length - _lb;
+      var _of = _lft.length < _oo.all.length ? _lft.length + ' of ' + _oo.all.length : String(_oo.all.length);
+      if (_omS.m === 'fresh'){
+        el.textContent = 'Buying the whole book: ' + _of + ' buy order' + (_oo.all.length === 1 ? '' : 's') +
+          (_lft.length < _oo.all.length ? ' left' : '') + ' to place.';
+      } else if (!_oo.all.length){
+        el.textContent = 'Pick stocks: tick what to buy or sell in Step 3, and your orders follow.';
+      } else {
+        el.textContent = (_lft.length < _oo.all.length
+            ? _lft.length + ' of the ' + _oo.all.length + ' orders you ticked left to place'
+            : _oo.all.length + ' order' + (_oo.all.length === 1 ? '' : 's') + ' you ticked to place') +
+          ' \u2014 ' + [_ls ? _ls + '\u00a0to sell' : '', _lb ? _lb + '\u00a0to buy' : ''].filter(Boolean).join(' and ') + '.';
+      }
       return;
     }
   } catch (e) {}
@@ -13496,7 +13757,8 @@ function refreshOrdersTile(animate){
       oSub.textContent = 'all ' + n + ' placed — done for this cycle';
     }
   } else if (!placed){
-    oSub.textContent = first ? 'the full book — your first tracked cycle'
+    oSub.textContent = (oc.mode === 'fresh' && window._bookDiff && window._bookDiff.known) ? 'the whole book, bought again'   // V43.8
+                     : first ? 'the full book — your first tracked cycle'
                              : sides(oc.buys.length, oc.sells.length);
   } else if (left){
     oSub.textContent = 'left of ' + n + ' · ' + (first ? placed + ' placed' : sides(leftIn, leftOut));
@@ -13713,6 +13975,8 @@ function renderBookChange(diff, stocks){
     var pp     = diff.prevPos || {};
     var sells  = function(list){
       if (!list.length) return '<div class="chg-none">None this cycle</div>';
+      // V43.8 — Buy all in Step 3: the member holds none of last month's book.
+      if (orderModeState().m === 'fresh') return '<div class="chg-none">Nothing to sell here: you chose <b>Buy all</b> in Step 3, which starts from none of last month&rsquo;s book.</div>';
       var unknownN = 0;
       return '<div class="chg-sells">' + list.map(function(t){
         var p    = pp[t] || {};
