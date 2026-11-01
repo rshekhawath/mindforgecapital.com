@@ -18,6 +18,10 @@ publishes elsewhere. None carries a pick, a book's weights, or anything from IP/
     docs/screener/closes-etf.json      common NSE ETFs (volatility, beta, trend)
     docs/screener/backtest-months.json the month-by-month backtest the strategy
                                        pages already print, as data
+    docs/screener/nse-series.json      (V43.9) every symbol NSE traded only outside
+                                       EQ (BE/BZ trade-for-trade, SM/ST SME): the
+                                       dashboard names their Kite basket rows
+                                       SYMBOL-BE, the way Kite does
 
 WHY THE BHAVCOPY AND NOT hist/: the snapshot's hist/<SYM>.json rows are stamped
 with the date the refresh RAN and hold whatever price Yahoo had then — a morning
@@ -489,6 +493,27 @@ def build_signals(snap, sessions, as_of):
             'rows': rows}
 
 
+def build_series(as_of):
+    """NSE's series for every symbol that traded only OUTSIDE EQ on the latest session:
+    trade-for-trade (BE), its stricter BZ, and the SME boards (SM, ST). Kite names these
+    instruments SYMBOL-BE and so on, and an order sent under the bare symbol finds no NSE
+    instrument to trade: on 1 Nov 2026 four of SmallMicro's fifteen (STLTECH, SIGMAADV, HFCL,
+    LOTUSDEV) showed LTP 0.00 on Kite's own basket screen. The dashboard reads this file to
+    name each basket row the way Kite does. From the bhavcopy fetch_bhav() cached for as_of."""
+    seen = {}
+    with open(os.path.join(CACHE, 'bhav', f"cm_{as_of.replace('-', '')}.csv"), encoding='utf-8') as f:
+        for row in csv.DictReader(f):
+            seen.setdefault(row['TckrSymb'], set()).add(row.get('SctySrs') or '')
+    series = {s: sorted(v - {'', 'EQ'})[0] for s, v in sorted(seen.items()) if 'EQ' not in v and v - {''}}
+    counts = {}
+    for v in series.values():
+        counts[v] = counts.get(v, 0) + 1
+    return {'as_of': as_of,
+            'notes': 'Symbols NSE traded only outside the EQ series on this session (BE / BZ = trade-for-trade, '
+                     'SM / ST = SME). Kite trades them as SYMBOL-<series>.',
+            'counts': counts, 'series': series}
+
+
 def build_backtest_months():
     """The month-by-month backtest each strategy page prints (its MFCAL block), as
     data. Read from the published pages, so it cannot disagree with them."""
@@ -591,6 +616,15 @@ def main():
             write_json(os.path.join(SCR, 'signals.json'), build_signals(snap, sessions, as_of))
     except Exception as e:
         log(f'signals.json failed: {e} — keeping the previous file')
+
+    try:
+        se = build_series(as_of)
+        if se['series']:
+            write_json(os.path.join(SCR, 'nse-series.json'), se)
+            log(f"nse-series: {len(se['series'])} symbols outside EQ on {as_of} · "
+                + ' · '.join(f'{k} {v}' for k, v in sorted(se['counts'].items())))
+    except Exception as e:
+        log(f'nse-series.json failed: {e} — keeping the previous file')
 
     try:
         bm = build_backtest_months()

@@ -66,8 +66,16 @@ if ('serviceWorker' in navigator) {
        null here means this load is the initial claim, and the first change is
        swallowed rather than announced. */
     var hadController = !!navigator.serviceWorker.controller;
+    /* V43.9 — and not for a worker THIS load installed. Every load asks sw.js for an update,
+       so the first visit after a release swaps workers seconds after the
+       page arrived, while sw.js serves dashboard.html from the network: the page is
+       already the new build. Seen on the owner's Chrome, 1 Nov 2026: "a new version is
+       available" over the V43.8 page it had just loaded. A tab that was open before the
+       release meets the change long after its own load, and is still told. */
+    var loadedAt = Date.now();
     navigator.serviceWorker.addEventListener('controllerchange', function(){
       if (!hadController) { hadController = true; return; }
+      if (Date.now() - loadedAt < 20000) return;
       if (told) return;
       told = true;
       var msg = 'A new version of the dashboard is available — reload to use it.';
@@ -5355,6 +5363,10 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       }
       /* the site's 44px on touch: these classes outrank its bare `button` rule */
       @media (hover:none) and (pointer:coarse){ .om-pick-a{ min-height:44px; } }
+      /* V43.9 — a stock NSE trades outside EQ (BE, BZ, SM, ST): the picks table and the order sheet tag it */
+      .srs-tag{ display:inline-block; margin-left:6px; padding:1px 6px; border-radius:6px; vertical-align:middle;
+        font-size:11px; font-weight:800; letter-spacing:.04em; line-height:1.5; color:#8a4b00; background:rgba(217,119,6,.13); }
+      html[data-theme="dark"] .srs-tag{ color:#fbbf24; background:rgba(251,191,36,.14); }
       @media (max-width:560px){
         .kbsk{ padding:14px 14px; gap:12px; }
         .kbsk-cta{ width:100%; justify-content:center; }
@@ -6180,6 +6192,7 @@ function _v412SampleCopy(){
 }
 
 async function init() {
+  try { loadNseSeries(); } catch (e) {}   // V43.9 — Kite's names for BE-series stocks
   if (isDemo) {
     try { var db = document.getElementById('demo-banner'); if (db) db.hidden = false; } catch (e) {}
     try { var de = document.getElementById('demo-end'); if (de) de.hidden = false; } catch (e) {}   // V40.7 — B3
@@ -8988,7 +9001,7 @@ function renderTable(stocks) {
       <td class="bought-col">${rs ? _csLockMark(s) : held ? (rwT ? `<span class="rw-slot" data-rwslot="tcb" data-rwt="${rwT}">${_rwSlot('tcb', s, _ocT, bought)}</span>` : heldMark(s, movePP))
         : `<input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}>`}</td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}${rwT ? `<span class="rw-slot" data-rwslot="ttag" data-rwt="${rwT}">${_rwSlot('ttag', s, _ocT, bought)}</span>` : ''}</td>
+      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}${srsTag(s)}${rwT ? `<span class="rw-slot" data-rwslot="ttag" data-rwt="${rwT}">${_rwSlot('ttag', s, _ocT, bought)}</span>` : ''}</td>
       <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${rs ? '' : brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(groupName(s))}">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></td>
       <td class="price right"><span class="px-rec">${fmtPrice(entry)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
@@ -9055,7 +9068,7 @@ function renderTable(stocks) {
         <div class="sc-num">${i+1}</div>
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
-          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${rs ? _csTag() : newTag(s)}</div>
+          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${rs ? _csTag() : newTag(s)}${srsTag(s)}</div>
         </div>
         <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>
       </div>
@@ -9901,7 +9914,7 @@ var BROKERS = {
   kite:   { name: 'Kite',   color: '#387ed1', ink: '#26639f', inkDark: '#6ba0e2',
             link: function(s){
               // Kite supports a query-pre-fill URL on the order page
-              var t = (s.ticker || '').toUpperCase();
+              var t = kiteSymbol(s.ticker);   // V43.9 — a BE-series stock is charted as STLTECH-BE
               return 'https://kite.zerodha.com/chart/web/NSE/' + encodeURIComponent(t);
             } },
   groww:  { name: 'Groww',  color: '#00b386', ink: '#006b50', inkDark: '#00b386',
@@ -11218,16 +11231,27 @@ function renderOrderMode(){
   var nTicked = cands.filter(function (o) { return !!pk[orderKey(o)]; }).length;
   var pl = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
 
+  /* V43.9 — orders with no quantity on record (last month's amount was never entered):
+     sales of the names that left, and re-weights that cannot be sized. They cannot go in
+     a basket, so the card counts them apart ("4 orders · 4 need sizes") instead of
+     promising 8, and says that Match my holdings sizes them. Seen live on 1 Nov 2026:
+     "8 orders" over a band of 4, and MultiAsset's "Nothing changes" over 8 moved weights. */
+  var nSz = known ? (base.sellUnsized || 0) : 0;
+  var nMv = (known && base.rwUnknown) ? d.held.filter(function (t) { return heldMovePP(t) != null && !_isRestricted(t); }).length : 0;
   var oR = $('om-o-rebal');
   if (oR) oR.hidden = !known;
   if (known){
     var nS = base.sells.length, nB = base.buys.length, nRw = (base.rw || []).length;
-    var nCarry = Math.max(0, d.held.filter(function (t) { return !_isRestricted(t); }).length - nRw);
+    var nCarry = Math.max(0, d.held.filter(function (t) { return !_isRestricted(t); }).length - nRw - nMv);
+    var nSend = base.all.filter(function (o) { return o.qty >= 1; }).length;
     var bits = [];
-    if (nS) bits.push('sell the ' + nS + ' that left');
+    if (nS) bits.push('sell the ' + nS + ' that left' + (nSz ? ' (Match my holdings sizes ' + (nSz === nS ? 'them' : nSz + ' of them') + ')' : ''));
     if (nB) bits.push('buy the ' + nB + ' that joined');
     if (nRw) bits.push('re-weight ' + nRw);
-    setT('om-n-rebal', base.all.length ? pl(base.all.length, 'order', 'orders') : 'nothing to place');
+    if (nMv) bits.push('re-weight ' + nMv + ' (Match my holdings sizes them)');
+    setT('om-n-rebal', (nSz + nMv)
+      ? (nSend ? pl(nSend, 'order', 'orders') + ' \u00b7 ' : '') + (nSz + nMv) + ' need sizes'
+      : (base.all.length ? pl(base.all.length, 'order', 'orders') : 'nothing to place'));
     setT('om-d-rebal', 'I still hold last month’s book. ' +
       (bits.length ? bits.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) : 'Nothing changes') +
       (nCarry === 1 ? '; the other one carries forward.' : nCarry ? '; the other ' + nCarry + ' carry forward.' : '.'));
@@ -11239,7 +11263,8 @@ function renderOrderMode(){
     : 'Every name in this month’s book, at the Shares quantity.');
   setT('om-n-pick', st.m === 'pick' ? nTicked + ' of ' + cands.length + ' ticked' : cands.length + ' to choose from');
   setT('om-d-pick', known
-    ? 'Only some of it: tick what to buy or sell, from this month’s changes and the names that carry forward.'
+    ? 'Only some of it: tick what to buy or sell, from this month’s changes and the names that carry forward.' +
+      ((nSz + nMv) ? ' ' + ((nSz + nMv) === 1 ? 'One order needs' : (nSz + nMv) + ' orders need') + ' your quantities first: Match my holdings.' : '')
     : 'Tick the names to buy now.');
 
   ['rebal', 'fresh', 'pick'].forEach(function (m) {
@@ -11262,6 +11287,7 @@ function renderOrderMode(){
       var why = o.why === 'left' ? 'left the book' : o.why === 'joined' ? 'joined this month'
               : o.why === 'held' ? 'carries forward · the whole position'
               : o.why === 'rw' ? 're-weight, ' + o.from + ' → ' + o.to + ' shares' : 'in this month’s book';
+      if (nseSeriesOf(o.ticker)) why += ' \u00b7 NSE ' + nseSeriesOf(o.ticker) + ' series';   // V43.9
       var meta = pl(o.qty, 'share', 'shares') + ' · ' + fmtMoney(Math.round(o.qty * (o.price || 0)));
       return '<li><label class="om-row' + (on ? '' : ' is-off') + '">' +
         '<input type="checkbox" data-okey="' + escapeHtml(k) + '"' + (on ? ' checked' : '') + ' onchange="omPickToggle(this)">' +
@@ -11278,7 +11304,8 @@ function renderOrderMode(){
     note.innerHTML =
       st.m === 'rebal' && known
         ? (d.prevQtyKnown === false
-            ? 'Last month&rsquo;s quantities were sized at the starting amount, not one you entered, so the sales cannot be sized here;' + match + ' works them out from your broker&rsquo;s holdings file.'
+            ? 'Last month&rsquo;s quantities were sized at the starting amount, not one you entered, so ' +
+              (nMv && !nSz ? 'the re-weights' : nMv ? 'the sales and re-weights' : 'the sales') + ' cannot be sized here;' + match + ' works them out from your broker&rsquo;s holdings file.'
             : 'Sales use last month&rsquo;s quantities at your capital. Holding a different number?' + match + ' works out exact orders from your broker&rsquo;s holdings file.')
       : st.m === 'fresh' && known
         ? 'Nothing is sold: this starts from an account that holds none of the book.'
@@ -11298,12 +11325,73 @@ function abarGoToOrderMode(){
   document.documentElement.style.scrollBehavior = prev;
 }
 
+/* ── V43.9 · KITE NAMES A TRADE-FOR-TRADE STOCK SYMBOL-BE ─────────────────────
+   Found on the owner's live Zerodha account, 1 Nov 2026: four of SmallMicro's fifteen
+   (STLTECH, SIGMAADV, HFCL, LOTUSDEV) showed LTP 0.00 on Kite's own basket screen. NSE
+   had moved them to its BE (trade-for-trade) series, where Kite's instrument is
+   STLTECH-BE; under the bare symbol Kite finds no NSE instrument to trade, so a quarter
+   of that month's buys could not have filled. screener/market_data.py now writes, with
+   every daily refresh, the symbols NSE traded only outside EQ (BE, BZ, SM, ST) from its
+   bhavcopy; each basket row, Kite link and order line reads it. A file more than ten days
+   old is not used: a name that moved back to EQ would then fail the other way round. */
+window._nseSeries = null;
+function loadNseSeries(){
+  if (window._nseSeriesP) return window._nseSeriesP;
+  window._nseSeriesP = fetch('screener/nse-series.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.series || !d.as_of) return null;
+      var age = (Date.now() - new Date(d.as_of + 'T15:30:00+05:30').getTime()) / 864e5;
+      if (!(age <= 10)) return null;
+      window._nseSeries = d;
+      // a list drawn before the file arrived re-draws once, if any name in it is affected
+      try {
+        if ((stocksData || []).some(function (x) { return nseSeriesOf(x.ticker); }) && document.querySelector('#stocks-tbody tr[data-row]')) applySort();
+      } catch (e) {}
+      try { refreshKiteBasket(); } catch (e) {}
+      return d;
+    })
+    .catch(function () { return null; });
+  return window._nseSeriesP;
+}
+function nseSeriesOf(t){
+  var d = window._nseSeries;
+  return (d && d.series && d.series[String(t || '').toUpperCase()]) || '';
+}
+function kiteSymbol(t){
+  var T = String(t || '').toUpperCase(), sr = nseSeriesOf(T);
+  return sr ? T + '-' + sr : T;
+}
+function srsTag(s){
+  var sr = nseSeriesOf(s && s.ticker);
+  if (!sr) return '';
+  var T = String(s.ticker || '').toUpperCase();
+  return '<span class="srs-tag" title="NSE ' + sr + ' series' + (sr === 'BE' || sr === 'BZ' ? ' (trade-for-trade)' : '') +
+         ': Kite lists it as ' + escapeHtml(T + '-' + sr) + '">' + sr + '</span>';
+}
+/* One sentence for the band when anything it sends trades outside EQ. */
+function _kbSeriesNote(plan){
+  var names = [], codes = [];
+  (plan.live || []).forEach(function (b) { b.open.forEach(function (o) {
+    var sr = nseSeriesOf(o.ticker);
+    if (sr && names.indexOf(o.ticker) < 0) { names.push(o.ticker); if (codes.indexOf(sr) < 0) codes.push(sr); }
+  }); });
+  if (!names.length) return '';
+  var one = names.length === 1;
+  var list = one ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+  var t2t = codes.some(function (c) { return c === 'BE' || c === 'BZ'; });
+  return '<b>' + escapeHtml(list) + ' trade' + (one ? 's' : '') + ' in NSE&rsquo;s ' + escapeHtml(codes.join('/')) + ' series</b>' +
+    (t2t ? ' (trade-for-trade: delivery only, each trade settled on its own)' : ' (the SME board)') +
+    ', so ' + (one ? 'it goes' : 'they go') + ' to Kite as ' + escapeHtml(kiteSymbol(names[0])) + (one ? '' : ' and so on') +
+    '. If Kite will not take a market order for ' + (one ? 'it' : 'one of them') + ', switch it to Limit there. ';
+}
+
 /* One order -> one Kite basket row. The only place that shape is written. */
 function _kbRow(o){
   return {
     variety:          'regular',
     exchange:         'NSE',
-    tradingsymbol:    o.ticker,
+    tradingsymbol:    kiteSymbol(o.ticker),           // V43.9 — STLTECH-BE, not STLTECH
     transaction_type: o.side,
     order_type:       'MARKET',
     product:          'CNC',                          // delivery, not intraday
@@ -11566,7 +11654,7 @@ function renderOrderSheet(){
       return '<li class="os-row' + (done ? ' is-done' : '') + '">' +
         '<span class="os-n">' + (i + 1) + '</span>' +
         '<span class="os-side ' + (o.side === 'SELL' ? 'is-sell' : 'is-buy') + '">' + o.side + '</span>' +
-        '<span class="os-t">' + escapeHtml(o.ticker) + '</span>' +
+        '<span class="os-t">' + escapeHtml(o.ticker) + srsTag(o) + '</span>' +
         '<span class="os-meta">' + o.qty + ' share' + (o.qty === 1 ? '' : 's') + ' \u00b7 ~' + escapeHtml(fmtMoney(Math.round(o.qty * (o.price || 0)))) + '</span>' +
         '<button type="button" class="broker-link broker-copy os-copy" data-copy="' + escapeHtml(line) + '" onclick="copyOrderLine(this)" aria-label="Copy ' + escapeHtml(line) + '">Copy</button>' +
         '<label class="os-tick"><input type="checkbox" data-okey="' + escapeHtml(k) + '"' + (done ? ' checked' : '') +
@@ -11667,7 +11755,7 @@ function refreshKiteBasket() {
         if (btn) btn.onclick = abarEditCapital;
       }
       if (note) {
-        note.innerHTML = _kbCapNote() + _kbHoursNote() +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() + _kbSeriesNote(plan) +
           (b.state === 'sent'
             ? '<b>Opened on Kite from this device.</b> Tick each order once it fills; send again only if you closed Kite without confirming. '
             : b.state === 'stale'
@@ -11714,7 +11802,7 @@ function refreshKiteBasket() {
         list.hidden = false;
       }
       if (note) {
-        note.innerHTML = _kbCapNote() + _kbHoursNote() +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() + _kbSeriesNote(plan) +
           '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' +
           (plan.next
             ? 'Send basket ' + plan.next.pos + ', confirm it on Kite, then come back for ' +
@@ -19393,7 +19481,9 @@ function _preheldForm(p){
     var parsed = parseHoldings(state.syncText);
     if (!parsed.count){
       box.innerHTML = '<div class="adj-warn">No holdings could be read. Paste a CSV with a Symbol and a Quantity column, or one holding per line, like <b>SHILPAMED 105</b>.' +
-        (parsed.bad.length ? ' Unread: ' + esc(parsed.bad.slice(0, 3).join(' | ')) : '') + '</div>';
+        (parsed.bad.length ? ' Unread: ' + esc(parsed.bad.slice(0, 3).join(' | ')) : '') +
+        // V43.9 — an empty demat has nothing to paste: that member's answer is Buy all
+        ' Holding none of the book? Choose <b>Buy all</b> in Step 3 instead. <button type="button" class="chg-hint-btn" onclick="abarGoToOrderMode()">Go to Step 3</button></div>';
       lastSync = null; return;
     }
     var beforeOn = HELD_BEFORE && $('adj-sync-before') && $('adj-sync-before').checked;
