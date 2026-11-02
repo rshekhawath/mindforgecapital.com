@@ -22,6 +22,9 @@ publishes elsewhere. None carries a pick, a book's weights, or anything from IP/
                                        EQ (BE/BZ trade-for-trade, SM/ST SME): the
                                        dashboard names their Kite basket rows
                                        SYMBOL-BE, the way Kite does
+    docs/screener/nse-holidays.json    (V44.1) NSE's trading holidays for the cash
+                                       market: on one the dashboard reads NSE as
+                                       shut and sends Kite baskets as AMO
 
 WHY THE BHAVCOPY AND NOT hist/: the snapshot's hist/<SYM>.json rows are stamped
 with the date the refresh RAN and hold whatever price Yahoo had then — a morning
@@ -514,6 +517,54 @@ def build_series(as_of):
             'counts': counts, 'series': series}
 
 
+def build_holidays(prev):
+    """NSE's trading holidays for the cash market (the CM segment of its holiday master).
+    Zerodha refuses a regular order while NSE is shut, so the dashboard sends Kite baskets as
+    after-market orders (AMO) then (V44.0). It knew only weekends and the clock, so a weekday
+    holiday in market hours (10 and 24 Nov 2026) looked open and a basket went as 'regular';
+    the status bar, the price polling and the 1D label read the same test. NSE lists one
+    calendar year at a time, so a year it no longer returns is kept from the previous file
+    (the year before this one at most)."""
+    import requests
+    s = requests.Session()
+    s.headers.update(dict(UA, **{'Accept-Language': 'en-US,en;q=0.9'}))
+    try:
+        s.get('https://www.nseindia.com/', timeout=20)   # the API answers only with the cookies the homepage sets
+    except Exception:
+        pass
+    r = s.get('https://www.nseindia.com/api/holiday-master?type=trading', timeout=25,
+              headers={'Accept': 'application/json,text/plain,*/*',
+                       'Referer': 'https://www.nseindia.com/resources/exchange-communication-holidays'})
+    r.raise_for_status()
+    got = {}
+    for row in r.json().get('CM') or []:
+        d = datetime.strptime(str(row.get('tradingDate') or '').strip(), '%d-%b-%Y').date()
+        # a trailing * marks Diwali's Muhurat session, an evening hour timed by a later circular
+        got[d.isoformat()] = re.sub(r'\s*\*+\s*$', '', str(row.get('description') or '')).strip() or 'a trading holiday'
+    if len(got) < 8:
+        raise ValueError(f'NSE listed only {len(got)} cash-market holidays')
+    fetched = {int(k[:4]) for k in got}
+    years = sorted(fetched | {y for y in (prev.get('years') or []) if y >= date.today().year - 1})
+    keep = {k: v for k, v in (prev.get('holidays') or {}).items() if int(k[:4]) in years and int(k[:4]) not in fetched}
+    keep.update(got)
+    return {'as_of': date.today().isoformat(),
+            'notes': "NSE's trading holidays for the cash market (CM segment of its holiday master), including those "
+                     "that fall on a weekend. Diwali's Muhurat session is not marked.",
+            'years': years, 'holidays': dict(sorted(keep.items()))}
+
+
+def write_holidays():
+    path = os.path.join(SCR, 'nse-holidays.json')
+    prev = read_json(path, {}) or {}
+    ho = build_holidays(prev)
+    nxt = [k for k in ho['holidays'] if k >= ho['as_of'] and date.fromisoformat(k).weekday() < 5][:3]
+    if ho['years'] == prev.get('years') and ho['holidays'] == prev.get('holidays'):
+        log(f"nse-holidays: unchanged · {len(ho['holidays'])} days · years {ho['years']}")
+        return
+    write_json(path, ho)
+    log(f"nse-holidays: {len(ho['holidays'])} days · years {ho['years']} · next on a weekday: {', '.join(nxt) or 'none'}")
+
+
 def build_backtest_months():
     """The month-by-month backtest each strategy page prints (its MFCAL block), as
     data. Read from the published pages, so it cannot disagree with them."""
@@ -625,6 +676,11 @@ def main():
                 + ' · '.join(f'{k} {v}' for k, v in sorted(se['counts'].items())))
     except Exception as e:
         log(f'nse-series.json failed: {e} — keeping the previous file')
+
+    try:
+        write_holidays()
+    except Exception as e:
+        log(f'nse-holidays.json failed: {e} — keeping the previous file')
 
     try:
         bm = build_backtest_months()

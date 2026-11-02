@@ -6193,6 +6193,7 @@ function _v412SampleCopy(){
 
 async function init() {
   try { loadNseSeries(); } catch (e) {}   // V43.9 — Kite's names for BE-series stocks
+  try { loadNseHolidays(); } catch (e) {} // V44.1 — NSE's trading holidays (status bar, Kite AMO, price polling)
   if (isDemo) {
     try { var db = document.getElementById('demo-banner'); if (db) db.hidden = false; } catch (e) {}
     try { var de = document.getElementById('demo-end'); if (de) de.hidden = false; } catch (e) {}   // V40.7 — B3
@@ -12592,7 +12593,8 @@ function updateMarketStatus() {
   const h = local.getHours(), m = local.getMinutes(), d = local.getDay();
   const mins = h*60 + m;
   const isWeekday = d >= 1 && d <= 5;
-  const isOpen = isWeekday && mins >= open && mins <= close;
+  const hol = _nseHolidayOn(local);   // V44.1 — a trading holiday is shut all day
+  const isOpen = isWeekday && !hol && mins >= open && mins <= close;
 
   const lblEl = document.getElementById('market-label');
   if (lblEl) {
@@ -12604,7 +12606,7 @@ function updateMarketStatus() {
   if (dot) dot.className = isOpen ? 'dot-green' : 'dot-red';
 
   const bar = document.getElementById('market-status');
-  if (bar) bar.title = label + ' · ' + hours + ' · Mon–Fri';
+  if (bar) bar.title = label + ' · ' + hours + ' · Mon–Fri' + (hol ? ' · closed today for ' + hol : '');
 }
 
 // V35.2 — `opts.retry` marks an error the member can actually do something about.
@@ -14250,10 +14252,62 @@ function _todayKey(){ var d = new Date(); return d.getFullYear() + '-' + (d.getM
    the last traded price does not change again until tomorrow. */
 var PX_MAX_AGE_OPEN   = 5 * 60 * 1000;    // 5 minutes during market hours
 var PX_MAX_AGE_CLOSED = 12 * 60 * 60 * 1000; // the rest of the day once NSE has shut
+/* ── V44.1 · NSE'S TRADING HOLIDAYS ─────────────────────────────────────────
+   Until V44.1 "NSE is open" meant a weekday between 9:15 and 15:30, so a weekday
+   holiday looked open: a Kite basket went as 'regular', which Zerodha refuses while
+   NSE is shut (V44.0, below), the status bar said "NSE open", prices were re-polled
+   every five minutes and the 1D move was labelled "today". November 2026 has two,
+   Tue 10 Nov (Diwali Balipratipada) and Tue 24 Nov (Guru Nanak Jayanti).
+   screener/market_data.py writes the list from NSE's holiday master (cash market)
+   with every daily refresh. Without the file, or in a year it does not list, the page
+   knows weekends only, as before. Diwali's evening Muhurat session is not modelled. */
+window._nseHolidays = null;
+function loadNseHolidays(){
+  if (window._nseHolidaysP) return window._nseHolidaysP;
+  window._nseHolidaysP = fetch('screener/nse-holidays.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d || !d.holidays || !Array.isArray(d.years)) return null;
+      window._nseHolidays = d;
+      try { updateMarketStatus(); } catch (e) {}
+      try { refreshKiteBasket(); } catch (e) {}
+      return d;
+    })
+    .catch(function () { return null; });
+  return window._nseHolidaysP;
+}
+/* The holiday's name when `day` (an IST wall-clock Date) is one, else ''. */
+function _nseHolidayOn(day){
+  var h = window._nseHolidays;
+  if (!h || !h.holidays || !day) return '';
+  var k = day.getFullYear() + '-' + ('0' + (day.getMonth() + 1)).slice(-2) + '-' + ('0' + day.getDate()).slice(-2);
+  return Object.prototype.hasOwnProperty.call(h.holidays, k) ? String(h.holidays[k] || 'a trading holiday') : '';
+}
+/* When Zerodha sends an AMO placed now: 9:00 on the next session (this morning's,
+   before 9:00 on a trading day). A date is named only while the list covers it. */
+function _nseAmoWhen(local){
+  var vague = 'on the next trading morning';
+  try {
+    var h = window._nseHolidays;
+    var day0 = new Date(local.getFullYear(), local.getMonth(), local.getDate()), day = new Date(day0.getTime());
+    var trading = function (x) { var g = x.getDay(); return g >= 1 && g <= 5 && !_nseHolidayOn(x); };
+    if (!(trading(day) && local.getHours() * 60 + local.getMinutes() < 9 * 60)) {
+      var i = 0;
+      do { day.setDate(day.getDate() + 1); } while (!trading(day) && ++i < 15);
+    }
+    if (!h || h.years.indexOf(day0.getFullYear()) < 0 || h.years.indexOf(day.getFullYear()) < 0) return vague;
+    var gap = Math.round((day - day0) / 864e5);
+    if (gap === 0) return 'this morning';
+    if (gap === 1) return 'tomorrow morning';
+    var nm = mfDate(day, { weekday: 'long', day: 'numeric', month: 'short' });
+    return nm ? 'on ' + nm : vague;
+  } catch (e) { return vague; }
+}
 function _nseIsOpen(){
   try {
     var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     var d = local.getDay(); if (d < 1 || d > 5) return false;
+    if (_nseHolidayOn(local)) return false;   // V44.1
     var mins = local.getHours() * 60 + local.getMinutes();
     return mins >= (9 * 60 + 15) && mins <= (15 * 60 + 30);
   } catch(e){ return false; }
@@ -14271,14 +14325,13 @@ function _pxMaxAge(){ return _nseIsOpen() ? PX_MAX_AGE_OPEN : PX_MAX_AGE_CLOSED;
    order". So each row now says 'amo' whenever the market is shut (Publisher accepts
    regular, amo and co: kite.trade/docs/connect/v3/basket). Between Zerodha's AMO cut-off
    (8:58) and the open it stays 'regular', which Kite takes in the pre-open from 9:00.
-   NSE's trading holidays are not known here: a weekday holiday in market hours still
-   sends 'regular'. */
+   V44.1: a trading holiday is shut all day (loadNseHolidays, above), so it sends 'amo'. */
 function _kbAmoNow(){
   try {
     if (_nseIsOpen()) return false;
     var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     var d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
-    if (d >= 1 && d <= 5 && m >= 8 * 60 + 58 && m < 9 * 60 + 15) return false;
+    if (d >= 1 && d <= 5 && !_nseHolidayOn(local) && m >= 8 * 60 + 58 && m < 9 * 60 + 15) return false;
     return true;
   } catch (e) { return false; }
 }
@@ -14287,15 +14340,17 @@ function _kbHoursNote(){
     if (_nseIsOpen()) return '';
     var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     var d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
-    var weekday = d >= 1 && d <= 5;
+    var hol = _nseHolidayOn(local);   // V44.1
+    var weekday = d >= 1 && d <= 5 && !hol;
     if (weekday && m > 15 * 60 + 30 && m < 16 * 60)
       return '<b>NSE has closed for the day.</b> Zerodha takes after-market orders from 4:00 pm, so send the basket after that. ';
     if (weekday && m >= 8 * 60 + 58 && m < 9 * 60 + 15)
       return '<b>The market opens at 9:15.</b> Kite takes these orders from the open. ';
     if (m >= 60 && m < 5 * 60 + 30)   // V44.0 — Zerodha's nightly AMO maintenance
       return '<b>Zerodha takes no after-market orders between 1:00 and 5:30 am</b> (its nightly maintenance), so send the basket after 5:30. ';
-    return '<b>NSE is closed right now, so the basket goes to Kite as after-market orders (AMO).</b> Zerodha sends them to the ' +
-      'exchange at 9:00 on the next trading morning. A market order at the open can fill away from the ' +
+    return '<b>' + (hol ? 'NSE is shut today for ' + escapeHtml(hol) : 'NSE is closed right now') +
+      ', so the basket goes to Kite as after-market orders (AMO).</b> Zerodha sends them to the ' +
+      'exchange at 9:00 ' + _nseAmoWhen(local) + '. A market order at the open can fill away from the ' +
       'last price on thinner names, so you can switch any row to Limit on Kite\u2019s screen before confirming. ';
   } catch (e) { return ''; }
 }
