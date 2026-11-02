@@ -11389,7 +11389,7 @@ function _kbSeriesNote(plan){
 /* One order -> one Kite basket row. The only place that shape is written. */
 function _kbRow(o){
   return {
-    variety:          'regular',
+    variety:          _kbAmoNow() ? 'amo' : 'regular',   // V44.0 — an AMO while NSE is shut
     exchange:         'NSE',
     tradingsymbol:    kiteSymbol(o.ticker),           // V43.9 — STLTECH-BE, not STLTECH
     transaction_type: o.side,
@@ -14259,13 +14259,29 @@ function _nseIsOpen(){
   } catch(e){ return false; }
 }
 function _pxMaxAge(){ return _nseIsOpen() ? PX_MAX_AGE_OPEN : PX_MAX_AGE_CLOSED; }
-/* V39.1 — B2. THE EVENING IS WHEN THIS MEMBER HAS TIME. Zerodha converts a regular
-   order placed outside market hours into an after-market order (AMO) and sends it
-   to the exchange at 9:00 the next trading morning — support.zerodha.com, "What is
-   After Market Order (AMO) & its timings?" (NSE: 4:00 pm to 8:58 am). So the basket
-   already works at night; what was missing was telling the member so, and saying
-   what a market order at the open can do on a thin name. Kite's own order screen
-   lets them switch any row to Limit before confirming. */
+/* V39.1 — B2. THE EVENING IS WHEN THIS MEMBER HAS TIME. Zerodha sends after-market
+   orders (AMO) to the exchange at 9:00 the next trading morning (support.zerodha.com,
+   "What is After Market Order (AMO) & its timings?"; NSE: 4:00 pm to 8:58 am).
+   V44.0 — BUT IT DOES NOT TURN OUR BASKET INTO ONE. That page converts an order placed
+   outside market hours only on Zerodha's own screens (Kite's order window, Kite's own
+   baskets, ChartIQ, TradingView). A basket another site posts through Kite Publisher
+   keeps the variety it carries, which defaults to 'regular', and Zerodha's order system
+   refuses a regular order while NSE is shut. Seen on the owner's account on Sunday
+   1 Nov 2026 at 10 pm: all ten orders of a LargeMidcap basket came back "Error placing
+   order". So each row now says 'amo' whenever the market is shut (Publisher accepts
+   regular, amo and co: kite.trade/docs/connect/v3/basket). Between Zerodha's AMO cut-off
+   (8:58) and the open it stays 'regular', which Kite takes in the pre-open from 9:00.
+   NSE's trading holidays are not known here: a weekday holiday in market hours still
+   sends 'regular'. */
+function _kbAmoNow(){
+  try {
+    if (_nseIsOpen()) return false;
+    var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    var d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
+    if (d >= 1 && d <= 5 && m >= 8 * 60 + 58 && m < 9 * 60 + 15) return false;
+    return true;
+  } catch (e) { return false; }
+}
 function _kbHoursNote(){
   try {
     if (_nseIsOpen()) return '';
@@ -14273,11 +14289,13 @@ function _kbHoursNote(){
     var d = local.getDay(), m = local.getHours() * 60 + local.getMinutes();
     var weekday = d >= 1 && d <= 5;
     if (weekday && m > 15 * 60 + 30 && m < 16 * 60)
-      return '<b>NSE has closed for the day.</b> Kite starts queuing orders for the next session at 4:00 pm. ';
+      return '<b>NSE has closed for the day.</b> Zerodha takes after-market orders from 4:00 pm, so send the basket after that. ';
     if (weekday && m >= 8 * 60 + 58 && m < 9 * 60 + 15)
       return '<b>The market opens at 9:15.</b> Kite takes these orders from the open. ';
-    return '<b>NSE is closed right now.</b> On Zerodha, orders you confirm now are queued as after-market orders and ' +
-      'sent to the exchange at 9:00 on the next trading morning. A market order at the open can fill away from the ' +
+    if (m >= 60 && m < 5 * 60 + 30)   // V44.0 — Zerodha's nightly AMO maintenance
+      return '<b>Zerodha takes no after-market orders between 1:00 and 5:30 am</b> (its nightly maintenance), so send the basket after 5:30. ';
+    return '<b>NSE is closed right now, so the basket goes to Kite as after-market orders (AMO).</b> Zerodha sends them to the ' +
+      'exchange at 9:00 on the next trading morning. A market order at the open can fill away from the ' +
       'last price on thinner names, so you can switch any row to Limit on Kite\u2019s screen before confirming. ';
   } catch (e) { return ''; }
 }
@@ -19384,10 +19402,9 @@ function _preheldForm(p){
     var send = orders.filter(function(o){ return o.qty >= 1; });
     var chunk = send.slice(idx * KITE_BASKET_MAX, (idx + 1) * KITE_BASKET_MAX);
     if (!chunk.length) return;
-    var rows = chunk.map(function(o){
-      return { variety:'regular', exchange:'NSE', tradingsymbol:o.ticker, transaction_type:o.side,
-               order_type:'MARKET', product:'CNC', quantity:o.qty, readonly:false, tag:'MFC' };
-    });
+    // V44.0 — through _kbRow, the cycle basket's own row: this copy still sent the bare
+    // symbol (STLTECH, not STLTECH-BE) and 'regular' at night, both of which Kite refuses.
+    var rows = chunk.map(function(o){ return _kbRow(o); });
     if (!_kbSubmit(rows)) return;          // V40.3 — B1: the sample stops here
     state.sentAdj[key + ':' + idx] = 1;
     showToast('Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite');
