@@ -124,8 +124,11 @@
      against its index, labelled LAST CYCLE with its own dates, and the "new
      book" line moves underneath it. A sealed row is final, so this is the one
      figure that can stand in for the open cycle without being a guess; with no
-     sealed cycle yet (the very first book) the box keeps the sentence alone. */
-  var SHOW_LAST_CYCLE = true;
+     sealed cycle yet (the very first book) the box keeps the sentence alone.
+     V44.2 — OFF, at the owner's request: the landing page speaks for the current
+     cycle only ("Past month is not needed"); the track record and the broker's own
+     Live P&L carry the months before it. */
+  var SHOW_LAST_CYCLE = false;
   function zeroSession(d) {
     return !!(d && d.baseline_date && d.data_through && String(d.data_through) <= String(d.baseline_date));
   }
@@ -609,6 +612,8 @@
         window.MFCLive = d;
         fill(d);
         if (!d.zero_session) fillMeters(d);
+        // V44.2 — always, zero session or not: the homepage hero paints its column from this
+        try { document.dispatchEvent(new CustomEvent("mfc-live-data", { detail: d })); } catch (e) {}
       })
       .catch(function () { /* fail-soft: page stays in its pre-pivot state */ });
   }

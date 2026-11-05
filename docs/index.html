@@ -3898,7 +3898,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
    FAQ orphan is bound with &nbsp; in its own question instead. */
 main details:not(.faq-item) > summary > span{ text-wrap:balance; }
 </style>
-<link rel="stylesheet" href="assets/mfc-deep.css?v=3">
+<link rel="stylesheet" href="assets/mfc-deep.css?v=4">
 <!-- V42.3 — PERF FLAGS (markdowns/website_restructure.md §4.4 and §7.2). A module behind a flag
      stays in the page: its machine-written markers keep updating at every publish and the
      numbers gate keeps checking them; the flag only decides whether it is SHOWN. Flip one to
@@ -4065,6 +4065,11 @@ html[data-theme="dark"] .hvn{ background:var(--ink2); }
 .whyb-us{ font-size:20px; font-weight:800; color:var(--white); }
 .whyb-note{ font-size:12.5px; color:var(--text3); line-height:1.65; max-width:96ch; margin:12px 0 0; }
 .whyb-links{ display:flex; flex-wrap:wrap; gap:6px 20px; margin:12px 0 0; font-size:14px; }
+@media (pointer:coarse){   /* V44.2 — 44px on touch, like every other standalone link here */
+  .whyb-links{ gap:0 20px; margin-top:4px; }
+  .whyb-links a{ display:inline-flex; align-items:center; min-height:44px; }
+  .hvn-more{ display:inline-flex; align-items:center; min-height:44px; margin:-12px 0; }
+}
 .whyb-links a{ color:var(--ink-link,#0951c6); font-weight:700; text-decoration:underline; text-underline-offset:2px; }
 /* phones and small tablets: six columns cannot fit, so each book becomes a card with labelled rows */
 @media (max-width:760px){
@@ -4222,16 +4227,18 @@ html[data-theme="dark"] .whyb-bar.is-fund > i{ background:#f0a836; }
 
       <div class="hero-visual">
         <!-- V42.7 — THE NUMBERS LEAD AGAIN (owner, 2026-10-22): all three books, live first and
-             backtest second. The live column is filled by the script after the "why this" section,
-             from live-history.json with the track record page's own arithmetic, and stays hidden
-             until the data lands. Every backtest figure is an MFSTAT marker. -->
+             backtest second. The live column is filled by the script after the "why this" section
+             and stays hidden until the data lands. Every backtest figure is an MFSTAT marker.
+             V44.2 — the live column is the CURRENT cycle, from live-perf.json, the same figures as the
+             pricing cards (owner, 2026-11-05: "Past month is not needed", the Live P&L covers it). It
+             compounded every cycle since the record began; /track-record/ still does. -->
         <div class="hvn is-pending" id="hvn" role="group" aria-labelledby="hvn-k">
           <div class="hvn-head"><span class="hvn-k" id="hvn-k">The three books, live and backtested</span><a class="hvn-more" href="track-record/">Every cycle&nbsp;&rarr;</a></div>
           <table class="hvn-t">
-            <caption class="sr-only">Each MindForge book: the live model portfolio since the live record began, against its index, then the backtested return a year after tax, against its index</caption>
+            <caption class="sr-only">Each MindForge book: the live model portfolio this cycle, since the last rebalance, against its index, then the backtested return a year after tax, against its index</caption>
             <thead><tr>
               <th scope="col"><span class="sr-only">Book</span></th>
-              <th scope="col" class="hvn-live"><span class="hvn-badge"><span class="hvn-dot" aria-hidden="true"></span>Live</span> since <span data-hvn="since">31&nbsp;Aug</span><small>model portfolio</small></th>
+              <th scope="col" class="hvn-live"><span class="hvn-badge"><span class="hvn-dot" aria-hidden="true"></span>Live</span> this cycle<small>since <span data-hvn="since">the rebalance</span></small><small>model portfolio</small></th>
               <th scope="col">Backtest, a&nbsp;year<small>after tax</small></th>
             </tr></thead>
             <tbody>
@@ -4262,7 +4269,7 @@ html[data-theme="dark"] .whyb-bar.is-fund > i{ background:#f0a836; }
             <div class="hvp-row"><span class="hvp-side is-buy">Buy</span><span class="hvp-nm">Stock C</span><span class="hvp-q">22 shares</span></div>
             <div class="hvp-row"><span class="hvp-side is-buy">Buy</span><span class="hvp-nm">Stock D</span><span class="hvp-q">42 shares</span></div>
           </div>
-          <p class="hvp-sum">A typical month on LargeMidcap&nbsp;250 is about <b><!--MFTURN:lm:median-->12<!--/MFTURN--> orders</b>, sent to Zerodha as Kite baskets: about <b>ten minutes</b>, then nothing until the next list.</p>
+          <p class="hvp-sum">A typical month on LargeMidcap&nbsp;250 is about <b><!--MFTURN:lm:median-->12<!--/MFTURN--> orders</b>, sent to Zerodha as Kite baskets, the sales first: about <b>ten minutes</b>, then nothing until the next list.</p>
           <p class="hvp-links"><a href="dashboard.html?demo=1">See the sample dashboard&nbsp;&rarr;</a><a href="track-record/">Every cycle we&rsquo;ve published&nbsp;&rarr;</a></p>
           <p class="hvp-note">An illustration of the screen, not MindForge&rsquo;s picks or a recommendation.</p>
         </div>
@@ -4607,11 +4614,12 @@ html[data-theme="dark"] .whyb-bar.is-fund > i{ background:#f0a836; }
       if (c && s) s.appendChild(c);
     }
   } catch (e) {}
-  // the hero's live column: every cycle compounded per book, as /track-record/ does it
+  // the hero's live column: this cycle, per book. mfc-live.js fetches live-perf.json and hands it
+  // over, so this column and the pricing cards print one file's figures and cannot disagree (V44.2).
   var card = document.getElementById('hvn');
-  if (!card || !window.fetch || R.getAttribute('data-perf-hero') !== 'on') return;
+  if (!card || R.getAttribute('data-perf-hero') !== 'on') return;
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-  function day(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? Number(m[3]) + ' ' + MONTHS[Number(m[2]) - 1] : ''; }
+  function day(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? Number(m[3]) + '\u00A0' + MONTHS[Number(m[2]) - 1] : ''; }
   function sgn(v) { var s = Math.abs(v).toFixed(2); return Number(s) === 0 ? '0.00%' : (v > 0 ? '+' : '−') + s + '%'; }
   function tone(v) { return v > 0.05 ? 'is-up' : (v < -0.05 ? 'is-down' : ''); }
   function put(key, text, cls) {
@@ -4620,28 +4628,32 @@ html[data-theme="dark"] .whyb-bar.is-fund > i{ background:#f0a836; }
     e.textContent = text;
     if (cls != null) e.className = cls;
   }
-  fetch('/live-history.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (h) {
-    var cycles = h && h.cycles;
-    if (!cycles || !cycles.length) return;
-    var shown = 0;
-    ['lm', 'sm', 'ma'].forEach(function (k) {
-      var cyc = cycles.filter(function (c) { var x = c.strategies && c.strategies[k]; return x && x.live_pct != null && x.bench_pct != null; });
-      if (!cyc.length) return;
-      var m = 1, b = 1;
-      cyc.forEach(function (c) { var x = c.strategies[k]; m *= 1 + x.live_pct / 100; b *= 1 + x.bench_pct / 100; });
-      var live = (m - 1) * 100, bench = (b - 1) * 100, gap = live - bench;
+  function paint(L) {
+    var st = L && L.strategies, keys = ['lm', 'sm', 'ma'];
+    if (!st || !card.classList.contains('is-pending')) return;
+    // all three books or none: a half-filled column misleads
+    if (!keys.every(function (k) { return st[k] && st[k].live_pct != null && st[k].bench_pct != null; })) return;
+    keys.forEach(function (k) {
+      if (L.zero_session) {                    // a new book with no close of its own has no figure yet (V40.1)
+        put(k + ':live', '\u2014', '');
+        put(k + ':bench', '\u2014');
+        put(k + ':gap', '', 'hvn-gap');
+        return;
+      }
+      var live = st[k].live_pct, bench = st[k].bench_pct, gap = live - bench;
       put(k + ':live', sgn(live), tone(live));
       put(k + ':bench', sgn(bench));
       put(k + ':gap', Math.abs(gap) <= 0.05 ? 'level with its index' : Math.abs(gap).toFixed(2) + ' pts ' + (gap > 0 ? 'ahead' : 'behind'), 'hvn-gap ' + tone(gap));
-      shown++;
     });
-    if (shown < 3) return;                     // all three books or none: a half-filled column misleads
-    var sealed = cycles.filter(function (c) { return c.sealed; }).length, last = cycles[cycles.length - 1];
-    put('since', day(cycles[0].rebalance_date));
-    put('note', 'Live: the model portfolio to the ' + day(last.data_through) + ' close, before tax, not client returns; ' +
-      cycles.length + (cycles.length === 1 ? ' cycle' : ' cycles') + ' (' + sealed + ' closed), far too few to judge a strategy.');
+    put('since', day(L.rebalance_date));
+    put('note', L.zero_session
+      ? 'New book published ' + day(L.rebalance_date) + ': its first live figure comes after the next close.'
+      : 'Live: this cycle only, the model portfolio from the ' + day(L.rebalance_date) + ' rebalance to the ' + day(L.data_through) +
+        ' close, before tax, not client returns, and far too short a time to judge a strategy.');
     card.classList.remove('is-pending');
-  }).catch(function () {});
+  }
+  if (window.MFCLive) paint(window.MFCLive);
+  else document.addEventListener('mfc-live-data', function (e) { paint(e.detail); });
 })();</script>
 
 <script id="mf-v430-bars-js">
@@ -9687,7 +9699,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 </style>
 <script src="assets/mfc-offer.js?v=4050" defer></script>
 <script src="assets/mfc-member.js?v=1" defer></script>
-<script src="assets/mfc-live.js?v=4020" defer></script>
+<script src="assets/mfc-live.js?v=4420" defer></script>
 <script src="assets/mfc-walk.js?v=2" defer></script>
 <script src="assets/mfc-deep.js?v=1" defer></script>
 <style id="mf-navfix-sis">

@@ -3916,6 +3916,16 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
       .chg-sell-cb::before{ content:''; position:absolute; left:50%; top:50%;
         width:44px; height:44px; transform:translate(-50%,-50%); }
     }
+    /* V44.2 — drawn like the buy tick beside it (.bought-cb): side by side these were two
+       controls, a 17px native box and a 20px one, for the same act. */
+    .chg-sell > .chg-sell-cb, .chg-rot > .chg-sell-cb{ appearance:none; -webkit-appearance:none; width:20px; height:20px;
+      border-radius:6px; border:1.5px solid rgba(15,23,42,.5); background:var(--ink2); position:relative; transition:all .15s ease; }
+    html[data-theme="dark"] .chg-sell > .chg-sell-cb, html[data-theme="dark"] .chg-rot > .chg-sell-cb{ border-color:rgba(255,255,255,.45); }
+    .chg-sell > .chg-sell-cb:hover, .chg-rot > .chg-sell-cb:hover{ border-color:var(--accent); }
+    .chg-sell > .chg-sell-cb:checked, .chg-rot > .chg-sell-cb:checked{ background:linear-gradient(135deg,var(--green),#10b981); border-color:transparent; }
+    .chg-sell > .chg-sell-cb:checked::after, .chg-rot > .chg-sell-cb:checked::after{ content:''; position:absolute; left:5px; top:1px; width:6px; height:11px;
+      border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+    .chg-sell > .chg-sell-cb:focus-visible, .chg-rot > .chg-sell-cb:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
     .chg-sell-id{ min-width:0; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
     .chg-sell-t{ font-size:12.5px; font-weight:800; letter-spacing:.02em; color:var(--text);
       overflow:hidden; text-overflow:ellipsis; }
@@ -4558,6 +4568,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <div class="kbsk-txt">
             <div class="kbsk-eyebrow">Step 3, in one tap</div>
             <div class="kbsk-facts" id="kbsk-facts" aria-hidden="true"></div>
+            <p class="kbsk-fund" id="kbsk-fund" hidden></p>
             <!-- V37.5 — one row per Kite basket when the cycle needs more than one.
                  Rendered by refreshKiteBasket(); see kiteBasketPlan(). -->
             <ol class="kbsk-list" id="kbsk-list" hidden></ol>
@@ -5272,6 +5283,16 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       html[data-theme="dark"] .kbsk-b-state.is-next{ color:#9dbcff; background:rgba(120,160,240,.14); }
       html[data-theme="dark"] .kbsk-b-state.is-sent{ color:#6ee7b7; background:rgba(52,211,153,.12); }
       html[data-theme="dark"] .kbsk-b-state.is-stale{ color:#fbbf24; background:rgba(251,191,36,.12); }
+      /* V44.2 — a buy basket shut until the sales are done, and the sale money against the buys */
+      #kbsk{ scroll-margin-top:88px; }
+      .kbsk-b.is-wait{ background:rgba(15,23,42,.025); border-style:dashed; }
+      html[data-theme="dark"] .kbsk-b.is-wait{ background:rgba(255,255,255,.03); }
+      .kbsk-b-state.is-wait{ color:var(--text2); background:rgba(15,23,42,.06); }
+      html[data-theme="dark"] .kbsk-b-state.is-wait{ color:#cbd5e1; background:rgba(255,255,255,.08); }
+      .kbsk-fund{ margin:0 0 8px; font-size:12.5px; line-height:1.5; color:var(--text2); max-width:70ch; }
+      .kbsk-fund b{ color:var(--white); font-weight:700; }
+      .kbsk-fund.is-short b{ color:var(--ink-warn,#a64d08); }
+      html[data-theme="dark"] .kbsk-fund.is-short b{ color:#fbbf24; }
       .kbsk-b-btn{ font:inherit; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;
         min-height:44px; padding:0 14px; border-radius:10px;
         color:var(--accent); background:var(--ink2); border:1px solid rgba(37,99,235,.35);
@@ -9706,10 +9727,11 @@ function refreshActionBar(){
       var nB = pending.filter(function(o){ return o.side === 'BUY'; }).length;
       var nS = pending.length - nB;
       if (nEl) nEl.textContent = pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left';
-      var subBits = [nB ? nB + ' to buy' : '', nS ? nS + ' to sell' : ''];
+      var subBits = [nS ? nS + ' to sell' : '', nB ? nB + ' to buy' : ''];
       // Several baskets: say which one the button is about to open. With one
       // basket (or another broker) the split is the more useful fact.
-      if (isKite && plan.total > 1) subBits = [nextB ? 'basket ' + nextB.pos + ' of ' + plan.total + ' next' : 'all ' + plan.total + ' baskets sent'];
+      if (isKite && plan.total > 1) subBits = [nextB ? 'basket ' + nextB.pos + ' of ' + plan.total + ' next'
+                                               : plan.buysWait ? 'buys after the sales' : 'all ' + plan.total + ' baskets sent'];
       if (sEl) sEl.textContent = subBits.filter(Boolean).join('\u00a0· ');
     } else {
       if (nEl) nEl.textContent = nRw + ' to re-weight';
@@ -9737,12 +9759,23 @@ function refreshActionBar(){
                   fmtMoney(currentCapital) + ', which you have not entered'); }
     } else if (canSend){
       var many = plan.total > 1;
-      if (lab) lab.textContent = many ? 'Basket ' + nextB.pos + ' of ' + plan.total + ' on Kite' : 'Review ' + send + ' on Kite';
-      if (amt) amt.textContent = val > 0 ? (many ? send + ' orders · ' : '') + preciseMoney(val) : '';
+      // V44.2 — with both sides in the cycle the bar names the side it is about to send
+      var kindWord = plan.both ? (nextB.kind === 'sell' ? 'Sell' : 'Buy') + ' · basket ' : 'Basket ';
+      if (lab) lab.textContent = many ? kindWord + nextB.pos + ' of ' + plan.total + (plan.both ? '' : ' on Kite') : 'Review ' + send + ' on Kite';
+      if (amt) amt.textContent = val > 0 ? (many ? send + ' order' + (send === 1 ? '' : 's') + ' · ' : '') + preciseMoney(val) : '';
       if (cta){ cta.onclick = function(){ sendKiteBasket(nextB.pos); };
-                cta.setAttribute('aria-label', (many ? 'Basket ' + nextB.pos + ' of ' + plan.total + ': review ' : 'Review ') +
+                cta.setAttribute('aria-label', (many ? (plan.both ? (nextB.kind === 'sell' ? 'Sale ' : 'Buy ') : '') + 'basket ' + nextB.pos + ' of ' + plan.total + ': review ' : 'Review ') +
                   send + ' order' + (send === 1 ? '' : 's') +
-                  ' on Kite, worth ' + fmtMoney(val) + ' at the recommended prices'); }
+                  ' on Kite, worth ' + fmtMoney(val) + (nextB.kind === 'sell' ? '' : ' at the recommended prices')); }
+    } else if (isKite && plan.buysWait && !nextB){
+      // V44.2 — the sales are on Kite: the next job is to say they filled, in the band
+      var amoWait = plan.waitFor === 'amo';
+      if (lab) lab.textContent = amoWait ? 'Buys wait' : 'Sales filled?';
+      if (amt) amt.textContent = amoWait ? 'for the sales to fill' : 'then the buys';
+      if (cta){ cta.onclick = abarGoToBand;
+                cta.setAttribute('aria-label', amoWait
+                  ? 'The buys wait for your sales to fill. Jump to the Kite baskets'
+                  : 'Have your sales filled? Jump to the Kite baskets to open the buys'); }
     } else if (getBroker() === 'other' && pending.length){
       // V39.5 — B7: no basket to send; the next job is the numbered order sheet.
       if (lab) lab.textContent = 'Open the order sheet';
@@ -11101,8 +11134,8 @@ function _kbSentLoad(){
 }
 function _kbSentMark(orders){
   try {
-    var m = _kbSentLoad(), now = Date.now();
-    orders.forEach(function (o) { m[orderKey(o)] = { t: now, q: o.qty }; });
+    var m = _kbSentLoad(), now = Date.now(), amo = _kbAmoNow() ? 1 : 0;   // V44.2 — `a`: sent as an AMO
+    orders.forEach(function (o) { m[orderKey(o)] = { t: now, q: o.qty, a: amo }; });
     localStorage.setItem(_kbSentStoreKey(), JSON.stringify(m));
   } catch (e) {}
 }
@@ -11254,7 +11287,7 @@ function renderOrderMode(){
       ? (nSend ? pl(nSend, 'order', 'orders') + ' \u00b7 ' : '') + (nSz + nMv) + ' need sizes'
       : (base.all.length ? pl(base.all.length, 'order', 'orders') : 'nothing to place'));
     setT('om-d-rebal', 'I still hold last month’s book. ' +
-      (bits.length ? bits.join(', ').replace(/^./, function (c) { return c.toUpperCase(); }) : 'Nothing changes') +
+      (bits.length ? bits.join(', ').replace(', buy the', ', then buy the').replace(/^./, function (c) { return c.toUpperCase(); }) : 'Nothing changes') +
       (nCarry === 1 ? '; the other one carries forward.' : nCarry ? '; the other ' + nCarry + ' carry forward.' : '.'));
   }
   var wVal = whole.reduce(function (t, o) { return t + Math.round(o.qty * (o.price || 0)); }, 0);
@@ -11407,41 +11440,164 @@ function _kbRow(o){
      placed — every order in it is ticked
      sent   — every open order in it has been opened on Kite from this device
      stale  — sent, but the capital changed since, so the quantities differ
-     ready  — at least one open order has never been sent */
+     ready  — at least one open order has never been sent
+     wait   — a buy basket, shut until the sales are done (V44.2)
+
+   V44.2 — SALES FIRST, THEN BUYS, ALWAYS. The owner, 5 Nov 2026: "first sold and then
+   bought, always so that we dont need to continuously deploy new cash."
+   V35.4 put the sells at the front of the list, but the list was still cut every ten
+   orders, so a six-out, six-in month sent six sales and four buys in basket 1, and those
+   buys were placed before any sale had filled. Zerodha checks a buy against the cash in
+   the account when it is placed ("Insufficient funds", support.zerodha.com), and a sale
+   counts only once it has filled: an after-market sale, not before the next open. From
+   then 100% of it can buy stocks the same day (same site, since 7 Oct 2024). So:
+   · a basket is one side only, sale baskets first, buy baskets after;
+   · a buy basket stays shut while any sale of the cycle is unticked, sized or not, and
+     `waitFor` says what for: 'send' (a sale basket not opened on Kite yet), 'amo' (opened
+     as AMOs, so nothing can have filled before `fillFrom`), or 'fill' (they may have
+     filled, and "My sales have filled" ticks them);
+   · sendKiteBasket() enforces it, so no button or bar can send a buy early. */
 function kiteBasketPlan(){
   var orders = cycleOrders();
-  var plan = { baskets: [], live: [], total: 0, openN: 0, buyVal: 0, sellVal: 0, next: null, unsized: 0 };
+  var plan = { baskets: [], live: [], total: 0, openN: 0, buyVal: 0, sellVal: 0, next: null, unsized: 0,
+               hasSell: false, hasBuy: false, both: false, sellsOpen: 0, sellUnsized: 0,
+               buysWait: false, waitFor: '', fillFrom: null, fundIn: 0, fundOut: 0 };
   if (!orders.all.length || !(Number(currentCapital) > 0)) return plan;
   var placed = loadBought(currentStrategy) || {};
   var sent   = _kbSentLoad();
   var elig   = orders.all.filter(function (o) { return o.qty >= 1; });
   plan.unsized = orders.all.length - elig.length;
-  for (var i = 0; i < elig.length; i += KITE_BASKET_MAX){
-    var chunk = elig.slice(i, i + KITE_BASKET_MAX);
-    var b = { n: plan.baskets.length + 1, orders: chunk, open: [], buyVal: 0, sellVal: 0,
-              sentN: 0, staleN: 0, state: 'ready' };
-    chunk.forEach(function (o) {
-      if (placed[orderKey(o)]) return;
-      b.open.push(o);
-      var v = Math.round(o.qty * (o.price || 0));
-      if (o.side === 'SELL') b.sellVal += v; else b.buyVal += v;
-      var rec = sent[orderKey(o)];
-      if (rec) { b.sentN++; if (rec.q != null && Number(rec.q) !== o.qty) b.staleN++; }
-    });
-    if (!b.open.length) b.state = 'placed';
-    else if (b.sentN === b.open.length) b.state = b.staleN ? 'stale' : 'sent';
-    plan.openN   += b.open.length;
-    plan.buyVal  += b.buyVal;
-    plan.sellVal += b.sellVal;
-    plan.baskets.push(b);
-  }
+  var allSales = orders.all.filter(function (o) { return o.side === 'SELL'; });
+  var buys     = elig.filter(function (o) { return o.side !== 'SELL'; });
+  plan.hasSell = allSales.length > 0;
+  plan.hasBuy  = buys.length > 0;
+  plan.both    = plan.hasSell && plan.hasBuy;
+  plan.sellUnsized = allSales.filter(function (o) { return !(o.qty >= 1); }).length;
+  [elig.filter(function (o) { return o.side === 'SELL'; }), buys].forEach(function (side, si) {
+    for (var i = 0; i < side.length; i += KITE_BASKET_MAX){
+      var chunk = side.slice(i, i + KITE_BASKET_MAX);
+      var b = { n: plan.baskets.length + 1, kind: si ? 'buy' : 'sell', orders: chunk, open: [], buyVal: 0, sellVal: 0,
+                sentN: 0, staleN: 0, state: 'ready' };
+      chunk.forEach(function (o) {
+        var v = _kbValueOf(o);
+        if (o.side === 'SELL') plan.fundIn += v; else plan.fundOut += v;
+        if (placed[orderKey(o)]) return;
+        b.open.push(o);
+        if (o.side === 'SELL') b.sellVal += v; else b.buyVal += v;
+        var rec = sent[orderKey(o)];
+        if (rec) { b.sentN++; if (rec.q != null && Number(rec.q) !== o.qty) b.staleN++; }
+      });
+      if (!b.open.length) b.state = 'placed';
+      else if (b.sentN === b.open.length) b.state = b.staleN ? 'stale' : 'sent';
+      plan.openN   += b.open.length;
+      plan.buyVal  += b.buyVal;
+      plan.sellVal += b.sellVal;
+      plan.baskets.push(b);
+    }
+  });
   // Baskets with nothing left to place drop out of the numbering the member sees:
   // "basket 2 of 2" must describe what is still to do, not history.
   plan.live  = plan.baskets.filter(function (b) { return b.open.length; });
   plan.live.forEach(function (b, k) { b.pos = k + 1; });
   plan.total = plan.live.length;
+  var salesOpen = allSales.filter(function (o) { return !placed[orderKey(o)]; });
+  plan.sellsOpen = salesOpen.length;
+  plan.buysWait  = plan.sellsOpen > 0 && plan.live.some(function (b) { return b.kind === 'buy'; });
+  if (plan.buysWait){
+    plan.live.forEach(function (b) { if (b.kind === 'buy' && (b.state === 'ready' || b.state === 'stale')) b.state = 'wait'; });
+    if (plan.live.some(function (b) { return b.kind === 'sell' && (b.state === 'ready' || b.state === 'stale'); })) plan.waitFor = 'send';
+    else {
+      var nowIst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      salesOpen.forEach(function (o) {
+        var rec = sent[orderKey(o)];
+        if (!rec || !rec.a) return;
+        var open = _nseOpenAfter(Number(rec.t) || 0);
+        if (nowIst < open && (!plan.fillFrom || open > plan.fillFrom)) plan.fillFrom = open;
+      });
+      plan.waitFor = plan.fillFrom ? 'amo' : 'fill';
+    }
+  }
   plan.next  = plan.live.filter(function (b) { return b.state === 'ready' || b.state === 'stale'; })[0] || null;
   return plan;
+}
+/* What an order is worth now. A sale's recorded price is last month's entry, so it
+   takes the live price once there is one; a buy stays at the Shares column's price. */
+function _kbValueOf(o){
+  var q = (o.side === 'SELL' && o.y) ? (window._livePx || {})[o.y] : null;
+  var p = (q && Number(q.price) > 0) ? Number(q.price) : (Number(o.price) || 0);
+  return Math.round(o.qty * p);
+}
+/* The next 9:15 open after `ms`, as an IST wall-clock Date: when an AMO sent then can fill. */
+function _nseOpenAfter(ms){
+  var local = new Date(new Date(ms).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  var day = new Date(local.getFullYear(), local.getMonth(), local.getDate(), 9, 15);
+  var trading = function (x) { var g = x.getDay(); return g >= 1 && g <= 5 && !_nseHolidayOn(x); };
+  if (!(trading(day) && local < day)) {
+    var i = 0;
+    do { day.setDate(day.getDate() + 1); } while (!trading(day) && ++i < 15);
+  }
+  return day;
+}
+/* The whole cycle's sale money against its buys, one line above the baskets. An unsized
+   sale has no figure, so then the line says nothing rather than something short. */
+function _kbFundLine(plan){
+  if (!plan.both || plan.sellUnsized) return '';
+  var gap = plan.fundIn - plan.fundOut;
+  var sum = 'Before charges, the sales bring in about ' + escapeHtml(fmtMoney(plan.fundIn)) +
+            ' and the buys take about ' + escapeHtml(fmtMoney(plan.fundOut));
+  if (gap >= 0) return '<b>No new cash needed.</b> ' + sum +
+    (gap > plan.fundOut * 0.01 ? '; about ' + escapeHtml(fmtMoney(gap)) + ' stays in your account.' : '.');
+  return '<b>About ' + escapeHtml(fmtMoney(-gap)) + ' short.</b> ' + sum + '. Add the difference, or lower a quantity on Kite’s screen.';
+}
+/* Why the buys are shut, and what opens them. Empty when the cycle has one side only. */
+function _kbOrderNote(plan){
+  if (!plan.both) return '';
+  if (!plan.buysWait)
+    return plan.live.some(function (b) { return b.kind === 'buy'; }) ? '<b>Your sales are marked as filled,</b> so their money pays for these buys. ' : '';
+  if (plan.waitFor === 'amo'){
+    var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    var when = plan.fillFrom.toDateString() === local.toDateString() ? 'this morning' : _nseAmoWhen(local);
+    return '<b>Your sales reach the exchange at 9:00 ' + escapeHtml(when) + '.</b> Come back once they have filled, after the 9:15 open, ' +
+      'and the buys open here. A buy sent before then would need new cash in your account. ';
+  }
+  if (plan.waitFor === 'fill')
+    return plan.sellUnsized
+      ? '<b>Sell the ' + plan.sellUnsized + ' that left first.</b> <button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> ' +
+        'sizes them. Once they have filled, press My sales have filled and the buys open here; all of their money can pay for buys the same day. '
+      : '<b>Have your sales filled?</b> Check Kite’s Orders screen, then press My sales have filled and the buys open here. All of their money can pay for buys the same day. ';
+  return '<b>Sales first, then buys.</b> A buy needs the money in your account when it is placed, and a sale counts only once it has filled. ' +
+    'From then, all of it can pay for buys the same day, so the sales go in their own basket and the buys open here once they have filled. ';
+}
+/* "My sales have filled": the same ticks the What changed card writes, all at once. */
+function markSalesFilled(){
+  var map = loadBought(currentStrategy) || {}, rwKeys = [];
+  (cycleOrders().all || []).forEach(function (o) {
+    if (!o || o.side !== 'SELL') return;
+    var k = orderKey(o);
+    if (o.rw) rwKeys.push(k);
+    map[k] = true;
+  });
+  saveBought(currentStrategy, map);
+  document.querySelectorAll('input[data-okey^="SELL:"]').forEach(function (cb) {
+    cb.checked = true;
+    var h = cb.closest('.chg-sell'); if (h) h.classList.add('is-done');
+  });
+  rwKeys.forEach(function (k) { _rwSyncTicks(k, true); });
+  refreshBoughtProgress();
+  showToast('Sales marked as filled. The buys are open');
+  // the pressed button is gone: keep a keyboard user on the band's next action
+  try {
+    var nx = document.querySelector('#kbsk-list .kbsk-b-btn.is-primary') || document.getElementById('kbsk-btn');
+    if (nx && !nx.hidden) nx.focus({ preventScroll: true });
+  } catch (e) {}
+}
+function abarGoToBand(){
+  var el = document.getElementById('kbsk');
+  if (!el || el.hidden) return abarGoToPicks();
+  var prev = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  el.scrollIntoView({ block: 'start' });
+  document.documentElement.style.scrollBehavior = prev;
 }
 
 /* Every un-placed row that rounds to at least one share, in plan order. Kept for
@@ -11568,6 +11724,12 @@ function sendKiteBasket(pos) {
   }
   var plan = kiteBasketPlan();
   var b = (pos != null) ? plan.live[pos - 1] : (plan.next || null);
+  // V44.2 — sales first, then buys. Every send path ends here, so the rule lives here.
+  if (plan.buysWait && (!b || b.kind === 'buy')) {
+    abarGoToBand();
+    showToast(plan.waitFor === 'send' ? 'Sales first: the buys use what they bring in' : 'The buys open once your sales have filled');
+    return;
+  }
   if (!b || !b.open.length) {
     showToast(plan.openN ? 'Every basket has been opened on Kite — tick what filled' : 'Nothing left to place');
     return;
@@ -11577,9 +11739,11 @@ function sendKiteBasket(pos) {
   _kbSentMark(b.open);
   var msg = 'Opening ' + rows.length + ' order' + (rows.length === 1 ? '' : 's') + ' on Kite';
   if (plan.total > 1) {
-    var after = kiteBasketPlan().next;
-    msg = 'Basket ' + b.pos + ' of ' + plan.total + ' opened on Kite' +
-          (after ? ' — confirm it there, then send basket ' + after.pos : ' — all baskets sent');
+    var p2 = kiteBasketPlan(), after = p2.next;
+    msg = p2.buysWait && !after
+      ? 'Your sales are opening on Kite. Confirm them there; the buys open here once they fill'
+      : 'Basket ' + b.pos + ' of ' + plan.total + ' opened on Kite' +
+        (after ? ' — confirm it there, then send basket ' + after.pos : ' — all baskets sent');
   }
   showToast(msg);
   try { refreshKiteBasket(); } catch (e) {}
@@ -11649,10 +11813,15 @@ function renderOrderSheet(){
     if (facts) facts.textContent = left ? (left + ' of ' + rows.length + ' left \u00b7 one ticket per line, in this order')
                                         : ('All ' + rows.length + ' placed \u2014 done for this cycle');
     var list = document.getElementById('osheet-list');
+    // V44.2 — both sides in the list: each under its own heading, the sales first
+    var osBoth = rows.some(function(o){ return o.side === 'SELL'; }) && rows.some(function(o){ return o.side !== 'SELL'; });
     if (list) list.innerHTML = rows.map(function(o, i){
       var k = orderKey(o), done = !!placed[k];
       var line = o.ticker + ' ' + o.qty;
-      return '<li class="os-row' + (done ? ' is-done' : '') + '">' +
+      var gk = !osBoth ? ''
+             : i === 0 ? '<li class="os-gk">Sell first</li>'
+             : (rows[i - 1].side === 'SELL' && o.side !== 'SELL') ? '<li class="os-gk">Then buy, once the sales have filled</li>' : '';
+      return gk + '<li class="os-row' + (done ? ' is-done' : '') + '">' +
         '<span class="os-n">' + (i + 1) + '</span>' +
         '<span class="os-side ' + (o.side === 'SELL' ? 'is-sell' : 'is-buy') + '">' + o.side + '</span>' +
         '<span class="os-t">' + escapeHtml(o.ticker) + srsTag(o) + '</span>' +
@@ -11665,7 +11834,9 @@ function renderOrderSheet(){
     var hb = (oc.holdBack || []).length;
     var note = document.getElementById('osheet-note');
     if (note) note.innerHTML = 'On your broker&rsquo;s own order screen: NSE, delivery (CNC), market or a limit near the price shown. ' +
-      'Sells first &mdash; their proceeds fund the buys.' +
+      (osBoth ? 'Sell first, and place the buys once the sales have filled: a buy needs the money in your account when it is placed, so this way the sales pay for it instead of new cash. ' +
+                'How much of a sale you can use the same day depends on your broker.'
+              : '') +
       (hb ? ' <b>' + hb + '</b> sale' + (hb === 1 ? ' is' : 's are') + ' held back by your holding period and ' + (hb === 1 ? 'is' : 'are') + ' not on this sheet.' : '') +
       ' <button type="button" class="kb-capbtn" onclick="copyOrderSheet()">Copy the whole list</button>';
     sh.hidden = false;
@@ -11718,7 +11889,16 @@ function refreshKiteBasket() {
     var list  = document.getElementById('kbsk-list');
     var btn   = document.getElementById('kbsk-btn');
     var eyebrow = wrap.querySelector('.kbsk-eyebrow');
-    var multi = plan.total > 1;
+    var multi = plan.total > 1 || plan.buysWait;   // V44.2 — a shut buy basket is drawn in the list
+
+    /* V44.2 — what the sales bring in against what the buys take. */
+    var fund = document.getElementById('kbsk-fund');
+    if (fund) {
+      var fundHtml = _kbFundLine(plan);
+      fund.innerHTML = fundHtml;
+      fund.hidden = !fundHtml;
+      fund.classList.toggle('is-short', plan.fundIn < plan.fundOut);
+    }
 
     /* The facts describe the WHOLE cycle — every open order and every rupee of
        it — in both modes. V35.3 split buys from sells (money going out and
@@ -11727,8 +11907,8 @@ function refreshKiteBasket() {
        "10 orders · ₹9,91,xxx". */
     if (facts) {
       var money = [];
-      if (plan.buyVal  > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.buyVal))  + '<span>to buy</span></span>');
       if (plan.sellVal > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.sellVal)) + '<span>to sell</span></span>');
+      if (plan.buyVal  > 0) money.push('<span class="kbsk-fact">' + escapeHtml(fmtMoney(plan.buyVal))  + '<span>to buy</span></span>');
       facts.innerHTML =
         '<span class="kbsk-fact">' + plan.openN + '<span>order' + (plan.openN === 1 ? '' : 's') + '</span></span>' +
         (money.length ? '<i class="kbsk-dot"></i>' + money.join('<i class="kbsk-dot"></i>') : '') +
@@ -11736,7 +11916,9 @@ function refreshKiteBasket() {
         '<i class="kbsk-dot"></i>' +
         '<span class="kbsk-fact">NSE<span>delivery · CNC</span></span>';
     }
-    if (eyebrow) eyebrow.textContent = multi ? 'Step 3, in ' + plan.total + ' taps' : 'Step 3, in one tap';
+    if (eyebrow) eyebrow.textContent = plan.buysWait ? 'Step 3: sell first, then buy'
+      : (plan.both && plan.live[0].kind === 'buy') ? 'Step 3: now the buys'
+      : multi ? 'Step 3, in ' + plan.total + ' taps' : 'Step 3, in one tap';
 
     if (!multi) {
       /* ONE BASKET — the V34.2–V35.5 band, unchanged in shape: the total in the
@@ -11756,7 +11938,7 @@ function refreshKiteBasket() {
         if (btn) btn.onclick = abarEditCapital;
       }
       if (note) {
-        note.innerHTML = _kbCapNote() + _kbHoursNote() + _kbSeriesNote(plan) +
+        note.innerHTML = _kbCapNote() + _kbHoursNote() + _kbSeriesNote(plan) + _kbOrderNote(plan) +
           (b.state === 'sent'
             ? '<b>Opened on Kite from this device.</b> Tick each order once it fills; send again only if you closed Kite without confirming. '
             : b.state === 'stale'
@@ -11775,41 +11957,54 @@ function refreshKiteBasket() {
       if (btn) btn.hidden = true;
       if (list) {
         var nextPos = plan.next ? plan.next.pos : 0;
+        var capWanted = !isDemo && !window._capEntered;      // V39.3 — B4
+        var waiting = plan.live.filter(function (b) { return b.state === 'wait'; });
         list.innerHTML = plan.live.map(function (b) {
           var tot = b.buyVal + b.sellVal;
-          var isNext = b.pos === nextPos;
-          var names = b.open.map(function (o) { return (o.side === 'SELL' ? 'sell ' : '') + o.ticker; });
+          var isWait = b.state === 'wait';
+          // V44.2 — once the sales may have filled, the first shut basket carries the one action left
+          var canFill = isWait && !capWanted && plan.waitFor === 'fill' && b === waiting[0];
+          var isNext = b.pos === nextPos || canFill;
+          var sideTag = plan.hasSell ? '<span class="om-side ' + (b.kind === 'sell' ? 'is-sell">Sell' : 'is-buy">Buy') + '</span>' : '';
+          var names = b.open.map(function (o) { return o.ticker; });
           var stateHtml =
             b.state === 'sent'  ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' :
             b.state === 'stale' ? '<span class="kbsk-b-state is-stale">Capital changed since sent</span>' :
+            isWait              ? '<span class="kbsk-b-state is-wait">After the sales</span>' :
             isNext              ? '<span class="kbsk-b-state is-next">Next</span>' : '';
-          var btnLabel = (!isDemo && !window._capEntered) ? 'Enter your amount'      // V39.3 — B4
+          var btnLabel = capWanted ? 'Enter your amount'
                        : (b.state === 'sent' || b.state === 'stale') ? 'Send again' : 'Review on Kite';
+          var btn = canFill
+            ? '<button type="button" class="kbsk-b-btn is-primary" onclick="markSalesFilled()">My sales have filled</button>'
+            : (isWait && !capWanted) ? ''
+            : '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" ' +
+                'onclick="sendKiteBasket(' + b.pos + ')" ' +
+                'aria-label="' + escapeHtml(btnLabel + ': ' + (sideTag ? (b.kind === 'sell' ? 'sale ' : 'buy ') : '') + 'basket ' + b.pos + ' of ' + plan.total + ', ' +
+                  b.open.length + ' order' + (b.open.length === 1 ? '' : 's') + ', ' + fmtMoney(tot)) + '">' +
+                escapeHtml(btnLabel) + '</button>';
           return '<li class="kbsk-b' + (isNext ? ' is-next' : '') + ' is-' + b.state + '">' +
                    '<span class="kbsk-b-n" aria-hidden="true">' + b.pos + '</span>' +
                    '<span class="kbsk-b-main">' +
-                     '<span class="kbsk-b-head">Basket ' + b.pos + ' of ' + plan.total + stateHtml + '</span>' +
+                     '<span class="kbsk-b-head">' + sideTag + 'Basket ' + b.pos + ' of ' + plan.total + stateHtml + '</span>' +
                      '<span class="kbsk-b-sub"><b>' + b.open.length + '</b> order' + (b.open.length === 1 ? '' : 's') +
                        ' · <b>' + escapeHtml(fmtMoney(tot)) + '</b></span>' +
                      '<span class="kbsk-b-names" title="' + escapeHtml(names.join(', ')) + '">' + escapeHtml(names.join('\u00a0· ')) + '</span>' +
-                   '</span>' +
-                   '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" ' +
-                     'onclick="sendKiteBasket(' + b.pos + ')" ' +
-                     'aria-label="' + escapeHtml(btnLabel + ': basket ' + b.pos + ' of ' + plan.total + ', ' +
-                       b.open.length + ' order' + (b.open.length === 1 ? '' : 's') + ', ' + fmtMoney(tot)) + '">' +
-                     escapeHtml(btnLabel) + '</button>' +
+                   '</span>' + btn +
                  '</li>';
         }).join('');
         list.hidden = false;
       }
       if (note) {
-        note.innerHTML = _kbCapNote() + _kbHoursNote() + _kbSeriesNote(plan) +
-          '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' +
-          (plan.next
+        var overTen = plan.live.filter(function (b) { return b.kind === 'sell'; }).length > 1 ||
+                      plan.live.filter(function (b) { return b.kind === 'buy'; }).length > 1;
+        note.innerHTML = _kbCapNote() + (plan.waitFor === 'amo' ? '' : _kbHoursNote()) + _kbSeriesNote(plan) + _kbOrderNote(plan) +
+          (overTen ? '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' : '') +
+          (plan.buysWait && !plan.next ? ''
+           : plan.next
             ? 'Send basket ' + plan.next.pos + ', confirm it on Kite, then come back for ' +
               (plan.next.pos < plan.total ? 'the next one. ' : 'any you closed without confirming. ')
             : 'Every basket has been opened on Kite from this device — tick each order once it fills. ') +
-          'Each opens Zerodha’s own order screen with the quantities pre-filled; nothing is placed until you confirm there, ' +
+          'Each basket opens Zerodha’s own order screen with the quantities pre-filled; nothing is placed until you confirm there, ' +
           'and you can change quantity, order type or price first.' +
           _sellAuthInline(plan.sellVal > 0);   // V43.1 — A1
       }
@@ -11888,7 +12083,9 @@ function refreshHowto() {
            : '',
       3: total
            ? '<b>' + placed + ' of ' + total + '</b> placed' +
-             (left ? '<span class="hs-sep">·</span>' + fmtMoney(toDeploy) + ' still to deploy'
+             (left ? '<span class="hs-sep">·</span>' + fmtMoney(toDeploy) +
+                     // V44.2 — while sales are open, this money is theirs: it is not new cash to find
+                     (orders.all.some(function(o){ return o.side === 'SELL' && !map[orderKey(o)]; }) ? ' to buy after the sales' : ' still to deploy')
                    : '<span class="hs-sep">·</span>cycle complete')
            : '',
       4: (days !== null && rebLabel)
@@ -12212,8 +12409,8 @@ function copyAllTickers() {
   }
   if (orders.known && (orders.buys.length || orders.sells.length)) {
     const parts = [];
-    if (orders.buys.length)  parts.push('BUY: '  + orders.buys.map(o => o.ticker).join(', '));
     if (orders.sells.length) parts.push('SELL: ' + orders.sells.map(o => o.ticker).join(', '));
+    if (orders.buys.length)  parts.push('BUY: '  + orders.buys.map(o => o.ticker).join(', '));
     const n = orders.buys.length + orders.sells.length;
     copyText(parts.join('\n')).then(() => showToast('Copied ' + n + ' order' + (n === 1 ? '' : 's')));
     return;
@@ -12269,6 +12466,9 @@ function exportCSV() {
     if (o.hold) return 'REWEIGHT: SELL ' + o.hold.qty + ' ON OR AFTER ' + _csIso(o.hold.until);
     return o.qty > 0 ? 'REWEIGHT: ' + o.side + ' ' + o.qty : 'REWEIGHT: NO ORDER';
   };
+  /* V44.2 — a worklist reads top to bottom, so the sales lead the file: the names that
+     left, then the trims, then the rest of the book. `#` is the row's place in the file. */
+  const bookRows = [], trimRows = [];
   rowsOut.forEach((s,i) => {
     const price = Number(s.recommended_price)||0;
     const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
@@ -12285,7 +12485,7 @@ function exportCSV() {
       pickC ? (pickC[T] ? 'BUY' : (mv != null && pickC['RW:' + T] ? rwAction(s.ticker)
                                    : (known && !addSet[s.ticker] ? 'HOLD' : 'NOT CHOSEN'))) :
       known ? (addSet[s.ticker] ? 'BUY' : (mv != null ? rwAction(s.ticker) : 'HOLD')) : 'BUY',
-      i+1,
+      0,
       JSON.stringify(s.company_name||''),
       JSON.stringify(s.ticker||''),
       JSON.stringify(s.industry||''),
@@ -12294,7 +12494,7 @@ function exportCSV() {
       amt.toFixed(2),
       shares
     ];
-    lines.push(row.join(','));
+    (/^REWEIGHT: SELL/.test(row[0]) ? trimRows : bookRows).push(row);
   });
   /* The sells are not rows of the picks table, so they cannot come from
      visibleStocks() — they are appended from the diff. A sector filter narrows
@@ -12308,12 +12508,13 @@ function exportCSV() {
       const p = pp[t] || {};
       const until = _csHoldUntil(t);
       lines.push([
-        until ? 'SELL ON OR AFTER ' + _csIso(until) : 'SELL', rowsOut.length + j + 1,
+        until ? 'SELL ON OR AFTER ' + _csIso(until) : 'SELL', j + 1,
         JSON.stringify(p.n || t), JSON.stringify(t), JSON.stringify('—'),
         (Number(p.rec)||0).toFixed(2), '0.00', '0.00', (Number(p.qty)||'')   // V42.1 — B5: blank, never a guessed zero
       ].join(','));
     });
   }
+  trimRows.concat(bookRows).forEach(row => { row[1] = lines.length; lines.push(row.join(',')); });
   const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -12424,7 +12625,10 @@ function _setHowToStep3(orders){
                               : 'No names change this cycle \u2014 ' + tot + ' order' + (tot === 1 ? '' : 's') + ' bring each holding to its new weight') +
       ': ' + rwBits.join(', then ') + ', at the quantities marked above.' +
       (other ? ' The order sheet below lists them in order, one ticket per line.'
-             : (getBroker() === 'kite' ? ' On Zerodha they go in ' + (tot > KITE_BASKET_MAX ? 'Kite baskets' : 'one Kite basket') + '.' : '')) + base;
+             : (getBroker() === 'kite'
+                 ? ((nS + nT) && (nB + nA) ? ' On Zerodha the sales go first, in a Kite basket of their own.'   // V44.2
+                                           : ' On Zerodha they go in ' + (tot > KITE_BASKET_MAX ? 'Kite baskets' : 'one Kite basket') + '.')
+                 : '')) + base;
     return;
   }
   if (!nB && !nS){
@@ -13447,7 +13651,8 @@ function renderCycleCost(){
   diff.added.forEach(function(t){
     var s = byTicker[t]; if (!s) return;
     var price = Number(s.recommended_price) || 0; if (price <= 0) return;
-    buyVal += Math.floor(allocBudget(s, list, cap) / price) * price;
+    // V44.2 — rounded per row, as the Kite band sums them: raw floats printed ₹3,93,846 beside its ₹3,93,847
+    buyVal += Math.round(Math.floor(allocBudget(s, list, cap) / price) * price);
   });
 
   /* SELL leg — and the realised short-term gain that comes with it.
@@ -13466,7 +13671,7 @@ function renderCycleCost(){
     sellSized++;
     var q = px[p.y], live = (q && Number(q.price) > 0) ? Number(q.price) : 0;
     if (!live){ gainKnown = false; live = rec; }
-    sellVal += qty * live;
+    sellVal += Math.round(qty * live);
     gain    += qty * (live - rec);
   });
   if (goneNow.length && !sellSized) gainKnown = false;
@@ -13554,8 +13759,8 @@ function renderCycleCost(){
   var grid = document.getElementById('cc-grid');
   if (grid){
     var legs = [];
-    if (buyVal  > 0) legs.push(fmtMoney(Math.round(buyVal))  + ' bought');
     if (sellVal > 0) legs.push(fmtMoney(Math.round(sellVal)) + ' sold');
+    if (buyVal  > 0) legs.push(fmtMoney(Math.round(buyVal))  + ' bought');
     // V42.1 — B5: a sale with no known quantity is not in the total; say so
     var _unsz = diff.prevQtyKnown === false ? goneNow.length : 0;
     if (_unsz) legs.push(_unsz + (_unsz === 1 ? ' sale' : ' sales') + ' not sized');
@@ -13669,7 +13874,7 @@ function renderHeroJob(){
         el.textContent = (_lft.length < _oo.all.length
             ? _lft.length + ' of the ' + _oo.all.length + ' orders you ticked left to place'
             : _oo.all.length + ' order' + (_oo.all.length === 1 ? '' : 's') + ' you ticked to place') +
-          ' \u2014 ' + [_ls ? _ls + '\u00a0to sell' : '', _lb ? _lb + '\u00a0to buy' : ''].filter(Boolean).join(' and ') + '.';
+          ' \u2014 ' + [_ls ? _ls + '\u00a0to sell' : '', _lb ? _lb + '\u00a0to buy' : ''].filter(Boolean).join(_ls && _lb ? ' first, then ' : '') + '.';
       }
       return;
     }
@@ -13717,10 +13922,11 @@ function renderHeroJob(){
         [_lTr ? plural(_lTr, 'trim', 'trims') : '', _lAd ? plural(_lAd, 'add', 'adds') : ''].filter(Boolean).join(', then ') +
         '.' + _hbTxt;
     } else {
-      var _parts = [_lIn ? _lIn + '\u00a0to buy' : '', _lOut ? _lOut + '\u00a0to sell' : '', _lRw.length ? _lRw.length + '\u00a0to re-weight' : '']
-        .filter(Boolean);
+      // V44.2 — the sales, then the buys: the same order as the baskets
+      var _pOut = [_lOut ? _lOut + '\u00a0to sell' : '', _lTr ? _lTr + '\u00a0to trim' : ''].filter(Boolean).join(' and ');
+      var _pIn  = [_lIn ? _lIn + '\u00a0to buy' : '', _lAd ? _lAd + '\u00a0to add' : ''].filter(Boolean).join(' and ');
       el.textContent = plural(_lIn + _lOut + _lRw.length, 'order', 'orders') + ' to place this cycle \u2014 ' +
-        (_parts.length > 1 ? _parts.slice(0, -1).join(', ') + ' and ' + _parts[_parts.length - 1] : _parts[0]) + '.' + _hbTxt;
+        (_pOut && _pIn ? _pOut + ' first, then ' + _pIn : (_pOut || _pIn)) + '.' + _hbTxt;
     }
     return;
   }
@@ -13785,7 +13991,7 @@ function renderHeroJob(){
   var lead;
   if (leftIn && leftOut){
     lead = plural(left, 'order', 'orders') + ' to place this cycle \u2014 ' +
-           leftIn + '\u00a0to buy and ' + leftOut + '\u00a0to sell';
+           leftOut + '\u00a0to sell first, then ' + leftIn + '\u00a0to buy';
   } else if (leftIn){
     lead = plural(leftIn, 'buy order', 'buy orders') + ' to place this cycle';
   } else {
@@ -13823,7 +14029,7 @@ function refreshOrdersTile(animate){
   var rwAll = oc.rw || [], leftRw = rwAll.filter(function(o){ return !map[orderKey(o)]; });
   var left = leftIn + leftOut + leftRw.length, placed = n - left;
   var sides = function(b, s){
-    return [b ? b + (b === 1 ? ' buy' : ' buys') : '', s ? s + (s === 1 ? ' sell' : ' sells') : '']
+    return [s ? s + (s === 1 ? ' sell' : ' sells') : '', b ? b + (b === 1 ? ' buy' : ' buys') : '']
       .filter(Boolean).join('\u00a0· ');
   };
   var rwSides = function(list){
@@ -13932,7 +14138,7 @@ function renderBookChange(diff, stocks){
   if (!((orders || rwOrdersN) && refreshOrdersTile(true))){
     if (oVal) _animateCount(oVal, tileN, {});
     if (oSub) oSub.textContent = orders
-      ? (nIn + (nIn === 1 ? ' buy' : ' buys') + ' · ' + nOut + (nOut === 1 ? ' sell' : ' sells'))
+      ? (nOut + (nOut === 1 ? ' sell' : ' sells') + ' · ' + nIn + (nIn === 1 ? ' buy' : ' buys'))
       : (nMoved
           ? 'weights to adjust — no names change'   // MultiAsset: same sleeve, new targets
           : isWeightedBook(stocks)
@@ -14105,7 +14311,7 @@ function renderBookChange(diff, stocks){
             'so your dashboard cannot size these; <button type="button" class="chg-hint-btn" onclick="_rwOpenMatch()">Match my holdings</button> ' +
             'works them out from your broker&rsquo;s list. '
           : '') +
-        'Tick each one once the sell order is placed.' +
+        (nIn ? 'Tick each one once it has sold: its money then pays for the buys.' : 'Tick each one once the sell order is placed.') +
         (unknownN ? ' No purchase date is recorded for ' + (unknownN === 1 ? 'one of these' : unknownN + ' of these') +
           ' &mdash; if you bought ' + (unknownN === 1 ? 'it' : 'any') + ' within your ' + window._mfRules.h +
           '-day holding period, hold ' + (unknownN === 1 ? 'it' : 'those') + ' until the period ends.' : '') + '</div>' +
@@ -14150,12 +14356,14 @@ function renderBookChange(diff, stocks){
                  escapeHtml(bk.name) + ' &rarr;</a>' : _csCopyBtn(t, s2 ? sharesFor(s2) : 0)) +
         '</div>';
       }).join('') + '</div>' +
-      '<div class="chg-hint">Tick each one once the buy order is placed &mdash; the same tick as the picks table below.</div>';
+      '<div class="chg-hint">' + ((ocB.sells.length || (ocB.trims || []).length) ? 'Place these after the sales: their money pays for them. ' : '') +
+        'Tick each one once the buy order is placed &mdash; the same tick as the picks table below.</div>';
     };
     var rot = rotList.slice(), moved = movedList;
     var holdBody;
     if (moved.length){
-      rot.sort(function(a,b){ return Math.abs(b.d) - Math.abs(a.d); });
+      // V44.2 — the trims first, as in the baskets: each one's money pays for the adds
+      rot.sort(function(a,b){ return (b.d < 0 ? 1 : 0) - (a.d < 0 ? 1 : 0) || Math.abs(b.d) - Math.abs(a.d); });
       /* V41.9 — A1. When this cycle's re-weights could be sized (cycleOrders()
          .rwKnown), each moved row carries its order: the share count, a tick
          (RW:<ticker>, the same key the basket and the table use) and, for a trim
@@ -14220,9 +14428,11 @@ function renderBookChange(diff, stocks){
     var mtOut  = nOut === 0 ? ' is-empty' : '';
     var mtHold = (moved.length === 0 && nHold === 0) ? ' is-empty' : '';
     box.classList.toggle('has-empty', !!(mtIn || mtOut || mtHold));
+    // V44.2 — the sales first, always: their money pays for the buys beside them
+    var bothSides = nIn > 0 && ocB.sells.length > 0;
     box.innerHTML =
-      '<div class="chg-group is-in' + mtIn + '"><div class="chg-gk"><i></i>Buy · new this cycle (' + nIn + ')</div>'   + buys(diff.added)    + '</div>' +
-      '<div class="chg-group is-out' + mtOut + '"><div class="chg-gk"><i></i>Sell · left the book (' + nOut + ')</div>' + sells(diff.removed) + '</div>' +
+      '<div class="chg-group is-out' + mtOut + '"><div class="chg-gk"><i></i>' + (bothSides ? 'Sell first' : 'Sell') + ' · left the book (' + nOut + ')</div>' + sells(diff.removed) + '</div>' +
+      '<div class="chg-group is-in' + mtIn + '"><div class="chg-gk"><i></i>' + (bothSides ? 'Then buy' : 'Buy') + ' · new this cycle (' + nIn + ')</div>'   + buys(diff.added)    + '</div>' +
       '<div class="chg-group is-hold' + (moved.length ? ' is-rot' : '') + mtHold + '"><div class="chg-gk"><i></i>' +
         holdLabel + '</div>' + holdBody + '</div>';
   }
@@ -14635,6 +14845,12 @@ function paintLivePrices(){
   // it is re-derived here rather than on a timer of its own.
   try { renderMyPosition(); } catch (e) {}
   try { if (window.adjRefresh) window.adjRefresh(); } catch (e) {}   // V37.5 — sized at live prices
+  // V44.2 — a sale is valued at its live price, so the band follows it; only on a change,
+  // because a re-draw replaces its buttons and this runs every five minutes
+  try {
+    var _kp = kiteBasketPlan(), _ks = _kp.fundIn + '|' + _kp.sellVal;
+    if (_ks !== window._kbPxSig){ window._kbPxSig = _ks; refreshKiteBasket(); }
+  } catch (e) {}
 }
 /* ══ V36.6 — YOUR POSITION ═══════════════════════════════════════════════════
    The member's own return, from the member's own basis. This is the answer to
@@ -19430,33 +19646,49 @@ function _preheldForm(p){
       setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 1500);
     } catch(e){}
   }
+  /* V44.2 — the same rule as the cycle's baskets: a basket is one side only, the sales
+     first, and a buy basket opens only after every sale basket has gone to Kite. */
+  function adjChunks(orders){
+    var send = orders.filter(function(o){ return o.qty >= 1; }), out = [];
+    [send.filter(function(o){ return o.side === 'SELL'; }), send.filter(function(o){ return o.side !== 'SELL'; })].forEach(function(side){
+      for (var i = 0; i < side.length; i += KITE_BASKET_MAX) out.push(side.slice(i, i + KITE_BASKET_MAX));
+    });
+    return out;
+  }
+  function adjSalesUnsent(key, chunks){
+    return chunks.some(function(c, i){ return c[0].side === 'SELL' && !state.sentAdj[key + ':' + i]; });
+  }
   function basketsHtml(key, orders){
     var send = orders.filter(function(o){ return o.qty >= 1; });
     if (!send.length || getBroker() !== 'kite') return '';
-    var chunks = [];
-    for (var i = 0; i < send.length; i += KITE_BASKET_MAX) chunks.push(send.slice(i, i + KITE_BASKET_MAX));
+    var chunks = adjChunks(orders);
     var total = chunks.length;
     var nextIdx = -1;
+    var hasSell = chunks.some(function(c){ return c[0].side === 'SELL'; }), hasBuy = chunks.some(function(c){ return c[0].side !== 'SELL'; });
+    var salesUnsent = adjSalesUnsent(key, chunks);
     chunks.forEach(function(c, i){ if (nextIdx < 0 && !state.sentAdj[key + ':' + i]) nextIdx = i; });
     return '<ol class="adj-baskets">' + chunks.map(function(c, i){
       var val = c.reduce(function(a, o){ return a + o.qty * (o.price || 0); }, 0);
       var sent = !!state.sentAdj[key + ':' + i], isNext = i === nextIdx;
+      var isBuy = c[0].side !== 'SELL', wait = isBuy && !sent && salesUnsent;
       var lbl = sent ? 'Send again' : 'Review on Kite';
-      return '<li class="kbsk-b' + (isNext ? ' is-next' : '') + (sent ? ' is-sent' : ' is-ready') + '">' +
+      var tag = hasSell ? '<span class="om-side ' + (isBuy ? 'is-buy">Buy' : 'is-sell">Sell') + '</span>' : '';
+      return '<li class="kbsk-b' + (isNext ? ' is-next' : '') + (sent ? ' is-sent' : wait ? ' is-wait' : ' is-ready') + '">' +
         '<span class="kbsk-b-n" aria-hidden="true">' + (i + 1) + '</span>' +
-        '<span class="kbsk-b-main"><span class="kbsk-b-head">' + (total > 1 ? 'Basket ' + (i + 1) + ' of ' + total : 'Kite basket') +
-          (sent ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' : (isNext && total > 1 ? '<span class="kbsk-b-state is-next">Next</span>' : '')) + '</span>' +
+        '<span class="kbsk-b-main"><span class="kbsk-b-head">' + tag + (total > 1 ? 'Basket ' + (i + 1) + ' of ' + total : 'Kite basket') +
+          (sent ? '<span class="kbsk-b-state is-sent">Opened on Kite</span>' : wait ? '<span class="kbsk-b-state is-wait">After the sales</span>' : (isNext && total > 1 ? '<span class="kbsk-b-state is-next">Next</span>' : '')) + '</span>' +
           '<span class="kbsk-b-sub"><b>' + c.length + '</b> order' + (c.length === 1 ? '' : 's') + '\u00a0· <b>' + esc(money(val)) + '</b></span>' +
-          '<span class="kbsk-b-names">' + esc(c.map(function(o){ return (o.side === 'SELL' ? 'sell\u00a0' : '') + o.ticker + '\u00a0×' + o.qty; }).join('\u00a0· ')) + '</span></span>' +
-        '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" data-adj-send="' + key + ':' + i + '" ' +
-          'aria-label="' + esc(lbl + (total > 1 ? ': basket ' + (i + 1) + ' of ' + total : '') + ', ' + c.length + ' orders, ' + money(val)) + '">' + lbl + '</button>' +
+          '<span class="kbsk-b-names">' + esc(c.map(function(o){ return o.ticker + '\u00a0×' + o.qty; }).join('\u00a0· ')) + '</span></span>' +
+        (wait ? '' : '<button type="button" class="kbsk-b-btn' + (isNext ? ' is-primary' : '') + '" data-adj-send="' + key + ':' + i + '" ' +
+          'aria-label="' + esc(lbl + (total > 1 ? ': basket ' + (i + 1) + ' of ' + total : '') + ', ' + c.length + ' orders, ' + money(val)) + '">' + lbl + '</button>') +
       '</li>';
-    }).join('') + '</ol>';
+    }).join('') + '</ol>' +
+    (hasSell && hasBuy ? '<p class="adj-bk-note"><b>Sales first, then buys.</b> Send the buy basket once the sales have filled: a buy needs the money in your account when it is placed, and a sale counts only once it has filled.</p>' : '');
   }
   function sendAdj(key, idx, orders){
-    var send = orders.filter(function(o){ return o.qty >= 1; });
-    var chunk = send.slice(idx * KITE_BASKET_MAX, (idx + 1) * KITE_BASKET_MAX);
-    if (!chunk.length) return;
+    var chunks = adjChunks(orders), chunk = chunks[idx];
+    if (!chunk || !chunk.length) return;
+    if (chunk[0].side !== 'SELL' && adjSalesUnsent(key, chunks)){ showToast('Sales first: the buys use what they bring in'); return; }   // V44.2
     // V44.0 — through _kbRow, the cycle basket's own row: this copy still sent the bare
     // symbol (STLTECH, not STLTECH-BE) and 'regular' at night, both of which Kite refuses.
     var rows = chunk.map(function(o){ return _kbRow(o); });
@@ -20118,6 +20350,8 @@ button.broker-copy.copied{ border-color:#0f9d6e; }
 .osheet .kbsk-eyebrow::before{ display:none; }   /* the Kite roundel means "goes to Kite" — this does not */
 .osheet-facts{ margin:0 0 10px; font-size:13px; font-weight:700; color:var(--white); }
 .osheet-list{ list-style:none; margin:0 0 10px; padding:0; display:grid; gap:6px; }
+.os-gk{ margin:6px 0 0; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); }
+.os-gk:first-child{ margin-top:0; }
 .os-row{ display:grid; grid-template-columns:28px 52px minmax(0,1fr) auto auto auto; align-items:center; gap:8px 12px;
   padding:8px 10px; border-radius:10px; border:0.5px solid var(--border2); background:var(--ink); font-size:13px; }
 .os-row.is-done{ background:rgba(15,157,110,.06); }
@@ -20313,6 +20547,8 @@ html[data-theme="dark"] .cs-nudge a{ color:#9dbcff; }
 .adj-monthly[hidden]{ display:none; }
 .adj-monthly input{ width:18px; height:18px; margin:0; accent-color:var(--accent); cursor:pointer; }
 .adj-monthly-note{ font-size:12px; line-height:1.55; color:var(--text3); margin:8px 0 0; }
+.adj-bk-note{ font-size:12px; line-height:1.55; color:var(--text3); margin:8px 0 0; max-width:820px; }   /* V44.2 */
+.adj-bk-note b{ color:var(--text2); font-weight:700; }
 .chg-monthly{ display:flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin:14px 0 0; padding:6px 14px;
   border-radius:12px; font-size:13.5px; line-height:1.5; color:var(--text2);
   background:rgba(37,99,235,.05); border:0.5px solid var(--border2); }
@@ -20758,6 +20994,7 @@ html[data-dmode="insight"] .foot-fold{display:none !important}
   html .mf-abar .mf-abar-cap-k, html .cvg-head #cvg-chip, html .cyc-head .cyc-k, html .cc-head .cc-k,
   html .demo-banner-tag, html .kbsk-txt .kbsk-eyebrow, html .kbsk-b-head .kbsk-b-state,
   html .chg-group .chg-gk{ font-size:11px; }
+@media (max-width:340px){ html .chg-group .chg-gk{ letter-spacing:.03em; } }   /* V44.2 — "Sell first · left the book (6)" on one line */
 }
 </style>
 <script id="mf-v433-dash-js">

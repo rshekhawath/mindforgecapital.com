@@ -904,7 +904,10 @@
 // hands a tapped book to the dashboard without a token in the URL; the precached index.html carries
 // mfc-chrome.js 4080 (ribbon links 44px on touch, floating buttons step aside at the footer) and
 // mfc-finish.css 3970. New: the strategy charts' 1200px -m.webp copies for phone screens.
-const CACHE = 'mfc-v144';
+// V44.2 -> mfc-v145. The precached index.html's hero live column is the current cycle, and it carries
+// mfc-live.js 4420 (hands the file to the hero; the last-cycle stand-in is off); mfc-deep.css 3 -> 4
+// on 12 pages (link lists a full target on touch).
+const CACHE = 'mfc-v145';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/index.html',                    // offline navigation fallback (see fetch handler)
