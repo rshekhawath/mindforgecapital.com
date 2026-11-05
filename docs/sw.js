@@ -907,10 +907,16 @@
 // V44.2 -> mfc-v145. The precached index.html's hero live column is the current cycle, and it carries
 // mfc-live.js 4420 (hands the file to the hero; the last-cycle stand-in is off); mfc-deep.css 3 -> 4
 // on 12 pages (link lists a full target on touch).
-const CACHE = 'mfc-v145';
+// V44.3 -> mfc-v146. The offline fallback is now /offline.html, a page with no figures on it,
+// instead of a precached copy of the whole home page. That copy cost every first-time visitor
+// 191 KB gzipped, whichever page they had landed on, and it is why index.html has needed this
+// constant moved on nearly every release above: from here only login.html (the installed app's
+// start_url) is a precached document that can go stale. The logo's bytes changed too (23 KB to
+// 7 KB, same pixels to the eye) and it is in the list below with no ?v of its own.
+const CACHE = 'mfc-v146';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
-  '/index.html',                    // offline navigation fallback (see fetch handler)
+  '/offline.html',                  // offline navigation fallback (see fetch handler)
   '/assets/LogoNav.png',
   '/assets/favicon-32.png',
   '/assets/favicon-192.png',
@@ -950,14 +956,14 @@ self.addEventListener('fetch', (e) => {
   // is useless to anyone who should see it and a liability to everyone else.
   // A failed fetch falls back to the offline shell rather than to a stale book.
   if (url.pathname === '/dashboard.html' || url.pathname.endsWith('/dashboard.html')) {
-    e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
+    e.respondWith(fetch(req).catch(() => caches.match('/offline.html')));
     return;
   }
   // V42.3 — the same rule for the Factor Report's one-click unsubscribe link
   // (/learn/?unsub=<key>, from every report e-mail): the key must never become a
   // cache key, so that navigation goes to the network only.
   if (url.searchParams.has('unsub')) {
-    e.respondWith(fetch(req).catch(() => caches.match('/index.html')));
+    e.respondWith(fetch(req).catch(() => caches.match('/offline.html')));
     return;
   }
 
@@ -968,7 +974,7 @@ self.addEventListener('fetch', (e) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match(req).then((cached) => cached || caches.match('/index.html')))
+      }).catch(() => caches.match(req).then((cached) => cached || caches.match('/offline.html')))
     );
     return;
   }

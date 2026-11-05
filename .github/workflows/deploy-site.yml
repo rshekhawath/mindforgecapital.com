@@ -1,0 +1,70 @@
+# Publishes docs/ to GitHub Pages with its code comments removed, so docs/ keeps
+# them and visitors do not download them. See .github/deploy/build_site.py.
+#
+# Takes effect only when the repository's Settings > Pages > Source is set to
+# "GitHub Actions". While it is still "Deploy from a branch", GitHub publishes docs/
+# as it stands and this workflow only builds and checks, so the two cannot race.
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/deploy/**"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A newer push waits for the deployment in progress rather than cancelling it.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.source.outputs.source }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            docs
+            .github
+
+      - name: Which source is Pages set to?
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/pages" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin).get("build_type",""))' || true)
+          echo "Pages source: ${source:-unknown}"
+          echo "source=${source:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the published copy
+        run: python3 .github/deploy/build_site.py docs _site
+
+      - uses: actions/upload-pages-artifact@v5
+        if: steps.source.outputs.source != 'legacy'
+        with:
+          path: _site
+          include-hidden-files: true
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.source != 'legacy'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

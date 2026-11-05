@@ -861,7 +861,7 @@ tbody tr.rowlink{cursor:pointer}
   }
 }
 </style>
-<script src="screener-data.js?v=153"></script>
+<script src="screener-data.js?v=154"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -877,7 +877,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3970">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=4430">
 <style id="mf-v149-report">
 /* ── V14.9 "Deep read" — inline professional equity report for the Scanner lister ── */
 .exp-caret{display:inline-block;margin-right:6px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -1103,6 +1103,8 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 </style>
 </head>
 <body>
+<script>try{if(sessionStorage.getItem('mfc-offer-dismissed')==='1')document.documentElement.classList.add('mfc-offer-off')}catch(e){}</script>
+<div id="mfc-offer-bar" role="region" aria-label="Launch offer"><div class="mfc-offer-inner"><span class="mfc-offer-gift" aria-hidden="true">🎁</span><span class="mfc-offer-text"><strong>1st month FREE</strong><span class="mfc-offer-tail"> for all new members</span><span class="mfc-offer-sub"> · only pay from month two</span></span><a class="mfc-offer-cta" href="/signup.html">Get started →</a><button class="mfc-offer-x" type="button" aria-label="Dismiss offer" onclick="var b=document.getElementById('mfc-offer-bar');if(b)b.remove();try{sessionStorage.setItem('mfc-offer-dismissed','1')}catch(e){}">×</button></div></div>
 <a href="#main-content" class="skip-link">Skip to main content</a>
 
 <div class="mf-scroll-prog" id="scrollProg"></div>
@@ -1111,7 +1113,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
 <nav>
   <div class="nav-inner">
     <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
-      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
+      <img src="/assets/LogoNav.png?v=5e1b77" alt="MindForge Capital" decoding="async" width="44" height="36">
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="https://mindforgecapital.com/how-it-works/">How it works</a>
@@ -1125,6 +1127,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
+<p id="mf-ribbon" class="mf-ribbon"><span>MindForge publishes a researched stock portfolio every month: about ten minutes on the 1st, in your own broker.</span><a href="/how-it-works/">How it works</a><a href="/learn/#fr-h-learn">The Factor Report by e-mail</a></p>
 
 <!-- APP LAYOUT -->
 <div class="app-layout">
@@ -1638,6 +1641,7 @@ const COL_TIPS={
   beta:"Volatility vs the market (1 = moves with the index).",
   price_to_fcf:"Price ÷ free cash flow per share."
 };
+const FIRST_DRAWN=["name","current_price","day_change","market_cap_cr","pe_ratio","pb_ratio","roce","dividend_yield"];   // V44.3 — the columns stocks-first.json can draw
 const COLUMNS=[
   {key:"name",          label:"Company",      render:d=>`<div class="company-cell"><div class="company-name"><a href="/scores/company.html?symbol=${encodeURIComponent(d.symbol)}" onclick="event.stopPropagation()">${scnEsc(d.name||d.symbol)}</a></div><div class="company-sym">${scnEsc(d.symbol)}</div>${sectorPill(d.sector)}</div>`, visible:true, nosort:true},
   {key:"current_price", label:"Price (₹)",    render:d=>priceCell(d), visible:true},
@@ -1856,10 +1860,17 @@ async function loadInitialData(){
        against, so the denominator here can never disagree with the table.
        Fail-soft: if this throws, COVERAGE stays null and every consumer of it
        renders exactly what it rendered before this release. */
-    try{ COVERAGE=buildCoverage(d.results||[]); paintFilterCoverage(); }catch(e){ COVERAGE=null; }
+    /* V44.3 — and only ever from the full file, because the first table's small one holds 12
+       columns and would report every other field as 0% covered. Until it arrives COVERAGE and
+       DIST stay null, which is the fail-soft state every consumer already handles. */
+    const paintCounts=rows=>{
+      try{ COVERAGE=buildCoverage(rows); paintFilterCoverage(); }catch(e){ COVERAGE=null; }
     /* V33.0 — same snapshot, same fail-soft contract as the line above: the
        histograms are built from the identical rows the coverage note counts. */
-    try{ DIST=buildDistributions(d.results||[]); paintFilterDistributions(); }catch(e){ DIST=null; }
+      try{ DIST=buildDistributions(rows); paintFilterDistributions(); distSyncAll(); }catch(e){ DIST=null; }
+    };
+    if(window.MFCScreenerData.isFull()) paintCounts(d.results||[]);
+    else document.addEventListener("mfc:full-ready",()=>paintCounts(window.MFCScreenerData.rows()),{once:true});
     applyURLFilters();   // V15.2: restore a shared screen from the URL before the first run
     distSyncAll();       // V33.0: a shared URL sets .value directly, firing no input event
     if((d.cached_total||0)>0)runScreen({initial:true});   // V34.0: arrival, not a click — do not move the viewport
@@ -2570,6 +2581,37 @@ document.getElementById("btnClearFilters")?.addEventListener("click",clearFilter
 showSkeleton(10);
 checkHealth();
 
+/* V44.3 — WHEN THE FULL FILE COMES DOWN. Once someone reaches for a filter, a preset, a column or
+   an export; or on its own after the page settles, but only on a connection where 900 KB costs
+   little. On anything slower, a visitor who only reads the table never pays for it. Whichever
+   comes first, the rows on screen move over to the full ones, and the table redraws only if it
+   is showing a column the small file does not have. */
+(function(){
+  const md=window.MFCScreenerData;
+  if(!md||!md.loadFull)return;
+  const go=()=>{ md.loadFull().catch(()=>{}); };
+  const reach=e=>{
+    const t=e.target;
+    if(!t||!t.closest||!t.closest(".app-layout"))return;
+    if(!t.closest("input,select,button,label,summary,[role=button]")||t.closest(".pagination"))return;
+    ["pointerdown","focusin","keydown"].forEach(n=>document.removeEventListener(n,reach,true));
+    go();
+  };
+  ["pointerdown","focusin","keydown"].forEach(n=>document.addEventListener(n,reach,{capture:true,passive:true}));
+  const c=navigator.connection;
+  const cheap=!c||(!c.saveData&&c.effectiveType==="4g");
+  if(cheap){
+    const later=()=>setTimeout(()=>{ (window.requestIdleCallback||(f=>f()))(go,{timeout:4000}); },2500);
+    if(document.readyState==="complete")later(); else window.addEventListener("load",later,{once:true});
+  }
+  document.addEventListener("mfc:full-ready",()=>{
+    try{
+      if(Array.isArray(allResults))allResults=allResults.map(r=>md.bySym(r.symbol)||r);
+      if(allResults&&allResults.length&&COLUMNS.some(c=>c.visible&&c.key&&c.key!=="_actions"&&FIRST_DRAWN.indexOf(c.key)<0))renderTable();
+    }catch(e){}
+  });
+})();
+
 // Summary strip — universe size, sectors, snapshot date (from the bundled data).
 (function(){
   if(!window.MFCScreenerData||!window.MFCScreenerData.load)return;
@@ -2718,7 +2760,7 @@ checkHealth();
   }
 })();
 </script>
-<script src="../assets/mfc-offer.js?v=4050" defer></script>
+<script src="../assets/mfc-offer.js?v=4430" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -3199,7 +3241,7 @@ h1, h2, h3, h4, th,
      handler in the second is written to coexist with a page's own — the open
      fallback fires only when nothing else moved aria-expanded, and the drawer
      sizing writes the same measured value this page already writes. -->
-<script defer src="../assets/mfc-chrome.js?v=4080"></script>
+<script defer src="../assets/mfc-chrome.js?v=4430"></script>
 
 <!-- V38.6 · THE RESULTS TABLE HAD NO EDGE CUE, AND IT IS THE ONE TABLE ON THIS
      PAGE A READER CANNOT SEE ALL OF. V34.0 gave every horizontal scroller a

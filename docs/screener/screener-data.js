@@ -24,6 +24,21 @@
   // smaller). The per-stock company page sets window.MFC_USE_FULL=1 to load the full
   // file instead (it needs the business description for the About tab).
   var DATA_URL = (typeof window !== "undefined" && window.MFC_USE_FULL) ? "stocks.json" : "stocks-lite.json";
+  /* V44.3 — THE FIRST TABLE COMES FROM A SMALL FILE. The first screen draws 12 of the 96 columns
+     in stocks-lite.json, and a phone on slow 4G waited 8.6 s for all 96 before it drew anything.
+     stocks-first.json carries every stock and only those 12 (106 KB against 917 KB, both
+     gzipped), and answers everything that does not filter or sort on another column. Anything
+     else, a filter, a preset, a shared screen link, another column, the watchlist, loads the full
+     file first and waits for it, so no answer is ever computed from a partial row. The full file
+     then replaces the first one and "mfc:full-ready" fires; the page uses that for the filter
+     notes and histograms, which must be counted from all 96. FIRST_COLUMNS must match
+     _SCANNER_FIELDS in screener/export_static.py. If the small file cannot be read, this simply
+     falls back to the full one, as it always loaded. */
+  var FIRST_ON = !(typeof window !== "undefined" && window.MFC_USE_FULL);
+  var FIRST_URL = "stocks-first.json";
+  var FIRST_COLUMNS = { symbol: 1, name: 1, sector: 1, current_price: 1, day_change: 1, "52w_high": 1, "52w_low": 1,
+                        market_cap_cr: 1, pe_ratio: 1, pb_ratio: 1, roce: 1, dividend_yield: 1 };
+  var firstPromise = null, IS_FULL = false;
 
   function fmtDate(s) {
     try {
@@ -64,7 +79,7 @@
     return b.stocks || [];
   }
 
-  function loadBundle() {
+  function loadFull() {
     if (bundlePromise) return bundlePromise;
     // V36.6 — the explicit "no-cache" is GONE. It forced a revalidation
     // round-trip on every single load of the Scanner. GitHub Pages already
@@ -80,6 +95,15 @@
         return r.json();
       })
       .then(function (b) {
+        var out = adopt(b);
+        IS_FULL = true;
+        try { document.dispatchEvent(new CustomEvent("mfc:full-ready")); } catch (e) {}
+        return out;
+      });
+    return bundlePromise;
+  }
+
+  function adopt(b) {
         var arr = bundleRows(b);
         BUNDLE = Array.isArray(b)
           ? { stocks: arr, count: arr.length, sectors: [], generated_at: "", data_through: "" }
@@ -110,11 +134,44 @@
         } catch (e) {}
         try { document.dispatchEvent(new CustomEvent("mfc:data-ready", { detail: window.__SCREENER_META__ })); } catch (e) {}
         return BUNDLE;
-      });
-    return bundlePromise;
   }
 
-  window.MFCScreenerData = { load: loadBundle, bySym: function (s) { return BY_SYM[s]; } };
+  /* The quickest answer to hand: the full file if it is here, otherwise the small one. */
+  function loadBundle() {
+    if (IS_FULL || !FIRST_ON) return loadFull();
+    if (firstPromise) return firstPromise;
+    firstPromise = origFetch(FIRST_URL)
+      .then(function (r) {
+        if (!r.ok) throw new Error("stocks-first.json HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (b) { return IS_FULL ? BUNDLE : adopt(b); })
+      .catch(function () { return loadFull(); });
+    return firstPromise;
+  }
+
+  window.MFCScreenerData = {
+    load: loadBundle,
+    loadFull: loadFull,
+    isFull: function () { return IS_FULL; },
+    rows: function () { return BUNDLE ? BUNDLE.stocks : []; },
+    hasColumn: function (k) { return IS_FULL || !FIRST_ON || FIRST_COLUMNS[k] === 1; },
+    bySym: function (s) { return BY_SYM[s]; }
+  };
+
+  function needsFull(pathname, params) {
+    if (IS_FULL || !FIRST_ON) return false;
+    var m = pathname.match(/\/api\/(.*)$/), route = m ? m[1] : "";
+    if (route === "health" || route === "sectors" || route === "universe" || route === "search") return false;
+    if (route !== "screen") return true;
+    var need = false;
+    params.forEach(function (v, k) {
+      if (k === "limit" || k === "sort_dir" || k === "sector" || v === "") return;
+      if (k === "sort_by") { if (FIRST_COLUMNS[v] !== 1) need = true; return; }
+      need = true;                                     // any other parameter is a filter
+    });
+    return need;
+  }
 
   // ---- helpers -------------------------------------------------------------
   function jsonResp(obj, status) {
@@ -335,7 +392,7 @@
     var method = (init.method || (typeof input !== "string" && input && input.method) || "GET").toUpperCase();
     var body = {};
     if (init.body) { try { body = JSON.parse(init.body); } catch (e) { body = {}; } }
-    return loadBundle().then(function () {
+    return (needsFull(u.pathname, u.searchParams) ? loadFull() : loadBundle()).then(function () {
       var resp = handle(u.pathname, u.searchParams, method, body);
       return resp || jsonResp({ error: "unhandled" }, 500);
     }).catch(function (e) {

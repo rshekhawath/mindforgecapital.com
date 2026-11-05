@@ -335,7 +335,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 <nav>
   <div class="nav-inner">
     <a href="/" class="logo" aria-label="MindForge Capital — Home">
-      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
+      <img src="/assets/LogoNav.png?v=5e1b77" alt="MindForge Capital" decoding="async" width="44" height="36">
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="/how-it-works/">How it works</a>
@@ -349,6 +349,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
+<p id="mf-ribbon" class="mf-ribbon"><span>MindForge publishes a researched stock portfolio every month: about ten minutes on the 1st, in your own broker.</span><a href="/how-it-works/">How it works</a><a href="/learn/#fr-h-learn">The Factor Report by e-mail</a></p>
 
 <!-- V32.0: these 28 pages carried a skip link to #main-content and no <main>
      landmark, so the keyboard bypass worked and the screen-reader one did not.
@@ -567,6 +568,9 @@ def write_directory(stocks, out_dir, day):
 
 
 # ── V36.6 — THE REDUCED UNIVERSE FOR THE PER-STOCK PAGES ──────────────────────
+# V44.3 — stocks-universe.json itself is retired; these fields are now what each stock's own
+# co/<SYM>.json carries. See _write_company_files() below. The history stays because it
+# explains which fields a company page reads and why.
 # docs/scores/company.html loaded the FULL 6.5 MB stocks.json — 1.64 MB over the
 # wire — and it did so for exactly TWO fields: `description` and `website`, the
 # only two the lite bundle drops. Everything else it needs is the 39 fields its
@@ -722,15 +726,172 @@ def _universe_fields(rows: list) -> list:
     return order
 
 
-def _write_reduced_universe(bundle: dict, out_dir: str) -> None:
+# ── V44.3 — THE SCORES ARE WORKED OUT HERE, NOT IN EVERY VISITOR'S BROWSER ─────────
+# Every score is a percentile against the whole market, so the Integrity Score list and all
+# 2,120 company pages downloaded the whole market (0.77-0.92 MB gzipped) to show one number:
+# 7.9 s to a score on a phone on slow 4G. The market's percentiles only change once a day,
+# so the export now does that work once and publishes two kinds of file:
+#
+#   stocks-first.json   every stock, only the columns the Scanner's first table draws.
+#                       (Every numeric column costs about the same 8-10 KB gzipped, so this
+#                       one is kept to exactly what that table needs: 106 KB.)
+#   scores-first.json   every stock with its scores, and the columns the Integrity Score list
+#                       and the "peers" sections of the company pages read: about 210 KB.
+#   co/<SYM>.json       one stock in full, plus its factor scores, for its company page and
+#                       for the scorecard that opens on the list: about 1.4 KB.
+#
+# stocks-universe.json is gone: it existed only for the company pages. The browser's own
+# engine still exists as the fallback when either file cannot be read, and it remains the
+# definition: runner/verify_published_numbers.py runs it in headless Chrome and fails the
+# publish if a single score here differs. So a change to the formulas in scores-engine.js
+# must be mirrored in _score_universe() below, and that check is what says so.
+#
+# The factor table itself (keys, directions, guards, minimum counts) is READ FROM
+# scores-engine.js, same principle as _engine_factor_keys() above. A factor that computes its
+# value with fn() has to be in _ENGINE_FN; one that is not stops this and removes the scored
+# files, so the pages fall back to the engine rather than publishing a wrong number.
+#
+# A NEW COLUMN IN EITHER TABLE BELONGS IN THESE LISTS. A field read from another stock's row and
+# missing here renders as a dash. For the Scanner that is only until the full file arrives; it
+# reads SCANNER_FIRST in screener-data.js, which must match _SCANNER_FIELDS.
+_SCANNER_FIELDS = (
+    "symbol", "name", "sector", "current_price", "day_change", "52w_high", "52w_low",
+    "market_cap_cr", "pe_ratio", "pb_ratio", "roce", "dividend_yield",
+)
+_FIRST_FIELDS = (
+    "symbol", "name", "sector", "industry", "current_price", "day_change",
+    "52w_high", "52w_low", "market_cap_cr", "pe_ratio", "pb_ratio", "roe",
+    "dividend_yield", "net_margin", "revenue_growth", "ev_ebitda", "ev_revenue",
+    "cash_conv_cycle", "graham_number",
+)
+_SCORE_FIELDS = ("_q", "_v", "_g", "_m", "_e", "_overall")
+_ENGINE_FN = {
+    "debt_to_equity": lambda d, ok: d.get("debt_to_equity") / 100 if ok(d.get("debt_to_equity")) else None,
+    "_p2s200": lambda d, ok: (d["current_price"] / d["sma_200"] - 1) * 100
+        if ok(d.get("current_price")) and ok(d.get("sma_200")) and d["sma_200"] > 0 else None,
+    "_p2s50": lambda d, ok: (d["current_price"] / d["sma_50"] - 1) * 100
+        if ok(d.get("current_price")) and ok(d.get("sma_50")) and d["sma_50"] > 0 else None,
+}
+
+
+def _engine_model():
+    """The five pillars and their minimum factor counts, parsed out of scores-engine.js."""
+    import re as _re
+    with open(_ENGINE_JS, encoding="utf-8") as fh:
+        js = fh.read()
+    js = _re.sub(r"/\*.*?\*/", "", js, flags=_re.S)
+    js = _re.sub(r"(?m)^\s*//.*$", "", js)
+    pillars = []
+    for name, tag in (("QUALITY", "q"), ("VALUE", "v"), ("GROWTH", "g"), ("MOMENTUM", "m"), ("EFFICIENCY", "e")):
+        m = _re.search(r"var %s = \[(.*?)\n\s*\];" % name, js, _re.S)
+        if not m:
+            raise ValueError("no %s list in scores-engine.js" % name)
+        factors = []
+        for part in _re.split(r"(?=\{\s*key:)", m.group(1)):
+            km = _re.match(r'\{\s*key:\s*"([^"]+)"', part)
+            if not km:
+                continue
+            factors.append({
+                "key": km.group(1),
+                "dir": _re.search(r'dir:\s*"(high|low)"', part).group(1),
+                "posOnly": bool(_re.search(r"posOnly:\s*true", part)),
+                "posBest": bool(_re.search(r"posBest:\s*true", part)),
+                "zeroFill": bool(_re.search(r"zeroFill:\s*true", part)),
+                "fn": bool(_re.search(r"\bfn:\s*function", part)),
+            })
+            if factors[-1]["fn"] and factors[-1]["key"] not in _ENGINE_FN:
+                raise ValueError("factor %s computes with fn(), which _ENGINE_FN does not know" % factors[-1]["key"])
+        if not factors:
+            raise ValueError("empty %s list in scores-engine.js" % name)
+        pillars.append((tag, factors))
+    mins = {k.lower(): int(v) for k, v in _re.findall(r"MIN_([QVGME])\s*=\s*(\d+)", js)}
+    if set(mins) != {"q", "v", "g", "m", "e"}:
+        raise ValueError("could not read the MIN_ constants from scores-engine.js")
+    return pillars, mins
+
+
+def _score_universe(rows: list):
+    """scoreAll() and computeRanks() from scores-engine.js, operation for operation."""
+    import bisect
+    pillars, mins = _engine_model()
+    stocks = [d for d in rows if d and d.get("symbol") and not d.get("error")]
+
+    def is_num(v):
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+    def raw_for(d, f):
+        v = _ENGINE_FN[f["key"]](d, is_num) if f["fn"] else d.get(f["key"])
+        if not is_num(v):
+            return 0 if f["zeroFill"] else None
+        return v
+
+    def round1(v):                     # Math.round(v * 10) / 10: ties go up
+        if v is None:
+            return None
+        x = v * 10
+        r = math.floor(x)
+        if x - r >= 0.5:
+            r += 1
+        return r / 10
+
+    def mean(xs):                      # the same running sum, not a compensated one
+        total = 0
+        for x in xs:
+            total += x
+        return total / len(xs)
+
+    pools = {}
+    for _, factors in pillars:
+        for f in factors:
+            pools[f["key"]] = sorted(v for v in (raw_for(d, f) for d in stocks) if v is not None)
+    coverage = {k: (len(pool) / len(stocks) if stocks else None) for k, pool in pools.items()}
+
+    def score_value(v, f):
+        if v is None:
+            return None
+        if (f["posOnly"] and v <= 0) or (f["posBest"] and v < 0):
+            return 0
+        pool = pools[f["key"]]
+        n = len(pool)
+        if not n:
+            return None
+        lt = bisect.bisect_left(pool, v)
+        le = bisect.bisect_right(pool, v)
+        pct = (lt + 0.5 * (le - lt)) / n * 100
+        return 100 - pct if f["dir"] == "low" else pct
+
+    out = {}
+    ranked = []
+    for d in stocks:
+        rec = {"_fs": {}}
+        for tag, factors in pillars:
+            got = []
+            for f in factors:
+                sc = round1(score_value(raw_for(d, f), f))
+                if sc is not None:
+                    rec["_fs"][f["key"]] = sc
+                    got.append(sc)
+            rec["_" + tag] = round1(mean(got)) if len(got) >= mins[tag] else None
+            rec["_" + tag + "n"] = len(got)
+        rec["_overall"] = round1((rec["_q"] + rec["_v"]) / 2) if rec["_q"] is not None and rec["_v"] is not None else None
+        out[d["symbol"]] = rec
+        if rec["_overall"] is not None:
+            ranked.append((d, rec))
+    ranked.sort(key=lambda t: -t[1]["_overall"])       # stable, like Array.prototype.sort
+    sec_count, sec_total = {}, {}
+    for d, rec in ranked:
+        sec = (d.get("sector") or "").strip() or "Other"
+        sec_total[sec] = sec_total.get(sec, 0) + 1
+    for i, (d, rec) in enumerate(ranked):
+        sec = (d.get("sector") or "").strip() or "Other"
+        sec_count[sec] = sec_count.get(sec, 0) + 1
+        rec.update({"_uniRank": i + 1, "_uniTotal": len(ranked), "_secRank": sec_count[sec], "_sec": sec, "_secSize": sec_total[sec]})
+    return out, coverage, len(ranked)
+
+
+def _write_company_files(bundle: dict, out_dir: str) -> None:
     rows = bundle.get("stocks") or []
     fields = _universe_fields(rows)
-    uni = {k: v for k, v in bundle.items() if k != "stocks"}
-    uni["universe_fields"] = fields
-    uni["stocks"] = [{k: s[k] for k in fields if k in s} for s in rows]
-    path = os.path.join(out_dir, "stocks-universe.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(uni, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
 
     # One tiny file per symbol carrying only what the reduced universe omits.
     prose_dir = os.path.join(out_dir, "prose")
@@ -756,8 +917,82 @@ def _write_reduced_universe(bundle: dict, out_dir: str) -> None:
                 os.remove(os.path.join(prose_dir, stale))
             except OSError:
                 pass
-    print(f"  Universe: {len(fields)} of {len(rows[0]) if rows else 0} fields "
-          f"({os.path.getsize(path)/1e6:.2f} MB) + {len(kept)} prose files")
+
+    old_universe = os.path.join(out_dir, "stocks-universe.json")
+    if os.path.exists(old_universe):
+        os.remove(old_universe)
+
+    # The Scanner's first file needs no scores, so nothing below can stop it being written.
+    scanner = {
+        "generated_at": bundle.get("generated_at") or "",
+        "data_through": bundle.get("data_through") or "",
+        "count": len(rows),
+        "sectors": bundle.get("sectors") or [],
+        "first_fields": list(_SCANNER_FIELDS),
+        "stocks": [{k: s[k] for k in _SCANNER_FIELDS if s.get(k) is not None} for s in rows],
+    }
+    with open(os.path.join(out_dir, "stocks-first.json"), "w", encoding="utf-8") as f:
+        json.dump(scanner, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+    first_path = os.path.join(out_dir, "scores-first.json")
+    co_dir = os.path.join(out_dir, "co")
+    os.makedirs(co_dir, exist_ok=True)
+
+    def drop_co(keep):
+        for stale in os.listdir(co_dir):
+            if stale.endswith(".json") and stale not in keep:
+                try:
+                    os.remove(os.path.join(co_dir, stale))
+                except OSError:
+                    pass
+
+    try:
+        scored, coverage, n_scored = _score_universe(rows)
+    except Exception as exc:
+        # Loud, and safe: with these files gone the pages score in the browser as they used to.
+        print(f"  !! scores not precomputed ({exc}); removing scores-first.json and co/ so the "
+              f"pages fall back to scores-engine.js")
+        if os.path.exists(first_path):
+            os.remove(first_path)
+        drop_co(set())
+        return
+
+    meta = {
+        "generated_at": bundle.get("generated_at") or "",
+        "data_through": bundle.get("data_through") or "",
+        "count": sum(1 for s in rows if s.get("symbol") and not s.get("error")),
+        "scored": n_scored,
+    }
+    first_rows = []
+    for s in rows:
+        rec = scored.get(s.get("symbol"))
+        row = {k: s[k] for k in _FIRST_FIELDS if s.get(k) is not None}
+        if s.get("error"):
+            row["error"] = s["error"]
+        if rec:
+            row.update({k: rec[k] for k in _SCORE_FIELDS if rec[k] is not None})
+        first_rows.append(row)
+    first = dict(meta, sectors=bundle.get("sectors") or [], coverage=coverage,
+                 first_fields=list(_FIRST_FIELDS), stocks=first_rows)
+    with open(first_path, "w", encoding="utf-8") as f:
+        json.dump(first, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+    kept_co = set()
+    for s in rows:
+        sym = s.get("symbol")
+        rec = scored.get(sym)
+        if not rec:
+            continue
+        row = {k: s[k] for k in fields if k in s}
+        row.update(rec)
+        row["_meta"] = dict(meta, coverage=coverage)
+        name = _safe_name(sym) + ".json"
+        kept_co.add(name)
+        with open(os.path.join(co_dir, name), "w", encoding="utf-8") as f:
+            json.dump(row, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+    drop_co(kept_co)
+    print(f"  First files: {len(first_rows)} rows ({os.path.getsize(first_path)/1e6:.2f} MB scored), "
+          f"{len(kept_co)} company files, {len(kept)} prose files, {n_scored} stocks scored")
 
 
 def main() -> int:
@@ -830,9 +1065,9 @@ def main() -> int:
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(bundle, f, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
 
-    # V36.6 — the reduced universe + per-symbol prose that replace the full
-    # bundle on the 2,126 per-stock pages. See _write_reduced_universe().
-    _write_reduced_universe(bundle, OUT_DIR)
+    # V36.6 — per-symbol prose. V44.3 — plus the small first file and the per-symbol
+    # company files with their scores already worked out. See _write_company_files().
+    _write_company_files(bundle, OUT_DIR)
 
     # ── V15.2 (1): LITE bundle — full minus the two heavy free-text fields the list
     #    views never render (description alone is ~31% of the file). Both listers

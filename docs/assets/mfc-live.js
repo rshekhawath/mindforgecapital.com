@@ -236,255 +236,14 @@
     try {
       document.dispatchEvent(new CustomEvent("mfc-live-ready", { detail: data }));
     } catch (e) {}
+    return true;
   }
 
   // Shared CSS for the .live-strip (strategy pages) and .live-chip
   // (strategies index cards) — injected here so seven pages share one
   // implementation, same pattern as mfc-offer.js. The homepage hero's bespoke
   // .hv-live rules stay inline in index.html.
-  function injectStyle() {
-    if (document.getElementById("mfc-live-css")) return;
-    var st = document.createElement("style");
-    st.id = "mfc-live-css";
-    st.textContent =
-      ".live-strip{display:none;}" +
-      ".live-strip.live-ready{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 6px;padding:11px 15px;border:1px solid rgba(5,150,105,.28);border-radius:12px;background:linear-gradient(135deg,rgba(5,150,105,.07),rgba(45,212,191,.05));font-size:13px;color:var(--text2,#1e3a5f);}" +
-      /* V29.1 — the TEXT colours in this module moved off --green/#dc2626 and onto
-         the --data-* grading scale. --green is a brand token tuned for FILLS and
-         BORDERS (the pulsing dots and the strip's own outline still use it, and
-         still should); as INK on this module's own 7% wash it measures 3.17:1 on
-         the LIVE badge and 3.23:1 on the percentages — below AA for text this
-         small. The .lvm-* block 150 lines below already made exactly this move and
-         records the reason in its own comment; these older blocks were simply never
-         migrated with it. --data-strong/--data-bad are theme-aware and were
-         re-verified >=4.6:1 against both #ffffff and the deepest tint in use. */
-      ".live-strip .ls-badge{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:800;letter-spacing:.14em;color:var(--data-strong,#047454);border:1px solid rgba(5,150,105,.35);border-radius:999px;padding:2.5px 8px;}" +
-      ".live-strip .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
-      "@keyframes mfc-live-pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.8);}}" +
-      ".live-strip b{font-weight:800;font-variant-numeric:tabular-nums;}" +
-      ".live-strip .up{color:var(--data-strong,#047454);}" +
-      ".live-strip .down{color:var(--data-bad,#c92020);}" +
-      ".live-strip .flat{color:var(--text2,#1e3a5f);}" +
-      ".live-strip .ls-meta{font-size:11.5px;color:var(--text3,#475569);}" +
-      /* V28.0: this measured 19.8px tall — a standalone CTA, not a link inside a
-         sentence, so the WCAG 2.2 SC 2.5.8 inline exemption does not apply.
-         inline-block + 3px each way takes it to 25.8px; the strip is a centred
-         flex row, so the extra height is absorbed by align-items and nothing
-         beside it moves. */
-      ".live-strip .ls-cta{margin-left:auto;display:inline-block;padding:3px 0;font-size:12px;font-weight:700;color:var(--accent,#1a50d8);text-decoration:none;white-space:nowrap;}" +
-      ".live-strip .ls-cta:hover{text-decoration:underline;}" +
-      "@media (max-width:640px){.live-strip .ls-cta{margin-left:0;}}" +
-      ".live-chip{display:none;}" +
-      ".live-chip.live-ready{display:inline-flex;align-items:center;gap:6px;margin-top:7px;font-size:11.5px;color:var(--text3,#475569);}" +
-      ".live-chip .ls-dot{width:5px;height:5px;border-radius:50%;background:var(--green,#059669);animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
-      ".live-chip b{font-weight:800;font-variant-numeric:tabular-nums;}" +
-      ".live-chip .up{color:var(--data-strong,#047454);}" +
-      ".live-chip .down{color:var(--data-bad,#c92020);}" +
-      ".live-chip .flat{color:var(--text2,#1e3a5f);}" +
-      "@media (prefers-reduced-motion:reduce){.live-strip .ls-dot,.live-chip .ls-dot{animation:none;}}" +
-      /* ── V24.3: deeper pivot surfaces ─────────────────────────────────────
-         Homepage strategy cards: the live metric is appended LAST in the DOM
-         (so the hero's DATA harvest of .strat-metric .val[0]/[1] and the
-         :first-child divider rule keep working) and flex-ordered to render
-         FIRST. It carries .live-val, deliberately NOT .val, so nothing that
-         indexes .val ever sees it. */
-      ".strat-metric-live{display:none;order:-1;}" +
-      /* the live metric is a FULL-WIDTH headline row above the backtest pair —
-         five cards share one desktop row, so a third side-by-side metric gets
-         flex-squeezed (min-width:0) into text overlap. Wrapping instead keeps
-         the original two-metric geometry intact underneath. */
-      ".strat-card.has-live .strat-metrics{flex-wrap:wrap;}" +
-      /* card-scoped (0,3,0): the homepage's late body <style> re-declares
-         .strat-grid .strat-metric{flex:1 1 0;min-width:0} at (0,2,0), which
-         TIES a bare .strat-metric-live.live-ready and wins on source order —
-         the extra .strat-card class settles the cascade without !important. */
-      /* column like the card's other metrics (value over label) — a row form
-         overflows the ~160px five-across cards, and the page's inherited
-         justify-content:flex-end packs that overflow off the LEFT edge. */
-      ".strat-card .strat-metric-live.live-ready{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;flex:1 1 100%;min-width:100%;padding:0 0 10px;margin:0 0 10px;border-right:none;border-bottom:0.5px solid var(--border2,rgba(37,99,235,.2));}" +
-      ".strat-metric-live .live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}" +
-      ".strat-metric-live .live-val.up{color:var(--data-strong,#047454);}" +
-      ".strat-metric-live .live-val.down{color:var(--data-bad,#c92020);}" +
-      ".strat-metric-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
-      /* ── V27.9: the live figure finally gets the comparison the BACKTEST
-         figure has had since V27.5. Directly beneath these three cards sits a
-         two-bar Model-vs-Index compare with an explicit "gap +21.6 pts a year"
-         — for the SIMULATED number. The live number, which is the one the V24.2
-         pivot made the site's lead claim precisely because it is real, was
-         published bare: "+1.26%", with nothing to say whether that is good.
-         The benchmark's own cycle move and the gap are already in
-         live-perf.json and already flow through the slot filler, so this is a
-         markup + one-slot addition, not new data. Same fail-soft contract as
-         everything else here: it lives inside the [data-live-wrap] that stays
-         display:none until the fetch lands. */
-      ".strat-metric-live .live-vs{font-size:11.5px;line-height:1.45;color:var(--text3,#475569);letter-spacing:-.005em;}" +
-      ".strat-metric-live .live-vs b{font-weight:800;font-variant-numeric:tabular-nums;}" +
-      ".strat-metric-live .live-vs .up{color:var(--ink-pos,#047653);}" +
-      ".strat-metric-live .live-vs .down{color:var(--ink-neg,#c92020);}" +
-      ".strat-metric-live .live-vs .flat{color:var(--text2,#1e3a5f);}" +
-      /* the alpha is the payoff of the line — give it the weight of a verdict */
-      /* V31.7 — THE PILL IS A SHAPE, SO IT MUST NOT BE ALLOWED TO BREAK IN HALF.
-         `.live-vs-a` carries a rounded, tinted chip and its content is two words
-         ("+0.87 pts"). Inline elements break between words, so at 360px and at
-         1024px the chip painted "+0.87" at the end of one line and "pts" at the
-         start of the next — two half-pills, each with one rounded end and one
-         sheared end, around the single most-read live figure on the homepage.
-         nowrap keeps the chip atomic; the line break moves in front of it, which
-         is what the two-line reservation on .strat-card .live-vs already expects. */
-      ".strat-metric-live .live-vs .live-vs-a{padding:1px 7px;border-radius:999px;background:rgba(37,99,235,.07);white-space:nowrap;}" +
-      ".strat-metric-live .live-vs .live-vs-a.up{background:rgba(5,150,105,.10);}" +
-      ".strat-metric-live .live-vs .live-vs-a.down{background:rgba(220,38,38,.08);}" +
-      /* V28.0: this was --border2 — a BORDER token, tuned for a 1px hairline, used
-         as ink for a glyph. It measured 1.33:1 light / 1.91:1 dark, i.e. the
-         separator that groups "benchmark move" against "gap" was simply not
-         visible and the row read as two numbers with a space between them.
-         Inheriting the row's own --text3 (7.58 / 5.75) is what it meant to be. */
-      ".strat-metric-live .live-vs .live-vs-sep{margin:0 1px;}" +
-      "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a{background:rgba(131,170,255,.12);}" +
-      "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a.up{background:rgba(52,211,153,.14);}" +
-      "html[data-theme=\"dark\"] .strat-metric-live .live-vs .live-vs-a.down{background:rgba(248,113,113,.14);}" +
-      ".strat-metric-live .lbl{display:flex;align-items:center;gap:5px;white-space:nowrap;}" +
-      /* with live present, the card's backtest metrics step back */
-      ".strat-card.has-live .strat-metric .val{font-size:19px;}" +
-      ".strat-card.has-live .strat-metric:last-child .val{font-size:15px;}" +
-      ".strat-card.has-live .strat-metric:first-child{padding-right:14px;margin-right:14px;}" +
-      /* Strategy-page KPI row: a LIVE card leads the grid; the 5-col template
-         becomes 6-col only when the card is actually shown. */
-      ".stat-card.stat-live{display:none;}" +
-      ".stats-bar.has-live{grid-template-columns:repeat(6,1fr);}" +
-      "@media(max-width:960px){.stats-bar.has-live{grid-template-columns:1fr 1fr;}}" +
-      ".stat-card.stat-live.live-ready{display:block;border:1px solid rgba(5,150,105,.35);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(45,212,191,.04));}" +
-      ".stat-card.stat-live .live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:30px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;}" +
-      /* V29.1 — this card's parent clips (overflow-x:hidden) and at 320-360 the
-         30px figure needs 117px against a 112-115px content box, so the last
-         column of "+5.02%" was being shaved off. Step it down where the card is
-         narrow; every other width keeps the full 30px. */
-      "@media(max-width:400px){.stat-card.stat-live .live-val{font-size:25px;}}" +
-      /* V31.8 — the ladder above stops at 25px, and 25px is 2.4px too wide for the
-         card below ~292px: the value's own box is 95px there and "+6.84%" paints
-         97.4px of glyphs, so it starts hard against the left edge instead of
-         centring and runs past its box. Nothing is CLIPPED (the card is wider
-         still) and no phone on the market is this narrow — a Fold cover screen and
-         a heavily zoomed page are what reach it — so this is a tidy-up, not a
-         visible bug. 22px leaves 9px of slack rather than parking the fix on the
-         failure point, and the guard sits at 300 so it can never reach 320. */
-      "@media(max-width:300px){.stat-card.stat-live .live-val{font-size:22px;}}" +
-      /* The other squeeze is at the TOP of the range, not the bottom: this row is
-         six-across until 960px, so at 1024 (iPad landscape) the card content box
-         is 112px — narrower than any phone — and the 30px figure needs 117px.
-         Measured clipped at 1024 only; 414-960 and 1280+ have room. */
-      "@media(min-width:961px) and (max-width:1120px){.stat-card.stat-live .live-val{font-size:25px;}}" +
-      ".stat-card.stat-live .live-val.up{color:var(--data-strong,#047454);}" +
-      ".stat-card.stat-live .live-val.down{color:var(--data-bad,#c92020);}" +
-      ".stat-card.stat-live .live-val.flat{color:var(--text2,#1e3a5f);}" +
-      ".stat-card.stat-live .sl .ls-dot{display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-2px;}" +
-      ".stats-bar.has-live .stat-card .sv{font-size:24px;}" +
-      /* strategies.html cards: the live chip becomes the emphatic line and the
-         backtest summary steps back (sibling/:has — no JS reflow). */
-      ".live-chip.live-ready{font-size:13px;font-weight:600;color:var(--text2,#1e3a5f);}" +
-      ".live-chip.live-ready b{font-size:15px;}" +
-      ".ps-perf-cagr:has(+ .live-chip.live-ready){font-size:11.5px;color:var(--text3,#475569);}" +
-      ".ps-perf:has(.live-chip.live-ready) .ps-perf-val{font-size:16px;}" +
-      /* the pulsing dot in the two V24.3 contexts (strip/chip rules are scoped) */
-      ".strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);display:inline-block;animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
-      "@media (prefers-reduced-motion:reduce){.strat-metric-live .ls-dot,.stat-card.stat-live .ls-dot{animation:none;}}" +
-      /* ── V24.6: strategy-page SIDEBAR live card ───────────────────────────
-         The sticky sidebar previously showed only the backtest snapshot, so a
-         reader scrolling the page had the simulated figure pinned beside them
-         and the live one far above. This mirrors it: same fail-soft contract
-         (display:none until .live-ready), same data-live slots. */
-      ".sidebar-live{display:none;}" +
-      ".sidebar-live.live-ready{display:block;border:1px solid rgba(5,150,105,.35);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(45,212,191,.04));}" +
-      ".sidebar-live h3{display:flex;align-items:center;gap:7px;}" +
-      ".sidebar-live .ls-dot{width:6px;height:6px;border-radius:50%;background:var(--green,#059669);display:inline-block;animation:mfc-live-pulse 1.8s ease-in-out infinite;}" +
-      ".sidebar-live .sl-live-val{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;font-size:32px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;}" +
-      ".sidebar-live .sl-live-val.up{color:var(--data-strong,#047454);}" +
-      ".sidebar-live .sl-live-val.down{color:var(--data-bad,#c92020);}" +
-      ".sidebar-live .sl-live-val.flat{color:var(--text2,#1e3a5f);}" +
-      ".sidebar-live .sl-live-cyc{font-size:11px;color:var(--text3,#475569);margin:4px 0 12px;}" +
-      ".sidebar-live .sl-live-note{font-size:10.5px;color:var(--text3,#475569);margin-top:12px;line-height:1.5;}" +
-      "@media (prefers-reduced-motion:reduce){.sidebar-live .ls-dot{animation:none;}}" +
-      /* ── V24.8: the live surfaces used to POP into existence — the wrappers go
-         display:none → shown the instant the fetch lands, while every other
-         reveal on the site rises in. One shared entrance for all six live
-         containers; `both` so the from-state never flashes before it runs. */
-      "@keyframes mfc-live-in{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}" +
-      ".live-strip.live-ready,.live-chip.live-ready,.hv-live.live-ready," +
-      ".stat-card.stat-live.live-ready,.strat-metric-live.live-ready," +
-      /* NO fill-mode, deliberately. `both` would HOLD the from-state (opacity:0)
-         whenever the animation cannot run — e.g. these chips also live inside
-         strategies.html's hidden .ps-panel tabs — so a figure could render
-         permanently invisible. Without a fill the worst case is simply "no
-         animation, fully visible", which is the correct failure mode for a
-         page whose whole point is showing a number. */
-      ".sidebar-live.live-ready{animation:mfc-live-in .5s cubic-bezier(.22,1,.36,1);}" +
-      "@media (prefers-reduced-motion:reduce){.live-strip.live-ready,.live-chip.live-ready," +
-      ".hv-live.live-ready,.stat-card.stat-live.live-ready,.strat-metric-live.live-ready," +
-      ".sidebar-live.live-ready{animation:none;}}" +
-      /* ── V27.8: the CYCLE METER ───────────────────────────────────────────
-         The live pivot publishes bench_pct alongside live_pct, but until now the
-         two only ever appeared as adjacent numbers ("+1.26%  vs Nifty 50
-         +0.55%") — the reader had to do the subtraction. This renders the pair
-         as the site's existing MODEL/INDEX bar idiom (V27.5, homepage strategy
-         cards) so the gap is the thing you see, and states the gap in words
-         underneath.
-         Same fail-soft contract as every other live surface: display:none until
-         .live-ready, so a failed fetch leaves the page exactly as it was. */
-      ".lv-meter{display:none;}" +
-      ".lv-meter.live-ready{display:block;margin-top:12px;}" +
-      ".lvm-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;margin-top:6px;}" +
-      ".lvm-key{font-size:9px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text3,#475569);min-width:38px;}" +
-      /* V35.1 — DIVERGING, from a centre axis. These two bars grew from a shared
-         LEFT edge at |value| / max(|live|,|bench|), so sign lived only in the
-         model bar's colour and in the sentence underneath, and the benchmark
-         bar carried no sign at all. On the live book that read backwards: the
-         model at −2.63% drew the longest bar on the card while the index at
-         +0.40% drew a short grey stub, i.e. the picture said we were well ahead
-         of a benchmark we were 3.03 points BEHIND. Even between two negatives
-         it inverted — LargeMidcap's −2.33% painted twice the index's −1.11%.
-         Gains now grow RIGHT of the axis and losses LEFT, on one symmetric
-         scale, which is the idiom this codebase already uses twice (the factor
-         report's .fr-bar-wrap and the company page's .trend-track). */
-      ".lvm-track{position:relative;height:7px;border-radius:999px;background:var(--ink3,#e4eeff);overflow:hidden;min-width:0;}" +
-      ".lvm-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-0.5px;background:var(--lvm-zero,rgba(12,24,49,.30));z-index:1;}" +
-      /* display:block is load-bearing — an inline fill silently discards width */
-      ".lvm-fill{display:block;position:absolute;top:0;bottom:0;height:100%;width:0;border-radius:999px;transition:width .85s cubic-bezier(.22,.8,.2,1);}" +
-      ".lvm-fill.is-pos{left:50%;}" +
-      ".lvm-fill.is-neg{right:50%;}" +
-      ".lvm-model.is-pos{background:linear-gradient(90deg,rgba(5,150,105,.55),var(--green,#059669));}" +
-      ".lvm-model.is-neg{background:linear-gradient(270deg,rgba(220,38,38,.55),var(--red,#dc2626));}" +
-      /* V36.1 — the benchmark bar is the half of this module the reader is
-         being asked to compare against, and it was muted with `opacity` on an
-         ink that was already doing the de-emphasis: 2.21:1 light and 2.79:1
-         dark against its OWN track, both under WCAG 1.4.11's 3:1. Same defect
-         V36.0 fixed on the peer-comparison bars one module over, and the same
-         value settles it — #6f85aa is one colour clearing 3:1 against both
-         tracks (3.20:1 on #e4eeff light, 3.48:1 on the dark composite), so it
-         needs no theme override and no alpha. The model fill keeps its
-         gradient, so the two are still told apart by hue as well as weight. */
-      ".lvm-bench{background:#6f85aa;}" +
-      ".lvm-val{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text2,#1e3a5f);min-width:52px;text-align:right;}" +
-      /* --data-* not --green: these are 10.5–11.5px, i.e. NORMAL text by WCAG,
-         and --green (#059669) is only 3.8:1 on the card. The --data-* scale is
-         the AA-safe grading ink and is re-inked for dark, so no theme override
-         is needed here. --red is deliberately avoided too (it is load-bearing
-         for white-on-red chrome elsewhere). */
-      ".lvm-val.up{color:var(--data-strong,#047857);}" +
-      ".lvm-val.down{color:var(--data-bad,#dc2626);}" +
-      ".lvm-gap{margin-top:8px;font-size:10.5px;line-height:1.45;color:var(--text3,#475569);}" +
-      ".lvm-gap b{font-weight:800;color:var(--data-strong,#047857);}" +
-      ".lvm-gap.behind b{color:var(--data-bad,#dc2626);}" +
-      /* only the track needs a dark override now — the bench bar is one value
-         for both themes (V36.1) and every ink rides a token */
-      "html[data-theme=\"dark\"] .lvm-track{background:rgba(255,255,255,.09);}" +
-      /* the dark palette flips --green but NOT --red, so the negative fill is
-         hard-inked here rather than left on the token */
-      "html[data-theme=\"dark\"]{--lvm-zero:rgba(215,228,255,.34);}" +
-      "html[data-theme=\"dark\"] .lvm-model.is-pos{background:linear-gradient(90deg,rgba(52,211,153,.5),#34d399);}" +
-      "html[data-theme=\"dark\"] .lvm-model.is-neg{background:linear-gradient(270deg,rgba(248,113,113,.5),#f87171);}" +
-      "@media (prefers-reduced-motion:reduce){.lvm-fill{transition:none;}}";
-    document.head.appendChild(st);
-  }
+
 
   /* Render every [data-live-meter="<key>"] as a two-bar model-vs-index compare.
      Bars are scaled to the LARGER of the two magnitudes so the shorter bar is
@@ -598,24 +357,38 @@
     return c ? fmtDayMonth(c.rebalance_date) + NB + "\u2192" + NB + fmtDayMonth(c.data_through) : "";
   };
 
+  /* V44.3 — see the note at the top of mfc-live.css. Only ever called once. */
+  var settled = false;
+  function settle(live) {
+    if (settled) return;
+    settled = true;
+    if (!live) {
+      document.querySelectorAll("[data-live-static]").forEach(function (el) {
+        el.classList.remove("live-ready", "has-live");
+      });
+    }
+    document.documentElement.classList.add("mf-live-settled");
+  }
+
   function boot() {
-    injectStyle();
     fillDedicated();
+    setTimeout(function () { settle(false); }, 8000);   // a hung request must not keep the slots blank
     // cache-bust hourly — fresh enough for a twice-daily data pipeline without
     // defeating the CDN entirely
     var bust = Math.floor(Date.now() / 3600000);
     fetch("/live-perf.json?t=" + bust, { credentials: "omit" })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (d) {
-        if (!d || !d.strategies) return;
+        if (!d || !d.strategies) { settle(false); return; }
         d.zero_session = zeroSession(d);
         window.MFCLive = d;
-        fill(d);
+        var live = fill(d);
         if (!d.zero_session) fillMeters(d);
+        settle(!!live);
         // V44.2 — always, zero session or not: the homepage hero paints its column from this
         try { document.dispatchEvent(new CustomEvent("mfc-live-data", { detail: d })); } catch (e) {}
       })
-      .catch(function () { /* fail-soft: page stays in its pre-pivot state */ });
+      .catch(function () { settle(false); /* fail-soft: page stays in its pre-pivot state */ });
   }
 
   if (document.readyState !== "loading") boot();

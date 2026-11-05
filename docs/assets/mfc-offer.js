@@ -18,10 +18,15 @@
     else document.addEventListener("DOMContentLoaded", fn);
   }
   ready(function () {
-    try {
-      if (document.getElementById("mfc-offer-bar")) return;
-      if (sessionStorage.getItem("mfc-offer-dismissed") === "1") return;
-    } catch (e) {}
+    /* V44.3 — the bar is now in the page's own markup, styled by mfc-finish.css, and its ×
+       carries its own onclick, so it works before this deferred file has arrived. A small
+       inline script ahead of it hides it for a session that has dismissed it. All that is
+       left to do here is remove it for good in that case, and build it on a page that has
+       not been given the markup. */
+    var existing = document.getElementById("mfc-offer-bar"), dismissed = false;
+    try { dismissed = sessionStorage.getItem("mfc-offer-dismissed") === "1"; } catch (e) {}
+    if (dismissed) { if (existing && existing.parentNode) existing.parentNode.removeChild(existing); return; }
+    if (existing) return;
 
     var onSignup = /signup\.html$/i.test(location.pathname);
     /* V37.7 — THE CTA WAS RELATIVE, AND FIVE SURFACES ARE NOT AT THE ROOT.
@@ -47,87 +52,6 @@
         '<button class="mfc-offer-x" type="button" aria-label="Dismiss offer">×</button>' +
       "</div>";
 
-    var css = document.createElement("style");
-    css.id = "mfc-offer-css";
-    css.textContent =
-      "#mfc-offer-bar{position:relative;z-index:120;background:linear-gradient(90deg,#1a50d8 0%,#2563eb 48%,#0891b2 100%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 6px 18px -10px rgba(26,80,216,.5);}" +
-      /* V22.5: a slow, infrequent "living glint" — a soft light band drifts across
-         the strip once every ~9s, then rests. Sits BEHIND the copy (inner is z:1)
-         so text/CTA stay crisp and the CTA's drop-shadow is never clipped (no
-         overflow:hidden on the bar). Purely decorative; paused for reduced-motion. */
-      "#mfc-offer-bar::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.14) 50%,transparent 58%);background-size:220% 100%;background-position:135% 0;animation:mfc-offer-glint 9s ease-in-out infinite;}" +
-      "@keyframes mfc-offer-glint{0%{background-position:135% 0;}34%{background-position:-35% 0;}100%{background-position:-35% 0;}}" +
-      /* V33.1 — this row could not wrap and could not shrink: `display:flex` with
-   no flex-wrap, a CTA that is `flex-shrink:0` + `white-space:nowrap`, and a
-   text span at the default `min-width:auto`. Any growth in the text — a
-   reader who has asked for larger type, longer copy, a different language —
-   pushed the whole bar past the viewport instead of on to a second line.
-   Measured at 150% text on a 375px phone: the bar ran to 506px and the
-   headline slid underneath the dismiss button, on all 18 pages that carry
-   it. Wrapping costs nothing at the default size (nothing wraps) and makes
-   the bar grow DOWN, which is the only direction it has room in. */
-      // V37.8: right padding 44 -> 50px, reserving room for a CENTRED 44px tap
-      // pad on the .mfc-offer-x button (was exactly the pad's own width, so a
-      // centred pad had zero buffer against the CTA — see the comment there).
-      "#mfc-offer-bar .mfc-offer-inner{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 50px 8px 16px;position:relative;z-index:1;font-size:13.5px;line-height:1.3;}" +
-      "#mfc-offer-bar .mfc-offer-gift{font-size:15px;flex-shrink:0;}" +
-      /* V29.1 — the bar is a blue→teal gradient, so its lightest stop is the one
-         that has to carry the text. At .96 white the trailing clause measured
-         4.42:1 there and the .85-dimmed sub-clause 3.76:1, both under AA. Pure
-         white clears it on the lightest stop with margin; the hierarchy between
-         the headline and its qualifier was never carried by opacity anyway —
-         800 against 500 is what the eye reads, and that is unchanged. */
-      "#mfc-offer-bar .mfc-offer-text{font-weight:500;color:#fff;min-width:0;}" +
-      "#mfc-offer-bar .mfc-offer-text strong{font-weight:800;letter-spacing:.01em;}" +
-      "#mfc-offer-bar .mfc-offer-sub{opacity:1;font-weight:500;}" +
-      "#mfc-offer-bar .mfc-offer-cta{margin-left:auto;flex-shrink:0;max-width:100%;background:#fff;color:#1a50d8;font-weight:700;font-size:12.5px;text-decoration:none;padding:6px 14px;border-radius:8px;white-space:nowrap;transition:transform .2s ease,box-shadow .2s ease;box-shadow:0 4px 12px -6px rgba(0,0,0,.4);}" +
-      "#mfc-offer-bar .mfc-offer-cta:hover{transform:translateY(-1px);box-shadow:0 8px 18px -6px rgba(0,0,0,.5);}" +
-      // V23.7: padding:2px 6px left the dismiss button 23.7px wide — a hair under
-      // the 24×24 WCAG 2.2 SC 2.5.8 floor, on every page of the site. Centring on
-      // a 26px min box clears it and squares up the previously 23.7×24 hit area.
-      /* V30.0 — the dismiss glyph measured 3.3:1 against the bar it sits on.
-         Two things were against it: 85% white instead of white, and the bar is a
-         blue->teal gradient whose teal end is light enough that even pure white
-         is only 4.0:1 there. So the fix is not just the ink — a permanent 22%
-         ink scrim under the glyph takes it to 5.5:1 anywhere along the gradient,
-         and has the side benefit of giving the control a visible affordance
-         instead of one that only appeared on hover (which a touch device never
-         has). Hover keeps its brighter wash. */
-      "#mfc-offer-bar .mfc-offer-x{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:rgba(12,24,49,.22);border:none;color:#fff;font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:6px;transition:background .2s,color .2s;display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;}" +
-      "#mfc-offer-bar .mfc-offer-x:hover{background:rgba(255,255,255,.18);color:#fff;}" +
-      "#mfc-offer-bar .mfc-offer-x:focus-visible{outline:2px solid #fff;outline-offset:1px;}" +
-      // V40.5 — the CTA had only the site's blue ring, the strip's own blue: invisible.
-      "#mfc-offer-bar .mfc-offer-cta:focus-visible{outline:2px solid #fff;outline-offset:2px;}" +
-      // V27.9: 26×26 clears the 24px WCAG floor but is still a small thing to hit
-      // with a thumb, and this is the one control on the bar a phone user aims at.
-      // The bar is only ~44px tall, so the VISIBLE button cannot grow without
-      // crowding the copy — extend the HIT AREA instead, with the same invisible
-      // 44×44 ::before overlay the dashboard's "Order placed" checkbox already
-      // uses. The button stays 26px; the thumb gets a full 44px target.
-      // V27.9 kept it 34px WIDE deliberately, reasoning that the "Get started" CTA
-      // sits immediately to its left and a full 44px overlay CENTRED on the button
-      // would reach back over the CTA's right edge and swallow taps meant for the
-      // conversion button. That reasoning was right about the collision and wrong
-      // about the conclusion — see below.
-      /* V37.8 — SUPERSEDES V33.5. Anchoring the pad to the bar's edge instead of
-         centring it on the button made the pad's own hit-test fail: a real
-         44px target check (four points at +-20.5px from the VISUAL button's own
-         centre, not the pad's) landed two of them outside this pad on the left,
-         because the pad only reached 6px past the button there against the 9px
-         a centred 44px box needs. V33.5's fix traded a correct target for an
-         asymmetric one that merely avoided the CTA — it never re-measured
-         against the button's own centre.
-         Fixed at the root instead of re-shifting the pad: the reserved gap
-         between the CTA and the corner (was 44px, exactly the pad's width,
-         hence zero spare) is now 50px, so a truly CENTRED 9px/9px pad
-         (26 + 9 + 9 = 44) lands with a 3px buffer clear of the CTA on the left
-         and 3px clear of the bar's true edge on the right — measured at six
-         widths from 320 to 1440. */
-      "#mfc-offer-bar .mfc-offer-x::before{content:'';position:absolute;left:auto;right:-9px;top:50%;width:44px;height:44px;transform:translateY(-50%);}" +
-      "@media(max-width:560px){#mfc-offer-bar .mfc-offer-sub,#mfc-offer-bar .mfc-offer-tail{display:none;}#mfc-offer-bar .mfc-offer-text{white-space:nowrap;}#mfc-offer-bar .mfc-offer-inner{font-size:12.5px;gap:8px;padding-left:12px;}#mfc-offer-bar .mfc-offer-cta{padding:5px 11px;font-size:12px;}}" +
-      "@media(prefers-reduced-motion:reduce){#mfc-offer-bar .mfc-offer-cta{transition:none;}#mfc-offer-bar::after{animation:none;}}";
-
-    (document.head || document.documentElement).appendChild(css);
     document.body.insertBefore(bar, document.body.firstChild);
 
     var x = bar.querySelector(".mfc-offer-x");

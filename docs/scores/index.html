@@ -606,6 +606,17 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
 /* V38.5 — the sixth pill. gradeCls() can now return it (see the `na` branch);
    same declaration scores/company.html has carried since V26.8. */
 .gp-na{background:var(--ink3);color:var(--text3);border:0.5px solid var(--border2)}
+/* V44.3 — THE PLACE-HOLDERS THAT STOP THE PAGE JUMPING WHEN THE DATA LANDS. The six cards,
+   the two legends and the map were empty or hidden until the scores arrived, which threw
+   the search box and the list 1,000-odd px down the page in front of the reader (0.20 layout
+   shift on a phone). Each is replaced whole by renderHero() / renderQuadrant(). Their heights
+   are the real cards' at each step of the .highlights column ladder. */
+.hl-skel{min-height:142px;padding:16px 18px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--ink2)}
+@media(min-width:601px){.hl-skel{min-height:140px}}
+@media(min-width:1081px){.hl-skel{min-height:158px}}
+.hp-leg.is-skel,.qv-key.is-skel{cursor:default;pointer-events:none}
+.hp-leg.is-skel b,.hp-leg.is-skel .pct{visibility:hidden}
+.hp-leg.is-skel .sw,.qv-key.is-skel .qd{background:var(--ink3)}
 .skel{height:12px;border-radius:6px;background:linear-gradient(90deg,rgba(37,99,235,.07) 25%,rgba(37,99,235,.16) 37%,rgba(37,99,235,.07) 63%);background-size:400% 100%;animation:skel-sweep 1.25s ease-in-out infinite}
 @keyframes skel-sweep{0%{background-position:100% 0}100%{background-position:0 0}}
 .empty-row td{text-align:center;padding:56px 24px;color:var(--text3)}
@@ -702,7 +713,7 @@ td.company-col{white-space:normal;min-width:200px;max-width:300px}
   .hp-leg:last-child{grid-column:auto}
 }
 </style>
-<script src="scores-engine.js?v=3970"></script>
+<script src="scores-engine.js?v=4430"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -718,7 +729,7 @@ function sync(){var t=R.getAttribute('data-theme');b.innerHTML=t==='dark'?SUN:MO
 sync();b.addEventListener('click',function(){var t=R.getAttribute('data-theme')==='dark'?'light':'dark';try{R.classList.add('mfc-theming');clearTimeout(R._thmT);R._thmT=setTimeout(function(){R.classList.remove('mfc-theming');},560);}catch(e){}apply(t);try{localStorage.setItem('mfc-theme',t);}catch(e){}sync();});
 var ham=inner.querySelector('.nav-hamburger');if(ham)inner.insertBefore(b,ham);else{var lk=inner.querySelector('.nav-links');(lk||inner).appendChild(b);}}
 if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else build();})();</script>
-<link rel="stylesheet" href="../assets/mfc-finish.css?v=3970">
+<link rel="stylesheet" href="../assets/mfc-finish.css?v=4430">
 <style id="mf-v149-scorecard">
 /* ── V14.9 "Deep read" — inline professional scorecard for the Integrity Score lister ── */
 .exp-caret{display:inline-block;margin-right:5px;font-size:9px;color:var(--data-mid);transition:transform .25s ease}
@@ -997,6 +1008,8 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
 </style>
 </head>
 <body>
+<script>try{if(sessionStorage.getItem('mfc-offer-dismissed')==='1')document.documentElement.classList.add('mfc-offer-off')}catch(e){}</script>
+<div id="mfc-offer-bar" role="region" aria-label="Launch offer"><div class="mfc-offer-inner"><span class="mfc-offer-gift" aria-hidden="true">🎁</span><span class="mfc-offer-text"><strong>1st month FREE</strong><span class="mfc-offer-tail"> for all new members</span><span class="mfc-offer-sub"> · only pay from month two</span></span><a class="mfc-offer-cta" href="/signup.html">Get started →</a><button class="mfc-offer-x" type="button" aria-label="Dismiss offer" onclick="var b=document.getElementById('mfc-offer-bar');if(b)b.remove();try{sessionStorage.setItem('mfc-offer-dismissed','1')}catch(e){}">×</button></div></div>
 <a href="#main-content" class="skip-link">Skip to main content</a>
 
 <div class="mf-scroll-prog" id="scrollProg"></div>
@@ -1005,7 +1018,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
 <nav>
   <div class="nav-inner">
     <a href="https://mindforgecapital.com" class="logo" aria-label="MindForge Capital — Home">
-      <img src="/assets/LogoNav.png?v=b1f0c2" alt="MindForge Capital" decoding="async" width="44" height="36">
+      <img src="/assets/LogoNav.png?v=5e1b77" alt="MindForge Capital" decoding="async" width="44" height="36">
     </a>
     <div class="nav-links" id="primary-nav">
       <a href="https://mindforgecapital.com/how-it-works/">How it works</a>
@@ -1019,6 +1032,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
     <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav"><span></span><span></span><span></span></button>
   </div>
 </nav>
+<p id="mf-ribbon" class="mf-ribbon"><span>MindForge publishes a researched stock portfolio every month: about ten minutes on the 1st, in your own broker.</span><a href="/how-it-works/">How it works</a><a href="/learn/#fr-h-learn">The Factor Report by e-mail</a></p>
 
 <main class="wrap" id="main-content">
 
@@ -1050,12 +1064,12 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
           <button class="hp-clear" id="distClear" type="button" hidden><span id="distClearSw"></span><b id="distClearLbl"></b><em>✕</em></button>
         </div>
         <div class="hp-dist-bar" id="distBar" role="group" aria-label="Score distribution — pick a band to filter the list"></div>
-        <div class="hp-legend" id="distLegend"></div>
+        <div class="hp-legend" id="distLegend"><button class="hp-leg is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="sw"></span><span class="lbl">Excellent</span> <b>000</b><span class="pct">00%</span></button><button class="hp-leg is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="sw"></span><span class="lbl">Good</span> <b>000</b><span class="pct">00%</span></button><button class="hp-leg is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="sw"></span><span class="lbl">Fair</span> <b>000</b><span class="pct">00%</span></button><button class="hp-leg is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="sw"></span><span class="lbl">Weak</span> <b>000</b><span class="pct">00%</span></button><button class="hp-leg is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="sw"></span><span class="lbl">Poor</span> <b>000</b><span class="pct">00%</span></button></div>
       </div>
     </div>
 
     <!-- highlight cards -->
-    <div class="highlights" id="highlights"></div>
+    <div class="highlights" id="highlights"><div class="hl-skel" aria-hidden="true"><div class="skel" style="width:46%"></div><div class="skel" style="width:78%;margin-top:14px"></div><div class="skel" style="width:60%;margin-top:14px"></div></div><div class="hl-skel" aria-hidden="true"><div class="skel" style="width:46%"></div><div class="skel" style="width:78%;margin-top:14px"></div><div class="skel" style="width:60%;margin-top:14px"></div></div><div class="hl-skel" aria-hidden="true"><div class="skel" style="width:46%"></div><div class="skel" style="width:78%;margin-top:14px"></div><div class="skel" style="width:60%;margin-top:14px"></div></div><div class="hl-skel" aria-hidden="true"><div class="skel" style="width:46%"></div><div class="skel" style="width:78%;margin-top:14px"></div><div class="skel" style="width:60%;margin-top:14px"></div></div><div class="hl-skel" aria-hidden="true"><div class="skel" style="width:46%"></div><div class="skel" style="width:78%;margin-top:14px"></div><div class="skel" style="width:60%;margin-top:14px"></div></div><div class="hl-skel" aria-hidden="true"><div class="skel" style="width:46%"></div><div class="skel" style="width:78%;margin-top:14px"></div><div class="skel" style="width:60%;margin-top:14px"></div></div></div>
 
     <!-- search -->
     <div class="search-hero">
@@ -1067,7 +1081,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
   </section>
 
   <!-- QUALITY × VALUE MAP -->
-  <div class="qv-panel" id="qvPanel" style="display:none">
+  <div class="qv-panel" id="qvPanel">
     <div class="qv-head">
       <div>
         <div class="qv-title">Quality <span class="qv-x">×</span> Value landscape</div>
@@ -1075,7 +1089,7 @@ html[data-theme="dark"] .scr-s1{stop-color:#28bcd8}
       </div>
       <!-- Filled by renderQuadrant() from BANDS, so the key can never name a
            different set of colours than the cloud paints. See the .qv-key CSS. -->
-      <div class="qv-legend" id="qvKey"></div>
+      <div class="qv-legend" id="qvKey"><button class="qv-key is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="qd"></span>Excellent</button><button class="qv-key is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="qd"></span>Good</button><button class="qv-key is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="qd"></span>Fair</button><button class="qv-key is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="qd"></span>Weak</button><button class="qv-key is-skel" type="button" disabled tabindex="-1" aria-hidden="true"><span class="qd"></span>Poor</button></div>
     </div>
     <div class="qv-body">
       <div class="qv-chart-wrap">
@@ -1546,7 +1560,19 @@ function toggleScorecard(tr){
   const d=MFCScores.bySym(sym);if(!d)return;
   const detail=document.createElement("tr");
   detail.className="detail-row";
-  detail.innerHTML=`<td colspan="${COLUMNS.length}"><div class="sc-wrap" style="width:${scCardWidth()}px">${buildScorecard(d)}</div></td>`;
+  /* V44.3 — the list now loads only its own columns, so a scorecard fetches the rest of its
+     stock when it opens (about 1.4 KB). Already-opened rows answer at once. */
+  const fill=row=>{detail.innerHTML=`<td colspan="${COLUMNS.length}"><div class="sc-wrap" style="width:${scCardWidth()}px">${buildScorecard(row)}</div></td>`;};
+  if(d._qf){
+    fill(d);
+  }else{
+    detail.innerHTML=`<td colspan="${COLUMNS.length}"><div class="sc-wrap sc-wait" style="width:${scCardWidth()}px" role="status"><div class="skel" style="width:32%"></div><div class="skel" style="width:64%;margin-top:14px"></div><div class="skel" style="width:48%;margin-top:14px"></div></div></td>`;
+    MFCScores.detail(sym).then(row=>{
+      if(!detail.isConnected)return;
+      if(row&&row._qf)fill(row);
+      else detail.innerHTML=`<td colspan="${COLUMNS.length}"><div class="sc-wrap" style="width:${scCardWidth()}px;padding:18px;color:var(--text3)">Could not load this scorecard. Please try again.</div></td>`;
+    });
+  }
   tr.parentNode.insertBefore(detail,tr.nextSibling);
   tr.classList.add("expanded");
   tr.setAttribute("aria-expanded","true");
@@ -2279,7 +2305,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
   }, { passive: true });
 })();
 </script>
-<script src="../assets/mfc-offer.js?v=4050" defer></script>
+<script src="../assets/mfc-offer.js?v=4430" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.
@@ -2295,7 +2321,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMethod();});
   nav .nav-links a::after{display:none}
 }
 </style>
-<script defer src="../assets/mfc-chrome.js?v=4080"></script>
+<script defer src="../assets/mfc-chrome.js?v=4430"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to

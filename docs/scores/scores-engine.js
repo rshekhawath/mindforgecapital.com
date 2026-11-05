@@ -50,9 +50,23 @@
      Note this is the opposite trade from the columnar experiment the decoder
      above documents: that one re-encoded data the page reads (and cost CPU);
      this one removes data it never reads, so bytes AND parse time both fall. */
+  /* V44.3 — AND IT NO LONGER NEEDS THE UNIVERSE AT ALL. See the note in
+     screener/export_static.py: the export now works the scores out once a day, so
+       the list loads screener/scores-first.json (every stock, its scores, the columns it reads),
+       a company page loads screener/co/<SYM>.json (that one stock in full, factor scores too),
+       and the company page's peer sections read scores-first.json through universe().
+     This engine stays the definition of the scores and the fallback: if either file cannot be
+     read it fetches the full lite bundle and scores it right here, exactly as it always has.
+     runner/verify_published_numbers.py runs this engine (MFC_ENGINE_FULL) against the export. */
   var USE_DETAIL = (typeof window !== "undefined" && window.MFC_USE_FULL);
-  var DATA_URL = USE_DETAIL ? "../screener/stocks-universe.json"
-                            : "../screener/stocks-lite.json";
+  var FORCE_FULL = (typeof window !== "undefined" && window.MFC_ENGINE_FULL);
+  var FIRST_URL = "../screener/scores-first.json";
+  var DATA_URL = "../screener/stocks-lite.json";
+
+  /* The same rule as _safe_name() in export_static.py, because NSE symbols can carry an "&"
+     (M&M, J&KBANK). hydrateProse() used encodeURIComponent, which asks for M%26M.json when the
+     file is M_M.json, so those stocks' business descriptions have been quietly missing. */
+  function fileName(sym) { return String(sym).replace(/[^A-Za-z0-9._-]/g, "_") + ".json"; }
 
   /* The symbol this page is about, if any — read from the URL exactly the way
      mfc-company.js does, so the two can never disagree about which stock the
@@ -74,7 +88,7 @@
        not-found page (?symbol=ZZZNOTREAL) requested one and logged a 404 on
        every load. BY_SYM is complete by the time this runs (see load()). */
     if (!sym || !BY_SYM[sym]) return Promise.resolve(false);
-    return fetch("../screener/prose/" + encodeURIComponent(sym) + ".json")
+    return fetch("../screener/prose/" + fileName(sym))
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (p) {
         if (!p || p.symbol !== sym) return false;
@@ -409,32 +423,132 @@
   }
 
   // ── Load + memoise ────────────────────────────────────────────────────────
+  function getJSON(url) {
+    return fetch(url).then(function (r) {
+      if (!r.ok) { var e = new Error(url + " HTTP " + r.status); e.status = r.status; throw e; }
+      return r.json();
+    });
+  }
+  function setMeta(m) { META = m; MFCScores.meta = META; return META; }
+
+  /* The whole market, scored here. V36.6 — the explicit "no-cache" is GONE. GitHub Pages already
+     serves this with `cache-control: max-age=600` and a strong ETag, and the snapshot is
+     republished once or twice a day, so the default policy serves a repeat visitor from cache
+     with no network and revalidates with a 304 after ten minutes. Forcing a revalidation before
+     every score was a round trip on every load of both the Integrity Score list and all 2,126
+     company pages. Rows already handed out are not touched: BY_SYM moves to the new objects. */
+  var fullPromise = null;
+  function loadFull() {
+    if (fullPromise) return fullPromise;
+    fullPromise = getJSON(DATA_URL).then(function (b) {
+      var arr = bundleRows(b);
+      // Drop error/empty rows up front so scoring pools stay clean.
+      STOCKS = arr.filter(function (d) { return d && d.symbol && !d.error; });
+      BUNDLE = Array.isArray(b) ? { stocks: STOCKS } : b;
+      for (var i = 0; i < STOCKS.length; i++) BY_SYM[STOCKS[i].symbol] = STOCKS[i];
+      var scored = scoreAll(STOCKS);
+      return setMeta({
+        count: STOCKS.length,
+        scored: scored,
+        generated_at: (BUNDLE && BUNDLE.generated_at) || "",
+        data_through: (BUNDLE && BUNDLE.data_through) || "",
+      });
+    });
+    return fullPromise;
+  }
+
+  /* The list: scores already worked out, so no pools and no scoring pass. */
+  function loadFirst() {
+    return getJSON(FIRST_URL).then(function (b) {
+      STOCKS = bundleRows(b).filter(function (d) { return d && d.symbol && !d.error; });
+      if (!STOCKS.length) throw new Error("empty first file");
+      BUNDLE = b;
+      for (var i = 0; i < STOCKS.length; i++) BY_SYM[STOCKS[i].symbol] = STOCKS[i];
+      COVERAGE = b.coverage || null;
+      return setMeta({ count: b.count || STOCKS.length, scored: b.scored || 0,
+                       generated_at: b.generated_at || "", data_through: b.data_through || "" });
+    });
+  }
+
+  /* One stock's file, folded into `into` (or its own new object) in the shape scoreAll() leaves
+     behind: the breakdown arrays carry the labels from the tables above and the scores from the
+     export, so a renderer cannot tell the two routes apart. */
+  function adoptRecord(rec, into) {
+    var d = into || {};
+    Object.keys(rec).forEach(function (k) { if (k !== "_fs" && k !== "_meta") d[k] = rec[k]; });
+    var fs = rec._fs || {};
+    function rows(list) {
+      return list.map(function (f) {
+        var raw = rawFor(d, f);
+        return {
+          key: f.key, label: f.label, unit: f.unit, d: f.d, dir: f.dir, hint: f.hint || "",
+          raw: raw,
+          score: fs[f.key] === undefined ? null : fs[f.key],
+        };
+      });
+    }
+    d._qf = rows(QUALITY); d._vf = rows(VALUE); d._gf = rows(GROWTH); d._mf = rows(MOMENTUM); d._ef = rows(EFFICIENCY);
+    BY_SYM[d.symbol] = d;
+    return d;
+  }
+
+  /* A company page: its own file and nothing else. A 404 means either a symbol outside the
+     universe, which is the not-found page, or a missing file, which is the fallback; the first
+     file tells the two apart without downloading the whole market for a mistyped URL. */
+  function loadDetail() {
+    var sym = detailSymbol();
+    if (!sym) return Promise.resolve(setMeta(META));
+    return getJSON("../screener/co/" + fileName(sym)).then(function (rec) {
+      if (!rec || rec.symbol !== sym) throw new Error("wrong company file");
+      adoptRecord(rec);
+      var m = rec._meta || {};
+      COVERAGE = m.coverage || null;
+      return setMeta({ count: m.count || 0, scored: m.scored || 0,
+                       generated_at: m.generated_at || "", data_through: m.data_through || "" });
+    }, function (e) {
+      if (e && e.status === 404) {
+        return universe().then(function (all) {
+          if (!all.length || all.some(function (d) { return d.symbol === sym; })) throw e;
+          return setMeta({ count: all.length, scored: 0, generated_at: "", data_through: "" });
+        });
+      }
+      throw e;
+    });
+  }
+
+  /* Every stock, for the sections of a company page that compare it with the market. These rows
+     carry only the columns those sections read; see _FIRST_FIELDS in export_static.py. Resolves
+     to [] on failure, which those sections already treat as "nothing to compare with". */
+  var uniPromise = null;
+  function universe() {
+    if (uniPromise) return uniPromise;
+    if (!USE_DETAIL || FORCE_FULL || fullPromise) {
+      uniPromise = Promise.resolve(load()).then(function () { return STOCKS; });
+    } else {
+      uniPromise = getJSON(FIRST_URL)
+        .then(function (b) { return bundleRows(b).filter(function (d) { return d && d.symbol && !d.error; }); })
+        .catch(function () { return []; });
+    }
+    return uniPromise;
+  }
+
+  /* One stock's whole row and factor breakdown, for the scorecard on the list, which loaded only
+     the list's columns. Resolves to the same row object the list already holds. */
+  function detail(sym) {
+    sym = String(sym || "").toUpperCase();
+    var d = BY_SYM[sym];
+    if (d && d._qf) return Promise.resolve(d);
+    return getJSON("../screener/co/" + fileName(sym))
+      .then(function (rec) { return adoptRecord(rec, d); })
+      .catch(function () { return loadFull().then(function () { return BY_SYM[sym] || null; }); });
+  }
+
   function load() {
     if (loadPromise) return loadPromise;
-    // V36.6 — the explicit "no-cache" is GONE. GitHub Pages already serves this
-    // with `cache-control: max-age=600` and a strong ETag, and the snapshot is
-    // republished once or twice a day, so the default policy serves a repeat
-    // visitor from cache with no network and revalidates with a 304 after ten
-    // minutes. Forcing a revalidation before every score was a round trip on
-    // every load of both the Integrity Score list and all 2,126 company pages.
-    loadPromise = fetch(DATA_URL)
-      .then(function (r) { if (!r.ok) throw new Error("stocks.json HTTP " + r.status); return r.json(); })
-      .then(function (b) {
-        var arr = bundleRows(b);
-        // Drop error/empty rows up front so scoring pools stay clean.
-        STOCKS = arr.filter(function (d) { return d && d.symbol && !d.error; });
-        BUNDLE = Array.isArray(b) ? { stocks: STOCKS } : b;
-        for (var i = 0; i < STOCKS.length; i++) BY_SYM[STOCKS[i].symbol] = STOCKS[i];
-        var scored = scoreAll(STOCKS);
-        META = {
-          count: STOCKS.length,
-          scored: scored,
-          generated_at: (BUNDLE && BUNDLE.generated_at) || "",
-          data_through: (BUNDLE && BUNDLE.data_through) || "",
-        };
-        MFCScores.meta = META;
-        return META;
-      })
+    var start = FORCE_FULL ? loadFull()
+              : USE_DETAIL ? loadDetail().catch(loadFull)
+              : loadFirst().catch(loadFull);
+    loadPromise = start
       /* V36.6 — on the DETAIL page only, fold the per-symbol prose in before
          this promise resolves. company.html does `MFCScores.load().then(() => {
          D = MFCScores.bySym(SYMBOL); ... renderAbout(); })`, and D is the SAME
@@ -456,6 +570,8 @@
   // ── Public surface ────────────────────────────────────────────────────────
   var MFCScores = {
     load: load,
+    universe: universe,
+    detail: detail,
     all: function () { return STOCKS; },
     bySym: function (s) { return BY_SYM[String(s || "").toUpperCase()] || null; },
     meta: META,
@@ -468,9 +584,9 @@
   };
   window.MFCScores = MFCScores;
 
-  // Perf: kick off the stocks.json fetch the moment this script parses (it's in
-  // <head>), so the heavy ~6 MB bundle downloads in parallel with the rest of
-  // the page render instead of waiting for the page's init script. load() is
-  // memoised, so the page's own MFCScores.load() reuses this in-flight request.
+  // Perf: kick off the fetch the moment this script parses (it's in <head>), so the
+  // data downloads in parallel with the rest of the page render instead of waiting
+  // for the page's init script. load() is memoised, so the page's own
+  // MFCScores.load() reuses this in-flight request.
   try { load(); } catch (e) {}
 })();

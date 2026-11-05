@@ -61,8 +61,10 @@
    Report by e-mail. Deliberately not a sales banner: no price, no plan, no CTA
    button (markdowns/website_restructure.md §4.8).
    SECOND IN THE FILE, for the reason the loader above is first: the chrome IIFE
-   below returns early on most of these pages. Self-contained, its own small style
-   block, fails silent. */
+   below returns early on most of these pages. Fails silent.
+   V44.3 — the ribbon is now in each page's own markup and its rules are in
+   mfc-finish.css, because building it here pushed the page down after first paint.
+   This stays as the fallback for a page that has not been given the markup. */
 (function () {
   try {
     var P = location.pathname || '/';
@@ -71,21 +73,6 @@
       if (document.getElementById('mf-ribbon')) return;
       var nav = document.querySelector('body > nav') || document.querySelector('nav');
       if (!nav || !nav.parentNode) return;
-      if (!document.getElementById('mf-ribbon-style')) {
-        var st = document.createElement('style');
-        st.id = 'mf-ribbon-style';
-        st.textContent = '.mf-ribbon{position:relative;z-index:2;max-width:1100px;margin:12px auto 0;padding:9px 16px;border-radius:12px;' +
-          'display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 14px;text-align:center;' +
-          'background:rgba(37,99,235,.06);border:0.5px solid rgba(37,99,235,.18);font-size:13.5px;line-height:1.5;color:var(--text2,#1e3a5f)}' +
-          '.mf-ribbon a{color:var(--ink-link,#0951c6);font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}' +
-          'html[data-theme="dark"] .mf-ribbon{background:rgba(131,170,255,.08);border-color:rgba(131,170,255,.2)}' +
-          '@media (max-width:640px){.mf-ribbon{margin:10px 12px 0}}@media print{.mf-ribbon{display:none!important}}' +
-          // V43.7 — on touch the two links were 27-34px tall, under the site's 44px standard. Real
-          // boxes, not pads: at 320 they wrap onto two rows, where stacked pads would fight.
-          '@media (hover:none) and (pointer:coarse){.mf-ribbon{padding-top:3px;padding-bottom:3px;row-gap:0}' +
-          '.mf-ribbon a{display:inline-flex;align-items:center;min-height:44px}}';
-        (document.head || document.documentElement).appendChild(st);
-      }
       var r = document.createElement('p');
       r.id = 'mf-ribbon';
       r.className = 'mf-ribbon';

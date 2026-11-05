@@ -143,6 +143,10 @@
     // Never rejects: a failed universe fetch must still leave the universe-
     // independent panels (scale tiles, facts) rendering off the stock itself.
     try {
+      // V44.3 — the engine no longer holds the whole market on a company page; it fetches the
+      // columns these panels read when asked, once the stock's own panels are on screen.
+      if (window.MFCScores && typeof window.MFCScores.universe === "function")
+        return window.MFCScores.universe().catch(function () { return []; });
       if (window.MFCScores && typeof window.MFCScores.all === "function") {
         var a = window.MFCScores.all();
         if (a && a.length) return Promise.resolve(a);
