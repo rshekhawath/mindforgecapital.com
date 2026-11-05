@@ -10411,4 +10411,14 @@ function renderBenchCompare(port){
     pill.style.display='';
   }).catch(function(){});
 })();
-init();
+/* V44.3 — WHEN TO DRAW. This file runs a third of the way down dashboard.html, with 50-odd style
+   blocks and two dozen scripts still to come. A member's first draw used to wait two seconds for
+   the backend, by which time all of that had long arrived. The reads now start in <head>, so the
+   answer can land first, and a saved copy is there at once: both would draw into a half-parsed
+   page, before later scripts have hooked in, in a state this page has never run a member's book
+   in. So a member's draw waits for the parser (on slow 4G about 0.3 s; on anything faster,
+   nothing). The sample dashboard stays as it was, drawing at once, because it has no backend to
+   wait for and a first-time visitor is who it is for; the styles it needs at that moment are
+   copied into <head> (mf-v443-first-fold). With no session there is nothing to draw. */
+if (isDemo || !token || document.readyState !== 'loading') init();
+else document.addEventListener('DOMContentLoaded', init, { once: true });
