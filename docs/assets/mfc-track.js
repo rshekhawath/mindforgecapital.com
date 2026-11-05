@@ -55,6 +55,11 @@
     if (dnt === "1" || dnt === "yes") return;
   } catch (e) { return; }
 
+  /* V44.4: only the live site counts. A QA visit on localhost wrote the same rows into the
+     analytics sheet as a real reader, so every funnel read carried a little noise. Same exit as
+     an opt-out: window.mfcTrack stays undefined, and every caller already checks for that. */
+  try { if (location.hostname !== "mindforgecapital.com") return; } catch (e) { return; }
+
   /* The Apps Script deployment. Same URL as signup/login/dashboard/recover/
      admin/scores-company — a redeploy that changes the /macros/s/<id>/ segment
      has to update all seven. */

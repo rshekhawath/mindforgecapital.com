@@ -3911,7 +3911,8 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   var PERF_CARDS = true;   // the pricing cards' backtest pair and live line, the return ladder, the fund box
   var PERF_WHY = true;     // the "why this, not a fund or an index" table under the hero (.whyb)
   // V43.3 — the reader who already owns a lot (47 holdings, no map). OFF = the V43.2 page.
-  var ALREADY = true;      // "Already own a lot? Start with a map." (#already), straight after the walkthrough
+  var ALREADY = false;     // "Already own a lot? Start with a map." (#already). V44.4: folded into #doors; markup kept
+  var DOORS = true;        // V44.4: the two-door band in its slot: new to this (/start/), or already invested (/map/)
   var HVP_BAND = false;    // "What lands on your dashboard": the walkthrough just above plays the same orders
   var PERF_YEARS = false;  // C4, the owner's call: which calendar years SmallMicro's backtest return came from
   var R = document.documentElement;
@@ -3919,10 +3920,11 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   R.setAttribute('data-perf-cards', PERF_CARDS ? 'on' : 'off');
   R.setAttribute('data-perf-why', PERF_WHY ? 'on' : 'off');
   R.setAttribute('data-already', ALREADY ? 'on' : 'off');
+  R.setAttribute('data-doors', DOORS ? 'on' : 'off');
   R.setAttribute('data-hvp-band', HVP_BAND ? 'on' : 'off');
   R.setAttribute('data-perf-years', PERF_YEARS ? 'on' : 'off');
   var MOVED = { '#your-month': 'how-it-works/', '#how': 'methodology/', '#how-built': 'methodology/', '#vproof-h': 'track-record/' };
-  try { var to = MOVED[location.hash]; if (to) location.replace(to); } catch (e) {}
+  try { var to = MOVED[location.hash]; if (to) location.replace(to); if (location.hash === '#already' && !ALREADY) location.replace('#doors'); } catch (e) {}
 })();</script>
 <style id="mf-v423-home">
 /* V42.7 — the V42.2 performance card (.hv-card) is retired: PERF_HERO now shows the numbers card
@@ -3951,12 +3953,47 @@ html[data-perf-cards="off"] .notwhat-card{ grid-template-columns:minmax(0,1fr); 
 /* V43.3 — ALREADY, HVP_BAND and PERF_YEARS (mf-v423-flags). */
 html[data-hvp-band="off"] .hvp-band,
 html[data-already="off"] #already,
+html[data-doors="off"] #doors,
+html[data-perf-why="off"] .faq-why,
 html[data-perf-years="off"] .yrs-line{ display:none !important; }
 .already{ padding:56px 0; border-top:0.5px solid var(--border); position:relative; }
 .already h2{ font-size:34px; color:var(--white); margin-bottom:10px; letter-spacing:-.02em; }
 .already .al-desc{ font-size:16.5px; color:var(--text2); font-weight:300; line-height:1.7; max-width:62ch; margin-bottom:14px; }
 .already .al-fine{ font-size:13px; color:var(--text3); margin:10px 0 0; }
 @media (max-width:600px){ .already{ padding:40px 0; } .already h2{ font-size:26px; } }
+/* V44.4: the way in for someone who has not started. The hero's quiet link, the two-door band, and a
+   plain-words disclosure under the two tables of figures. */
+.hero-new{ display:inline-flex; align-items:center; justify-content:center; min-height:44px; font-size:14.5px; font-weight:650; color:var(--ink-link,#0951c6); text-decoration:underline; text-underline-offset:3px; }
+.hero-new:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; border-radius:6px; }
+.doors{ padding:56px 0; border-top:0.5px solid var(--border); position:relative; }
+.doors h2{ font-size:34px; color:var(--white); margin-bottom:14px; letter-spacing:-.02em; }
+.dr-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.dr-card{ display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px; border-radius:16px; background:var(--ink2); border:0.5px solid var(--border2); box-shadow:0 1px 2px rgba(15,23,42,.04); min-width:0; }
+.dr-k{ font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--text3); }
+.dr-card h3{ font-size:20px; line-height:1.25; color:var(--white); margin:0; letter-spacing:-.01em; }
+.dr-card p{ font-size:15px; line-height:1.6; color:var(--text2); margin:0; }
+.dr-card .dr-p{ flex:1 1 auto; }
+.dr-go{ margin-top:6px; }
+.dr-card .dr-also{ font-size:14px; }
+.dr-also a{ color:var(--ink-link,#0951c6); font-weight:600; text-decoration:underline; text-underline-offset:2px; }
+.doors .al-fine{ font-size:13px; color:var(--text3); margin:10px 0 0; }
+@media (pointer:coarse){ .dr-also a{ display:inline-block; padding:9px 0; } }
+@media (max-width:760px){ .dr-grid{ grid-template-columns:minmax(0,1fr); } }
+@media (max-width:360px){ .mobile-cta-bar .mcta-ghost{ padding-left:8px; padding-right:8px; white-space:nowrap; } }
+@media (max-width:600px){ .doors{ padding:40px 0; } .doors h2{ font-size:26px; } .dr-card{ padding:18px; } .dr-go{ width:100%; justify-content:center; text-align:center; } }
+.mf-words{ margin:10px 0 0; font-size:13px; line-height:1.5; color:var(--text2); }
+.mf-words > summary{ cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:6px; min-height:32px; font-size:13px; font-weight:700; color:var(--ink-link,#0951c6); }
+.mf-words > summary::-webkit-details-marker{ display:none; }
+.mf-words > summary::after{ content:"\25BE"; font-size:11px; }
+.mf-words[open] > summary::after{ content:"\25B4"; }
+.mf-words > summary:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; border-radius:6px; }
+.mf-words dl{ margin:6px 0 6px; display:grid; gap:6px; }
+.mf-words dt{ display:inline; font-weight:700; color:var(--white); }
+.mf-words dd{ display:inline; margin:0; }
+.mf-words a{ color:var(--ink-link,#0951c6); font-weight:600; text-decoration:underline; text-underline-offset:2px; }
+.whyb .mf-words{ margin-top:8px; max-width:70ch; }
+@media (pointer:coarse){ .mf-words > summary{ min-height:44px; } .mf-words a{ display:inline-block; padding:9px 0; } }
+@media print{ .mf-words{ display:none !important; } }
 .yrs-line{ font-size:12.5px; line-height:1.5; color:var(--text2); margin:8px 0 0; }
 .hvp{ position:relative; background:linear-gradient(160deg, rgba(255,255,255,0.88) 0%, var(--ink2) 60%); border:0.5px solid var(--border2);
   border-radius:22px; padding:24px; box-shadow:0 1px 0 rgba(255,255,255,0.6) inset, 0 28px 60px -28px rgba(26,80,216,0.22); }
@@ -4233,7 +4270,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
       <a href="how-it-works/" style="color:var(--text2);">How it works</a>
       <a href="strategies.html">Strategies</a>
       <a href="track-record/" style="color:var(--text2);">Track record</a>
-      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="fees-and-tax/">Fees and tax</a><a href="factor-report/">Factor Report</a><a href="fii-dii/">FII/DII activity</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="calculator.html">Calculators</a></div></details>
+      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="start/">Start here</a><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="fees-and-tax/">Fees and tax</a><a href="factor-report/">Factor Report</a><a href="fii-dii/">FII/DII activity</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="calculator.html">Calculators</a></div></details>
       <a href="#strategies" style="color:var(--text2);">Pricing</a>
       <a href="login.html" style="color:var(--text2);">Sign In</a>
       <a href="signup.html?strategy=multiasset" class="nav-cta">Start free</a>
@@ -4283,6 +4320,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
                and the phone's sticky bar keep "Get Started" for a reader who has chosen. -->
           <a href="signup.html?strategy=multiasset" class="btn-primary">Start free with MultiAsset →</a>
           <a href="dashboard.html?demo=1" class="btn-ghost">See the member dashboard (sample)&nbsp;→</a>
+          <a href="start/" class="hero-new">New to investing? Start here&nbsp;→</a>
         </div>
         <ul class="hero-benefits" aria-label="Why MindForge in three points">
           <li><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span id="hero-fee">One flat monthly fee, never a % of your corpus</span></li>
@@ -4299,33 +4337,34 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
              pricing cards (owner, 2026-11-05: "Past month is not needed", the Live P&L covers it). It
              compounded every cycle since the record began; /track-record/ still does. -->
         <div class="hvn is-pending" id="hvn" role="group" aria-labelledby="hvn-k">
-          <div class="hvn-head"><span class="hvn-k" id="hvn-k">The three books, live and backtested</span><a class="hvn-more" href="track-record/">Every cycle&nbsp;&rarr;</a></div>
+          <div class="hvn-head"><span class="hvn-k" id="hvn-k">The three portfolios, live and backtested</span><a class="hvn-more" href="track-record/">Every cycle&nbsp;&rarr;</a></div>
           <table class="hvn-t">
-            <caption class="sr-only">Each MindForge book: the live model portfolio this cycle, since the last rebalance, against its index, then the backtested return a year after tax, against its index</caption>
+            <caption class="sr-only">Each MindForge portfolio: the live model portfolio this cycle, since the last rebalance, against its index, then the backtested return a year after tax, against its index</caption>
             <thead><tr>
-              <th scope="col"><span class="sr-only">Book</span></th>
+              <th scope="col"><span class="sr-only">Portfolio</span></th>
               <th scope="col" class="hvn-live"><span class="hvn-badge"><span class="hvn-dot" aria-hidden="true"></span>Live</span> this cycle<small>since <span data-hvn="since">the rebalance</span></small><small>model portfolio</small></th>
               <th scope="col">Backtest, a&nbsp;year<small>after tax</small></th>
             </tr></thead>
             <tbody>
               <tr>
-                <th scope="row">LargeMidcap 250<small>Core-plus</small></th>
+                <th scope="row">LargeMidcap 250<small>Large and mid companies</small></th>
                 <td class="hvn-live"><b data-hvn="lm:live">&mdash;</b><span class="hvn-i">index <span data-hvn="lm:bench">&mdash;</span></span><span class="hvn-gap" data-hvn="lm:gap"></span></td>
                 <td><b><!--MFSTAT:lm:cagr_posttax-->18.6%<!--/MFSTAT--></b><span class="hvn-i">index <!--MFSTAT:lm:bench_cagr_posttax-->8.68%<!--/MFSTAT--></span></td>
               </tr>
               <tr>
-                <th scope="row">SmallMicro 500<small>Satellite</small></th>
+                <th scope="row">SmallMicro 500<small>Small companies, size smallest</small></th>
                 <td class="hvn-live"><b data-hvn="sm:live">&mdash;</b><span class="hvn-i">index <span data-hvn="sm:bench">&mdash;</span></span><span class="hvn-gap" data-hvn="sm:gap"></span></td>
                 <td><b><!--MFSTAT:sm:cagr_posttax-->44.3%<!--/MFSTAT--></b><span class="hvn-i">index <!--MFSTAT:sm:bench_cagr_posttax-->11.03%<!--/MFSTAT--></span></td>
               </tr>
               <tr>
-                <th scope="row">MultiAsset<small>Free&nbsp;· core</small></th>
+                <th scope="row">MultiAsset<small>Free&nbsp;· 8 ETFs</small></th>
                 <td class="hvn-live"><b data-hvn="ma:live">&mdash;</b><span class="hvn-i">index <span data-hvn="ma:bench">&mdash;</span></span><span class="hvn-gap" data-hvn="ma:gap"></span></td>
                 <td><b><!--MFSTAT:ma:cagr_posttax-->11.6%<!--/MFSTAT--></b><span class="hvn-i">index <!--MFSTAT:ma:bench_cagr_posttax-->7.91%<!--/MFSTAT--></span></td>
               </tr>
             </tbody>
           </table>
           <p class="hvn-note"><span class="hvn-live" data-hvn="note"></span> Backtests are simulated, not live trading; their months, and the best fund over the same months, are in the table below.</p>
+          <details class="mf-words"><summary>What do these words mean?</summary><dl><div><dt>Portfolio (we call it a book):</dt> <dd>a list of stocks or ETFs with a weight for each, which you hold in your own demat.</dd></div><div><dt>Backtest:</dt> <dd>a simulation of the rules over past years. Useful for what it shows about a method, but not a record of real trading.</dd></div><div><dt>Index:</dt> <dd>the market measure a portfolio is compared with, such as the Nifty&nbsp;50.</dd></div><div><dt>Live this cycle:</dt> <dd>how the published list has moved since it last changed, on the 1st.</dd></div><div><dt>Points behind:</dt> <dd>the gap between the portfolio and its index, in percentage points.</dd></div><div><dt>Deepest fall:</dt> <dd>the furthest it dropped from a previous high.</dd></div></dl><a href="learn/#gl-h">The full glossary&nbsp;&rarr;</a></details>
         </div>
         <div class="hvp" role="group" aria-label="What a member's dashboard shows on the 1st (placeholder stocks)">
           <div class="hvp-head"><span class="hvp-k">On the 1st, on your dashboard</span><span class="hvp-tag">Placeholder stocks</span></div>
@@ -4452,17 +4491,17 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
   <div class="container">
     <div class="section-label">The numbers, side by side</div>
     <h2 class="whyb-h2" id="whyb-h">Why this, and not a fund or an index</h2>
-    <p class="whyb-desc">Each book against its own index and the best fund in its category, over the same months and after tax. The funds&rsquo; figures are their real returns; ours are backtests, so read the note under the table.</p>
+    <p class="whyb-desc">Each portfolio against its own index and the best fund in its category, over the same months and after tax. The funds&rsquo; figures are their real returns; ours are backtests, so read the note under the table.</p>
     <div class="whyb-wrap">
       <table class="whyb-t">
-        <caption class="sr-only">Each MindForge book: its backtested return a year after tax, the same after its fee, its index over the same months, the best fund in its category over the same months, and the deepest fall of the book and of its index</caption>
+        <caption class="sr-only">Each MindForge portfolio: its backtested return a year after tax, the same after its fee, its index over the same months, the best fund in its category over the same months, and the deepest fall of the book and of its index</caption>
         <thead><tr>
-          <th scope="col">Book<small>and its months</small></th>
+          <th scope="col">Portfolio<small>and its months</small></th>
           <th scope="col">MindForge, a&nbsp;year<small>backtest, after tax</small></th>
           <th scope="col">After our fee<small>at the capital shown</small></th>
           <th scope="col">Its index<small>same months, after tax</small></th>
           <th scope="col">Best fund in its category<small>real return, after tax</small></th>
-          <th scope="col">Deepest fall<small>the book, then its index</small></th>
+          <th scope="col">Deepest fall<small>the portfolio, then its index</small></th>
         </tr></thead>
         <tbody>
           <tr>
@@ -4493,6 +4532,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
       </table>
     </div>
     <p class="whyb-note">How to read it: MindForge figures are backtests, with monthly rebalancing simulated after a one-way trading cost on turnover (10&nbsp;bps on LargeMidcap&nbsp;250 and 20&nbsp;bps on SmallMicro&nbsp;500; MultiAsset&rsquo;s simulation charges none) and 20% short-term tax on every gain booked; they are not live trading. Index and fund figures are bought and held, taxed once at exit at the 12.5% long-term rate; the funds&rsquo; are their real Direct Plan returns, measured from AMFI&rsquo;s published NAVs over the same months. &ldquo;After our fee&rdquo; takes the subscription out at the capital shown; MultiAsset is free. Past returns, real or simulated, do not promise future ones, and nothing here recommends any fund.</p>
+    <details class="mf-words"><summary>What do these words mean?</summary><dl><div><dt>Portfolio (we call it a book):</dt> <dd>a list of stocks or ETFs with a weight for each, which you hold in your own demat.</dd></div><div><dt>Backtest:</dt> <dd>a simulation of the rules over past years. Useful for what it shows about a method, but not a record of real trading.</dd></div><div><dt>Index:</dt> <dd>the market measure a portfolio is compared with, such as the Nifty&nbsp;50.</dd></div><div><dt>Live this cycle:</dt> <dd>how the published list has moved since it last changed, on the 1st.</dd></div><div><dt>Points behind:</dt> <dd>the gap between the portfolio and its index, in percentage points.</dd></div><div><dt>Deepest fall:</dt> <dd>the furthest it dropped from a previous high.</dd></div></dl><a href="learn/#gl-h">The full glossary&nbsp;&rarr;</a></details>
     <p class="whyb-links"><a href="track-record/">The live record, cycle by cycle&nbsp;&rarr;</a><a href="strategies.html#performance">Every fund in each category&nbsp;&rarr;</a><a href="calculators/mindforge-vs-fund.html">Your fund against a book&nbsp;&rarr;</a><a href="methodology/">How the backtests are run&nbsp;&rarr;</a></p>
   </div>
 </section>
@@ -4503,10 +4543,10 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
       <div class="mfw-copy">
         <div class="section-label">Getting started</div>
         <h2 class="mfw-h2 fade-up" id="mfw-h">From here to your first orders, in three steps</h2>
-        <p class="mfw-desc fade-up">Choose a book, sign up, and on the 1st place the orders. The phone plays each step the way the site shows it.</p>
+        <p class="mfw-desc fade-up">Choose a portfolio, sign up, and on the 1st place the orders. The phone plays each step the way the site shows it.</p>
         <ol class="mfw-steps">
           <li class="mfw-step is-on">
-            <button type="button" class="mfw-sbtn" aria-current="step"><span class="mfw-n">01</span><span class="mfw-t">Choose a book</span></button>
+            <button type="button" class="mfw-sbtn" aria-current="step"><span class="mfw-n">01</span><span class="mfw-t">Choose a portfolio</span></button>
             <p class="mfw-d">MultiAsset is free; LargeMidcap 250 and SmallMicro 500 are monthly plans. Most people need one book &mdash; if you are unsure, start with the free one.<span class="ma-honest" data-ma-honest> It is the book to learn the routine on, not the one to beat a fund with: after tax its backtest, <!--MFSTAT:ma:cagr_posttax-->11.6%<!--/MFSTAT--> a year, trails the best multi-asset fund over the same months, <!--MFPEER:ma:best_name-->Quant Multi&nbsp;Asset<!--/MFPEER--> at <!--MFPEER:ma:best_post-->19.5%<!--/MFPEER-->. The two stock books are the ones built for that.</span></p>
             <span class="mfw-bar" aria-hidden="true"><i></i></span>
           </li>
@@ -4522,7 +4562,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
           </li>
         </ol>
         <div class="mfw-cta">
-          <a class="btn-primary" href="signup.html?strategy=multiasset">Start the free book &rarr;</a>
+          <a class="btn-primary" href="signup.html?strategy=multiasset">Start the free portfolio &rarr;</a>
           <a class="mfw-more" href="dashboard.html?demo=1">See the sample dashboard</a>
         </div>
       </div>
@@ -4537,7 +4577,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
               <div class="mfw-view">
 
                 <div class="mfw-fr" data-f="books" data-ctx="Strategies">
-                  <p class="mfw-k">Three books</p>
+                  <p class="mfw-k">Three portfolios</p>
                   <p class="mfw-h">Pick the one that fits</p>
                   <p class="mfw-s">Most people need one. Unsure? Start free.</p>
                   <div class="mfw-card" data-mfw-t="ma"><div class="mfw-row"><span class="mfw-name">MultiAsset</span><span class="mfw-free">FREE</span></div><div class="mfw-meta">ETFs: equity, gold, bonds &amp; global</div></div>
@@ -4642,6 +4682,31 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
   </div>
 </section>
 
+<!-- V44.4: A5 and B1. Two very different readers reach this point. Someone who has never invested read "Already own a
+     lot?" as "not for you"; #already (still in the page, off with ALREADY) is now one of the two doors. No figure here. -->
+<section class="doors" id="doors" aria-labelledby="dr-h">
+  <div class="container">
+    <div class="section-label">Two very different starts</div>
+    <h2 class="fade-up" id="dr-h">Where are you starting from?</h2>
+    <div class="dr-grid fade-up">
+      <div class="dr-card">
+        <span class="dr-k">New to this</span>
+        <h3>Savings sitting idle, and reels telling you what to do?</h3>
+        <p class="dr-p">What to check before you invest anything, whether to go in all at once, and what the first month involves. About five minutes.</p>
+        <a class="btn-primary dr-go" href="start/">Start here&nbsp;&rarr;</a>
+      </div>
+      <div class="dr-card">
+        <span class="dr-k">Already invested</span>
+        <h3>Already own a lot? Start with a map.</h3>
+        <p class="dr-p">Paste your broker&rsquo;s holdings: what is large, mid and small, and what is too small to matter. Nothing you paste is sent or kept.</p>
+        <a class="btn-ghost dr-go" href="map/">Map my holdings&nbsp;&rarr;</a>
+        <p class="dr-also">Also: <a href="learn/how-many-holdings/">How many is enough?</a> &middot; <a href="#faq-switch">Do I have to sell my funds?</a></p>
+      </div>
+    </div>
+    <p class="al-fine">General information about portfolios, not advice on yours.</p>
+  </div>
+</section>
+
 <!-- V43.3 — A1. The first section that speaks to someone who already invests: until now the page
      assumed a blank slate until the FAQ. No figure here; the "past a point" sentence rests on
      /learn/how-many-holdings/ (docs/learn/holdings-curve.json). Off with ALREADY in mf-v423-flags. -->
@@ -4709,7 +4774,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
       var live = st[k].live_pct, bench = st[k].bench_pct, gap = live - bench;
       put(k + ':live', sgn(live), tone(live));
       put(k + ':bench', sgn(bench));
-      put(k + ':gap', Math.abs(gap) <= 0.05 ? 'level with its index' : Math.abs(gap).toFixed(2) + ' pts ' + (gap > 0 ? 'ahead' : 'behind'), 'hvn-gap ' + tone(gap));
+      put(k + ':gap', Math.abs(gap) <= 0.05 ? 'level with its index' : Math.abs(gap).toFixed(2) + ' points ' + (gap > 0 ? 'ahead' : 'behind'), 'hvn-gap ' + tone(gap));
     });
     put('since', day(L.rebalance_date));
     put('note', L.zero_session
@@ -4781,7 +4846,7 @@ h1, h2, h3, h4, th, .lbl, .sl, .mm-fl, .fun-lbl, .k-lbl, .ctx-name, .mcal-slabel
     var key = el('p', 'hvn-key'), note = card.querySelector('.hvn-note');
     key.setAttribute('aria-hidden', 'true');
     // the spaces are for copied text only: whitespace between flex items is not laid out
-    key.innerHTML = '<span><i class="k-bar"></i>the book</span> <span><i class="k-tick"></i>its index</span> <span>each column on its own scale</span>';
+    key.innerHTML = '<span><i class="k-bar"></i>the portfolio</span> <span><i class="k-tick"></i>its index</span> <span>each column on its own scale</span>';
     card.insertBefore(key, note);
     setTimeout(function () { grow(card, 'hvn-bars-in'); }, 60);
     return true;
@@ -5522,7 +5587,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
          links) and lands on signup at 33% with the strategy chosen (V34.8). -->
     <div class="gift-start fade-up">
       <a class="btn-primary gift-start-btn" href="signup.html?strategy=multiasset">Start it free tonight &rarr;</a>
-      <p class="gift-start-note">&#8377;0 &middot; no card &middot; the full MultiAsset book</p>
+      <p class="gift-start-note">&#8377;0 &middot; no card &middot; the full MultiAsset portfolio</p>
     </div>
 
     <!-- V43.3 — B2: the "Three more free tools if you like to dig" line moved out. The free tool a
@@ -5592,7 +5657,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
     <div class="strategies-header">
       <div>
         <div class="section-label">Three strategies</div>
-        <h2 class="fade-up">Three books. Most people need one.</h2>
+        <h2 class="fade-up">Three portfolios. Most people need one.</h2>
       </div>
       <p class="fade-up" style="font-size:15px;color:var(--text2);font-weight:300;line-height:1.7;">A free multi-asset book, a large-and-midcap book, and a small-cap book to size smallest.</p>
     </div>
@@ -8116,6 +8181,32 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
          the question this reader is asking. Each .faq-list keeps the list styling;
          the FAQPage JSON-LD below follows the same order. -->
     <div class="faq-group">
+      <h3 class="faq-gh">New to this</h3>
+      <div class="faq-list">
+
+      <details class="faq-item" data-ld-sync id="faq-new">
+        <summary><span>I have never invested. Is this a sensible place to start?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>It can be, if three things are true. The money can stay invested for at least five years. You have six months of expenses set aside and no costly loans. And you could watch a fall of a quarter or more without selling. If not, sort those out first: nothing here is urgent. If you would rather place no orders at all, a low-cost fund may suit you better. You do not need to learn the market to do this, because the model does the choosing and you place the orders. You do need to know what can go wrong. <a href="start/">Start here</a> sets that out in about five minutes. General information, not advice on your situation.</p></div>
+      </details>
+
+      <details class="faq-item" data-ld-sync id="faq-lump">
+        <summary><span>I have a lump sum. Should it all go in at once?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>This is a choice about regret as much as return. In Indian index data, all at once ended ahead of six monthly parts a little more often than not after five years, and in parts usually did better when the market fell soon after the start. <a href="learn/lump-sum/">The numbers.</a> In parts, you enter only this month&rsquo;s part as your amount and use Add money on later 1sts. Each part has to clear the &ldquo;works from&rdquo; figure, or the priciest names wait.</p></div>
+      </details>
+
+      <details class="faq-item" data-ld-sync id="faq-demat">
+        <summary><span>I don&rsquo;t have a demat account. What do I do first?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>Open one online with any Indian broker. You need your PAN, a mobile number linked to Aadhaar and a bank account in your name, and it usually takes a day or two. You do not need F&amp;O switched on. Then move the money across before the evening you place orders, because a buy is checked against your cash when it is placed. <a href="learn/first-demat/">Step by step.</a></p></div>
+      </details>
+
+      <details class="faq-item" data-ld-sync id="faq-reels">
+        <summary><span>Reels say funds are for people who have given up, and F&amp;O is where the money is. Are they right?</span><i aria-hidden="true"></i></summary>
+        <div class="faq-a"><p>No on both counts. <span class="faq-why">The table at the top of this page shows the best fund in each category beating its index after tax, with real returns. And </span>SEBI&rsquo;s study of FY26 found that 87.7% of individual traders lost money in F&amp;O, &#8377;91,685&nbsp;crore in all, which is why nothing here uses derivatives, leverage or margin. <a href="learn/reels/">What reels leave out.</a></p></div>
+      </details>
+
+      </div>
+    </div>
+    <div class="faq-group">
       <h3 class="faq-gh">Starting</h3>
       <div class="faq-list">
 
@@ -8282,6 +8373,38 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
     "@context": "https://schema.org",
     "@type": "FAQPage",
     "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "I have never invested. Is this a sensible place to start?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It can be, if three things are true. The money can stay invested for at least five years. You have six months of expenses set aside and no costly loans. And you could watch a fall of a quarter or more without selling. If not, sort those out first: nothing here is urgent. If you would rather place no orders at all, a low-cost fund may suit you better. You do not need to learn the market to do this, because the model does the choosing and you place the orders. You do need to know what can go wrong. Start here sets that out in about five minutes. General information, not advice on your situation."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "I have a lump sum. Should it all go in at once?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "This is a choice about regret as much as return. In Indian index data, all at once ended ahead of six monthly parts a little more often than not after five years, and in parts usually did better when the market fell soon after the start. The numbers. In parts, you enter only this month’s part as your amount and use Add money on later 1sts. Each part has to clear the “works from” figure, or the priciest names wait."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "I don’t have a demat account. What do I do first?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Open one online with any Indian broker. You need your PAN, a mobile number linked to Aadhaar and a bank account in your name, and it usually takes a day or two. You do not need F&O switched on. Then move the money across before the evening you place orders, because a buy is checked against your cash when it is placed. Step by step."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Reels say funds are for people who have given up, and F&O is where the money is. Are they right?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No on both counts. The table at the top of this page shows the best fund in each category beating its index after tax, with real returns. And SEBI’s study of FY26 found that 87.7% of individual traders lost money in F&O, ₹91,685 crore in all, which is why nothing here uses derivatives, leverage or margin. What reels leave out."
+        }
+      },
       {
         "@type": "Question",
         "name": "What is MindForge Capital?",
@@ -8456,8 +8579,8 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 <section class="notready" aria-labelledby="nr-h">
   <div class="container">
     <div class="section-label">Not ready yet?</div>
-    <h2 class="fade-up" id="nr-h">Start with what you own.</h2>
-    <p class="nr-desc fade-up">A private map of what you already hold, and what the data says about how many holdings is enough. Or the monthly India Factor Report by e-mail. None of them needs an account.</p>
+    <h2 class="fade-up" id="nr-h">Start with the basics, or with what you own.</h2>
+    <p class="nr-desc fade-up">What to check before you invest anything, or a private map of what you already hold. Or the monthly India Factor Report by e-mail. None of them needs an account.</p>
     <div class="dp-fr fade-up" style="margin-top:6px">
       <form data-fr novalidate>
         <label class="sr-only" for="fr-email-home">E-mail address</label>
@@ -8470,8 +8593,8 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
     <!-- V43.3 — B3: two tiles, both about the reader's own money. The four market feeds that stood
          here (weather, the Factor Report, the Scanner, FII/DII) are in the Learn menu on every page. -->
     <div class="dp-tiles fade-up">
+      <a class="dp-tile" href="start/"><span class="dp-tk">New to this &middot; about five minutes</span><span class="dp-tv" style="font-size:18px">Start here</span><span class="dp-tl">The choices in plain words, who this does not suit, and what you would do first.</span></a>
       <a class="dp-tile" href="map/"><span class="dp-tk">Private &middot; no account</span><span class="dp-tv" style="font-size:18px">Map my holdings</span><span class="dp-tl">Size, sectors, and the holdings too small to move your result. Nothing you paste leaves your browser.</span></a>
-      <a class="dp-tile" href="learn/how-many-holdings/"><span class="dp-tk">From the data</span><span class="dp-tv" style="font-size:18px">How many holdings is enough?</span><span class="dp-tl">What adding the 15th, the 30th and the 50th stock did to the typical swing.</span></a>
     </div>
   </div>
 </section>
@@ -8725,7 +8848,7 @@ function durNote(k){
 
 <!-- Mobile sticky CTA bar (hidden on desktop) -->
 <div class="mobile-cta-bar" aria-hidden="false">
-  <a class="mcta-ghost" href="strategies.html">Strategies</a>
+  <a class="mcta-ghost" href="start/">New? Start here</a>
   <a class="mcta-primary" href="signup.html">Get started →</a>
 </div>
 

@@ -247,6 +247,15 @@
     'steadying': 'With the index below its long-run average but no longer falling, leadership is unsettled: trends are shorter and less reliable than in a steady rise.'
   };
 
+  /* V44.4: the first hundred days of a membership, the paragraph in plain words: the rupees on the amount
+     entered instead of the split of contributions, which moves under "How to read this" with both halves still
+     printed. PLAIN_MONTH = false puts it back for everyone. */
+  var PLAIN_MONTH = true;
+  function plainMonth(s) {
+    if (!PLAIN_MONTH) return false;
+    var j = s.sub && s.sub.subscribed_at ? new Date(s.sub.subscribed_at) : null;
+    return !!(j && !isNaN(j.getTime()) && (Date.now() - j.getTime()) / 864e5 <= 100);
+  }
   function renderNarrative(s, lb, bench, mk) {
     var el = card('mi-narr', 'insight', 'mi-narr');
     var anchor = D.getElementById('profit-card');
@@ -268,6 +277,11 @@
       head += '; its index, the ' + esc(bench.name) + ', is ' + span(bench.bench, sgn(bench.bench)) + ' — ' + g + '.';
     } else head += '.';
     parts.push(head);
+    var plain = plainMonth(s), drivers = '';
+    if (plain && W._capEntered && s.capital > 0 && dir !== 'flat') {
+      var moved = Math.round(s.capital * Math.abs(port) / 100);
+      parts.push('On your ' + esc(inr(s.capital)) + ', that is about ' + span(port, (port > 0 ? '+' : '−') + esc(inr(moved))) + '.');
+    }
 
     // drivers: the names that did most of the work, from the same contributions as the attribution card.
     // Both halves are printed: three names can add more than the whole gain (2.77 pts in a book up 1.88%),
@@ -283,18 +297,20 @@
       var tot = sumC(1), fell = sumC(-1), acc = 0, top = [];
       for (var i = 0; i < lift.length && top.length < 3; i++) { top.push(lift[i]); acc += lift[i].c; if (acc >= tot * 0.6) break; }
       if (top.length && tot > 0.0001) {
-        parts.push(who(top) + ' did most of the lifting: <a href="#attrib-card">' + acc.toFixed(2) + '</a> of the ' + tot.toFixed(2) +
-          ' pts the rising holdings added' + (fell < -0.005 ? ' (the ones that fell took ' + Math.abs(fell).toFixed(2) + ' pts away)' : '') + '.');
+        drivers = who(top) + ' did most of the lifting: <a href="#attrib-card">' + acc.toFixed(2) + '</a> of the ' + tot.toFixed(2) +
+          ' pts the rising holdings added' + (fell < -0.005 ? ' (the ones that fell took ' + Math.abs(fell).toFixed(2) + ' pts away)' : '') + '.';
       }
     } else if (port < -0.05) {
       var drag = rows.filter(function (x) { return x.c < 0; }).reverse();
       var totd = sumC(-1), rose = sumC(1), accd = 0, topd = [];
       for (var j = 0; j < drag.length && topd.length < 3; j++) { topd.push(drag[j]); accd += drag[j].c; if (accd <= totd * 0.6) break; }
       if (topd.length && totd < -0.0001) {
-        parts.push(who(topd) + ' did most of the damage: <a href="#attrib-card">' + Math.abs(accd).toFixed(2) + '</a> of the ' + Math.abs(totd).toFixed(2) +
-          ' pts the falling holdings took away' + (rose > 0.005 ? ' (the ones that rose added ' + rose.toFixed(2) + ' pts back)' : '') + '.');
+        drivers = who(topd) + ' did most of the damage: <a href="#attrib-card">' + Math.abs(accd).toFixed(2) + '</a> of the ' + Math.abs(totd).toFixed(2) +
+          ' pts the falling holdings took away' + (rose > 0.005 ? ' (the ones that rose added ' + rose.toFixed(2) + ' pts back)' : '') + '.';
       }
     }
+
+    if (drivers && !plain) parts.push(drivers);
 
     // the market it happened in
     if (mk && mk.regime && REGIME_SHORT[mk.regime.key]) {
@@ -321,7 +337,7 @@
 
     show(el, '<div class="mi-head"><h2>Your month in one paragraph</h2><span class="mi-sub">Live prices</span></div>' +
       '<p class="mi-p">' + parts.join(' ') + '</p>' +
-      learn(['Written by the page from its own numbers each time it loads: the weighted move of the book’s holdings since the rebalance (model weights, published prices), the same index the profit card uses, and the contributions in “What moved your number”. Nothing in it is typed by hand, and it never says what to do beyond the model’s published orders.']));
+      learn((plain && drivers ? [drivers] : []).concat(['Written by the page from its own numbers each time it loads: the weighted move of the book’s holdings since the rebalance (model weights, published prices), the same index the profit card uses, and the contributions in “What moved your number”. Nothing in it is typed by hand, and it never says what to do beyond the model’s published orders.'])));
   }
 
   // ── M6 · is this normal? ─────────────────────────────────────────────────

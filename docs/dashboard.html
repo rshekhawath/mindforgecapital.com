@@ -28,7 +28,7 @@
      the way down. Measured on slow 4G: with this hint the first visit's main content comes 0.7 s
      sooner than without it. (The stylesheet stayed inline in this page on purpose: as a file of
      its own it delayed first paint by 0.55 s and saved a repeat visitor nothing that matters.) -->
-<link rel="preload" as="script" href="assets/mfc-dash.js?v=6cd4ec40">
+<link rel="preload" as="script" href="assets/mfc-dash.js?v=a67d0ba0">
 <script id="mf-v443-early">
 /* V44.3 — START THE MEMBER'S TWO READS AT THE TOP OF THE PAGE. init() sits 76% of the way
    down this file, so on a slow 4G phone the request for the member's picks did not even
@@ -3021,7 +3021,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
      all (script blocked) the member nav shows, exactly as before. -->
 <script id="mf-v410-navstate">
 (function(){try{
-  var q=location.search, d=/[?&]demo=(?:1|2|pinned|restricted)(?:&|$)/.test(q),
+  var q=location.search, d=/[?&]demo=(?:1|2|pinned|restricted|first)(?:&|$)/.test(q),
       t=/[?&]token=[^&]/.test(q) || /(?:^|;\s*)mfc_dash_token=[^;]/.test(document.cookie);
   if(!d && !t){ try{ t=!!(localStorage.getItem('mfc_dash_token')||sessionStorage.getItem('mfc_dash_token')); }catch(e){} }
   document.documentElement.setAttribute('data-nav', d ? 'demo' : (t ? 'member' : 'out'));
@@ -3046,6 +3046,9 @@ html:not([data-nav="out"])  [data-nav-for="out"]{ display:none !important; }
 @media (prefers-reduced-motion: reduce){ .nav-cta, .nav-cta:hover{ transition:none; transform:none; } }
 </style>
 <style id="mf-v443-first-fold">
+.demo-months { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; font-weight: 600; color: var(--text2); margin-top: 6px; flex-basis: 100%; }
+.demo-months[hidden] { display: none; }
+.su-tag { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; vertical-align: 1px; background: rgba(37,99,235,.08); color: var(--text2); white-space: nowrap; }
 /* V44.3 — COPIES, not moves. The sample dashboard draws as soon as assets/mfc-dash.js has run, with these rules still to come further down the page, so it drew unstyled and then rearranged itself (up to 0.33 layout shift on a desktop). The originals below still win; this only means that first draw already has them. Regenerate if the top of the dashboard changes shape. */
 :root { --v13-ease: cubic-bezier(.22,.8,.2,1); --v13-shadow: 0 1px 2px rgba(12,24,49,.04), 0 12px 34px -16px rgba(26,80,216,.18), 0 30px 60px -34px rgba(26,80,216,.20); }
 :root { --v14-ease: cubic-bezier(.22,.8,.2,1); }
@@ -3182,6 +3185,36 @@ html[data-theme="dark"] .su-btn { color: rgb(157, 188, 255); border-color: rgba(
 html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap, html .mf-abar .mf-abar-cap-k, html .cvg-head #cvg-chip, html .cyc-head .cyc-k, html .cc-head .cc-k, html .demo-banner-tag, html .kbsk-txt .kbsk-eyebrow, html .kbsk-b-head .kbsk-b-state, html .chg-group .chg-gk { font-size: 11px; }
 }
 </style>
+<style id="mf-v444-iab-css">
+.mf-iab{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:10px 12px 0; padding:10px 14px; border-radius:12px; font-size:13.5px; line-height:1.5; color:var(--text2,#1e3a5f); background:rgba(217,119,6,.08); border:0.5px solid rgba(217,119,6,.32); }
+.mf-iab b{ color:var(--text,#0c1831); }
+.mf-iab button{ min-height:36px; margin-left:auto; padding:0 12px; border-radius:999px; border:0.5px solid rgba(37,99,235,.3); background:transparent; font:inherit; font-size:13px; font-weight:700; color:var(--ink-link,#0951c6); cursor:pointer; }
+@media print{ .mf-iab{ display:none !important; } }
+</style>
+<script id="mf-v444-iab">
+/* V44.4: A8. Inside Instagram's or Facebook's own browser, a dashboard session is lost to the phone's real browser and new-tab
+   Kite screens and .ics files can fail. One line says so. It reads the user agent, blocks nothing and remembers only its dismissal. */
+(function () {
+  try {
+    var ua = navigator.userAgent || '';
+    var who = /Instagram/.test(ua) ? 'Instagram' : /FBAN|FBAV|FB_IAB/.test(ua) ? 'Facebook' : '';
+    if (!who || sessionStorage.getItem('mfc-iab-off') === '1') return;
+    var go = function () {
+      var nav = document.querySelector('body > nav') || document.querySelector('nav');
+      if (!nav || !nav.parentNode || document.getElementById('mf-iab')) return;
+      var p = document.createElement('p');
+      p.id = 'mf-iab'; p.className = 'mf-iab'; p.setAttribute('role', 'status');
+      p.innerHTML = '<span>You are in ' + who + '&rsquo;s browser. To stay signed in and open Kite properly, open this page in Chrome or Safari: tap <b>&#8943;</b>, then <b>Open in browser</b>.</span><button type="button">Got it</button>';
+      nav.parentNode.insertBefore(p, nav.nextSibling);
+      p.querySelector('button').addEventListener('click', function () {
+        p.parentNode.removeChild(p);
+        try { sessionStorage.setItem('mfc-iab-off', '1'); } catch (e) {}
+      });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -3200,7 +3233,7 @@ html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap
       <a href="how-it-works/" style="color:var(--text2);">How it works</a>
       <a href="strategies.html">Strategies</a>
       <a href="track-record/" style="color:var(--text2);">Track record</a>
-      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="fees-and-tax/">Fees and tax</a><a href="factor-report/">Factor Report</a><a href="fii-dii/">FII/DII activity</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="calculator.html">Calculators</a></div></details>
+      <details class="nav-group"><summary>Learn</summary><div class="nav-group-menu"><a href="start/">Start here</a><a href="learn/">Learn hub</a><a href="methodology/">How a book is built</a><a href="risk/">Risks</a><a href="compare/">Compare</a><a href="fees-and-tax/">Fees and tax</a><a href="factor-report/">Factor Report</a><a href="fii-dii/">FII/DII activity</a><a href="screener/">Stock Scanner</a><a href="scores/">Integrity Score</a><a href="calculator.html">Calculators</a></div></details>
       <a href="login.html" style="color:var(--text2);" data-nav-for="member">My Account</a>
       <a href="login.html" id="nav-signout" style="color:var(--text2);" data-nav-for="member">Sign out</a>
       <a href="/#pricing" style="color:var(--text2);" data-nav-for="demo">Pricing</a>
@@ -3326,9 +3359,11 @@ html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap
            prospect convinced by this screen was sent back to browse. The free
            book is the same screen with real picks, so it leads. -->
       <span class="demo-banner-ctas">
-        <a class="demo-banner-cta is-go" href="/signup.html?strategy=multiasset">Start the free book — this screen, with real picks <span aria-hidden="true">→</span></a>
+        <a class="demo-banner-cta is-go" href="/signup.html?strategy=multiasset">Start the free portfolio — this screen, with real picks <span aria-hidden="true">→</span></a>
         <a class="demo-banner-cta" href="/strategies.html">See the strategies <span aria-hidden="true">→</span></a>
       </span>
+      <!-- V44.4: A6.4. The sample's two months. A first-time reader's own first month is buys only, far simpler than month two. -->
+      <span class="demo-months" id="demo-months" hidden>See: <a href="?demo=first" data-demo="first">Month one</a> <a href="?demo=1" data-demo="1">A later month</a></span>
     </aside>
     <!-- HERO -->
     <div class="dash-hero fade-up">
@@ -3736,6 +3771,7 @@ html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap
           <span data-k="ma:neg"><!--MFRISK:ma:neg-->10<!--/MFRISK--></span><span data-k="ma:months"><!--MFRISK:ma:months-->44<!--/MFRISK--></span><span data-k="ma:worst"><!--MFRISK:ma:worst-->-9.1%<!--/MFRISK--></span>
           <span data-k="lm:median"><!--MFTURN:lm:median-->12<!--/MFTURN--></span><span data-k="lm:yearly"><!--MFTURN:lm:yearly-->140<!--/MFTURN--></span>
           <span data-k="sm:median"><!--MFTURN:sm:median-->14<!--/MFTURN--></span><span data-k="sm:yearly"><!--MFTURN:sm:yearly-->170<!--/MFTURN--></span>
+          <span data-k="lm:max_dd"><!--MFSTAT:lm:max_dd-->-23.1%<!--/MFSTAT--></span><span data-k="sm:max_dd"><!--MFSTAT:sm:max_dd-->-24.2%<!--/MFSTAT--></span><span data-k="ma:max_dd"><!--MFSTAT:ma:max_dd-->-13.5%<!--/MFSTAT--></span>
         </div>
         <div class="pc-leaders" id="pc-leaders"></div>
       </div>
@@ -4368,12 +4404,13 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
     <!-- POSITION SIZING -->
     <div class="size-card fade-up" id="size-card" style="display:none;">
       <div class="size-head">
-        <h2>Position sizing</h2>
-        <div class="size-meta">Enter your capital — we'll size each pick by its model weight so you can place orders straight from the table.</div>
+        <h2>Your amount</h2>
+        <div class="size-meta">Enter what you will put into this book. We work out how many shares of each pick that buys.</div>
+        <p class="size-parts" id="size-parts" hidden>Starting with part of a lump sum? Enter only this month&rsquo;s part. On a later 1st, Add money takes the next part. <a href="/learn/lump-sum/" target="_blank" rel="noopener">All at once, or in parts?</a></p>
         <div class="size-summary">
           <span class="ss-cell"><span class="ss-k">Per stock</span><span class="ss-c">: </span><strong id="size-per-stock">—</strong></span>
-          <span class="ss-cell"><span class="ss-k">Total allocated</span><span class="ss-c">: </span><strong id="size-total-alloc">—</strong></span>
-          <span class="ss-cell"><span class="ss-k">Cash residue</span><span class="ss-c">: </span><strong id="size-residue">—</strong></span>
+          <span class="ss-cell"><span class="ss-k">Invested</span><span class="ss-c">: </span><strong id="size-total-alloc">—</strong></span>
+          <span class="ss-cell"><span class="ss-k">Left in cash</span><span class="ss-c">: </span><strong id="size-residue">—</strong></span>
         </div>
         <div class="size-deploy" id="size-deploy" style="display:none;">
           <span class="size-deploy-track" aria-hidden="true"><i id="size-deploy-fill" data-bar="0%"></i></span>
@@ -5478,6 +5515,9 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       .kbsk-b-state.is-wait{ color:var(--text2); background:rgba(15,23,42,.06); }
       html[data-theme="dark"] .kbsk-b-state.is-wait{ color:#cbd5e1; background:rgba(255,255,255,.08); }
       .kbsk-fund{ margin:0 0 8px; font-size:12.5px; line-height:1.5; color:var(--text2); max-width:70ch; }
+      .adj-fund{ margin:10px 0 2px; font-size:12.5px; line-height:1.5; color:var(--text2); max-width:70ch; }
+      .adj-fund b{ color:var(--white); font-weight:700; }
+      .adj-fund a, .kbsk-fund a, #osheet-note a{ color:var(--ink-link,#0951c6); font-weight:600; text-decoration:underline; text-underline-offset:2px; }
       .kbsk-fund b{ color:var(--white); font-weight:700; }
       .kbsk-fund.is-short b{ color:var(--ink-warn,#a64d08); }
       html[data-theme="dark"] .kbsk-fund.is-short b{ color:#fbbf24; }
@@ -5761,7 +5801,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
   <span id="toast-msg">Copied</span>
 </div>
 
-<script src="assets/mfc-dash.js?v=6cd4ec40"></script>
+<script src="assets/mfc-dash.js?v=a67d0ba0"></script>
 <script>
 // MF-SCROLL-PROG v3.4
 (function() {
@@ -8238,7 +8278,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4430"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=4"></script>
+<script defer src="assets/mfc-insight.js?v=5"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -9722,6 +9762,8 @@ function _preheldForm(p){
           (p.minFull ? 'About ' + esc(money(p.minFull)) + ' buys at least one share of every pick.' : '') + '</span>' : '') +
       '</div>' +
       '<div class="adj-tbl-wrap"><table class="adj-tbl"><thead><tr><th scope="col">Pick</th><th scope="col">Order</th><th scope="col" class="r">Shares</th><th scope="col" class="r adj-v">Est. value</th></tr></thead><tbody>' + rowsH + '</tbody></table></div>' +
+      /* V44.4: new money has to reach the broker before these orders can go */
+      '<p class="adj-fund">About <b>' + esc(money(p.spent)) + '</b> has to be in your trading account before you send these. <a href="/learn/first-demat/#money" target="_blank" rel="noopener">How to add funds</a></p>' +
       basketsHtml('add', p.orders) +
       '<div class="adj-acts">' +
         '<button type="button" class="adj-btn" data-adj-copy="add">Copy order list</button>' +
@@ -10740,6 +10782,28 @@ html[data-theme="dark"] .su-i.is-done .su-ck{background:#10b981;border-color:#10
 .su-i.is-done .su-it{color:var(--text3)}
 .su-it a{color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px}
 html[data-theme="dark"] .su-it a{color:#9dbcff}
+/* V44.4: a row for later, and the first month's quieter screen */
+.su-i.is-later .su-ck{border-style:dashed;opacity:.7}
+@media (max-width:480px){.su-tag{display:block;width:max-content;margin:3px 0 0 !important}}
+.su-also{font-size:13px;line-height:1.5;color:var(--text2);margin:12px 0 0}
+.su-also a{color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+html[data-theme="dark"] .su-also a{color:#9dbcff}
+.su-tag{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;vertical-align:1px;background:rgba(37,99,235,.08);color:var(--text2);white-space:nowrap}
+html[data-theme="dark"] .su-tag{background:rgba(157,188,255,.12)}
+.size-parts{font-size:13px;line-height:1.5;color:var(--text2);margin:8px 0 10px;max-width:60ch}
+.size-parts a{color:var(--ink-link,#0951c6);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+html[data-theme="dark"] .size-parts a{color:#9dbcff}
+.size-parts[hidden]{display:none}
+.adj-card.is-ffold{display:none !important}
+.adj-fold{margin:0 0 22px}
+.adj-fold[hidden]{display:none}
+.demo-months{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:13px;font-weight:600;color:var(--text2);margin-top:6px;flex-basis:100%}
+.demo-months[hidden]{display:none}
+.demo-months a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;border:0.5px solid rgba(37,99,235,.3);color:var(--ink-link,#0951c6);font-weight:700;text-decoration:none}
+.demo-months a.is-on{background:var(--ink-link,#0951c6);border-color:var(--ink-link,#0951c6);color:#fff}
+html[data-theme="dark"] .demo-months a{color:#9dbcff;border-color:rgba(157,188,255,.3)}
+html[data-theme="dark"] .demo-months a.is-on{background:#2563eb;border-color:#2563eb;color:#fff}
+@media (pointer:coarse){.demo-months a{min-height:44px}}
 .su-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .su-acts:empty{display:none}
 .su-btn{display:inline-flex;align-items:center;min-height:36px;padding:0 13px;border-radius:999px;border:0.5px solid rgba(37,99,235,.28);
@@ -10815,11 +10879,44 @@ var ORDERS_CALM = true;
     var sub = window._currentSub || {}, out = [];
     var cap = !!window._capEntered;
     var amt = ''; try { amt = shortMoney(currentCapital); } catch (x) {}
+    // V44.4: a first-month member also needs an account and the money in it, and to have seen the worst case
+    var first = false; try { first = !!window._isFirstMonth(); } catch (x) {}
+    var plan = null, anyTick = false;
+    if (first) {
+      try { plan = kiteBasketPlan(); } catch (x) {}
+      try { anyTick = Object.keys(loadBought(currentStrategy) || {}).length > 0; } catch (x) {}
+      var dem = ls('mfc_setup_demat') === '1' || anyTick;
+      out.push({ k: 'demat', done: dem, h: 'A demat account',
+        t: 'You place every order in your own account with a broker. No account yet? It takes a day or two to open online.',
+        a: dem ? '' : '<button type="button" class="su-btn" data-su="demat">I have one</button>' +
+                      '<a class="su-btn" href="/learn/first-demat/" target="_blank" rel="noopener">How to open one</a>' });
+    }
     out.push({ k: 'amount', done: cap, h: 'Your amount',
       t: cap ? 'Every order is sized to ' + e(amt) + '.' : 'Enter what you will put into this book. Every order is sized to it.' +
          // V43.3 — A6: a demat that already holds things is this reader's usual case, not an edge case
          (typeof HELD_BEFORE !== 'undefined' && HELD_BEFORE ? '<span class="su-also">Already hold shares in this demat? <button type="button" class="su-link" data-su="match">Match my holdings</button> counts them first, and never sells the ones you mark as yours from before.</span>' : ''),
       a: cap ? '' : '<button type="button" class="su-btn" data-su="amount">Enter my amount</button>' });
+    if (first) {
+      var fundsDone = ls('mfc_setup_funds') === '1' || anyTick;
+      var need = plan && plan.buyVal > 0 ? plan.buyVal : (Number(currentCapital) || 0);
+      out.push({ k: 'funds', done: fundsDone, h: 'The money, in your broker',
+        t: (cap ? 'About ' + e(fmtMoney(Math.round(need))) + ' has' : 'What you enter above has') +
+           ' to be in your trading account before you send the orders. A buy is checked against your cash when you place it. A large amount can take a few hours to arrive, so move it a day early.',
+        a: fundsDone ? '' : '<button type="button" class="su-btn" data-su="funds">It is in</button>' +
+                            '<a class="su-btn" href="/learn/first-demat/#money" target="_blank" rel="noopener">How to add funds</a>' });
+      var bk = /multiasset/i.test(String(currentStrategy)) ? 'ma' : /largemidcap/i.test(String(currentStrategy)) ? 'lm' : /smallmicro/i.test(String(currentStrategy)) ? 'sm' : '';
+      var ddEl = bk && D.querySelector('#mfrisk [data-k="' + bk + ':max_dd"]');
+      var ddM = ddEl && /(\d+(?:\.\d+)?)%/.exec(ddEl.textContent || '');
+      if (ddM) {
+        var fallDone = ls('mfc_setup_fall') === '1';
+        var dd = parseFloat(ddM[1]), lossV = Math.round((Number(currentCapital) || 0) * dd / 100);
+        out.push({ k: 'fall', done: fallDone, h: 'How far this can fall',
+          t: 'In its backtest this book fell as far as −' + e(ddM[1]) + '%.' +
+             (cap ? ' On ' + e(fmtMoney(currentCapital)) + ' that is about −' + e(fmtMoney(lossV)) + ' on your screen.' : '') +
+             ' A real crash can cost more, and last longer. If that number would make you sell, enter a smaller amount now.',
+          a: fallDone ? '' : '<button type="button" class="su-btn" data-su="fall">Understood</button>' });
+      }
+    }
     var cal = ls('mfc_setup_cal') === '1';
     var g = D.getElementById('cyc-cal-g'), rec = D.getElementById('cyc-cal-rec');
     var gh = g ? g.getAttribute('href') : '', every = rec && !rec.hidden ? rec.textContent : '';
@@ -10829,8 +10926,8 @@ var ORDERS_CALM = true;
       a: cal ? '' : ((gh && gh !== '#') ? '<a class="su-btn" data-su="cal" href="' + e(gh) + '" target="_blank" rel="noopener noreferrer">Google Calendar</a>' : '') +
                     '<button type="button" class="su-btn" data-su="ics">Apple / Outlook (.ics)</button>' });
     var sell = _sellAuthDone();
-    out.push({ k: 'sell', done: sell, h: 'How your demat approves sales',
-      t: 'A DDPI given to your broker once, or your depository’s TPIN and an OTP on the day you sell. ' +
+    out.push({ k: 'sell', done: sell, later: first && !sell, h: 'How your demat approves sales',
+      t: (first ? 'Sales start next month. ' : '') + 'A DDPI given to your broker once, or your depository’s TPIN and an OTP on the day you sell. ' +
          '<a href="/how-it-works/#sec-selling" target="_blank" rel="noopener">How it works</a>',
       a: sell ? '' : '<button type="button" class="su-btn" data-su="sell">My DDPI is on</button>' +
                      '<button type="button" class="su-btn" data-su="sell">I’ll use the TPIN</button>' });
@@ -10847,7 +10944,8 @@ var ORDERS_CALM = true;
     var box = D.getElementById('su-card');
     if (!box) return;
     if (!SETUP_CARD || ls('mfc_setup_hide') === '1' || !window._currentSub) { box.hidden = true; return; }
-    var list = items(), done = list.filter(function (i) { return i.done; }).length, all = done === list.length;
+    var list = items(), now = list.filter(function (i) { return !i.later; });
+    var done = now.filter(function (i) { return i.done; }).length, all = done === now.length;
     if (all && !shownThisVisit) { box.hidden = true; return; }
     shownThisVisit = true;
     if (all) {
@@ -10856,14 +10954,17 @@ var ORDERS_CALM = true;
         '<p class="su-lede" style="margin-bottom:0">The 1st is the only date now.</p>';
     } else {
       box.innerHTML = '<div class="su-top"><h2 class="su-h" id="su-h">Set up once</h2>' +
-        '<span class="su-n">' + done + ' of ' + list.length + ' done</span>' +
+        '<span class="su-n">' + done + ' of ' + now.length + ' done</span>' +
         '<button type="button" class="su-hide" data-su="hide">Hide</button></div>' +
         '<p class="su-lede">A few minutes, once. After that the 1st is the only date.</p>' +
         '<ol class="su-list">' + list.map(function (i) {
-          return '<li class="su-i' + (i.done ? ' is-done' : '') + '" data-k="' + i.k + '"><span class="su-ck" aria-hidden="true"></span>' +
-            '<div><p class="su-ih">' + i.h + (i.done ? '<span class="sr-only"> (done)</span>' : '') + '</p>' +
+          return '<li class="su-i' + (i.done ? ' is-done' : '') + (i.later ? ' is-later' : '') + '" data-k="' + i.k + '"><span class="su-ck" aria-hidden="true"></span>' +
+            '<div><p class="su-ih">' + i.h + (i.done ? '<span class="sr-only"> (done)</span>' : '') + (i.later ? '<span class="su-tag">Next month, not tonight</span>' : '') + '</p>' +
             '<p class="su-it">' + i.t + '</p><div class="su-acts">' + i.a + '</div></div></li>';
-        }).join('') + '</ol>';
+        }).join('') + '</ol>' +
+        // V44.4: the existing 1:1 card, pointed at only (its own text carries frozen wording)
+        (list.some(function (i) { return i.k === 'demat'; }) && D.querySelector('.oneonone-card') ?
+          '<p class="su-also">Prefer to be walked through it the first time? <a href="#oneonone-cta">A 1:1 call comes with your plan.</a></p>' : '');
     }
     box.hidden = false;
   }
@@ -10877,6 +10978,7 @@ var ORDERS_CALM = true;
     if (k === 'cal') { ls('mfc_setup_cal', '1'); setTimeout(renderSetup, 0); return; }
     if (k === 'ics') { try { addCycleToCalendar(); } catch (x) {} ls('mfc_setup_cal', '1'); renderSetup(); return; }
     if (k === 'sell') { _sellAuthOk(); return; }
+    if (k === 'demat' || k === 'funds' || k === 'fall') { ls('mfc_setup_' + k, '1'); renderSetup(); return; }   // V44.4
     if (k === 'match') { try { _rwOpenMatch(); } catch (x) {} return; }
     if (k === 'mail') {
       try { if (window.mfcFootOpen) window.mfcFootOpen(); } catch (x) {}
@@ -10927,7 +11029,36 @@ var ORDERS_CALM = true;
   }
 
   window.mfcSetupRefresh = renderSetup;
-  window.mfcV431Refresh = function () { renderSetup(); renderFold(); };
+  // V44.4: B9 and A6.5. What a first month does not need yet steps back; every other member's screen is untouched.
+  function renderFirstMonth() {
+    var first = false; try { first = !!window._isFirstMonth(); } catch (x) {}
+    var atx = D.getElementById('cyc-cal-atx');
+    if (atx) atx.style.display = first ? 'none' : '';
+    var parts = D.getElementById('size-parts');
+    if (parts) parts.hidden = !first;
+    var card = D.getElementById('adj-card'), fold = D.getElementById('adj-fold');
+    if (!card) return;
+    if (!first) { card.classList.remove('is-ffold'); if (fold) fold.hidden = true; return; }
+    if (!fold) {
+      fold = D.createElement('button');
+      fold.type = 'button'; fold.id = 'adj-fold'; fold.className = 'hold-fold adj-fold';
+      card.parentNode.insertBefore(fold, card);
+      fold.addEventListener('click', function () {
+        var opening = card.classList.contains('is-ffold');
+        ls('mfc_adj_open', opening ? '1' : '0');
+        renderFirstMonth();
+      });
+    }
+    var open = ls('mfc_adj_open') === '1';
+    card.classList.toggle('is-ffold', !open);
+    fold.hidden = false;
+    fold.setAttribute('aria-expanded', open ? 'true' : 'false');
+    fold.innerHTML = open
+      ? '<span>Hide Add money, Match my holdings and Take money out</span>'
+      : '<span>Add money, match my holdings, take money out<small>For later months. Nothing here is needed in your first.</small></span>';
+  }
+
+  window.mfcV431Refresh = function () { renderSetup(); renderFold(); renderFirstMonth(); };
   try { window.mfcV431Refresh(); } catch (x) {}
 })();
 </script>

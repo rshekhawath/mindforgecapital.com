@@ -201,7 +201,8 @@ def main():
 # search) inside <!--MFHC:key-->…<!--/MFHC--> markers. They are rewritten here,
 # from the same doc the JSON holds, so the prose can never drift from the chart.
 PAGES = [os.path.join(DOCS, 'learn', 'how-many-holdings', 'index.html'),
-         os.path.join(DOCS, 'map', 'index.html')]
+         os.path.join(DOCS, 'map', 'index.html'),
+         os.path.join(DOCS, 'learn', 'reels', 'index.html')]
 MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 

@@ -455,7 +455,7 @@ const demoMode = new URLSearchParams(window.location.search).get('demo');
 // switch to ?demo=2 fell through to the TOKEN path, found no token and rendered
 // nothing. Accept every mode _demoData() knows about, and nothing else — an
 // unrecognised ?demo= value must still take the real path, not a blank dashboard.
-const DEMO_MODES = ['1', '2', 'pinned', 'restricted'];   // V39.1 — 'pinned' is the test-only state ?demo=1 used to be; V39.5 — 'restricted' is the career-safe test state
+const DEMO_MODES = ['1', '2', 'pinned', 'restricted', 'first'];   // V39.1 — 'pinned' is the test-only state ?demo=1 used to be; V39.5 — 'restricted' is the career-safe test state; V44.4 — 'first' is the sample's month one, linked from /start/ and the banner
 const isDemo = DEMO_MODES.indexOf(demoMode) > -1;
 // V41.0 — C1: the authoritative nav state. The <head> guess (mf-v410-navstate)
 // mirrors this from the URL and storage; this line is the one that decides.
@@ -797,6 +797,18 @@ function _v412SampleCopy(){
     if (a[0]) a[0].innerHTML = go;
     if (a[1]) { a[1].innerHTML = lm; a[1].setAttribute('href', '/largemidcap.html'); }
   });
+  // V44.4: the sample's two months, so a first-time reader can see what their own first month looks like
+  try {
+    var mv = document.getElementById('demo-months');
+    if (mv) {
+      mv.hidden = false;
+      mv.querySelectorAll('a').forEach(function (x) {
+        var on = x.getAttribute('data-demo') === demoMode;
+        x.classList.toggle('is-on', on);
+        if (on) x.setAttribute('aria-current', 'page');
+      });
+    }
+  } catch (e) {}
   var t = document.querySelector('#demo-end .demo-banner-txt');
   if (t) t.innerHTML = '<b>That\u2019s the whole month.</b> The free book, MultiAsset, runs on this same dashboard with its own ETFs; LargeMidcap\u00A0250, shown here, is a paid book.';
 }
@@ -1011,6 +1023,19 @@ function _lateJoinState(now){
   } catch (e) {}
   return st;
 }
+/* V44.4: a member in their first month: no earlier book on record, joined within 45 days. A long-standing
+   member on a new device has an older subscribed_at, so this stays false for them. Drives the extra set-up
+   rows and the calmer first-month screen, and nothing about any order. */
+window._isFirstMonth = function () {
+  try {
+    if (demoMode === 'first') return true;
+    if (isDemo) return false;
+    var su = window._currentSub || {}, j = su.subscribed_at ? new Date(su.subscribed_at) : null;
+    if (!j || isNaN(j.getTime())) return false;
+    var known = !!(window._bookDiff && window._bookDiff.known);
+    return !known && (Date.now() - j.getTime()) / 864e5 <= 45;
+  } catch (e) { return false; }
+};
 function _renderLateJoin(){
   var jn = document.getElementById('cyc-join');
   if (!jn) return;
@@ -1769,6 +1794,7 @@ function renderDashboard(sub, stocks) {
     var _seen = false;
     try { _seen = !!localStorage.getItem('mfc_dash_seen'); } catch (e) {}
     if (_greet && !isDemo && !_seen && !(loadSavedCapital(sub.strategy || '') > 0)) _greet.textContent = 'Welcome';
+    if (_greet && demoMode === 'first') _greet.textContent = 'Welcome';   // V44.4: the sample's month one
     if (!isDemo) { try { localStorage.setItem('mfc_dash_seen', '1'); } catch (e) {} }
   } catch (e) {}
   // expiry-date span lives inside the pill that we re-render below — defensive
@@ -2768,7 +2794,7 @@ function _capRefreshLabels() {
 }
 function confirmCapital() {
   if (currentStrategy) saveCapital(currentStrategy, currentCapital);
-  showToast('Your orders are sized for ' + fmtMoney(currentCapital) + ' — change it any time in Position sizing');
+  showToast('Your orders are sized for ' + fmtMoney(currentCapital) + ' — change it any time under Your amount');
 }
 /* The line the basket band and the headline share while no amount is set. */
 function _kbCapNote() {
@@ -2947,7 +2973,7 @@ function refreshSizeSummary() {
         const depStr = depPct >= 99.95 ? '100' : depPct.toFixed(1);
         depFill.setAttribute('data-bar', depStr + '%');
         if (depFill.style.width) depFill.style.width = depStr + '%';   // post-applier updates
-        depLbl.textContent = depStr + '% deployed';
+        depLbl.textContent = depStr + '% invested';
         dep.title = depStr + '% of your capital goes into orders — ' + fmtMoney(Math.max(0, residue)) + ' stays in cash (whole shares only)';
         dep.style.display = '';
       } else { dep.style.display = 'none'; }
@@ -5884,6 +5910,7 @@ function _omApply(){
   try { applySort(); } catch (e) { try { renderTable(stocksData); reapplyViewState(); } catch (e2) {} }
   try { if (window._bookDiff) renderBookChange(window._bookDiff, stocksData); } catch (e) {}
   try { refreshBoughtProgress(); } catch (e) {}
+  try { if (window.mfcInsight) window.mfcInsight.refresh('ticks'); } catch (e) {}   // V44.4: the tab's count read 12 under Buy all's 15 until a reload
 }
 function renderOrderMode(){
   var box = document.getElementById('omode');
@@ -6178,8 +6205,18 @@ function _nseOpenAfter(ms){
 }
 /* The whole cycle's sale money against its buys, one line above the baskets. An unsized
    sale has no figure, so then the line says nothing rather than something short. */
+/* V44.4: a buys-only month (month one, Buy all, a Pick of buys) brings in no sale money, and a buy is
+   checked against the cash in the account when it is placed. Nothing said so, so a member's first evening
+   could end in a rejected basket. Worded as an "about": the live price moves it. */
+var _KB_FUNDS_HREF = '/learn/first-demat/#money';
+function _kbNeedsCash(val){
+  return '<b>About ' + escapeHtml(fmtMoney(val)) + ' has to be in your trading account first.</b> ' +
+    'A buy is checked against your cash when it is placed. ' +
+    '<a href="' + _KB_FUNDS_HREF + '" target="_blank" rel="noopener">How to add funds</a>';
+}
 function _kbFundLine(plan){
-  if (!plan.both || plan.sellUnsized) return '';
+  if (!plan.both) return (plan.buyVal > 0 && !plan.hasSell) ? _kbNeedsCash(plan.buyVal) : '';
+  if (plan.sellUnsized) return '';
   var gap = plan.fundIn - plan.fundOut;
   var sum = 'Before charges, the sales bring in about ' + escapeHtml(fmtMoney(plan.fundIn)) +
             ' and the buys take about ' + escapeHtml(fmtMoney(plan.fundOut));
@@ -6475,7 +6512,11 @@ function renderOrderSheet(){
     if (note) note.innerHTML = 'On your broker&rsquo;s own order screen: NSE, delivery (CNC), market or a limit near the price shown. ' +
       (osBoth ? 'Sell first, and place the buys once the sales have filled: a buy needs the money in your account when it is placed, so this way the sales pay for it instead of new cash. ' +
                 'How much of a sale you can use the same day depends on your broker.'
-              : '') +
+              : (function () {   // V44.4: a buys-only list, the same sentence as the Kite band
+                  var open = rows.filter(function(o){ return o.side !== 'SELL' && !placed[orderKey(o)]; });
+                  var v = open.reduce(function(s, o){ return s + o.qty * (o.price || 0); }, 0);
+                  return open.length === rows.filter(function(o){ return !placed[orderKey(o)]; }).length && v > 0 ? _kbNeedsCash(Math.round(v)) + ' ' : '';
+                })()) +
       (hb ? ' <b>' + hb + '</b> sale' + (hb === 1 ? ' is' : 's are') + ' held back by your holding period and ' + (hb === 1 ? 'is' : 'are') + ' not on this sheet.' : '') +
       ' <button type="button" class="kb-capbtn" onclick="copyOrderSheet()">Copy the whole list</button>';
     sh.hidden = false;
@@ -6537,7 +6578,7 @@ function refreshKiteBasket() {
       var fundHtml = _kbFundLine(plan);
       fund.innerHTML = fundHtml;
       fund.hidden = !fundHtml;
-      fund.classList.toggle('is-short', plan.fundIn < plan.fundOut);
+      fund.classList.toggle('is-short', plan.both && plan.fundIn < plan.fundOut);
     }
 
     /* The facts describe the WHOLE cycle — every open order and every rupee of
@@ -7912,6 +7953,7 @@ function bookDiff(sub, stocks){
     slot = { cur:{ key:key, tickers:tickers, pos:pos, when:new Date().toISOString(), entered:true },
              prev:{ key:'demo-prev', tickers:_demoPrevTickers(), pos:_demoPrevPos(),
                     when:new Date(Date.now()-31*864e5).toISOString(), entered:true } };
+    if (demoMode === 'first') delete slot.prev;   // V44.4: no last month, so every surface takes its real first-cycle branch
   } else if (!slot.cur){
     slot.cur = { key:key, tickers:tickers, pos:pos, when:new Date().toISOString() };
   } else if (slot.cur.key !== key){
