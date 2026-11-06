@@ -132,9 +132,10 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
   <section class="dp-sec fade-up" aria-labelledby="new-h">
     <h2 id="new-h">New to this?</h2>
     <div class="dp-tiles">
-      <a class="dp-tile" href="/start/"><span class="dp-tk">About five minutes</span><span class="dp-tv" style="font-size:19px">Start here</span><span class="dp-tl">The choices in plain words, who this does not suit, and what you would do first.</span></a>
+      <a class="dp-tile" href="/start/"><span class="dp-tk">About six minutes</span><span class="dp-tv" style="font-size:19px">Start here</span><span class="dp-tl">The choices in plain words, who this does not suit, and what you would do first.</span></a>
       <a class="dp-tile" href="/learn/lump-sum/"><span class="dp-tk">From the data</span><span class="dp-tv" style="font-size:19px">A lump sum: all at once, or in parts?</span><span class="dp-tl">What about twenty years of Indian index data says, and what it cannot.</span></a>
       <a class="dp-tile" href="/learn/first-demat/"><span class="dp-tk">Before your first order</span><span class="dp-tv" style="font-size:19px">Opening a demat, and what comes next</span><span class="dp-tl">What you need, what to skip, and how the money gets there.</span></a>
+      <a class="dp-tile" href="/learn/first-orders/"><span class="dp-tk">The first evening</span><span class="dp-tv" style="font-size:19px">Your first orders, screen by screen</span><span class="dp-tl">What you will see, and what to do if something looks wrong.</span></a>
       <a class="dp-tile" href="/learn/reels/"><span class="dp-tk">Six claims, checked</span><span class="dp-tv" style="font-size:19px">What finance reels leave out</span><span class="dp-tl">Funds, F&amp;O and P&amp;L screenshots, against the data.</span></a>
     </div>
   </section>
@@ -247,6 +248,20 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
     ham.classList.toggle('open', open);
     ham.setAttribute('aria-expanded', String(open));
   });
+})();
+</script>
+<script>
+/* V44.5: the one-click stop in the first week's notes. The random key is the authorisation. */
+(function () {
+  var m = /[?&]notes_stop=([a-f0-9]{16,64})/i.exec(location.search), out = document.getElementById('dp-unsub');
+  if (!m || !out) return;
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  out.hidden = false; out.textContent = 'One moment…';
+  fetch('https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4mt1n3vJvd1gywpYT_iiYvt94ddYeqaniNI4ggM7idJTJHhA6RH8w/exec', {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ action: 'notes_stop', key: m[1] })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    out.textContent = d && d.stopped ? 'Done. We won\u2019t send you any more set-up notes.' : 'That link did not match anything, so nothing changed.';
+  }).catch(function () { out.textContent = 'That did not go through. Please open the link again in a minute.'; });
 })();
 </script>
 </body>

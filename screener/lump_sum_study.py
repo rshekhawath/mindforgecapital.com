@@ -35,7 +35,8 @@ OUT = os.path.join(DOCS, 'learn', 'lump-sum.json')
 CACHE = os.path.join(ROOT, 'runner', 'cache', 'index')
 PEERS = os.path.join(ROOT, 'runner', 'peer_window.json')
 PAGES = [os.path.join(DOCS, 'learn', 'lump-sum', 'index.html'),
-         os.path.join(DOCS, 'learn', 'reels', 'index.html')]
+         os.path.join(DOCS, 'learn', 'reels', 'index.html'),
+         os.path.join(DOCS, 'start', 'index.html')]   # V44.5: "What is a normal year?"
 DRY = '--dry' in sys.argv
 
 SERIES = (('n50', 'NSEI.csv', 'Nifty 50'), ('sc', 'NIFTYSMLCAP250_NS.csv', 'Nifty Smallcap 250'))

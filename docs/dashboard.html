@@ -28,7 +28,7 @@
      the way down. Measured on slow 4G: with this hint the first visit's main content comes 0.7 s
      sooner than without it. (The stylesheet stayed inline in this page on purpose: as a file of
      its own it delayed first paint by 0.55 s and saved a repeat visitor nothing that matters.) -->
-<link rel="preload" as="script" href="assets/mfc-dash.js?v=a67d0ba0">
+<link rel="preload" as="script" href="assets/mfc-dash.js?v=95615dea">
 <script id="mf-v443-early">
 /* V44.3 — START THE MEMBER'S TWO READS AT THE TOP OF THE PAGE. init() sits 76% of the way
    down this file, so on a slow 4G phone the request for the member's picks did not even
@@ -5206,6 +5206,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
                Zerodha publishes that account&rsquo;s realised P&amp;L &mdash; closed trades only,
                over the account&rsquo;s whole history &mdash; on its own verified page. It does
                not show open positions or a percentage return.</p>
+            <p>Either total can read negative when you open it: in a falling month the sales book losses, and the holdings that are up have not been sold. We link them anyway.</p>
             <p class="vfy-since" id="vfy-since" hidden></p>
           </div>
         </div>
@@ -5801,7 +5802,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
   <span id="toast-msg">Copied</span>
 </div>
 
-<script src="assets/mfc-dash.js?v=a67d0ba0"></script>
+<script src="assets/mfc-dash.js?v=95615dea"></script>
 <script>
 // MF-SCROLL-PROG v3.4
 (function() {
@@ -10853,6 +10854,7 @@ html[data-dmode="insight"] .hold-fold{display:none !important}
    bar and the Kite band stay. The KPI tiles move to "How it's going"
    (mfc-insight.js reads ORDERS_CALM). First month and every sample: as before. */
 var SETUP_CARD = true;
+var OTHER_BROKER_TIME = 'about twenty minutes';   // V44.5: an estimate for 15 orders; the owner has not timed it yet
 var ORDERS_CALM = true;
 (function () {
   var D = document;
@@ -10886,10 +10888,18 @@ var ORDERS_CALM = true;
       try { plan = kiteBasketPlan(); } catch (x) {}
       try { anyTick = Object.keys(loadBought(currentStrategy) || {}).length > 0; } catch (x) {}
       var dem = ls('mfc_setup_demat') === '1' || anyTick;
+      // V44.5: every label assumed Kite until someone found a small select in the toolbar, so the broker is asked here
+      var bkKey = ls('mfc-broker') || '', bkObj = (typeof BROKERS !== 'undefined' && BROKERS[bkKey]) || null;
+      var bkDone = !bkObj ? '' : bkKey === 'kite' ? 'With Zerodha. Your orders go as baskets.'
+        : (bkKey === 'other' ? 'With another broker.' : 'With ' + e(bkObj.name) + '.') + ' One order at a time, down a numbered list: allow ' + OTHER_BROKER_TIME + ' the first month.';
       out.push({ k: 'demat', done: dem, h: 'A demat account',
-        t: 'You place every order in your own account with a broker. No account yet? It takes a day or two to open online.',
-        a: dem ? '' : '<button type="button" class="su-btn" data-su="demat">I have one</button>' +
-                      '<a class="su-btn" href="/learn/first-demat/" target="_blank" rel="noopener">How to open one</a>' });
+        t: (dem && bkDone) ? bkDone : 'You place every order in your own account with a broker. No account yet? It takes a day or two to open online.',
+        a: dem ? '' : '<a class="su-btn" href="/learn/first-demat/" target="_blank" rel="noopener">How to open one</a>' +
+                      '<span class="su-q">Which broker is it with?</span>' +
+                      '<button type="button" class="su-btn" data-su="broker:kite">Zerodha</button>' +
+                      '<button type="button" class="su-btn" data-su="broker:groww">Groww</button>' +
+                      '<button type="button" class="su-btn" data-su="broker:upstox">Upstox</button>' +
+                      '<button type="button" class="su-btn" data-su="broker:other">Another</button>' });
     }
     out.push({ k: 'amount', done: cap, h: 'Your amount',
       t: cap ? 'Every order is sized to ' + e(amt) + '.' : 'Enter what you will put into this book. Every order is sized to it.' +
@@ -10934,8 +10944,11 @@ var ORDERS_CALM = true;
     var ns = D.getElementById('notif-section');
     if (!_subIsPinned(sub) && ns && ns.style.display !== 'none') {
       var on = (typeof _notifOn !== 'undefined') && !!_notifOn;
+      var dgRow = D.getElementById('digest-row'), dgSw = D.getElementById('digest-switch');
+      var dgAsk = first && on && dgRow && !dgRow.hidden && dgSw && !dgSw.classList.contains('on');   // V44.5
       out.push({ k: 'mail', done: on, h: 'The e-mail when the new list lands',
-        t: on ? 'On: it arrives the day the list changes.' : 'Off for now. It is the switch in the notification card.',
+        t: (on ? 'On: it arrives the day the list changes.' : 'Off for now. It is the switch in the notification card.') +
+           (dgAsk ? '<span class="su-also">Also a short note each Saturday, for your first months? <button type="button" class="su-link" data-su="digest">Turn it on</button></span>' : ''),
         a: on ? '' : '<button type="button" class="su-btn" data-su="mail">Go to the switch</button>' });
     }
     return out;
@@ -10979,6 +10992,8 @@ var ORDERS_CALM = true;
     if (k === 'ics') { try { addCycleToCalendar(); } catch (x) {} ls('mfc_setup_cal', '1'); renderSetup(); return; }
     if (k === 'sell') { _sellAuthOk(); return; }
     if (k === 'demat' || k === 'funds' || k === 'fall') { ls('mfc_setup_' + k, '1'); renderSetup(); return; }   // V44.4
+    if (k.indexOf('broker:') === 0) { try { setBroker(k.slice(7)); } catch (x) {} ls('mfc_setup_demat', '1'); renderSetup(); return; }   // V44.5
+    if (k === 'digest') { try { toggleDigest(); } catch (x) {} setTimeout(renderSetup, 0); return; }   // V44.5
     if (k === 'match') { try { _rwOpenMatch(); } catch (x) {} return; }
     if (k === 'mail') {
       try { if (window.mfcFootOpen) window.mfcFootOpen(); } catch (x) {}
@@ -11030,8 +11045,44 @@ var ORDERS_CALM = true;
 
   window.mfcSetupRefresh = renderSetup;
   // V44.4: B9 and A6.5. What a first month does not need yet steps back; every other member's screen is untouched.
+  function fmMove(node, parent, before, on) {
+    // V44.5: moved in the DOM, not with CSS order, so keyboard order follows what is seen. A comment marks the way home.
+    if (!node || !parent) return;
+    if (on) {
+      if (node._fmHome) return;
+      node._fmHome = D.createComment('fm-home');
+      node.parentNode.insertBefore(node._fmHome, node);
+      parent.insertBefore(node, before);
+    } else if (node._fmHome) {
+      node._fmHome.parentNode.insertBefore(node, node._fmHome);
+      node._fmHome.parentNode.removeChild(node._fmHome);
+      node._fmHome = null;
+    }
+  }
   function renderFirstMonth() {
     var first = false; try { first = !!window._isFirstMonth(); } catch (x) {}
+    D.documentElement.classList.toggle('is-fm', first);
+    var kite = false; try { kite = getBroker() === 'kite'; } catch (x) {}
+    D.documentElement.classList.toggle('fm-kite', first && kite);
+    var suCard = D.getElementById('su-card');
+    D.documentElement.classList.toggle('fm-setup', first && !!suCard && !suCard.hidden);
+    var sec = D.querySelector('.table-section'), how = D.querySelector('.howto-card'), sheet = D.getElementById('osheet');
+    fmMove(how, sec, sec && sec.firstChild, first);
+    if (sheet && sheet.parentNode) fmMove(D.getElementById('hs-allplaced'), sheet.parentNode, sheet.nextSibling, first);
+    var tools = D.querySelector('.table-actions'), more = D.getElementById('fm-more');
+    if (tools && first && !more) {
+      more = D.createElement('button');
+      more.type = 'button'; more.id = 'fm-more'; more.className = 'tbl-btn fm-more';
+      more.setAttribute('aria-expanded', 'false');
+      more.textContent = 'More tools';
+      more.addEventListener('click', function () {
+        var open = D.documentElement.classList.toggle('fm-tools');
+        more.setAttribute('aria-expanded', open ? 'true' : 'false');
+        more.textContent = open ? 'Fewer tools' : 'More tools';
+      });
+      tools.appendChild(more);
+    }
+    if (more) more.hidden = !first;
     var atx = D.getElementById('cyc-cal-atx');
     if (atx) atx.style.display = first ? 'none' : '';
     var parts = D.getElementById('size-parts');
@@ -11159,11 +11210,12 @@ var FOOT_FOLD = true;
              !(typeof _subIsPinned === 'function' && _subIsPinned(window._currentSub || {}));
     } catch (x) { return false; }
   }
+  function firstMonthNow() { try { return !!window._isFirstMonth(); } catch (x) { return false; } }   // V44.5
   function renderFoot() {
     var first = D.getElementById('cs-card'), btn = D.getElementById('foot-fold');
     var any = IDS.map(function (i) { return D.getElementById(i); })
       .filter(function (el) { return el && el.style.display !== 'none' && !el.hidden; });
-    var on = FOOT_FOLD && first && any.length && returning() && !needsMember();
+    var on = FOOT_FOLD && first && any.length && (returning() || firstMonthNow()) && !needsMember();
     if (!on) { R.classList.remove('ft-folded'); if (btn) btn.hidden = true; return; }
     if (!btn) {
       btn = D.createElement('button');
@@ -11199,5 +11251,45 @@ var FOOT_FOLD = true;
   window.addEventListener('load', soon);
 })();
 </script>
+<style id="mf-v445-dash">
+/* V44.5: a first month. The job comes first, the words are plain, and the tools wait. Screen only; every other member is untouched. */
+.split-notice{margin:0 0 14px;padding:10px 14px;border:1px solid var(--border2);border-radius:12px;background:var(--ink2);color:var(--text2);font-size:14px;line-height:1.55}
+.split-notice b{color:var(--white);font-weight:700}
+.su-q{flex-basis:100%;margin-top:4px;font-size:13px;font-weight:700;color:var(--text2)}
+.trk-when i.trk-to{display:block;margin:1px 0 0;font-weight:600;color:var(--text3);line-height:1.25}
+html[data-theme="dark"] .trk-when i.trk-to{color:var(--text3)}
+.kbsk-note a{color:var(--ink-link,#0951c6);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+html[data-theme="dark"] .kbsk-note a{color:#9dbcff}
+.kbsk-more{margin-top:6px}
+.kbsk-more summary{cursor:pointer;font-weight:700;color:var(--text2);min-height:32px;display:inline-flex;align-items:center}
+@media (pointer:coarse){.kbsk-more summary{min-height:44px}}
+.fm-more[hidden]{display:none !important}
+@media screen{
+  html.is-fm .stats-row{display:none !important}
+  html.fm-setup #cyc-cal{display:none !important}
+  html.is-fm .table-section > .howto-card{margin:0 0 20px}
+  html.is-fm:not(.fm-tools) #msort,
+  html.is-fm:not(.fm-tools) .tbl-search-wrap,
+  html.is-fm:not(.fm-tools) .tbl-search,
+  html.is-fm:not(.fm-tools) #btn-copy-tickers,
+  html.is-fm:not(.fm-tools) #btn-export-csv,
+  html.is-fm:not(.fm-tools) #btn-print,
+  html.is-fm:not(.fm-tools) #btn-refresh,
+  html.is-fm:not(.fm-tools) #sector-chips{display:none !important}
+  html.is-fm .table-section > #hs-allplaced,
+  html.is-fm .howto-card > #hs-allplaced{display:inline-flex;align-items:center}
+  html.is-fm #stock-cards-mobile .sc-act-wt,
+  html.is-fm #stock-cards-mobile .sc-cmp{display:none !important}
+  html.is-fm #stock-cards-mobile .stock-card{gap:6px;padding:10px 14px}
+  html.is-fm #stock-cards-mobile .sc-act{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:0}
+  html.is-fm #stock-cards-mobile .sc-act-qty,
+  html.is-fm #stock-cards-mobile .sc-act-money{display:flex;align-items:baseline;gap:6px;flex-direction:row}
+  html.is-fm #stock-cards-mobile .sc-act-money{flex-direction:row-reverse}
+  html.fm-kite #stock-cards-mobile .sc-foot .broker-link{display:none}
+  html.fm-kite #stock-cards-mobile .sc-foot{justify-content:flex-start}
+}
+@media (max-width:600px){ .os-row .os-meta{ white-space:normal; line-height:1.3; min-width:0; } }
+@media screen and (max-width:1199px){ html.is-fm #weightCap{ display:none !important; } }
+</style>
 </body>
 </html>

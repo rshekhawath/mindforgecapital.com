@@ -338,7 +338,7 @@ function _mfLastSave(tok, data){
     ['email', 'name', 'strategy', 'run_id', 'subscribed_at', 'expires_at', 'status', 'duration_months', 'notify', 'digest']
       .forEach(function(k){ if (src[k] !== undefined) sub[k] = src[k]; });
     var all = _mfLastAll();
-    all[_mfTokHash(tok)] = { at: Date.now(), subscription: sub, stocks: data.stocks || [], note: data.note || null };
+    all[_mfTokHash(tok)] = { at: Date.now(), subscription: sub, stocks: data.stocks || [], note: data.note || null, splits: data.splits || null };
     var keys = Object.keys(all);
     if (keys.length > 5) {
       keys.sort(function(a, b){ return (all[a].at || 0) - (all[b].at || 0); })
@@ -843,6 +843,7 @@ async function init() {
       window._mfUnverified = true;
       stocksData = _saved.stocks;
       window._mfNote = _saved.note || null;
+      window._splits = _saved.splits || null;
       renderDashboard(_saved.subscription, stocksData);
       _painted = true;
       _mfRefreshSpin(true);
@@ -905,6 +906,7 @@ async function init() {
     // objects it was drawn from carry render-time fields, so they stay in place.
     const _same = _painted && _saved.sig === _mfSig(data.subscription, data.stocks, data.note);
     _mfLastSave(token, data);
+    window._splits = data.splits || null;   // V44.5 — see _splitTicks
     if (!_same) {
       stocksData = data.stocks || [];
       window._mfNote = (data && data.note) || null;   // V42.3 — M10: the analyst's latest note for this book, if any
@@ -1026,6 +1028,7 @@ function _lateJoinState(now){
 /* V44.4: a member in their first month: no earlier book on record, joined within 45 days. A long-standing
    member on a new device has an older subscribed_at, so this stays false for them. Drives the extra set-up
    rows and the calmer first-month screen, and nothing about any order. */
+function _fmNow(){ try { return !!window._isFirstMonth(); } catch (e) { return false; } }   // V44.5
 window._isFirstMonth = function () {
   try {
     if (demoMode === 'first') return true;
@@ -1987,6 +1990,7 @@ function renderDashboard(sub, stocks) {
   // same paint would report an empty diff) and published on window so the row
   // renderer can badge the new names without recomputing it.
   renderBookChange(window._bookDiff, stocks);
+  try { renderSplitNotice(stocks); } catch (e) {}   // V44.5
   try { if (window.mfcV412Refresh) window.mfcV412Refresh(); } catch (e) {}   // V41.2 — B1, B3
   try { if (window.mfcV431Refresh) window.mfcV431Refresh(); } catch (e) {}   // V43.1 — B1, B2
   try { if (window.mfcInsight) window.mfcInsight.refresh('book'); } catch (e) {}   // V42.3 — the two modes and the insight cards
@@ -3690,7 +3694,7 @@ function renderTable(stocks) {
       <td class="bought-col">${rs ? _csLockMark(s) : held ? (rwT ? `<span class="rw-slot" data-rwslot="tcb" data-rwt="${rwT}">${_rwSlot('tcb', s, _ocT, bought)}</span>` : heldMark(s, movePP))
         : `<input type="checkbox" class="bought-cb" aria-label="Mark ${escapeHtml(s.ticker)} as bought" onchange="toggleBought(this)" ${isBought?'checked':''}>`}</td>
       <td class="row-num"><span class="row-chip">${i+1}</span></td>
-      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}${srsTag(s)}${rwT ? `<span class="rw-slot" data-rwslot="ttag" data-rwt="${rwT}">${_rwSlot('ttag', s, _ocT, bought)}</span>` : ''}</td>
+      <td class="company" title="${escapeHtml(s.company_name || s.ticker)}">${companyCell(s)}${rs ? _csTag() : newTag(s)}${srsTag(s)}${splitTag(s)}${rwT ? `<span class="rw-slot" data-rwslot="ttag" data-rwt="${rwT}">${_rwSlot('ttag', s, _ocT, bought)}</span>` : ''}</td>
       <td class="ticker"><span class="ticker-chip" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)" title="Copy ticker">${escapeHtml(s.ticker)}${copyIco}</span>${rs ? '' : brokerLink(s)}</td>
       <td><span class="industry-badge" title="${escapeHtml(groupName(s))}">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span></td>
       <td class="price right"><span class="px-rec">${fmtPrice(entry)}</span><span class="px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}"></span></td>
@@ -3757,7 +3761,7 @@ function renderTable(stocks) {
         <div class="sc-num">${i+1}</div>
         <div class="sc-name-wrap">
           <div class="sc-company">${companyCell(s)}</div>
-          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${rs ? _csTag() : newTag(s)}${srsTag(s)}</div>
+          <div class="sc-sub"><span class="sc-ind">${indDot(s)}${escapeHtml(groupName(s) || '—')}</span>${rs ? _csTag() : newTag(s)}${srsTag(s)}${splitTag(s)}</div>
         </div>
         <span class="sc-ticker" role="button" tabindex="0" aria-label="Copy ticker ${escapeHtml(s.ticker)}" data-ticker="${escapeHtml(s.ticker)}" onclick="copyTicker(this)" onkeydown="tickerChipKey(event,this)">${escapeHtml(s.ticker)}${copyIco}</span>
       </div>
@@ -3768,7 +3772,7 @@ function renderTable(stocks) {
           <div class="sc-bar-wrap weight-bar-wrap" role="img" title="${wLbl}" aria-label="${wLbl}"><i class="wt-axis" aria-hidden="true"></i>${gaugeBar(hwR)}</div>
           <span class="sc-act-lbl">weight vs model</span>
         </div>
-        <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${rs ? '\u2014' : fmtAmt(amt)}</span><span class="sc-act-lbl">allocation</span></div>
+        <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${rs ? '\u2014' : fmtAmt(amt)}</span><span class="sc-act-lbl">${_fmNow() ? 'amount' : 'allocation'}</span></div>
       </div>
       <div class="sc-cmp">
         <span class="sc-cmp-rec">Rec <b>${fmtPrice(entry)}</b></span>
@@ -4041,7 +4045,7 @@ function pruneBoughtKeys(strategy){
 function loadBought(strategy) {
   try {
     const raw = localStorage.getItem(boughtStorageKey(strategy));
-    return raw ? JSON.parse(raw) : {};
+    return raw ? _splitTicks(JSON.parse(raw)) : {};
   } catch (e) { return {}; }
 }
 
@@ -4232,6 +4236,7 @@ function progressSyncLoad(strategy) {
       }
       // Removals this device has not managed to push yet still apply.
       (_progPendingAll()[key] || []).forEach(function (k) { delete merged[k]; });
+      _splitTicks(merged);                     // V44.5 — the server's copy may predate a split
 
       const changed = JSON.stringify(merged) !== JSON.stringify(local);
       if (changed) { try { localStorage.setItem(key, JSON.stringify(merged)); } catch (e) {} }
@@ -4428,7 +4433,7 @@ function refreshActionBar(){
       var kindWord = plan.both ? (nextB.kind === 'sell' ? 'Sell' : 'Buy') + ' · basket ' : 'Basket ';
       if (lab) lab.textContent = many ? kindWord + nextB.pos + ' of ' + plan.total + (plan.both ? '' : ' on Kite') : 'Review ' + send + ' on Kite';
       if (amt) amt.textContent = val > 0 ? (many ? send + ' order' + (send === 1 ? '' : 's') + ' · ' : '') + preciseMoney(val) : '';
-      if (cta){ cta.onclick = function(){ sendKiteBasket(nextB.pos); };
+      if (cta){ cta.onclick = function(){ if (_fmAskFunds()) return; sendKiteBasket(nextB.pos); };
                 cta.setAttribute('aria-label', (many ? (plan.both ? (nextB.kind === 'sell' ? 'Sale ' : 'Buy ') : '') + 'basket ' + nextB.pos + ' of ' + plan.total + ': review ' : 'Review ') +
                   send + ' order' + (send === 1 ? '' : 's') +
                   ' on Kite, worth ' + fmtMoney(val) + (nextB.kind === 'sell' ? '' : ' at the recommended prices')); }
@@ -4441,8 +4446,8 @@ function refreshActionBar(){
                 cta.setAttribute('aria-label', amoWait
                   ? 'The buys wait for your sales to fill. Jump to the Kite baskets'
                   : 'Have your sales filled? Jump to the Kite baskets to open the buys'); }
-    } else if (getBroker() === 'other' && pending.length){
-      // V39.5 — B7: no basket to send; the next job is the numbered order sheet.
+    } else if ((BROKERS[getBroker()] || {}).sheet === true && pending.length){
+      // V39.5 — B7: no basket to send; the next job is the numbered order sheet. V44.5: every broker but Kite.
       if (lab) lab.textContent = 'Open the order sheet';
       if (amt) amt.textContent = pending.length + ' left';
       if (cta){ cta.onclick = abarGoToSheet; cta.setAttribute('aria-label', 'Jump to the order sheet: ' + pending.length + ' order' + (pending.length === 1 ? '' : 's') + ' left to place'); }
@@ -4537,7 +4542,7 @@ function abarEditCapital(){
   try { el.focus({ preventScroll:true }); el.select(); } catch(e){ try{ el.focus(); }catch(e2){} }
 }
 function abarGoToPicks(){
-  var el = document.querySelector('.table-section');
+  var el = document.querySelector(document.documentElement.classList.contains('is-fm') ? '.table-section > .table-header' : '.table-section');
   if (!el) return;
   var prev = document.documentElement.style.scrollBehavior;
   document.documentElement.style.scrollBehavior = 'auto';
@@ -4624,20 +4629,18 @@ var BROKERS = {
               // Measured 26 Sep 2026: /stocks/reliance and /stocks/infy both 404,
               // /search?q=RELIANCE 200. Search is the link that resolves.
               return 'https://groww.in/search?q=' + encodeURIComponent(t);
-            } },
+            }, sheet: true },   // V44.5: Groww and Upstox had no step 3 at all: no list, no funding line
   upstox: { name: 'Upstox', color: '#371777', ink: '#371777', inkDark: '#ac8dea',
-            link: function(s){
-              var t = (s.ticker || '').toUpperCase();
-              // Upstox search-page deeplink
-              return 'https://upstox.com/search?q=' + encodeURIComponent(t);
-            } },
+            // V44.5: upstox.com/search?q= answered "couldn't find that page" (checked in Chrome, 6 Nov 2026), so every row
+            // linked to a dead page. Like a bank's broker, its rows now offer Copy and step 3 is the numbered sheet.
+            link: function(){ return ''; }, copy: true, sheet: true },
   /* V39.5 — B7. A member whose demat came with their salary account (a bank broker)
      had to pick one of three brokers that were not theirs, and every row then
      linked into the wrong app. There is no order link to build for "any broker",
      so this entry has none: each row offers COPY (the ticker and its quantity) and
      step 3 becomes a numbered order sheet — one ticket per line, ticked as placed. */
   other:  { name: 'Another broker', color: '#475569', ink: '#334155', inkDark: '#cbd5e1',
-            link: function(){ return ''; }, copy: true },
+            link: function(){ return ''; }, copy: true, sheet: true },
 };
 function getBroker(){
   try { var saved = localStorage.getItem(_devKey('mfc-broker')); if (saved && BROKERS[saved]) return saved; } catch(e){}
@@ -6266,6 +6269,19 @@ function markSalesFilled(){
     if (nx && !nx.hidden) nx.focus({ preventScroll: true });
   } catch (e) {}
 }
+/* V44.5: the bar is the biggest button on a phone, and it can send a first basket from a screen that does not
+   show the funding line. Once per visit, for a first month with no ticks and the money not yet confirmed. */
+function _fmAskFunds(){
+  try {
+    if (window._fmFundsAsked || !_fmNow()) return false;
+    if (localStorage.getItem(_devKey('mfc_setup_funds')) === '1') return false;
+    if (Object.keys(loadBought(currentStrategy) || {}).length) return false;
+    window._fmFundsAsked = true;
+    abarGoToBand();
+    showToast('Is the money in your broker? A buy is checked against your cash.');
+    return true;
+  } catch (e) { return false; }
+}
 function abarGoToBand(){
   var el = document.getElementById('kbsk');
   if (!el || el.hidden) return abarGoToPicks();
@@ -6475,11 +6491,21 @@ if (document.readyState === 'loading') {
    numbered list: one ticket per line, a Copy per line, and a tick bound to the SAME
    map the picks table and the change card write — so the progress bar, the hero line
    and the sticky bar move together whichever surface the member ticks on. */
+/* V44.5: a broker with a working link gets that link on each line; one without gets Copy. */
+function _osRowControl(o, line){
+  var b = BROKERS[getBroker()] || {};
+  var url = (!b.copy && b.link) ? b.link(o) : '';
+  if (!url) return '<button type="button" class="broker-link broker-copy os-copy" data-copy="' + escapeHtml(line) + '" onclick="copyOrderLine(this)" aria-label="Copy ' + escapeHtml(line) + '">Copy</button>';
+  return '<a class="broker-link os-copy" target="_blank" rel="noopener noreferrer" href="' + url.replace(/"/g, '&quot;') + '" ' +
+    'aria-label="Open ' + escapeHtml(o.ticker) + ' on ' + escapeHtml(b.name) + '" ' +
+    'style="background:' + b.color + '14;border-color:' + b.color + '33;--bk-ink:' + (b.ink || b.color) + ';--bk-ink-d:' + (b.inkDark || b.ink || b.color) + ';">' +
+    escapeHtml(b.name) + ' \u2192</a>';
+}
 function renderOrderSheet(){
   var sh = document.getElementById('osheet');
   if (!sh) return;
   try {
-    if ((BROKERS[getBroker()] || {}).copy !== true) { sh.hidden = true; return; }
+    if ((BROKERS[getBroker()] || {}).sheet !== true) { sh.hidden = true; return; }
     if (needsOrderChoice()) { sh.hidden = true; return; }   // V43.8 — the sheet waits for the answer
     var oc = cycleOrders(), placed = loadBought(currentStrategy) || {};
     var rows = oc.all.filter(function(o){ return o.qty >= 1; });
@@ -6502,7 +6528,7 @@ function renderOrderSheet(){
         '<span class="os-side ' + (o.side === 'SELL' ? 'is-sell' : 'is-buy') + '">' + o.side + '</span>' +
         '<span class="os-t">' + escapeHtml(o.ticker) + srsTag(o) + '</span>' +
         '<span class="os-meta">' + o.qty + ' share' + (o.qty === 1 ? '' : 's') + ' \u00b7 ~' + escapeHtml(fmtMoney(Math.round(o.qty * (o.price || 0)))) + '</span>' +
-        '<button type="button" class="broker-link broker-copy os-copy" data-copy="' + escapeHtml(line) + '" onclick="copyOrderLine(this)" aria-label="Copy ' + escapeHtml(line) + '">Copy</button>' +
+        _osRowControl(o, line) +
         '<label class="os-tick"><input type="checkbox" data-okey="' + escapeHtml(k) + '"' + (done ? ' checked' : '') +
           ' onchange="toggleSheetOrder(this)" aria-label="' + escapeHtml(o.side === 'SELL' ? 'Sold' : 'Bought') + ': ' + escapeHtml(line) + '"><span>Placed</span></label>' +
         '</li>';
@@ -6518,7 +6544,8 @@ function renderOrderSheet(){
                   return open.length === rows.filter(function(o){ return !placed[orderKey(o)]; }).length && v > 0 ? _kbNeedsCash(Math.round(v)) + ' ' : '';
                 })()) +
       (hb ? ' <b>' + hb + '</b> sale' + (hb === 1 ? ' is' : 's are') + ' held back by your holding period and ' + (hb === 1 ? 'is' : 'are') + ' not on this sheet.' : '') +
-      ' <button type="button" class="kb-capbtn" onclick="copyOrderSheet()">Copy the whole list</button>';
+      ' <button type="button" class="kb-capbtn" onclick="copyOrderSheet()">Copy the whole list</button>' +
+      (_fmNow() ? ' <a href="/learn/first-orders/" target="_blank" rel="noopener">First time? What you will see</a>' : '');
     sh.hidden = false;
   } catch (e) { sh.hidden = true; }
 }
@@ -6678,7 +6705,7 @@ function refreshKiteBasket() {
       if (note) {
         var overTen = plan.live.filter(function (b) { return b.kind === 'sell'; }).length > 1 ||
                       plan.live.filter(function (b) { return b.kind === 'buy'; }).length > 1;
-        note.innerHTML = _kbCapNote() + (plan.waitFor === 'amo' ? '' : _kbHoursNote()) + _kbSeriesNote(plan) + _kbOrderNote(plan) +
+        note.innerHTML = (_fmNow() && !plan.both) ? _kbFirstNote(plan) : _kbCapNote() + (plan.waitFor === 'amo' ? '' : _kbHoursNote()) + _kbSeriesNote(plan) + _kbOrderNote(plan) +
           (overTen ? '<b>Kite accepts ten orders per basket, so this cycle’s ' + plan.openN + ' go in ' + plan.total + '.</b> ' : '') +
           (plan.buysWait && !plan.next ? ''
            : plan.next
@@ -6840,7 +6867,7 @@ function refreshHowto() {
           returning = true;                                 // V43.3 — B5: the sample opens like a second month
         }
       } catch (e) { returning = false; }
-      hcard.classList.toggle('is-collapsed', returning && !hcard._hsOpen);
+      hcard.classList.toggle('is-collapsed', (returning || _fmNow()) && !hcard._hsOpen);   // V44.5: a first month too
       var hb = document.getElementById('hs-show');
       if (hb) hb.setAttribute('aria-expanded', hcard.classList.contains('is-collapsed') ? 'false' : 'true');
     }
@@ -7298,7 +7325,7 @@ function _setHowToStep3(orders){
   if (rwL.length){
     var nT = rwL.filter(function(o){ return o.side === 'SELL'; }).length, nA = rwL.length - nT;
     var tot = nB + nS + rwL.length;
-    var other = (BROKERS[getBroker()] || {}).copy === true;
+    var other = (BROKERS[getBroker()] || {}).sheet === true;
     var rwBits = [];
     if (nS) rwBits.push('sell the ' + nS + (nS === 1 ? ' name' : ' names') + ' leaving');
     if (nT) rwBits.push('trim ' + nT);
@@ -7325,7 +7352,7 @@ function _setHowToStep3(orders){
   if (nB) bits.push('buy the ' + nB + ' new ' + (nB === 1 ? 'one' : 'ones') + ' at the Shares quantity in the table');
   p.textContent = 'Only ' + (nB + nS) + ' order' + (nB + nS === 1 ? '' : 's') + ' this cycle — ' +
     bits.join(', then ') + '. Everything else you already hold, untouched.' + base +
-    ((BROKERS[getBroker()] || {}).copy === true ? ' The order sheet below lists them in order, one ticket per line.' : '');
+    ((BROKERS[getBroker()] || {}).sheet === true ? ' The order sheet below lists them in order, one ticket per line.' : '');
 }
 
 /* V35.3 — "Your picks stay fixed for your subscription" was told to BOTH plans,
@@ -7659,6 +7686,7 @@ async function refreshDashboard() {
     if (!data.subscription) { showToast('Refresh failed'); return; }
     _mfLastSave(token, data);   // V44.3
     _mfVerified();              // V44.3 — a Refresh that lands is as good as the first answer
+    window._splits = data.splits || null;   // V44.5 — see _splitTicks
     stocksData = data.stocks || [];
     window._mfNote = (data && data.note) || null;   // V42.3 — M10: the analyst's latest note for this book, if any
     // V38.7 — awaited, and ONLY on a device with no history of its own: see
@@ -7742,6 +7770,82 @@ function _isDemoResidue(slot){
     return k === 'demo-prev' || (typeof k === 'string' && _DEMO_RUN_RE.test(k));
   });
 }
+/* V44.5 — A SPLIT OR BONUS INSIDE A CYCLE. A 1:5 split leaves every figure stored before
+   the ex-date on the old basis: the published price, the recorded position and the
+   member's own ticks. Measured on a sample book at ₹10,00,000, that read −79% on the
+   holding and −5 points on the headline, −₹51,530 on Your position, an order for a fifth
+   of the intended shares, and on rebalance day a sale of 21 shares out of 105 beside a
+   "realised loss" that was really a gain.
+   From the ex-date's open the backend serves an older run's rows restated, with `split`
+   on the row, and `splits` names the records for this book, so a holding that has left
+   the current list is still covered. Stored figures move to the new basis here, at the
+   two places they are read, and are marked `spl` so it happens once. A position built
+   from a restated row is already on it (_bookPos). */
+function _splitOpenMs(sp){ return Date.parse(sp.ex + 'T09:15:00+05:30'); }
+function _cycleDay(key){
+  var m = /^(\d{4})(\d{2})(\d{2})/.exec(String(key || ''));
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = /^d(\d{4}-\d{2}-\d{2})/.exec(String(key || ''));
+  return m ? m[1] : '';
+}
+function _splitTicks(map){
+  var S = window._splits;
+  if (!S || !map || !window._currentSub) return map;
+  var day = _cycleDay(_cycleKey(window._currentSub));
+  if (!day) return map;
+  Object.keys(S).forEach(function(t){
+    var sp = S[t], v = map[t];
+    if (!v || typeof v !== 'object' || v.spl || !(day < sp.ex)) return;
+    if (Date.parse(v.t) >= _splitOpenMs(sp)) return;      // placed after it: already on the new basis
+    if (Number(v.p) > 0) v.p = Math.round(Number(v.p) / sp.f * 100) / 100;
+    if (Number(v.q) > 0) v.q = Math.floor(Number(v.q) * sp.f);
+    v.spl = 1;
+  });
+  return map;
+}
+function _splitHist(hist){
+  var S = window._splits, sub = window._currentSub;
+  var slot = (S && sub) ? hist[_bookHistStrat(sub.strategy)] : null;
+  if (!slot) return hist;
+  [slot.cur, slot.prev].forEach(function(rec){
+    var day = (rec && rec.pos) ? _cycleDay(rec.key) : '';
+    if (!day) return;
+    Object.keys(S).forEach(function(t){
+      var sp = S[t], p = rec.pos[t];
+      if (!p || p.spl || !(day < sp.ex)) return;
+      if (Number(p.qty) > 0) p.qty = Math.floor(Number(p.qty) * sp.f);
+      if (Number(p.held) > 0) p.held = Math.floor(Number(p.held) * sp.f);
+      if (Number(p.rec) > 0) p.rec = Math.round(Number(p.rec) / sp.f * 100) / 100;
+      p.spl = 1;
+    });
+  });
+  return hist;
+}
+function splitTag(s){
+  var sp = s && s.split;
+  return sp ? '<span class="srs-tag split-tag">' + escapeHtml(sp.label || 'Split') + '</span>' : '';
+}
+/* What a member sees beside a broker app that now shows five times the shares. */
+function renderSplitNotice(stocks){
+  var rows = (stocks || []).filter(function(s){ return s && s.split; });
+  var el = document.getElementById('split-notice');
+  if (!rows.length){ if (el) el.parentNode.removeChild(el); return; }
+  var host = document.querySelector('.table-section');
+  if (!host) return;
+  if (!el){
+    el = document.createElement('p');
+    el.id = 'split-notice'; el.className = 'split-notice';
+    host.parentNode.insertBefore(el, host);
+  }
+  el.innerHTML = rows.map(function(s){
+    var sp = s.split;
+    var when = mfDate(new Date(sp.ex + 'T12:00:00+05:30'), { day:'numeric', month:'short', timeZone:'Asia/Kolkata' });
+    return '<b>' + escapeHtml(s.ticker) + ' ' + escapeHtml(String(sp.label || 'split or bonus').toLowerCase()) + ' on ' + when + '</b>, so its ' +
+      fmtPrice(sp.was) + ' price is now ' + fmtPrice(s.recommended_price) + '. If you bought before that, your broker shows ' +
+      sp.f + ' shares for every 1 you bought, at a lower price. You don’t need to do anything.';
+  }).join(' ');
+}
+
 function _loadBookHist(){
   try { var o = JSON.parse(localStorage.getItem(BOOK_HIST_KEY) || '{}');
         if (!o || typeof o !== 'object') return {};
@@ -7752,7 +7856,7 @@ function _loadBookHist(){
           });
           if (healed) { try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e2){} }
         }
-        return o; } catch(e){ return {}; }
+        return _splitHist(o); } catch(e){ return {}; }
 }
 function _saveBookHist(o){ try { localStorage.setItem(BOOK_HIST_KEY, JSON.stringify(o)); } catch(e){} }
 /* V40.0 — THE SAMPLE KEEPS ITS OWN HISTORY. ?demo stored its fixture under the
@@ -7877,6 +7981,7 @@ function _bookPos(stocks, capital){
       w:   Number(s.weight_pct) || 0,
       n:   s.company_name || t
     };
+    if (s.split) pos[t].spl = 1;                 // V44.5 — already on the new basis
   });
   return pos;
 }
@@ -7905,8 +8010,7 @@ function _recordCurQty(){
     list.forEach(function(s){
       var t = String(s.ticker || ''), p = slot.cur.pos[t];
       if (!t || !p) return;
-      var price = Number(s.recommended_price) || 0;
-      var q = (price > 0 && cap > 0) ? Math.floor(allocBudget(s, list, cap) / price) : 0;
+      var q = _recordedQty(s, p, list, cap, slot.cur.when);
       if (p.qty !== q){ p.qty = q; dirty = true; }
     });
     /* V42.1 — B5. WHAT THE QUANTITIES WERE SIZED FROM. A quantity recorded at the
@@ -7920,6 +8024,40 @@ function _recordCurQty(){
     if (slot.cur.cap !== cap || slot.cur.entered !== ent){ slot.cur.cap = cap; slot.cur.entered = ent; dirty = true; }
     if (dirty) _saveBookHist(hist);
   } catch(e){}
+}
+
+/* V44.5 — WHAT THE MEMBER HOLDS, WHICH IS WHAT NEXT CYCLE'S SALE IS SIZED FROM. A quantity
+   was always worked out afresh at this cycle's price, so a stock held into a new month
+   drifted away from the shares actually held, with no order to explain it: bought 161,
+   recorded 153 after a 5% rise, so a later sale left 8 behind, and after a fall it asked
+   to sell more than the member had, which a broker rejects. A name kept at the same weight
+   now keeps its shares (_carryHeld). A row split in this cycle counts the whole shares
+   the old price bought, multiplied up. */
+function _recordedQty(s, p, list, cap, when){
+  if (Number(p.held) > 0) return Number(p.held);
+  var price = Number(s.recommended_price) || 0;
+  if (!(price > 0 && cap > 0)) return 0;
+  var budget = allocBudget(s, list, cap), sp = s.split;
+  if (sp && _boughtBeforeSplit(s, sp, when)) return Math.floor(Math.floor(budget / sp.was) * sp.f);
+  return Math.floor(budget / price);
+}
+function _boughtBeforeSplit(s, sp, when){
+  var tick = (loadBought(currentStrategy) || {})[s.ticker];
+  if (tick && typeof tick === 'object' && tick.t) return !!tick.spl;
+  return !(Date.parse(when) >= _splitOpenMs(sp));   // no tick: did this cycle start before it?
+}
+/* A name whose weight did not move gets no order, so its shares are what they were. A moved
+   weight is a re-weight order (heldMovePP's test), which takes the holding to its target.
+   Only quantities sized at an amount the member entered count as holdings (V42.1 — B5). */
+function _carryHeld(slot, sub){
+  var was = slot.prev, pos = slot.cur && slot.cur.pos;
+  if (!was || !was.pos || !pos || !_histEntered(was, sub)) return;
+  Object.keys(pos).forEach(function(t){
+    var o = was.pos[t], n = pos[t];
+    if (!o || !(Number(o.qty) > 0)) return;
+    if (typeof o.w === 'number' && Math.abs((Number(n.w) || 0) - o.w) >= 0.05) return;
+    n.qty = n.held = Number(o.qty);
+  });
 }
 
 /* V42.1 — B5. Was this cycle record sized at an amount the member entered?
@@ -7956,9 +8094,11 @@ function bookDiff(sub, stocks){
     if (demoMode === 'first') delete slot.prev;   // V44.4: no last month, so every surface takes its real first-cycle branch
   } else if (!slot.cur){
     slot.cur = { key:key, tickers:tickers, pos:pos, when:new Date().toISOString() };
+    _carryHeld(slot, sub);                                 // V44.5 — a device that only knows the server's last cycle
   } else if (slot.cur.key !== key){
     slot.prev = slot.cur;                                  // the book rolled over
     slot.cur  = { key:key, tickers:tickers, pos:pos, when:new Date().toISOString() };
+    _carryHeld(slot, sub);                                 // V44.5
     out.rolled = true;                                     // V35.3 — see migrateBoughtKeys
   } else {
     slot.cur.tickers = tickers;                            // same cycle, re-read
@@ -7966,7 +8106,12 @@ function bookDiff(sub, stocks){
     // publish.py re-stamped the run. Existing quantities are preserved — the
     // member's capital is not known to be restored at this point in the render.
     var had = slot.cur.pos || {};
-    Object.keys(pos).forEach(function(t){ if (had[t] && had[t].qty) pos[t].qty = had[t].qty; });
+    Object.keys(pos).forEach(function(t){
+      if (!had[t]) return;
+      if (had[t].qty) pos[t].qty = had[t].qty;
+      if (had[t].held) pos[t].held = had[t].held;   // V44.5
+      if (had[t].spl) pos[t].spl = 1;
+    });
     slot.cur.pos = pos;
   }
   hist[strat] = slot; _saveBookHist(hist);
@@ -9229,7 +9374,17 @@ function _kbAmoNow(){
     return true;
   } catch (e) { return false; }
 }
-function _kbHoursNote(){
+/* V44.5: a first month's note in plain words. The time-of-day warnings stay as they are, because each is an
+   instruction; only the general after-hours sentence changes. The limit-order detail moves behind a fold. */
+function _kbFirstNote(plan){
+  return _kbCapNote() + (_nseIsOpen() ? 'The market is open, so each order goes in as you confirm it. ' : _kbHoursNote(true)) + _kbSeriesNote(plan) +
+    'Nothing is placed until you confirm on Zerodha\u2019s own screen, and you can change any quantity there. ' +
+    (!plan.next ? 'Every basket has been opened on Kite from this device: tick each order once it fills. '
+     : plan.total > 1 ? 'Kite takes ten orders at a time, so this month\u2019s ' + plan.openN + ' go in ' + plan.total + ': send one, confirm it, come back for the next. ' : '') +
+    '<a href="/learn/first-orders/" target="_blank" rel="noopener">First time? What you will see</a>' +
+    '<details class="kbsk-more"><summary>Order types</summary>A market order at the open can fill away from the last price on thinner names, so you can switch any row to Limit on Kite\u2019s screen before confirming.</details>';
+}
+function _kbHoursNote(plain){
   try {
     if (_nseIsOpen()) return '';
     var local = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
@@ -9242,6 +9397,7 @@ function _kbHoursNote(){
       return '<b>The market opens at 9:15.</b> Kite takes these orders from the open. ';
     if (m >= 60 && m < 5 * 60 + 30)   // V44.0 — Zerodha's nightly AMO maintenance
       return '<b>Zerodha takes no after-market orders between 1:00 and 5:30 am</b> (its nightly maintenance), so send the basket after 5:30. ';
+    if (plain) return (hol ? 'NSE is shut today for ' + escapeHtml(hol) + ', so these go in at the open ' : 'The market is shut now, so these go in at the open ') + _nseAmoWhen(local) + '. ';   // V44.5
     return '<b>' + (hol ? 'NSE is shut today for ' + escapeHtml(hol) : 'NSE is closed right now') +
       ', so the basket goes to Kite as after-market orders (AMO).</b> Zerodha sends them to the ' +
       'exchange at 9:00 ' + _nseAmoWhen(local) + '. A market order at the open can fill away from the ' +
@@ -9504,7 +9660,9 @@ function paintLivePrices(){
       return;
     }
     var dayHtml = '';
-    if (p.prev != null && Number(p.prev) > 0){
+    // V44.5 — Yahoo's previous close stays unadjusted on an ex-date, and a one-day move over
+    // 35% is a split or bonus, not a move (mfc-insight's rule). No 1D beats a false one.
+    if (p.prev != null && Number(p.prev) > 0 && Math.abs((live - p.prev) / p.prev * 100) <= 35){
       var d = (live - p.prev) / p.prev * 100;
       /* The 1D figure prints at TWO decimals, so unlike the return above it can
          still show a real value inside the flat band — −0.04% is a number, not a
@@ -9636,6 +9794,8 @@ function renderMyPosition(){
       ' no price recorded yet, so ' + (unpriced === 1 ? 'it is' : 'they are') +
       ' left out. Un-tick and re-tick to record one.');
     if (noLive) bits.push('Live prices are missing for ' + noLive + ' of these, so the totals are withheld rather than computed from a partial set.');
+    var _splN = rows.filter(function(r){ return map[r.t] && map[r.t].spl; }).map(function(r){ return r.t; });   // V44.5
+    if (_splN.length) bits.push(_splN.join(', ') + ': shares and price are shown after the split.');
     document.getElementById('mypos-note').textContent = bits.join(' ');
 
     // The fade is a statement about this table at this width, so it is set from
@@ -9695,8 +9855,10 @@ function renderProfitHeadline(){
     var pv = Number(p.prev) || 0;
     if (pv > 0 && Number(p.price) > 0){
       var dr = (Number(p.price) - pv) / pv * 100;
-      day.w += w; day.wr += w * dr; day.n++;
-      if (dr > 0.05) day.up++; else if (dr < -0.05) day.down++;
+      if (Math.abs(dr) <= 35){                 // V44.5 — see paintLivePrices
+        day.w += w; day.wr += w * dr; day.n++;
+        if (dr > 0.05) day.up++; else if (dr < -0.05) day.down++;
+      }
     }
     contrib.push({ t: s.ticker, r: r, wr: w * r });
     /* V37.3 — the third class. This counted two and printed two, so a holding
@@ -10233,9 +10395,9 @@ function renderTrackRecord(){
       }
       var aria = mon(r.when) + ' cycle: ' + fmtPct(r.live) +
         (r.bench == null ? '' : ', against ' + fmtPct(r.bench) + ' for ' + r.benchName) +
-        (r.sealed ? '' : ' — cycle still in progress');
+        (r.sealed ? '' : ' — cycle still in progress, to the ' + _trkDay(r.through) + ' close');
       return '<div class="trk-row">' +
-        '<span class="trk-when">' + mon(r.when) + (r.sealed ? '' : '<i>live</i>') + '</span>' +
+        '<span class="trk-when">' + mon(r.when) + (r.sealed ? '' : '<i>live</i><i class="trk-to">to ' + escapeHtml(_trkDay(r.through)) + '</i>') + '</span>' +
         '<span class="trk-axis" role="img" aria-label="' + escapeHtml(aria) + '">' +
           '<i class="trk-bar ' + (cls === 'flat' ? 'up' : cls) + '" data-left="' + left.toFixed(2) +
             '" data-w="' + half.toFixed(2) + '" style="left:50%"></i>' + tick +

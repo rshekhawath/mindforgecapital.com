@@ -133,6 +133,7 @@ html[data-theme="dark"] .card-icon::after{
 /* -- the meter. The bar is the gradient the step dots cannot express: the dots
       move three times, the bar moves on every field completed, which is what
       makes the last stretch pull. -- */
+html.no-gg .gg-meter{display:none}
 .gg-meter{margin:0 0 22px;padding:13px 15px;border-radius:12px;background:var(--ink3);
   border:0.5px solid var(--border2);}
 .gg-bar{height:6px;border-radius:99px;background:rgba(37,99,235,.13);overflow:hidden;}
@@ -548,7 +549,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            component to maintain. The percentage line is role="status" so the
            change is announced, not merely repainted. ═══════════════════════ -->
       <ol class="step-indicator" id="reg-steps" aria-label="Sign-up progress">
-        <li class="step-item active" id="reg-step-1" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Strategy</span></li>
+        <li class="step-item active" id="reg-step-1" aria-current="step"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Portfolio</span></li>
         <li class="step-item" id="reg-step-2"><span class="step-dot" aria-hidden="true"></span><span class="step-name">Your details</span></li>
         <!-- "Access", not "Broker & access": the third label is the only one that
              does not fit a third of a 390px card, and it ellipsised to
@@ -606,13 +607,13 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
             title="Enter your 10-digit mobile number without spaces or dashes"
             oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
         </div>
-        <div class="phone-hint">10 digits. Only for a paid plan, whose payment link comes on WhatsApp.</div>
+        <div class="phone-hint">10 digits. Only for a paid plan, whose payment link comes on WhatsApp. We never ask for an OTP, a PIN or a broker password on WhatsApp.</div>
       </div>
 
       <div class="form-group">
-        <label for="reg-strategy">Strategy</label>
+        <label for="reg-strategy">Portfolio</label>
         <select id="reg-strategy" name="strategy" required onchange="onStrategyChange()">
-          <option value="" disabled selected>Select a strategy</option>
+          <option value="" disabled selected>Select a portfolio</option>
           <option value="MindForge MultiAsset">MultiAsset — FREE</option>
           <option value="MindForge LargeMidcap 250">LargeMidcap 250 — ₹999/mo</option>
           <option value="MindForge SmallMicro 500">SmallMicro 500 — ₹1,499/mo</option>
@@ -642,7 +643,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
            books only, shown with the mobile field. It helps whoever answers on WhatsApp
            answer well; it changes nothing about the plan, the price or the book. -->
       <div class="form-group" id="band-group">
-        <label for="reg-band">Roughly how much would you put into this book? <span style="font-weight:500;color:var(--text3)">(optional)</span></label>
+        <label for="reg-band">Roughly how much would you put into this portfolio? <span style="font-weight:500;color:var(--text3)">(optional)</span></label>
         <select id="reg-band" name="capital_band">
           <option value="">Prefer not to say</option>
           <option value="lt1l">Under &#8377;1 lakh</option>
@@ -799,6 +800,11 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAkgF6naSDlx8q4
 // the success checklist below it read this, so they cannot say different things
 // about whether month one is paid. Set false when the offer ends.
 var FIRST_MONTH_FREE = true;
+/* V44.5: the "33% complete" card, five fields' worth of pressure above the first field. The stepper says the same thing. */
+var SIGNUP_PROGRESS = false;
+if (!SIGNUP_PROGRESS) document.documentElement.classList.add('no-gg');
+/* V44.5: the owner's rule, 6 Nov 2026. The free month sits inside the plan, so a plan of N months bills N-1 of them. */
+function firstBill(strategyMonthly, d){ return d.months > 1 ? Math.round(strategyMonthly * (d.months - 1) * (1 - d.disc)) : 0; }
 /* V39.3 — B1. The free book is activated by the backend itself the moment the
    lead is saved (handleSaveLead -> activateCore_), so its dashboard link is
    emailed in a minute or two instead of waiting for someone to click Activate.
@@ -837,9 +843,9 @@ function freeAccessCopy(state, email){
 
 var STRATEGY_META = {
   // V18.3: MultiAsset is FREE for everyone — no payment, full dashboard access.
-  'MindForge MultiAsset':       { monthly: 0, free: true, desc: '8 ETFs across equity, gold, silver & bonds. Defensive, diversified. Close to the model from ₹1,00,000.' },
-  'MindForge LargeMidcap 250':  { monthly: 999, desc: '15 stocks from Nifty LargeMidcap 250. Built as a core-plus. Close to the model from ₹10,00,000.' },
-  'MindForge SmallMicro 500':   { monthly: 1499, desc: '15 small & micro-cap stocks. Built as a satellite — size it smallest. Close to the model from ₹15,00,000.' }
+  'MindForge MultiAsset':       { monthly: 0, free: true, desc: '8 ETFs across equity, gold, silver & bonds.' },
+  'MindForge LargeMidcap 250':  { monthly: 999, desc: '15 stocks from Nifty LargeMidcap 250.' },
+  'MindForge SmallMicro 500':   { monthly: 1499, desc: '15 small & micro-cap stocks. Size it smallest.' }
 };
 // Duration → discount (item 9): 1mo 0%, 3mo 5%, 6mo 10%, 12mo 20%
 var DURATIONS = {
@@ -899,8 +905,15 @@ function osHTML(o){
   return '<div class="os-top"><span class="os-eyebrow">Your plan</span>' + pill + '</div>' +
          '<div class="os-price-row"><span class="os-total' + (o.totalFree ? ' os-total-free' : '') + '">' + o.total + '</span>' +
          '<span class="os-per">' + o.per + '</span></div>' +
-         save +
+         save + (o.today ? '<div class="os-today">' + o.today + '</div>' : '') +
          '<div class="os-desc">' + o.desc + '</div>';
+}
+/* V44.5: what they pay, and when. */
+function todayLine(monthly, d){
+  if (!d) return '';
+  var fb = firstBill(monthly, d);
+  if (!fb) return '<b>Today: ₹0.</b> Month one is free, and this plan ends with it. To get the next list, you renew for ' + inr(monthly) + '.';
+  return '<b>Today: ₹0.</b> Month one is free and counts as part of this plan. Your first bill is <b>' + inr(fb) + '</b>, about a week before month two.';
 }
 
 /* V44.4: what each choice is, in one line, at the moment it is being made. */
@@ -1081,6 +1094,7 @@ function onStrategyChange() {
         total: inr(p.total),
         per: 'for ' + p.label,
         save: p.disc > 0 ? 'You save ' + inr(p.save) + ' vs paying monthly' : '',
+        today: FIRST_MONTH_FREE ? todayLine(m.monthly, DURATIONS[durKey]) : '',
         desc: inr(m.monthly) + '/month base · ' + m.desc
       });
     }
@@ -1156,7 +1170,7 @@ async function handleSubmit() {
   if (!name)                         { showError('Please enter your full name.'); return; }
   if (!email || !email.includes('@')){ showError('Please enter a valid email address.'); return; }
   if (needPhone && rawPhone.length !== 10) { showError('Please enter a valid 10-digit mobile number.'); return; }
-  if (!strategy)                     { showError('Please select a strategy.'); return; }
+  if (!strategy)                     { showError('Please select a portfolio.'); return; }
   // V41.6 — A4: a paid plan's length is the reader's choice; nothing picks it for them.
   var _durPick = document.getElementById('reg-duration');
   if (!(STRATEGY_META[strategy] || {}).free && _durPick && !_durPick.value) {
@@ -1175,6 +1189,11 @@ async function handleSubmit() {
   var meta = STRATEGY_META[strategy] || {};
   var isFree = !!meta.free;
   var price = isFree ? 'FREE (₹0)' : inr(p.total) + ' for ' + p.label;
+  // V44.5: the lead e-mail and the sheet show the amount the owner should bill under the offer
+  if (!isFree && FIRST_MONTH_FREE && DURATIONS[durKey]) {
+    var _fb = firstBill(meta.monthly || 0, DURATIONS[durKey]);
+    price += _fb ? ' · month one free, first bill ' + inr(_fb) : ' · month one free';
+  }
 
   // V38.7 — three branches. See the comment on the success panel markup.
   //   isFree            MultiAsset: no payment exists at all.
@@ -1515,16 +1534,17 @@ function resetForm() {
     if(noteEl) noteEl.innerHTML = note;
 
     // The heading acknowledges the choice rather than restarting the funnel.
-    if(h1)     h1.textContent = (chosen && !submitted) ? 'You’re a third of the way there' : 'Get started';
+    if(h1)     h1.textContent = 'Get started';   // V44.5: no countdown on a page where someone is deciding about their savings
     // V39.1 — B1. The free book involves no chat, and a paid plan under the
     // launch offer involves no payment until month two; the copy says so per case.
     var _stSel = document.getElementById('reg-strategy');
     var _free = !!(_stSel && STRATEGY_META[_stSel.value] && STRATEGY_META[_stSel.value].free);
+    function _saved(){ return 'Saved: ' + String((_stSel && _stSel.value) || '').replace(/^MindForge\s+/, '') + '. You can change it below.'; }   // V44.5
     if(descEl) descEl.textContent = (chosen && !submitted)
       ? (_free
-          ? 'Your strategy is locked in. Two short steps left\u00a0— your details, then your dashboard link arrives by email ' +
+          ? _saved() + ' Next come your details, and then your dashboard link arrives by email ' +
             (FREE_INSTANT ? 'in a minute or two' : 'within 24 hours') + '. No card, no payment, no chat.'
-          : 'Your strategy is locked in. Two short steps left\u00a0— your details, then your dashboard link arrives by email within 24 hours.' +
+          : _saved() + ' Next come your details, and then your dashboard link arrives by email within 24 hours.' +
             (FIRST_MONTH_FREE ? ' Month one is free; we confirm payment details with you on WhatsApp before month two.' : ' We confirm payment details with you on WhatsApp.'))
       : (FREE_INSTANT   // V40.8 — the static #reg-desc above says the same; keep the two in step
           ? 'Choose a strategy and register. The free book\u2019s dashboard link arrives by email in a minute or two; a paid plan\u2019s within 24 hours, and we confirm its payment details with you on WhatsApp.'
@@ -1779,6 +1799,8 @@ input:focus-visible, select:focus-visible, #reg-tnc:focus-visible{
 .os-per{ font-size:13px; font-weight:600; color:var(--text2); }
 .os-save{ margin-top:5px; font-size:12px; font-weight:700; color:#047857; }
 .os-desc{ margin-top:8px; font-size:12px; line-height:1.5; color:var(--text3); }
+.os-today{ margin-top:6px; font-size:13px; line-height:1.5; color:var(--text2); }
+.os-today b{ color:var(--text); font-weight:700; }
 /* dark: brighter greens read cleanly on the dark card surface */
 html[data-theme="dark"] #strategy-note.strategy-note{ background:linear-gradient(180deg, rgba(95,145,255,0.10), rgba(40,188,216,0.05)); }
 html[data-theme="dark"] .os-pill-save,

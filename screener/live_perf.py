@@ -398,6 +398,8 @@ def main() -> None:
                                   f"before the ex-date; {live / factor:.2f} on the adjusted basis")
                             live /= factor
                         splits += 1
+                        print(f"  !! {key}: {r['yahoo']}: members need this too. If it is not in the backend's "
+                              f"SPLITS Script Property yet, add it, or their dashboards stay on the old price")
                     else:
                         print(f"  ↺  {key}: {r['yahoo']} Yahoo's {base} close {rec:.2f} differs from "
                               f"{src} {ref:.2f}; measuring from {ref:.2f}")
