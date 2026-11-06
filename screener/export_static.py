@@ -664,7 +664,7 @@ _COMPANY_FIELDS = (
     "ebitda_margin", "gross_margin",
     # V37.8 — the Ratios card.
     "quick_ratio", "peg_ratio", "price_to_fcf", "ps_ratio", "ev_revenue",
-    "beta", "dividend_rate", "eps_forward", "pe_forward", "payout_ratio",
+    "beta", "beta_months", "dividend_rate", "eps_forward", "pe_forward", "payout_ratio",
     "payable_days",
     # V37.8 — Shareholding.
     "institutional_holding", "promoter_holding",
@@ -995,6 +995,17 @@ def _write_company_files(bundle: dict, out_dir: str) -> None:
           f"{len(kept_co)} company files, {len(kept)} prose files, {n_scored} stocks scored")
 
 
+def _load_betas():
+    """({symbol: [beta, months, ...]}, the last month it covers), from docs/screener/beta.json."""
+    try:
+        with open(os.path.join(OUT_DIR, "beta.json"), encoding="utf-8") as f:
+            doc = json.load(f)
+        return doc.get("rows") or {}, doc.get("window_end")
+    except (OSError, ValueError) as e:
+        print(f"  !! beta.json unreadable ({e}): every beta will be empty, and the coverage gate will say so")
+        return {}, None
+
+
 def main() -> int:
     if not os.path.exists(DB_PATH):
         print(f"ERROR: database not found at {DB_PATH}")
@@ -1019,7 +1030,7 @@ def main() -> int:
     skipped = 0
     dropped = []
     latest_update = ""
-    beta_fresh, beta_carried = 0, []
+    betas, beta_to = _load_betas()
 
     for data_json, updated_at in rows:
         try:
@@ -1047,14 +1058,11 @@ def main() -> int:
         # Yahoo codes the National Stock Exchange as "NSI" — show the real name
         if d.get("exchange") in (None, "", "NSI"):
             d["exchange"] = "NSE"
-        # V44.5 — when Yahoo last sent this row's beta (see server.py). It stops here,
-        # and the count below keeps a slide in Yahoo's field visible in every log.
-        _beta_on = d.pop("beta_on", None)
-        if d.get("beta") is not None:
-            if _beta_on and updated_at and _beta_on < updated_at[:10]:
-                beta_carried.append(_beta_on)
-            else:
-                beta_fresh += 1
+        # V44.6 — beta is our own, one basis for every row (see beta_monthly.py). A row cached
+        # before this release still holds Yahoo's figure, so it is overwritten either way.
+        d.pop("beta_on", None)
+        _b = betas.get(d["symbol"]) or [None, None]
+        d["beta"], d["beta_months"] = (_b[0], _b[1]) if _b[0] is not None else (None, None)
         stocks.append(sanitize(d))
         sec = d.get("sector")
         if sec and sec not in ("N/A", ""):
@@ -1062,9 +1070,8 @@ def main() -> int:
         if updated_at and updated_at > latest_update:
             latest_update = updated_at
 
-    print(f"  Beta: {beta_fresh} from Yahoo in this fetch, {len(beta_carried)} carried"
-          + (f" (oldest from {min(beta_carried)})" if beta_carried else "")
-          + f", {len(stocks) - beta_fresh - len(beta_carried)} with none.")
+    _n_beta = sum(1 for x in stocks if x.get("beta") is not None)
+    print(f"  Beta: {_n_beta} with our own figure (months to {beta_to or 'none'}), {len(stocks) - _n_beta} with none.")
 
     bundle = {
         "generated_at": datetime.now(timezone.utc).isoformat(),

@@ -279,8 +279,11 @@
     parts.push(head);
     var plain = plainMonth(s), drivers = '';
     if (plain && W._capEntered && s.capital > 0 && dir !== 'flat') {
-      var moved = Math.round(s.capital * Math.abs(port) / 100);
-      parts.push('On your ' + esc(inr(s.capital)) + ', that is about ' + span(port, (port > 0 ? '+' : '−') + esc(inr(moved))) + '.');
+      /* V44.6: the same rupees the profit card prints below this paragraph. Capital times the percentage left out
+         the cash whole shares leave over, so one screen read +₹26,169 here and +₹26,027 there. */
+      var pa = W._profitAbs, own = pa && pa.cap === s.capital && Math.abs(pa.port - port) < 0.005;
+      var rupees = own ? pa.v : s.capital * port / 100, moved = Math.round(Math.abs(rupees));
+      if (moved) parts.push('On your ' + esc(inr(s.capital)) + ((own && pa.out) || ',') + ' that is ' + span(rupees, '<span style="white-space:nowrap">' + (rupees > 0 ? '+' : '−') + esc(inr(moved)) + '</span>') + '.');
     }
 
     // drivers: the names that did most of the work, from the same contributions as the attribution card.

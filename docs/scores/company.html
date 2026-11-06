@@ -123,7 +123,7 @@ var MFC_OG_ALT = "MindForge Capital — systematic, factor-based investing for I
      export_static.py so the page stops needing the universe at all. -->
 <script>window.MFC_USE_FULL=1;/* V44.3: this flag means "detail page": scores-engine loads screener/co/<SYM>.json, one stock with its scores worked out by the export (about 1.4 KB). What follows is the V36.6 note. V36.6: this flag now means "detail page" — scores-engine loads screener/stocks-universe.json (80 of 100 fields, 0.75 MB gzipped vs 1.64 MB for stocks.json) plus screener/prose/<SYM>.json for the business description. Same rendered output; 54% less over the wire. V37.8 widened the field list from 39 -> 80 (see export_static.py's _COMPANY_FIELDS): the original 39 covered only assets/mfc-company.js's seven renderers and left ten of company.html's OWN renderers reading fields the bundle never carried — day_change, most of Financials/Ratios/Shareholding, the SMA-crossover flags and the 52-week range all showed "—" in production until this widening. */</script>
 <script src="scores-engine.js?v=4430"></script>
-<script src="../assets/mfc-company.js?v=4430"></script>
+<script src="../assets/mfc-company.js?v=4460"></script>
 <style>
 :root{
   --ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;
@@ -1935,7 +1935,7 @@ function renderOverview(){
   }
   document.getElementById("quickStats").innerHTML=[
     ["EPS (TTM)",fmtI(D.eps,"₹")],["EPS (Forward)",fmtI(D.eps_forward,"₹")],["Book Value",fmtI(D.book_value,"₹")],
-    ["52W High",fmtI(D["52w_high"],"₹")],["52W Low",fmtI(D["52w_low"],"₹")],["Beta",fmtN(D.beta,2)],
+    ["52W High",fmtI(D["52w_high"],"₹")],["52W Low",fmtI(D["52w_low"],"₹")],["Beta (vs Nifty 50)",fmtN(D.beta,2)],
     ["Shares Out.",D.shares_outstanding?`${(D.shares_outstanding/1e7).toFixed(2)} Cr`:"—"],
     ["Free Cash Flow",fmtCr(D.free_cashflow)],["Operating CF",fmtCr(D.operating_cf)],
   ].map(([l,v])=>`<tr><th scope="row">${l}</th><td>${v}</td></tr>`).join("");
@@ -1984,7 +1984,7 @@ function renderRatios(){
     rI("Current Ratio",D.current_ratio?fmtN(D.current_ratio,2):"—"),rI("Quick Ratio",D.quick_ratio?fmtN(D.quick_ratio,2):"—"),
     rI("D/E Ratio",D.debt_to_equity?fmtN(D.debt_to_equity/100,2):"—"),rI("Interest Coverage",D.interest_coverage?fmtN(D.interest_coverage,2):"—"),
     rI("Working Capital",D.working_capital_cr!=null?fmtCr(D.working_capital_cr*1e7):"—","Current assets − liabilities"),
-    rI("Net Debt",fmtCr(D.net_debt)),rI("Total Cash",fmtCr(D.total_cash)),rI("Total Debt",fmtCr(D.total_debt)),rI("Beta",D.beta?fmtN(D.beta,2):"—"),
+    rI("Net Debt",fmtCr(D.net_debt)),rI("Total Cash",fmtCr(D.total_cash)),rI("Total Debt",fmtCr(D.total_debt)),rI("Beta (vs Nifty 50)",fmtN(D.beta,2)),
   ].join("");
   document.getElementById("ratioEff").innerHTML=[
     rI("Op. CF Margin",D.opcf_margin!=null?`${fmtN(D.opcf_margin,2)}%`:"—","Operating cash flow / revenue"),rI("Inventory Turnover",D.inventory_turnover?fmtN(D.inventory_turnover,2):"—"),
@@ -2014,7 +2014,7 @@ function renderShareholding(){
     </table>`;
   document.getElementById("mktPosition").innerHTML=[
     {l:"Market Cap",v:fmtCr(D.market_cap)},{l:"Ent. Value",v:fmtCr(D.enterprise_value)},{l:"Net Debt",v:fmtCr(D.net_debt)},
-    {l:"Total Cash",v:fmtCr(D.total_cash)},{l:"Beta",v:D.beta?fmtN(D.beta,2):"—"},{l:"52W High",v:fmtI(D["52w_high"],"₹")},
+    {l:"Total Cash",v:fmtCr(D.total_cash)},{l:"Beta (vs Nifty 50)",v:fmtN(D.beta,2)},{l:"52W High",v:fmtI(D["52w_high"],"₹")},
     {l:"52W Low",v:fmtI(D["52w_low"],"₹")},{l:"SMA 50",v:fmtI(D.sma_50,"₹")},{l:"SMA 200",v:fmtI(D.sma_200,"₹")},
   ].map(k=>`<div class="ratio-item"><div class="ri-label">${k.l}</div><div class="ri-value">${k.v}</div></div>`).join("");
 }

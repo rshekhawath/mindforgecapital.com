@@ -266,8 +266,10 @@
     }
     out.sort(function (a, b) {
       var av = a[sortBy], bv = b[sortBy];
-      av = (av === null || av === undefined) ? 0 : av;
-      bv = (bv === null || bv === undefined) ? 0 : bv;
+      // V44.6 — a stock with no figure goes last whichever way the list runs. It used to read
+      // as 0, so "Low to High" opened on stocks with no figure at all.
+      var an = (av === null || av === undefined), bn = (bv === null || bv === undefined);
+      if (an || bn) return an === bn ? 0 : (an ? 1 : -1);
       return sortDir === "desc" ? (bv - av) : (av - bv);
     });
     var results = (limit > 0) ? out.slice(0, limit) : out;

@@ -329,33 +329,6 @@ def sr(val, dp=2):
     try: return round(float(val), dp) if val is not None else None
     except: return None
 
-# V44.5 — YAHOO IS DROPPING `beta`, ONE LISTING AT A TIME. It was on about 1,950 of
-# 2,120 listings until 27 Oct 2026 and on 1,715 by 6 Nov. The field is missing from
-# quoteSummary itself, and almost no listing that lost it has got it back. It is a
-# five-year monthly figure that barely moves: over a month the median change is 0.02,
-# and 2% of listings cross one of the company page's label bands. So a listing Yahoo
-# stops sending keeps the last figure Yahoo sent, for BETA_CARRY_DAYS, and the export
-# prints how many are carried. After that the hole shows and the coverage gate sees it.
-# A figure beyond BETA_SANE is a data error, not a beta: one listing read −20,488, and
-# its company page called that lower volatility than the market.
-BETA_CARRY_DAYS = 60
-BETA_SANE = 5.0
-
-def beta_or_last_seen(beta, cached_row):
-    """(beta, the day Yahoo sent it): today's if usable, else the cached one while it is young enough."""
-    today = datetime.now().date()
-    if beta is not None and abs(beta) <= BETA_SANE:
-        return beta, today.isoformat()
-    try:
-        old = json.loads(cached_row["data"])
-        kept, on = old.get("beta"), old.get("beta_on")
-        if kept is not None and abs(kept) <= BETA_SANE \
-                and (today - datetime.fromisoformat(on).date()).days <= BETA_CARRY_DAYS:
-            return kept, on
-    except Exception:                        # no cached row, or one from before this field existed
-        pass
-    return None, None
-
 def sp(val, dp=2):
     """Safe percent (multiply by 100 then round)."""
     try: return round(float(val) * 100, dp) if val is not None else None
@@ -780,7 +753,6 @@ def fetch_stock_info(symbol):
         l52 = sr(i.get("fiftyTwoWeekLow"), 2)
         sma50  = sr(i.get("fiftyDayAverage"), 2)
         sma200 = sr(i.get("twoHundredDayAverage"), 2)
-        beta, beta_on = beta_or_last_seen(sr(i.get("beta"), 2), row)
         day_ch = sr(i.get("regularMarketChangePercent"), 2)
 
         from_h = sr((price - h52) / h52 * 100, 2) if price and h52 and h52 > 0 else None
@@ -885,8 +857,6 @@ def fetch_stock_info(symbol):
             "sma_200":            sma200,
             "above_sma50":        above_sma50,
             "above_sma200":       above_sma200,
-            "beta":               beta,
-            "beta_on":            beta_on,       # the export counts these and does not publish them
 
             # P&L (absolute ₹)
             "revenue":            revenue,

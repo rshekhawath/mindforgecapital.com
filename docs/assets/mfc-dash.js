@@ -3513,7 +3513,7 @@ function updateAllocationCells() {
   const HW = heldWeights(currentCapital);   // V32.7 — one reading per update
   stocksData.forEach((s, i) => {
     const price = Number(s.recommended_price) || 0;
-    const shares = price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0;
+    const shares = _heldShares(s, price > 0 ? Math.floor(allocBudget(s, stocksData, currentCapital) / price) : 0);
     const amt = shares * price;
     const rs = _isRestricted(s.ticker);   // V39.5 — a dash, never "0 shares", for a name left out on purpose
     const allocCell = document.querySelector('tr[data-row="'+i+'"] .alloc-amt');
@@ -3672,7 +3672,7 @@ function renderTable(stocks) {
     const entry = Number(s.recommended_price) || 0;
     const w = Number(s.weight_pct) || 0;
     const barPct = (w / maxW) * 100;
-    const shares = entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0;
+    const shares = _heldShares(s, entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0);
     const amt = shares * entry;
     const rs = _isRestricted(s.ticker);      // V39.5 — B1: on the member's restricted list
     const held = !rs && isHeldRow(s.ticker);        // V35.4 — carried over from last cycle
@@ -3715,7 +3715,7 @@ function renderTable(stocks) {
     const entry = Number(s.recommended_price) || 0;
     const w = Number(s.weight_pct) || 0;
     const barPct = (w / maxW) * 100;
-    const shares = entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0;
+    const shares = _heldShares(s, entry > 0 ? Math.floor(allocBudget(s, stocks, currentCapital) / entry) : 0);
     const amt = shares * entry;
     const rs = _isRestricted(s.ticker);   // V39.5 — B1
     const held = !rs && isHeldRow(s.ticker);     // V35.4 — carried over from last cycle
@@ -8046,6 +8046,18 @@ function _boughtBeforeSplit(s, sp, when){
   if (tick && typeof tick === 'object' && tick.t) return !!tick.spl;
   return !(Date.parse(when) >= _splitOpenMs(sp));   // no tick: did this cycle start before it?
 }
+/* V44.6 — "shares held" means held. A name carried at the same weight shows the shares on
+   record, not what today's price would buy, so a stock that rose does not appear to have
+   lost shares. Every other row shows its target, as before. */
+function _heldShares(s, target){
+  try {
+    var d = window._bookDiff;
+    if (!d || !d.known || !isHeldRow(s.ticker) || heldMovePP(s.ticker) != null) return target;
+    var slot = _loadBookHist()[_bookHistStrat(window._currentSub && window._currentSub.strategy)];
+    var p = slot && slot.cur && slot.cur.pos && slot.cur.pos[String(s.ticker)];
+    return (p && Number(p.held) > 0) ? Number(p.held) : target;
+  } catch (e) { return target; }
+}
 /* A name whose weight did not move gets no order, so its shares are what they were. A moved
    weight is a re-weight order (heldMovePP's test), which takes the holding to its target.
    Only quantities sized at an amount the member entered count as holdings (V42.1 — B5). */
@@ -9893,6 +9905,7 @@ function renderProfitHeadline(){
      the line says which is which instead of letting one pass for the other. */
   var _nRs = (stocks || []).filter(function(x){ return _isRestricted(x.ticker); }).length;
   var _rsOut = _nRs ? ', leaving out your ' + _nRs + ' restricted name' + (_nRs === 1 ? '' : 's') + ',' : '';
+  window._profitAbs = { v: absGain, cap: currentCapital, port: port, out: _rsOut };   // V44.6: the month paragraph prints this same figure
   sub.innerHTML = (_nRs ? 'The model’s weighted return across ' : 'Weighted return across ') + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
     (rebal ? ' on <strong>' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
     (window._capEntered

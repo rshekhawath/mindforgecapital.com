@@ -861,7 +861,7 @@ tbody tr.rowlink{cursor:pointer}
   }
 }
 </style>
-<script src="screener-data.js?v=154"></script>
+<script src="screener-data.js?v=155"></script>
 <script>/* MFC theme (V17.5): FOUC-free apply + injected nav toggle. Default LIGHT; dark is explicit opt-in. Self-contained, no deps. */
 (function(){var D=document,R=D.documentElement;
 function get(){try{return localStorage.getItem('mfc-theme')==='dark'?'dark':'light';}catch(e){return'light';}}
@@ -1354,7 +1354,7 @@ tbody tr.detail-row>td{padding:0;background:linear-gradient(180deg,rgba(37,99,23
         <option value="debt_to_equity">Debt / Equity</option>
         <option value="current_ratio">Current Ratio</option>
         <option value="promoter_holding">Promoter Holding %</option>
-        <option value="beta">Beta</option>
+        <option value="beta">Beta (vs Nifty 50)</option>
       </select>
       <select class="filter-select" id="sort_dir" aria-label="Sort direction">
         <option value="desc">High → Low</option>
@@ -1638,7 +1638,7 @@ const COL_TIPS={
   institutional_holding:"% held by institutional investors.",
   eps:"Earnings per share (trailing 12\u00A0months).",
   book_value:"Net assets per share.",
-  beta:"Volatility vs the market (1 = moves with the index).",
+  beta:"How much the stock has tended to move for each 1% move in the Nifty 50, from up to five years of month-end prices (1 = moves with the index).",
   price_to_fcf:"Price ÷ free cash flow per share."
 };
 const FIRST_DRAWN=["name","current_price","day_change","market_cap_cr","pe_ratio","pb_ratio","roce","dividend_yield"];   // V44.3 — the columns stocks-first.json can draw
@@ -1677,7 +1677,7 @@ const COLUMNS=[
   {key:"52w_high",      label:"52W High",     render:d=>d["52w_high"]?`<span class="num">₹${Number(d["52w_high"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"52w_low",       label:"52W Low",      render:d=>d["52w_low"]?`<span class="num">₹${Number(d["52w_low"]).toFixed(2)}</span>`:`<span class="na">—</span>`, visible:false},
   {key:"52w_from_high_pct",label:"From 52W H %",render:d=>fmtN(d["52w_from_high_pct"],1), visible:false},
-  {key:"beta",          label:"Beta",         render:d=>fmtN(d.beta,2), visible:false},
+  {key:"beta",          label:"Beta (vs Nifty 50)", render:d=>fmtN(d.beta,2), visible:false},
   // ── V12.4: deeper fundamentals — surface more of the snapshot (toggle via "Columns") ──
   {key:"ps_ratio",          label:"P/S",            render:d=>fmtN(d.ps_ratio,2), visible:false},
   {key:"peg_ratio",         label:"PEG",            render:d=>fmtN(d.peg_ratio,2), visible:false},
@@ -1905,7 +1905,7 @@ function applyURLFilters(){
   if(sp.has("sector")){const sel=document.getElementById("sector_filter"),v=sp.get("sector");
     if(sel){if(![].some.call(sel.options,o=>o.value===v)){const o=document.createElement("option");o.value=v;o.textContent=v;sel.appendChild(o);}sel.value=v;any=true;}}
   if(sp.get("above_sma200")==="true"){const c=document.getElementById("above_sma200");if(c){c.checked=true;any=true;}}
-  if(sp.has("sort_by")){const s=document.getElementById("sort_by");if(s)s.value=sp.get("sort_by");}
+  if(sp.has("sort_by")){ensureSortOption(sp.get("sort_by"));const s=document.getElementById("sort_by");if(s)s.value=sp.get("sort_by");}
   if(sp.has("sort_dir")){const s=document.getElementById("sort_dir");if(s)s.value=sp.get("sort_dir");}
   return any;
 }
@@ -1924,6 +1924,8 @@ async function runScreen(opts){
   try{
     const d=await(await fetch(`${API}/screen?${params}`)).json();
     allResults=d.results;currentPage=1;
+    // V44.6 — the header's arrow follows the order asked for. It stayed on Market Cap whatever the list or a preset chose.
+    if(params.get("sort_by")){sortKey=params.get("sort_by");sortDir=params.get("sort_dir")==="asc"?1:-1;}
     /* V31.5 — the count said 500 when 2,126 matched. The response has ALWAYS
        carried both figures: `count` is how many rows passed the screen and
        `results` is that list capped at the `limit` above. Both the headline and
@@ -2334,7 +2336,41 @@ function renderTable(){
 }
 
 function goPage(p){currentPage=Math.max(1,Math.min(p,Math.ceil(allResults.length/PAGE_SIZE)));renderTable();scrollTo(0,0);}
-function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}allResults.sort((a,b)=>{const av=a[k],bv=b[k];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;return(av-bv)*sortDir;});currentPage=1;renderTable();}
+/* V44.6 — a header and the "Sort by" list now do one thing. A header only re-ordered the rows in hand, and with no
+   filter on those are the 500 largest of 2,120: "Beta, low to high" stopped at 0.02 with figures down to -0.71
+   further along, and "Day %" found the day's best among large companies only. So when the match is bigger than the
+   rows in hand, a header asks for the whole match in the new order. The list follows the header, so the next Run
+   Screen and a shared link keep the order; runScreen() moves the header the other way. */
+function ensureSortOption(k){
+  const sb=document.getElementById("sort_by");
+  if(!sb||[].some.call(sb.options,o=>o.value===k)) return;
+  const c=COLUMNS.find(x=>x.key===k); if(!c) return;
+  const o=document.createElement("option");o.value=k;o.textContent=c.label;sb.appendChild(o);
+}
+function sortRowsInHand(){const k=sortKey;allResults.sort((a,b)=>{const av=a[k],bv=b[k];if(av==null&&bv==null)return 0;if(av==null)return 1;if(bv==null)return -1;return(av-bv)*sortDir;});currentPage=1;renderTable();}
+let sortAsk=0;
+async function sortWholeMatch(){
+  const ask=++sortAsk, params=currentScreenParams(); params.append("limit",500);
+  const wait=setTimeout(()=>showSkeleton(10),200);      // only when it has to load the larger file
+  try{
+    const d=await(await fetch(`${API}/screen?${params}`)).json();
+    clearTimeout(wait);
+    if(ask!==sortAsk) return;
+    allResults=d.results;currentPage=1;
+    lastScreen={matched:(d.count==null?d.results.length:d.count),shown:d.results.length,universe:(d.cached_total||0)};
+    const head=document.getElementById("tableHead"),ae=document.activeElement;
+    const i=(head&&ae&&head.contains(ae))?Array.prototype.indexOf.call(head.querySelectorAll("th"),ae):-1;
+    renderTable();
+    if(i>=0){const again=head.querySelectorAll("th")[i];if(again&&again.getAttribute("role")==="button")again.focus();}
+  }catch{clearTimeout(wait);if(ask===sortAsk)sortRowsInHand();}
+}
+function sortBy(k){
+  if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=-1;}
+  ensureSortOption(k);
+  const sb=document.getElementById("sort_by"),sd=document.getElementById("sort_dir");
+  if(sb)sb.value=k; if(sd)sd.value=sortDir>0?"asc":"desc";
+  if(lastScreen.shown<lastScreen.matched)sortWholeMatch();else sortRowsInHand();
+}
 /* V31.9 — Enter/Space on a focused header. A role="button" element does NOT get
    the browser's implicit key-to-click behaviour that a real <button> does, so
    without this the tabindex would be a focus ring that leads nowhere. Delegated

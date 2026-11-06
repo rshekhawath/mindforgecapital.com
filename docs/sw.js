@@ -918,7 +918,9 @@
 // cache name has to move for a returning browser to fetch the new tracker.
 // V44.5 -> mfc-v148. One new page (/learn/first-orders/), not precached; five new share cards, not precached;
 // mfc-dash.js's token moved, so the cache name has to move too.
-const CACHE = 'mfc-v148';
+// V44.6 -> mfc-v149. Our own beta: mfc-company.js 4460 and screener-data.js 155; mfc-deep.css 6 on 17 pages, mfc-insight.js 6 and
+// mfc-dash.js's token moved; the cache name moves with them.
+const CACHE = 'mfc-v149';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

@@ -770,12 +770,20 @@
         "</div></div>");
     }
 
-    // volatility (beta)
-    var beta = num(D.beta);
+    // market sensitivity (beta). V44.6: our own figure against the Nifty 50. It says how much a
+    // stock moves WITH the index, not how much it moves, so it wears no verdict. This card used
+    // to say "Lower volatility than the market" on 87% of pages, and every stock sampled had in
+    // fact moved more than the Nifty 50.
+    var beta = num(D.beta), betaM = num(D.beta_months);
     if (beta != null) {
-      var band = beta < 0.8 ? ["Lower volatility than the market", "good"] : beta <= 1.2 ? ["Moves roughly with the market", "mut"] : ["More volatile than the market", "warn"];
-      out.push('<div><div class="mfx-line"><b>Volatility</b> &nbsp;<span class="mfx-tag ' + band[1] + '">β ' + fx(beta, 2) + "</span></div>" +
-        '<div class="mfx-line" style="color:var(--text3);margin-top:4px">' + band[0] + ".</div></div>");
+      var betaWin = betaM ? "last " + betaM + " months" : "up to five years";
+      var betaSay = Math.abs(beta) < 0.05
+        ? "Over the " + betaWin + " this stock has shown almost no link to the Nifty 50\u2019s monthly moves"
+        : beta > 0
+          ? "When the Nifty 50 moved 1% in a month, this stock has tended to move about " + fx(beta, 1) + "% (" + betaWin + ")"
+          : "When the Nifty 50 rose 1% in a month, this stock has tended to fall about " + fx(-beta, 1) + "% (" + betaWin + ")";
+      out.push('<div><div class="mfx-line"><b>Market sensitivity</b> &nbsp;<span class="mfx-tag mut">\u03b2 ' + fx(beta, 2) + "</span></div>" +
+        '<div class="mfx-line" style="color:var(--text3);margin-top:4px">' + betaSay + ".</div></div>");
     }
 
     // 52-week performance context
@@ -1139,7 +1147,7 @@
     if (fcf != null && fcf < 0) W("<b>Negative free cash flow</b> — " + crStr(Math.abs(fcf)) + " burned after capex.");
     if (pr != null && pr > 80 && dy != null && dy > 0) W("<b>Payout ratio of " + fx(pr, 0) + "%</b> — most earnings are paid out, limiting reinvestment.");
     if (pe != null && pe > 60) W("<b>Rich earnings multiple</b> — P/E of " + fx(pe, 1) + "× prices in strong growth.");
-    if (beta != null && beta > 1.5) W("<b>High volatility</b> — beta of " + fx(beta, 2) + " swings more than the market.");
+    if (beta != null && beta > 2) W("<b>High market sensitivity</b> \u2014 beta of " + fx(beta, 2) + ": it has tended to move about " + fx(beta, 1) + "% when the Nifty 50 moved 1%.");
     if (fh != null && fh < -40) W("<b>Well off its highs</b> — " + fx(fh, 1) + "% from the 52-week peak.");
     if (ph != null && ph < 25) W("<b>Low promoter holding</b> at " + fx(ph, 1) + "%.");
 
