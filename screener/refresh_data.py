@@ -14,10 +14,11 @@ survives a flaky run.
 
 Usage
 -----
-    python3 refresh_data.py            # full universe (~80-95 min)
+    python3 refresh_data.py            # full universe (about an hour)
     python3 refresh_data.py 100        # first N symbols only (smoke test)
 """
 import csv, io, sys, time
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -27,6 +28,17 @@ import export_static
 NSE_ARCHIVE = "https://archives.nseindia.com/content/equities/"
 NSE_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                              "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"}
+
+
+def _yahoo_last_trade(sym):
+    """The day Yahoo last saw this symbol trade, or None if it has no data for it."""
+    try:
+        r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}.NS?range=5d&interval=1d",
+                         headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+        when = r.json()["chart"]["result"][0]["meta"]["regularMarketTime"]
+        return datetime.fromtimestamp(when, timezone(timedelta(hours=5, minutes=30))).date()
+    except Exception:
+        return None
 
 
 def check_nse_renames(universe) -> None:
@@ -58,8 +70,18 @@ def check_nse_renames(universe) -> None:
             new, when = renames[new]
         if new in listed:
             found += 1
-            print(f"  ⚠ NSE renamed {sym} -> {new} on {when}: Yahoo's {sym}.NS price is "
-                  f"frozen. Replace it in NSE_EQUITY_UNIVERSE (screener/server.py).")
+            # V44.5 — ask Yahoo before saying so. NSE's file only says the symbol changed,
+            # and Yahoo can be weeks behind it. For two weeks in Oct 2026 this line said
+            # "frozen, replace it" while the new ticker had no data, and following it would
+            # have dropped the stock from the site.
+            was, now = _yahoo_last_trade(sym), _yahoo_last_trade(new)
+            if now and (not was or was < now):
+                print(f"  ⚠ NSE renamed {sym} -> {new} on {when}: Yahoo's {sym}.NS stopped on {was} and "
+                      f"{new}.NS is live. Replace it in NSE_EQUITY_UNIVERSE (screener/server.py).")
+            else:
+                print(f"  · NSE renamed {sym} -> {new} on {when}, but {new}.NS is not the live one on Yahoo "
+                      f"yet ({sym}.NS last traded {was}, {new}.NS {now or 'has no data'}). Leave it for now: "
+                      f"switching would drop the stock from the site.")
     if not found:
         print("  NSE symbol-change check: no universe symbol has been renamed.")
 

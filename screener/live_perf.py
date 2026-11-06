@@ -33,7 +33,8 @@ Prices are Yahoo's closes. A pick Yahoo has not priced on the measuring day take
 NSE's official close for that exact day (V41.8, see main()). Each pick's baseline
 is checked against the price it was published at (the book's file, where it has
 one) or NSE's official close for that day, and the reference wins when Yahoo's bar
-disagrees by more than 0.5% (V42.1, see main()).
+disagrees by more than 0.5% (V42.1, see main()), unless the gap is a split or bonus
+factor, where Yahoo's adjusted basis stands (V44.5, see split_factor()).
 
 Run: python3 screener/live_perf.py        (wired into refresh-stocks.command +
 commands/refresh-stocks.command, so it refreshes with every data cycle)
@@ -163,6 +164,41 @@ def baseline_day(published: datetime) -> date:
     return day
 
 
+# V44.5 — A SPLIT OR BONUS IS NOT A BAD BAR. Yahoo back-adjusts its history: after a
+# 1:5 split every close before the ex-date reads a fifth of what NSE printed that day,
+# and the adjustment can reach Yahoo before the ex-date does. The V42.1 check in main()
+# took that gap for a wrong bar and went back to the unadjusted price, so one holding
+# measured from its old price to its adjusted one read about −80%, about five points
+# off a 15-name book. A sealed row is never corrected, so a figure like that must not
+# reach the end of a cycle.
+#
+# Two prices for the same session that differ by one of these factors are on different
+# bases; neither is wrong. The list covers share splits (face value 10 to 2 is 5) and
+# bonus issues (1:2 is 1.5, 1:1 is 2). The tolerance leaves room for a small dividend
+# in the same cycle and keeps the 4% bad bar V42.1 was written for outside every factor.
+SPLIT_FACTORS = (1.1, 1.2, 1.25, 4 / 3, 1.5, 5 / 3, 1.75,
+                 2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25, 50)
+SPLIT_TOL = 0.01
+# A holding this far from its baseline gets a warning in the run's output. It may be a
+# real move. It may also be a corporate action no check here can see: Yahoo not yet
+# adjusted, or NSE's closes on both sides of an ex-date, leave no gap between the
+# baseline and the reference. Guessing could hide a real fall, so this only warns.
+BIG_MOVE = 0.35
+
+
+def split_factor(ref: float, rec: float) -> float | None:
+    """The factor separating a reference price from Yahoo's close for the same
+    session, or None when the gap does not look like a corporate action. Above 1 is
+    a split or bonus (Yahoo reads lower); below 1 is a consolidation."""
+    gap = ref / rec
+    for f in SPLIT_FACTORS:
+        if abs(gap / f - 1.0) <= SPLIT_TOL:
+            return f
+        if f >= 2 and abs(gap * f - 1.0) <= SPLIT_TOL:
+            return 1.0 / f
+    return None
+
+
 def main() -> None:
     import pandas as pd
     import yfinance as yf
@@ -243,6 +279,7 @@ def main() -> None:
     # the picks a session past their benchmark is the mismatch V39.3 removed).
     # Yahoo's close wins wherever it exists. NSE's close for any other day is
     # never borrowed. A failed NSE fetch leaves the date where Yahoo alone put it.
+    nse_filled = set()                       # V44.5 — these closes are unadjusted; see the baseline check
     if common is not None:
         legs = {t for k in STRATS for t in REAL_BENCHMARKS[STRAT_TO_BENCHKEY[k]]["tickers"]}
         books = {k: p for k, p in picks_by_key.items() if latest_covered(p) is not None}
@@ -262,6 +299,7 @@ def main() -> None:
                    for p in books.values()):
                 for s, v in nse.items():
                     close.loc[day, s] = v
+                nse_filled.update(nse)
                 for k, p in books.items():
                     from_nse = sorted(r["yahoo"] for r in p if r["yahoo"] in nse)
                     if from_nse:
@@ -312,6 +350,9 @@ def main() -> None:
     # official close for the baseline day. Beyond BASE_TOL the reference is the
     # baseline and the run says so. With no reference (no file price, NSE
     # unreachable or the pick not in its file) Yahoo's close stands, as before.
+    # V44.5 — a gap that is a split or bonus factor keeps the adjusted basis instead
+    # (see split_factor): the reference is restated on it, and an NSE close for a
+    # session before the ex-date is too. Yahoo's own closes are already adjusted.
     BASE_TOL = 0.005
     nse_base = {"ok": True}
 
@@ -332,9 +373,10 @@ def main() -> None:
     for key, (folder, suffix, name, curr) in STRATS.items():
         picks = picks_by_key[key]
         w_sum = w_ret = 0.0
-        priced = checked = moved = 0
+        priced = checked = moved = splits = 0
         for r in picks:
             rec, live = px(r["yahoo"], rebal_ts), px(r["yahoo"])
+            live_is_nse = r["yahoo"] in nse_filled or not (rec and live)
             if not rec or not live:
                 rec, live = nse_pair(r["yahoo"], rec, live)
                 print(f"  ↺  {key}: {r['yahoo']} not fully priced by Yahoo; NSE bhavcopy "
@@ -345,15 +387,32 @@ def main() -> None:
             if ref:
                 checked += 1
                 if abs(rec / ref - 1.0) > BASE_TOL:
-                    print(f"  ↺  {key}: {r['yahoo']} Yahoo's {base} close {rec:.2f} differs from "
-                          f"{src} {ref:.2f}; measuring from {ref:.2f}")
-                    rec = ref
-                    moved += 1
+                    factor = split_factor(ref, rec)
+                    if factor:
+                        print(f"  ↺  {key}: {r['yahoo']} Yahoo's {base} close {rec:.2f} and {src} "
+                              f"{ref:.2f} differ by a factor of {factor:g}, a split or bonus; "
+                              f"measuring from {ref / factor:.2f} on the adjusted basis")
+                        rec = ref / factor
+                        if live_is_nse and abs(live / factor / rec - 1.0) < abs(live / rec - 1.0):
+                            print(f"  ↺  {key}: {r['yahoo']} NSE's {measured} close {live:.2f} is from "
+                                  f"before the ex-date; {live / factor:.2f} on the adjusted basis")
+                            live /= factor
+                        splits += 1
+                    else:
+                        print(f"  ↺  {key}: {r['yahoo']} Yahoo's {base} close {rec:.2f} differs from "
+                              f"{src} {ref:.2f}; measuring from {ref:.2f}")
+                        rec = ref
+                        moved += 1
+            if abs(live / rec - 1.0) > BIG_MOVE:
+                print(f"  !! {key}: {r['yahoo']} reads {live / rec - 1.0:+.1%} since the baseline "
+                      f"({rec:.2f} to {live:.2f}). If that is not a real move it is a corporate action "
+                      f"this run cannot see: check it before this cycle seals, a sealed row is never corrected")
             priced += 1
             w_sum += r["w"]
             w_ret += r["w"] * (live / rec - 1.0)
         print(f"  {key}: baseline checked for {checked}/{priced} priced picks"
-              + (f", {moved} measured from the reference" if moved else ""))
+              + (f", {moved} measured from the reference" if moved else "")
+              + (f", {splits} split or bonus kept on the adjusted basis" if splits else ""))
         ok = picks and priced / len(picks) >= 0.8 and w_sum > 0
         live_pct = round(w_ret / w_sum * 100, 2) if ok else None
         if not ok:

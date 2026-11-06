@@ -1019,6 +1019,7 @@ def main() -> int:
     skipped = 0
     dropped = []
     latest_update = ""
+    beta_fresh, beta_carried = 0, []
 
     for data_json, updated_at in rows:
         try:
@@ -1046,12 +1047,24 @@ def main() -> int:
         # Yahoo codes the National Stock Exchange as "NSI" — show the real name
         if d.get("exchange") in (None, "", "NSI"):
             d["exchange"] = "NSE"
+        # V44.5 — when Yahoo last sent this row's beta (see server.py). It stops here,
+        # and the count below keeps a slide in Yahoo's field visible in every log.
+        _beta_on = d.pop("beta_on", None)
+        if d.get("beta") is not None:
+            if _beta_on and updated_at and _beta_on < updated_at[:10]:
+                beta_carried.append(_beta_on)
+            else:
+                beta_fresh += 1
         stocks.append(sanitize(d))
         sec = d.get("sector")
         if sec and sec not in ("N/A", ""):
             sectors.add(sec)
         if updated_at and updated_at > latest_update:
             latest_update = updated_at
+
+    print(f"  Beta: {beta_fresh} from Yahoo in this fetch, {len(beta_carried)} carried"
+          + (f" (oldest from {min(beta_carried)})" if beta_carried else "")
+          + f", {len(stocks) - beta_fresh - len(beta_carried)} with none.")
 
     bundle = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
