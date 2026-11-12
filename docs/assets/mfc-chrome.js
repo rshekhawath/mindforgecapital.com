@@ -747,3 +747,47 @@
     setTimeout(function () { clear(el); }, 0);        // after the browser's own scroll
   }, true);
 })();
+
+/* ============================================================================
+   V44.9 — ON A PHONE OR TABLET, THE BACK-TO-TOP BUTTON STEPS ASIDE ONCE YOU STOP
+   SCROLLING, AND THE STICKY ORDER BAR STEPS ASIDE FOR THE OPEN MENU.
+   ----------------------------------------------------------------------------
+   The dashboard's own button has faded 1.4 s after the last scroll since V37.3.
+   Every other page's (#back-to-top on the homepage and Strategies, the injected
+   .mfc-btt on the rest) stayed on top of whatever sat under the bottom-right
+   corner at every width without a gutter: "-9.02 pts" on the track record, the
+   last digit of the calculator's amount box, the fee section's bars on the
+   homepage, a pricing card's lines. Same rule now: shown while the page moves,
+   gone 1.4 s after the last scroll, back with the next one, always shown to the
+   keyboard. Below 1440px only; wider, the button sits in the page's gutter.
+   The open menu panel ended a few pixels into the homepage's sticky
+   "New? Start here / Get started" bar, so both sets of buttons showed at once.
+   ============================================================================ */
+(function () {
+  var D = document, W = window;
+  if (D.getElementById('mfc-btt-idle-style')) return;
+  var st = D.createElement('style');
+  st.id = 'mfc-btt-idle-style';
+  st.textContent =
+    '@media (max-width:1439px){' +
+      'html .back-to-top.visible.is-idle,html .mfc-btt.visible.is-idle{opacity:0 !important;pointer-events:none !important}' +
+      'html .back-to-top.visible.is-idle:focus-visible,html .mfc-btt.visible.is-idle:focus-visible{opacity:1 !important;pointer-events:auto !important}' +
+    '}' +
+    'html:has(.nav-links.open) .mobile-cta-bar{visibility:hidden !important}';
+  (D.head || D.documentElement).appendChild(st);
+  var SEL = '.back-to-top, .mfc-btt', T = 0;
+  function idle() {
+    D.querySelectorAll(SEL).forEach(function (b) { if (D.activeElement !== b) b.classList.add('is-idle'); });
+  }
+  function wake() {
+    D.querySelectorAll(SEL).forEach(function (b) { b.classList.remove('is-idle'); });
+    clearTimeout(T); T = setTimeout(idle, 1400);
+  }
+  W.addEventListener('scroll', wake, { passive: true });
+  D.addEventListener('focusin', function (e) {
+    var b = e.target;
+    if (b && b.matches && b.matches(SEL)) { clearTimeout(T); b.classList.remove('is-idle'); }
+  });
+  // a restored scroll position shows the button without a scroll event
+  T = setTimeout(idle, 1400);
+})();

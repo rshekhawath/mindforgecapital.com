@@ -925,7 +925,9 @@
 // under the numbers table, and the chat bubble no longer pops up on its own. mfc-insight.js 7 and mfc-dash.js carry their own ?v.
 // V44.8 -> mfc-v151. The precached index.html: the owner's new headline, sized to keep the hero's height, and the
 // fee section's amount box reading "15 lakh" or "1.5 cr". mfc-insight.js 8 ("Since you joined" in words for one list).
-const CACHE = 'mfc-v151';
+// V44.9 -> mfc-v152. mfc-chrome.js 4490 (the back-to-top fades once scrolling stops below 1440px; the sticky bar
+// steps aside for the open menu) and the precached index.html (hero pill, live card's day count).
+const CACHE = 'mfc-v152';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)
