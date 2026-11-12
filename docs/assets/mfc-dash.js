@@ -1088,7 +1088,7 @@ function renderCycleRail(now, expiry, nextReb, daysLeft, daysToReb){
     // never "covered", however many days of access are left.
     var pinned = _subIsPinned();
     badge.className = 'cyc-badge ' + (covered && !pinned ? 'ok' : 'warn');
-    badge.textContent = pinned ? 'Next set needs a renewal' : (covered ? 'Next rebalance covered' : 'Renewal due first');
+    badge.textContent = pinned ? 'Next set needs a renewal' : (covered ? 'Next list included' : 'Renewal due first');
   }
   var foot = document.getElementById('cyc-foot');
   if (foot && card.classList.contains('is-calm')) {
@@ -3775,7 +3775,7 @@ function renderTable(stocks) {
         <div class="sc-act-money"><span class="sc-act-amt sc-alloc">${rs ? '\u2014' : fmtAmt(amt)}</span><span class="sc-act-lbl">${_fmNow() ? 'amount' : 'allocation'}</span></div>
       </div>
       <div class="sc-cmp">
-        <span class="sc-cmp-rec">Rec <b>${fmtPrice(entry)}</b></span>
+        <span class="sc-cmp-rec">Listed <b>${fmtPrice(entry)}</b></span>
         <span class="sc-cmp-sep" aria-hidden="true">·</span>
         <span class="sc-cmp-live">Live <span class="sc-val px-live" data-px="${escapeHtml(s.yahoo_ticker||'')}" data-rec="${entry}">—</span></span>
       </div>
@@ -7305,7 +7305,7 @@ function _setNotifUI(on, email) {
 function _setHowToStep3(orders){
   var p = document.getElementById('hs3-copy');
   if (!p) return;
-  var base = ' Limit orders near rec. price are fine on liquid names.';
+  var base = ' A limit order near the listed price is fine; busy stocks fill easily.';
   // V43.8 — Pick stocks: the orders the member ticked, in the list below.
   if (orders && orders.mode === 'pick'){
     var pn = orders.all.length, pS = orders.sells.length + (orders.trims || []).length, pB = pn - pS;
@@ -9906,7 +9906,7 @@ function renderProfitHeadline(){
   var _nRs = (stocks || []).filter(function(x){ return _isRestricted(x.ticker); }).length;
   var _rsOut = _nRs ? ', leaving out your ' + _nRs + ' restricted name' + (_nRs === 1 ? '' : 's') + ',' : '';
   window._profitAbs = { v: absGain, cap: currentCapital, port: port, out: _rsOut };   // V44.6: the month paragraph prints this same figure
-  sub.innerHTML = (_nRs ? 'The model’s weighted return across ' : 'Weighted return across ') + n + ' holding' + (n !== 1 ? 's' : '') + ' since the rebalance' +
+  sub.innerHTML = (_nRs ? 'The model portfolio’s ' : 'All ') + n + ' holding' + (n !== 1 ? 's' : '') + ' together, since the list changed' +
     (rebal ? ' on <strong>' + mfDate(rebal, {day:'numeric',month:'short',year:'numeric'}) + '</strong>' : '') +
     (window._capEntered
       ? '. On your ' + fmtMoney(currentCapital) + _rsOut + ' that is <strong class="pc-amt">' + absSign + absStr + '</strong>.'
@@ -9935,7 +9935,7 @@ function renderProfitHeadline(){
       return '<span class="pc-chip"><span class="pc-chip-lbl">' + lbl + '</span>' + escapeHtml(x.t) +
              ' <span class="pc-chip-ret ' + cls + '">' + sign + x.r.toFixed(1) + '%</span></span>';
     }
-    ld.innerHTML = (n >= 2 && best && worst && best.t !== worst.t) ? (chip('Top', best) + chip('Lagging', worst)) : '';
+    ld.innerHTML = (n >= 2 && best && worst && best.t !== worst.t) ? (chip('Best so far', best) + chip('Weakest so far', worst)) : '';
   }
   try { renderTodayMove(day, n); } catch (e) { var tdy = document.getElementById('pc-today'); if (tdy) tdy.hidden = true; }
   // V28.3: attribution card. Same wRet/wSum the headline came from, so it is a
@@ -9965,11 +9965,11 @@ function renderTodayMove(day, nPriced){
   var txt = (num > 0 ? '+' : num < 0 ? '−' : '') + Math.abs(num).toFixed(2) + '%';
   // NSE closed means prev_close is the session before the last traded one, so
   // the move is that session's, whatever the calendar says.
-  var when = _nseIsOpen() ? 'today' : 'on the last session';
+  var when = _nseIsOpen() ? 'today' : 'on the last trading day';
   var flat = day.n - day.up - day.down;
   var br = day.up + ' up · ' + day.down + ' down' + (flat ? ' · ' + flat + ' flat' : '') +
            (day.n < nPriced ? ' · ' + day.n + ' of ' + nPriced + ' priced' : '');
-  el.innerHTML = '<span class="pct-k" aria-hidden="true">1D</span>' +
+  el.innerHTML = '<span class="pct-k" aria-hidden="true">Day</span>' +
     '<span><b class="pct-v ' + cls + '">' + txt + '</b> ' + when + '</span>' +
     '<span class="pct-br">' + br + '</span>';
   el.setAttribute('aria-label', 'Your book moved ' + txt + ' ' + when + ': ' + br + '.');
@@ -10429,7 +10429,7 @@ function renderTrackRecord(){
       // absolute move on the chart (floored at 1.0), and a bar reaching the edge
       // of its row IS that value, so this is the one number that makes a bar
       // length readable rather than merely comparable to its neighbours.
-      '<span class="trk-scale">Row edge = &plusmn;' + scale.toFixed(2) + '%</span>' +
+      '<span class="trk-scale">Bars end at &plusmn;' + scale.toFixed(2) + '%</span>' +
     '</div>';
     // Grow from the centre line — the site's bar idiom. Painting the final
     // geometry immediately leaves a dead transition (V23.5).

@@ -817,7 +817,7 @@
 // on the sixteen calculator pages (the bridge's "How a month works" link).
 // V40.8 -> mfc-v119. index.html is precached and changed (the MultiAsset card and
 // "Getting started" step 02 say the free book's link comes in minutes — FREE_INSTANT
-// is on; the hidden LinkedIn placeholder is gone from the footer, and WhatsApp's
+// is on; the hidden placeholder icon is gone from the footer, and WhatsApp's
 // hover follows it to the 4th slot). No shared asset moved.
 // V40.9 -> mfc-v120. index.html is precached and changed (the pricing cards' "Learn
 // more →" keeps its space on a phone and an iPad; "Start it free tonight" centres
@@ -920,7 +920,10 @@
 // mfc-dash.js's token moved, so the cache name has to move too.
 // V44.6 -> mfc-v149. Our own beta: mfc-company.js 4460 and screener-data.js 155; mfc-deep.css 6 on 17 pages, mfc-insight.js 6 and
 // mfc-dash.js's token moved; the cache name moves with them.
-const CACHE = 'mfc-v149';
+// V44.7 -> mfc-v150. The precached index.html: a calmer hero card (neutral "points behind", the days the live
+// figure covers, a line to the two Zerodha-verified accounts), "What a percentage fee costs" and "How the list is made"
+// under the numbers table, and the chat bubble no longer pops up on its own. mfc-insight.js 7 and mfc-dash.js carry their own ?v.
+const CACHE = 'mfc-v150';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

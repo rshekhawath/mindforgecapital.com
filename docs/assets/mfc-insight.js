@@ -251,6 +251,215 @@
      entered instead of the split of contributions, which moves under "How to read this" with both halves still
      printed. PLAIN_MONTH = false puts it back for everyone. */
   var PLAIN_MONTH = true;
+
+  /* V44.7 — the career-first reader with a lump sum.
+     SINCE_START: "Since you joined", first in "How it's going": the model's live record since the member's join
+       date (live-history.json, the record the track record prints), on their own amount once they enter it.
+     FEE_LINE: inside it, the member's fee in rupees and as a share of their amount, beside a 1% and a 2% fund fee.
+     OWN_LINES: "What you own, in plain words" (each holding's name, industry, size and one line on what it does,
+       from the company files the public company pages read), and the same line on each new name in the
+       "Context for the names that changed" fold. The paragraph names companies instead of tickers.
+     WEATHER_LITE: the market card without the FII/DII flows and the factor-style rows. */
+  var SINCE_START = true, FEE_LINE = true, OWN_LINES = true, WEATHER_LITE = true;
+  /* TWIN of STRAT_MONTHLY and DURATIONS in index.html (and DURATIONS in signup.html): the listed monthly price
+     and each plan's discount. The dashboard has no price table of its own; a QA check asserts the three agree. */
+  var PLAN_PRICES = { ma: 0, lm: 999, sm: 1499 };
+  var PLAN_DISC = { 1: 0, 3: 0.05, 6: 0.10, 12: 0.20 };
+  var BENCH = { lm: 'Nifty LargeMidcap 250', sm: 'Nifty Smallcap 250', ma: 'Nifty 50' };
+
+  // an all-capitals name in title case, with its short words and common acronyms kept as they read
+  var KEEP_UP = /^(?:ETF|IT|US|UK|PSU|NBFC|AMC|BSE|NSE|LIC|SBI|HDFC|ICICI|IDFC|IDBI|NTPC|ONGC|GAIL|ITC|TCS|HCL|MRF|BEL|ABB|PNB|REC|PFC|IRFC|IRCTC|CDSL|NHPC|SJVN|NMDC|KPIT|KEI|KEC|CESC|GMR|JSW|DLF|SRF|UPL|VIP|PVR|INOX|IIFL|RBL|BLS|HFCL|KPR|PTC|BASF|SKF|CRISIL)$/;
+  function shortName(n) {
+    var t = String(n || '').replace(/\s+/g, ' ').trim().replace(/[\s,]+(?:Ltd\.?|Limited)$/i, '');
+    if (t && !/[a-z]/.test(t)) {
+      t = t.split(' ').map(function (w, i) {
+        if (w.length <= 2 || KEEP_UP.test(w.replace(/[^A-Z]/g, ''))) return w;
+        if (i && /^(?:AND|OF|THE|FOR|IN)$/.test(w)) return w.toLowerCase();
+        return w.charAt(0) + w.slice(1).toLowerCase();
+      }).join(' ');
+    }
+    return t || String(n || '');
+  }
+  function sig2(v) {
+    if (!(v > 0)) return '';
+    var mag = Math.pow(10, Math.max(0, Math.floor(Math.log(v) / Math.LN10) - 1));
+    return (Math.round(v / mag) * mag).toLocaleString('en-IN');
+  }
+  // one sentence from a company description, without its own name in front, at most 140 characters
+  var ABBR = /(?:\b(?:Ltd|Inc|Co|No|Pvt|Corp|St|Mfg|Intl|etc|vs|Sr|Jr|Dr|Mr|Mrs|Ms)|\b[A-Z]|U\.S|e\.g|i\.e)\.$/;
+  function oneLine(desc, name) {
+    var t = String(desc || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    var out = t, i = 0;
+    for (var guard = 0; guard < 40; guard++) {
+      var j = t.indexOf('. ', i);
+      if (j < 0) break;
+      var c = t.slice(0, j + 1);
+      if (!ABBR.test(c)) { out = c; break; }
+      i = j + 2;
+    }
+    var nm = String(name || '').replace(/\s+/g, ' ').trim();
+    if (nm && out.toLowerCase().indexOf(nm.toLowerCase()) === 0) out = out.slice(nm.length);
+    out = out.replace(/^[\s,]+/, '').replace(/^(?:together with|through|along with) its subsidiar(?:y|ies),?\s*/i, '').replace(/^[\s,]+/, '');
+    if (!out) return '';
+    out = out.charAt(0).toUpperCase() + out.slice(1);
+    if (out.length > 140) { out = out.slice(0, 140); out = out.slice(0, out.lastIndexOf(' ')).replace(/[,;:]$/, '') + '…'; }
+    return out;
+  }
+  // same rule as fileName() in scores/scores-engine.js (the export's _safe_name: M&M -> M_M)
+  function ownFile(t) { return String(t).replace(/[^A-Za-z0-9._-]/g, '_') + '.json'; }
+  var OWNC = {}, ownGen = 0;
+  function ownLoad(t) {
+    if (!OWNC[t]) {
+      var f = ownFile(t);
+      OWNC[t] = Promise.all([getJSON('screener/prose/' + f), getJSON('screener/co/' + f)]).then(function (v) {
+        var pr = v[0] || {}, co = v[1] || {};
+        return { line: oneLine(pr.description, co.name), cap: Number(co.market_cap_cr) || 0 };
+      }).catch(function () { return { line: '', cap: 0 }; });
+    }
+    return OWNC[t];
+  }
+  function attrEsc(t) { return String(t).replace(/["\\]/g, '\\$&'); }
+  function ownFill(root, t, prefix) {
+    ownLoad(t).then(function (o) {
+      if (!o || !root) return;
+      var l = root.querySelector('[data-own-line="' + attrEsc(t) + '"]');
+      if (l && o.line) l.textContent = (prefix || '') + o.line;
+      var c = root.querySelector('[data-own-cap="' + attrEsc(t) + '"]');
+      if (c && o.cap > 0) c.textContent = ' · ₹' + sig2(o.cap) + ' crore';
+    });
+  }
+  // the free book's funds: what each one holds, by symbol (public facts about the ETFs, not the model)
+  function etfLine(t) {
+    var u = String(t || '').toUpperCase();
+    var M = [
+      [/GOLD/, 'Gold, through a fund that tracks its price.'],
+      [/SILVER/, 'Silver, through a fund that tracks its price.'],
+      [/MON100|N100|NASDAQ/, 'The Nasdaq-100: the largest US companies outside finance, mostly technology.'],
+      [/MAFANG|FANG/, 'A small group of the largest US technology companies.'],
+      [/LIQUID/, 'Overnight lending: the cash-like part of the mix.'],
+      [/EBBETF|BBETF|BHARAT|GILT|GSEC|BOND/, 'Bonds of government-owned companies, held to a set year.'],
+      [/BANK/, 'India’s largest listed banks.'],
+      [/CPSE/, 'Large government-owned Indian companies.'],
+      [/ITBEES|^IT/, 'India’s largest IT companies.'],
+      [/JUNIOR|NEXT50|NN50/, 'The 50 Indian companies that come after the Nifty 50.'],
+      [/MID150|MIDCAP/, '150 mid-sized Indian companies.'],
+      [/SML|SMALL/, '250 smaller Indian companies.'],
+      [/NIFTY|SENSEX/, 'India’s 50 largest listed companies.'],
+      [/LOWVOL/, 'Indian shares chosen for steadier prices, through an NSE index fund.'],
+      [/MOM/, 'Indian shares chosen for recent price strength, through an NSE index fund.'],
+      [/QUAL/, 'Indian shares chosen for strong balance sheets, through an NSE index fund.'],
+      [/VAL/, 'Indian shares chosen for low prices against earnings, through an NSE index fund.']
+    ];
+    for (var i = 0; i < M.length; i++) if (M[i][0].test(u)) return M[i][1];
+    return 'An exchange-traded fund: one holding that tracks a whole market.';
+  }
+  var OWN_WHY = {
+    lm: 'Each of these ranked among the highest of the 250 companies in the Nifty LargeMidcap 250 on the model’s price-and-trading score this month, with no more than two from any industry.',
+    sm: 'Each of these ranked among the highest of the 500 companies in the Nifty Smallcap 250 and Microcap 250 on the model’s price-and-trading score this month, with no more than two from any industry.',
+    ma: 'Eight funds, each a whole market in one holding. The model changes only how much of each you hold.'
+  };
+  function ownKey(s) { return 'mfc_own_more' + (s && s.demo ? '::demo' : ''); }
+
+  // ── V44.7 · "Since you joined" (SINCE_START) and "What it costs you" (FEE_LINE) ──────────────────────
+  function feeBlock(s) {
+    if (!FEE_LINE || !s.key || PLAN_PRICES[s.key] == null) return '';
+    var price = PLAN_PRICES[s.key], cap = (s.capEntered && s.capital > 0) ? s.capital : 0, h = '<div class="mi-fee"><p class="mi-k">What it costs you</p><p class="mi-p">';
+    if (price === 0) {
+      h += 'MultiAsset is free.' + (cap ? ' On your ' + esc(inr(cap)) + ', a 1% fund fee would be <b>' + esc(inr(cap * 0.01)) + '</b> a year.' : '');
+      return h + '</p></div>';
+    }
+    var dm = Number((s.sub || {}).duration_months) || 0, disc = PLAN_DISC[dm];
+    var yearly = price * 12 * (1 - (disc || 0));
+    var plan = disc == null ? '' : (dm === 1 ? ' on the monthly plan' : dm === 12 ? ' on the 1-year plan' : ' on the ' + dm + '-month plan');
+    h += 'Your fee: <b>' + esc(inr(yearly)) + '</b> a year' + plan + ' (' + esc(inr(price)) + ' a month' + (disc ? ', less ' + Math.round(disc * 100) + '%' : '') + ')';
+    if (!cap) return h + '. <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter your amount</button> to see it as a share of your money.</p><p class="mi-note">At your plan’s listed rate.</p></div>';
+    var f1 = cap * 0.01, f2 = cap * 0.02, d1 = f1 - yearly, d2 = f2 - yearly;
+    var cmp = function (d, label) { return esc(inr(Math.abs(d))) + ' a year ' + (d >= 0 ? 'less' : 'more') + ' than ' + label; };
+    h += ', ' + (yearly / cap * 100).toFixed(2) + '% of your ' + esc(inr(cap)) + '. On the same amount a 1% fund fee would be <b>' + esc(inr(f1)) +
+      '</b> a year, and a 2% fee <b>' + esc(inr(f2)) + '</b>. That is ' + cmp(d1, 'a 1% fee') + (d1 >= 0 ? '.' : ', and ' + cmp(d2, 'a 2% fee') + '.') +
+      ' A flat fee’s share falls as your amount grows; a percentage never does.</p><p class="mi-note">At your plan’s listed rate.</p></div>';
+    return h;
+  }
+  function renderSince(s, hist) {
+    var el = card('mi-since', 'insight', 'mi-since');
+    before(el, D.getElementById('mi-today') || D.getElementById('mi-review') || D.getElementById('mi-narr') || D.getElementById('profit-card'));
+    if (!SINCE_START || !s.key) { hide('mi-since'); return; }
+    if (s.demo) {
+      show(el, '<div class="mi-head"><h2>Since you joined<span class="mi-badge">Sample</span></h2></div>' +
+        '<p class="mi-p">On a member’s dashboard this card shows how the model portfolio has done since the day they joined, against its index, and on their own amount in rupees once they enter it. It never shows a forecast.</p>' + feeBlock(s));
+      return;
+    }
+    var sub = s.sub || {}, now = Date.now(), start = sub.subscribed_at ? new Date(sub.subscribed_at) : null;
+    if (!start || isNaN(start.getTime())) { hide('mi-since'); return; }
+    var startIso = iso(start).slice(0, 10), k = s.key;
+    var cyc = ((hist && hist.cycles) || []).filter(function (c) {
+      var x = c.strategies && c.strategies[k];
+      return c.rebalance_date >= startIso && x && x.live_pct != null && x.bench_pct != null;
+    });
+    var monthsIn = Math.max(1, Math.round((now - start.getTime()) / (30.44 * 864e5)));
+    var html = '<div class="mi-head"><h2>Since you joined</h2><span class="mi-sub">' + (cyc.length ? plural(monthsIn, 'month') + ' · ' : '') + 'model portfolio, live record</span></div>';
+    if (!cyc.length) {
+      html += '<p class="mi-p">Your first month. The record starts when this month’s list closes on the 1st; until then, the paragraph below covers it.</p>';
+    } else {
+      var m = 1, b = 1, closed = 0;
+      cyc.forEach(function (c) { var x = c.strategies[k]; m *= 1 + x.live_pct / 100; b *= 1 + x.bench_pct / 100; if (c.sealed) closed++; });
+      var mp = (m - 1) * 100, bp = (b - 1) * 100, running = !cyc[cyc.length - 1].sealed;
+      var bname = cyc[cyc.length - 1].strategies[k].bench_name || BENCH[k] || 'its index';
+      html += '<p class="mi-p">Over the ' + plural(cyc.length, 'monthly list') + ' since you joined on ' + esc(dlong(start)) + (running ? ' (the newest still running)' : '') +
+        ', the model portfolio is ' + span(mp, sgn(mp)) + '; its index, the ' + esc(bname) + ', is ' + span(bp, sgn(bp)) + '.</p>';
+      if (s.capEntered && s.capital > 0) {
+        var rs = s.capital * (m - 1), rr = Math.round(Math.abs(rs));
+        if (rr) html += '<p class="mi-p">On your ' + esc(inr(s.capital)) + ', that path comes to ' + span(rs, '<span style="white-space:nowrap">' + (rs > 0 ? '+' : '−') + esc(inr(rr)) + '</span>') + ', before tax and charges.</p>';
+      }
+      var neg = W._mfData ? W._mfData(k + ':neg') : '', mon = W._mfData ? W._mfData(k + ':months') : '', dd = W._mfData ? W._mfData(k + ':max_dd') : '';
+      html += '<p class="mi-note">' + plural(closed, 'of those months is', 'of those months are').replace(/^(\d+) /, '$1 ') + ' closed, far too few to judge a strategy.' +
+        (neg && mon && dd ? ' Expect down months: in the backtest, ' + esc(neg) + ' of ' + esc(mon) + ' months ended down, and the deepest fall was ' + esc(dd) + '.' : '') + '</p>' +
+        '<p class="mi-note">The model’s record at published prices, not your account: your broker’s holdings and Tax P&amp;L show your own.</p>';
+    }
+    var exp = sub.expires_at ? new Date(sub.expires_at) : null;
+    if (exp && !isNaN(exp.getTime())) {
+      var left = Math.ceil((exp.getTime() - now) / 864e5);
+      if (left >= 0 && left <= 14) html += '<p class="mi-note">Your access runs to <b>' + esc(dlong(exp)) + '</b> (' + plural(left, 'day') + ').</p>';
+    }
+    show(el, html + feeBlock(s));
+  }
+
+  // ── V44.7 · "What you own, in plain words" (OWN_LINES) ─────────────────────────────────────────────
+  function renderOwn(s) {
+    var el = card('mi-own', 'insight', 'mi-own');
+    after(el, D.getElementById('mi-normal') || D.getElementById('profit-card'));
+    var rows = (s.stocks || []).filter(function (x) { return x && x.ticker; });
+    if (!OWN_LINES || !s.key || !rows.length) { hide('mi-own'); return; }
+    rows.sort(function (a, b) { return (Number(b.weight_pct) || 0) - (Number(a.weight_pct) || 0) || String(a.company_name || '').localeCompare(String(b.company_name || '')); });
+    var sigKey = s.key + '|' + (s.demo ? 'd' : 'm') + '|' + rows.map(function (x) { return x.ticker; }).join(',');
+    if (el.getAttribute('data-sig') === sigKey && !el.hidden) return;
+    el.setAttribute('data-sig', sigKey);
+    var n = rows.length, open = false, ma = s.key === 'ma';
+    try { open = localStorage.getItem(ownKey(s)) === '1'; } catch (e) {}
+    var gen = ++ownGen;
+    show(el, '<div class="mi-head"><h2>What you own, in plain words' + (s.demo ? '<span class="mi-badge">Sample</span>' : '') + '</h2><span class="mi-sub">' +
+      (ma ? plural(n, 'fund') : plural(n, 'company', 'companies') + ', equal amounts') + '</span></div>' +
+      '<p class="mi-p">' + esc(OWN_WHY[s.key] || '') + '</p>' +
+      '<ul class="mi-own-list' + (open || n <= 5 ? '' : ' is-short') + '">' + rows.map(function (x) {
+        var t = String(x.ticker);
+        return '<li><a class="mi-own-n" href="/scores/company.html?symbol=' + encodeURIComponent(t) + '" target="_blank" rel="noopener">' + esc(shortName(x.company_name || t)) + '</a>' +
+          '<span class="mi-own-m"> · ' + esc(x.industry || (ma ? 'ETF' : '')) + '<span data-own-cap="' + esc(t) + '"></span></span>' +
+          '<span class="mi-own-l" data-own-line="' + esc(t) + '">' + (ma ? esc(etfLine(t)) : '') + '</span></li>';
+      }).join('') + '</ul>' +
+      (n > 5 ? '<button type="button" class="mi-own-more" aria-expanded="' + (open ? 'true' : 'false') + '">' + (open ? 'Show fewer' : 'Show all ' + n) + '</button>' : '') +
+      '<p class="mi-note">' + (ma ? 'The model weighs these funds by its score; it does not pick the companies inside them.'
+        : 'The model does not read these businesses; it ranks prices and trading. These lines are here so you know what you hold, not why it was chosen.') + '</p>');
+    var btn = el.querySelector('.mi-own-more'), ul = el.querySelector('.mi-own-list');
+    if (btn && ul) btn.addEventListener('click', function () {
+      var nowOpen = ul.classList.toggle('is-short') === false;
+      btn.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+      btn.textContent = nowOpen ? 'Show fewer' : 'Show all ' + n;
+      try { localStorage.setItem(ownKey(s), nowOpen ? '1' : '0'); } catch (e) {}
+    });
+    if (ma) return;
+    rows.forEach(function (x) { if (gen === ownGen) ownFill(el, String(x.ticker), ''); });
+  }
   function plainMonth(s) {
     if (!PLAIN_MONTH) return false;
     var j = s.sub && s.sub.subscribed_at ? new Date(s.sub.subscribed_at) : null;
@@ -269,8 +478,8 @@
     if (!lb) { hide('mi-narr'); return; }
     var port = lb.port, parts = [];
     var dir = port > 0.05 ? 'up' : port < -0.05 ? 'down' : 'flat';
-    var since = s.rebal ? ' since the ' + esc(dshort(s.rebal)) + ' rebalance' : ' since the rebalance';
-    var head = 'Your ' + esc(s.book) + ' book is ' + (dir === 'flat' ? 'flat' : dir + ' ' + span(port, Math.abs(port).toFixed(2) + '%')) + since;
+    var since = s.rebal ? ' since the list changed on ' + esc(dshort(s.rebal)) : ' since the list changed';
+    var head = 'Your ' + esc(s.book) + ' portfolio is ' + (dir === 'flat' ? 'flat' : dir + ' ' + span(port, Math.abs(port).toFixed(2) + '%')) + since;
     if (bench && bench.live) {
       var gap = port - bench.bench;
       var g = Math.abs(gap) <= 0.05 ? 'level with it' : (span(gap, Math.abs(gap).toFixed(2) + ' points') + (gap > 0 ? ' ahead' : ' behind'));
@@ -291,7 +500,7 @@
     // and that only reconciles once the other side's part is on the page too.
     var rows = lb.rows.slice().sort(function (a, b) { return b.c - a.c; });
     var who = function (list) {
-      var n = list.map(function (x) { return '<b>' + esc(x.t) + '</b>'; });
+      var n = list.map(function (x) { return '<b>' + esc(OWN_LINES ? shortName(x.n || x.t) : x.t) + '</b>'; });
       return n.length > 1 ? n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1] : n[0];
     };
     var sumC = function (sign) { return rows.reduce(function (a, x) { return a + (x.c * sign > 0 ? x.c : 0); }, 0); };
@@ -301,7 +510,7 @@
       for (var i = 0; i < lift.length && top.length < 3; i++) { top.push(lift[i]); acc += lift[i].c; if (acc >= tot * 0.6) break; }
       if (top.length && tot > 0.0001) {
         drivers = who(top) + ' did most of the lifting: <a href="#attrib-card">' + acc.toFixed(2) + '</a> of the ' + tot.toFixed(2) +
-          ' pts the rising holdings added' + (fell < -0.005 ? ' (the ones that fell took ' + Math.abs(fell).toFixed(2) + ' pts away)' : '') + '.';
+          ' points the rising holdings added' + (fell < -0.005 ? ' (the ones that fell took ' + Math.abs(fell).toFixed(2) + ' points away)' : '') + '.';
       }
     } else if (port < -0.05) {
       var drag = rows.filter(function (x) { return x.c < 0; }).reverse();
@@ -309,7 +518,7 @@
       for (var j = 0; j < drag.length && topd.length < 3; j++) { topd.push(drag[j]); accd += drag[j].c; if (accd <= totd * 0.6) break; }
       if (topd.length && totd < -0.0001) {
         drivers = who(topd) + ' did most of the damage: <a href="#attrib-card">' + Math.abs(accd).toFixed(2) + '</a> of the ' + Math.abs(totd).toFixed(2) +
-          ' pts the falling holdings took away' + (rose > 0.005 ? ' (the ones that rose added ' + rose.toFixed(2) + ' pts back)' : '') + '.';
+          ' points the falling holdings took away' + (rose > 0.005 ? ' (the ones that rose added ' + rose.toFixed(2) + ' points back)' : '') + '.';
       }
     }
 
@@ -321,7 +530,7 @@
       if (mk.size && mk.size.cyc != null && Math.abs(mk.size.cyc) >= 1) bits += ', with small caps ' + (mk.size.cyc > 0 ? 'ahead of' : 'behind') + ' large caps by ' + Math.abs(mk.size.cyc).toFixed(1) + ' points since the rebalance';
       var mom = (mk.styles || []).filter(function (x) { return x.key === 'momentum'; })[0];
       if (mom && mom.cyc != null && (s.key === 'lm' || s.key === 'sm')) bits += ', and the momentum index ' + (mom.cyc >= 0 ? 'up ' : 'down ') + Math.abs(mom.cyc).toFixed(1) + '%';
-      bits += ' (<a href="#mi-weather">market weather</a>).';
+      bits += ' (<a href="#mi-weather">the market this month</a>).';
       parts.push(bits);
     }
 
@@ -336,7 +545,7 @@
     // what happens next — a process fact, never advice
     var left = pendingOrders();
     var next = new Date(); next = new Date(next.getFullYear(), next.getMonth() + 1, 1);
-    parts.push(left ? 'You still have ' + plural(left, 'order') + ' to place this cycle.' : 'The next list lands on ' + esc(dshort(next)) + '.');
+    parts.push(left ? 'You still have ' + plural(left, 'order') + ' to place this month.' : 'The next list lands on ' + esc(dshort(next)) + '.');
 
     show(el, '<div class="mi-head"><h2>Your month in one paragraph</h2><span class="mi-sub">Live prices</span></div>' +
       '<p class="mi-p">' + parts.join(' ') + '</p>' +
@@ -526,7 +735,7 @@
       rows.push(['Breadth', '<b>' + Math.round(b.above200) + '%</b> of ' + Number(b.n).toLocaleString('en-IN') + ' NSE stocks are above their 200-day average' + chg + ', and ' + Math.round(b.above50) + '% above their 50-day.']);
     }
     if (mk.vix && mk.vix.last != null) rows.push(['Volatility', 'India VIX <b>' + mk.vix.last.toFixed(1) + '</b> — higher than ' + mk.vix.pctile_1y + '% of the past year’s readings.']);
-    if (mk.flows) {
+    if (mk.flows && !WEATHER_LITE) {
       var f = mk.flows;
       rows.push(['Flows', 'Over the last ' + f.days + ' sessions FIIs sold on <b>' + f.fii_sell_days + '</b> (net ' + crore(f.fii_net_cr) + ') and DIIs bought on <b>' + f.dii_buy_days + '</b> (net ' + crore(f.dii_net_cr) + ').']);
     }
@@ -534,7 +743,7 @@
       var sc = mk.indices.smallcap250, lg = n50;
       rows.push(['Size', 'Since the rebalance the Nifty Smallcap 250 is ' + span(sc ? sc.cyc : 0, sgn(sc ? sc.cyc : null, 1)) + ' against ' + span(lg.cyc, sgn(lg.cyc, 1)) + ' for the Nifty 50.']);
     }
-    if (mk.styles && mk.styles.length) {
+    if (!WEATHER_LITE && mk.styles && mk.styles.length) {
       var ss = mk.styles.filter(function (x) { return x.cyc != null; }).sort(function (a, b) { return b.cyc - a.cyc; });
       if (ss.length) rows.push(['Style', '<span class="mi-styles">' + ss.map(function (x) { return '<span>' + esc(x.short) + ' ' + span(x.cyc, sgn(x.cyc, 1)) + '</span>'; }).join('') + '</span> since the rebalance, through ETFs that track NSE’s factor indices.']);
     }
@@ -560,9 +769,9 @@
       meaning = '<p class="mi-k">What this kind of market has meant for books like this</p><p class="mi-p">' + REGIME_LONG[key] +
         ' <span class="mi-sub">General research about books that rank on price and volume trends, not a forecast for this month.</span></p>';
     }
-    show(el, '<div class="mi-head"><h2>Market weather ' + (mk.regime ? '<span class="mi-pill is-' + esc(mk.regime.key) + '">' + esc(mk.regime.label) + '</span>' : '') + '</h2><span class="mi-sub">To the ' + esc(dshort(dt(mk.as_of))) + ' close</span></div>' +
+    show(el, '<div class="mi-head"><h2>The market this month ' + (mk.regime ? '<span class="mi-pill is-' + esc(mk.regime.key) + '">' + esc(mk.regime.label) + '</span>' : '') + '</h2><span class="mi-sub">To the ' + esc(dshort(dt(mk.as_of))) + ' close</span></div>' +
       '<div class="mi-rows">' + rows.map(function (r) { return '<div class="mi-row"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>'; }).join('') + '</div>' + meaning +
-      '<p class="mi-note">Sources: NSE official closes and FII/DII provisional data; Yahoo Finance for index levels and India VIX; the MindForge stock snapshot for breadth.</p>' +
+      '<p class="mi-note">Sources: NSE official closes' + (WEATHER_LITE ? '' : ' and FII/DII provisional data') + '; Yahoo Finance for index levels and India VIX; the MindForge stock snapshot for breadth.</p>' +
       learn(['The label comes from published rules: the trend is the Nifty 50 against its 200-session average, “nervous” means India VIX at or above its 70th percentile of the past year, and a rebound is the index at least 5% off a 3-month low after a fall of 8% or more.',
              'None of this changes the model or its orders. It describes the market the book is moving in.']));
   }
@@ -617,7 +826,7 @@
         var cov = 0, vx = 0; pairs.forEach(function (p) { cov += (p[1] - mx) * (p[0] - my); vx += Math.pow(p[1] - mx, 2); });
         if (vx > 0) {
           var beta = cov / vx;
-          rows.push(['Market sensitivity', 'When the ' + bname + ' moved 1% in a day, this book has tended to move about <b>' + beta.toFixed(2) + '%</b> (last ' + pairs.length + ' sessions).']);
+          rows.push(['Market sensitivity', 'When its index, the ' + bname + ', moved 1% in a day, this portfolio tended to move about <b>' + beta.toFixed(2) + '%</b> (last ' + pairs.length + ' sessions).']);
         }
       }
     }
@@ -649,7 +858,7 @@
       if (sr && sr[3] != null && sr[3] <= -20) deep.push({ t: t, v: sr[3] });
     });
     if (nt >= Math.max(3, stocks.length * 0.6)) {
-      rows.push(['Trend', '<b>' + a50 + ' of ' + nt + '</b> holdings are above their 50-day average' + (s.key !== 'ma' ? ' and ' + a200 + ' above their 200-day' : '') + '.' +
+      rows.push(['Trend', '<b>' + a50 + ' of ' + nt + '</b> trade above their average price of the last ten weeks' + (s.key !== 'ma' ? ', and ' + a200 + ' above their average of the last ten months' : '') + '.' +
         (s.key !== 'ma' ? ' <span class="mi-sub">The model ranks on price and volume trends, so this is the part of the market it is built to hold.</span>' : '')]);
     }
     if (deep.length) {
@@ -688,13 +897,12 @@
       }
       if (ew >= tot * 0.6) {
         var pe = ew / ey, pb = bwt ? bwt / by : null, roe = rw ? rq / rw : null;
-        rows.push(['What it owns', 'Weighted P/E <b>' + pe.toFixed(1) + '</b>' + (bst ? ' against ' + bst.pe.toFixed(1) + ' for the index' : '') +
-          (pb ? ' · P/B ' + pb.toFixed(1) + (bst ? ' against ' + bst.pb.toFixed(1) : '') : '') +
-          (roe != null ? ' · ROE ' + roe.toFixed(0) + '%' + (bst ? ' against ' + bst.roe.toFixed(0) + '%' : '') : '') +
-          '. <span class="mi-sub">The model does not use these figures; they describe what the book holds.</span>']);
+        rows.push(['What you are paying for', 'The companies are priced at <b>' + pe.toFixed(1) + '</b> times their yearly profit' + (bst ? ' (the index: ' + bst.pe.toFixed(1) + ')' : '') +
+          (roe != null ? ', and earn <b>' + roe.toFixed(0) + '%</b> a year on their shareholders’ money' + (bst ? ' (the index: ' + bst.roe.toFixed(0) + '%)' : '') : '') +
+          '. <span class="mi-sub">The model does not use these figures; they describe what the portfolio holds.</span>']);
       }
     }
-    show(el, '<div class="mi-head"><h2>What could move your book' + (s.demo ? '<span class="mi-badge">Sample book</span>' : '') + '</h2><span class="mi-sub">Last ' + n + ' sessions to ' + esc(dshort(dt(closes.dates[n - 1]))) + '</span></div>' +
+    show(el, '<div class="mi-head"><h2>What could move your portfolio' + (s.demo ? '<span class="mi-badge">Sample book</span>' : '') + '</h2><span class="mi-sub">Last ' + n + ' sessions to ' + esc(dshort(dt(closes.dates[n - 1]))) + '</span></div>' +
       '<div class="mi-rows">' + rows.map(function (r) { return '<div class="mi-row"><span>' + r[0] + '</span><span>' + r[1] + '</span></div>'; }).join('') + '</div>' +
       '<p class="mi-note">From official NSE closes over about three months, at today’s model weights. It describes the recent past, not a forecast.</p>' +
       learn(['“Typical month” is the book’s daily volatility scaled to a month (×√21). About two months in three fall inside it if returns behave normally; real markets have fatter tails.',
@@ -802,8 +1010,8 @@
     }).join('');
     if (!warn) { warn = D.createElement('p'); warn.id = 'mi-trk-warn'; warn.className = 'mi-trk-warn'; }
     warn.textContent = sealed.length < 6
-      ? sealed.length + ' closed ' + (sealed.length === 1 ? 'cycle is' : 'cycles are') + ' far too few to judge a strategy. Up and down capture against the index is shown from twelve.'
-      : (sealed.length < 12 ? 'Up and down capture against the index is shown from twelve closed cycles.' : '');
+      ? sealed.length + ' closed ' + (sealed.length === 1 ? 'cycle is' : 'cycles are') + ' far too few to judge a strategy. How it does in rising and falling months is shown once there are twelve.'
+      : (sealed.length < 12 ? 'How it does in rising and falling months is shown once there are twelve closed months.' : '');
     var rowsEl = D.getElementById('trk-rows');
     if (rowsEl && rowsEl.parentNode) {
       rowsEl.parentNode.insertBefore(old, rowsEl);
@@ -836,7 +1044,8 @@
         if (sr[1] != null) bits.push((sr[1] ? 'above' : 'below') + ' its 50-day average');
         if (sr[3] != null) bits.push(sgn(sr[3], 0) + ' from its 52-week high');
       }
-      return bits.length ? '<div class="mi-ctx-row"><b>' + esc(t) + '</b><span class="mi-cx">' + bits.join(' · ') + '</span></div>' : '';
+      var own = (!left && OWN_LINES) ? '<span class="mi-cx mi-own-l" data-own-line="' + esc(t) + '"></span>' : '';
+      return (bits.length || own) ? '<div class="mi-ctx-row"><b>' + esc(t) + '</b>' + (bits.length ? '<span class="mi-cx">' + bits.join(' · ') + '</span>' : '') + own + '</div>' : '';
     };
     var outRows = diff.removed.map(function (t) { return line(t, true); }).join('');
     var inRows = diff.added.map(function (t) { return line(t, false); }).join('');
@@ -846,9 +1055,10 @@
     if (!old) { old = D.createElement('details'); old.id = 'mi-ctx'; old.className = 'mi-ctx mi-more'; host.appendChild(old); }
     old.innerHTML = '<summary>Context for the names that changed</summary>' +
       (med ? '<p class="mi-note" style="margin-top:6px">' + plural(nOrd, 'order') + ' this cycle from changes to the list; the typical backtest month needs about ' + esc(med) + '.</p>' : '') +
-      (outRows ? '<p class="mi-k">Left the book</p><div class="mi-ctx-list">' + outRows + '</div>' : '') +
-      (inRows ? '<p class="mi-k">Joined the book</p><div class="mi-ctx-list">' + inRows + '</div>' : '') +
+      (outRows ? '<p class="mi-k">Left the list</p><div class="mi-ctx-list">' + outRows + '</div>' : '') +
+      (inRows ? '<p class="mi-k">Joined the list</p><div class="mi-ctx-list">' + inRows + '</div>' : '') +
       '<p class="mi-note">Context, not the model’s reasons. A name joins or leaves when its rank in the model changes; the ranking and its inputs are not published. Trend and 52-week figures are from the MindForge snapshot.</p>';
+    if (OWN_LINES) diff.added.forEach(function (t) { ownFill(old, t, 'What it does: '); });
   }
 
   // ── M10 · a note from the analyst ────────────────────────────────────────
@@ -875,7 +1085,7 @@
   function renderReview(s, hist) {
     var el = card('mi-review', 'insight');
     before(el, D.getElementById('mi-narr') || D.getElementById('profit-card'));
-    if (s.demo || !s.key || s.key === 'ma' || !hist || !hist.cycles) { hide('mi-review'); return; }
+    if (SINCE_START || s.demo || !s.key || s.key === 'ma' || !hist || !hist.cycles) { hide('mi-review'); return; }
     var sub = s.sub || {}, now = Date.now();
     var exp = sub.expires_at ? new Date(sub.expires_at) : null, start = sub.subscribed_at ? new Date(sub.subscribed_at) : null;
     if (!exp || isNaN(exp.getTime()) || !start || isNaN(start.getTime())) { hide('mi-review'); return; }
@@ -894,7 +1104,7 @@
     show(el, '<div class="mi-head"><h2>Your ' + plural(months, 'month') + ' with ' + esc(s.book) + '</h2><span class="mi-sub">Model portfolio, live record</span></div>' +
       '<p class="mi-p">' + plural(cyc.length, 'cycle') + ' since you joined' + (running ? ' (the newest still running)' : '') + ': the model ' + span((m - 1) * 100, sgn((m - 1) * 100)) + ' against its index ' + span((b - 1) * 100, sgn((b - 1) * 100)) + ', compounded' + (closed ? ', and ahead of it in <b>' + ahead + ' of ' + closed + '</b> closed ' + (closed === 1 ? 'cycle' : 'cycles') : '') + '. ' +
       'Your access runs to <b>' + esc(dlong(exp)) + '</b>' + (daysLeft <= 14 ? ' (' + plural(daysLeft, 'day') + ')' : '') + '.</p>' +
-      '<p class="mi-note">The model’s record, not your account’s: your broker’s Tax P&amp;L has your own trades and charges. <a class="mi-link" href="#trk-card">Every cycle so far</a></p>');
+      '<p class="mi-note">The model’s record, not your account’s: your broker’s Tax P&amp;L has your own trades and charges. <a class="mi-link" href="#trk-card">Every month so far</a></p>');
   }
 
   // ── M12 · what happened today ────────────────────────────────────────────
@@ -1162,7 +1372,7 @@
         }
       });
     }
-    var anchor = shown(D.getElementById('mi-normal')) || shown(D.getElementById('profit-card')) || shown(D.getElementById('mi-narr'));
+    var anchor = shown(D.getElementById('mi-own')) || shown(D.getElementById('mi-normal')) || shown(D.getElementById('profit-card')) || shown(D.getElementById('mi-narr'));
     if (anchor) after(t, anchor); else before(t, D.getElementById(present[0][0]));
     root.classList.toggle('mi-folded', !open);
     t.hidden = false;
@@ -1188,6 +1398,8 @@
       safe(function () { renderNarrative(s, lb, bench, mk); });
       safe(function () { renderReview(s, hist); });
       safe(function () { renderToday(s, closes, sig, mk); });        // after the review: it sits above it
+      safe(function () { renderSince(s, hist); });                   // V44.7: above all of them
+      safe(function () { renderOwn(s); });                           // V44.7: under "Is this normal?"
       safe(function () { renderNote(s); });
       safe(function () { renderVsIndex(s, lb, bench, mk, ba, closes); });
       safe(function () { renderWeather(s, mk, s.key === 'ma' ? closes : null); });

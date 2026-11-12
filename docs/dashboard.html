@@ -28,7 +28,7 @@
      the way down. Measured on slow 4G: with this hint the first visit's main content comes 0.7 s
      sooner than without it. (The stylesheet stayed inline in this page on purpose: as a file of
      its own it delayed first paint by 0.55 s and saved a repeat visitor nothing that matters.) -->
-<link rel="preload" as="script" href="assets/mfc-dash.js?v=fbec9cdb">
+<link rel="preload" as="script" href="assets/mfc-dash.js?v=10973fed">
 <script id="mf-v443-early">
 /* V44.3 — START THE MEMBER'S TWO READS AT THE TOP OF THE PAGE. init() sits 76% of the way
    down this file, so on a slow 4G phone the request for the member's picks did not even
@@ -2810,7 +2810,7 @@ html[data-theme="dark"] tr.row-bought .broker-link{ color: var(--ink-link, #83aa
   box-shadow: 0 10px 24px -8px rgba(15,23,42,0.55),
               0 0 0 3px rgba(15,23,42,0.10);
 }
-/* V40.8: the hidden LinkedIn placeholder was removed (owner, 10 Oct 2026), so
+/* V40.8: the hidden placeholder icon was removed (owner, 10 Oct 2026), so
    WhatsApp is the 4th icon now — its hover moved with it. */
 .dash-foot-social a:nth-child(4):hover {  /* WhatsApp */
   box-shadow: 0 10px 24px -8px rgba(37,211,102,0.55),
@@ -3215,6 +3215,63 @@ html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap
   } catch (e) {}
 })();
 </script>
+<style id="mf-v447-dash">
+/* V44.7 — a calmer "How it's going" (switches in mf-v447-dash-flags below) and the new insight cards
+   ("Since you joined", "What you own, in plain words"; mfc-insight.js). */
+html[data-kpi="off"] #state-dashboard .stats-row{ display:none !important; }
+html[data-calm-profit="on"]:not(.pc-detail-open) #pc-today,
+html[data-calm-profit="on"]:not(.pc-detail-open) #pc-leaders,
+html[data-calm-profit="on"]:not(.pc-detail-open) #pc-breakdown{ display:none !important; }
+.pc-detail{ font:inherit; font-size:12.5px; font-weight:700; color:var(--accent2); background:none; border:0; padding:8px 0 0; margin-top:4px; cursor:pointer; text-align:left; display:block; }
+.pc-detail:hover{ text-decoration:underline; }
+.pc-detail:focus-visible{ outline:2px solid var(--accent2); outline-offset:2px; border-radius:4px; }
+html:not([data-calm-profit="on"]) .pc-detail{ display:none !important; }
+html[data-bps-text="off"] .sc-gap{ display:none !important; }
+.mi-since .mi-fee{ margin-top:12px; padding-top:12px; border-top:0.5px solid var(--border); }
+.mi-own-list{ list-style:none; margin:10px 0 0; padding:0; }
+.mi-own-list li{ padding:9px 0; border-top:0.5px solid var(--border); line-height:1.5; }
+.mi-own-list li:first-child{ border-top:0; }
+.mi-own-list.is-short li:nth-child(n+6){ display:none; }
+.mi-own-n{ font-weight:700; color:var(--white); text-decoration:none; }
+.mi-own-n:hover{ text-decoration:underline; }
+.mi-own-m{ font-size:12px; color:var(--text3); }
+.mi-own-l{ display:block; font-size:13.5px; color:var(--text2); margin-top:2px; }
+.mi-own-l:empty{ display:none; }
+.mi-own-more{ font:inherit; font-size:13px; font-weight:700; color:var(--accent2); background:none; border:0; padding:8px 0; cursor:pointer; }
+.mi-own-more:hover{ text-decoration:underline; }
+.mi-own-more:focus-visible{ outline:2px solid var(--accent2); outline-offset:2px; border-radius:4px; }
+.mi-ctx-row .mi-own-l{ flex-basis:100%; }
+@media print{ .mi-own-list.is-short li:nth-child(n+6){ display:block !important; } .mi-own-more, .pc-detail{ display:none !important; } }
+</style>
+<script id="mf-v447-dash-flags">(function(){
+  // V44.7 — a calmer "How it's going" for the career-first member. One switch each.
+  var KPI_TILES = false;   // the four count tiles; their facts are in the paragraph and on the mode button
+  var CALM_PROFIT = true;  // the profit card's one-day move, best/weakest names and up/down counts wait behind "Today's detail"
+  var BPS_TEXT = false;    // the "+1 bps" beside each stock card's weight gauge; the gauge and its label stay
+  var R = document.documentElement, KEY = 'mfc_pc_detail';
+  R.setAttribute('data-kpi', KPI_TILES ? 'on' : 'off');
+  R.setAttribute('data-calm-profit', CALM_PROFIT ? 'on' : 'off');
+  R.setAttribute('data-bps-text', BPS_TEXT ? 'on' : 'off');
+  try { if (CALM_PROFIT && localStorage.getItem(KEY) === '1') R.classList.add('pc-detail-open'); } catch (e) {}
+  function add(){
+    if (!CALM_PROFIT || document.getElementById('pc-detail')) return;
+    var left = document.querySelector('#profit-card .pc-left');
+    if (!left) return;
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'pc-detail'; b.className = 'pc-detail';
+    function sync(){
+      var o = R.classList.contains('pc-detail-open');
+      b.setAttribute('aria-expanded', o ? 'true' : 'false');
+      b.textContent = o ? 'Hide today’s detail' : 'Today’s detail';
+    }
+    b.addEventListener('click', function(){
+      R.classList.toggle('pc-detail-open'); sync();
+      try { localStorage.setItem(KEY, R.classList.contains('pc-detail-open') ? '1' : '0'); } catch (e) {}
+    });
+    sync(); left.appendChild(b);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();
+})();</script>
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -3474,7 +3531,7 @@ html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap
       <div class="cyc-head">
         <span class="cyc-k">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.9"/></svg>
-          Your cycle
+          Your month
         </span>
         <span class="cyc-badge" id="cyc-badge"></span>
       </div>
@@ -3754,7 +3811,7 @@ html .stat-card .stat-label, html #stat-industries-label, html .trk-val .trk-gap
     </div>
     <div class="profit-card fade-up" id="profit-card" style="display:none;">
       <div class="pc-left">
-        <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span><span class="pc-label-t">Live profit since rebalance<span id="pc-rebal-date"></span></span></div>
+        <div class="pc-label"><span class="pc-livedot" aria-hidden="true"></span><span class="pc-label-t">Your portfolio this month<span id="pc-rebal-date"></span></span></div>
         <div class="pc-main"><span class="pc-pct" id="pc-pct">—</span></div>
         <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
         <div class="pc-today" id="pc-today" hidden></div>
@@ -4500,7 +4557,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               <option value="company">Company</option>
               <option value="ticker">Ticker</option>
               <option value="industry" id="msort-group">Industry</option>
-              <option value="price">Rec. price</option>
+              <option value="price">Listed price</option>
               <option value="alloc">Allocation</option>
               <option value="shares">Shares</option>
               <option value="weight">Weight</option>
@@ -4640,7 +4697,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
               <th scope="col" class="sortable" data-sort="company" role="button" tabindex="0" aria-sort="none">Company</th>
               <th scope="col" class="sortable" data-sort="ticker" role="button" tabindex="0" aria-sort="none">Ticker</th>
               <th scope="col" class="sortable" data-sort="industry" role="button" tabindex="0" aria-sort="none" id="th-group">Industry</th>
-              <th scope="col" class="right sortable" data-sort="price" role="button" tabindex="0" aria-sort="none">Rec. Price</th>
+              <th scope="col" class="right sortable" data-sort="price" role="button" tabindex="0" aria-sort="none">Listed price</th>
               <th scope="col" class="right sortable" data-sort="alloc" role="button" tabindex="0" aria-sort="none">Allocation</th>
               <th scope="col" class="right sortable" data-sort="shares" role="button" tabindex="0" aria-sort="none">Shares</th>
               <th scope="col" class="right sortable th-stacked" data-sort="weight" style="width:170px;" role="button" tabindex="0" aria-sort="none" title="Model weight, and how far your capital lands from it after whole-share rounding">Weight <span class="th-sub">vs model</span></th>
@@ -4725,7 +4782,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
                    member past month one is both the wrong list and roughly ten times
                    the right amount of money. It also never mentioned selling, on a
                    page that had just named the holdings to sell. -->
-              <p id="hs3-copy">Use the Shares column as your quantity for each ticker. Limit orders near rec. price are fine on liquid names.</p>
+              <p id="hs3-copy">Use the Shares column as your quantity for each ticker. A limit order near the listed price is fine; busy stocks fill easily.</p>
               <div class="hs-live" hidden></div>
               <!-- V39.1 — B7: one tap for the member who placed everything on Kite and
                    does not want to tick fifteen rows. Uses the table's own select-all. -->
@@ -5228,7 +5285,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       <div class="trk-card fade-up" id="trk-card" style="display:none;">
         <div class="trk-head">
           <div>
-            <h3 id="trk-title">Every cycle so far</h3>
+            <h3 id="trk-title">Every month so far</h3>
             <div class="trk-sub" id="trk-sub"></div>
           </div>
           <span class="trk-badge" id="trk-badge"></span>
@@ -5802,7 +5859,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
   <span id="toast-msg">Copied</span>
 </div>
 
-<script src="assets/mfc-dash.js?v=fbec9cdb"></script>
+<script src="assets/mfc-dash.js?v=10973fed"></script>
 <script>
 // MF-SCROLL-PROG v3.4
 (function() {
@@ -8279,7 +8336,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4430"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=6"></script>
+<script defer src="assets/mfc-insight.js?v=7"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
