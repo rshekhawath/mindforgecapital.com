@@ -406,14 +406,19 @@
       cyc.forEach(function (c) { var x = c.strategies[k]; m *= 1 + x.live_pct / 100; b *= 1 + x.bench_pct / 100; if (c.sealed) closed++; });
       var mp = (m - 1) * 100, bp = (b - 1) * 100, running = !cyc[cyc.length - 1].sealed;
       var bname = cyc[cyc.length - 1].strategies[k].bench_name || BENCH[k] || 'its index';
-      html += '<p class="mi-p">Over the ' + plural(cyc.length, 'monthly list') + ' since you joined on ' + esc(dlong(start)) + (running ? ' (the newest still running)' : '') +
+      // V44.8 — a member who joined last month has ONE list, still running: "Over the 1 monthly list … (the newest
+      // still running)" and "0 of those months are closed" read like a template. Say it in words.
+      var one = cyc.length === 1;
+      html += '<p class="mi-p">Over the ' + (one ? 'one monthly list' : plural(cyc.length, 'monthly list')) + ' since you joined on ' + esc(dlong(start)) + (running ? (one ? ' (still running)' : ' (the newest still running)') : '') +
         ', the model portfolio is ' + span(mp, sgn(mp)) + '; its index, the ' + esc(bname) + ', is ' + span(bp, sgn(bp)) + '.</p>';
       if (s.capEntered && s.capital > 0) {
         var rs = s.capital * (m - 1), rr = Math.round(Math.abs(rs));
         if (rr) html += '<p class="mi-p">On your ' + esc(inr(s.capital)) + ', that path comes to ' + span(rs, '<span style="white-space:nowrap">' + (rs > 0 ? '+' : '−') + esc(inr(rr)) + '</span>') + ', before tax and charges.</p>';
       }
       var neg = W._mfData ? W._mfData(k + ':neg') : '', mon = W._mfData ? W._mfData(k + ':months') : '', dd = W._mfData ? W._mfData(k + ':max_dd') : '';
-      html += '<p class="mi-note">' + plural(closed, 'of those months is', 'of those months are').replace(/^(\d+) /, '$1 ') + ' closed, far too few to judge a strategy.' +
+      html += '<p class="mi-note">' + (!closed ? 'No month has closed yet, far too soon to judge a strategy.'
+        : one ? 'One closed month, far too few to judge a strategy.'
+        : plural(closed, 'of those months is', 'of those months are') + ' closed, far too few to judge a strategy.') +
         (neg && mon && dd ? ' Expect down months: in the backtest, ' + esc(neg) + ' of ' + esc(mon) + ' months ended down, and the deepest fall was ' + esc(dd) + '.' : '') + '</p>' +
         '<p class="mi-note">The model’s record at published prices, not your account: your broker’s holdings and Tax P&amp;L show your own.</p>';
     }

@@ -923,7 +923,9 @@
 // V44.7 -> mfc-v150. The precached index.html: a calmer hero card (neutral "points behind", the days the live
 // figure covers, a line to the two Zerodha-verified accounts), "What a percentage fee costs" and "How the list is made"
 // under the numbers table, and the chat bubble no longer pops up on its own. mfc-insight.js 7 and mfc-dash.js carry their own ?v.
-const CACHE = 'mfc-v150';
+// V44.8 -> mfc-v151. The precached index.html: the owner's new headline, sized to keep the hero's height, and the
+// fee section's amount box reading "15 lakh" or "1.5 cr". mfc-insight.js 8 ("Since you joined" in words for one list).
+const CACHE = 'mfc-v151';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)
