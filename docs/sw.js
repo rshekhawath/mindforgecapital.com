@@ -929,7 +929,10 @@
 // steps aside for the open menu) and the precached index.html (hero pill, live card's day count).
 // V45.0 -> mfc-v153. The career-first audit: mfc-insight.js 9 / .css 7 and mfc-dash.js's token moved (the glance
 // card, the folded day card, one figure per cycle), plus a new calculator page (Time to Goal), not precached.
-const CACHE = 'mfc-v153';
+// V45.1 -> mfc-v154. Two precached documents changed: index.html (the hero button's arrow keeps its space on
+// phones and iPads) and offline.html (follows the site's light/dark switch). mfc-dash.js's token moved (the
+// action bar's Capital and amount buttons work from "How it's going").
+const CACHE = 'mfc-v154';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

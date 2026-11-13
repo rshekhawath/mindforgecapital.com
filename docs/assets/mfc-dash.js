@@ -4532,7 +4532,17 @@ if (!window.__abarFitBound){
   addEventListener('orientationchange', function(){ setTimeout(abarFitMid, 180); }, {passive:true});
   try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(abarFitMid); } catch(e){}
 }
+/* V45.1 — the action bar shows in both views, but the amount field, the order-mode chooser and the list live in
+   "This month's orders". From "How it's going" these buttons scrolled to, or focused, an element that is not
+   displayed, so the tap did nothing (Capital, Enter your amount, Choose your orders). Switch views first, the way
+   the view's own tab does. Synchronous on purpose: iOS opens the keyboard only for a focus inside the tap. */
+function _abarToOrders(){
+  if (document.documentElement.getAttribute('data-dmode') !== 'insight') return;
+  var b = document.querySelector('#mi-modes button[data-m="orders"]');
+  if (b) b.click();
+}
 function abarEditCapital(){
+  _abarToOrders();
   var el = document.getElementById('size-input');
   if (!el) return;
   var prev = document.documentElement.style.scrollBehavior;
@@ -4542,6 +4552,7 @@ function abarEditCapital(){
   try { el.focus({ preventScroll:true }); el.select(); } catch(e){ try{ el.focus(); }catch(e2){} }
 }
 function abarGoToPicks(){
+  _abarToOrders();
   var el = document.querySelector(document.documentElement.classList.contains('is-fm') ? '.table-section > .table-header' : '.table-section');
   if (!el) return;
   var prev = document.documentElement.style.scrollBehavior;
@@ -6019,6 +6030,7 @@ function renderOrderMode(){
   box.hidden = false;
 }
 function abarGoToOrderMode(){
+  _abarToOrders();
   var el = document.getElementById('omode');
   if (!el || el.hidden) return abarGoToPicks();
   var prev = document.documentElement.style.scrollBehavior;
