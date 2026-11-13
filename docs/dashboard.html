@@ -28,7 +28,7 @@
      the way down. Measured on slow 4G: with this hint the first visit's main content comes 0.7 s
      sooner than without it. (The stylesheet stayed inline in this page on purpose: as a file of
      its own it delayed first paint by 0.55 s and saved a repeat visitor nothing that matters.) -->
-<link rel="preload" as="script" href="assets/mfc-dash.js?v=10973fed">
+<link rel="preload" as="script" href="assets/mfc-dash.js?v=51cbbe46">
 <script id="mf-v443-early">
 /* V44.3 — START THE MEMBER'S TWO READS AT THE TOP OF THE PAGE. init() sits 76% of the way
    down this file, so on a slow 4G phone the request for the member's picks did not even
@@ -3276,6 +3276,36 @@ html[data-bps-text="off"] .sc-gap{ display:none !important; }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();
 })();</script>
+<script id="mf-v450-dash-flags">(function(){
+  // V45.0 — the career-first audit (markdowns/V45.0-career-first-homepage-and-dashboard.md). One switch each.
+  // The insight cards' switches (GLANCE, TODAY_FOLD, PLAIN_ALWAYS, COST_ALL_IN, OWN_PLAIN, NORMAL_RUPEES) are in mfc-insight.js.
+  var CALM_PILL = true;          // profit card: the index pill in neutral ink, a smaller headline figure, the days it covers
+  var PILLS_CALM = true;         // hero pills: the data date as a date ("updated 13 Nov"), and no data pill on phones
+  var RECORD_ONE_FIGURE = true;  // "Every month so far": the running row prints the profit card's figure; compounding counts closed cycles
+  var NAMES_WITH_TICKERS = true; // order lists: the company's short name beside each ticker (labels only, no order logic)
+  var R = document.documentElement;
+  R.setAttribute('data-calm-pill', CALM_PILL ? 'on' : 'off');
+  R.setAttribute('data-pills-calm', PILLS_CALM ? 'on' : 'off');
+  R.setAttribute('data-record-one', RECORD_ONE_FIGURE ? 'on' : 'off');
+  R.setAttribute('data-names-tk', NAMES_WITH_TICKERS ? 'on' : 'off');
+})();</script>
+<style id="mf-v450-dash">
+/* V45.0 — CALM_PILL: the profit card stops reading like a scoreboard */
+.pc-calm-note{ display:none; }
+html[data-calm-pill="on"] #profit-card .pc-calm-note{ display:block; margin:8px 0 0; font-size:12.5px; line-height:1.5; color:var(--text3); }
+html[data-calm-pill="on"] .pc-pct{ font-size:30px; }
+html[data-calm-pill="on"] .pc-bench .pcb-gap.ahead,
+html[data-calm-pill="on"] .pc-bench .pcb-gap.behind{ color:var(--text2,#1e3a5f) !important; background:rgba(37,99,235,.07) !important; }
+html[data-calm-pill="on"][data-theme="dark"] .pc-bench .pcb-gap.ahead,
+html[data-calm-pill="on"][data-theme="dark"] .pc-bench .pcb-gap.behind{ background:rgba(131,170,255,.12) !important; }
+html[data-calm-pill="on"] .pc-bench .pcb-bench.up,
+html[data-calm-pill="on"] .pc-bench .pcb-bench.down{ color:var(--text2,#1e3a5f) !important; }
+/* PILLS_CALM: on a phone the data-date pill is detail; the glance card dates its own figures */
+@media (max-width:600px){ html[data-pills-calm="on"] #pill-fresh{ display:none !important; } }
+/* NAMES_WITH_TICKERS: the name leads, the ticker follows small (mfc-dash.js writes .tk-nm) */
+.tk-nm{ font-weight:inherit; color:inherit; letter-spacing:0; }
+.tk-sym{ font-size:.86em; color:var(--text3); font-weight:600; letter-spacing:.02em; }
+</style>
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -3431,6 +3461,8 @@ html[data-bps-text="off"] .sc-gap{ display:none !important; }
       <div class="section-label">Member Dashboard</div>
       <h1><span id="hero-greet">Welcome back</span>, <span class="accent welcome-name" id="hero-name">Investor</span>.</h1>
       <p class="sub" id="dash-subtitle">Here are this cycle's picks for your strategy. Place them in your broker and you're done for the month.</p>
+      <!-- V45.0 — GLANCE (mfc-insight.js): in "How it's going" the greeting is a status line written here -->
+      <p class="sub" id="dash-sub-calm" hidden></p>
       <div class="meta-row">
         <div class="meta-pill" id="pill-status">
           <span class="dot-green"></span> Subscription active until <strong id="expiry-date">—</strong>
@@ -3820,6 +3852,8 @@ html[data-bps-text="off"] .sc-gap{ display:none !important; }
         <div class="pc-sub" id="pc-sub">Fetching live prices for your holdings…</div>
         <div class="pc-today" id="pc-today" hidden></div>
         <div class="pc-bench" id="pc-bench" style="display:none;"></div>
+        <!-- V45.0 — CALM_PILL: a few days of a monthly book say little -->
+        <p class="pc-calm-note" id="pc-calm-note">A part-month says little; the record below counts whole months.</p>
         <!-- V39.1 — B3. Shown only when the since-rebalance figure is negative. -->
         <p class="pc-risk" id="pc-risk" hidden></p>
         <!-- V39.1 — the backtest figures the page reads (renderRiskLine, the
@@ -3832,6 +3866,9 @@ html[data-bps-text="off"] .sc-gap{ display:none !important; }
           <span data-k="ma:neg"><!--MFRISK:ma:neg-->10<!--/MFRISK--></span><span data-k="ma:months"><!--MFRISK:ma:months-->44<!--/MFRISK--></span><span data-k="ma:worst"><!--MFRISK:ma:worst-->-9.1%<!--/MFRISK--></span>
           <span data-k="lm:median"><!--MFTURN:lm:median-->12<!--/MFTURN--></span><span data-k="lm:yearly"><!--MFTURN:lm:yearly-->140<!--/MFTURN--></span>
           <span data-k="sm:median"><!--MFTURN:sm:median-->14<!--/MFTURN--></span><span data-k="sm:yearly"><!--MFTURN:sm:yearly-->170<!--/MFTURN--></span>
+          <span data-k="lm:charges_var"><!--MFTURN:lm:charges_var-->1.072<!--/MFTURN--></span><span data-k="lm:charges_dp"><!--MFTURN:lm:charges_dp-->1109<!--/MFTURN--></span><span data-k="lm:charges_pct"><!--MFTURN:lm:charges_pct-->1.15<!--/MFTURN--></span>
+          <span data-k="sm:charges_var"><!--MFTURN:sm:charges_var-->1.277<!--/MFTURN--></span><span data-k="sm:charges_dp"><!--MFTURN:sm:charges_dp-->1320<!--/MFTURN--></span><span data-k="sm:charges_pct"><!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN--></span>
+          <span data-k="charges:asof"><!--MFTURN:charges:asof-->13 Nov 2026<!--/MFTURN--></span>
           <span data-k="lm:max_dd"><!--MFSTAT:lm:max_dd-->-23.1%<!--/MFSTAT--></span><span data-k="sm:max_dd"><!--MFSTAT:sm:max_dd-->-24.2%<!--/MFSTAT--></span><span data-k="ma:max_dd"><!--MFSTAT:ma:max_dd-->-13.5%<!--/MFSTAT--></span>
         </div>
         <div class="pc-leaders" id="pc-leaders"></div>
@@ -5863,7 +5900,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
   <span id="toast-msg">Copied</span>
 </div>
 
-<script src="assets/mfc-dash.js?v=10973fed"></script>
+<script src="assets/mfc-dash.js?v=51cbbe46"></script>
 <script>
 // MF-SCROLL-PROG v3.4
 (function() {
@@ -8340,7 +8377,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4490"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=8"></script>
+<script defer src="assets/mfc-insight.js?v=9"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -8360,7 +8397,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
      to the page's own body styles. Measured — moving it to the head took
      .vfy-card on the dashboard from 16px to 18px of phone padding. -->
 <link rel="stylesheet" href="assets/mfc-chrome.css?v=10">
-<link rel="stylesheet" href="assets/mfc-insight.css?v=6">
+<link rel="stylesheet" href="assets/mfc-insight.css?v=7">
 
 <!-- ============================================================================
      V29.5 — THE 16px RULE: MOBILE SAFARI ZOOMS INTO ANY FIELD SMALLER THAN THIS.

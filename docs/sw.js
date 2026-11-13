@@ -927,7 +927,9 @@
 // fee section's amount box reading "15 lakh" or "1.5 cr". mfc-insight.js 8 ("Since you joined" in words for one list).
 // V44.9 -> mfc-v152. mfc-chrome.js 4490 (the back-to-top fades once scrolling stops below 1440px; the sticky bar
 // steps aside for the open menu) and the precached index.html (hero pill, live card's day count).
-const CACHE = 'mfc-v152';
+// V45.0 -> mfc-v153. The career-first audit: mfc-insight.js 9 / .css 7 and mfc-dash.js's token moved (the glance
+// card, the folded day card, one figure per cycle), plus a new calculator page (Time to Goal), not precached.
+const CACHE = 'mfc-v153';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

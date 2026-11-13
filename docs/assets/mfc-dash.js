@@ -9190,7 +9190,7 @@ function renderBookChange(diff, stocks){
           '<input type="checkbox" class="bought-cb chg-sell-cb"' + (done ? ' checked' : '') +
             ' onchange="toggleBought(this)"' +
             ' aria-label="Mark ' + escapeHtml(t) + ' as bought">' +
-          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+          '<span class="chg-sell-id"><span class="chg-sell-t">' + _tkLabel(t, s2) + '</span>' +
             '<span class="chg-sell-q" data-buyqty="' + escapeHtml(t) + '">' + _buyQtyText(s2) + '</span>' +
           '</span>' +
           (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
@@ -9913,7 +9913,16 @@ function renderProfitHeadline(){
       // V39.3 — B4: never "your" for an amount the member did not set.
       : '. On ' + fmtMoney(currentCapital) + ', the starting amount rather than one you entered, that is <strong class="pc-amt">' +
         absSign + absStr + '</strong>. <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter yours</button>');
-  var d = document.getElementById('pc-rebal-date'); if (d) d.textContent = '';
+  var d = document.getElementById('pc-rebal-date');
+  if (d) {
+    // V45.0 — CALM_PILL: the label says how many days the figure covers ("· 12 days")
+    var _nd = 0;
+    if (rebal && document.documentElement.getAttribute('data-calm-pill') === 'on') {
+      var _a0 = new Date(rebal.getTime()), _a1 = new Date(); _a0.setHours(0,0,0,0); _a1.setHours(0,0,0,0);
+      _nd = Math.max(1, Math.round((_a1 - _a0) / 864e5));
+    }
+    d.textContent = _nd ? '\u00a0· ' + _nd + ' day' + (_nd === 1 ? '' : 's') : '';
+  }
   var br = document.getElementById('pc-breakdown');
   if (br) br.innerHTML =
     '<div class="pc-stat"><span class="pc-dot pc-up-dot"></span><b>' + up + '</b> up</div>' +
@@ -10329,6 +10338,21 @@ function renderTrackRecord(){
              benchName:s.bench_name || '' };
   }).filter(Boolean);
   if (!rows.length) return;
+  /* V45.0 — RECORD_ONE_FIGURE. The running row came from live-history.json (to its last measured close, "to
+     9 Nov") while the profit card above it priced the same cycle today: two figures for one month on one
+     page. When the profit card has priced the cycle against the same moment's index, the running row prints
+     that figure, dated today; the compounded line below counts closed cycles only. */
+  var rOne = document.documentElement.getAttribute('data-record-one') === 'on';
+  if (rOne) {
+    var lastR = rows[rows.length - 1], pa = window._profitAbs, bn = window._benchNow, rb = window._rebalDate;
+    var rbIso = (rb && !isNaN(rb.getTime())) ? (rb.getFullYear() + '-' + String(rb.getMonth() + 1).padStart(2, '0') + '-' + String(rb.getDate()).padStart(2, '0')) : '';
+    if (lastR && !lastR.sealed && !lastR.pending && pa && bn && !bn.asOf && isFinite(pa.port) && isFinite(bn.bench) &&
+        Math.abs(pa.port - bn.model) < 0.005 && rbIso && String(lastR.when).slice(0, 10) === rbIso) {
+      var _t = new Date();
+      lastR.live = pa.port; lastR.bench = bn.bench;
+      lastR.through = _t.getFullYear() + '-' + String(_t.getMonth() + 1).padStart(2, '0') + '-' + String(_t.getDate()).padStart(2, '0');
+    }
+  }
 
   // ONE scale for every row, so a bar's length means the same thing down the
   // column. 1.0 floors it: a set of near-flat cycles would otherwise be magnified
@@ -10452,15 +10476,16 @@ function renderTrackRecord(){
        across a gap and state a return for a period nobody measured. So it
        renders only when every row is the entry after the one before it, and the
        benchmark half only when every row carries one. */
-    var chain = rows.length >= 2 && rows.every(function(r, i){ return !i || r.ix === rows[i - 1].ix + 1; });
+    var cRows = rOne ? rows.filter(function(r){ return r.sealed; }) : rows;   // V45.0: closed cycles only
+    var chain = cRows.length >= 2 && cRows.every(function(r, i){ return !i || r.ix === cRows[i - 1].ix + 1; });
     if (chain){
       var cm = 1, cb = 1, hasB = true;
-      rows.forEach(function(r){
+      cRows.forEach(function(r){
         cm *= 1 + r.live / 100;
         if (r.bench == null) hasB = false; else cb *= 1 + r.bench / 100;
       });
-      sub.textContent += '\u00a0· compounded ' + fmtPct((cm - 1) * 100) +
-        (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (rows[rows.length - 1].benchName || 'the index') : '');
+      sub.textContent += '\u00a0· ' + (rOne && cRows.length < rows.length ? cRows.length + ' closed, compounded ' : 'compounded ') + fmtPct((cm - 1) * 100) +
+        (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (cRows[cRows.length - 1].benchName || 'the index') : '');
     }
   }
   var badge = document.getElementById('trk-badge');
@@ -10559,6 +10584,13 @@ function _benchLive(key, s){
   }).catch(function(){ return null; });
   return _benchLiveP;
 }
+/* V45.0 — NAMES_WITH_TICKERS: a buy row leads with the company's short name; the ticker the broker needs
+   follows, small. Labels only: every key, tick and quantity still reads the ticker. */
+function _tkLabel(t, s2){
+  var nm = s2 && s2.company_name ? String(s2.company_name).replace(/\s+/g, ' ').trim().replace(/[\s,]+(?:Ltd\.?|Limited)$/i, '') : '';
+  if (!nm || !/[a-z]/.test(nm) || document.documentElement.getAttribute('data-names-tk') !== 'on' || nm.toUpperCase() === String(t).toUpperCase()) return escapeHtml(t);
+  return '<span class="tk-nm">' + escapeHtml(nm) + '</span> <span class="tk-sym">' + escapeHtml(t) + '</span>';
+}
 function _paintBenchPill(el, s, model, bench, asOfIso){
   var gap = model - bench;
   var state = gap > 0.05 ? 'ahead' : (gap < -0.05 ? 'behind' : 'level');
@@ -10585,6 +10617,11 @@ function _paintBenchPill(el, s, model, bench, asOfIso){
   el.setAttribute('aria-label', asOfIso
     ? 'To the ' + when + ' close this book moved ' + fmt(model) + ' and ' + bname + ' ' + benchTxt + ': ' + gapTxt + ' ' + ariaWord + ' it.'
     : 'Your portfolio is ' + gapTxt + ' ' + ariaWord + ' ' + bname + ', which moved ' + benchTxt + ' over the same cycle.');
+  // V45.0 — the card's own comparison, kept so the glance card (mfc-insight.js) and the record's running row
+  // print the same figure for this cycle as the profit card does (RECORD_ONE_FIGURE).
+  window._benchNow = { model: model, bench: bench, asOf: asOfIso || null };
+  if (document.documentElement.getAttribute('data-record-one') === 'on') { try { renderTrackRecord(); } catch(e){} }
+  try { if (window.mfcInsight && typeof window.mfcInsight.refresh === 'function') window.mfcInsight.refresh('bench'); } catch(e){}
 }
 function renderBenchCompare(port){
   var el = document.getElementById('pc-bench');
@@ -10619,6 +10656,8 @@ function renderBenchCompare(port){
     // so the "Xm ago" is correct for viewers in any timezone (no-op for IST).
     var ga=String(d.generated_at); if(!/(?:[zZ]|[+-]\d\d:?\d\d)$/.test(ga)) ga+='+05:30';
     var t=new Date(ga); if(isNaN(t))return;
+    // V45.0 — PILLS_CALM: a date reads calmer than a clock ("updated 13 Nov", not "13h ago")
+    if(document.documentElement.getAttribute('data-pills-calm')==='on'){ when.textContent='updated '+mfDate(t, {day:'numeric',month:'short'}); pill.style.display=''; return; }
     var mins=Math.max(0,Math.round((Date.now()-t.getTime())/60000));
     var label;
     if(mins<60) label=mins+'m ago';
