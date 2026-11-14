@@ -275,7 +275,7 @@
   var GLANCE = true, TODAY_FOLD = true, PLAIN_ALWAYS = true, COST_ALL_IN = true, OWN_PLAIN = true, NORMAL_RUPEES = true;
   /* TWIN of STRAT_MONTHLY and DURATIONS in index.html (and DURATIONS in signup.html): the listed monthly price
      and each plan's discount. The dashboard has no price table of its own; a QA check asserts the three agree. */
-  var PLAN_PRICES = { ma: 0, lm: 999, sm: 1499 };
+  var PLAN_PRICES = { ma: 0, lm: 199, sm: 499 };
   var PLAN_DISC = { 1: 0, 3: 0.05, 6: 0.10, 12: 0.20 };
   var BENCH = { lm: 'Nifty LargeMidcap 250', sm: 'Nifty Smallcap 250', ma: 'Nifty 50' };
 
@@ -415,13 +415,16 @@
     var fee = PLAN_PRICES[s.key] * 12 * (1 - (disc || 0)), cap = (s.capEntered && s.capital > 0) ? s.capital : 0;
     var g = function (k) { var v = parseFloat(W._mfData ? W._mfData(s.key + ':' + k) : ''); return isFinite(v) ? v : null; };
     var vr = g('charges_var'), dp = g('charges_dp');
+    // V45.2 — the amount charges_pct is quoted at: the book's recommended investment (MFSTAT tax_capital)
+    var at = parseFloat(String(W._mfData ? W._mfData(s.key + ':charges_at') : '').replace(/[^0-9.]/g, ''));
     return { fee: fee, cap: cap, pct: g('charges_pct'), chg: (cap && vr != null && dp != null) ? cap * vr / 100 + dp : null,
-             asof: W._mfData ? W._mfData('charges:asof') : '' };
+             at: at > 0 ? at : 0, asof: W._mfData ? W._mfData('charges:asof') : '' };
   }
+  function atLakh(ca) { var n = ca && ca.at; return n > 0 ? ' at ₹' + (n % 1e5 ? (n / 1e5).toFixed(1) : String(n / 1e5)) + ' lakh' : ''; }
   function chgSentence(s, yearly, cap) {
     var ca = COST_ALL_IN ? costAllIn(s) : null;
     if (!ca || ca.free || ca.pct == null) return '';
-    return ' Trading charges come on top: about ' + ca.pct.toFixed(2) + '% of the money a year at ₹15 lakh' +
+    return ' Trading charges come on top: about ' + ca.pct.toFixed(2) + '% of the money a year' + atLakh(ca) +
       (cap && ca.chg != null ? ', about ' + esc(inr(r100(ca.chg))) + ' on your ' + esc(inr(cap)) + ', so about <b>' + esc(inr(r100(yearly + ca.chg))) + '</b> a year all in' : '') +
       ' (an estimate from this book’s average month in its backtest' + (ca.asof ? ', at Zerodha’s rates on ' + esc(ca.asof) : '') + ').';
   }
@@ -562,7 +565,7 @@
         t3 = 'About <b>' + esc(inr(r100(tot))) + '</b>: your fee ' + esc(inr(ca.fee)) + ' plus trading charges of about ' + esc(inr(r100(ca.chg))) +
           ' (estimate). That’s ' + (tot / ca.cap * 100).toFixed(1) + '% of your amount; a 1% fund’s fee would be ' + esc(inr(ca.cap * 0.01)) + ', a 2% fund’s ' + esc(inr(ca.cap * 0.02)) + '.';
       } else {
-        t3 = 'Your fee: <b>' + esc(inr(ca.fee)) + '</b> a year.' + (ca.pct != null ? ' Trading charges come on top: about ' + ca.pct.toFixed(2) + '% of the money a year at ₹15 lakh.' : '');
+        t3 = 'Your fee: <b>' + esc(inr(ca.fee)) + '</b> a year.' + (ca.pct != null ? ' Trading charges come on top: about ' + ca.pct.toFixed(2) + '% of the money a year' + atLakh(ca) + '.' : '');
       }
       rows.push(['A year, all in', t3]);
     }

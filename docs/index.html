@@ -22,7 +22,7 @@
      searches for. The brand still closes the title (and the homepage wins its own
      name on brand queries regardless); the front of it now spends its weight on
      the intent words: quant / factor / India. -->
-<title>A quant-researched stock portfolio built to outperform active mutual funds, for one flat fee | MindForge Capital</title>
+<title>A quant-researched stock portfolio built to outperform active mutual funds, for a passive fund’s fee | MindForge Capital</title>
 <style>
 :root{--ink:#f0f5ff;--ink2:#ffffff;--ink3:#e4eeff;--white:#0c1831;--accent:#1a50d8;--accent2:#2563eb;--accent3:#3b82f6;--gold:#d97706;--teal:#0891b2;--green:#059669;--text:#0c1831;--text2:#1e3a5f;--text3:#475569;--border:rgba(37,99,235,0.10);--border2:rgba(37,99,235,0.20);--r:16px;--r-sm:10px;}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3803,7 +3803,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
   <!-- V40.7 — A1/A2: what a forwarded link shows on WhatsApp and LinkedIn. No figure
        of any kind (a share card is an advertisement, and a number in a preview
        reads as a tip); one "SEBI-registered", as before. -->
-  <meta property="og:title" content="A quant-researched stock portfolio built to outperform active mutual funds, for one flat fee | MindForge Capital">
+  <meta property="og:title" content="A quant-researched stock portfolio built to outperform active mutual funds, for a passive fund’s fee | MindForge Capital">
   <meta property="og:description" content="From a SEBI-registered Research Analyst: the month’s stocks and weights on the 1st, about ten minutes to place in your own broker. One book is free.">
   <meta property="og:url" content="https://mindforgecapital.com/">
   <meta property="og:image" content="https://mindforgecapital.com/assets/og/home.png">
@@ -3813,7 +3813,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@MindForgeCap">
-  <meta name="twitter:title" content="A quant-researched stock portfolio built to outperform active mutual funds, for one flat fee | MindForge Capital">
+  <meta name="twitter:title" content="A quant-researched stock portfolio built to outperform active mutual funds, for a passive fund’s fee | MindForge Capital">
   <meta name="twitter:description" content="From a SEBI-registered Research Analyst: the month’s stocks and weights on the 1st, about ten minutes to place in your own broker. One book is free.">
   <meta name="twitter:image" content="https://mindforgecapital.com/assets/og/home.png">
   <!-- Structured data (Organization + WebSite) for rich SERP results -->
@@ -3938,6 +3938,7 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   var FEE_ALL_IN = true;     // fee section: the trading-charges toggle and the all-in sentence
   var FEE_ALL_IN_DEFAULT = false; // the toggle's starting state (a reader's own choice is kept)
   var PLAIN_RULES = true;    // "Four plain rules", with "What this is not" moved into it; off = its old place
+  var FUND_MAP = true;       // V45.2: "Find your fund. Then find ours." (#fund-map): the 187 active funds by fee and return, ours beside them
   var R = document.documentElement;
   R.setAttribute('data-perf-hero', PERF_HERO ? 'on' : 'off');
   R.setAttribute('data-perf-cards', PERF_CARDS ? 'on' : 'off');
@@ -3958,6 +3959,7 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   R.setAttribute('data-fee-chart', FEE_CHART ? 'on' : 'off');
   R.setAttribute('data-fee-allin', FEE_ALL_IN ? 'on' : 'off');
   R.setAttribute('data-fee-allin-default', FEE_ALL_IN_DEFAULT ? 'on' : 'off');
+  R.setAttribute('data-fund-map', FUND_MAP ? 'on' : 'off');
   R.setAttribute('data-plain-rules', PLAIN_RULES ? 'on' : 'off');
   var MOVED = { '#your-month': 'how-it-works/', '#how': 'methodology/', '#how-built': 'methodology/', '#vproof-h': 'track-record/' };
   try { var to = MOVED[location.hash]; if (to) location.replace(to); if (location.hash === '#already' && !ALREADY) location.replace('#doors'); } catch (e) {}
@@ -4392,7 +4394,6 @@ html[data-theme="dark"] .hvn-bar-f.is-fund{ background:#f0a836; }
 @media (max-width:420px){ .hvf{ padding:18px 16px 14px; } }
 @media (max-width:360px){ .hvf{ padding:16px 14px 12px; } }
 /* FEE_CHART: the ten-year chart replaces the three total bars; FEE_ALL_IN: the toggle and the all-in line */
-html[data-fee-chart="on"] #fa-scale, html[data-fee-chart="on"] #fa-scaleN,
 html[data-fee-chart="off"] .fd-chart,
 html[data-fee-allin="off"] .fd-allin, html[data-fee-allin="off"] .fd-allin-line{ display:none !important; }
 /* the intro names the chart only while there is one; FEE_CHART off restores V44.7's sentence */
@@ -4476,6 +4477,106 @@ html body section.prules{ padding:46px 0 6px; }
   .pr-list li::before{ left:13px; top:14px; } .pr-list b{ font-size:15px; margin-bottom:3px; } }
 /* rule 4's link sits inside its sentence, so it takes the V39.3 inline opt-out: no 44px box opening a gap in the line */
 </style>
+<style id="mf-v452-home">
+/* V45.2 — the fee section's own fund, sliders and this month's rupees, the chart's year reader, and the fund map
+   (#fund-map). Phones first: every control is 44px tall on touch, and nothing here widens the page. */
+.fd-row-fund{ align-items:center; }
+.fd-pick{ display:inline-flex; max-width:100%; }
+.fd-select{ font:inherit; font-size:16px; font-weight:650; color:var(--white); background-color:var(--ink2); border:1px solid var(--field-edge);
+  border-radius:10px; min-height:44px; padding:0 38px 0 12px; width:24em; max-width:100%; box-sizing:border-box; cursor:pointer;
+  -webkit-appearance:none; appearance:none; text-overflow:ellipsis;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 13px center; background-size:12px 8px; }
+.fd-select:focus-visible{ outline:none; border-color:var(--accent3); box-shadow:0 0 0 3px rgba(59,130,246,.16); }
+.fd-select:disabled{ opacity:.65; cursor:progress; }
+.fd-fund-note{ flex-basis:100%; margin:0; font-size:13px; line-height:1.55; color:var(--text2); max-width:78ch; }
+.fd-range{ -webkit-appearance:none; appearance:none; flex:1 1 240px; min-width:0; max-width:440px; height:44px; margin:0; background:transparent; cursor:pointer; }
+.fd-range::-webkit-slider-runnable-track{ height:6px; border-radius:999px; background:var(--border2); }
+.fd-range::-webkit-slider-thumb{ -webkit-appearance:none; appearance:none; width:26px; height:26px; margin-top:-10px; border-radius:50%;
+  background:#1a50d8; border:3px solid #fff; box-shadow:0 2px 7px rgba(15,23,42,.28); }
+.fd-range::-moz-range-track{ height:6px; border-radius:999px; background:var(--border2); }
+.fd-range::-moz-range-progress{ height:6px; border-radius:999px; background:#1a50d8; }
+.fd-range::-moz-range-thumb{ width:20px; height:20px; border-radius:50%; background:#1a50d8; border:3px solid #fff; box-shadow:0 2px 7px rgba(15,23,42,.28); }
+.fd-range:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; border-radius:10px; }
+html[data-theme="dark"] .fd-range::-webkit-slider-thumb{ background:#60a5fa; border-color:#0b1220; }
+html[data-theme="dark"] .fd-range::-moz-range-thumb{ background:#60a5fa; border-color:#0b1220; }
+.fd-out{ font-size:16px; font-weight:800; color:var(--white); min-width:5.2em; font-variant-numeric:tabular-nums; }
+.fd-month{ margin:14px 0 0; padding:12px 15px; border-radius:12px; background:rgba(180,83,9,.06); border:0.5px solid rgba(180,83,9,.24);
+  font-size:15px; line-height:1.65; color:var(--text2); max-width:80ch; }
+.fd-month b{ color:var(--white); font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+html[data-theme="dark"] .fd-month{ background:rgba(245,158,11,.07); border-color:rgba(245,158,11,.26); }
+@media (max-width:600px){
+  .fd-row{ gap:8px 10px; }
+  .fd-k{ flex-basis:100%; min-width:0; }
+  .fd-pick, .fd-select{ width:100%; }
+  .fd-range{ flex-basis:100%; max-width:none; }
+  .fd-month{ font-size:14px; padding:11px 13px; }
+}
+/* the chart's year reader: drag, tap or arrow along it */
+.fd-plot{ touch-action:pan-y; cursor:crosshair; border-radius:8px; -webkit-tap-highlight-color:transparent; }
+.fd-plot:focus-visible{ outline:2px solid var(--accent3); outline-offset:4px; }
+.fd-scrub-l{ stroke:var(--text3); stroke-width:1; stroke-dasharray:3 3; }
+.fd-scrub-d{ stroke:var(--ink); stroke-width:2; }
+.fd-scrub-d.is-fund{ fill:#b45309; } .fd-scrub-d.is-lm{ fill:#1a50d8; } .fd-scrub-d.is-sm{ fill:#0f766e; }
+.fd-scrub-d.is-allin{ fill-opacity:.6; }
+html[data-theme="dark"] .fd-scrub-d.is-fund{ fill:#f59e0b; } html[data-theme="dark"] .fd-scrub-d.is-lm{ fill:#60a5fa; } html[data-theme="dark"] .fd-scrub-d.is-sm{ fill:#2dd4bf; }
+.fd-legend li.is-yr{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 12px; font-weight:750; color:var(--white); }
+.fd-legend li.is-yr small{ font-size:11.5px; font-weight:500; color:var(--text3); }
+/* the bars sit above the chart now: what each fee adds up to, then what is left */
+html[data-fee-chart="on"] .fa-scale{ margin-top:14px; }
+/* the fund map */
+.fmap{ padding:64px 0 36px; }
+@media (max-width:600px){ .fmap{ padding:44px 0 24px; } }
+.fmap .fd-desc b{ color:var(--white); font-weight:750; white-space:nowrap; }
+.fmap-chips{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+.fmap-chips .fd-chip small{ font-weight:500; opacity:.8; margin-left:4px; }
+@media (max-width:600px){
+  .fmap-chips{ flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding:2px 16px 6px; margin:0 -16px 10px;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%);
+            mask-image:linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 28px), transparent 100%); }
+  .fmap-chips::-webkit-scrollbar{ display:none; }
+  .fmap-chips .fd-chip{ flex:0 0 auto; }
+}
+@media (pointer:coarse){ .fmap-chips .fd-chip{ min-height:44px; } }
+.fmap-fig{ margin:0; padding:14px 14px 12px; border-radius:16px; background:var(--ink); border:0.5px solid var(--border); }
+.fmap-plot{ width:100%; min-height:280px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.fmap-plot svg{ display:block; max-width:100%; height:auto; overflow:visible; }
+.fm-grid{ stroke:var(--border); stroke-width:1; }
+.fm-med{ stroke:var(--text3); stroke-width:1; stroke-dasharray:4 4; opacity:.7; }
+.fm-ax{ fill:var(--text3); font-size:11px; }
+.fm-axt{ fill:var(--text2); font-size:11.5px; font-weight:650; }
+.fm-corner{ fill:#0f766e; font-size:12px; font-weight:750; }
+html[data-theme="dark"] .fm-corner{ fill:#2dd4bf; }
+.fm-dot{ fill:#94a3b8; fill-opacity:.5; transition:fill-opacity .2s; }
+.fm-dot.is-in{ fill:#b45309; fill-opacity:.8; }
+.fm-dot.is-out{ fill-opacity:.16; }
+html[data-theme="dark"] .fm-dot{ fill:#64748b; }
+html[data-theme="dark"] .fm-dot.is-in{ fill:#f59e0b; }
+.fm-us{ stroke:#fff; stroke-width:2.5; }
+.fm-us.is-lm{ fill:#1a50d8; } .fm-us.is-sm{ fill:#0f766e; }
+html[data-theme="dark"] .fm-us{ stroke:#0b1220; }
+html[data-theme="dark"] .fm-us.is-lm{ fill:#60a5fa; } html[data-theme="dark"] .fm-us.is-sm{ fill:#2dd4bf; }
+.fm-ul{ font-size:12.5px; font-weight:800; fill:var(--white); paint-order:stroke; stroke:var(--ink); stroke-width:4px; stroke-linejoin:round; }
+.fm-medl{ paint-order:stroke; stroke:var(--ink); stroke-width:4px; stroke-linejoin:round; }
+.fm-ul tspan.fm-bt{ font-size:11px; font-weight:600; fill:var(--text3); }
+.fm-sel{ fill:none; stroke:var(--white); stroke-width:2; }
+@media (prefers-reduced-motion:reduce){ .fm-dot{ transition:none; } }
+.fmap-read{ min-height:3.2em; margin:10px 2px 0; font-size:14px; line-height:1.55; color:var(--text2); }
+.fmap-read p{ margin:0; }
+.fmap-read b{ color:var(--white); }
+.fmap-hint{ color:var(--text3); font-size:13px; }
+.fmap-use{ font:inherit; font-size:13.5px; font-weight:750; color:var(--ink-link,#0951c6); background:transparent; border:1px solid rgba(26,80,216,.35);
+  border-radius:999px; padding:6px 14px; margin-top:8px; cursor:pointer; }
+.fmap-use:hover{ background:rgba(26,80,216,.07); }
+.fmap-use:focus-visible{ outline:2px solid var(--accent3); outline-offset:2px; }
+@media (pointer:coarse){ .fmap-use{ min-height:44px; } }
+.fmap-cap{ margin:10px 2px 0; font-size:12px; line-height:1.55; color:var(--text3); }
+.fmap-sum{ margin:14px 0 0; font-size:15px; line-height:1.7; color:var(--text2); max-width:80ch; }
+.fmap-sum b{ color:var(--white); font-weight:750; }
+@media (max-width:600px){ .fmap-fig{ padding:10px 8px 10px; border-radius:14px; } .fmap-sum{ font-size:14px; } }
+@media print{ .fmap-chips, .fmap-use, .fmap-hint{ display:none; } }
+html[data-fund-map="off"] #fund-map{ display:none !important; }
+</style>
 </head>
 <body>
 <script>try{if(sessionStorage.getItem('mfc-offer-dismissed')==='1')document.documentElement.classList.add('mfc-offer-off')}catch(e){}</script>
@@ -4536,8 +4637,11 @@ html body section.prules{ padding:46px 0 6px; }
              The accent sits on the cost clause; the V18.4 verb cycle stands down (not a verb).
              V45.0 — "delivered at a fraction of the cost" counted the fee alone: with the
              trading charges a monthly book pays, the all-in cost is close to a regular-plan
-             fund's at Rs 15 lakh (markdowns/V45.0 brief, 4.1). "For one flat fee" is true. -->
-        <h1>A quant-researched stock portfolio built to outperform active mutual funds, <em>for one flat fee</em>.</h1>
+             fund's at Rs 15 lakh (markdowns/V45.0 brief, 4.1). "For one flat fee" is true.
+             V45.2 — the owner's headline at the new prices: Rs 199 / Rs 499 a month is 0.24% of LargeMidcap's
+             Rs 10 lakh and 0.40% of SmallMicro's Rs 15 lakh, an index fund's range; trading charges are
+             printed separately below. -->
+        <h1>A quant-researched stock portfolio built to outperform active mutual funds, <em>for a passive fund&rsquo;s fee</em>.</h1>
         <p class="hero-desc">On the 1st, a SEBI-registered Research Analyst&rsquo;s rules-based model publishes the exact stocks and the exact weights. You place the orders in your own broker &mdash; about ten minutes on Zerodha &mdash; and hold. We never touch your money.</p>
         <div class="hero-actions">
           <!-- V41.2 — C1. "Get Started" opened the paid form (0%, "1 month" preselected,
@@ -4616,12 +4720,12 @@ html body section.prules{ padding:46px 0 6px; }
             <tbody>
               <tr data-hvf="lm">
                 <th scope="row">LargeMidcap&nbsp;250<small><!--MFPEER:lm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER--></small></th>
-                <td><b class="hvf-us"><!--MFSTAT:lm:cagr_posttax_postfee-->17.8%<!--/MFSTAT--></b><span class="hvn-i">at&nbsp;<!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></span><span class="hvn-gap hvf-gap" data-hvf-gap></span></td>
+                <td><b class="hvf-us"><!--MFSTAT:lm:cagr_posttax_postfee-->18.4%<!--/MFSTAT--></b><span class="hvn-i">at&nbsp;<!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></span><span class="hvn-gap hvf-gap" data-hvf-gap></span></td>
                 <td><b class="hvf-fund"><!--MFPEER:lm:best_post-->15.8%<!--/MFPEER--></b><span class="hvn-i"><!--MFPEER:lm:best_name-->Motilal Oswal Large &amp; Midcap<!--/MFPEER--></span></td>
               </tr>
               <tr data-hvf="sm">
                 <th scope="row">SmallMicro&nbsp;500<small><!--MFPEER:sm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER--></small></th>
-                <td><b class="hvf-us"><!--MFSTAT:sm:cagr_posttax_postfee-->43.6%<!--/MFSTAT--></b><span class="hvn-i">at&nbsp;<!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></span><span class="hvn-gap hvf-gap" data-hvf-gap></span></td>
+                <td><b class="hvf-us"><!--MFSTAT:sm:cagr_posttax_postfee-->44.1%<!--/MFSTAT--></b><span class="hvn-i">at&nbsp;<!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></span><span class="hvn-gap hvf-gap" data-hvf-gap></span></td>
                 <td><b class="hvf-fund"><!--MFPEER:sm:best_post-->16.8%<!--/MFPEER--></b><span class="hvn-i"><!--MFPEER:sm:best_name-->Invesco India Smallcap<!--/MFPEER--></span></td>
               </tr>
               <tr data-hvf="ma">
@@ -4632,8 +4736,7 @@ html body section.prules{ padding:46px 0 6px; }
             </tbody>
           </table>
           <p class="hvn-note hvf-live" data-hvf-live hidden></p>
-          <p class="hvn-note">Each row compares the same months for both. Ours are backtests: simulated, not live trading. The funds&rsquo; are their real Direct Plan returns, from AMFI&rsquo;s published NAVs. Past returns do not promise future ones.</p>
-          <p class="hvn-ver">LargeMidcap&nbsp;250 and SmallMicro&nbsp;500 also trade in their own Zerodha accounts. Zerodha publishes each account&rsquo;s realised profit: closed trades only, in rupees, so it won&rsquo;t match any percentage here. <a href="track-record/#vproof-h">See the two accounts&nbsp;&rarr;</a></p>
+          <p class="hvn-ver">LargeMidcap&nbsp;250 and SmallMicro&nbsp;500 also trade in their own Zerodha accounts. <a href="track-record/#vproof-h">See the two accounts&nbsp;&rarr;</a></p>
         </div>
         <div class="hvp" role="group" aria-label="What a member's dashboard shows on the 1st (placeholder stocks)">
           <div class="hvp-head"><span class="hvp-k">On the 1st, on your dashboard</span><span class="hvp-tag">Placeholder stocks</span></div>
@@ -4777,7 +4880,7 @@ html body section.prules{ padding:46px 0 6px; }
           <tr>
             <th scope="row">LargeMidcap&nbsp;250<small><!--MFPEER:lm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER--></small></th>
             <td class="is-us" data-l="MindForge, a year (backtest)"><span class="whyb-us"><!--MFSTAT:lm:cagr_posttax-->18.6%<!--/MFSTAT--></span></td>
-            <td data-l="After our fee"><!--MFSTAT:lm:cagr_posttax_postfee-->17.8%<!--/MFSTAT--><small>at&nbsp;<!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></small></td>
+            <td data-l="After our fee"><!--MFSTAT:lm:cagr_posttax_postfee-->18.4%<!--/MFSTAT--><small>at&nbsp;<!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></small></td>
             <td data-l="Its index"><!--MFSTAT:lm:bench_cagr_posttax-->8.68%<!--/MFSTAT--></td>
             <td data-l="Best of three funds in its category"><!--MFPEER:lm:best_post-->15.8%<!--/MFPEER--><small><!--MFPEER:lm:best_name-->Motilal Oswal Large &amp; Midcap<!--/MFPEER--></small></td>
             <td data-l="Deepest fall"><!--MFSTAT:lm:max_dd-->-23.1%<!--/MFSTAT--><small>index&nbsp;<!--MFSTAT:lm:bench_max_dd-->-18.4%<!--/MFSTAT--></small></td>
@@ -4785,7 +4888,7 @@ html body section.prules{ padding:46px 0 6px; }
           <tr>
             <th scope="row">SmallMicro&nbsp;500<small><!--MFPEER:sm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER--></small></th>
             <td class="is-us" data-l="MindForge, a year (backtest)"><span class="whyb-us"><!--MFSTAT:sm:cagr_posttax-->44.3%<!--/MFSTAT--></span></td>
-            <td data-l="After our fee"><!--MFSTAT:sm:cagr_posttax_postfee-->43.6%<!--/MFSTAT--><small>at&nbsp;<!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></small></td>
+            <td data-l="After our fee"><!--MFSTAT:sm:cagr_posttax_postfee-->44.1%<!--/MFSTAT--><small>at&nbsp;<!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></small></td>
             <td data-l="Its index"><!--MFSTAT:sm:bench_cagr_posttax-->11.03%<!--/MFSTAT--></td>
             <td data-l="Best of three funds in its category"><!--MFPEER:sm:best_post-->16.8%<!--/MFPEER--><small><!--MFPEER:sm:best_name-->Invesco India Smallcap<!--/MFPEER--></small></td>
             <td data-l="Deepest fall"><!--MFSTAT:sm:max_dd-->-24.2%<!--/MFSTAT--><small>index&nbsp;<!--MFSTAT:sm:bench_max_dd-->-24.8%<!--/MFSTAT--></small></td>
@@ -4811,43 +4914,64 @@ html body section.prules{ padding:46px 0 6px; }
      (#fee-more) moved up for the reader who already pays a fund 1-2% a year, with their own amount, fee and
      years. Every figure is the calculator twin's (mf-v348-anchor-js, window.mfcFeeCalc); the first paint is
      its defaults, so the twin test still holds. FEE_DRAG and FEE_DRAG_FLAT in mf-v423-flags. -->
+<!-- V45.2 — THE FUND MAP (the owner's brief, item 4: the return against the fee, shown rather than claimed).
+     Every active fund in assets/active-funds.json (AMFI NAVs, direct plans; the owner's list, Nov 2026) as a dot:
+     its expense ratio across, its five-year return up. Our two paid books sit on the same axes: the fee at each
+     book's recommended amount (STRAT_MONTHLY x 12 over MFSTAT tax_capital) and the backtest after tax and our fee
+     (MFSTAT cagr_posttax_postfee), labelled backtest. The funds are before tax, which flatters them, not us. Drawn
+     by mf-v452-funds-js; the summary sentence is computed from the same rows, so no claim here is typed. -->
+<section class="fmap" id="fund-map" aria-labelledby="fmap-h">
+  <div class="container">
+    <div class="section-label">Return against fee</div>
+    <h2 class="fd-h2" id="fmap-h">Find your fund. Then find ours.</h2>
+    <p class="fd-desc">Each grey dot is one of <span data-fmap-n>187</span> active funds: what its direct plan charges a year, across, and what it returned a year over five years, up. The cheapest charges <b data-fmap-min>0.43%</b>. At the amounts we recommend, ours cost <b data-fmap-fee="lm">0.24%</b> and <b data-fmap-fee="sm">0.40%</b>.</p>
+    <div class="fmap-chips" id="fmap-chips" role="group" aria-label="Show one kind of fund"></div>
+    <figure class="fmap-fig" id="fmap-fig">
+      <div class="fmap-plot" id="fmap-plot" aria-hidden="true"></div>
+      <div class="fmap-read" id="fmap-read" aria-live="polite"><p class="fmap-hint">Tap any dot to see the fund, and use its fee in the calculator below.</p></div>
+      <figcaption class="fmap-cap">Funds: direct plans, five-year return a year before tax, and expense ratio, from AMFI NAVs, <span data-fmap-asof>Nov 2026</span>. Ours: backtests, not live trading, after 20% tax on every gain booked and our fee at the recommended amount, <!--MFPEER:lm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER-->.</figcaption>
+      <table class="sr-only" id="fmap-table"><caption>Active funds and the two MindForge stock portfolios: yearly fee and five-year return</caption></table>
+    </figure>
+    <p class="fmap-sum" id="fmap-sum">None of the 187 funds charges less than either of ours. LargeMidcap&nbsp;250&rsquo;s backtest is above 176 of them and SmallMicro&nbsp;500&rsquo;s above all 187: theirs before tax, ours after tax and our fee.</p>
+    <span hidden id="fmap-ours"><span data-k="lm:ret"><!--MFSTAT:lm:cagr_posttax_postfee-->18.4%<!--/MFSTAT--></span><span data-k="sm:ret"><!--MFSTAT:sm:cagr_posttax_postfee-->44.1%<!--/MFSTAT--></span><span data-k="lm:at"><!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></span><span data-k="sm:at"><!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></span></span>
+  </div>
+</section>
+
 <section class="feedrag" id="fee-drag" aria-labelledby="fd-h">
   <div class="container">
     <div class="section-label">What a percentage fee costs</div>
     <!-- V44.8 — the heading named 1% while the figures below open on 2% (the calculator twin's default,
          which the twin test holds). It now names both, so the first figures match it. -->
     <h2 class="fd-h2" id="fd-h">A 1% or 2% fee sounds small. Over ten years, it isn&rsquo;t.</h2>
-    <p class="fd-desc">A fund&rsquo;s expense ratio is a share of everything you hold, taken every year, in good years and bad. <span class="fd-desc-chart">Our fee is a fixed number of rupees that doesn&rsquo;t grow with your savings. Pick your amount and your fund&rsquo;s fee; the chart runs both at the same return.</span><span class="fd-desc-bars">Our fee is a fixed number of rupees. Choose your amount and your fund&rsquo;s fee to see the difference over the same years and the same return.</span></p>
+    <p class="fd-desc">A fund&rsquo;s expense ratio is a share of everything you hold, taken every year, in good years and bad. <span class="fd-desc-chart">Our fee is a fixed number of rupees that doesn&rsquo;t grow with your savings. Pick your fund, your amount and the years; the chart runs both at the same return.</span><span class="fd-desc-bars">Our fee is a fixed number of rupees. Choose your amount and your fund&rsquo;s fee to see the difference over the same years and the same return.</span></p>
+    <!-- V45.2 — the controls a reader can drive: their own fund (the 187 active funds in assets/active-funds.json,
+         filled by mf-v452-funds-js) or a typical fee, an amount slider over a fixed ladder, a years slider, and a
+         line that turns the percentage into this month's rupees. Every figure still goes through window.mfcFeeCalc;
+         mf-v447-feedrag-js reads these controls. -->
     <div class="fd-ctl" id="fd-ctl">
-      <div class="fd-row" role="group" aria-labelledby="fd-amt-k">
-        <span class="fd-k" id="fd-amt-k">Your amount</span>
-        <span class="fd-chips">
-          <button type="button" class="fd-chip" data-amt="1000000" aria-pressed="false">₹10 lakh</button>
-          <button type="button" class="fd-chip" data-amt="1500000" aria-pressed="true">₹15 lakh</button>
-          <button type="button" class="fd-chip" data-amt="2500000" aria-pressed="false">₹25 lakh</button>
-          <button type="button" class="fd-chip" data-amt="5000000" aria-pressed="false">₹50 lakh</button>
-          <span class="fd-field"><span aria-hidden="true">₹</span><input type="text" inputmode="numeric" id="fd-amt" autocomplete="off" value="15,00,000" aria-label="Or type your amount, in rupees"></span>
-        </span>
-      </div>
-      <div class="fd-row" role="group" aria-labelledby="fd-fee-k">
+      <div class="fd-row fd-row-fund" role="group" aria-labelledby="fd-fee-k">
         <span class="fd-k" id="fd-fee-k">Your fund&rsquo;s yearly fee</span>
+        <span class="fd-pick"><label class="sr-only" for="fd-fund">Pick your fund</label><select class="fd-select" id="fd-fund" disabled><option value="">Pick your fund (187 active funds)</option></select></span>
         <span class="fd-chips">
-          <button type="button" class="fd-chip" data-fee="0.75" aria-pressed="false">0.75% · direct plan</button>
+          <button type="button" class="fd-chip" data-fee="0.94" aria-pressed="false"><span data-fund-median>0.94</span>% &middot; typical direct plan</button>
           <button type="button" class="fd-chip" data-fee="1" aria-pressed="false">1%</button>
-          <button type="button" class="fd-chip" data-fee="1.5" aria-pressed="false">1.5%</button>
-          <button type="button" class="fd-chip" data-fee="2" aria-pressed="true">2% · regular plan or PMS</button>
+          <button type="button" class="fd-chip" data-fee="2" aria-pressed="true">2% &middot; regular plan or PMS</button>
         </span>
+        <p class="fd-fund-note" id="fd-fund-note" hidden></p>
       </div>
-      <div class="fd-row" role="group" aria-labelledby="fd-yr-k">
+      <div class="fd-row fd-row-slide" role="group" aria-labelledby="fd-amt-k">
+        <span class="fd-k" id="fd-amt-k">Your amount</span>
+        <span class="fd-field"><span aria-hidden="true">₹</span><input type="text" inputmode="numeric" id="fd-amt" autocomplete="off" value="15,00,000" aria-label="Or type your amount, in rupees"></span>
+        <input type="range" class="fd-range" id="fd-amt-rng" min="0" max="23" step="1" value="11" aria-label="Your amount" aria-valuetext="₹15 lakh">
+      </div>
+      <div class="fd-row fd-row-slide" role="group" aria-labelledby="fd-yr-k">
         <span class="fd-k" id="fd-yr-k">Years</span>
-        <span class="fd-chips">
-          <button type="button" class="fd-chip" data-yrs="10" aria-pressed="true">10</button>
-          <button type="button" class="fd-chip" data-yrs="15" aria-pressed="false">15</button>
-          <button type="button" class="fd-chip" data-yrs="20" aria-pressed="false">20</button>
-        </span>
+        <output class="fd-out" id="fd-yr-out" for="fd-yr-rng">10 years</output>
+        <input type="range" class="fd-range" id="fd-yr-rng" min="1" max="30" step="1" value="10" aria-label="Years" aria-valuetext="10 years">
       </div>
       <p class="fd-assume" id="fd-assume">Assumes 15% a year before fees, on both sides.</p>
     </div>
+    <p class="fd-month" id="fd-month" aria-live="polite">This month, a 2% fee on ₹15,00,000 is <b>₹2,500</b>; by year&nbsp;10 it is <b>₹7,510</b> a month, because it grows with your money. Ours stays <b>₹199</b> on LargeMidcap&nbsp;250 or <b>₹499</b> on SmallMicro&nbsp;500, whatever you hold.</p>
     <div class="fee-anchor fade-up" id="feeAnchor">
       <div class="fa-head">
         <span class="fa-eyebrow">The number a flat fee competes with</span>
@@ -4864,7 +4988,7 @@ html body section.prules{ padding:46px 0 6px; }
           <div class="fa-sub">Charged every year on everything you hold, whether or not anything is done for you.</div>
         </div>
         <div class="fa-fig fa-fig-hero" id="fa-gap-fig">
-          <div class="fa-val" id="fa-gap">₹7,33,085</div>
+          <div class="fa-val" id="fa-gap">₹9,28,000</div>
           <div class="fa-lbl" id="fa-gap-lbl">missing from your final amount</div>
           <div class="fa-sub" id="fa-gap-sub">Larger than the fees themselves: money taken out in year&nbsp;2 cannot grow in years 3&nbsp;to&nbsp;10.</div>
         </div>
@@ -4875,19 +4999,6 @@ html body section.prules{ padding:46px 0 6px; }
            loop) for that year, so the chart cannot disagree with the two figures above. FEE_ALL_IN adds a toggle
            that takes each book's trading charges out as well (MFTURN charges_var + charges_dp, machine-written
            from the backtest's own turnover and the broker's published rates). Drawn by mf-v450-fee-js. -->
-      <figure class="fd-chart" id="fd-chart" aria-labelledby="fd-chart-h">
-        <div class="fd-chart-top">
-          <p class="fd-chart-h" id="fd-chart-h">₹15,00,000 over 10 years, at the same 15% a year before costs</p>
-          <button type="button" class="fd-allin" id="fd-allin" aria-pressed="false">Count each book&rsquo;s trading charges too <small>(estimate)</small></button>
-        </div>
-        <div class="fd-plot" id="fd-plot"></div>
-        <p class="sr-only" id="fd-chart-d"></p>
-        <ul class="fd-legend" id="fd-legend"></ul>
-        <p class="fd-allin-note" id="fd-allin-note" hidden></p>
-        <figcaption class="fd-cap">Each line is your amount with that cost taken out every year, at the same return before costs. Year 0 is today.</figcaption>
-        <table class="sr-only" id="fd-table"></table>
-      </figure>
-
       <!-- V34.9 · THE SAME TWO SUMS, SIDE BY SIDE ON ONE SCALE.
            The figures above are comparable only by doing the division in your
            head — which is the exact gap V28.3's trade-off strip closed for risk
@@ -4905,17 +5016,32 @@ html body section.prules{ padding:46px 0 6px; }
           <span class="fa-sv" id="fa-bar-aum-v">₹5,52,592</span>
         </div>
         <div class="fa-srow is-flat">
-          <span class="fa-sk" id="fa-sk-flat">₹999 flat</span>
-          <span class="fa-strack"><i class="fa-sfill flat" id="fa-bar-flat" data-w="22"></i></span>
-          <span class="fa-sv" id="fa-bar-flat-v">₹1,19,880</span>
+          <span class="fa-sk" id="fa-sk-flat">₹199 flat</span>
+          <span class="fa-strack"><i class="fa-sfill flat" id="fa-bar-flat" data-w="4.3"></i></span>
+          <span class="fa-sv" id="fa-bar-flat-v">₹23,880</span>
         </div>
         <div class="fa-srow is-flat">
-          <span class="fa-sk" id="fa-sk-flat2">₹1,499 flat</span>
-          <span class="fa-strack"><i class="fa-sfill flat" id="fa-bar-flat2" data-w="32.6"></i></span>
-          <span class="fa-sv" id="fa-bar-flat2-v">₹1,79,880</span>
+          <span class="fa-sk" id="fa-sk-flat2">₹499 flat</span>
+          <span class="fa-strack"><i class="fa-sfill flat" id="fa-bar-flat2" data-w="10.8"></i></span>
+          <span class="fa-sv" id="fa-bar-flat2-v">₹59,880</span>
         </div>
       </div>
-      <p class="fa-scaleN" id="fa-scaleN">All three totals over the same 10 years, drawn to the same scale.</p>
+      <p class="fa-scaleN" id="fa-scaleN">What each fee adds up to over the same 10 years, drawn to the same scale.</p>
+
+      <figure class="fd-chart" id="fd-chart" aria-labelledby="fd-chart-h">
+        <div class="fd-chart-top">
+          <p class="fd-chart-h" id="fd-chart-h">₹15,00,000 over 10 years, at the same 15% a year before costs</p>
+          <button type="button" class="fd-allin" id="fd-allin" aria-pressed="false">Count each book&rsquo;s trading charges too <small>(estimate)</small></button>
+        </div>
+        <div class="fd-plot" id="fd-plot"></div>
+        <p class="sr-only" id="fd-chart-d"></p>
+        <ul class="fd-legend" id="fd-legend"></ul>
+        <p class="fd-allin-note" id="fd-allin-note" hidden></p>
+        <figcaption class="fd-cap">Each line is your amount with that cost taken out every year, at the same return before costs. Year 0 is today.</figcaption>
+        <table class="sr-only" id="fd-table"></table>
+      </figure>
+
+
       <p class="fa-be" id="fa-be" hidden></p>
 
       <!-- ══ V38.9 · THE OTHER SIDE OF THIS PANEL ═══════════════════════════
@@ -4939,9 +5065,11 @@ html body section.prules{ padding:46px 0 6px; }
     <!-- V45.0 — ALL-IN: the fee is not the whole cost (markdowns/V45.0 brief, 4.1). The charges are MFTURN markers
          written by runner/inject_site_stats.py from each backtest's mean monthly turnover and CHARGE_RATES, and
          checked by runner/verify_published_numbers.py; the all-in totals are added by mf-v450-fee-js from
-         STRAT_MONTHLY and DURATIONS. Hidden while FEE_ALL_IN is off. -->
-    <p class="fd-allin-line" id="fd-allin-line">All in, at ₹15,00,000 on the yearly plan and Zerodha&rsquo;s rates on <!--MFTURN:charges:asof-->13 Nov 2026<!--/MFTURN-->, <span id="fd-allin-tot">trading charges add about <b><!--MFTURN:lm:charges_pct-->1.15<!--/MFTURN-->%</b> a year to the fee on LargeMidcap&nbsp;250 and <b><!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN-->%</b> on SmallMicro&nbsp;500</span>. A regular-plan fund&rsquo;s fee is about 2%; a direct plan&rsquo;s about 0.75%. The table above compares what&rsquo;s left after all of it.</p>
-    <span class="fd-chg" id="fd-chg" hidden><span data-k="lm:var"><!--MFTURN:lm:charges_var-->1.072<!--/MFTURN--></span><span data-k="lm:dp"><!--MFTURN:lm:charges_dp-->1109<!--/MFTURN--></span><span data-k="lm:pct"><!--MFTURN:lm:charges_pct-->1.15<!--/MFTURN--></span><span data-k="sm:var"><!--MFTURN:sm:charges_var-->1.277<!--/MFTURN--></span><span data-k="sm:dp"><!--MFTURN:sm:charges_dp-->1320<!--/MFTURN--></span><span data-k="sm:pct"><!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN--></span></span>
+         STRAT_MONTHLY and DURATIONS. Hidden while FEE_ALL_IN is off.
+         V45.2 — each book at its recommended investment (MFSTAT tax_capital): LargeMidcap Rs 10 lakh, SmallMicro Rs 15 lakh;
+         the median direct-plan fee is the median of assets/active-funds.json, written by mf-v452-funds-js. -->
+    <p class="fd-allin-line" id="fd-allin-line">All in, on the yearly plan and Zerodha&rsquo;s rates on <!--MFTURN:charges:asof-->13 Nov 2026<!--/MFTURN-->, <span id="fd-allin-tot">LargeMidcap&nbsp;250 at <!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--> costs about <b>1.4%</b> a year (fee 0.2%, trading charges <!--MFTURN:lm:charges_pct-->1.18<!--/MFTURN-->%) and SmallMicro&nbsp;500 at <!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--> about <b>1.7%</b> (fee 0.3%, trading charges <!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN-->%)</span>. A regular-plan fund&rsquo;s fee is about 2%; the median active fund&rsquo;s direct plan, <span data-fund-median>0.94</span>%. The table above compares what&rsquo;s left after all of it.</p>
+    <span class="fd-chg" id="fd-chg" hidden><span data-k="lm:var"><!--MFTURN:lm:charges_var-->1.072<!--/MFTURN--></span><span data-k="lm:dp"><!--MFTURN:lm:charges_dp-->1109<!--/MFTURN--></span><span data-k="lm:pct"><!--MFTURN:lm:charges_pct-->1.18<!--/MFTURN--></span><span data-k="sm:var"><!--MFTURN:sm:charges_var-->1.277<!--/MFTURN--></span><span data-k="sm:dp"><!--MFTURN:sm:charges_dp-->1320<!--/MFTURN--></span><span data-k="sm:pct"><!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN--></span><span data-k="lm:at"><!--MFSTAT:lm:tax_capital-->₹10,00,000<!--/MFSTAT--></span><span data-k="sm:at"><!--MFSTAT:sm:tax_capital-->₹15,00,000<!--/MFSTAT--></span></span>
   </div>
 </section>
 
@@ -5074,7 +5202,7 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
           <span class="nv-nm">MindForge LargeMidcap&nbsp;250</span>
           <span class="nv-n"><!--MFSTAT:lm:cagr_posttax-->18.6%<!--/MFSTAT--></span>
         </div>
-        <p class="nv-sub">after our fee as well, at <!--MFPEER:lm:capital-->₹10,00,000<!--/MFPEER-->: <b><!--MFSTAT:lm:cagr_posttax_postfee-->17.8%<!--/MFSTAT--></b></p>
+        <p class="nv-sub">after our fee as well, at <!--MFPEER:lm:capital-->₹10,00,000<!--/MFPEER-->: <b><!--MFSTAT:lm:cagr_posttax_postfee-->18.4%<!--/MFSTAT--></b></p>
         <div class="nv-row is-fund">
           <span class="nv-nm"><!--MFPEER:lm:best_name-->Motilal Oswal Large &amp; Midcap<!--/MFPEER--></span>
           <span class="nv-n"><!--MFPEER:lm:best_post-->15.8%<!--/MFPEER--></span>
@@ -5132,15 +5260,15 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
                   <p class="mfw-h">Pick the one that fits</p>
                   <p class="mfw-s">Most people need one. Unsure? Start free.</p>
                   <div class="mfw-card" data-mfw-t="ma"><div class="mfw-row"><span class="mfw-name">MultiAsset</span><span class="mfw-free">FREE</span></div><div class="mfw-meta">ETFs: equity, gold, bonds &amp; global</div></div>
-                  <div class="mfw-card" data-mfw-t="lm"><div class="mfw-row"><span class="mfw-name">LargeMidcap 250</span><span class="mfw-price" data-mfw-month="lm">&#8377;999/month</span></div><div class="mfw-meta">Large &amp; midcap stocks</div></div>
-                  <div class="mfw-card" data-mfw-t="sm"><div class="mfw-row"><span class="mfw-name">SmallMicro 500</span><span class="mfw-price" data-mfw-month="sm">&#8377;1,499/month</span></div><div class="mfw-meta">Small &amp; microcap stocks</div></div>
+                  <div class="mfw-card" data-mfw-t="lm"><div class="mfw-row"><span class="mfw-name">LargeMidcap 250</span><span class="mfw-price" data-mfw-month="lm">&#8377;199/month</span></div><div class="mfw-meta">Large &amp; midcap stocks</div></div>
+                  <div class="mfw-card" data-mfw-t="sm"><div class="mfw-row"><span class="mfw-name">SmallMicro 500</span><span class="mfw-price" data-mfw-month="sm">&#8377;499/month</span></div><div class="mfw-meta">Small &amp; microcap stocks</div></div>
                 </div>
 
                 <div class="mfw-fr" data-f="book" data-ctx="Strategies">
                   <p class="mfw-k">Core-plus &middot; large &amp; midcap</p>
                   <p class="mfw-h">MindForge LargeMidcap 250</p>
                   <p class="mfw-s">Equal weight, rebalanced on the 1st.</p>
-                  <div class="mfw-sum"><div><span>Plan</span><b data-mfw-month="lm">&#8377;999/month</b></div><div><span>Rebalance</span><b>Monthly</b></div></div>
+                  <div class="mfw-sum"><div><span>Plan</span><b data-mfw-month="lm">&#8377;199/month</b></div><div><span>Rebalance</span><b>Monthly</b></div></div>
                   <p class="mfw-gift">Month one is free: new members pay from month two.</p>
                   <span class="mfw-btn" data-mfw-t="choose">Choose this plan &rarr;</span>
                 </div>
@@ -5149,13 +5277,13 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
                   <p class="mfw-k">Get started</p>
                   <p class="mfw-h">Register</p>
                   <div class="mfw-field"><span class="mfw-lab">Email</span><span class="mfw-input" data-mfw-t="email"><span data-mfw-typed></span><i class="mfw-caret"></i></span></div>
-                  <div class="mfw-field"><span class="mfw-lab">Strategy</span><span class="mfw-input">LargeMidcap 250 &middot;&nbsp;<span data-mfw-month="lm">&#8377;999/month</span></span></div>
+                  <div class="mfw-field"><span class="mfw-lab">Strategy</span><span class="mfw-input">LargeMidcap 250 &middot;&nbsp;<span data-mfw-month="lm">&#8377;199/month</span></span></div>
                   <div class="mfw-field"><span class="mfw-lab">How long</span>
                     <div class="mfw-chips">
-                      <span class="mfw-chip"><b>1 month</b><span data-mfw-term="lm:1">&#8377;999</span></span>
-                      <span class="mfw-chip"><b>3 months</b><span data-mfw-term="lm:3">&#8377;2,847</span> &middot; <span data-mfw-off="3">5% off</span></span>
-                      <span class="mfw-chip"><b>6 months</b><span data-mfw-term="lm:6">&#8377;5,395</span> &middot; <span data-mfw-off="6">10% off</span></span>
-                      <span class="mfw-chip" data-mfw-t="dur12"><b>1 year</b><span data-mfw-term="lm:12">&#8377;9,590</span> &middot; <span data-mfw-off="12">20% off</span></span>
+                      <span class="mfw-chip"><b>1 month</b><span data-mfw-term="lm:1">&#8377;199</span></span>
+                      <span class="mfw-chip"><b>3 months</b><span data-mfw-term="lm:3">&#8377;567</span> &middot; <span data-mfw-off="3">5% off</span></span>
+                      <span class="mfw-chip"><b>6 months</b><span data-mfw-term="lm:6">&#8377;1,075</span> &middot; <span data-mfw-off="6">10% off</span></span>
+                      <span class="mfw-chip" data-mfw-t="dur12"><b>1 year</b><span data-mfw-term="lm:12">&#8377;1,910</span> &middot; <span data-mfw-off="12">20% off</span></span>
                     </div>
                   </div>
                   <div class="mfw-check" data-mfw-t="agree"><span class="mfw-box" data-mfw-aim></span><span>I have read the Terms and accept the investment risks.</span></div>
@@ -5403,7 +5531,7 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
       }).filter(Boolean);
       if (!parts.length) return;
       txt = 'The live record began on ' + began + ': ' + (n === 1 ? 'one month' : n + ' months') + ' closed. Ahead of its index in ' +
-        (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' : '') + parts[parts.length - 1] + '. Far too few to judge. ';
+        (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' : '') + parts[parts.length - 1] + '. ';
     }
     live.textContent = txt;
     var a = document.createElement('a');
@@ -6503,7 +6631,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
     (function(){
       function run(){
       try{
-        var D = { invest:1500000, ret:15, years:10, aum:2, flat:999 };   // == calculator.html DEFAULTS
+        var D = { invest:1500000, ret:15, years:10, aum:2, flat:199 };   // == calculator.html DEFAULTS
         /* V44.7 — the same loop as one function, so the fee section's own amounts
            (mf-v447-feedrag-js) run THIS arithmetic rather than a third copy of it. The
            defaults go through it first, so every figure below is unchanged. */
@@ -6536,28 +6664,39 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         /* ── V38.9 · the same loop, run where the flat fee LOSES ──
            Direct-plan rate and a corpus this page's reader actually holds. The
            sign is not assumed: whichever way it comes out is what gets printed,
-           and the block stays hidden if the arithmetic ever fails. */
-        (function(){
-          var C = { invest:500000, aum:0.75 };
-          var a2 = C.aum/100, fund2 = C.invest, mfc2 = C.invest;
-          for(var y2=1; y2<=D.years; y2++){
-            fund2 = fund2*(1 + r - a2);
-            mfc2  = mfc2*(1 + r) - annualFee;
-            if(mfc2 < 0) mfc2 = 0;
-          }
-          var diff = mfc2 - fund2;
-          var el = document.getElementById('fa-counter');
-          if(!el || !isFinite(diff)) return;
-          var worse = diff < 0;
-          el.innerHTML =
-            'And where it does not: on <b>' + inr(C.invest) + '</b> against a <b>' + C.aum +
-            '% direct plan</b>, the same ten years and the same return leave the ₹' +
-            D.flat + ' plan <b>' + inr(Math.abs(diff)) + ' ' + (worse ? 'behind' : 'ahead') +
-            '</b>. Below its break-even a flat fee is the dearer choice, which is why the case for these ' +
-            'portfolios was never the fee alone. It is the return after the fee, compared on published figures ' +
-            '<a href="calculators/mindforge-vs-fund.html">here →</a>';
-          el.hidden = false;
-        })();
+           and the block stays hidden if the arithmetic ever fails.
+           V45.2 — at Rs 199 a month the flat fee beat a 0.75% direct plan at the old Rs 5 lakh
+           example, so the example amount is now FOUND: the largest of a few round amounts at
+           which the flat plan ends behind over the same ten years. One function, so
+           mf-v452-funds-js can rerun it against the cheapest fund in assets/active-funds.json. */
+        window.mfcFeeCounter = function(terPct, fundName){
+          try {
+            var a2 = terPct/100, el = document.getElementById('fa-counter');
+            if(!el || !(a2 > 0)) return;
+            var pick = null;
+            [500000, 400000, 300000, 200000, 150000, 100000, 50000].some(function(inv){
+              var fund2 = inv, mfc2 = inv;
+              for(var y2=1; y2<=D.years; y2++){
+                fund2 = fund2*(1 + r - a2);
+                mfc2  = mfc2*(1 + r) - annualFee;
+                if(mfc2 < 0) mfc2 = 0;
+              }
+              if(isFinite(mfc2 - fund2) && mfc2 < fund2){ pick = { invest:inv, diff:fund2 - mfc2 }; return true; }
+              return false;
+            });
+            if(!pick){ el.hidden = true; return; }
+            var who = fundName ? fundName + ', the cheapest active fund on the list at <b>' + terPct + '%</b> a year'
+                               : 'a <b>' + terPct + '% direct plan</b>';
+            el.innerHTML =
+              'And where it does not: against ' + who + ', ₹' + D.flat + ' a month is the dearer fee on any amount below <b>' +
+              inr(annualFee/a2) + '</b>. On <b>' + inr(pick.invest) + '</b>, the same ten years and the same return leave the ₹' +
+              D.flat + ' plan <b>' + inr(pick.diff) + ' behind</b>. Below its break-even a flat fee is the dearer choice, which is why the case for these ' +
+              'portfolios was never the fee alone. It is the return after the fee, compared on published figures ' +
+              '<a href="calculators/mindforge-vs-fund.html">here →</a>';
+            el.hidden = false;
+          } catch(e){}
+        };
+        window.mfcFeeCounter(0.75, '');
 
         /* ── V34.9 · the two totals on one scale ──
            Widths and labels both come from THIS calculation, so a bar can never
@@ -6654,11 +6793,19 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
        window.mfcFeeCalc (the calculator-twin loop above), so this adds no arithmetic; the first
        paint is the twin's own defaults, which the twin test asserts. Prices come from
        STRAT_MONTHLY and DURATIONS, never typed. Waits for DOMContentLoaded like the twin, and
-       its listener is added after the twin's, so the twin has run first. */
+       its listener is added after the twin's, so the twin has run first.
+       V45.2 — the reader drives it: their own fund from the 187 in assets/active-funds.json (the
+       select is filled by mf-v452-funds-js, which calls window.mfcFeeUseFund), or a typical fee;
+       an amount slider over a fixed ladder beside the typed box; a years slider; and #fd-month,
+       the percentage as this month's rupees and the same fee in the last year. */
     (function(){
       var R = document.documentElement;
       function $(id){ return document.getElementById(id); }
       function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
+      function lakh(n){ return n >= 1e7 ? '₹' + String(Math.round(n / 1e5) / 100) + ' crore' : '₹' + String(Math.round(n / 1e3) / 100) + ' lakh'; }
+      var LADDER = [100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1250000, 1500000,
+                    2000000, 2500000, 3000000, 4000000, 5000000, 6000000, 7500000, 10000000, 15000000, 20000000, 30000000, 50000000];
+      function rung(v){ var b = 0, bd = Infinity; LADDER.forEach(function (x, i) { var d = Math.abs(Math.log(x / v)); if (d < bd) { bd = d; b = i; } }); return b; }
       function putBack(){
         var fm = $('fee-more'), lad = $('fee-lad'), an = $('feeAnchor');
         if (fm && lad && an && an.parentNode !== fm) fm.insertBefore(an, lad);
@@ -6670,7 +6817,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
           if (!box || typeof calc !== 'function' || !M || !(M.lm > 0) || !(M.sm > 0)) return;
           var D = calc.D, flatOn = R.getAttribute('data-fee-drag-flat') !== 'off';
           var disc = (DU && DU['12'] && typeof DU['12'].disc === 'number') ? DU['12'].disc : null;
-          var st = { invest: D.invest, fee: D.aum, years: D.years }, revealed = false;
+          var st = { invest: D.invest, fee: D.aum, years: D.years, fund: null }, revealed = false;
           var NB = String.fromCharCode(160);
           var as = $('fd-assume'); if (as) as.textContent = 'Assumes ' + D.ret + '% a year before fees, on both sides.';
           function txt(id, t){ var e = $(id); if (e) e.textContent = t; }
@@ -6679,7 +6826,10 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
             b.setAttribute('data-w', w.toFixed(1));
             if (revealed) b.style.width = w.toFixed(1) + '%';
           }
-          function kind(fee){ return fee === 2 ? 'regular-plan or PMS ' : (fee === 0.75 ? 'direct-plan ' : ''); }
+          function median(){ var e = document.querySelector('[data-fund-median]'), v = e ? parseFloat(e.textContent) : NaN; return isFinite(v) ? v : null; }
+          function kind(fee){ return fee === 2 ? 'regular-plan or PMS ' : (fee === median() ? 'typical direct-plan ' : ''); }
+          function short(name){ return String(name || '').replace(/\s+Fund\b.*$/i, '').replace(/\s+\(.*?\)\s*$/, ''); }
+          function feeName(){ return st.fund ? short(st.fund[0]) + '’s ' + st.fee + '% fee' : 'a ' + st.fee + '% ' + kind(st.fee) + 'fee'; }
           function grows(y){ return 'Larger than the fees themselves: money taken out in year' + NB + '2 cannot grow in years 3' + NB + 'to' + NB + y + '.'; }
           function paint(full){
             var a = calc(st.invest, D.ret, st.years, st.fee, M.lm), y = st.years;
@@ -6688,12 +6838,13 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
             txt('fa-sk-flat', inr(M.lm) + ' flat'); txt('fa-bar-flat-v', inr(t1));
             txt('fa-sk-flat2', inr(M.sm) + ' flat'); txt('fa-bar-flat2-v', inr(t2));
             bar('fa-bar-flat2', t2 / mx * 100);
-            txt('fa-scaleN', 'All three totals over the same ' + y + ' years, drawn to the same scale.');
+            txt('fa-scaleN', 'What each fee adds up to over the same ' + y + ' years, drawn to the same scale.');
             var inv = flatOn && a.gap < 0;
             if (full) {
-              txt('fa-title', 'What a ' + st.fee + '% ' + kind(st.fee) + 'fee costs on a ' + inr(st.invest) + ' portfolio over ' + y + NB + 'years');
+              var fn = feeName();
+              txt('fa-title', 'What ' + fn + ' costs on a ' + inr(st.invest) + ' portfolio over ' + y + NB + 'years');
               txt('fa-fees', inr(a.aumFees));
-              txt('fa-sk-aum', st.fee + '% fee'); txt('fa-bar-aum-v', inr(a.aumFees));
+              txt('fa-sk-aum', st.fund ? short(st.fund[0]) : st.fee + '% fee'); txt('fa-bar-aum-v', inr(a.aumFees));
               bar('fa-bar-aum', a.aumFees / mx * 100); bar('fa-bar-flat', t1 / mx * 100);
               if (!flatOn) {
                 txt('fa-gap', inr(st.invest * Math.pow(1 + D.ret / 100, y) - a.fund));
@@ -6711,28 +6862,76 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
               }
               var fig = $('fa-gap-fig'); if (fig) fig.classList.toggle('is-inverted', inv);
             }
+            // V45.2 — the percentage as rupees this month, and the same fee in the last year (it grows with the money)
+            var mo = $('fd-month');
+            if (mo) {
+              var last = calc(st.invest, D.ret, Math.max(0, y - 1), st.fee, M.lm).fund * st.fee / 100 / 12;
+              mo.innerHTML = 'This month, ' + fn_html() + ' on ' + inr(st.invest) + ' is <b>' + inr(st.invest * st.fee / 100 / 12) + '</b>' +
+                (y > 1 ? '; by year' + NB + y + ' it is <b>' + inr(last) + '</b> a month, because it grows with your money' : '') +
+                '. Ours stays <b>' + inr(M.lm) + '</b> on LargeMidcap' + NB + '250 or <b>' + inr(M.sm) + '</b> on SmallMicro' + NB + '500, whatever you hold.';
+            }
             var be = $('fa-be');
             if (be && flatOn) {
               var f = st.fee / 100;
               var line = function (m) { return '<b>' + inr(m * 12 / f) + '</b>' + (disc != null ? ' (' + inr(m * 12 * (1 - disc) / f) + ' on the yearly plan)' : ''); };
-              be.innerHTML = inr(M.lm) + ' a month costs less than a ' + st.fee + '% fee on any amount above ' + line(M.lm) +
+              be.innerHTML = inr(M.lm) + ' a month costs less than ' + (st.fund ? esc(short(st.fund[0])) + '’s ' + st.fee + '%' : 'a ' + st.fee + '% fee') + ' on any amount above ' + line(M.lm) +
                 '; ' + inr(M.sm) + ' a month, above ' + line(M.sm) + '.';
               be.hidden = false;
             }
             var ctr = $('fa-counter'); if (ctr && ctr.textContent) ctr.hidden = inv || !flatOn;
-            try { if (window.mfcFeeChart) window.mfcFeeChart(st.invest, st.fee, st.years); } catch (e) {}   // V45.0
+            try { if (window.mfcFeeChart) window.mfcFeeChart(st.invest, st.fee, st.years, st.fund ? short(st.fund[0]) + '’s ' + st.fee + '% fee' : ''); } catch (e) {}   // V45.0
           }
+          function esc(t){ return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+          function fn_html(){ return st.fund ? esc(short(st.fund[0])) + '’s <b>' + st.fee + '%</b> fee' : 'a <b>' + st.fee + '%</b> fee'; }
           function own(){ window.mfcFeeOwned = true; revealed = true; }
           function press(sel, btn){ box.querySelectorAll(sel).forEach(function (x) { x.setAttribute('aria-pressed', x === btn ? 'true' : 'false'); }); }
-          var inp = $('fd-amt');
+          var inp = $('fd-amt'), arng = $('fd-amt-rng'), yrng = $('fd-yr-rng'), yout = $('fd-yr-out'), sel = $('fd-fund'), note = $('fd-fund-note');
+          function syncAmt(fromSlider){
+            if (inp && !fromSlider) inp.value = st.invest.toLocaleString('en-IN');
+            if (arng) { if (!fromSlider) arng.value = String(rung(st.invest)); arng.setAttribute('aria-valuetext', lakh(st.invest)); }
+          }
+          function syncYrs(){
+            var t = st.years + (st.years === 1 ? ' year' : ' years');
+            if (yout) yout.textContent = t;
+            if (yrng) { yrng.value = String(st.years); yrng.setAttribute('aria-valuetext', t); }
+          }
+          function fundNote(){
+            if (!note) return;
+            if (!st.fund) { note.hidden = true; note.textContent = ''; return; }
+            var f = st.fund;
+            note.textContent = f[0] + ' · ' + (window.mfcFundCat ? window.mfcFundCat(f[1]) : f[1]) + ' · direct plan: ' + f[3] + '% a year, and it returned ' + f[2] +
+              '% a year over five years, before tax. The chart holds the return equal on both sides, so only the fee differs.';
+            note.hidden = false;
+          }
           box.addEventListener('click', function (e) {
             var b = e.target.closest ? e.target.closest('.fd-chip') : null;
             if (!b) return;
-            if (b.hasAttribute('data-amt')) { st.invest = Number(b.getAttribute('data-amt')); press('[data-amt]', b); if (inp) inp.value = st.invest.toLocaleString('en-IN'); }
-            else if (b.hasAttribute('data-fee')) { st.fee = Number(b.getAttribute('data-fee')); press('[data-fee]', b); }
-            else if (b.hasAttribute('data-yrs')) { st.years = Number(b.getAttribute('data-yrs')); press('[data-yrs]', b); }
+            if (b.hasAttribute('data-amt')) { st.invest = Number(b.getAttribute('data-amt')); press('[data-amt]', b); syncAmt(false); }
+            else if (b.hasAttribute('data-fee')) { st.fee = Number(b.getAttribute('data-fee')); st.fund = null; if (sel) sel.value = ''; press('[data-fee]', b); fundNote(); }
+            else if (b.hasAttribute('data-yrs')) { st.years = Number(b.getAttribute('data-yrs')); press('[data-yrs]', b); syncYrs(); }
             else return;
             own(); paint(true);
+          });
+          if (sel) sel.addEventListener('change', function () {
+            var F = window.MFC_FUNDS, i = sel.value === '' ? -1 : Number(sel.value);
+            if (!F || !F[i]) return;
+            st.fund = F[i]; st.fee = F[i][3];
+            press('[data-fee]', null); fundNote(); own(); paint(true);
+          });
+          // V45.2 — the fund map's "Use this fund's fee" lands here
+          window.mfcFeeUseFund = function (i) {
+            if (!sel || !window.MFC_FUNDS || !window.MFC_FUNDS[i]) return;
+            sel.value = String(i); sel.dispatchEvent(new Event('change'));
+          };
+          if (arng) arng.addEventListener('input', function () {
+            var v = LADDER[Number(arng.value)] || st.invest;
+            st.invest = v; syncAmt(true); if (inp) inp.value = v.toLocaleString('en-IN');
+            if (inp) inp.removeAttribute('aria-invalid');
+            own(); paint(true);
+          });
+          if (yrng) yrng.addEventListener('input', function () {
+            var v = Math.max(1, Math.min(30, Math.round(Number(yrng.value)) || st.years));
+            st.years = v; syncYrs(); own(); paint(true);
           });
           if (inp) {
             var tmr = null;
@@ -6755,6 +6954,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
                 inp.removeAttribute('aria-invalid');
                 st.invest = v;
                 box.querySelectorAll('[data-amt]').forEach(function (x) { x.setAttribute('aria-pressed', Number(x.getAttribute('data-amt')) === v ? 'true' : 'false'); });
+                if (arng) { arng.value = String(rung(v)); arng.setAttribute('aria-valuetext', lakh(v)); }
                 own(); paint(true);
               }, 300);
             });
@@ -6764,6 +6964,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
               inp.removeAttribute('aria-invalid');
             });
           }
+          syncAmt(false); syncYrs();
           // the second flat bar grows with the twin's two, on the same reveal
           var AN = $('feeAnchor');
           function revealNow(){ if (revealed) return; revealed = true; var b = $('fa-bar-flat2'); if (b) b.style.width = (b.getAttribute('data-w') || 0) + '%'; }
@@ -6806,7 +7007,13 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         var p = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10)), f = raw / p;
         return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
       }
-      var C = { lmVar: chg('lm:var'), lmDp: chg('lm:dp'), lmPct: chg('lm:pct'), smVar: chg('sm:var'), smDp: chg('sm:dp'), smPct: chg('sm:pct') };
+      // V45.2 — each book's charges are quoted at its recommended investment (MFSTAT tax_capital in #fd-chg)
+      function amt(k) {
+        var e = document.querySelector('#fd-chg [data-k="' + k + '"]'), v = e ? parseFloat(String(e.textContent).replace(/[^0-9.]/g, '')) : NaN;
+        return v > 0 ? v : null;
+      }
+      var C = { lmVar: chg('lm:var'), lmDp: chg('lm:dp'), lmPct: chg('lm:pct'), smVar: chg('sm:var'), smDp: chg('sm:dp'), smPct: chg('sm:pct'),
+                lmAt: amt('lm:at') || 1000000, smAt: amt('sm:at') || 1500000 };
       var haveChg = C.lmVar != null && C.lmDp != null && C.smVar != null && C.smDp != null;
       var chartOn = R.getAttribute('data-fee-chart') === 'on', allInOn = R.getAttribute('data-fee-allin') === 'on' && haveChg;
       var st = null, allIn = false, lastW = 0;
@@ -6829,7 +7036,8 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         var calc = window.mfcFeeCalc, M = window.STRAT_MONTHLY, plot = $('fd-plot');
         if (!st || !plot || typeof calc !== 'function' || !M || !(M.lm > 0) || !(M.sm > 0)) return;
         var D = calc.D, N = st.years, ret = D.ret;
-        var S = [{ cls: 'is-fund', label: 'A ' + st.fee + '% yearly fee', full: 'With a ' + st.fee + '% yearly fee', v: [] },
+        var fl = st.label ? st.label.charAt(0).toUpperCase() + st.label.slice(1) : 'A ' + st.fee + '% yearly fee';
+        var S = [{ cls: 'is-fund', label: fl, full: st.label ? 'With ' + st.label : 'With a ' + st.fee + '% yearly fee', v: [] },
                  { cls: 'is-lm', label: inr(M.lm) + '-a-month fee', full: 'With the ' + inr(M.lm) + '-a-month fee', v: [] },
                  { cls: 'is-sm', label: inr(M.sm) + '-a-month fee', full: 'With the ' + inr(M.sm) + '-a-month fee', v: [] }];
         for (var y = 0; y <= N; y++) {
@@ -6865,15 +7073,11 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
           var d = s.v.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join('');
           h += '<path class="fd-line ' + s.cls + (/is-allin/.test(s.cls) ? '' : ' is-draw') + '" d="' + d + '" pathLength="1"/>';
         });
-        plot.innerHTML = h + '</svg>';
+        plot.innerHTML = h + '<g class="fd-scrub" aria-hidden="true"></g></svg>';
+        last = { S: S, N: N, X: X, Y: Y, W: W, H: H, padL: padL, padR: padR, padT: padT, padB: padB };
         var hd = $('fd-chart-h');
         if (hd) hd.textContent = inr(st.invest) + ' over ' + N + ' years, at the same ' + ret + '% a year before costs';
-        var gap = Math.abs(lm[N] - fu[N]);
-        var lg = $('fd-legend');
-        if (lg) lg.innerHTML = S.map(function (s) {
-          return '<li class="' + s.cls + '"><i aria-hidden="true"></i><span>' + s.label + '</span><b>' + inr(s.v[N]) + '</b></li>';
-        }).join('') + '<li class="is-gap' + (inv ? ' is-inv' : '') + '"><i aria-hidden="true"></i><span>' +
-          (inv ? 'The fund’s fee is smaller, by' : 'What the ' + st.fee + '% fee keeps') + '</span><b>' + inr(gap) + '</b></li>';
+        scrub(N, true);
         var sd = $('fd-chart-d');
         if (sd) sd.textContent = 'After ' + N + ' years: ' + S.map(function (s) { return s.full.charAt(0).toLowerCase() + s.full.slice(1) + ', ' + inr(s.v[N]); }).join('; ') + '.';
         var tb = $('fd-table');
@@ -6894,8 +7098,52 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
           } else note.hidden = true;
         }
       }
+      /* V45.2 — drag, tap or arrow along the chart to read any year: a line, a dot on each path, and the legend's
+         figures for that year. Mouse-out goes back to the last year; touch keeps the year it was left on. */
+      var last = null, scrubK = null;
+      function scrub(k, reset) {
+        if (!last) return;
+        var N = last.N, S = last.S; k = Math.max(0, Math.min(N, k)); scrubK = reset ? null : k;
+        var g = document.querySelector('#fd-plot .fd-scrub');
+        if (g) g.innerHTML = (k === N && reset) ? '' : '<line class="fd-scrub-l" x1="' + last.X(k).toFixed(1) + '" x2="' + last.X(k).toFixed(1) + '" y1="' + last.padT +
+          '" y2="' + (last.H - last.padB) + '"/>' + S.map(function (s) {
+            return '<circle class="fd-scrub-d ' + s.cls + '" cx="' + last.X(k).toFixed(1) + '" cy="' + last.Y(s.v[k]).toFixed(1) + '" r="4.5"/>';
+          }).join('');
+        var fu = S[0].v, lm = S[1].v, inv = lm[k] < fu[k], gap = Math.abs(lm[k] - fu[k]);
+        var lg = $('fd-legend');
+        if (lg) lg.innerHTML = '<li class="is-yr"><span>' + (k === N ? 'After ' + N + ' years' : k === 0 ? 'Today' : 'At year' + NB + k) +
+          '</span><small>' + (k === N ? 'Drag across the chart to read any year' : 'of ' + N) + '</small></li>' + S.map(function (s) {
+          return '<li class="' + s.cls + '"><i aria-hidden="true"></i><span>' + s.label + '</span><b>' + inr(s.v[k]) + '</b></li>';
+        }).join('') + '<li class="is-gap' + (inv ? ' is-inv' : '') + '"><i aria-hidden="true"></i><span>' +
+          (inv ? 'The fund’s fee is smaller, by' : 'What the ' + st.fee + '% fee keeps') + '</span><b>' + inr(gap) + '</b></li>';
+        var plot = $('fd-plot');
+        if (plot) { plot.setAttribute('aria-valuemax', String(N)); plot.setAttribute('aria-valuenow', String(k));
+          plot.setAttribute('aria-valuetext', (k === 0 ? 'Today' : 'Year ' + k) + ': ' + S.map(function (s) { return s.label + ' ' + inr(s.v[k]); }).join(', ')); }
+      }
+      function kAt(e) {
+        var svg = document.querySelector('#fd-plot svg');
+        if (!svg || !last) return null;
+        var r = svg.getBoundingClientRect(), x = (e.clientX - r.left) * (last.W / (r.width || last.W));
+        return Math.round((x - last.padL) / (last.W - last.padL - last.padR) * last.N);
+      }
       if (chartOn) {
-        window.mfcFeeChart = function (invest, fee, years) { st = { invest: invest, fee: fee, years: years }; draw(); };
+        window.mfcFeeChart = function (invest, fee, years, label) { st = { invest: invest, fee: fee, years: years, label: label || '' }; draw(); };
+        var P = $('fd-plot');
+        if (P && window.PointerEvent) {
+          P.setAttribute('tabindex', '0'); P.setAttribute('role', 'slider'); P.setAttribute('aria-label', 'Year to read on the chart');
+          P.setAttribute('aria-valuemin', '0');
+          var down = false;
+          P.addEventListener('pointerdown', function (e) { down = true; var k = kAt(e); if (k != null) scrub(k); });
+          P.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse' || down) { var k = kAt(e); if (k != null) scrub(k); } });
+          ['pointerup', 'pointercancel'].forEach(function (t) { P.addEventListener(t, function () { down = false; }); });
+          P.addEventListener('pointerleave', function (e) { down = false; if (e.pointerType === 'mouse' && last) scrub(last.N, true); });
+          P.addEventListener('keydown', function (e) {
+            if (!last) return;
+            var k = scrubK == null ? last.N : scrubK, n = { ArrowLeft: k - 1, ArrowDown: k - 1, ArrowRight: k + 1, ArrowUp: k + 1, Home: 0, End: last.N }[e.key];
+            if (n == null) return;
+            e.preventDefault(); scrub(n, n >= last.N);
+          });
+        }
       }
       function setup() {
         var calc = window.mfcFeeCalc, M = window.STRAT_MONTHLY, DU = window.DURATIONS;
@@ -6932,21 +7180,23 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
             tmr = setTimeout(function () { var p = $('fd-plot'); if (p && Math.round(p.clientWidth) !== lastW) draw(); }, 150);
           });
         }
-        // the all-in totals, at the amount the MFTURN figures are quoted at (Rs 15 lakh, CHARGES_AT)
+        // the all-in totals, each at the amount its MFTURN figure is quoted at: the book's recommended investment (V45.2)
         var tot = $('fd-allin-tot');
         if (tot && allInOn && M && M.lm > 0 && M.sm > 0 && C.lmPct != null && C.smPct != null) {
-          var disc = (DU && DU['12'] && typeof DU['12'].disc === 'number') ? DU['12'].disc : 0, AT = 1500000;
-          var fl = M.lm * 12 * (1 - disc) / AT * 100, fs = M.sm * 12 * (1 - disc) / AT * 100;
-          tot.innerHTML = 'LargeMidcap' + NB + '250 costs about <b>' + (fl + C.lmPct).toFixed(1) + '%</b> a year (fee ' + fl.toFixed(1) +
-            '%, trading charges ' + C.lmPct.toFixed(2) + '%) and SmallMicro' + NB + '500 about <b>' + (fs + C.smPct).toFixed(1) + '%</b> (fee ' +
+          var disc = (DU && DU['12'] && typeof DU['12'].disc === 'number') ? DU['12'].disc : 0;
+          var fl = Math.round(M.lm * 12 * (1 - disc)) / C.lmAt * 100, fs = Math.round(M.sm * 12 * (1 - disc)) / C.smAt * 100;
+          tot.innerHTML = 'LargeMidcap' + NB + '250 at ' + inr(C.lmAt) + ' costs about <b>' + (fl + C.lmPct).toFixed(1) + '%</b> a year (fee ' + fl.toFixed(1) +
+            '%, trading charges ' + C.lmPct.toFixed(2) + '%) and SmallMicro' + NB + '500 at ' + inr(C.smAt) + ' about <b>' + (fs + C.smPct).toFixed(1) + '%</b> (fee ' +
             fs.toFixed(1) + '%, trading charges ' + C.smPct.toFixed(2) + '%)';
         }
         // CARDS_CALM: each paid card's fee line says what the fee is a year, and that trading charges come on top
         if (R.getAttribute('data-cards-calm') === 'on' && M) {
-          [['lm', 'lm-tenyr', C.lmPct], ['sm', 'sm-tenyr', C.smPct]].forEach(function (c) {
+          [['lm', 'lm-tenyr', C.lmPct, C.lmAt], ['sm', 'sm-tenyr', C.smPct, C.smAt]].forEach(function (c) {
             var host = $(c[1]), m = M[c[0]];
             if (!host || !(m > 0)) return;
-            host.innerHTML = '<b>' + inr(m * 12) + '</b> a year at the listed price: ' + (m * 12 / 1500000 * 100).toFixed(2) + '% of ' + inr(1500000) + '.' +
+            // V45.2: at the book's own recommended amount; mf-v452-funds-js fills [data-moat-fee] from the fund list
+            host.innerHTML = '<b>' + inr(m * 12) + '</b> a year at the listed price: ' + (m * 12 / c[3] * 100).toFixed(2) + '% of ' + inr(c[3]) +
+              '<span data-moat-fee="' + c[0] + '" data-pct="' + (m * 12 / c[3] * 100).toFixed(2) + '"></span>.' +
               (c[2] != null ? ' Trading charges, about ' + c[2].toFixed(2) + '% a year, go to your broker, the exchange and the government.' : '');
           });
         }
@@ -6978,6 +7228,229 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         if (window.MFCLive) calm(window.MFCLive);
         else document.addEventListener('mfc-live-data', function (e) { calm(e.detail); });
       }
+    })();
+    </script>
+    <script id="mf-v452-funds-js">
+    /* V45.2 — the 187 active funds (assets/active-funds.json: AMFI NAVs, direct plans; the owner's list) feed
+       four things: the fund map (#fund-map), the fee section's "Your fund" picker (#fd-fund, read by
+       mf-v447-feedrag-js through window.MFC_FUNDS / window.mfcFeeUseFund), the median and cheapest fees quoted
+       in prose ([data-fund-median], [data-fmap-min]), and the counter-example (window.mfcFeeCounter). Every
+       sentence it writes is computed from the rows and from the page's own machine-written figures (STRAT_MONTHLY,
+       MFSTAT cagr_posttax_postfee and tax_capital in #fmap-ours), so none of it is typed. Fail-soft: without the
+       file the static text stands and the picker stays disabled. */
+    (function () {
+      var D = document, R = D.documentElement, NB = ' ';
+      function $(id) { return D.getElementById(id); }
+      function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+      function inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+      function lakh(n) { return '₹' + String(Math.round(n / 1e3) / 100) + NB + 'lakh'; }
+      function pct(v, d) { return v.toFixed(d == null ? 2 : d) + '%'; }
+      function tick(x) { return String(Math.round(x * 10) / 10) + '%'; }
+      var CAT = { 'Small Cap': 'Small cap', 'Mid Cap': 'Mid cap', 'Large & Mid Cap': 'Large & mid cap', 'Flexi Cap': 'Flexi cap',
+                  'Multi Cap': 'Multi cap', 'Large Cap': 'Large cap', 'ELSS Tax Saver': 'ELSS tax saver' };
+      window.mfcFundCat = function (c) { return CAT[c] || c; };
+      var GROUPS = [['all', 'All', null], ['lmc', 'Large & mid cap', ['Large & Mid Cap']], ['sc', 'Small cap', ['Small Cap']],
+                    ['mc', 'Mid cap', ['Mid Cap']], ['lc', 'Large cap', ['Large Cap']], ['fx', 'Flexi & multi cap', ['Flexi Cap', 'Multi Cap']],
+                    ['elss', 'ELSS', ['ELSS Tax Saver']], ['oth', 'Others', 'rest']];
+      var NAMED = [].concat.apply([], GROUPS.filter(function (g) { return Array.isArray(g[2]); }).map(function (g) { return g[2]; }));
+      function inGroup(f, g) { return g[2] === null ? true : g[2] === 'rest' ? NAMED.indexOf(f[1]) < 0 : g[2].indexOf(f[1]) >= 0; }
+      function short(n) { return String(n).replace(/\s+Fund\b.*$/i, ''); }
+      function ours() {
+        var M = window.STRAT_MONTHLY || {}, box = $('fmap-ours'), out = {};
+        ['lm', 'sm'].forEach(function (k) {
+          var get = function (f) { var e = box && box.querySelector('[data-k="' + k + ':' + f + '"]'); return e ? parseFloat(String(e.textContent).replace(/[^0-9.\-]/g, '')) : NaN; };
+          var ret = get('ret'), at = get('at'), m = M[k];
+          if (isFinite(ret) && at > 0 && m > 0) out[k] = { k: k, name: k === 'lm' ? 'LargeMidcap' + NB + '250' : 'SmallMicro' + NB + '500', ret: ret, at: at,
+            month: m, fee: m * 12 / at * 100, grp: k === 'lm' ? 'lmc' : 'sc' };
+        });
+        return out;
+      }
+      var F = null, O = null, grp = GROUPS[0], sel = null, lastW = 0;
+
+      function draw() {
+        var plot = $('fmap-plot');
+        if (!plot || !F) return;
+        var W = Math.max(280, Math.round(plot.clientWidth || 600)), small = W < 520, H = small ? Math.round(W * 0.92) : Math.min(420, Math.round(W * 0.5));
+        lastW = W;
+        var padL = small ? 34 : 44, padR = small ? 10 : 16, padT = 26, padB = 34;
+        var xMax = Math.ceil((Math.max.apply(null, F.map(function (f) { return f[3]; })) + 0.05) * 2) / 2;
+        var yTop = Math.max.apply(null, F.map(function (f) { return f[2]; }).concat(Object.keys(O).map(function (k) { return O[k].ret; })));
+        var yMax = Math.ceil((yTop + 2) / 10) * 10;
+        function X(v) { return padL + (W - padL - padR) * (v / xMax); }
+        function Y(v) { return padT + (H - padT - padB) * (1 - Math.max(0, v) / yMax); }
+        var h = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="presentation" focusable="false">';
+        for (var y = 0; y <= yMax; y += 10) h += '<line class="fm-grid" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + Y(y).toFixed(1) + '" y2="' + Y(y).toFixed(1) + '"/>' +
+          '<text class="fm-ax" x="' + (padL - 5) + '" y="' + (Y(y) + 4).toFixed(1) + '" text-anchor="end">' + y + '%</text>';
+        for (var x = 0; x <= xMax + 1e-9; x += 0.5) h += '<text class="fm-ax" x="' + X(x).toFixed(1) + '" y="' + (H - padB + 15) + '" text-anchor="' + (x === 0 ? 'start' : 'middle') + '">' + (x ? tick(x) : '0') + '</text>';
+        h += '<text class="fm-axt" x="' + (W - padR) + '" y="' + (H - 3) + '" text-anchor="end">Fee a year →</text>';
+        h += '<text class="fm-axt" x="' + padL + '" y="' + (padT - 10) + '">↑ Return a year, five years</text>';
+        var srt = function (a) { a = a.slice().sort(function (p, q) { return p - q; }); var n = a.length; return n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2; };
+        var mx = srt(F.map(function (f) { return f[3]; })), my = srt(F.map(function (f) { return f[2]; }));
+        h += '<line class="fm-med" x1="' + X(mx).toFixed(1) + '" x2="' + X(mx).toFixed(1) + '" y1="' + padT + '" y2="' + (H - padB) + '"/>' +
+             '<line class="fm-med" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + Y(my).toFixed(1) + '" y2="' + Y(my).toFixed(1) + '"/>' +
+             '<text class="fm-ax fm-medl" x="' + (X(mx) + 5).toFixed(1) + '" y="' + (Y(my) - 6).toFixed(1) + '">median fund</text>';
+        var r = small ? 3.6 : 4.4;
+        // the picked kind of fund is drawn last, so the faded dots never sit on top of it
+        var dot = function (f, i, cls) { return '<circle class="fm-dot' + cls + '" data-i="' + i + '" cx="' + X(f[3]).toFixed(1) + '" cy="' + Y(f[2]).toFixed(1) + '" r="' + r + '"/>'; };
+        var top = '';
+        F.forEach(function (f, i) {
+          if (grp[0] === 'all') { h += dot(f, i, ''); return; }
+          if (inGroup(f, grp)) top += dot(f, i, ' is-in'); else h += dot(f, i, ' is-out');
+        });
+        h += top;
+        Object.keys(O).forEach(function (k) {
+          var o = O[k], cx = X(o.fee), cy = Y(o.ret), dim = grp[0] !== 'all' && o.grp !== grp[0];
+          h += '<g' + (dim ? ' opacity=".45"' : '') + '><circle class="fm-us is-' + k + '" data-us="' + k + '" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (small ? 7 : 8) + '"/>' +
+               (dim ? '' : '<text class="fm-ul" x="' + (cx + 12).toFixed(1) + '" y="' + (cy + 4).toFixed(1) + '">' + o.name + ' <tspan class="fm-bt">backtest</tspan></text>') + '</g>';
+        });
+        if (sel) {
+          var sx = sel.us ? X(O[sel.us].fee) : X(F[sel.i][3]), sy = sel.us ? Y(O[sel.us].ret) : Y(F[sel.i][2]);
+          h += '<circle class="fm-sel" cx="' + sx.toFixed(1) + '" cy="' + sy.toFixed(1) + '" r="' + (sel.us ? 12 : 8) + '"/>';
+        }
+        plot.innerHTML = h + '</svg>';
+        plot._geo = { X: X, Y: Y, W: W, H: H };
+      }
+      function read() {
+        var box = $('fmap-read');
+        if (!box) return;
+        if (!sel) { box.innerHTML = '<p class="fmap-hint">Tap any dot to see the fund, and use its fee in the calculator below.</p>'; return; }
+        if (sel.us) {
+          var o = O[sel.us];
+          box.innerHTML = '<p><b>MindForge ' + o.name + '</b>, backtest: <b>' + pct(o.ret, 1) + '</b> a year after 20% tax on every gain and our fee, for <b>' +
+            pct(o.fee) + '</b> a year: ' + inr(o.month) + ' a month on ' + lakh(o.at) + '. Not live trading.</p>';
+          return;
+        }
+        var f = F[sel.i];
+        box.innerHTML = '<p><b>' + esc(f[0]) + '</b> · ' + esc(window.mfcFundCat(f[1])) + ': <b>' + pct(f[3]) + '</b> a year in fees, and <b>' + pct(f[2], 1) +
+          '</b> a year over five years, before tax.</p><button type="button" class="fmap-use" data-use="' + sel.i + '">Use its fee in the calculator below&nbsp;↓</button>';
+      }
+      function summary() {
+        var el = $('fmap-sum');
+        if (!el || !F) return;
+        var lm = O.lm, sm = O.sm, min = Math.min.apply(null, F.map(function (f) { return f[3]; }));
+        var below = function (o, rows) { return rows.filter(function (f) { return f[2] < o.ret; }).length; };
+        if (grp[0] === 'all') {
+          var cheaper = [lm, sm].filter(Boolean).every(function (o) { return o.fee < min; });
+          var bits = [lm, sm].filter(Boolean).map(function (o) {
+            var n = below(o, F);
+            return o.name + '&rsquo;s backtest is above ' + (n === F.length ? 'all ' + F.length : n + ' of them');
+          });
+          el.innerHTML = (cheaper ? 'None of the ' + F.length + ' funds charges less than either of ours. ' : 'The cheapest of the ' + F.length + ' funds charges ' + pct(min) + '. ') +
+            bits.join(' and ') + ': theirs before tax, ours after tax and our fee.';
+          return;
+        }
+        var rows = F.filter(function (f) { return inGroup(f, grp); });
+        if (!rows.length) { el.textContent = ''; return; }
+        var lo = function (i) { return Math.min.apply(null, rows.map(function (f) { return f[i]; })); };
+        var hi = function (i) { return Math.max.apply(null, rows.map(function (f) { return f[i]; })); };
+        var t = rows.length + ' ' + (grp[0] === 'oth' ? 'other funds (value, contra, sector, hybrid and more)' : grp[1].toLowerCase() + ' funds') + ': fees from <b>' + pct(lo(3)) + '</b> to <b>' + pct(hi(3)) +
+          '</b> a year, five-year returns from ' + pct(lo(2), 1) + ' to <b>' + pct(hi(2), 1) + '</b> a year before tax.';
+        var o = grp[0] === 'lmc' ? lm : grp[0] === 'sc' ? sm : null;
+        if (o) {
+          var n = below(o, rows);
+          t += ' ' + o.name + '&rsquo;s backtest: <b>' + pct(o.ret, 1) + '</b> a year after tax and our fee, above ' + (n === rows.length ? 'every one of them' : n + ' of the ' + rows.length) +
+            ', for <b>' + pct(o.fee) + '</b> a year at ' + lakh(o.at) + '.';
+        } else {
+          t += ' For scale, ours: ' + [lm, sm].filter(Boolean).map(function (x) { return x.name + ' ' + pct(x.ret, 1) + ' for ' + pct(x.fee); }).join(', ') + ' (backtests, after tax and fee).';
+        }
+        el.innerHTML = t;
+      }
+      function table() {
+        var tb = $('fmap-table');
+        if (!tb || !F) return;
+        var h = '<caption>Active funds and the two MindForge stock portfolios: yearly fee and five-year return a year</caption><thead><tr><th scope="col">Fund</th><th scope="col">Kind</th><th scope="col">Fee a year</th><th scope="col">Return a year, five years</th></tr></thead><tbody>';
+        Object.keys(O).forEach(function (k) { var o = O[k]; h += '<tr><th scope="row">MindForge ' + o.name + ' (backtest, after tax and fee)</th><td>Stock portfolio</td><td>' + pct(o.fee) + '</td><td>' + pct(o.ret, 1) + '</td></tr>'; });
+        F.forEach(function (f) { h += '<tr><th scope="row">' + esc(f[0]) + '</th><td>' + esc(window.mfcFundCat(f[1])) + '</td><td>' + pct(f[3]) + '</td><td>' + pct(f[2], 1) + ' (before tax)</td></tr>'; });
+        tb.innerHTML = h + '</tbody>';
+      }
+      function chips() {
+        var box = $('fmap-chips');
+        if (!box) return;
+        box.innerHTML = GROUPS.map(function (g) {
+          var n = F.filter(function (f) { return inGroup(f, g); }).length;
+          return n ? '<button type="button" class="fd-chip" data-g="' + g[0] + '" aria-pressed="' + (g === grp) + '">' + g[1] + '<small>' + n + '</small></button>' : '';
+        }).join('');
+      }
+      function pick(e) {
+        var plot = $('fmap-plot'), g = plot && plot._geo, svg = plot && plot.querySelector('svg');
+        if (!g || !svg) return;
+        var rc = svg.getBoundingClientRect(), k = g.W / (rc.width || g.W), x = (e.clientX - rc.left) * k, y = (e.clientY - rc.top) * k;
+        var best = null, bd = 30 * k;
+        Object.keys(O).forEach(function (u) { var d = Math.hypot(g.X(O[u].fee) - x, g.Y(O[u].ret) - y); if (d < bd + 6) { bd = d - 6; best = { us: u }; } });
+        F.forEach(function (f, i) {
+          if (grp[0] !== 'all' && !inGroup(f, grp)) return;
+          var d = Math.hypot(g.X(f[3]) - x, g.Y(f[2]) - y); if (d < bd) { bd = d; best = { i: i }; }
+        });
+        if (!best) return;
+        sel = best; draw(); read();
+      }
+      function fill(data) {
+        F = (data && data.funds || []).filter(function (f) { return f && f.length >= 4 && isFinite(f[2]) && isFinite(f[3]); });
+        if (!F.length) return;
+        window.MFC_FUNDS = F;
+        O = ours();
+        var ters = F.map(function (f) { return f[3]; }).sort(function (a, b) { return a - b; }), n = ters.length;
+        var med = n % 2 ? ters[(n - 1) / 2] : (ters[n / 2 - 1] + ters[n / 2]) / 2, min = ters[0];
+        var cheapest = F.filter(function (f) { return f[3] === min; })[0];
+        D.querySelectorAll('[data-fund-median]').forEach(function (e) { e.textContent = String(Math.round(med * 100) / 100); });
+        D.querySelectorAll('.fd-chip[data-fee] [data-fund-median]').forEach(function (e) { var b = e.closest('.fd-chip'); if (b) b.setAttribute('data-fee', String(Math.round(med * 100) / 100)); });
+        D.querySelectorAll('[data-fmap-n]').forEach(function (e) { e.textContent = String(n); });
+        D.querySelectorAll('[data-fmap-min]').forEach(function (e) { e.textContent = pct(min); });
+        D.querySelectorAll('[data-fmap-asof]').forEach(function (e) { if (data.asof) e.textContent = data.asof; });
+        Object.keys(O).forEach(function (k) { D.querySelectorAll('[data-fmap-fee="' + k + '"]').forEach(function (e) { e.textContent = pct(O[k].fee); }); });
+        // the pricing cards: the fee against the cheapest fund, only when it is in fact lower
+        D.querySelectorAll('[data-moat-fee]').forEach(function (e) {
+          var p = parseFloat(e.getAttribute('data-pct'));
+          e.textContent = p > 0 && p < min ? ', less than the cheapest of ' + n + ' active funds (' + pct(min) + ')' : '';
+        });
+        // the picker: one group per kind of fund, in the list's own order
+        var s = $('fd-fund');
+        if (s) {
+          var order = [], by = {};
+          F.forEach(function (f, i) { if (!by[f[1]]) { by[f[1]] = []; order.push(f[1]); } by[f[1]].push(i); });
+          s.innerHTML = '<option value="">Pick your fund (' + n + ' active funds)</option>' + order.map(function (c) {
+            return '<optgroup label="' + esc(window.mfcFundCat(c)) + '">' + by[c].map(function (i) { return '<option value="' + i + '">' + esc(short(F[i][0])) + ' · ' + pct(F[i][3]) + '</option>'; }).join('') + '</optgroup>';
+          }).join('');
+          s.disabled = false;
+        }
+        if (cheapest && window.mfcFeeCounter) window.mfcFeeCounter(min, esc(short(cheapest[0])));
+        chips(); draw(); read(); summary(); table();
+      }
+      function start() {
+        var map = $('fund-map');
+        if (R.getAttribute('data-fund-map') === 'off' && map) map.hidden = true;
+        if (!window.fetch) return;
+        fetch('assets/active-funds.json?v=1', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+          if (d) fill(d);
+        }).catch(function () {});
+        var chipsBox = $('fmap-chips');
+        if (chipsBox) chipsBox.addEventListener('click', function (e) {
+          var b = e.target.closest ? e.target.closest('[data-g]') : null;
+          if (!b || !F) return;
+          grp = GROUPS.filter(function (g) { return g[0] === b.getAttribute('data-g'); })[0] || GROUPS[0];
+          chipsBox.querySelectorAll('[data-g]').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+          if (sel && sel.i != null && grp[0] !== 'all' && !inGroup(F[sel.i], grp)) sel = null;
+          draw(); read(); summary();
+        });
+        var plot = $('fmap-plot');
+        if (plot) plot.addEventListener('click', function (e) { if (F) pick(e); });
+        var rd = $('fmap-read');
+        if (rd) rd.addEventListener('click', function (e) {
+          var b = e.target.closest ? e.target.closest('[data-use]') : null;
+          if (!b || !window.mfcFeeUseFund) return;
+          window.mfcFeeUseFund(Number(b.getAttribute('data-use')));
+          var t = $('fd-ctl'), s = $('fd-fund');
+          var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          if (t) t.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+          if (s) { try { s.focus({ preventScroll: true }); } catch (x) { s.focus(); } }
+        });
+        var tmr = null;
+        window.addEventListener('resize', function () {
+          clearTimeout(tmr);
+          tmr = setTimeout(function () { var p = $('fmap-plot'); if (F && p && Math.round(p.clientWidth) !== lastW) draw(); }, 150);
+        });
+      }
+      if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', start); else start();
     })();
     </script>
 
@@ -7083,7 +7556,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
             <span class="strat-rec">Close to the model from <span data-rec>₹15,00,000</span></span>
           </div>
           <div class="price-row">
-            <span class="price-amt" id="sm-price-amt">₹1,499</span>
+            <span class="price-amt" id="sm-price-amt">₹499</span>
             <span class="price-mo"  id="sm-price-unit">/ month</span>
           </div>
           <div class="price-annual-note" id="sm-price-note" style="display:none;"></div>
@@ -7140,7 +7613,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
             <span class="strat-rec">Close to the model from <span data-rec>₹10,00,000</span></span>
           </div>
           <div class="price-row">
-            <span class="price-amt" id="lm-price-amt">₹999</span>
+            <span class="price-amt" id="lm-price-amt">₹199</span>
             <span class="price-mo"  id="lm-price-unit">/ month</span>
           </div>
           <div class="price-annual-note" id="lm-price-note" style="display:none;"></div>
@@ -9039,7 +9512,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 
       <details class="faq-item" data-ld-sync>
         <summary><span>How much does a subscription cost?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>MindForge MultiAsset is free for everyone. MindForge LargeMidcap&nbsp;250 is ₹999 per month and MindForge SmallMicro&nbsp;500 is ₹1,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free, which counts as part of the plan: on a 3-month plan, the bill covers months two and three. You can subscribe to one strategy or to all three. The <a href="calculator.html">Fee Calculator</a> compares a flat subscription against a percentage-of-AUM fee at your own portfolio size.</p></div>
+        <div class="faq-a"><p>MindForge MultiAsset is free for everyone. MindForge LargeMidcap&nbsp;250 is ₹199 per month and MindForge SmallMicro&nbsp;500 is ₹499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free, which counts as part of the plan: on a 3-month plan, the bill covers months two and three. You can subscribe to one strategy or to all three. The <a href="calculator.html">Fee Calculator</a> compares a flat subscription against a percentage-of-AUM fee at your own portfolio size.</p></div>
       </details>
 
       <details class="faq-item" data-ld-sync>
@@ -9131,7 +9604,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
       </details>
       <details class="faq-item" data-ld-sync id="faq-allin">
         <summary><span>What does a book cost me in a year, all in?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>Three things. <b>Our fee</b>: ₹999 or ₹1,499 a month, less on longer plans; the <a href="#fee-drag">fee section</a> shows it as a share of your amount. <b>Trading charges</b>: the book changes most of its holdings each month, and the transaction tax, stamp duty, exchange and depository charges come to about <!--MFTURN:lm:charges_pct-->1.15<!--/MFTURN-->% of the money a year on LargeMidcap&nbsp;250 and <!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN-->% on SmallMicro&nbsp;500, at Zerodha’s rates on <!--MFTURN:charges:asof-->13 Nov 2026<!--/MFTURN-->. <b>Tax</b>: every gain is short-term, taxed at 20% in the year it’s booked. A fund’s expense ratio covers its fee; its own trading costs sit inside its NAV, and its gains are taxed once, when you sell. The return after all of this is what the <a href="#why-this">comparison table</a> shows.</p></div>
+        <div class="faq-a"><p>Three things. <b>Our fee</b>: ₹199 or ₹499 a month, less on longer plans; the <a href="#fee-drag">fee section</a> shows it as a share of your amount. <b>Trading charges</b>: the book changes most of its holdings each month, and the transaction tax, stamp duty, exchange and depository charges come to about <!--MFTURN:lm:charges_pct-->1.18<!--/MFTURN-->% of the money a year on LargeMidcap&nbsp;250 at ₹10&nbsp;lakh and <!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN-->% on SmallMicro&nbsp;500 at ₹15&nbsp;lakh, at Zerodha’s rates on <!--MFTURN:charges:asof-->13 Nov 2026<!--/MFTURN-->. <b>Tax</b>: every gain is short-term, taxed at 20% in the year it’s booked. A fund’s expense ratio covers its fee; its own trading costs sit inside its NAV, and its gains are taxed once, when you sell. The return after all of this is what the <a href="#why-this">comparison table</a> shows.</p></div>
       </details>
       </div>
     </div>
@@ -9194,7 +9667,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
       </details>
       <details class="faq-item" data-ld-sync id="faq-flatfee">
         <summary><span>My fund charges about 1% a year. Is a flat fee really cheaper?</span><i aria-hidden="true"></i></summary>
-        <div class="faq-a"><p>Above its break-even, yes; below it, no. A flat fee is a fixed number of rupees, so the larger your amount, the smaller its share, while a 1% fee is always 1% of everything you hold. The <a href="#fee-drag">fee section</a> near the top of this page works out the break-even for your amount and your fund’s fee. Fees are only part of it. These portfolios change most of their holdings each month, so trading charges add about <!--MFTURN:lm:charges_pct-->1.15<!--/MFTURN-->% a year on LargeMidcap&nbsp;250 and <!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN-->% on SmallMicro&nbsp;500, and every gain is taxed in the year it’s booked, at the short-term rate. The comparison that counts is the return after all of that, which is the table near the top of this page.</p></div>
+        <div class="faq-a"><p>Above its break-even, yes; below it, no. A flat fee is a fixed number of rupees, so the larger your amount, the smaller its share, while a 1% fee is always 1% of everything you hold. The <a href="#fee-drag">fee section</a> near the top of this page works out the break-even for your amount and your fund’s fee. Fees are only part of it. These portfolios change most of their holdings each month, so trading charges add about <!--MFTURN:lm:charges_pct-->1.18<!--/MFTURN-->% a year on LargeMidcap&nbsp;250 at ₹10&nbsp;lakh and <!--MFTURN:sm:charges_pct-->1.36<!--/MFTURN-->% on SmallMicro&nbsp;500 at ₹15&nbsp;lakh, and every gain is taxed in the year it’s booked, at the short-term rate. The comparison that counts is the return after all of that, which is the table near the top of this page.</p></div>
       </details>
 
       </div>
@@ -9258,7 +9731,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         "name": "How much does a subscription cost?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹999 per month and MindForge SmallMicro 500 is ₹1,499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free, which counts as part of the plan: on a 3-month plan, the bill covers months two and three. You can subscribe to one strategy or to all three. The Fee Calculator compares a flat subscription against a percentage-of-AUM fee at your own portfolio size."
+          "text": "MindForge MultiAsset is free for everyone. MindForge LargeMidcap 250 is ₹199 per month and MindForge SmallMicro 500 is ₹499 per month. Quarterly, half-yearly and annual billing carry 5%, 10% and 20% discounts respectively, and new members currently get their first month free, which counts as part of the plan: on a 3-month plan, the bill covers months two and three. You can subscribe to one strategy or to all three. The Fee Calculator compares a flat subscription against a percentage-of-AUM fee at your own portfolio size."
         }
       },
       {
@@ -9370,7 +9843,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         "name": "What does a book cost me in a year, all in?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Three things. Our fee: ₹999 or ₹1,499 a month, less on longer plans; the fee section shows it as a share of your amount. Trading charges: the book changes most of its holdings each month, and the transaction tax, stamp duty, exchange and depository charges come to about 1.15% of the money a year on LargeMidcap 250 and 1.36% on SmallMicro 500, at Zerodha’s rates on 13 Nov 2026. Tax: every gain is short-term, taxed at 20% in the year it’s booked. A fund’s expense ratio covers its fee; its own trading costs sit inside its NAV, and its gains are taxed once, when you sell. The return after all of this is what the comparison table shows."
+          "text": "Three things. Our fee: ₹199 or ₹499 a month, less on longer plans; the fee section shows it as a share of your amount. Trading charges: the book changes most of its holdings each month, and the transaction tax, stamp duty, exchange and depository charges come to about 1.18% of the money a year on LargeMidcap 250 at ₹10 lakh and 1.36% on SmallMicro 500 at ₹15 lakh, at Zerodha’s rates on 13 Nov 2026. Tax: every gain is short-term, taxed at 20% in the year it’s booked. A fund’s expense ratio covers its fee; its own trading costs sit inside its NAV, and its gains are taxed once, when you sell. The return after all of this is what the comparison table shows."
         }
       },
       {
@@ -9442,7 +9915,7 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
         "name": "My fund charges about 1% a year. Is a flat fee really cheaper?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Above its break-even, yes; below it, no. A flat fee is a fixed number of rupees, so the larger your amount, the smaller its share, while a 1% fee is always 1% of everything you hold. The fee section near the top of this page works out the break-even for your amount and your fund’s fee. Fees are only part of it. These portfolios change most of their holdings each month, so trading charges add about 1.15% a year on LargeMidcap 250 and 1.36% on SmallMicro 500, and every gain is taxed in the year it’s booked, at the short-term rate. The comparison that counts is the return after all of that, which is the table near the top of this page."
+          "text": "Above its break-even, yes; below it, no. A flat fee is a fixed number of rupees, so the larger your amount, the smaller its share, while a 1% fee is always 1% of everything you hold. The fee section near the top of this page works out the break-even for your amount and your fund’s fee. Fees are only part of it. These portfolios change most of their holdings each month, so trading charges add about 1.18% a year on LargeMidcap 250 at ₹10 lakh and 1.36% on SmallMicro 500 at ₹15 lakh, and every gain is taxed in the year it’s booked, at the short-term rate. The comparison that counts is the return after all of that, which is the table near the top of this page."
         }
       }
     ]
@@ -9583,7 +10056,7 @@ window.addEventListener('resize', revealFadeUps, { passive: true });
 // to match the backend's handleActivate expiry/duration computation.
 // V18.3: MultiAsset is FREE for everyone — 0 short-circuits below so its card
 // always reads "FREE for everyone" regardless of the duration toggle.
-var STRAT_MONTHLY = { ma: 0, lm: 999, sm: 1499 };
+var STRAT_MONTHLY = { ma: 0, lm: 199, sm: 499 };
 var DURATIONS = {
   '1':  { months: 1,  disc: 0.00, unit: '/ month'    },
   '3':  { months: 3,  disc: 0.05, unit: '/ 3\u00A0months' },

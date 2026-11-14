@@ -932,7 +932,9 @@
 // V45.1 -> mfc-v154. Two precached documents changed: index.html (the hero button's arrow keeps its space on
 // phones and iPads) and offline.html (follows the site's light/dark switch). mfc-dash.js's token moved (the
 // action bar's Capital and amount buttons work from "How it's going").
-const CACHE = 'mfc-v154';
+// V45.2 -> mfc-v155. New prices (Rs 199 / Rs 499 a month) in the precached index.html, which also gains the fund map
+// and a fee section a reader can drive (assets/active-funds.json, fetched, not precached); mfc-insight.js 10.
+const CACHE = 'mfc-v155';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)
