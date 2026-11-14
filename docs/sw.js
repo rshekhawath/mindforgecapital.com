@@ -935,7 +935,8 @@
 // V45.2 -> mfc-v155. New prices (Rs 199 / Rs 499 a month) in the precached index.html, which also gains the fund map
 // and a fee section a reader can drive (assets/active-funds.json, fetched, not precached); mfc-insight.js 10.
 // V45.3 -> mfc-v156. New prices again (Rs 499 / Rs 999 a month) in the precached index.html; mfc-insight.js 11.
-const CACHE = 'mfc-v156';
+// V45.4 -> mfc-v157. iPhone pass: the precached index.html's in-sentence links get touch pads instead of 44px boxes.
+const CACHE = 'mfc-v157';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)
