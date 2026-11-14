@@ -275,7 +275,7 @@
   var GLANCE = true, TODAY_FOLD = true, PLAIN_ALWAYS = true, COST_ALL_IN = true, OWN_PLAIN = true, NORMAL_RUPEES = true;
   /* TWIN of STRAT_MONTHLY and DURATIONS in index.html (and DURATIONS in signup.html): the listed monthly price
      and each plan's discount. The dashboard has no price table of its own; a QA check asserts the three agree. */
-  var PLAN_PRICES = { ma: 0, lm: 199, sm: 499 };
+  var PLAN_PRICES = { ma: 0, lm: 499, sm: 999 };
   var PLAN_DISC = { 1: 0, 3: 0.05, 6: 0.10, 12: 0.20 };
   var BENCH = { lm: 'Nifty LargeMidcap 250', sm: 'Nifty Smallcap 250', ma: 'Nifty 50' };
 
