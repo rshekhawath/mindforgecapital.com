@@ -937,7 +937,8 @@
 // V45.3 -> mfc-v156. New prices again (Rs 499 / Rs 999 a month) in the precached index.html; mfc-insight.js 11.
 // V45.4 -> mfc-v157. iPhone pass: the precached index.html's in-sentence links get touch pads instead of 44px boxes.
 // v1.0.0 -> mfc-v158. SEBI registration INH000032179 in every footer: the precached login.html changed.
-const CACHE = 'mfc-v158';
+// v1.0.1 -> mfc-v159. Address and phone in every footer, and sign-in by e-mail or mobile: the precached login.html changed.
+const CACHE = 'mfc-v159';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

@@ -28,7 +28,7 @@
      the way down. Measured on slow 4G: with this hint the first visit's main content comes 0.7 s
      sooner than without it. (The stylesheet stayed inline in this page on purpose: as a file of
      its own it delayed first paint by 0.55 s and saved a repeat visitor nothing that matters.) -->
-<link rel="preload" as="script" href="assets/mfc-dash.js?v=f7e6ca16">
+<link rel="preload" as="script" href="assets/mfc-dash.js?v=49d620aa">
 <script id="mf-v443-early">
 /* V44.3 — START THE MEMBER'S TWO READS AT THE TOP OF THE PAGE. init() sits 76% of the way
    down this file, so on a slow 4G phone the request for the member's picks did not even
@@ -5792,7 +5792,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         <div class="pmap-grid" id="pmap-grid"></div>
       </div>
 
-      <div class="oneonone-card fade-up">
+      <div class="oneonone-card fade-up" id="oneonone-card">
         <div class="oo-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
         <div class="oo-text">
           <div class="oo-title">1:1 Zoom call with Sagar Shekhawath<span class="oo-badge">SEBI RA</span></div>
@@ -5891,7 +5891,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
         </svg>
       </a>
     </div>
-    <p><span class="sebi-line">SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">Reg.&nbsp;No.&nbsp;INH000032179</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor&nbsp;Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;max-width:32em;">Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI, enlistment with BSE and certification from NISM in no way guarantee performance of the intermediary or provide any assurance of returns to investors.</span><br>© 2026 MindForge Capital&nbsp;· <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="recover.html">Recover access</a></p>
+    <p><span class="sebi-line">SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">Reg.&nbsp;No.&nbsp;INH000032179</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor&nbsp;Charter</a></span><br><span class="mfc-ra-addr" style="display:inline-block;margin-top:6px;">Address: IIIrd Floor, Shri Building, Sairam Nagar Colony, Karmanghat, Hyderabad-500079&nbsp;· Phone: <a href="tel:+917601032082" style="color:inherit;">+91-7601032082</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;max-width:32em;">Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI, enlistment with BSE and certification from NISM in no way guarantee performance of the intermediary or provide any assurance of returns to investors.</span><br>© 2026 MindForge Capital&nbsp;· <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · <a href="recover.html">Recover access</a></p>
   </footer>
 </div>
 
@@ -5901,7 +5901,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
   <span id="toast-msg">Copied</span>
 </div>
 
-<script src="assets/mfc-dash.js?v=f7e6ca16"></script>
+<script src="assets/mfc-dash.js?v=49d620aa"></script>
 <script>
 // MF-SCROLL-PROG v3.4
 (function() {
@@ -10955,6 +10955,10 @@ html[data-dmode="insight"] .hold-fold{display:none !important}
 var SETUP_CARD = true;
 var OTHER_BROKER_TIME = 'about twenty minutes';   // V44.5: an estimate for 15 orders; the owner has not timed it yet
 var ORDERS_CALM = true;
+/* v1.0.1: "returning" no longer needs last cycle's ticks on record. Any member with an earlier list (the
+   book diff knows its previous run) gets the calm orders screen: holdings, the four steps and the settings
+   cards fold under their buttons, which stay visible. Set false to go back to the ticks-only test. */
+var CALM_FOR_ALL_MEMBERS = true;
 (function () {
   var D = document;
   function ls(k, v) {
@@ -10967,6 +10971,7 @@ var ORDERS_CALM = true;
       var bd = window._bookDiff;
       if (!bd || !bd.known || !bd.prevKey) return false;
       if (isDemo) return window.SAMPLE_CALM !== false;    // V43.3 — B5: the sample reads like a member's second month
+      if (window.CALM_FOR_ALL_MEMBERS !== false) return true;   // v1.0.1
       var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
                String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
       var pm = JSON.parse(localStorage.getItem(pk) || '{}');
@@ -11254,7 +11259,8 @@ html[data-dmode="insight"] .foot-fold{display:none !important}
   html.ft-folded[data-dmode="orders"] #cs-card,
   html.ft-folded[data-dmode="orders"] #track-more,
   html.ft-folded[data-dmode="orders"] #notif-section,
-  html.ft-folded[data-dmode="orders"] #vfy-card{display:none !important}
+  html.ft-folded[data-dmode="orders"] #vfy-card,
+  html.ft-folded[data-dmode="orders"] #oneonone-card{display:none !important}
 }
 @media print{.foot-fold{display:none !important}}
 /* V43.7 — a type floor on phones. The sweep found member-facing labels at 9-10.5px
@@ -11286,7 +11292,7 @@ var FOOT_FOLD = true;
 (function () {
   var D = document, R = D.documentElement;
   if (ORDERS_NO_DAY) R.classList.add('no-day');
-  var IDS = ['cs-card', 'track-more', 'notif-section', 'vfy-card'];
+  var IDS = ['cs-card', 'track-more', 'notif-section', 'vfy-card', 'oneonone-card'];   // v1.0.1: the 1:1 call joins (the wording freeze is over)
   function ls(k, v) {
     try { if (v === undefined) return localStorage.getItem(_devKey(k)); localStorage.setItem(_devKey(k), v); } catch (e) {}
     return null;
@@ -11296,6 +11302,7 @@ var FOOT_FOLD = true;
       var bd = window._bookDiff;
       if (!bd || !bd.known || !bd.prevKey) return false;
       if (isDemo) return SAMPLE_CALM;
+      if (window.CALM_FOR_ALL_MEMBERS !== false) return true;   // v1.0.1
       var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
                String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
       var pm = JSON.parse(localStorage.getItem(pk) || '{}');
@@ -11332,7 +11339,7 @@ var FOOT_FOLD = true;
     btn.hidden = false;
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.innerHTML = open ? '<span>Settings and help</span>'
-      : '<span>Settings and help<small>e-mails &middot; your trading rules &middot; the verified account</small></span>';
+      : '<span>Settings and help<small>e-mails &middot; your trading rules &middot; the verified account &middot; a 1:1 call</small></span>';
   }
   window.mfcFootOpen = function () {
     if (!R.classList.contains('ft-folded')) return;

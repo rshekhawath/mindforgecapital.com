@@ -6874,7 +6874,7 @@ function refreshHowto() {
           var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' +
                    String(bd.prevKey).replace(/[^a-z0-9]+/gi, '_');
           var pm = JSON.parse(localStorage.getItem(pk) || '{}');
-          returning = !!pm && Object.keys(pm).length > 0;
+          returning = (window.CALM_FOR_ALL_MEMBERS !== false) || (!!pm && Object.keys(pm).length > 0);   // v1.0.1: any member with an earlier list
         } else if (isDemo && window.SAMPLE_CALM !== false && bd && bd.known && bd.prevKey) {
           returning = true;                                 // V43.3 — B5: the sample opens like a second month
         }

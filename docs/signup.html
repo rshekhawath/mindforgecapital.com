@@ -602,12 +602,12 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
                a wrong number saved silently. enterkeyhint matches the two fields
                above it, which both carry "next" (two <select>s follow). -->
           <input type="tel" id="reg-phone" name="phone" placeholder="98765 43210" maxlength="10"
-            pattern="[0-9]{10}" inputmode="numeric" required
+            pattern="[6-9][0-9]{9}" inputmode="numeric" required
             autocomplete="tel-national" enterkeyhint="next"
-            title="Enter your 10-digit mobile number without spaces or dashes"
+            title="Your 10-digit Indian mobile number: it starts with 6, 7, 8 or 9"
             oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)">
         </div>
-        <div class="phone-hint">10 digits. Only for a paid plan, whose payment link comes on WhatsApp. We never ask for an OTP, a PIN or a broker password on WhatsApp.</div>
+        <div class="phone-hint">10 digits, needed for every plan. It finds your account if you lose your dashboard link, and a paid plan&rsquo;s payment link comes on WhatsApp. We never ask for an OTP, a PIN or a broker password on WhatsApp.</div>
       </div>
 
       <div class="form-group">
@@ -789,7 +789,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 </div>
 
 <footer>
-  <p><span class="sebi-line">SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">Reg.&nbsp;No.&nbsp;INH000032179</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor&nbsp;Charter</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;max-width:32em;">Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI, enlistment with BSE and certification from NISM in no way guarantee performance of the intermediary or provide any assurance of returns to investors.</span><br>© 2026 MindForge Capital · <a href="privacy.html" style="color:var(--ink-link);">Privacy</a> · <a href="terms.html" style="color:var(--ink-link);">Terms</a></p>
+  <p><span class="sebi-line">SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">Reg.&nbsp;No.&nbsp;INH000032179</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html" style="color:inherit;text-decoration:underline;">Disclosures &amp; Investor&nbsp;Charter</a></span><br><span class="mfc-ra-addr" style="display:inline-block;margin-top:6px;">Address: IIIrd Floor, Shri Building, Sairam Nagar Colony, Karmanghat, Hyderabad-500079&nbsp;· Phone: <a href="tel:+917601032082" style="color:inherit;">+91-7601032082</a></span><br><span class="mfc-mr-warn" style="display:inline-block;margin-top:6px;opacity:.9;max-width:32em;">Investment in securities market are subject to market risks. Read all the related documents carefully before investing. Registration granted by SEBI, enlistment with BSE and certification from NISM in no way guarantee performance of the intermediary or provide any assurance of returns to investors.</span><br>© 2026 MindForge Capital · <a href="privacy.html" style="color:var(--ink-link);">Privacy</a> · <a href="terms.html" style="color:var(--ink-link);">Terms</a></p>
 </footer>
 
 <script>
@@ -856,16 +856,30 @@ var DURATIONS = {
 };
 function inr(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); }
 
-/* V40.7 — C1. THE FREE BOOK DOES NOT ASK FOR A MOBILE NUMBER. The backend never
+/* v1.0.1: SUPERSEDED. The owner asked for a valid mobile number on every sign-up, so phoneNeeded() is now always
+   true and paidPick() drives the paid-only rows. The V40.7 note follows for history.
+   V40.7 — C1. THE FREE BOOK DOES NOT ASK FOR A MOBILE NUMBER. The backend never
    uses one on the free path (handleSaveLead stores '' safely, and the free book is
    delivered by email), and a phone number asked for a free thing reads as "we'll
    call you". A paid plan keeps it: its payment link comes on WhatsApp. The field's
    visibility, step2Parts(), handleSubmit() and the WhatsApp prefill all ask this
    one function, so the four cannot disagree. privacy.html §2 says the same. */
-function phoneNeeded(){
+function phoneNeeded(){ return true; }   /* v1.0.1: every sign-up, the free book included, needs a valid mobile number (owner's ask) */
+function paidPick(){                        /* the paid-plan-only rows (plan length, capital band) */
   var s = document.getElementById('reg-strategy');
   var m = s && STRATEGY_META[s.value];
   return !(m && m.free);
+}
+/* v1.0.1: the same rules as the backend's validEmail_() / validMobile_(), so the form and the server cannot disagree */
+function mfcValidEmail(v){
+  v = String(v || '').trim();
+  if (v.length > 254 || !/^[A-Za-z0-9.!#$%&'*+\/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(v)) return false;
+  var local = v.split('@')[0], tld = v.split('.').pop();
+  return local.length <= 64 && !/^\.|\.$|\.\./.test(local) && /^[A-Za-z]{2,}$/.test(tld);
+}
+function mfcValidMobile(d){
+  d = String(d || '').replace(/\D/g, '');
+  return /^[6-9][0-9]{9}$/.test(d) && !/^(\d)\1{9}$/.test(d) && d !== '9876543210';
 }
 /* V39.1 — D1: false while apps_script.gs pins 1-month plans to one run. Flip it in
    the same release that deploys a backend serving them the latest run, together
@@ -1001,7 +1015,7 @@ function onStrategyChange() {
       if (durGroup) durGroup.style.display = '';
     }
   }
-  // V40.7 — C1: no mobile number for the free book (see phoneNeeded()).
+  // V40.7 — C1, reversed in v1.0.1: every plan asks for the mobile number (phoneNeeded() is true).
   var phEl = document.getElementById('reg-phone');
   if (phEl) {
     var phGroup = phEl.closest('.form-group');
@@ -1010,7 +1024,7 @@ function onStrategyChange() {
   }
   // V42.3 — the optional capital band travels with the mobile field: paid books only
   var bandGroup = document.getElementById('band-group');
-  if (bandGroup) bandGroup.style.display = phoneNeeded() ? '' : 'none';
+  if (bandGroup) bandGroup.style.display = paidPick() ? '' : 'none';
   var durKey = (durSel || {}).value || '';        // V41.6 — A4: '' until the reader chooses
   /* V41.6 — A1/A4: with no length chosen yet, both lines below show, and the
      1-month line carries the date (see _replacedSoon()).
@@ -1168,8 +1182,8 @@ async function handleSubmit() {
   var needPhone = phoneNeeded();   // V40.7 — C1: false for the free book
 
   if (!name)                         { showError('Please enter your full name.'); return; }
-  if (!email || !email.includes('@')){ showError('Please enter a valid email address.'); return; }
-  if (needPhone && rawPhone.length !== 10) { showError('Please enter a valid 10-digit mobile number.'); return; }
+  if (!mfcValidEmail(email))          { showError('Please enter a valid email address, like name@example.com.'); return; }
+  if (!mfcValidMobile(rawPhone))      { showError('Please enter a valid 10-digit Indian mobile number (it starts with 6, 7, 8 or 9).'); return; }
   if (!strategy)                     { showError('Please select a portfolio.'); return; }
   // V41.6 — A4: a paid plan's length is the reader's choice; nothing picks it for them.
   var _durPick = document.getElementById('reg-duration');
@@ -1264,11 +1278,19 @@ async function handleSubmit() {
       price: price,
       duration_months: p.months,
       duration_label: p.label,
-      capital_band: (phoneNeeded() && document.getElementById('reg-band')) ? document.getElementById('reg-band').value : '',   // V42.3
+      capital_band: (paidPick() && document.getElementById('reg-band')) ? document.getElementById('reg-band').value : '',   // V42.3
       agreement: true
     })
   }).then(function(r){ return r.json(); })
-    .then(function(d){ if (isFree) freeAccessCopy(d && d.activated === true ? 'sent' : 'queued', email); })
+    .then(function(d){
+      if (d && d.status === 'error' && d.error) {   // v1.0.1: the server's own check said no; back to the form with its reason
+        document.getElementById('step-success').style.display = 'none';
+        document.getElementById('step-form').style.display = 'block';
+        showError(d.error);
+        return;
+      }
+      if (isFree) freeAccessCopy(d && d.activated === true ? 'sent' : 'queued', email);
+    })
     .catch(function(err){
       console.warn('Lead save failed (non-blocking):', err);
       if (isFree) freeAccessCopy('queued', email);
@@ -1452,16 +1474,16 @@ function resetForm() {
   function step2Parts(){
     function val(id){ var e=document.getElementById(id); return e ? String(e.value||'').trim() : ''; }
     var tnc = document.getElementById('reg-tnc');
-    // V40.7 — C1: the free book has three parts, not four (no mobile number), so
+    // v1.0.1: the mobile number counts on every plan; V40.7's note: the free book had three parts, not four, so
     // the progress the goal gradient claims stays true on both paths.
     var parts = [
       val('reg-name').length >= 2,
-      /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(val('reg-email'))
+      (typeof mfcValidEmail === 'function' ? mfcValidEmail(val('reg-email')) : /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(val('reg-email')))
     ];
-    if (typeof phoneNeeded !== 'function' || phoneNeeded()) parts.push(/^[0-9]{10}$/.test(val('reg-phone')));
+    parts.push(typeof mfcValidMobile === 'function' ? mfcValidMobile(val('reg-phone')) : /^[6-9][0-9]{9}$/.test(val('reg-phone')));
     // V41.6 — A4: a paid plan's length is chosen here too (phoneNeeded() is true
     // exactly when the book is not the free one).
-    if (typeof phoneNeeded !== 'function' || phoneNeeded()) parts.push(!!val('reg-duration'));
+    if (typeof paidPick !== 'function' || paidPick()) parts.push(!!val('reg-duration'));
     parts.push(!!(tnc && tnc.checked));
     return parts;
   }
