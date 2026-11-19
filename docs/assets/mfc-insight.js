@@ -78,6 +78,9 @@
     return '₹' + v.toLocaleString('en-IN');
   }
   function num(v) { v = Number(v); return isFinite(v) ? v : null; }
+  /* v1.0.3 — a gap between two printed percentages is the gap between them AS PRINTED (2 dp each). From the unrounded
+     pair one member's screen read "+4.11%" against "+7.59%", "3.47 points behind", where the two figures give 3.48. */
+  function r2(v) { return Math.round(v * 100) / 100; }
   function sgn(v, dp, unit) {
     if (v == null || !isFinite(v)) return '—';
     dp = dp == null ? 2 : dp; unit = unit == null ? '%' : unit;
@@ -524,6 +527,10 @@
       if (c.sealed) closed++;
     });
     d.mp = (m - 1) * 100; d.bp = (b - 1) * 100; d.m = m; d.closed = closed; d.liveNow = liveNow; d.through = last.data_through;
+    /* v1.0.3 — the window opens at the first list on or after the join date, not on the join date itself: a member who
+       joined on 10 Jul read "Since 10 Jul" over a record that starts on 31 Aug, when the live record began. */
+    d.fromIso = cyc[0].rebalance_date; d.from = dt(d.fromIso);
+    d.recStart = !!(hist.cycles[0] && hist.cycles[0].rebalance_date === d.fromIso);
     d.bname = last.strategies[k].bench_name || BENCH[k] || 'its index';
     return d;
   }
@@ -550,7 +557,9 @@
       var t2;
       if (!sd.n) t2 = 'Your first month: the record starts when this month’s list closes on the 1st.';
       else {
-        t2 = 'Since <b>' + esc(dshort(sd.start)) + '</b>: the model portfolio ' + span(sd.mp, sgn(sd.mp)) + ', its index ' + span(sd.bp, sgn(sd.bp)) + '.';
+        var lead = 'Since <b>' + esc(dshort(sd.start)) + '</b>';
+        if (sd.from && sd.fromIso > iso(sd.start)) lead = 'Since <b>' + esc(dshort(sd.from)) + '</b>, ' + (sd.recStart ? 'when the live record began' : 'your first full month');
+        t2 = lead + ': the model portfolio ' + span(sd.mp, sgn(sd.mp)) + ', its index ' + span(sd.bp, sgn(sd.bp)) + '.';
         var rs = needCap ? 0 : s.capital * (sd.m - 1), rr = Math.round(Math.abs(rs));
         if (rr) t2 += ' On your ' + esc(inr(s.capital)) + ', that path comes to ' + span(rs, '<span style="white-space:nowrap">' + (rs > 0 ? '+' : '−') + esc(inr(rr)) + '</span>') + ', before tax and charges.';
       }
@@ -667,7 +676,7 @@
     var since = s.rebal ? ' since the list changed on ' + esc(dshort(s.rebal)) : ' since the list changed';
     var head = 'Your ' + esc(s.book) + ' portfolio is ' + (dir === 'flat' ? 'flat' : dir + ' ' + span(port, Math.abs(port).toFixed(2) + '%')) + since;
     if (bench && bench.live) {
-      var gap = port - bench.bench;
+      var gap = r2(port) - r2(bench.bench);
       var g = Math.abs(gap) <= 0.05 ? 'level with it' : (span(gap, Math.abs(gap).toFixed(2) + ' points') + (gap > 0 ? ' ahead' : ' behind'));
       head += '; its index, the ' + esc(bench.name) + ', is ' + span(bench.bench, sgn(bench.bench)) + ' — ' + g + '.';
     } else head += '.';
@@ -812,7 +821,7 @@
 
     // M2 — live, from the same contributions as the attribution card
     if (lb && bench && bench.live) {
-      var gap = lb.port - bench.bench;
+      var gap = r2(lb.port) - r2(bench.bench);
       var act = lb.rows.map(function (x) { return { t: x.t, ind: x.ind, r: x.r, a: x.wn * (x.r - bench.bench) }; });
       var pos = act.filter(function (x) { return x.a > 0.005; }).sort(function (a, b) { return b.a - a.a; });
       var neg = act.filter(function (x) { return x.a < -0.005; }).sort(function (a, b) { return a.a - b.a; });

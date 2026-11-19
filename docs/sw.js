@@ -938,7 +938,9 @@
 // V45.4 -> mfc-v157. iPhone pass: the precached index.html's in-sentence links get touch pads instead of 44px boxes.
 // v1.0.0 -> mfc-v158. SEBI registration INH000032179 in every footer: the precached login.html changed.
 // v1.0.1 -> mfc-v159. Address and phone in every footer, and sign-in by e-mail or mobile: the precached login.html changed.
-const CACHE = 'mfc-v159';
+// v1.0.3 -> mfc-v160. Device QA: the precached login.html (a mobile sign-in's no-subscription message), mfc-dash.js's
+// token and mfc-insight.js 12 (gaps from the printed figures, the record's real start date).
+const CACHE = 'mfc-v160';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

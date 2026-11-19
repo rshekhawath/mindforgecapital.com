@@ -600,7 +600,8 @@ async function verifyOTP() {
     } else if (data.subscriptions && data.subscriptions.length > 0) {
       renderSubscriptions(data.subscriptions);
     } else {
-      showError('otp-error', 'No active subscriptions found for this email. Please subscribe to a strategy first.');
+      // v1.0.3 — a sign-in by mobile was told "for this email", a thing the member never typed
+      showError('otp-error', 'No active subscriptions found for this ' + (_id && _id.phone ? 'mobile number' : 'e-mail') + '. Please subscribe to a strategy first.');
     }
   } catch(e) {
     showError('otp-error', 'Could not verify. Please try again.');

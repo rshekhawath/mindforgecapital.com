@@ -2903,6 +2903,11 @@ function setupCapitalCalculator(stocks, strategy) {
       setCapital(v, null, false);
       showToast('Using the amount you set on another device: ' + fmtMoney(v));
     } else if (!window._capEntered) {
+      /* v1.0.3 — the amount set on another device equals the starting amount, so setCapital() never ran and this
+         device kept nothing: every load painted "Enter your amount" and "1 of 4 done" until the server answered,
+         then flipped. Kept here WITHOUT the _at stamp, so the server's copy stays the newer one and nothing is
+         pushed back; an amount typed on this device later stamps it as before. */
+      try { localStorage.setItem(capitalStorageKey(strategy), String(v)); } catch (e) {}
       window._capEntered = true;
       _capRefreshLabels();
     }
@@ -10437,7 +10442,7 @@ function renderTrackRecord(){
       }
       var gapEl = '';
       if (r.bench != null){
-        var g = r.live - r.bench, ah = g >= 0, lvl = Math.abs(g) < 0.005;
+        var g = Math.round(r.live * 100) / 100 - Math.round(r.bench * 100) / 100, ah = g >= 0, lvl = Math.abs(g) < 0.005;   // v1.0.3 — as printed
         gapEl = '<i class="trk-gap' + (ah ? '' : ' behind') + '">' +
                 (lvl ? 'level with the index'
                      : (ah ? '+' : '\u2212') + Math.abs(g).toFixed(2) + '\u00a0pts ' + (ah ? 'ahead' : 'behind')) + '</i>';
@@ -10604,7 +10609,9 @@ function _tkLabel(t, s2){
   return '<span class="tk-nm">' + escapeHtml(nm) + '</span> <span class="tk-sym">' + escapeHtml(t) + '</span>';
 }
 function _paintBenchPill(el, s, model, bench, asOfIso){
-  var gap = model - bench;
+  /* v1.0.3 — the gap between the two figures AS PRINTED (2 dp each): from the unrounded pair a member's pill read
+     "+7.59%" and "−3.47 pts behind" beside a +4.11% headline, where the printed figures give 3.48. */
+  var gap = Math.round(model * 100) / 100 - Math.round(bench * 100) / 100;
   var state = gap > 0.05 ? 'ahead' : (gap < -0.05 ? 'behind' : 'level');
   // the PILL is a label ("+0.35 pts ahead"); the aria sentence below needs the
   // preposition ("ahead OF Nifty…"). Reusing one string for both left a
