@@ -3957,9 +3957,25 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
                              // names the yearly trading charge (MFTURN charges_pct)
   var FEE_CHART = true;      // fee section: the ten-year chart in place of the three total bars
   var FEE_ALL_IN = true;     // fee section: the trading-charges toggle and the all-in sentence
-  var FEE_ALL_IN_DEFAULT = false; // the toggle's starting state (a reader's own choice is kept)
+  var FEE_ALL_IN_DEFAULT = true;  // the toggle's starting state (a reader's own choice is kept); v1.0.4: on, so our own costs show first
   var PLAIN_RULES = true;    // "Four plain rules", with "What this is not" moved into it; off = its old place
   var FUND_MAP = true;       // V45.2: "Find your fund. Then find ours." (#fund-map): the 187 active funds by fee and return, ours beside them
+  // v1.0.4 — the calm compounder (markdowns/v1.1.0-calm-compounder-homepage-and-dashboard.md, built as v1.0.4). One switch each;
+  // every one off gives v1.0.3's page.
+  var WHY_FOLD = true;          // "Compared with the fund you would otherwise buy" (#why-this) folds to one line under the hero card
+  var FMAP_OURS = 'fee';        // the fund map: 'fee' = our two fees as lines on the fee axis; 'dots' = our backtest returns as dots (v1.0.3)
+  var FEE_LEDGER = true;        // the fee section: the four costs side by side on the reader's own amount (#fee-ledger)
+  var FEE_FOLD = true;          // the fee section: the counters, bars, break-even, counter-case, tax and all-in lines fold under the chart (#fee-full)
+  var PLAIN_MODEL_CARDS = false;// "How the list is made": the six cards under the paragraph; off = the paragraph alone
+  var WALK_PHONE_SMALL = false; // the walkthrough's phone below 860px, where it stacks under the steps; off = the steps alone
+  var CALM_DAYS = true;         // "What a month looks like": the 1st, and every other day (#calm-days)
+  var FREE_BAND = false;        // "Free, and not a trial" (#free-tools); off = its line joins the MultiAsset card
+  var TRADEOFF = false;         // "What each rung of return costs" (#trade-off)
+  var CARDS_LIVE = false;       // the pricing cards' part-month "Live this cycle" line; the live record stays in the hero card
+  var NOT_FOR = true;           // "Not for you if…" under the pricing cards (#not-for)
+  var FIT_ROLES = false;        // "Built to be the base / to sit on the base / a small slice" (.fit-roles)
+  var FAQ_FOLD = true;          // the FAQ groups fold, the first one open
+  var NOTREADY_LEAN = true;     // "Not ready yet?": the e-mail form alone, without the two tiles that repeat #doors
   var R = document.documentElement;
   R.setAttribute('data-perf-hero', PERF_HERO ? 'on' : 'off');
   R.setAttribute('data-perf-cards', PERF_CARDS ? 'on' : 'off');
@@ -3982,8 +3998,22 @@ main details:not(.faq-item) > summary > span{ text-wrap:balance; }
   R.setAttribute('data-fee-allin-default', FEE_ALL_IN_DEFAULT ? 'on' : 'off');
   R.setAttribute('data-fund-map', FUND_MAP ? 'on' : 'off');
   R.setAttribute('data-plain-rules', PLAIN_RULES ? 'on' : 'off');
+  R.setAttribute('data-why-fold', WHY_FOLD ? 'on' : 'off');
+  R.setAttribute('data-fmap-ours', FMAP_OURS === 'dots' ? 'dots' : 'fee');
+  R.setAttribute('data-fee-ledger', FEE_LEDGER ? 'on' : 'off');
+  R.setAttribute('data-fee-fold', FEE_FOLD ? 'on' : 'off');
+  R.setAttribute('data-plain-model-cards', PLAIN_MODEL_CARDS ? 'on' : 'off');
+  R.setAttribute('data-walk-phone-small', WALK_PHONE_SMALL ? 'on' : 'off');
+  R.setAttribute('data-calm-days', CALM_DAYS ? 'on' : 'off');
+  R.setAttribute('data-free-band', FREE_BAND ? 'on' : 'off');
+  R.setAttribute('data-tradeoff', TRADEOFF ? 'on' : 'off');
+  R.setAttribute('data-cards-live', CARDS_LIVE ? 'on' : 'off');
+  R.setAttribute('data-not-for', NOT_FOR ? 'on' : 'off');
+  R.setAttribute('data-fit-roles', FIT_ROLES ? 'on' : 'off');
+  R.setAttribute('data-faq-fold', FAQ_FOLD ? 'on' : 'off');
+  R.setAttribute('data-notready-lean', NOTREADY_LEAN ? 'on' : 'off');
   var MOVED = { '#your-month': 'how-it-works/', '#how': 'methodology/', '#how-built': 'methodology/', '#vproof-h': 'track-record/' };
-  try { var to = MOVED[location.hash]; if (to) location.replace(to); if (location.hash === '#already' && !ALREADY) location.replace('#doors'); } catch (e) {}
+  try { var to = MOVED[location.hash]; if (to) location.replace(to); if (location.hash === '#already' && !ALREADY) location.replace('#doors'); if (location.hash === '#free-tools' && !FREE_BAND) location.replace('#strategies'); } catch (e) {}
 })();</script>
 <style id="mf-v423-home">
 /* V42.7 — the V42.2 performance card (.hv-card) is retired: PERF_HERO now shows the numbers card
@@ -4608,6 +4638,106 @@ html[data-theme="dark"] .fm-us.is-lm{ fill:#60a5fa; } html[data-theme="dark"] .f
 @media print{ .fmap-chips, .fmap-use, .fmap-hint{ display:none; } }
 html[data-fund-map="off"] #fund-map{ display:none !important; }
 </style>
+<style id="mf-v104-home">
+/* v1.0.4 — the calm compounder. Each rule answers one switch in mf-v423-flags. */
+/* WHY_FOLD: the second comparison table sits behind one line under the hero card */
+html[data-why-fold="on"] .whyb{ padding:8px 0 14px; }
+.tl-more.whyb-fold{ margin-top:0; }
+.tl-more.whyb-fold[open] > summary{ margin-bottom:24px; }
+html[data-why-fold="off"] .whyb-fold > summary{ display:none; }
+html[data-why-fold="off"] .whyb-fold::details-content{ block-size:auto; content-visibility:visible; }
+/* FMAP_OURS: the fund map's words for each mode */
+html[data-fmap-ours="fee"] .fm-v-dots{ display:none !important; }
+html:not([data-fmap-ours="fee"]) .fm-v-fee{ display:none !important; }
+.fm-fee-l{ stroke:#1a50d8; stroke-width:2.2; stroke-dasharray:6 4; }
+.fm-fee-l.is-sm{ stroke:#0f766e; }
+html[data-theme="dark"] .fm-fee-l{ stroke:#60a5fa; }
+html[data-theme="dark"] .fm-fee-l.is-sm{ stroke:#2dd4bf; }
+.fm-fee-t{ font-size:12px; font-weight:800; fill:#1a50d8; paint-order:stroke; stroke:var(--ink); stroke-width:4px; stroke-linejoin:round; }
+.fm-fee-t.is-sm{ fill:#0f766e; }
+html[data-theme="dark"] .fm-fee-t{ fill:#93c5fd; }
+html[data-theme="dark"] .fm-fee-t.is-sm{ fill:#5eead4; }
+/* FEE_LEDGER: the four costs, side by side */
+html[data-fee-ledger="off"] #fee-ledger{ display:none !important; }
+.fd-ledger{ margin:20px 0 8px; }
+.fdl-h{ margin:0 0 10px; font-size:16px; font-weight:750; line-height:1.4; color:var(--white); }
+.fdl-t{ width:100%; border-collapse:separate; border-spacing:0; font-variant-numeric:tabular-nums;
+  background:var(--ink2); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.fdl-t th, .fdl-t td{ padding:11px 14px; border-top:1px solid var(--border); text-align:right; font-size:14px;
+  line-height:1.45; color:var(--text2); vertical-align:top; }
+.fdl-t thead th{ border-top:0; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); }
+.fdl-t thead th:first-child, .fdl-t tbody th{ text-align:left; }
+.fdl-t tbody th{ font-weight:600; color:var(--text); }
+.fdl-t td b{ color:var(--white); font-weight:750; }
+.fdl-t td small{ display:block; font-size:12px; color:var(--text3); font-weight:500; }
+.fdl-t tr.is-us th{ color:var(--white); }
+.fdl-note{ margin:10px 2px 0; font-size:13px; line-height:1.65; color:var(--text3); max-width:84ch; }
+@media (max-width:600px){
+  .fdl-t thead{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .fdl-t, .fdl-t tbody, .fdl-t tr, .fdl-t th, .fdl-t td{ display:block; }
+  .fdl-t tr{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); border-top:1px solid var(--border); }
+  .fdl-t tbody tr:first-child{ border-top:0; }
+  .fdl-t tbody th{ grid-column:1 / -1; border-top:0; padding:11px 12px 2px; font-size:13.5px; }
+  .fdl-t td{ border-top:0; text-align:left; padding:4px 12px 11px; font-size:13.5px; }
+  .fdl-t td::before{ content:attr(data-l); display:block; font-size:10.5px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--text3); margin-bottom:2px; }
+}
+/* the ledger says what the chart's all-in note said, with the numbers, so the note stands down while it shows */
+html[data-fee-ledger="on"] #fd-allin-note{ display:none !important; }
+/* FEE_FOLD: the arithmetic behind the chart, one tap away */
+.tl-more.fee-full{ margin-top:18px; }
+.tl-more.fee-full[open] > summary{ margin-bottom:18px; }
+.fee-full .fa-head{ margin-top:4px; }
+/* PLAIN_MODEL_CARDS */
+html[data-plain-model-cards="off"] #how-it-chooses .pm-list{ display:none; }
+/* WALK_PHONE_SMALL: below the stacking width the phone goes, and so does the sentence about it */
+@media (max-width:860px){
+  html[data-walk-phone-small="off"] #get-started .mfw-stage,
+  html[data-walk-phone-small="off"] #get-started .mfw-desc-phone{ display:none; }
+}
+/* CALM_DAYS */
+html[data-calm-days="off"] #calm-days{ display:none !important; }
+.calm-days{ margin:22px 0 6px; }
+.cd-k{ margin:0 0 10px; font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--text3); }
+.cd-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.cd-tile{ background:var(--ink2); border:1px solid var(--border); border-radius:14px; padding:14px 16px; }
+.cd-tk{ display:block; margin-bottom:6px; font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-link,#0951c6); }
+html[data-theme="dark"] .cd-tk{ color:#9dbcff; }
+.cd-tv{ margin:0; font-size:14px; line-height:1.6; color:var(--text2); }
+.cd-tv b{ color:var(--white); font-weight:700; }
+@media (max-width:480px){ .cd-grid{ grid-template-columns:minmax(0,1fr); } }
+/* FREE_BAND: the band goes; its line joins the MultiAsset card */
+html[data-free-band="off"] #free-tools{ display:none !important; }
+html:not([data-free-band="off"]) .ma-notrial{ display:none; }
+/* TRADEOFF, CARDS_LIVE */
+html[data-tradeoff="off"] #trade-off{ display:none !important; }
+html[data-cards-live="off"] .strat-card .live-calm{ display:none !important; }
+/* NOT_FOR */
+html[data-not-for="off"] #not-for{ display:none !important; }
+.not-for{ margin:22px auto 0; max-width:66ch; text-align:center; font-size:14px; line-height:1.7; color:var(--text2); }
+.not-for b{ color:var(--white); font-weight:700; }
+@media (max-width:600px){ .not-for{ font-size:13.5px; text-align:left; } }
+/* FIT_ROLES */
+html[data-fit-roles="off"] #where-this-fits .fit-roles{ display:none !important; }
+/* FAQ_FOLD: each group opens on its heading; the first starts open; print shows all */
+html[data-faq-fold="on"] .faq-group.is-shut > .faq-list{ display:none; }
+.faq-gh-btn{ display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:6px 0; margin:0; background:none; border:0;
+  border-bottom:1px solid var(--border); font:inherit; letter-spacing:inherit; text-transform:inherit; color:inherit; text-align:left; cursor:pointer; }
+.faq-gh-btn small{ font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:none; color:var(--text3); }
+.faq-gh-btn i{ margin-left:auto; width:9px; height:9px; border-right:2px solid var(--accent2); border-bottom:2px solid var(--accent2);
+  transform:rotate(45deg); margin-top:-4px; flex:none; transition:transform .2s ease; }
+.faq-gh-btn[aria-expanded="true"] i{ transform:rotate(-135deg); margin-top:4px; }
+.faq-gh-btn:hover{ color:var(--white); }
+.faq-gh-btn:focus-visible{ outline:2px solid var(--accent3); outline-offset:3px; }
+html[data-faq-fold="on"] .faq-group + .faq-group{ margin-top:14px; }
+html[data-faq-fold="on"] .faq-gh{ margin-bottom:10px; }
+@media (prefers-reduced-motion:reduce){ .faq-gh-btn i{ transition:none; } }
+@media print{ html[data-faq-fold="on"] .faq-group.is-shut > .faq-list{ display:block; } .faq-gh-btn i{ display:none; } }
+/* NOTREADY_LEAN */
+html[data-notready-lean="on"] .notready .dp-tiles{ display:none !important; }
+html[data-notready-lean="on"] .notready .nr-v-full{ display:none; }
+html:not([data-notready-lean="on"]) .notready .nr-v-lean{ display:none; }
+</style>
 </head>
 <body>
 <script>try{if(sessionStorage.getItem('mfc-offer-dismissed')==='1')document.documentElement.classList.add('mfc-offer-off')}catch(e){}</script>
@@ -4673,7 +4803,7 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
              V45.3 — prices now Rs 499 / Rs 999: 0.60% of LargeMidcap's Rs 10 lakh and 0.80% of SmallMicro's Rs 15 lakh,
              about a regular-plan index fund's fee; the headline is the owner's and stands. -->
         <h1>A quant-researched stock portfolio built to outperform active mutual funds, <em>for a passive fund&rsquo;s fee</em>.</h1>
-        <p class="hero-desc">On the 1st, a SEBI-registered Research Analyst&rsquo;s rules-based model publishes the exact stocks and the exact weights. You place the orders in your own broker &mdash; about ten minutes on Zerodha &mdash; and hold. We never touch your money.</p>
+        <p class="hero-desc">On the 1st, a SEBI-registered Research Analyst&rsquo;s rules publish fifteen Indian companies and how much of each to buy. You place the orders in your own demat &mdash; about ten minutes &mdash; and get back to work. We never hold your money.</p>
         <div class="hero-actions">
           <!-- V41.2 — C1. "Get Started" opened the paid form (0%, "1 month" preselected,
                a phone field) for a reader this page tells to start free. It now opens
@@ -4893,6 +5023,9 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
      never labelled backtest; ours always are. Where a fund beat a book, the table simply shows it. -->
 <section class="whyb" id="why-this" aria-labelledby="whyb-h">
   <div class="container">
+    <!-- v1.0.4 — WHY_FOLD: the hero card already gives these numbers; this table adds each index and the deepest
+         fall, one tap away. With the switch off, mf-v104-home-js opens it and the summary is hidden (v1.0.3). -->
+    <details class="tl-more tl-keep whyb-fold" id="why-fold"><summary><span>The same comparison, with each index and the deepest fall</span><i aria-hidden="true"></i></summary>
     <div class="section-label">Same months, after tax</div>
     <h2 class="whyb-h2" id="whyb-h">Compared with the fund you would otherwise buy</h2>
     <p class="whyb-desc">Each portfolio beside its own index and the best of three funds in its category, over the same months, after tax. The funds&rsquo; figures are what their investors actually got; ours are backtests, so read the note under the table. Where a fund did better, the table shows it.</p>
@@ -4938,8 +5071,23 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
     <p class="whyb-note">How to read it: MindForge figures are backtests, with monthly rebalancing simulated after a one-way trading cost on turnover (10&nbsp;bps on LargeMidcap&nbsp;250 and 20&nbsp;bps on SmallMicro&nbsp;500; MultiAsset&rsquo;s simulation charges none) and 20% short-term tax on every gain booked; they are not live trading. Index and fund figures are bought and held, taxed once at exit at the 12.5% long-term rate; the funds&rsquo; are their real Direct Plan returns, measured from AMFI&rsquo;s published NAVs over the same months. &ldquo;After our fee&rdquo; takes the subscription out at the capital shown; MultiAsset is free. Past returns, real or simulated, do not promise future ones, and nothing here recommends any fund.</p>
     <details class="mf-words"><summary>What do these words mean?</summary><dl><div><dt>Portfolio (we call it a book):</dt> <dd>a list of stocks or ETFs with a weight for each, which you hold in your own demat.</dd></div><div><dt>Backtest:</dt> <dd>a simulation of the rules over past years. Useful for what it shows about a method, but not a record of real trading.</dd></div><div><dt>Index:</dt> <dd>the market measure a portfolio is compared with, such as the Nifty&nbsp;50.</dd></div><div><dt>Live this cycle:</dt> <dd>how the published list has moved since it last changed, on the 1st.</dd></div><div><dt>Points behind:</dt> <dd>the gap between the portfolio and its index, in percentage points.</dd></div><div><dt>Deepest fall:</dt> <dd>the furthest it dropped from a previous high.</dd></div></dl><a href="learn/#gl-h">The full glossary&nbsp;&rarr;</a></details>
     <p class="whyb-links"><a href="track-record/">The live record, cycle by cycle&nbsp;&rarr;</a><a href="strategies.html#performance">The three funds, same months&nbsp;&rarr;</a><a href="calculators/mindforge-vs-fund.html">Your fund against a book&nbsp;&rarr;</a><a href="methodology/">How the backtests are run&nbsp;&rarr;</a></p>
+    </details>
   </div>
 </section>
+<script id="mf-v104-why-js">
+/* v1.0.4 — WHY_FOLD: off = the table stands open, as in v1.0.3; on = "How we compare" in the hero card and any
+   #why-this link open it before the browser scrolls there. */
+(function () {
+  var R = document.documentElement, d = document.getElementById('why-fold');
+  if (!d) return;
+  if (R.getAttribute('data-why-fold') === 'off') { d.open = true; return; }
+  function openIt() { d.open = true; }
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href="#why-this"]'); if (a) openIt(); }, true);
+  if (location.hash === '#why-this') openIt();
+  window.addEventListener('hashchange', function () { if (location.hash === '#why-this') openIt(); });
+})();
+</script>
+
 
 <!-- V44.7 — L1 · WHAT A PERCENTAGE FEE COSTS. The fee anchor that sat folded under the pricing cards
      (#fee-more) moved up for the reader who already pays a fund 1-2% a year, with their own amount, fee and
@@ -4953,14 +5101,15 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
      by mf-v452-funds-js; the summary sentence is computed from the same rows, so no claim here is typed. -->
 <section class="fmap" id="fund-map" aria-labelledby="fmap-h">
   <div class="container">
-    <div class="section-label">Return against fee</div>
-    <h2 class="fd-h2" id="fmap-h">Find your fund. Then find ours.</h2>
-    <p class="fd-desc">Each grey dot is one of <span data-fmap-n>187</span> active funds: what its direct plan charges a year, across, and what it returned a year over five years, up. The cheapest charges <b data-fmap-min>0.43%</b>. At the amounts we recommend, ours cost <b data-fmap-fee="lm">0.60%</b> and <b data-fmap-fee="sm">0.80%</b>.</p>
+    <div class="section-label"><span class="fm-v-dots">Return against fee</span><span class="fm-v-fee">What funds charge</span></div>
+    <h2 class="fd-h2" id="fmap-h"><span class="fm-v-dots">Find your fund. Then find ours.</span><span class="fm-v-fee">Find your fund. See what it charges you.</span></h2>
+    <p class="fd-desc fm-v-dots">Each grey dot is one of <span data-fmap-n>187</span> active funds: what its direct plan charges a year, across, and what it returned a year over five years, up. The cheapest charges <b data-fmap-min>0.43%</b>. At the amounts we recommend, ours cost <b data-fmap-fee="lm">0.60%</b> and <b data-fmap-fee="sm">0.80%</b>.</p>
+    <p class="fd-desc fm-v-fee">Each dot is one of <span data-fmap-n>187</span> active funds: its direct plan&rsquo;s fee a year, across, and what it returned a year over five years, up. The two lines are our fees at the amounts we suggest: <b data-fmap-fee="lm">0.60%</b> on LargeMidcap&nbsp;250 at <span data-fmap-at="lm">₹10 lakh</span> and <b data-fmap-fee="sm">0.80%</b> on SmallMicro&nbsp;500 at <span data-fmap-at="sm">₹15 lakh</span>. Trading charges come on top for us, as their own trading costs do inside every fund&rsquo;s price; the next section counts both.</p>
     <div class="fmap-chips" id="fmap-chips" role="group" aria-label="Show one kind of fund"></div>
     <figure class="fmap-fig" id="fmap-fig">
       <div class="fmap-plot" id="fmap-plot" aria-hidden="true"></div>
       <div class="fmap-read" id="fmap-read" aria-live="polite"><p class="fmap-hint">Tap any dot to see the fund, and use its fee in the calculator below.</p></div>
-      <figcaption class="fmap-cap">Funds: direct plans, five-year return a year before tax, and expense ratio, from AMFI NAVs, <span data-fmap-asof>Nov 2026</span>. Ours: backtests, not live trading, after 20% tax on every gain booked and our fee at the recommended amount, <!--MFPEER:lm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER-->.</figcaption>
+      <figcaption class="fmap-cap">Funds: direct plans, five-year return a year before tax, and expense ratio, from AMFI NAVs, <span data-fmap-asof>Nov 2026</span>.<span class="fm-v-dots"> Ours: backtests, not live trading, after 20% tax on every gain booked and our fee at the recommended amount, <!--MFPEER:lm:span-->Oct&nbsp;2021 → Oct&nbsp;2026<!--/MFPEER-->.</span><span class="fm-v-fee"> Ours: the listed monthly fee for a year, over the amount each portfolio is built for.</span></figcaption>
       <table class="sr-only" id="fmap-table"><caption>Active funds and the two MindForge stock portfolios: yearly fee and five-year return</caption></table>
     </figure>
     <p class="fmap-sum" id="fmap-sum">The cheapest of the 187 funds charges 0.43%. LargeMidcap&nbsp;250&rsquo;s backtest is above 176 of them and SmallMicro&nbsp;500&rsquo;s backtest is above all 187: theirs before tax, ours after tax and our fee.</p>
@@ -4970,11 +5119,11 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
 
 <section class="feedrag" id="fee-drag" aria-labelledby="fd-h">
   <div class="container">
-    <div class="section-label">What a percentage fee costs</div>
+    <div class="section-label">The fee that grows with you</div>
     <!-- V44.8 — the heading named 1% while the figures below open on 2% (the calculator twin's default,
          which the twin test holds). It now names both, so the first figures match it. -->
     <h2 class="fd-h2" id="fd-h">A 1% or 2% fee sounds small. Over ten years, it isn&rsquo;t.</h2>
-    <p class="fd-desc">A fund&rsquo;s expense ratio is a share of everything you hold, taken every year, in good years and bad. <span class="fd-desc-chart">Our fee is a fixed number of rupees that doesn&rsquo;t grow with your savings. Pick your fund, your amount and the years; the chart runs both at the same return.</span><span class="fd-desc-bars">Our fee is a fixed number of rupees. Choose your amount and your fund&rsquo;s fee to see the difference over the same years and the same return.</span></p>
+    <p class="fd-desc">A fund&rsquo;s expense ratio is a share of everything you hold, taken every year in good years and bad, so it grows as fast as your savings do. <span class="fd-desc-chart">Our fee is a fixed number of rupees. Pick your fund, your amount and the years: the table counts every cost we know of, and the chart runs both at the same return.</span><span class="fd-desc-bars">Our fee is a fixed number of rupees. Choose your amount and your fund&rsquo;s fee to see the difference over the same years and the same return.</span></p>
     <!-- V45.2 — the controls a reader can drive: their own fund (the 187 active funds in assets/active-funds.json,
          filled by mf-v452-funds-js) or a typical fee, an amount slider over a fixed ladder, a years slider, and a
          line that turns the percentage into this month's rupees. Every figure still goes through window.mfcFeeCalc;
@@ -5003,6 +5152,23 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
       <p class="fd-assume" id="fd-assume">Assumes 15% a year before fees, on both sides.</p>
     </div>
     <p class="fd-month" id="fd-month" aria-live="polite">This month, a 2% fee on ₹15,00,000 is <b>₹2,500</b>; by year&nbsp;10 it is <b>₹7,510</b> a month, because it grows with your money. Ours stays <b>₹499</b> on LargeMidcap&nbsp;250 or <b>₹999</b> on SmallMicro&nbsp;500, whatever you hold.</p>
+    <!-- v1.0.4 — FEE_LEDGER: the four costs side by side on the reader's own amount, years and fund. Painted by
+         mf-v450-fee-js from window.mfcFeeCalc (the calculator twin's loop) and allInPath with MFTURN charges_var and
+         charges_dp, from the same state as the chart, so the two cannot disagree. The static figures are the defaults
+         (Rs 15 lakh, 10 years, 15% before costs) and are rewritten on load. -->
+    <div class="fd-ledger" id="fee-ledger">
+      <p class="fdl-h" id="fdl-h">10 years on ₹15,00,000, cost by cost</p>
+      <table class="fdl-t" aria-labelledby="fdl-h">
+        <thead><tr><th scope="col">The cost</th><th scope="col">What it takes</th><th scope="col" id="fdl-end-h">₹15,00,000 becomes</th></tr></thead>
+        <tbody id="fdl-body">
+          <tr class="is-fund"><th scope="row">A regular-plan fund or PMS, 2% a year</th><td data-l="What it takes">₹5,52,592</td><td data-l="Becomes"><b>₹50,91,851</b></td></tr>
+          <tr class="is-dir"><th scope="row">A typical direct plan, 0.94% a year</th><td data-l="What it takes">₹2,73,454</td><td data-l="Becomes"><b>₹55,90,169</b></td></tr>
+          <tr class="is-us is-lm"><th scope="row">LargeMidcap&nbsp;250: ₹499 a month, plus its trading charges</th><td data-l="What it takes">₹59,880 + ₹3,15,882<small>fee + trading charges</small></td><td data-l="Becomes"><b>₹53,89,054</b></td></tr>
+          <tr class="is-us is-sm"><th scope="row">SmallMicro&nbsp;500: ₹999 a month, plus its trading charges</th><td data-l="What it takes">₹1,19,880 + ₹3,67,403<small>fee + trading charges</small></td><td data-l="Becomes"><b>₹51,73,287</b></td></tr>
+        </tbody>
+      </table>
+      <p class="fdl-note" id="fdl-note">The same <span id="fdl-ret">15</span>% a year before costs on every row, so only the costs differ: an illustration, not a forecast. Trading charges are the transaction tax, stamp duty and exchange and depository charges at Zerodha&rsquo;s rates on <!--MFTURN:charges:asof-->13 Nov 2026<!--/MFTURN-->; they go to the exchange and the government, not to us. A fund&rsquo;s own trading costs sit inside its price and are not in this table. All in, a monthly portfolio costs about what a regular plan does and more than a direct plan, so we never sell it on the fee alone. What counts is the return after costs: the comparison at the top of this page is after tax, our fee and an allowance for trading costs.</p>
+    </div>
     <div class="fee-anchor fade-up" id="feeAnchor">
       <div class="fa-head">
         <span class="fa-eyebrow">The number a flat fee competes with</span>
@@ -5062,7 +5228,7 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
       <figure class="fd-chart" id="fd-chart" aria-labelledby="fd-chart-h">
         <div class="fd-chart-top">
           <p class="fd-chart-h" id="fd-chart-h">₹15,00,000 over 10 years, at the same 15% a year before costs</p>
-          <button type="button" class="fd-allin" id="fd-allin" aria-pressed="false">Count each book&rsquo;s trading charges too <small>(estimate)</small></button>
+          <button type="button" class="fd-allin" id="fd-allin" aria-pressed="false">Count each portfolio&rsquo;s trading charges <small>(estimate)</small></button>
         </div>
         <div class="fd-plot" id="fd-plot"></div>
         <p class="sr-only" id="fd-chart-d"></p>
@@ -5104,6 +5270,24 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
   </div>
 </section>
 
+<!-- v1.0.4 — FEE_FOLD (mf-v423-flags): the counters, the bars, the break-even, the counter-case, the caveat, the tax
+     note and the all-in sentence move, in their own order, into one <details> after the chart. Run while the page is
+     parsed, so nothing jumps; every element keeps its id, so mf-v447-feedrag-js and mf-v450-fee-js still find them. -->
+<script id="mf-v104-feefold-js">
+(function () {
+  var R = document.documentElement;
+  if (R.getAttribute('data-fee-fold') !== 'on') return;
+  var box = document.getElementById('fee-drag'), an = document.getElementById('feeAnchor'), chart = document.getElementById('fd-chart');
+  if (!box || !an || !chart || document.getElementById('fee-full')) return;
+  var det = document.createElement('details');
+  det.className = 'tl-more tl-keep fee-full'; det.id = 'fee-full';
+  det.innerHTML = '<summary><span>The full arithmetic: the fees in rupees, the break-even and where a flat fee loses</span><i aria-hidden="true"></i></summary>';
+  chart.parentNode.insertBefore(det, chart.nextSibling);
+  ['.fa-head', '.fa-figs', '#fa-scale', '#fa-scaleN', '#fa-be', '#fa-counter', '.fa-foot'].forEach(function (q) { var e = an.querySelector(q); if (e) det.appendChild(e); });
+  ['.fd-tax', '#fd-allin-line'].forEach(function (q) { var e = box.querySelector(q); if (e) det.appendChild(e); });
+})();
+</script>
+
 <!-- V44.7 — L2 · THE METHOD IN SIX PLAIN LINES. Each line restates what /methodology/ and the dashboard's
      "Why these 15" already publish; nothing beyond the four signal families. PLAIN_MODEL in mf-v423-flags. -->
 <section class="plainm" id="how-it-chooses" aria-labelledby="pm-h">
@@ -5113,7 +5297,7 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
     <!-- V45.0 — the method in plain words, within what the site may say (IP off the public site: the four
          signal families, TOP_N, the industry cap, equal sizing, the monthly cadence; no measure, weight or
          look-back is named). -->
-    <p class="pm-desc">In plain words: the model starts from every company in an index and looks at how each share price has behaved over recent months &mdash; how far and how steadily it has risen, how much it swings, how easily it trades. It keeps the fifteen that score best, no more than two from any one industry, and puts the same amount in each. Once a month it looks again. The detail, and the months it struggles in, are on the method page.</p>
+    <p class="pm-desc">Think of a league table, redrawn on the 1st of every month. Every company in the index is ranked on how its share price has behaved lately: how far and how steadily it has risen, how much it swings, how easily it trades. The fifteen at the top get a place, no more than two from any one industry, each with the same amount. Each month a few drop out and a few come in; most stay. Nobody can add a favourite or remove a name by hand.</p>
     <ol class="pm-list">
       <li><b>The same starting list</b> Every company in the portfolio&rsquo;s index, the same list every month: 250 for LargeMidcap&nbsp;250, 500 for SmallMicro&nbsp;500.</li>
       <li><b>One score from prices and trading</b> Momentum, trend, volatility and liquidity, read from prices and traded volumes. Not forecasts, not tips, not the news.</li>
@@ -5123,7 +5307,7 @@ html[data-fund-map="off"] #fund-map{ display:none !important; }
       <li><b>Nobody overrides it</b> No name is added, removed or resized by hand.</li>
     </ol>
     <p class="pm-never"><span class="pm-never-k">What it never reads:</span> <span class="pm-chip">The news</span> <span class="pm-chip">Forecasts</span> <span class="pm-chip">Company results</span> <span class="pm-chip">Tips</span> <span class="pm-chip">Social media</span></p>
-    <p class="pm-why">A rule can be tested on past years and checked against every month since. A tip can&rsquo;t be checked at all.</p>
+    <p class="pm-why">Why rank prices and not stories? Shares that have risen steadily have tended to keep rising for a while, one of the most studied patterns in markets. It is not a law: it fails in sharp rebounds after a fall, and your dashboard says so when that happens. A rule can be tested on past years and checked against every month since. A tip can&rsquo;t be checked at all.</p>
     <p class="pm-foot">MultiAsset holds all eight of its ETFs every month and changes only how much of each.</p>
     <p class="pm-close">When it struggles: sharp rebounds after a fall, when last quarter&rsquo;s laggards lead the bounce. It tends to lag then, and the dashboard says so when it happens. <a href="methodology/">How a portfolio is built, and when it struggles&nbsp;&rarr;</a></p>
   </div>
@@ -5192,12 +5376,13 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
 <section class="prules" id="plain-rules" aria-labelledby="pr-h">
   <div class="container">
     <div class="section-label">Built on common sense</div>
-    <h2 class="pr-h2" id="pr-h">Four plain rules, and what we left out because of them.</h2>
+    <h2 class="pr-h2" id="pr-h">Five plain rules, and what we left out because of them.</h2>
     <ol class="pr-list">
-      <li><b>A cost that grows with your savings needs a reason.</b> A percentage fee rises every year your money does, whether or not more is done for you. Ours is a fixed number of rupees, and every other cost is printed next to it.</li>
-      <li><b>You should be able to say what each company does.</b> Every holding on your dashboard comes with one plain line: what the company makes or sells, its industry and how big it is.</li>
-      <li><b>The market&rsquo;s daily mood is not your job.</b> The list changes on the 1st, by rules, and only then. Nobody here forecasts the market, the budget or interest rates, and nothing alerts you in between.</li>
-      <li><b>Falls come with owning companies. Know your number first.</b> Each book&rsquo;s deepest backtested fall is shown in rupees for your amount before you start, so the first bad month isn&rsquo;t a surprise. <a href="#where-this-fits">Work out yours&nbsp;&rarr;</a></li>
+      <li><b>Fees compound too.</b> A percentage fee is taken from everything you hold, every year, good or bad, so it grows as fast as your savings. Ours is a fixed number of rupees, and every other cost, including the ones that don&rsquo;t come to us, is printed beside it. <a href="fees-and-tax/">What it costs, all in&nbsp;&rarr;</a></li>
+      <li><b>Next month is nobody&rsquo;s to know.</b> The rules forecast nothing. They rank what prices have already done, once a month, and then stop. Nothing alerts you in between, because nothing in between changes what you hold. <a href="how-it-works/">What you do each month&nbsp;&rarr;</a></li>
+      <li><b>You should be able to say what each company does.</b> Every holding on your dashboard comes with two plain lines: what it sells, and what makes that business busier or quieter. You didn&rsquo;t pick it, but you will always know what it is. <a href="dashboard.html?demo=1">See a sample&nbsp;&rarr;</a></li>
+      <li><b>Falls come with owning companies. Know yours in rupees.</b> Some months fall, and some falls are deep. Before you start, each portfolio&rsquo;s worst backtested fall is shown on your own amount, so the first bad month is a number you already knew. <a href="#where-this-fits">Work out yours&nbsp;&rarr;</a></li>
+      <li><b>Ten minutes, then back to work.</b> Your career gets your attention. This asks for one sitting on the 1st; the other days of the month, there is nothing to do. <a href="#get-started">What the month looks like&nbsp;&rarr;</a></li>
     </ol>
   </div>
 </section>
@@ -5253,7 +5438,7 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
       <div class="mfw-copy">
         <div class="section-label">Getting started</div>
         <h2 class="mfw-h2 fade-up" id="mfw-h">From here to your first orders, in three steps</h2>
-        <p class="mfw-desc fade-up">Choose a portfolio, sign up, and on the 1st place the orders. The phone plays each step the way the site shows it.</p>
+        <p class="mfw-desc fade-up">Choose a portfolio, sign up, and on the 1st place the orders.<span class="mfw-desc-phone"> The phone plays each step the way the site shows it.</span></p>
         <ol class="mfw-steps">
           <li class="mfw-step is-on">
             <button type="button" class="mfw-sbtn" aria-current="step"><span class="mfw-n">01</span><span class="mfw-t">Choose a portfolio</span></button>
@@ -5271,6 +5456,15 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
             <span class="mfw-bar" aria-hidden="true"><i></i></span>
           </li>
         </ol>
+        <!-- v1.0.4 — CALM_DAYS: the other days of the month, shown rather than claimed. The date is written by
+             mf-v104-home-js (the next 1st); the static words stand without it. -->
+        <div class="calm-days" id="calm-days">
+          <p class="cd-k">What a month looks like</p>
+          <div class="cd-grid">
+            <div class="cd-tile"><span class="cd-tk">The 1st</span><p class="cd-tv">Your dashboard lists the orders: sell what left, then buy what joined. About ten minutes in your broker.</p></div>
+            <div class="cd-tile"><span class="cd-tk">Every other day</span><p class="cd-tv">One line: <b>&ldquo;Nothing to do until <span data-next-first>the 1st</span>.&rdquo;</b> No app, no alerts, nothing you need to watch.</p></div>
+          </div>
+        </div>
         <div class="mfw-cta">
           <a class="btn-primary" href="signup.html?strategy=multiasset">Start the free portfolio &rarr;</a>
           <a class="mfw-more" href="dashboard.html?demo=1">See the sample dashboard</a>
@@ -5296,7 +5490,7 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
                 </div>
 
                 <div class="mfw-fr" data-f="book" data-ctx="Strategies">
-                  <p class="mfw-k">Core-plus &middot; large &amp; midcap</p>
+                  <p class="mfw-k">Large &amp; midcap</p>
                   <p class="mfw-h">MindForge LargeMidcap 250</p>
                   <p class="mfw-s">Equal weight, rebalanced on the 1st.</p>
                   <div class="mfw-sum"><div><span>Plan</span><b data-mfw-month="lm">&#8377;499/month</b></div><div><span>Rebalance</span><b>Monthly</b></div></div>
@@ -5391,6 +5585,18 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
     </div>
   </div>
 </section>
+<script id="mf-v104-days-js">
+/* v1.0.4 — CALM_DAYS: "Nothing to do until <the next 1st>", the way the dashboard writes its date */
+(function () {
+  var el = document.querySelectorAll('[data-next-first]');
+  if (!el.length) return;
+  var n = new Date(), d = new Date(n.getFullYear(), n.getMonth() + 1, 1);
+  var t = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + '\u00a0' + d.getDate() + '\u00a0' +
+    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'][d.getMonth()];
+  el.forEach(function (e) { e.textContent = t; });
+})();
+</script>
+
 
 <!-- V44.4: A5 and B1. Two very different readers reach this point. Someone who has never invested read "Already own a
      lot?" as "not for you"; #already (still in the page, off with ALREADY) is now one of the two doors. No figure here. -->
@@ -6258,7 +6464,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
   <div class="container">
     <div class="gifts-header">
       <div class="section-label">Free, and not a trial</div>
-      <h2 class="fade-up" id="gifts-h">The whole product, free, before you pay anything.</h2>
+      <h2 class="fade-up" id="gifts-h">The whole routine, free, before you pay anything.</h2>
       <!-- V43.3 — B2: the lede that stood here ("We would rather you watched the process run…")
            said what the card below says; the free book is pitched enough times above the price. -->
     </div>
@@ -7073,7 +7279,45 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         }
         return v;
       }
+      window.mfcAllInPath = allInPath;
+      /* v1.0.4 — FEE_LEDGER: the four costs side by side, from the same state the chart is drawn from (st), so
+         the table and the chart cannot disagree. Fund rows: window.mfcFeeCalc (.aumFees taken, .fund left). Our rows:
+         the fee, plus the trading charges allInPath takes out each year (the money at the start of the year times
+         charges_var, plus charges_dp). Fail-soft: without the charges the static defaults stand. */
+      function escH(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+      function ledger() {
+        var body = $('fdl-body'), calc = window.mfcFeeCalc, M = window.STRAT_MONTHLY;
+        if (!body || R.getAttribute('data-fee-ledger') !== 'on' || !st || typeof calc !== 'function' || !M || !(M.lm > 0) || !(M.sm > 0) || !haveChg) return;
+        var D = calc.D, N = st.years, ret = D.ret, inv = st.invest;
+        var me = document.querySelector('[data-fund-median]'), med = me ? parseFloat(me.textContent) : NaN;
+        var lab = st.label ? st.label.charAt(0).toUpperCase() + st.label.slice(1)
+          : st.fee === 2 ? 'A regular-plan fund or PMS, 2% a year'
+          : (isFinite(med) && Math.abs(st.fee - med) < 1e-9) ? 'A typical direct plan, ' + st.fee + '% a year' : 'A fund at ' + st.fee + '% a year';
+        var f = calc(inv, ret, N, st.fee, M.lm);
+        var rows = [{ cls: 'is-fund', th: escH(lab), take: inr(f.aumFees), end: f.fund }];
+        if (isFinite(med) && Math.abs(st.fee - med) > 1e-9) {
+          var d = calc(inv, ret, N, med, M.lm);
+          rows.push({ cls: 'is-dir', th: 'A typical direct plan, ' + med + '% a year', take: inr(d.aumFees), end: d.fund });
+        }
+        [['lm', 'LargeMidcap' + NB + '250', M.lm, C.lmVar, C.lmDp], ['sm', 'SmallMicro' + NB + '500', M.sm, C.smVar, C.smDp]].forEach(function (k) {
+          var mf = inv, chg = 0;
+          for (var y = 1; y <= N; y++) {
+            chg += mf * k[3] / 100 + k[4];
+            mf = mf * (1 + ret / 100 - k[3] / 100) - k[2] * 12 - k[4];
+            if (mf < 0) mf = 0;
+          }
+          rows.push({ cls: 'is-us is-' + k[0], th: k[1] + ': ' + inr(k[2]) + ' a month, plus its trading charges',
+                      take: inr(k[2] * 12 * N) + ' + ' + inr(chg) + '<small>fee + trading charges</small>', end: mf });
+        });
+        body.innerHTML = rows.map(function (r) {
+          return '<tr class="' + r.cls + '"><th scope="row">' + r.th + '</th><td data-l="What it takes">' + r.take + '</td><td data-l="Becomes"><b>' + inr(r.end) + '</b></td></tr>';
+        }).join('');
+        var h = $('fdl-h'); if (h) h.textContent = N + (N === 1 ? ' year' : ' years') + ' on ' + inr(inv) + ', cost by cost';
+        var eh = $('fdl-end-h'); if (eh) eh.textContent = inr(inv) + ' becomes';
+        var rt = $('fdl-ret'); if (rt) rt.textContent = String(ret);
+      }
       function draw() {
+        try { ledger(); } catch (e) {}                                  // v1.0.4
         var calc = window.mfcFeeCalc, M = window.STRAT_MONTHLY, plot = $('fd-plot');
         if (!st || !plot || typeof calc !== 'function' || !M || !(M.lm > 0) || !(M.sm > 0)) return;
         var D = calc.D, N = st.years, ret = D.ret;
@@ -7281,6 +7525,9 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
        file the static text stands and the picker stays disabled. */
     (function () {
       var D = document, R = D.documentElement, NB = ' ';
+      // v1.0.4 — FMAP_OURS (mf-v423-flags): 'fee' draws our two fees as lines on the fee axis and no return for
+      // them (a backtest is not a peer of 187 real returns); 'dots' is the V45.2 map
+      var FEE_MODE = R.getAttribute('data-fmap-ours') === 'fee', MED = null;
       function $(id) { return D.getElementById(id); }
       function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
       function inr(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
@@ -7315,7 +7562,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         lastW = W;
         var padL = small ? 34 : 44, padR = small ? 10 : 16, padT = 26, padB = 34;
         var xMax = Math.ceil((Math.max.apply(null, F.map(function (f) { return f[3]; })) + 0.05) * 2) / 2;
-        var yTop = Math.max.apply(null, F.map(function (f) { return f[2]; }).concat(Object.keys(O).map(function (k) { return O[k].ret; })));
+        var yTop = Math.max.apply(null, F.map(function (f) { return f[2]; }).concat(FEE_MODE ? [] : Object.keys(O).map(function (k) { return O[k].ret; })));
         var yMax = Math.ceil((yTop + 2) / 10) * 10;
         function X(v) { return padL + (W - padL - padR) * (v / xMax); }
         function Y(v) { return padT + (H - padT - padB) * (1 - Math.max(0, v) / yMax); }
@@ -7339,7 +7586,12 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
           if (inGroup(f, grp)) top += dot(f, i, ' is-in'); else h += dot(f, i, ' is-out');
         });
         h += top;
-        Object.keys(O).forEach(function (k) {
+        if (FEE_MODE) Object.keys(O).forEach(function (k, n) {
+          var o = O[k], lx = X(o.fee), dim = grp[0] !== 'all' && o.grp !== grp[0], ty = padT + 14 + n * 17;
+          h += '<g' + (dim ? ' opacity=".4"' : '') + '><line class="fm-fee-l is-' + k + '" x1="' + lx.toFixed(1) + '" x2="' + lx.toFixed(1) + '" y1="' + padT + '" y2="' + (H - padB) + '"/>' +
+               '<text class="fm-fee-t is-' + k + '" x="' + (lx + 5).toFixed(1) + '" y="' + ty.toFixed(1) + '">' + o.name + ' fee ' + pct(o.fee) + '</text></g>';
+        });
+        if (!FEE_MODE) Object.keys(O).forEach(function (k) {
           var o = O[k], cx = X(o.fee), cy = Y(o.ret), dim = grp[0] !== 'all' && o.grp !== grp[0];
           h += '<g' + (dim ? ' opacity=".45"' : '') + '><circle class="fm-us is-' + k + '" data-us="' + k + '" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + (small ? 7 : 8) + '"/>' +
                (dim ? '' : '<text class="fm-ul" x="' + (cx + 12).toFixed(1) + '" y="' + (cy + 4).toFixed(1) + '">' + o.name + ' <tspan class="fm-bt">backtest</tspan></text>') + '</g>';
@@ -7370,6 +7622,30 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         if (!el || !F) return;
         var lm = O.lm, sm = O.sm, min = Math.min.apply(null, F.map(function (f) { return f[3]; }));
         var below = function (o, rows) { return rows.filter(function (f) { return f[2] < o.ret; }).length; };
+        if (FEE_MODE) {
+          var feeTxt = function (o) { return o.name + ' <b>' + pct(o.fee) + '</b> a year at ' + lakh(o.at); };
+          var dearer = function (o, rows) { return rows.filter(function (f) { return f[3] > o.fee; }).length; };
+          if (grp[0] === 'all') {
+            el.innerHTML = 'The cheapest of the ' + F.length + ' funds charges ' + pct(min) + (MED != null ? '; the median direct plan, ' + pct(MED) : '') +
+              '. Our fees: ' + [lm, sm].filter(Boolean).map(feeTxt).join(' and ') + ', before trading charges, which the next section counts.';
+            return;
+          }
+          var rws = F.filter(function (f) { return inGroup(f, grp); });
+          if (!rws.length) { el.textContent = ''; return; }
+          var lo2 = function (i) { return Math.min.apply(null, rws.map(function (f) { return f[i]; })); };
+          var hi2 = function (i) { return Math.max.apply(null, rws.map(function (f) { return f[i]; })); };
+          var tt = rws.length + ' ' + (grp[0] === 'oth' ? 'other funds (value, contra, sector, hybrid and more)' : grp[1].toLowerCase() + ' funds') + ': fees from <b>' + pct(lo2(3)) + '</b> to <b>' + pct(hi2(3)) +
+            '</b> a year, five-year returns from ' + pct(lo2(2), 1) + ' to <b>' + pct(hi2(2), 1) + '</b> a year before tax.';
+          var oo = grp[0] === 'lmc' ? lm : grp[0] === 'sc' ? sm : null;
+          if (oo) {
+            var nd = dearer(oo, rws);
+            tt += ' Our ' + feeTxt(oo) + ', before trading charges; ' + (nd === rws.length ? 'every one of these funds charges more' : nd ? nd + ' of these ' + rws.length + ' charge more' : 'none of these charges more') + '.';
+          } else {
+            tt += ' For scale, our fees: ' + [lm, sm].filter(Boolean).map(feeTxt).join(' and ') + ', before trading charges.';
+          }
+          el.innerHTML = tt;
+          return;
+        }
         if (grp[0] === 'all') {
           var cheaper = [lm, sm].filter(Boolean).every(function (o) { return o.fee < min; });
           var bits = [lm, sm].filter(Boolean).map(function (o) {
@@ -7400,7 +7676,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         var tb = $('fmap-table');
         if (!tb || !F) return;
         var h = '<caption>Active funds and the two MindForge stock portfolios: yearly fee and five-year return a year</caption><thead><tr><th scope="col">Fund</th><th scope="col">Kind</th><th scope="col">Fee a year</th><th scope="col">Return a year, five years</th></tr></thead><tbody>';
-        Object.keys(O).forEach(function (k) { var o = O[k]; h += '<tr><th scope="row">MindForge ' + o.name + ' (backtest, after tax and fee)</th><td>Stock portfolio</td><td>' + pct(o.fee) + '</td><td>' + pct(o.ret, 1) + '</td></tr>'; });
+        Object.keys(O).forEach(function (k) { var o = O[k]; h += '<tr><th scope="row">MindForge ' + o.name + (FEE_MODE ? ' (its fee at ' + lakh(o.at) + ')' : ' (backtest, after tax and fee)') + '</th><td>Stock portfolio</td><td>' + pct(o.fee) + '</td><td>' + (FEE_MODE ? '— (not plotted)' : pct(o.ret, 1)) + '</td></tr>'; });
         F.forEach(function (f) { h += '<tr><th scope="row">' + esc(f[0]) + '</th><td>' + esc(window.mfcFundCat(f[1])) + '</td><td>' + pct(f[3]) + '</td><td>' + pct(f[2], 1) + ' (before tax)</td></tr>'; });
         tb.innerHTML = h + '</tbody>';
       }
@@ -7417,7 +7693,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         if (!g || !svg) return;
         var rc = svg.getBoundingClientRect(), k = g.W / (rc.width || g.W), x = (e.clientX - rc.left) * k, y = (e.clientY - rc.top) * k;
         var best = null, bd = 30 * k;
-        Object.keys(O).forEach(function (u) { var d = Math.hypot(g.X(O[u].fee) - x, g.Y(O[u].ret) - y); if (d < bd + 6) { bd = d - 6; best = { us: u }; } });
+        if (!FEE_MODE) Object.keys(O).forEach(function (u) { var d = Math.hypot(g.X(O[u].fee) - x, g.Y(O[u].ret) - y); if (d < bd + 6) { bd = d - 6; best = { us: u }; } });
         F.forEach(function (f, i) {
           if (grp[0] !== 'all' && !inGroup(f, grp)) return;
           var d = Math.hypot(g.X(f[3]) - x, g.Y(f[2]) - y); if (d < bd) { bd = d; best = { i: i }; }
@@ -7432,6 +7708,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         O = ours();
         var ters = F.map(function (f) { return f[3]; }).sort(function (a, b) { return a - b; }), n = ters.length;
         var med = n % 2 ? ters[(n - 1) / 2] : (ters[n / 2 - 1] + ters[n / 2]) / 2, min = ters[0];
+        MED = Math.round(med * 100) / 100;
         var cheapest = F.filter(function (f) { return f[3] === min; })[0];
         D.querySelectorAll('[data-fund-median]').forEach(function (e) { e.textContent = String(Math.round(med * 100) / 100); });
         D.querySelectorAll('.fd-chip[data-fee] [data-fund-median]').forEach(function (e) { var b = e.closest('.fd-chip'); if (b) b.setAttribute('data-fee', String(Math.round(med * 100) / 100)); });
@@ -7439,6 +7716,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         D.querySelectorAll('[data-fmap-min]').forEach(function (e) { e.textContent = pct(min); });
         D.querySelectorAll('[data-fmap-asof]').forEach(function (e) { if (data.asof) e.textContent = data.asof; });
         Object.keys(O).forEach(function (k) { D.querySelectorAll('[data-fmap-fee="' + k + '"]').forEach(function (e) { e.textContent = pct(O[k].fee); }); });
+        Object.keys(O).forEach(function (k) { D.querySelectorAll('[data-fmap-at="' + k + '"]').forEach(function (e) { e.textContent = lakh(O[k].at); }); });   // v1.0.4
         // the pricing cards: the fee against the cheapest fund, only when it is in fact lower
         D.querySelectorAll('[data-moat-fee]').forEach(function (e) {
           var p = parseFloat(e.getAttribute('data-pct'));
@@ -7542,7 +7820,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
       <div class="strat-card tilt-host fade-up" data-live-host data-bt-start="2021-10" data-bt-end="2026-10">
         <span class="strat-badge badge-gold">Small &amp; Microcap</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> SmallMicro&nbsp;500</div>
-        <div class="strat-universe">15 stocks&nbsp;· Smallcap&nbsp;250 + Microcap 250&nbsp;· Monthly rebalance</div>
+        <div class="strat-universe">15 smaller companies&nbsp;· changed on the&nbsp;1st</div>
         <div class="strat-metrics">
           <div class="strat-metric">
             <div class="val proof-num" data-count="44.3" data-suffix="%" data-decimals="1" style="color:var(--green);"><!--MFSTAT:sm:cagr_posttax-->44.3%<!--/MFSTAT--></div>
@@ -7570,7 +7848,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">The one that swings hardest, and the one to size smallest. Equal weight, rebalanced on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:sm:alpha_posttax-->+33.29%<!--/MFSTAT--> a year over the Nifty Smallcap&nbsp;250, after tax.</span></p>
+        <p class="strat-desc">The one that swings hardest, and the one to size smallest. The same amount in each, changed on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:sm:alpha_posttax-->+33.29%<!--/MFSTAT--> a year over the Nifty Smallcap&nbsp;250, after tax.</span></p>
         <!-- V43.3 — C4, OFF (PERF_YEARS): the calendar years the backtest's return came from, read from
              screener/backtest-months.json at run time. A performance figure: the owner's and the
              adviser's call. Full calendar years only. -->
@@ -7616,10 +7894,9 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
 
       <!-- LargeMidcap -->
       <div class="strat-card featured tilt-host fade-up" data-live-host data-bt-start="2021-10" data-bt-end="2026-10">
-        <span class="badge-pop">Core-plus</span>
         <span class="strat-badge badge-purple">Large &amp; Midcap</span>
         <div class="strat-name"><span class="mf-brand">MindForge</span> LargeMidcap&nbsp;250</div>
-        <div class="strat-universe">15 stocks&nbsp;· Nifty LargeMidcap&nbsp;250&nbsp;· Monthly rebalance</div>
+        <div class="strat-universe">15 large and mid-sized companies&nbsp;· changed on the&nbsp;1st</div>
         <div class="strat-metrics">
           <div class="strat-metric">
             <div class="val proof-num" data-count="18.6" data-suffix="%" data-decimals="1" style="color:var(--green);"><!--MFSTAT:lm:cagr_posttax-->18.6%<!--/MFSTAT--></div>
@@ -7647,7 +7924,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">Fifteen large and mid-cap names, in the part of the market funds also hold. Equal weight, rebalanced on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:lm:alpha_posttax-->+9.94%<!--/MFSTAT--> a year over the Nifty LargeMidcap&nbsp;250, after tax.</span></p>
+        <p class="strat-desc">Fifteen large and mid-sized companies, in the part of the market funds also hold. The same amount in each, changed on the 1st. <span class="perf-line">The backtest shows <!--MFSTAT:lm:alpha_posttax-->+9.94%<!--/MFSTAT--> a year over the Nifty LargeMidcap&nbsp;250, after tax.</span></p>
         <div class="strat-footer">
           <div class="strat-min">
             <span class="strat-works">Works from <span><!--MFMIN:lm:capital-->₹7,15,000<!--/MFMIN--></span></span>
@@ -7684,7 +7961,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
              for all three and MultiAsset's own lookbacks are commented "in months
              — same monthly cadence as LM/SM". The line now says what the other two
              cards say in the same slot: what the universe is. -->
-        <div class="strat-universe">8 assets&nbsp;· Equity, gold, bonds &amp; global ETFs&nbsp;· Monthly rebalance</div>
+        <div class="strat-universe">8 funds: Indian shares, gold, silver, bonds, US tech&nbsp;· re-weighted on the&nbsp;1st</div>
         <div class="strat-metrics">
           <div class="strat-metric">
             <div class="val proof-num" data-count="11.6" data-suffix="%" data-decimals="1" style="color:var(--green);"><!--MFSTAT:ma:cagr_posttax-->11.6%<!--/MFSTAT--></div>
@@ -7713,7 +7990,7 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
         <!-- V39.1 — the "How it works" chips and the proprietary-model sentence were
              auditor content at the decision point; the method lives on the strategy
              page. What stays is what the book is FOR. -->
-        <p class="strat-desc">Eight ETFs across equity, gold, silver and debt, rebalanced on the 1st, and free. <span class="perf-line">The backtest shows <!--MFSTAT:ma:alpha_posttax-->+3.69%<!--/MFSTAT--> a year over the Nifty&nbsp;50, after tax. <a class="mf-slab" href="disclosures.html#ma-slab">At a 30% tax slab the real after-tax figure is lower&nbsp;— why&nbsp;&rarr;</a></span></p>
+        <p class="strat-desc">Eight ETFs across equity, gold, silver and debt, rebalanced on the 1st, and free.<span class="ma-notrial"> Not a sample or a trial: the full portfolio, every month, on the same dashboard as the paid ones.</span> <span class="perf-line">The backtest shows <!--MFSTAT:ma:alpha_posttax-->+3.69%<!--/MFSTAT--> a year over the Nifty&nbsp;50, after tax. <a class="mf-slab" href="disclosures.html#ma-slab">At a 30% tax slab the real after-tax figure is lower&nbsp;— why&nbsp;&rarr;</a></span></p>
         <div class="strat-footer">
           <div class="strat-min">
             <span class="strat-works">Works from <span><!--MFMIN:ma:capital-->₹10,000<!--/MFMIN--></span></span>
@@ -7740,6 +8017,8 @@ html[data-theme="dark"] .gift-tag.reg{ color:var(--accent2); }
          paid monthly and invests by SIP, and the only sentence saying a book takes monthly
          savings sat inside a closed FAQ answer. One line for all three cards, not one per
          card: the cards' heights are compared across the grid. -->
+    <!-- v1.0.4 — NOT_FOR: who should not buy, said where the buying happens -->
+    <p class="not-for" id="not-for"><b>Not for you if:</b> the money is needed within five years &middot; a fall of a quarter would make you sell &middot; you would rather never place an order yourself (then a low-cost index fund is the better home).</p>
     <p class="strat-monthly">&ldquo;Works from&rdquo; is needed once. After that, each month's savings can go in on the&nbsp;1st&nbsp;&mdash; <a href="#faq-sip">how that works&nbsp;&rarr;</a></p>
 
     <!-- V39.1 — C2. THE FEE WAS ARGUED FOUR TIMES BEFORE AND AROUND THE PRICE:
@@ -8456,10 +8735,9 @@ html[data-theme="dark"] .fit-chip[aria-pressed="true"]{ color:#fff; background:#
 <section class="fit" id="where-this-fits" aria-labelledby="fit-h">
   <div class="container">
     <div class="section-label">Where this fits</div>
-    <h2 class="fade-up" id="fit-h">How much of your money this is supposed to be.</h2>
-    <p class="fit-lede fade-up">Each card above also shows a “Close to the model from” figure: the size at which
-      whole-share rounding stops mattering. That is not a view on how much of your wealth belongs in one book. Here is what each one is built to be,
-      and what its worst backtested fall would have been in rupees at the size you choose.</p>
+    <h2 class="fade-up" id="fit-h">Before you choose: what a bad year would cost you, in rupees.</h2>
+    <p class="fit-lede fade-up">How much of your savings belongs in one portfolio is your call, and a qualified adviser&rsquo;s.
+      What we can show is what each one&rsquo;s worst backtested fall would have cost at the size you choose.</p>
 
     <div class="fit-roles fade-up">
       <div class="fit-role">
@@ -9436,8 +9714,8 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 <section class="team" id="team">
   <div class="container">
     <div class="section-label">The founders</div>
-    <h2 class="fade-up">Built by practitioners, not theorists.</h2>
-    <p class="team-desc fade-up">MindForge Capital was founded by people who build and run these models themselves.</p>
+    <h2 class="fade-up">The people who answer for it.</h2>
+    <p class="team-desc fade-up">Three people build the model, write the words and check every published figure.</p>
     <div class="team-grid fade-up" style="grid-template-columns:repeat(3,1fr);">
       <div class="team-card tilt-host" style="flex-direction:column;align-items:flex-start;">
         <img src="assets/team/Sagar_Shekhawath.jpg?v=c5bfc11e" width="90" height="90" style="width:90px;height:90px;border-radius:50%;object-fit:cover;object-position:center top;margin-bottom:18px;flex-shrink:0;" alt="Sagar Shekhawath" loading="lazy" decoding="async">
@@ -9716,6 +9994,39 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 
   </div>
 </section>
+<script id="mf-v104-faq-js">
+/* v1.0.4 — FAQ_FOLD: the five groups fold on their headings (a real button with aria-expanded), the first open.
+   Without script every question shows, as before. A link or hash to one answer opens its group first; the V39.5
+   script above then opens the answer itself. Question and answer text is untouched, so the FAQPage JSON-LD holds. */
+(function () {
+  var R = document.documentElement;
+  if (R.getAttribute('data-faq-fold') !== 'on') return;
+  document.querySelectorAll('#faq .faq-group').forEach(function (g, i) {
+    var h = g.querySelector(':scope > .faq-gh'), list = g.querySelector(':scope > .faq-list');
+    if (!h || !list || h.querySelector('.faq-gh-btn')) return;
+    var n = list.querySelectorAll('details.faq-item').length;
+    if (!list.id) list.id = 'faq-l-' + (i + 1);
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'faq-gh-btn'; b.setAttribute('aria-controls', list.id);
+    b.innerHTML = '<span></span><small></small><i aria-hidden="true"></i>';
+    b.firstChild.textContent = h.textContent.replace(/\s+/g, ' ').trim();
+    b.querySelector('small').textContent = n + (n === 1 ? ' question' : ' questions');
+    h.textContent = ''; h.appendChild(b);
+    function set(open) { g.classList.toggle('is-shut', !open); b.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    set(i === 0);
+    b.addEventListener('click', function () { set(g.classList.contains('is-shut')); });
+  });
+  function openFor(id) {
+    var d = id && document.getElementById(id), g = d && d.closest ? d.closest('.faq-group') : null;
+    if (g && g.classList.contains('is-shut')) { var b = g.querySelector('.faq-gh-btn'); if (b) b.click(); }
+  }
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href^="#faq-"]'); if (a) openFor(a.getAttribute('href').slice(1)); }, true);
+  function fromHash() { if (/^#faq-/.test(location.hash)) openFor(location.hash.slice(1)); }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+})();
+</script>
+
 
 <!-- V25.6 — FAQPage markup. The text below is a VERBATIM plain-text copy of the
      visible "Common questions" section near the end of <body>; markup that
@@ -9965,8 +10276,8 @@ html[data-theme="dark"] .fun-track{ background: rgba(120,150,255,.10); }
 <section class="notready" aria-labelledby="nr-h">
   <div class="container">
     <div class="section-label">Not ready yet?</div>
-    <h2 class="fade-up" id="nr-h">Start with the basics, or with what you own.</h2>
-    <p class="nr-desc fade-up">What to check before you invest anything, or a private map of what you already hold. Or the monthly India Factor Report by e-mail. None of them needs an account.</p>
+    <h2 class="fade-up" id="nr-h"><span class="nr-v-full">Start with the basics, or with what you own.</span><span class="nr-v-lean">One e-mail when the new report is out.</span></h2>
+    <p class="nr-desc fade-up"><span class="nr-v-full">What to check before you invest anything, or a private map of what you already hold. Or the monthly India Factor Report by e-mail. None of them needs an account.</span><span class="nr-v-lean">The monthly India Factor Report: what moved Indian shares, by e-mail. No account needed.</span></p>
     <div class="dp-fr fade-up" style="margin-top:6px">
       <form data-fr novalidate>
         <label class="sr-only" for="fr-email-home">E-mail address</label>

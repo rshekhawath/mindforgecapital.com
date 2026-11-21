@@ -28,7 +28,7 @@
      the way down. Measured on slow 4G: with this hint the first visit's main content comes 0.7 s
      sooner than without it. (The stylesheet stayed inline in this page on purpose: as a file of
      its own it delayed first paint by 0.55 s and saved a repeat visitor nothing that matters.) -->
-<link rel="preload" as="script" href="assets/mfc-dash.js?v=5f11bb46">
+<link rel="preload" as="script" href="assets/mfc-dash.js?v=c2e374c5">
 <script id="mf-v443-early">
 /* V44.3 — START THE MEMBER'S TWO READS AT THE TOP OF THE PAGE. init() sits 76% of the way
    down this file, so on a slow 4G phone the request for the member's picks did not even
@@ -3295,6 +3295,77 @@ html[data-bps-text="off"] .sc-gap{ display:none !important; }
   R.setAttribute('data-record-one', RECORD_ONE_FIGURE ? 'on' : 'off');
   R.setAttribute('data-names-tk', NAMES_WITH_TICKERS ? 'on' : 'off');
 })();</script>
+<script id="mf-v104-dash-flags">(function(){
+  // v1.0.4 — the calm compounder (markdowns/v1.1.0-calm-compounder-homepage-and-dashboard.md, built as v1.0.4). One switch
+  // each; all off = v1.0.3. The insight cards' switches (GLANCE_LUMP, GLANCE_SPARK, CALM_INK, MONTH_FOLD, FOLD_LEAN,
+  // OWN_CURATED, DEMO_INSIGHT) are in mfc-insight.js.
+  var FOOT_FOLD_INSIGHT = true;    // "Settings and help" folds in "How it's going" too (e-mails, the verified account, the 1:1 call), under the record
+  var TRK_CALM = true;             // the record: "Month by month", one sentence, no badge and no tiles
+  var ONE_REMINDER = true;         // "Your month" keeps its reminder buttons back while the set-up card asks for the same reminder
+  var NAMES_ON_SELLS = true;       // the change card: company names on the sales and on the names kept (with NAMES_WITH_TICKERS)
+  var HOLD_MOVES = false;          // the change card: each kept name's move since the list changed, repolled every 5 minutes
+  var ORDERS_DEFAULT_REBAL = true; // last month's ticks answer Step 3 ("just the changes"); with no answer, the question opens the change card
+  var CHOICE_LABELS = 'plain';     // 'plain' = "Just the changes / Buy all / Only some"; 'v103' = "Rebalance / Buy all / Pick stocks"
+  var CYCLE_CHARGES = 'rates';     // the cycle's charges at Zerodha's rates (the table behind the year's figure); 'bps' = the backtest's 10/20 bps
+  var R = document.documentElement;
+  R.setAttribute('data-foot-fold-insight', FOOT_FOLD_INSIGHT ? 'on' : 'off');
+  R.setAttribute('data-trk-calm', TRK_CALM ? 'on' : 'off');
+  R.setAttribute('data-one-reminder', ONE_REMINDER ? 'on' : 'off');
+  R.setAttribute('data-names-sells', NAMES_ON_SELLS ? 'on' : 'off');
+  R.setAttribute('data-hold-moves', HOLD_MOVES ? 'on' : 'off');
+  R.setAttribute('data-orders-default', ORDERS_DEFAULT_REBAL ? 'on' : 'off');
+  R.setAttribute('data-choice-labels', CHOICE_LABELS === 'plain' ? 'plain' : 'v103');
+  R.setAttribute('data-cycle-charges', CYCLE_CHARGES === 'rates' ? 'on' : 'off');
+})();</script>
+<style id="mf-v104-dash">
+/* v1.0.4 — the calm compounder: one rule set per switch (mf-v104-dash-flags; the insight switches in mfc-insight.js) */
+/* GLANCE_SPARK: the amount at each month end, the index dashed; no axis, no colour */
+.mi-spark{ display:block; width:100%; max-width:420px; height:40px; margin:10px 0 2px; overflow:visible; }
+.mi-spark-m{ fill:none; stroke:var(--text2); stroke-width:2.2; vector-effect:non-scaling-stroke; stroke-linejoin:round; stroke-linecap:round; }
+.mi-spark-b{ fill:none; stroke:var(--text3); stroke-width:1.5; stroke-dasharray:4 3; vector-effect:non-scaling-stroke; }
+.mi-spark-k{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin:2px 0 0; font-size:12px; line-height:1.4; color:var(--text3); }
+.mi-spark-k i{ display:inline-block; width:18px; height:0; border-top:2px solid var(--text2); margin-right:2px; }
+.mi-spark-k i.is-b{ border-top:1.5px dashed var(--text3); margin-left:8px; }
+/* CALM_INK: the glance card and the record's summary in plain ink; the signs stay */
+html[data-calm-ink="on"] #mi-glance .mi-up, html[data-calm-ink="on"] #mi-glance .mi-down{ color:inherit; }
+/* MONTH_FOLD: the month's own cards under one line (screen only; print shows them) */
+@media screen{
+  html.mi-month-folded[data-dmode="insight"] #mi-narr,
+  html.mi-month-folded[data-dmode="insight"] #profit-card,
+  html.mi-month-folded[data-dmode="insight"] #mi-normal{ display:none !important; }
+}
+/* TRK_CALM: the record's tiles stand down; its sentence says the same */
+html[data-trk-calm="on"] #mi-trk{ display:none !important; }
+/* ONE_REMINDER: one set of reminder buttons at a time */
+html[data-one-reminder="on"] #su-card:not([hidden]):has(li.su-i[data-k="cal"]:not(.is-done)) ~ #cyc-card #cyc-cal{ display:none !important; }
+/* FOOT_FOLD_INSIGHT: the settings fold in "How it's going", under the record */
+@media screen{
+  html[data-foot-fold-insight="on"].ft-folded[data-dmode="insight"] #notif-section,
+  html[data-foot-fold-insight="on"].ft-folded[data-dmode="insight"] #vfy-card,
+  html[data-foot-fold-insight="on"].ft-folded[data-dmode="insight"] #oneonone-card{ display:none !important; }
+}
+html[data-dmode="insight"] .foot-fold.is-insight:not([hidden]){ display:flex !important; }
+html[data-dmode="orders"] .foot-fold.is-insight{ display:none !important; }
+/* ORDERS_DEFAULT_REBAL: the question before the list it decides */
+.om-first{ margin:2px 0 14px; padding:12px 14px; border-radius:12px; background:rgba(26,80,216,.06); border:1px solid rgba(26,80,216,.22); }
+.om-first[hidden]{ display:none; }
+html[data-theme="dark"] .om-first{ background:rgba(96,165,250,.10); border-color:rgba(96,165,250,.28); }
+.om-first-q{ margin:0; font-size:14px; line-height:1.6; color:var(--text2); }
+.om-first-q b{ color:var(--white); }
+.om-first-b{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.om-first-btn{ font:inherit; font-size:13.5px; font-weight:700; color:var(--ink-link,#0951c6); background:var(--ink2); border:1px solid var(--border2);
+  border-radius:999px; padding:8px 14px; min-height:40px; cursor:pointer; }
+html[data-theme="dark"] .om-first-btn{ color:#9dbcff; }
+.om-first-btn:hover{ border-color:var(--accent); }
+.om-first-btn:focus-visible, .om-first-again:focus-visible{ outline:2px solid var(--accent3,#3b82f6); outline-offset:2px; }
+.om-first-again{ font:inherit; font-weight:700; color:var(--ink-link,#0951c6); background:none; border:0; padding:0; margin:0; min-height:0;
+  text-decoration:underline; text-underline-offset:2px; cursor:pointer; position:relative; }
+html[data-theme="dark"] .om-first-again{ color:#9dbcff; }
+@media (pointer:coarse){ .om-first-btn{ min-height:44px; } .om-first-again::after{ content:""; position:absolute; left:-4px; right:-4px; top:50%; height:44px; transform:translateY(-50%); } }
+/* CHOICE_LABELS */
+html[data-choice-labels="plain"] .om-l-o{ display:none; }
+html:not([data-choice-labels="plain"]) .om-l-p{ display:none; }
+</style>
 <style id="mf-v450-dash">
 /* V45.0 — CALM_PILL: the profit card stops reading like a scoreboard */
 .pc-calm-note{ display:none; }
@@ -4871,7 +4942,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
           <div class="om-opts" role="radiogroup" aria-labelledby="om-eyebrow">
             <label class="om-opt" id="om-o-rebal">
               <input type="radio" name="omode" value="rebal" onchange="setOrderMode('rebal')">
-              <span class="om-b"><span class="om-h"><b>Rebalance</b><span class="om-n" id="om-n-rebal"></span></span><span class="om-d" id="om-d-rebal"></span></span>
+              <span class="om-b"><span class="om-h"><b><span class="om-l-o">Rebalance</span><span class="om-l-p">Just the changes</span></b><span class="om-n" id="om-n-rebal"></span></span><span class="om-d" id="om-d-rebal"></span></span>
             </label>
             <label class="om-opt" id="om-o-fresh">
               <input type="radio" name="omode" value="fresh" onchange="setOrderMode('fresh')">
@@ -4879,7 +4950,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
             </label>
             <label class="om-opt" id="om-o-pick">
               <input type="radio" name="omode" value="pick" onchange="setOrderMode('pick')">
-              <span class="om-b"><span class="om-h"><b>Pick stocks</b><span class="om-n" id="om-n-pick"></span></span><span class="om-d" id="om-d-pick"></span></span>
+              <span class="om-b"><span class="om-h"><b><span class="om-l-o">Pick stocks</span><span class="om-l-p">Only some</span></b><span class="om-n" id="om-n-pick"></span></span><span class="om-d" id="om-d-pick"></span></span>
             </label>
           </div>
           <div class="om-pick" id="om-pick" hidden>
@@ -5196,7 +5267,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
       <div id="notif-section" class="notif-card">
         <div id="notif-rebal-head" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;">
           <div>
-            <div style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">Rebalance notifications</div>
+            <div style="font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:4px;">E-mail when the new list lands</div>
             <div style="font-size:13px;color:var(--text2);">Get an email the moment next month's portfolio is published — it replaces this one on your dashboard automatically.</div>
           </div>
           <div id="notif-toggle-wrap">
@@ -5907,7 +5978,7 @@ html[data-theme="dark"] .new-tag{ color:#34d399; background:rgba(52,211,153,.13)
   <span id="toast-msg">Copied</span>
 </div>
 
-<script src="assets/mfc-dash.js?v=5f11bb46"></script>
+<script src="assets/mfc-dash.js?v=c2e374c5"></script>
 <script>
 // MF-SCROLL-PROG v3.4
 (function() {
@@ -8384,7 +8455,7 @@ html[data-theme="dark"] .pmap-grid.mf255-ret .rt-dn3 .pmap-ret{ color:#f87171; }
 <script defer src="assets/mfc-chrome.js?v=4490"></script>
 <!-- V42.3 — the two modes and the insight cards (markdowns/dashboard_updates.md). A separate file,
      so this page only gains the hook calls above. -->
-<script defer src="assets/mfc-insight.js?v=12"></script>
+<script defer src="assets/mfc-insight.js?v=13"></script>
 
 <!-- ═══ V27.6 · MOBILE DENSITY — PHONES ONLY (max-width:600px) ════════════════
      Mobile users reported too much scrolling. Every rule below is scoped to
@@ -11328,7 +11399,7 @@ var FOOT_FOLD = true;
     var any = IDS.map(function (i) { return D.getElementById(i); })
       .filter(function (el) { return el && el.style.display !== 'none' && !el.hidden; });
     var on = FOOT_FOLD && first && any.length && (returning() || firstMonthNow()) && !needsMember();
-    if (!on) { R.classList.remove('ft-folded'); if (btn) btn.hidden = true; return; }
+    if (!on) { R.classList.remove('ft-folded'); if (btn) btn.hidden = true; var bi0 = D.getElementById('foot-fold-i'); if (bi0) bi0.hidden = true; return; }
     if (!btn) {
       btn = D.createElement('button');
       btn.type = 'button'; btn.id = 'foot-fold'; btn.className = 'foot-fold';
@@ -11346,6 +11417,22 @@ var FOOT_FOLD = true;
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.innerHTML = open ? '<span>Settings and help</span>'
       : '<span>Settings and help<small>e-mails &middot; your trading rules &middot; the verified account &middot; a 1:1 call</small></span>';
+    // v1.0.4 — FOOT_FOLD_INSIGHT: in "How it's going" the record moves above the fold once, and a twin button sits under it
+    var bi = D.getElementById('foot-fold-i');
+    if (R.getAttribute('data-foot-fold-insight') !== 'on') { if (bi) bi.hidden = true; return; }
+    var trk = D.getElementById('trk-card'), ns = D.getElementById('notif-section');
+    if (!ns) return;
+    if (trk && trk.parentNode === ns.parentNode && (ns.compareDocumentPosition(trk) & 4)) ns.parentNode.insertBefore(trk, ns);
+    if (!bi) {
+      bi = D.createElement('button');
+      bi.type = 'button'; bi.id = 'foot-fold-i'; bi.className = 'foot-fold is-insight';
+      bi.addEventListener('click', function () { var b0 = D.getElementById('foot-fold'); if (b0) b0.click(); });
+    }
+    if (bi.nextElementSibling !== ns) ns.parentNode.insertBefore(bi, ns);
+    bi.hidden = false;
+    bi.setAttribute('aria-expanded', open ? 'true' : 'false');
+    bi.innerHTML = open ? '<span>Settings and help</span>'
+      : '<span>Settings and help<small>e-mails &middot; the verified account &middot; a 1:1 call</small></span>';
   }
   window.mfcFootOpen = function () {
     if (!R.classList.contains('ft-folded')) return;

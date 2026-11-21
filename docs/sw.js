@@ -940,7 +940,9 @@
 // v1.0.1 -> mfc-v159. Address and phone in every footer, and sign-in by e-mail or mobile: the precached login.html changed.
 // v1.0.3 -> mfc-v160. Device QA: the precached login.html (a mobile sign-in's no-subscription message), mfc-dash.js's
 // token and mfc-insight.js 12 (gaps from the printed figures, the record's real start date).
-const CACHE = 'mfc-v160';
+// v1.0.4 -> mfc-v161. The calm compounder: mfc-dash.js's token and mfc-insight.js 13 (the "Your money" card, the month
+// and settings folds, names and plain labels on the orders, the cycle's charges at Zerodha's rates).
+const CACHE = 'mfc-v161';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

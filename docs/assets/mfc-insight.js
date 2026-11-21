@@ -185,7 +185,7 @@
     var h = (location.hash || '').toLowerCase();
     if (h === '#orders' || h === '#insight') return h.slice(1);
     try { var m = localStorage.getItem(modeKey(s)); if (m === 'orders' || m === 'insight') return m; } catch (e) {}
-    if (s.demo) return 'orders';
+    if (s.demo) return (DEMO_INSIGHT && s.demoMode !== 'first') ? 'insight' : 'orders';   // v1.0.4
     if (!pendingOrders()) return 'insight';
     var now = Date.now();
     var dReb = s.rebal ? (now - s.rebal.getTime()) / 864e5 : 99;
@@ -276,6 +276,20 @@
      OWN_PLAIN: each holding's line is plainer, with one general line on the kind of business its industry is.
      NORMAL_RUPEES: "Is this normal?" gives the range and the worst month in rupees on the member's amount. */
   var GLANCE = true, TODAY_FOLD = true, PLAIN_ALWAYS = true, COST_ALL_IN = true, OWN_PLAIN = true, NORMAL_RUPEES = true;
+  /* v1.0.4 — the calm compounder (markdowns/v1.1.0-calm-compounder-homepage-and-dashboard.md, built as v1.0.4). One
+     switch each; all off = v1.0.3.
+     GLANCE_LUMP: "Your money": the member's amount then and now on the model portfolio, and the same money in its
+       index, in place of the "Since you joined" percentages; the year's cost says where the trading charges go.
+     GLANCE_SPARK: inside it, a small line of that amount at each month end, the index dashed. No axis, no colour.
+     CALM_INK: the glance card and the record's summary in plain ink; the signs stay.
+     MONTH_FOLD: "This month, in plain words", the profit card and "Is this normal?" fold under one line for an
+       established member (not in the first month, not in the sample).
+     FOLD_LEAN: "More about this month" without the market's weather, "What could move your portfolio" and the day's
+       biggest moves: index levels, VIX, breadth, beta and 52-week highs are a trading screen's furniture.
+     OWN_CURATED: a hand-checked line per company from assets/plain-lines.json, where the file has one.
+     DEMO_INSIGHT: the sample opens on "How it's going", and its glance card shows the rows that carry no return. */
+  var GLANCE_LUMP = true, GLANCE_SPARK = true, CALM_INK = true, MONTH_FOLD = true, FOLD_LEAN = true, OWN_CURATED = true, DEMO_INSIGHT = true;
+  D.documentElement.setAttribute('data-calm-ink', CALM_INK ? 'on' : 'off');
   /* TWIN of STRAT_MONTHLY and DURATIONS in index.html (and DURATIONS in signup.html): the listed monthly price
      and each plan's discount. The dashboard has no price table of its own; a QA check asserts the three agree. */
   var PLAN_PRICES = { ma: 0, lm: 499, sm: 999 };
@@ -332,8 +346,10 @@
   function ownLoad(t) {
     if (!OWNC[t]) {
       var f = ownFile(t);
-      OWNC[t] = Promise.all([getJSON('screener/prose/' + f), getJSON('screener/co/' + f)]).then(function (v) {
-        var pr = v[0] || {}, co = v[1] || {};
+      OWNC[t] = Promise.all([getJSON('screener/prose/' + f), getJSON('screener/co/' + f),
+                             OWN_CURATED ? getJSON('assets/plain-lines.json') : Promise.resolve(null)]).then(function (v) {
+        var pr = v[0] || {}, co = v[1] || {}, cu = v[2] && v[2].lines ? v[2].lines[String(t).toUpperCase()] : null;
+        if (cu && cu.sells) return { line: String(cu.sells), busier: cu.busier ? String(cu.busier) : '', cap: Number(co.market_cap_cr) || 0 };   // v1.0.4
         return { line: oneLine(pr.description, co.name), cap: Number(co.market_cap_cr) || 0 };
       }).catch(function () { return { line: '', cap: 0 }; });
     }
@@ -345,6 +361,11 @@
       if (!o || !root) return;
       var l = root.querySelector('[data-own-line="' + attrEsc(t) + '"]');
       if (l && o.line) l.textContent = (prefix || '') + o.line;
+      if (l && o.busier) {                                                   // v1.0.4 — OWN_CURATED
+        var x = l.parentNode && l.parentNode.querySelector('.mi-own-x');
+        if (!x) { x = D.createElement('span'); x.className = 'mi-own-x'; l.parentNode.insertBefore(x, l.nextSibling); }
+        x.textContent = 'Busier when ' + o.busier.charAt(0).toLowerCase() + o.busier.slice(1);
+      }
       var c = root.querySelector('[data-own-cap="' + attrEsc(t) + '"]');
       if (c && o.cap > 0) c.textContent = ' · ₹' + sig2(o.cap) + ' crore';
     });
@@ -515,6 +536,7 @@
     var d = { start: start, n: cyc.length };
     if (!cyc.length) return d;
     var last = cyc[cyc.length - 1], m = 1, b = 1, closed = 0, liveNow = false;
+    var path = [1], bpath = [1], when = [dt(cyc[0].rebalance_date)];        // v1.0.4 — GLANCE_SPARK
     cyc.forEach(function (c, i) {
       var x = c.strategies[k], lv = Number(x.live_pct), bv = Number(x.bench_pct);
       if (i === cyc.length - 1 && !c.sealed && c.rebalance_date === s.rebalIso) {
@@ -525,8 +547,10 @@
       }
       m *= 1 + lv / 100; b *= 1 + bv / 100;
       if (c.sealed) closed++;
+      path.push(m); bpath.push(b); when.push(i === cyc.length - 1 && liveNow ? null : dt(c.data_through));
     });
     d.mp = (m - 1) * 100; d.bp = (b - 1) * 100; d.m = m; d.closed = closed; d.liveNow = liveNow; d.through = last.data_through;
+    d.path = path; d.bpath = bpath; d.when = when;
     /* v1.0.3 — the window opens at the first list on or after the join date, not on the join date itself: a member who
        joined on 10 Jul read "Since 10 Jul" over a record that starts on 31 Aug, when the live record began. */
     d.fromIso = cyc[0].rebalance_date; d.from = dt(d.fromIso);
@@ -534,11 +558,30 @@
     d.bname = last.strategies[k].bench_name || BENCH[k] || 'its index';
     return d;
   }
+  /* v1.0.4 — GLANCE_SPARK: the member's amount at each month end on the model portfolio (and the same money in its
+     index, dashed), from the path sinceData() walked. A line, no axis, no colour; the aria label reads every point. */
+  function spark(s, sd) {
+    var Pm = sd.path || [], Pb = sd.bpath || [];
+    if (Pm.length < 2) return '';
+    var all = Pm.concat(Pb.length === Pm.length ? Pb : []), lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+    if (!(hi > lo)) hi = lo + 0.01;
+    var W2 = 300, H2 = 40, pd = 3;
+    var X = function (i) { return pd + (W2 - 2 * pd) * i / (Pm.length - 1); };
+    var Y = function (v) { return pd + (H2 - 2 * pd) * (1 - (v - lo) / (hi - lo)); };
+    var dpath = function (a) { return a.map(function (v, i) { return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); }).join(''); };
+    var lab = 'Your amount at each month end: ' + Pm.map(function (v, i) {
+      var w = sd.when && sd.when[i];
+      return (w ? '' : 'about ') + inr(r100(s.capital * v)) + (w ? ' on ' + dshort(w) : ' today');
+    }).join(', ') + '. The same money in its index: about ' + inr(r100(s.capital * Pb[Pb.length - 1])) + '.';
+    return '<svg class="mi-spark" viewBox="0 0 ' + W2 + ' ' + H2 + '" preserveAspectRatio="none" role="img" aria-label="' + esc(lab) + '">' +
+      (Pb.length === Pm.length ? '<path class="mi-spark-b" d="' + dpath(Pb) + '"/>' : '') + '<path class="mi-spark-m" d="' + dpath(Pm) + '"/></svg>' +
+      '<span class="mi-spark-k" aria-hidden="true"><i class="is-m"></i>Your amount' + (Pb.length === Pm.length ? '<i class="is-b"></i>The same money in ' + (sd.bname ? 'the ' + esc(sd.bname) : 'its index') : '') + '</span>';
+  }
   function renderGlance(s, hist) {
     var el = card('mi-glance', 'insight', 'mi-glance');
     before(el, D.getElementById('su-card') || D.getElementById('mi-today') || D.getElementById('mi-review') || D.getElementById('mi-narr') || D.getElementById('profit-card'));
     if (!s.key) { hide('mi-glance'); return; }
-    if (s.demo) {
+    if (s.demo && !DEMO_INSIGHT) {
       show(el, '<div class="mi-head"><h2>Your money at a glance<span class="mi-badge">Sample</span></h2></div>' +
         '<p class="mi-p">On a member’s dashboard this card comes first: what to do next, how the model portfolio has done since the day they joined (in rupees on their own amount), what a year costs all in, and what they own. It never shows a forecast.</p>');
       return;
@@ -552,8 +595,16 @@
       ? (first ? 'Your first orders are waiting: ' + plural(left, 'order') + ' to place.' : plural(left, 'order') + ' still to place this month.') +
         ' <button type="button" class="mi-gl-go" data-gl-go>Open the orders</button>'
       : 'Next list: <b>' + esc(nextDay) + '</b> · ' + plural(dn, 'day') + '. Nothing to place until then.']);
-    var sd = sinceData(s, hist);
-    if (sd) {
+    var sd = s.demo ? null : sinceData(s, hist), lump = null;
+    if (s.demo) {                                                            // v1.0.4 — DEMO_INSIGHT: no return in the sample
+      rows.push(['Your amount', 'On your dashboard: what you put in, what it is worth on the model portfolio today, and the same money in its index. The sample shows no returns because it has no live prices.']);
+    } else if (sd && GLANCE_LUMP && sd.n && !needCap) {                       // v1.0.4 — GLANCE_LUMP
+      var vNow = r100(s.capital * sd.m), iNow = r100(s.capital * (1 + sd.bp / 100));
+      var lead2 = 'since <b>' + esc(dshort(sd.start)) + '</b>';
+      if (sd.from && sd.fromIso > iso(sd.start)) lead2 = 'since <b>' + esc(dshort(sd.from)) + '</b>, ' + (sd.recStart ? 'when the live record began' : 'your first full month');
+      lump = ['Your ' + inr(s.capital), 'is about <b>' + esc(inr(vNow)) + '</b> on the model portfolio ' + lead2 + ' (' + span(sd.mp, sgn(sd.mp)) + '). The same money in the ' +
+        esc(sd.bname) + ': about ' + esc(inr(iNow)) + ' (' + span(sd.bp, sgn(sd.bp)) + ').' + (GLANCE_SPARK ? spark(s, sd) : '')];
+    } else if (sd) {
       var t2;
       if (!sd.n) t2 = 'Your first month: the record starts when this month’s list closes on the 1st.';
       else {
@@ -571,8 +622,12 @@
       if (ca.free) t3 = 'Free. Trading charges are small: the eight funds stay, and only their sizes change.';
       else if (ca.cap && ca.chg != null) {
         var tot = ca.fee + ca.chg;
-        t3 = 'About <b>' + esc(inr(r100(tot))) + '</b>: your fee ' + esc(inr(ca.fee)) + ' plus trading charges of about ' + esc(inr(r100(ca.chg))) +
-          ' (estimate). That’s ' + (tot / ca.cap * 100).toFixed(1) + '% of your amount; a 1% fund’s fee would be ' + esc(inr(ca.cap * 0.01)) + ', a 2% fund’s ' + esc(inr(ca.cap * 0.02)) + '.';
+        t3 = GLANCE_LUMP
+          ? 'About <b>' + esc(inr(r100(tot))) + '</b>: your fee ' + esc(inr(ca.fee)) + ' plus about ' + esc(inr(r100(ca.chg))) +
+            ' in trading charges, which go to the exchange and the government, not to us (estimate). That’s ' + (tot / ca.cap * 100).toFixed(1) +
+            '% of your amount; a 1% fund’s fee would be ' + esc(inr(ca.cap * 0.01)) + ', a 2% fund’s ' + esc(inr(ca.cap * 0.02)) + '.'
+          : 'About <b>' + esc(inr(r100(tot))) + '</b>: your fee ' + esc(inr(ca.fee)) + ' plus trading charges of about ' + esc(inr(r100(ca.chg))) +
+            ' (estimate). That’s ' + (tot / ca.cap * 100).toFixed(1) + '% of your amount; a 1% fund’s fee would be ' + esc(inr(ca.cap * 0.01)) + ', a 2% fund’s ' + esc(inr(ca.cap * 0.02)) + '.';
       } else {
         t3 = 'Your fee: <b>' + esc(inr(ca.fee)) + '</b> a year.' + (ca.pct != null ? ' Trading charges come on top: about ' + ca.pct.toFixed(2) + '% of the money a year' + atLakh(ca) + '.' : '');
       }
@@ -581,6 +636,7 @@
     var n = (s.stocks || []).length, ma = s.key === 'ma';
     rows.push(['You own', (ma ? plural(n, 'fund') + ', each a whole market in one holding.' : plural(n, 'company', 'companies') + ' in equal amounts, no more than two from any industry.') +
       ' <a href="#mi-own" data-gl-own>See them in plain words&nbsp;↓</a>']);
+    if (lump) rows.unshift(lump);                                            // v1.0.4 — the amount first
     var more = '';
     if (sd && sd.n) {
       var neg = W._mfData ? W._mfData(s.key + ':neg') : '', mon = W._mfData ? W._mfData(s.key + ':months') : '', dd = W._mfData ? W._mfData(s.key + ':max_dd') : '';
@@ -597,11 +653,13 @@
       ? (sd.liveNow ? 'The model’s record at published prices, with this month at today’s prices; not your account.'
                     : 'The model’s record at published prices, to the ' + esc(dshort(dt(sd.through))) + ' close; not your account.')
       : 'The model’s record at published prices; not your account.';
-    show(el, '<div class="mi-head"><h2>Your money at a glance</h2><span class="mi-sub">Three numbers matter here; the rest is detail.</span></div>' +
+    var calmHead = GLANCE_LUMP || (s.demo && DEMO_INSIGHT);                  // v1.0.4
+    show(el, '<div class="mi-head"><h2>' + (calmHead ? 'Your money' : 'Your money at a glance') + (s.demo ? '<span class="mi-badge">Sample</span>' : '') + '</h2><span class="mi-sub">' +
+      (calmHead ? 'The few numbers that matter. The rest can wait.' : 'Three numbers matter here; the rest is detail.') + '</span></div>' +
       '<dl class="mi-gl">' + rows.map(function (r) { return '<div class="mi-gl-r"><dt>' + esc(r[0]) + '</dt><dd>' + r[1] + '</dd></div>'; }).join('') + '</dl>' +
-      endNote +
+      (s.demo ? '' : endNote +
       '<p class="mi-note">' + basis + (needCap && !(ca && ca.free) ? ' <button type="button" class="pc-capfix" onclick="abarEditCapital()">Enter your amount</button> to see the rupees.' : '') + '</p>' +
-      (more ? '<details class="mi-learn mi-gl-more"><summary>More on these numbers</summary>' + more + '</details>' : ''));
+      (more ? '<details class="mi-learn mi-gl-more"><summary>More on these numbers</summary>' + more + '</details>' : '')));
     var go = el.querySelector('[data-gl-go]');
     if (go) go.addEventListener('click', function () {
       setMode('orders', st(), true);
@@ -1597,6 +1655,37 @@
       : '<span>More about this month<small>' + esc(names.join(' · ')) + '</small></span>';
   }
 
+  /* v1.0.4 — MONTH_FOLD: the month's own cards ("This month, in plain words", the profit card, "Is this normal?") under
+     one line, where they begin. Same pattern as renderFold: nothing moves, a class on <html> hides them, screen only.
+     An established member only: the first month's whole story is the month, and the sample shows them. */
+  function renderMonthFold(s) {
+    var root = D.documentElement, b = D.getElementById('mi-month-more');
+    var first = false; try { first = typeof W._isFirstMonth === 'function' && !!W._isFirstMonth(); } catch (e) {}
+    var cards = ['mi-narr', 'profit-card', 'mi-normal'].map(function (id) { return D.getElementById(id); }).filter(function (e) { return !!shown(e); });
+    if (!MONTH_FOLD || s.demo || first || !cards.length) { root.classList.remove('mi-month-folded'); if (b) b.hidden = true; return; }
+    var open = false; try { open = localStorage.getItem('mfc_month_more') === '1'; } catch (e) {}
+    if (!b) {
+      b = D.createElement('button');
+      b.type = 'button'; b.id = 'mi-month-more'; b.className = 'mi-more mi-month-more';
+      b.setAttribute('data-mfm', 'insight');
+      b.addEventListener('click', function () {
+        var opening = root.classList.contains('mi-month-folded');
+        try { localStorage.setItem('mfc_month_more', opening ? '1' : '0'); } catch (e) {}
+        renderMonthFold(st());
+        if (opening) {
+          var n = D.getElementById('mi-narr'), h = n && n.querySelector('h2');
+          if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch (e) {} }
+          try { W.dispatchEvent(new Event('resize')); } catch (e) {}
+        }
+      });
+    }
+    before(b, cards[0]);
+    root.classList.toggle('mi-month-folded', !open);
+    b.hidden = false;
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    b.innerHTML = open ? '<span>Less about this month so far</span>'
+      : '<span>This month in detail<small>the month so far, against its index &middot; is this normal?</small></span>';
+  }
   function renderInsight() {
     var s = st();
     if (!s.key || !(s.stocks || []).length) return;
@@ -1611,15 +1700,16 @@
       safe(function () { renderNormal(s, lb, bm, hist); });            // first: the narrative reads its counts
       safe(function () { renderNarrative(s, lb, bench, mk); });
       safe(function () { renderReview(s, hist); });
-      safe(function () { renderToday(s, closes, sig, mk); });        // after the review: it sits above it
+      safe(function () { if (FOLD_LEAN) hide('mi-today'); else renderToday(s, closes, sig, mk); });   // v1.0.4 — FOLD_LEAN
       safe(function () { renderSince(s, hist); });                   // V44.7: above all of them
       safe(function () { renderOwn(s); });                           // V44.7: under "Is this normal?"
       safe(function () { renderNote(s); });
       safe(function () { renderVsIndex(s, lb, bench, mk, ba, closes); });
-      safe(function () { renderWeather(s, mk, s.key === 'ma' ? closes : null); });
-      safe(function () { renderRisk(s, mk, ba, sig, closes); });
+      safe(function () { if (FOLD_LEAN) hide('mi-weather'); else renderWeather(s, mk, s.key === 'ma' ? closes : null); });
+      safe(function () { if (FOLD_LEAN) hide('mi-risk'); else renderRisk(s, mk, ba, sig, closes); });
       safe(function () { renderYou(s, lb, closes); });
       safe(function () { renderRecord(s, hist); });
+      safe(function () { renderMonthFold(s); });                      // v1.0.4 — MONTH_FOLD, before the other fold
       safe(function () { renderFold(s); });                           // V43.1 — B3: after every card has painted
     });
   }

@@ -3850,6 +3850,9 @@ function revealHoldingsBackstop() {
    Keyed on the same _cycleKey() bookDiff uses, so the two can never disagree
    about which cycle is current. The strategy stays in the key because the
    switcher can move between books without a reload. */
+/* v1.0.4 — the calm compounder's order-side switches, written onto <html> by mf-v104-dash-flags in dashboard.html */
+function _v104(k){ return document.documentElement.getAttribute('data-' + k) === 'on'; }
+function _plainChoice(){ return document.documentElement.getAttribute('data-choice-labels') === 'plain'; }
 function boughtStorageKey(strategy) {
   var base = 'mfc_bought_' + (strategy || 'default').replace(/[^a-z0-9]+/gi,'_');
   var key  = _cycleKey(window._currentSub);
@@ -4396,8 +4399,8 @@ function refreshActionBar(){
 
     var nEl = document.getElementById('abar-n'), sEl = document.getElementById('abar-sub');
     if (omWait){
-      if (nEl) nEl.textContent = omWait === 'ask' ? 'This month' : 'Pick stocks';
-      if (sEl) sEl.textContent = omWait === 'ask' ? 'rebalance, buy all or pick' : 'nothing ticked yet';
+      if (nEl) nEl.textContent = omWait === 'ask' ? 'This month' : (_plainChoice() ? 'Only some' : 'Pick stocks');
+      if (sEl) sEl.textContent = omWait === 'ask' ? (_plainChoice() ? 'just the changes, buy all or only some' : 'rebalance, buy all or pick') : 'nothing ticked yet';
     } else if (pending.length){
       var nB = pending.filter(function(o){ return o.side === 'BUY'; }).length;
       var nS = pending.length - nB;
@@ -4424,7 +4427,7 @@ function refreshActionBar(){
       if (amt) amt.textContent = omWait === 'ask' ? '3 options' : 'none ticked';
       if (cta){ cta.onclick = abarGoToOrderMode;
                 cta.setAttribute('aria-label', omWait === 'ask'
-                  ? 'Choose what to place this month: rebalance, buy all, or pick stocks'
+                  ? (_plainChoice() ? 'Choose what to place this month: just the changes, buy all, or only some' : 'Choose what to place this month: rebalance, buy all, or pick stocks')
                   : 'No stocks ticked yet. Jump to the list to tick what to buy or sell'); }
     } else if (canSend && !isDemo && !window._capEntered){      // V39.3 — B4
       if (lab) lab.textContent = 'Enter your amount';
@@ -5865,6 +5868,16 @@ function orderModeState(){
     var bm = loadBought(currentStrategy) || {}, sent = _kbSentLoad();
     if (rebalanceOrders().all.some(function (o) { var k = orderKey(o); return !!bm[k] || !!sent[k]; })) st.m = 'rebal';
   } catch (e) {}
+  /* v1.0.4 — ORDERS_DEFAULT_REBAL: last month's orders were ticked on this device, so the member holds last month's
+     book and this month is just the changes. Never Buy all (it would buy the book twice); the change card says what
+     was assumed and offers the question again. */
+  if (!st.m && _v104('orders-default') && d && d.prevKey) {
+    try {
+      var pk = 'mfc_bought_' + (currentStrategy || 'default').replace(/[^a-z0-9]+/gi, '_') + '__' + String(d.prevKey).replace(/[^a-z0-9]+/gi, '_');
+      var pm = JSON.parse(localStorage.getItem(pk) || '{}');
+      if (pm && typeof pm === 'object' && Object.keys(pm).length) { st.m = 'rebal'; st.fromLast = true; }
+    } catch (e) {}
+  }
   return st;
 }
 function needsOrderChoice(){ return !orderModeState().m; }
@@ -8450,6 +8463,14 @@ function _demoPrevPos(){
    the note says so. Getting this wrong in the flattering direction is the failure
    mode that matters, so where a strategy is unrecognised the higher figure is
    used, never the lower. */
+/* v1.0.4 — CYCLE_CHARGES: a twin of CHARGE_RATES in runner/inject_site_stats.py (Zerodha's published equity-delivery
+   rates; the year's all-in figure on this page comes from the same table through MFTURN). Change both together: the
+   v1.0.4 release check compared them. Equity books only; MultiAsset's ETFs keep the assumption below. */
+var CHARGE_RATES = { stt: 0.001, stamp_buy: 0.00015, exch: 0.0000307, sebi: 0.000001, gst: 0.18, dp_per_sale: 15.34 };
+function _ratesCharge(buyV, sellV, nSales){
+  var r = CHARGE_RATES, ex = r.exch + r.sebi;
+  return buyV * (r.stt + r.stamp_buy + ex) + r.gst * buyV * ex + sellV * (r.stt + ex) + r.gst * sellV * ex + r.dp_per_sale * nSales;
+}
 var CYCLE_COST_BPS = {
   lm: { bps: 10, src: 'modelled' },
   sm: { bps: 20, src: 'modelled' },
@@ -8565,6 +8586,14 @@ function renderCycleCost(){
   var traded  = buyVal + sellVal + rebVal;
   if (traded <= 0){ box.hidden = true; return; }
   var charges = traded * (cost.bps / 10000);
+  // v1.0.4 — CYCLE_CHARGES: an equity book at Zerodha's rates; a sale not yet sized counts as an equal share of the amount
+  var useRates = _v104('cycle-charges') && cost.src === 'modelled', unszV = 0, nSalesR = 0;
+  if (useRates){
+    var _uz = diff.prevQtyKnown === false ? goneNow.length : Math.max(0, goneNow.length - sellSized);
+    unszV = _uz * (list.length ? cap / list.length : 0);
+    nSalesR = goneNow.length + (rwC.length ? rwC.filter(function(o){ return o.side === 'SELL'; }).length : 0);
+    charges = _ratesCharge(buyVal + (rwC.length ? rwBought : 0), sellVal + unszV + (rwC.length ? rwSold : 0), nSalesR);
+  }
   var tax     = gain > 0 ? gain * STCG_RATE : 0;
 
   // V40.1 — A7. MultiAsset: the TRIMS are the sales. Each held ETF whose model
@@ -8628,10 +8657,14 @@ function renderCycleCost(){
     } else if (rebVal  > 0) legs.push(fmtMoney(Math.round(rebVal))  + ' rebalanced');
     grid.innerHTML =
       cell('Value traded', fmtMoney(Math.round(traded)), legs.join(' &middot; ')) +
-      cell('Estimated charges', '~' + fmtMoney(Math.round(charges)),
+      (useRates
+        ? cell('Estimated charges', 'about ' + fmtMoney(Math.round(charges)),
+               'transaction tax, stamp duty, exchange and depository charges at Zerodha&rsquo;s rates' +
+               (_mfData('charges:asof') ? ' on ' + escapeHtml(_mfData('charges:asof')) : ''))
+        : cell('Estimated charges', '~' + fmtMoney(Math.round(charges)),
            cost.bps + '&nbsp;bps a side, ' + (cost.src === 'modelled'
              ? 'the figure the published backtest is net&nbsp;of'
-             : 'assumed for liquid&nbsp;ETFs')) +
+             : 'assumed for liquid&nbsp;ETFs'))) +
       (maTax && maTax.noTrims
         ? cell('Short-term tax', fmtMoney(0), 'nothing sold this cycle', true)
         : maTax
@@ -8659,8 +8692,12 @@ function renderCycleCost(){
   var note = document.getElementById('cc-note');
   if (note){
     // V42.1 — B6: "you entered" only when they did (V39.3 B4's words otherwise)
-    note.innerHTML = (window._capEntered ? 'Estimates, at the capital you entered.' : 'Estimates, at the starting amount, not one you entered.') + ' Charges are a single ' + cost.bps +
-      '&nbsp;bps-a-side assumption; your broker’s plan, STT, stamp duty, exchange and SEBI fees and GST are not itemised. ' +
+    note.innerHTML = (window._capEntered ? 'Estimates, at the capital you entered.' : 'Estimates, at the starting amount, not one you entered.') +
+      (useRates
+        ? (unszV > 0 ? ' A sale not yet sized is counted at an equal share of it.' : '') +
+          ' Your broker&rsquo;s own brokerage, if any, is extra. The published backtest allows ' + cost.bps + '&nbsp;bps each way for trading costs. '
+        : ' Charges are a single ' + cost.bps +
+      '&nbsp;bps-a-side assumption; your broker’s plan, STT, stamp duty, exchange and SEBI fees and GST are not itemised. ') +
       (key === 'ma'
         ? 'Tax: the Indian equity ETFs pay the 20% short-term rate; the Nasdaq-100, gold, silver and bond ETFs pay your ' +
           'income-tax slab plus 4% cess — estimated on the weight each ETF gives up this cycle. ' +
@@ -8727,7 +8764,7 @@ function renderHeroJob(){
         el.textContent = 'Buying the whole book: ' + _of + ' buy order' + (_oo.all.length === 1 ? '' : 's') +
           (_lft.length < _oo.all.length ? ' left' : '') + ' to place.';
       } else if (!_oo.all.length){
-        el.textContent = 'Pick stocks: tick what to buy or sell in Step 3, and your orders follow.';
+        el.textContent = (_plainChoice() ? 'Only some' : 'Pick stocks') + ': tick what to buy or sell in Step 3, and your orders follow.';
       } else {
         el.textContent = (_lft.length < _oo.all.length
             ? _lft.length + ' of the ' + _oo.all.length + ' orders you ticked left to place'
@@ -8934,6 +8971,67 @@ function refreshOrdersTile(animate){
 /* ── the change module + the two KPI tiles it feeds ────────────────────────────
    One writer for all three surfaces, so the tiles and the card can never state
    different counts. Everything is gated on diff.known. */
+/* v1.0.4 — NAMES_ON_SELLS: a name that left the book is no longer in this month's list, so its company name comes
+   from the public company file (screener/co/<SYM>.json, the file the company pages read). One promise per ticker. */
+var _coNameP = {};
+function _coShort(n){ return String(n || '').replace(/\s+/g, ' ').trim().replace(/[\s,]+(?:Ltd\.?|Limited)$/i, ''); }
+function _coName(t){
+  var k = String(t || '').toUpperCase();
+  if (!_coNameP[k]) _coNameP[k] = fetch('screener/co/' + k.replace(/[^A-Za-z0-9._-]/g, '_') + '.json', { cache: 'no-cache' })
+    .then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { return d && d.name ? _coShort(d.name) : ''; })
+    .catch(function () { return ''; });
+  return _coNameP[k];
+}
+// the name recorded with last month's position (_bookPos writes `n`) when there is one; the company file otherwise
+function _sellLabel(t, p){
+  if (_v104('names-sells') && document.documentElement.getAttribute('data-names-tk') === 'on' && p && p.n &&
+      String(p.n).toUpperCase() !== String(t).toUpperCase()) return _tkLabel(t, { company_name: p.n });
+  return escapeHtml(t);
+}
+function _fillSellNames(){
+  if (!_v104('names-sells') || document.documentElement.getAttribute('data-names-tk') !== 'on') return;
+  document.querySelectorAll('#chg-groups [data-tk-fill]').forEach(function (el) {
+    var t = el.getAttribute('data-tk-fill');
+    _coName(t).then(function (nm) {
+      if (!nm || !el.isConnected || nm.toUpperCase() === String(t).toUpperCase()) return;
+      el.innerHTML = '<span class="tk-nm">' + escapeHtml(nm) + '</span> <span class="tk-sym">' + escapeHtml(t) + '</span>';
+      el.removeAttribute('data-tk-fill');
+    });
+  });
+}
+/* v1.0.4 — the question before the list it decides: with no answer yet, the change card opens with Step 3's three
+   choices; when last month's ticks answered it (ORDERS_DEFAULT_REBAL), it says so and offers the question again. */
+function _renderOmFirst(diff){
+  var groups = document.getElementById('chg-groups');
+  if (!groups) return;
+  var el = document.getElementById('om-first');
+  if (!el) { el = document.createElement('div'); el.id = 'om-first'; el.className = 'om-first'; el.hidden = true; groups.parentNode.insertBefore(el, groups); }
+  if (!_v104('orders-default') || isDemo || !diff || !diff.known) { el.hidden = true; el.innerHTML = ''; return; }
+  var st = orderModeState(), pl = _plainChoice();
+  var L = { rebal: pl ? 'Just the changes' : 'Rebalance', fresh: 'Buy all', pick: pl ? 'Only some' : 'Pick stocks' };
+  if (!st.m) {
+    el.innerHTML = '<p class="om-first-q"><b>First, one question:</b> do you still hold last month&rsquo;s book? Your orders follow the answer.</p>' +
+      '<div class="om-first-b">' + ['rebal', 'fresh', 'pick'].map(function (m) {
+        return '<button type="button" class="om-first-btn" data-om="' + m + '">' + L[m] + '</button>';
+      }).join('') + '</div>';
+    el.hidden = false;
+  } else if (st.auto && st.fromLast) {
+    var oc = rebalanceOrders(), nS = (oc.sells || []).length, nB = (oc.buys || []).length;
+    el.innerHTML = '<p class="om-first-q">You placed last month&rsquo;s orders, so this month is ' + (pl ? 'just the changes' : 'the rebalance') + ': ' +
+      nS + ' to sell, ' + nB + ' to buy. <button type="button" class="om-first-again" data-om="again">Not right? Choose again</button></p>';
+    el.hidden = false;
+  } else { el.hidden = true; el.innerHTML = ''; }
+  if (!el._wired) {
+    el._wired = true;
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-om]');
+      if (!b) return;
+      var m = b.getAttribute('data-om');
+      if (m === 'again' || m === 'pick') { if (m === 'pick') setOrderMode('pick'); abarGoToOrderMode(); return; }
+      setOrderMode(m);
+    });
+  }
+}
 function renderBookChange(diff, stocks){
   var card   = document.getElementById('chg-card');
   var nVal   = document.getElementById('stat-new'),   nSub = document.getElementById('stat-new-sub');
@@ -9111,8 +9209,11 @@ function renderBookChange(diff, stocks){
         var y   = s2.yahoo_ticker || '';
         if (_isRestricted(t)) return '<span class="chg-tk is-restricted" title="On your restricted list — not held through this dashboard">' +
           escapeHtml(t) + '<span class="chg-tk-rs">restricted</span></span>';   // V39.5
+        if (_v104('names-sells') && document.documentElement.getAttribute('data-names-tk') === 'on' && s2.company_name)   // v1.0.4
+          return '<span class="chg-tk" title="' + escapeHtml(t) + '">' + escapeHtml(_coShort(s2.company_name)) +
+            (document.documentElement.getAttribute('data-hold-moves') !== 'off' && rec > 0 && y ? '<span class="px-live chg-tk-px" data-px-mode="ret" data-px="' + escapeHtml(y) + '" data-rec="' + rec + '"></span>' : '') + '</span>';
         return '<span class="chg-tk">' + escapeHtml(t) +
-          (rec > 0 && y
+          (document.documentElement.getAttribute('data-hold-moves') !== 'off' && rec > 0 && y
             ? '<span class="px-live chg-tk-px" data-px-mode="ret" data-px="' + escapeHtml(y) +
               '" data-rec="' + rec + '"></span>'
             : '') +
@@ -9155,7 +9256,7 @@ function renderBookChange(diff, stocks){
           '<input type="checkbox" class="chg-sell-cb"' + (done ? ' checked' : '') +
             ' data-okey="' + escapeHtml(key) + '" onchange="toggleOrder(this)"' +
             ' aria-label="Mark ' + escapeHtml(t) + ' as sold">' +
-          '<span class="chg-sell-id"><span class="chg-sell-t">' + escapeHtml(t) + '</span>' +
+          '<span class="chg-sell-id"><span class="chg-sell-t"' + (_v104('names-sells') && _sellLabel(t, p) === escapeHtml(t) ? ' data-tk-fill="' + escapeHtml(t) + '"' : '') + '>' + _sellLabel(t, p) + '</span>' +
             (qty > 0 ? '<span class="chg-sell-q">' + qty + ' share' + (qty === 1 ? '' : 's') + ' held</span>' : '') +
           '</span>' +
           (url ? '<a class="chg-sell-lnk" href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' +
@@ -9281,7 +9382,7 @@ function renderBookChange(diff, stocks){
       holdBody = chips(diff.held);
     }
     var holdLabel = moved.length ? 'Rebalance · weights moved (' + moved.length + ')'
-                                 : 'Hold · carried over (' + nHold + ')';
+                                 : (_plainChoice() ? 'Keep · nothing to do (' + nHold + ')' : 'Hold · carried over (' + nHold + ')');
     var mtIn   = nIn  === 0 ? ' is-empty' : '';
     var mtOut  = nOut === 0 ? ' is-empty' : '';
     var mtHold = (moved.length === 0 && nHold === 0) ? ' is-empty' : '';
@@ -9298,6 +9399,7 @@ function renderBookChange(diff, stocks){
      they would sit empty until the next 5-minute poll. Same guard renderTable
      ends with, for the same reason. */
   if (window._livePx) { try { paintLivePrices(); } catch(e){} }
+  try { _fillSellNames(); _renderOmFirst(diff); } catch(e){}   // v1.0.4 — names on the sales; the question first
   renderCycleCost();   // V35.3 — what the turnover named above actually costs
   renderHeroJob();     // V37.3 — and what the hero line has to say about it
   window._rwSigShown = _rwSig(ocB);   // V41.9 — A1: what refreshRwRows() compares against
@@ -10482,6 +10584,9 @@ function renderTrackRecord(){
     }, 60);
   }
 
+  var trkCalm = _v104('trk-calm');                                          // v1.0.4 — TRK_CALM
+  var ttl = document.getElementById('trk-title');
+  if (ttl) ttl.textContent = trkCalm ? 'Month by month' : 'Every month so far';
   var sub = document.getElementById('trk-sub');
   if (sub){
     sub.textContent = rows.length === 1
@@ -10504,10 +10609,15 @@ function renderTrackRecord(){
       sub.textContent += '\u00a0· ' + (rOne && cRows.length < rows.length ? cRows.length + ' closed, compounded ' : 'compounded ') + fmtPct((cm - 1) * 100) +
         (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (cRows[cRows.length - 1].benchName || 'the index') : '');
     }
+    if (trkCalm && sealed){                                                  // v1.0.4 — the same facts, in one sentence
+      sub.textContent = sealed + ' closed month' + (sealed === 1 ? '' : 's') + (judged ? ', ahead of the index in ' + (ahead === judged && judged > 1 ? 'all ' + judged : ahead) : '') +
+        (chain ? ': together ' + fmtPct((cm - 1) * 100) + (hasB ? ' against ' + fmtPct((cb - 1) * 100) : '') : '') +
+        (sealed < rows.length ? '. This month is still running.' : '.');
+    }
   }
   var badge = document.getElementById('trk-badge');
   if (badge){
-    if (judged >= 2){ badge.textContent = 'Ahead of the index in ' + ahead + ' of ' + judged; badge.style.display = ''; }
+    if (judged >= 2 && !trkCalm){ badge.textContent = 'Ahead of the index in ' + ahead + ' of ' + judged; badge.style.display = ''; }
     else { badge.style.display = 'none'; }
   }
   var foot = document.getElementById('trk-foot');
