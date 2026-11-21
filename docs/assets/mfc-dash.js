@@ -7419,8 +7419,8 @@ function _setHowToStep4(){
      something that was already on. The sentence now follows the switch. */
   p.textContent = months > 1
     ? "Your book updates automatically on the 1st\u00A0— the picks here are always the current set, for as long as your subscription runs. " +
-      (_notifOn ? "Rebalance notifications are on, so we'll email you the moment a new set lands; the switch is " + where + "."
-                : "Turn on rebalance notifications " + where + " and we'll email you the moment a new set lands.")
+      (_notifOn ? "\u201cE-mail when the new list lands\u201d is on, so we'll email you the moment a new set lands; the switch is " + where + "."
+                : "Turn on \u201cE-mail when the new list lands\u201d " + where + " and we'll email you the moment a new set lands.")
     : "Your picks stay fixed for your subscription. Next month's set is published on the 1st — renew to switch to it. Automatic monthly updates and email alerts come with the 3-month plan and longer.";
 }
 
@@ -8752,7 +8752,9 @@ function renderHeroJob(){
   try {
     var _omS = orderModeState(), _dkn = !!(window._bookDiff && window._bookDiff.known);
     if (_dkn && !_omS.m){
-      el.textContent = 'This month\u2019s picks are in. Tell Step 3 whether you still hold last month\u2019s book, and it lists your orders.';
+      el.textContent = (_v104('orders-default') && !isDemo)
+        ? 'This month\u2019s picks are in. One question first: do you still hold last month\u2019s book? Your orders follow the answer.'   // v1.0.5: as #om-first asks it
+        : 'This month\u2019s picks are in. Tell Step 3 whether you still hold last month\u2019s book, and it lists your orders.';
       return;
     }
     if (_dkn && (_omS.m === 'fresh' || _omS.m === 'pick')){
@@ -10610,7 +10612,8 @@ function renderTrackRecord(){
         (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (cRows[cRows.length - 1].benchName || 'the index') : '');
     }
     if (trkCalm && sealed){                                                  // v1.0.4 — the same facts, in one sentence
-      sub.textContent = sealed + ' closed month' + (sealed === 1 ? '' : 's') + (judged ? ', ahead of the index in ' + (ahead === judged && judged > 1 ? 'all ' + judged : ahead) : '') +
+      sub.textContent = sealed + ' closed month' + (sealed === 1 ? '' : 's') + (judged ? (judged === 1 ? (ahead ? ', ahead of the index' : ', not ahead of the index')
+        : ', ahead of the index in ' + (ahead === judged ? (judged === 2 ? 'both' : 'all ' + judged) : ahead + ' of ' + judged)) : '') +   // v1.0.5: was 'in all 2'
         (chain ? ': together ' + fmtPct((cm - 1) * 100) + (hasB ? ' against ' + fmtPct((cb - 1) * 100) : '') : '') +
         (sealed < rows.length ? '. This month is still running.' : '.');
     }

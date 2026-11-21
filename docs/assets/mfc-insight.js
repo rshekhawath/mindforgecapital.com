@@ -575,7 +575,7 @@
     }).join(', ') + '. The same money in its index: about ' + inr(r100(s.capital * Pb[Pb.length - 1])) + '.';
     return '<svg class="mi-spark" viewBox="0 0 ' + W2 + ' ' + H2 + '" preserveAspectRatio="none" role="img" aria-label="' + esc(lab) + '">' +
       (Pb.length === Pm.length ? '<path class="mi-spark-b" d="' + dpath(Pb) + '"/>' : '') + '<path class="mi-spark-m" d="' + dpath(Pm) + '"/></svg>' +
-      '<span class="mi-spark-k" aria-hidden="true"><i class="is-m"></i>Your amount' + (Pb.length === Pm.length ? '<i class="is-b"></i>The same money in ' + (sd.bname ? 'the ' + esc(sd.bname) : 'its index') : '') + '</span>';
+      '<span class="mi-spark-k" aria-hidden="true"><span><i class="is-m"></i>Your amount</span>' + (Pb.length === Pm.length ? '<span><i class="is-b"></i>The same money in ' + (sd.bname ? 'the ' + esc(sd.bname) : 'its index') + '</span>' : '') + '</span>';
   }
   function renderGlance(s, hist) {
     var el = card('mi-glance', 'insight', 'mi-glance');

@@ -942,7 +942,9 @@
 // token and mfc-insight.js 12 (gaps from the printed figures, the record's real start date).
 // v1.0.4 -> mfc-v161. The calm compounder: mfc-dash.js's token and mfc-insight.js 13 (the "Your money" card, the month
 // and settings folds, names and plain labels on the orders, the cycle's charges at Zerodha's rates).
-const CACHE = 'mfc-v161';
+// v1.0.5 -> mfc-v162. Device QA: the precached index.html (the walkthrough phone back on phones, touch pads on the five
+// rules' links, the fee notes name the comparison they mean), mfc-dash.js's token and mfc-insight.js 14 (the chart key).
+const CACHE = 'mfc-v162';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)
