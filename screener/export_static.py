@@ -369,7 +369,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
 
 <footer class="dir-foot">
   Stock data is sourced from public filings for research and education only — <b>not investment advice</b> or a buy/sell recommendation. <b>Investment in securities market are subject to market risks. Read all the related documents carefully before investing.</b> Registration granted by SEBI, enlistment with BSE and certification from NISM in no way guarantee performance of the intermediary or provide any assurance of returns to investors.<br>
-  SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">Reg.&nbsp;No.&nbsp;INH000032179</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor&nbsp;Charter</a><br><span class="mfc-ra-addr" style="display:inline-block;margin-top:6px;">Address: IIIrd Floor, Shri Building, Sairam Nagar Colony, Karmanghat, Hyderabad-500079&nbsp;· Phone: <a href="tel:+917601032082" style="color:inherit;">+91-7601032082</a></span><br>
+  SEBI-Registered Research&nbsp;Analyst&nbsp;· <span style="white-space:nowrap">Reg.&nbsp;No.&nbsp;INH000032179</span>&nbsp;· <span style="white-space:nowrap">BSE&nbsp;Enlistment&nbsp;No.&nbsp;7719</span>&nbsp;· Sagar&nbsp;Shekhawath&nbsp;· <a href="/disclosures.html">Disclosures &amp; Investor&nbsp;Charter</a><br><span class="mfc-ra-addr" style="display:inline-block;margin-top:6px;">Address: IIIrd Floor, Shri Building, Sairam Nagar Colony, Karmanghat, Hyderabad-500079&nbsp;· Phone: <a href="tel:+917601032082" style="color:inherit;">+91-7601032082</a></span><br>
   <span style="color:var(--text3)">Directory regenerated {day}.</span>
 </footer>
 
@@ -1029,6 +1029,7 @@ def main() -> int:
     stocks, sectors = [], set()
     skipped = 0
     dropped = []
+    eps_dropped = []
     latest_update = ""
     betas, beta_to = _load_betas()
 
@@ -1058,6 +1059,20 @@ def main() -> int:
         # Yahoo codes the National Stock Exchange as "NSI" — show the real name
         if d.get("exchange") in (None, "", "NSI"):
             d["exchange"] = "NSE"
+        # v1.0.6 — an EPS that cannot be this company's. Yahoo sometimes serves a trailing EPS
+        # that, times the share count, misses the reported net profit by more than 50x, the same
+        # line verify_published_numbers.py section 6 draws (SUPREMEINF, Nov 2026: EPS 980 on a Rs -165 Cr loss gave P/E 0.06 and an
+        # earnings yield of 1,667%). A row reporting in a foreign currency is server.py's to fix,
+        # and verify_published_numbers.py section 6 still flags it. Everything derived from the
+        # EPS goes with it, so no list or score ranks on it.
+        _eps, _sh, _np = d.get("eps"), d.get("shares_outstanding"), d.get("net_profit_cr")
+        if (not d.get("financial_currency") and _fin(_eps) and _fin(_sh) and _fin(_np)
+                and _eps and _sh > 0 and abs(_np) >= 100):
+            _ratio = (_eps * _sh / 1e7) / _np
+            if abs(_ratio) > 50:
+                for _k in ("eps", "pe_ratio", "earnings_yield", "graham_number", "graham_mos", "peg_ratio"):
+                    d[_k] = None
+                eps_dropped.append(d["symbol"])
         # V44.6 — beta is our own, one basis for every row (see beta_monthly.py). A row cached
         # before this release still holds Yahoo's figure, so it is overwritten either way.
         d.pop("beta_on", None)
@@ -1070,6 +1085,8 @@ def main() -> int:
         if updated_at and updated_at > latest_update:
             latest_update = updated_at
 
+    if eps_dropped:
+        print(f"  EPS dropped as inconsistent with net profit (>50x): {', '.join(eps_dropped)}")
     _n_beta = sum(1 for x in stocks if x.get("beta") is not None)
     print(f"  Beta: {_n_beta} with our own figure (months to {beta_to or 'none'}), {len(stocks) - _n_beta} with none.")
 

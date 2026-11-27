@@ -944,7 +944,8 @@
 // and settings folds, names and plain labels on the orders, the cycle's charges at Zerodha's rates).
 // v1.0.5 -> mfc-v162. Device QA: the precached index.html (the walkthrough phone back on phones, touch pads on the five
 // rules' links, the fee notes name the comparison they mean), mfc-dash.js's token and mfc-insight.js 14 (the chart key).
-const CACHE = 'mfc-v162';
+// v1.0.6 -> mfc-v163. BSE enlistment no. 7719 in every footer: the precached index.html and login.html changed.
+const CACHE = 'mfc-v163';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)
