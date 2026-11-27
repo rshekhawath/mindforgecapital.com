@@ -356,18 +356,34 @@ def main() -> None:
     BASE_TOL = 0.005
     nse_base = {"ok": True}
 
-    def base_ref(r):
-        if r.get("pub"):
-            return r["pub"], "the published price"
+    # v1.0.7 — A FILE PRICE IS THE PUBLISHED PRICE ONLY IF IT IS THE BASELINE DAY'S CLOSE.
+    # The MultiAsset builder's "Current Price" is its signal's MONTH-END close. That is
+    # the price members were given only when the book is published on the first session
+    # after the month-end; publish.py gives members the latest close. A book published
+    # mid-month (27 Nov 2026) left the previous month-end's prices in the file, so the
+    # new cycle opened above zero and a price gap read as a split. The file price now
+    # stands only while NSE's official close for the baseline day agrees with it (or
+    # NSE cannot be reached, the old behaviour); otherwise NSE's close is the reference.
+    def _nse_base(r):
         if not nse_base["ok"]:
-            return None, ""
+            return None
         try:
-            v = nse_close_on(r["yahoo"], base)
+            return nse_close_on(r["yahoo"], base) or None
         except Exception as e:                   # the check must never stop a run
             print(f"  !! NSE close for {base} unavailable ({e}); Yahoo's baselines unchecked")
             nse_base["ok"] = False
-            return None, ""
-        return (v or None), "NSE's official close"
+            return None
+
+    def base_ref(r):
+        if r.get("pub"):
+            v = _nse_base(r)
+            if not v or abs(r["pub"] / v - 1.0) <= BASE_TOL:
+                return r["pub"], "the published price"
+            print(f"  ·  {r['yahoo']}: the file's price {r['pub']:.2f} is not the {base} close "
+                  f"(NSE {v:.2f}), a month-end price from a mid-month publish; NSE's close is the reference")
+            return v, "NSE's official close"
+        v = _nse_base(r)
+        return (v or None), ("NSE's official close" if v else "")
 
     strategies, as_of = {}, None
     for key, (folder, suffix, name, curr) in STRATS.items():
