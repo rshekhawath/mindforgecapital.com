@@ -17,7 +17,7 @@
   function ready(fn) { if (d.readyState !== 'loading') fn(); else d.addEventListener('DOMContentLoaded', fn); }
   function $(sel, root) { return (root || d).querySelector(sel); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  /* v1.0.10 — a cycle sealed on its own baseline had no trading session (a list re-published the next day
+  /* v1.1.0 — a cycle sealed on its own baseline had no trading session (a list re-published the next day
      closed it), and an open cycle measured to a close before it began has none yet. */
   function noSession(c) {
     return !!(c && c.sealed && c.data_through && c.rebalance_date && String(c.data_through).slice(0, 10) <= String(c.rebalance_date).slice(0, 10));
@@ -124,7 +124,7 @@
         var pos = function (v) { return (50 + v / scale * 50).toFixed(2) + '%'; };
         var rows = cyc.map(function (c) {
           var x = c.strategies[key], gap = x.live_pct - x.bench_pct;
-          // v1.0.10 — no completed session in the cycle: nothing was measured, so no figures and no verdict
+          // v1.1.0 — no completed session in the cycle: nothing was measured, so no figures and no verdict
           if (noSession(c) || pending(c)) {
             return '<tr class="dp-nosess"><td>' + day(c.rebalance_date, true) + '</td>' + (c.sealed ? '<td>' + day(c.data_through) + ' close' : '<td class="dp-noclose">no close yet') + '</td>' +
               '<td data-l="Model">—</td><td data-l="Index">—</td><td data-l="Difference">—</td><td></td>' +

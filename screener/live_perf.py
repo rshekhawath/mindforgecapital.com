@@ -112,7 +112,7 @@ def rebalance_date() -> datetime:
 
 
 def strategy_rebalance_date(key: str) -> str:
-    """v1.0.10 — the day THIS book's list was published (its own portfolio.csv mtime).
+    """v1.1.0 — the day THIS book's list was published (its own portfolio.csv mtime).
     rebalance_date() is the newest of the three, which is right for the shared
     cycle in live-history.json but wrong for a book that was not re-published: on
     28 Nov 2026 a MultiAsset-only re-publish moved it to 28 Nov, and every monthly
@@ -465,7 +465,7 @@ def main() -> None:
             as_of = max(as_of or b.index[-1], b.index[-1])
         strategies[key] = {
             "name": name,
-            "rebalance_date": strategy_rebalance_date(key),   # v1.0.10 — this book's own publish day
+            "rebalance_date": strategy_rebalance_date(key),   # v1.1.0 — this book's own publish day
             "live_pct": live_pct,
             "bench_pct": round(b_ret * 100, 2) if b_ok else None,
             "bench_name": BENCH_SHORT[key],

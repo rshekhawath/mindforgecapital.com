@@ -2637,7 +2637,7 @@ function mfDateTime(d, opts) {
 }
 function _mfBindDate(str) {
   return String(str)
-    .replace(/\bSep\b/g, 'Sept')   // v1.0.10 — Safari's en-IN short month; Chrome's and the site's copy say Sept
+    .replace(/\bSep\b/g, 'Sept')   // v1.1.0 — Safari's en-IN short month; Chrome's and the site's copy say Sept
     .replace(/(\d)\s+([A-Za-z])/g, '$1\u00a0$2')
     .replace(/([A-Za-z])\s+(\d)/g, '$1\u00a0$2');
 }
@@ -10455,7 +10455,7 @@ function renderTrackRecord(){
              // measurement, not a result, and it must not be judged or drawn as one.
              pending: !c.sealed && !!c.data_through && !!c.rebalance_date &&
                       String(c.data_through) <= String(c.rebalance_date),
-             // v1.0.10 — the same absence of a measurement, SEALED: a list re-published the next day closed the
+             // v1.1.0 — the same absence of a measurement, SEALED: a list re-published the next day closed the
              // 27 Nov cycle on its own baseline, with no trading session in it. It is shown as a note, never
              // judged or counted as a closed month ("4 closed months, ahead in 2 of 4" counted it as a loss).
              empty: !!c.sealed && !!c.data_through && !!c.rebalance_date &&
@@ -10495,7 +10495,7 @@ function renderTrackRecord(){
   var ahead = 0, judged = 0, sealed = 0, anyOpen = false;
   rows.forEach(function(r){
     if (!r.sealed) anyOpen = true;
-    if (r.empty) return;                                                     // v1.0.10 — nothing to judge
+    if (r.empty) return;                                                     // v1.1.0 — nothing to judge
     if (r.sealed) sealed++;
     if (r.bench == null || !r.sealed) return;
     judged++; if (r.live > r.bench) ahead++;
@@ -10515,7 +10515,7 @@ function renderTrackRecord(){
      book was published: the cycle rebalanced on 31 Aug is the market from 1 Sept
      to 30 Sept, and calling it "Aug ’26" sent a reader checking it against what
      they knew of August. Month-end rebalances make that the next day's month. */
-  /* v1.0.10 — the site's own month names: Safari's en-IN short month is "Sep" where Chrome's is "Sept",
+  /* v1.1.0 — the site's own month names: Safari's en-IN short month is "Sep" where Chrome's is "Sept",
      so the same row read differently on an iPhone. */
   var MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec'];
   var mon = function(iso){
@@ -10524,7 +10524,7 @@ function renderTrackRecord(){
     if (isNaN(dt.getTime())) return iso;
     return MON3[dt.getMonth()] + '\u00a0\u2019' + String(dt.getFullYear()).slice(-2);
   };
-  /* v1.0.10 — a mid-month publish puts two lists in one month, and a re-publish the next day a third: three
+  /* v1.1.0 — a mid-month publish puts two lists in one month, and a re-publish the next day a third: three
      rows all read "Nov ’26". Where a month label repeats, each of those rows is labelled by its own days
      instead ("1–27 Nov", "27 Nov", "28 Nov"), as the track record page dates them. */
   var _dayOf = function(iso){
@@ -10683,7 +10683,7 @@ function renderTrackRecord(){
    discarding the knowledge was the miss.
    Gated on the identical comparison, so the notice and the hidden row can never
    disagree. It says a newer set exists and never a word about what is in it. */
-/* v1.0.10 — the day THIS book was last published. live-perf.json's top-level rebalance_date is the newest of
+/* v1.1.0 — the day THIS book was last published. live-perf.json's top-level rebalance_date is the newest of
    the three books, so a MultiAsset-only re-publish on 28 Nov 2026 told every monthly LargeMidcap and SmallMicro
    member on the 27 Nov list that "a newer set published on 28 Nov", with a button to renew for it. live_perf.py
    now writes each book's own date; an older file without it falls back to the shared one. */
@@ -10806,7 +10806,7 @@ function renderBenchCompare(port){
   var s = d.strategies[key];
   if (!s || s.bench_pct == null || !isFinite(s.bench_pct)) return hide();
   // guard (1): same window on both sides, or nothing
-  var rd = _perfRebal(d, key);                                             // v1.0.10 — this book's own date
+  var rd = _perfRebal(d, key);                                             // v1.1.0 — this book's own date
   if (!rd || _isoDay(window._rebalDate) !== rd) return hide();
   // A capital change re-runs the headline, and with it this; the newest call owns
   // the element, so a slow first fetch can never paint over a later answer.

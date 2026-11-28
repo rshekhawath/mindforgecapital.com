@@ -57,7 +57,7 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
   function dt(isoStr) { var d = new Date(String(isoStr).slice(0, 10) + 'T00:00:00'); return isNaN(d.getTime()) ? null : d; }
-  /* v1.0.10 — a cycle sealed on its own baseline had no trading session (a list re-published the next day closed
+  /* v1.1.0 — a cycle sealed on its own baseline had no trading session (a list re-published the next day closed
      it): 0.00 against 0.00 is the absence of a measurement, so it is never counted as a closed month or judged. */
   function noSession(c) {
     return !!(c && c.sealed && c.data_through && c.rebalance_date &&
@@ -147,7 +147,7 @@
     benchP = W.loadBenchPerf().then(function (d) {
       if (!d || !d.strategies || !d.strategies[s.key]) return null;
       var b = d.strategies[s.key];
-      var rd = b.rebalance_date || d.rebalance_date;                         // v1.0.10 — this book's own publish day
+      var rd = b.rebalance_date || d.rebalance_date;                         // v1.1.0 — this book's own publish day
       if (!rd || rd !== s.rebalIso) return null;
       var tail = function (live) {
         if (live != null && isFinite(live)) return { bench: Number(live), name: b.bench_name, legs: b.bench_legs || [], live: true };
@@ -434,7 +434,7 @@
     'Textiles': 'Makes yarn, fabric or clothing; results follow cotton prices and export demand.',
     'Utilities': 'Supplies water, gas or other essentials; demand is steady and prices are often regulated.'
   };
-  /* v1.0.10 — the sample book (?demo=1) labels its placeholder names with short industry names ("Banks",
+  /* v1.1.0 — the sample book (?demo=1) labels its placeholder names with short industry names ("Banks",
      "Telecom", "IT Services"), so seven of its fifteen holdings showed no second line, on the page the homepage
      links as proof that every holding has two. The live books carry NSE's names and never reach this map. */
   var INDUSTRY_ALIAS = { 'Banks': 'Financial Services', 'IT Services': 'Information Technology', 'Telecom': 'Telecommunication',
