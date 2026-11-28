@@ -747,7 +747,7 @@ function _demoData(mode) {
       {ticker:'HDFCSML250', company_name:'Nifty SmallCap 250 ETF',  weight_pct:16.13, recommended_price:180.67},
       {ticker:'JUNIORBEES', company_name:'Nifty Next\u00A050 ETF',       weight_pct:10.45, recommended_price:795.65},
       {ticker:'MID150BEES', company_name:'Nifty Midcap\u00A0150 ETF',    weight_pct:12.47, recommended_price:239.48},
-      {ticker:'EBBETF0431', company_name:'Bharat Bond ETF',         weight_pct:8.28, recommended_price:1441.34},
+      {ticker:'GILT5YBEES', company_name:'5-Year Gilt ETF',         weight_pct:8.28, recommended_price:66.17},
       {ticker:'GOLDBEES',   company_name:'Gold ETF',                weight_pct:17.36,  recommended_price:117.11},
       {ticker:'SILVERBEES', company_name:'Silver ETF',              weight_pct:4.27,  recommended_price:206.51},
       {ticker:'NIFTYBEES',  company_name:'Nifty\u00A050 ETF',            weight_pct:1.12,  recommended_price:277.42},
@@ -8380,7 +8380,7 @@ function _demoSwapN(){
   return Math.max(1, Math.min(_DEMO_LM_NEW.length, _DEMO_LM_LEAVE.length, Math.round(m / 2)));
 }
 function _demoPrevTickers(){
-  if (demoMode === '2') return ['MON100','HDFCSML250','JUNIORBEES','MID150BEES','EBBETF0431','GOLDBEES','SILVERBEES','NIFTYBEES'];
+  if (demoMode === '2') return ['MON100','HDFCSML250','JUNIORBEES','MID150BEES','GILT5YBEES','GOLDBEES','SILVERBEES','NIFTYBEES'];
   var k = _demoSwapN(), gone = _DEMO_LM_NEW.slice(0, k);
   var cur = (stocksData || []).map(function(s){ return String(s.ticker || ''); }).filter(Boolean);
   if (!cur.length) cur = ['INFY','TCS','HDFCBANK','ICICIBANK','MARUTI','M&M','RELIANCE','BHARTIARTL','SUNPHARMA','LT','BAJFINANCE','ULTRACEMCO','NTPC','POWERGRID','HINDALCO'];
@@ -8406,7 +8406,7 @@ function _demoPrevPos(){
   // own ₹1,00,000 — floor(1,00,000 × w / price) — because the re-weight orders are
   // target minus this. (They were sized for no single capital, which would have
   // shown a nonsense sale of hundreds of shares.) At ₹1,00,000 the sample's month
-  // is 7 orders, one basket: trims of JUNIORBEES 2, MID150BEES 10, EBBETF0431 2 and
+  // is 7 orders, one basket: trims of JUNIORBEES 2, MID150BEES 10, GILT5YBEES 48 and
   // NIFTYBEES 7, then adds of MON100 13, HDFCSML250 15 and GOLDBEES 7; SILVERBEES
   // moves +0.2 pp and stays at 20 shares.
   if (demoMode === '2') return mk([
@@ -8414,7 +8414,7 @@ function _demoPrevPos(){
     ['HDFCSML250', 176.12,   74, 13.05, 'Nifty SmallCap 250 ETF'],
     ['JUNIORBEES', 812.30,   15, 12.90, 'Nifty Next 50 ETF'],
     ['MID150BEES', 233.05,   62, 14.62, 'Nifty Midcap 150 ETF'],
-    ['EBBETF0431', 1432.10,   7, 11.44, 'Bharat Bond ETF'],
+    ['GILT5YBEES',   65.92,  173, 11.44, '5-Year Gilt ETF'],
     ['GOLDBEES',   112.68,  141, 15.90, 'Gold ETF'],
     ['SILVERBEES', 198.44,   20,  4.05, 'Silver ETF'],
     ['NIFTYBEES',  274.90,   11,  3.24, 'Nifty 50 ETF']
@@ -8488,7 +8488,7 @@ var STCG_RATE = 0.20;   // s.111A (s.196 of the Income-tax Act, 2025 from Apr 20
    estimate rather than a guessed rate. The slab is the member's own answer,
    kept on this device only (the backend's prefs entry accepts no new field). */
 var MA_TAX_CLASS = { NIFTYBEES:'eq', JUNIORBEES:'eq', MID150BEES:'eq', HDFCSML250:'eq',
-                     MON100:'slab', GOLDBEES:'slab', SILVERBEES:'slab', EBBETF0431:'slab' };
+                     MON100:'slab', GOLDBEES:'slab', SILVERBEES:'slab', EBBETF0431:'slab', GILT5YBEES:'slab' };
 var TAX_SLABS = [30, 25, 20, 15, 10, 5];
 function _taxSlab(){
   try { var v = Number(localStorage.getItem(_devKey('mfc_tax_slab'))); if (TAX_SLABS.indexOf(v) > -1) return v; } catch (e) {}

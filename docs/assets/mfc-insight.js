@@ -379,7 +379,8 @@
       [/MON100|N100|NASDAQ/, 'The Nasdaq-100: the largest US companies outside finance, mostly technology.'],
       [/MAFANG|FANG/, 'A small group of the largest US technology companies.'],
       [/LIQUID/, 'Overnight lending: the cash-like part of the mix.'],
-      [/EBBETF|BBETF|BHARAT|GILT|GSEC|BOND/, 'Bonds of government-owned companies, held to a set year.'],
+      [/GILT|GSEC|G-SEC/, 'Bonds issued by the Government of India.'],
+      [/EBBETF|BBETF|BHARAT|BOND/, 'Bonds of government-owned companies, held to a set year.'],
       [/BANK/, 'India’s largest listed banks.'],
       [/CPSE/, 'Large government-owned Indian companies.'],
       [/ITBEES|^IT/, 'India’s largest IT companies.'],
@@ -1010,7 +1011,7 @@
     var key = mk.regime && mk.regime.key;
     var meaning = '';
     if (s.key === 'ma') {
-      var A = [['NIFTYBEES', 'Indian large caps'], ['MID150BEES', 'Indian midcaps'], ['HDFCSML250', 'Indian small caps'], ['GOLDBEES', 'Gold'], ['SILVERBEES', 'Silver'], ['MON100', 'US technology (Nasdaq-100)'], ['EBBETF0431', 'Indian bonds']];
+      var A = [['NIFTYBEES', 'Indian large caps'], ['MID150BEES', 'Indian midcaps'], ['HDFCSML250', 'Indian small caps'], ['GOLDBEES', 'Gold'], ['SILVERBEES', 'Silver'], ['MON100', 'US technology (Nasdaq-100)'], ['GILT5YBEES', 'Indian government bonds']];
       var moves = [];
       if (etf && etf.rows && etf.dates && s.rebalIso) {
         var ri = etf.dates.indexOf(s.rebalIso), li = etf.dates.length - 1;

@@ -74,7 +74,7 @@ STYLES = [
 # Common NSE ETFs. A generic list, not any book's holdings: a member's dashboard
 # looks its own tickers up and simply skips what it does not find.
 ETFS = ['NIFTYBEES', 'JUNIORBEES', 'MID150BEES', 'HDFCSML250', 'BANKBEES', 'ITBEES', 'MON100',
-        'MAFANG', 'GOLDBEES', 'SILVERBEES', 'LIQUIDBEES', 'EBBETF0431', 'CPSEETF',
+        'MAFANG', 'GOLDBEES', 'SILVERBEES', 'LIQUIDBEES', 'EBBETF0431', 'GILT5YBEES', 'CPSEETF',
         'MOM30IETF', 'QUAL30IETF', 'VAL30IETF', 'LOWVOLIETF']
 CONSTITUENTS = {
     'nifty100':    'ind_nifty100list.csv',
