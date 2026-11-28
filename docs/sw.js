@@ -945,7 +945,10 @@
 // v1.0.5 -> mfc-v162. Device QA: the precached index.html (the walkthrough phone back on phones, touch pads on the five
 // rules' links, the fee notes name the comparison they mean), mfc-dash.js's token and mfc-insight.js 14 (the chart key).
 // v1.0.6 -> mfc-v163. BSE enlistment no. 7719 in every footer: the precached index.html and login.html changed.
-const CACHE = 'mfc-v163';
+// v1.0.10 -> mfc-v164. Device QA: a cycle that closed with no trading session is no longer a closed month (the
+// precached index.html), Safari's "Sep" reads "Sept" (the precached login.html and mfc-live.js, whose ?v stays because
+// the strategy-page generator owns it), mfc-dash.js's token, mfc-insight.js 16, mfc-deep.js 2 and mfc-deep.css 7.
+const CACHE = 'mfc-v164';
 const ASSET_PATHS = [
   '/login.html',                    // manifest start_url — the installed app's entry
   '/offline.html',                  // offline navigation fallback (see fetch handler)

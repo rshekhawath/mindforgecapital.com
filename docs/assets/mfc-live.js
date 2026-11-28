@@ -90,7 +90,7 @@
     try {
       var d = new Date(iso + "T00:00:00");
       return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-              .replace(/\s+/g, NB);
+              .replace(/\bSep\b/g, "Sept").replace(/\s+/g, NB);   // v1.0.10 — Safari writes Sep
     } catch (e) { return iso; }
   }
   // V39.3 — day and month only, for a date read beside a full one ("since 31 Aug
@@ -98,7 +98,7 @@
   function fmtDayMonth(iso) {
     try {
       var d = new Date(iso + "T00:00:00");
-      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }).replace(/\s+/g, NB);
+      return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" }).replace(/\bSep\b/g, "Sept").replace(/\s+/g, NB);
     } catch (e) { return iso; }
   }
 

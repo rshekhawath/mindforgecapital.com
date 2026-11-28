@@ -2637,6 +2637,7 @@ function mfDateTime(d, opts) {
 }
 function _mfBindDate(str) {
   return String(str)
+    .replace(/\bSep\b/g, 'Sept')   // v1.0.10 — Safari's en-IN short month; Chrome's and the site's copy say Sept
     .replace(/(\d)\s+([A-Za-z])/g, '$1\u00a0$2')
     .replace(/([A-Za-z])\s+(\d)/g, '$1\u00a0$2');
 }
@@ -10454,6 +10455,11 @@ function renderTrackRecord(){
              // measurement, not a result, and it must not be judged or drawn as one.
              pending: !c.sealed && !!c.data_through && !!c.rebalance_date &&
                       String(c.data_through) <= String(c.rebalance_date),
+             // v1.0.10 — the same absence of a measurement, SEALED: a list re-published the next day closed the
+             // 27 Nov cycle on its own baseline, with no trading session in it. It is shown as a note, never
+             // judged or counted as a closed month ("4 closed months, ahead in 2 of 4" counted it as a loss).
+             empty: !!c.sealed && !!c.data_through && !!c.rebalance_date &&
+                    String(c.data_through).slice(0, 10) <= String(c.rebalance_date).slice(0, 10),
              live:Number(s.live_pct),
              bench:(s.bench_pct != null && isFinite(s.bench_pct)) ? Number(s.bench_pct) : null,
              benchName:s.bench_name || '' };
@@ -10486,8 +10492,10 @@ function renderTrackRecord(){
   // V40.1 — A8. Only FINISHED cycles are judged. The sample read "Ahead of the
   // index in 1 of 2" because the cycle that opened that evening (0.00 vs 0.00,
   // no close yet) counted as a cycle that was not ahead.
-  var ahead = 0, judged = 0, sealed = 0;
+  var ahead = 0, judged = 0, sealed = 0, anyOpen = false;
   rows.forEach(function(r){
+    if (!r.sealed) anyOpen = true;
+    if (r.empty) return;                                                     // v1.0.10 — nothing to judge
     if (r.sealed) sealed++;
     if (r.bench == null || !r.sealed) return;
     judged++; if (r.live > r.bench) ahead++;
@@ -10507,13 +10515,32 @@ function renderTrackRecord(){
      book was published: the cycle rebalanced on 31 Aug is the market from 1 Sept
      to 30 Sept, and calling it "Aug ’26" sent a reader checking it against what
      they knew of August. Month-end rebalances make that the next day's month. */
+  /* v1.0.10 — the site's own month names: Safari's en-IN short month is "Sep" where Chrome's is "Sept",
+     so the same row read differently on an iPhone. */
+  var MON3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec'];
   var mon = function(iso){
     var dt = new Date(iso + 'T00:00:00');
     if (!isNaN(dt.getTime())) dt.setDate(dt.getDate() + 1);
     if (isNaN(dt.getTime())) return iso;
-    return mfDate(dt, { month:'short', year:'2-digit' })
-             .replace(/[\s\u00a0](\d{2})$/, '\u00a0\u2019$1');
+    return MON3[dt.getMonth()] + '\u00a0\u2019' + String(dt.getFullYear()).slice(-2);
   };
+  /* v1.0.10 — a mid-month publish puts two lists in one month, and a re-publish the next day a third: three
+     rows all read "Nov ’26". Where a month label repeats, each of those rows is labelled by its own days
+     instead ("1–27 Nov", "27 Nov", "28 Nov"), as the track record page dates them. */
+  var _dayOf = function(iso){
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    return m ? { d: Number(m[3]), m: MON3[Number(m[2]) - 1] } : null;
+  };
+  var _lblDays = function(r){
+    var a = _dayOf(r.when), b = _dayOf(r.through);
+    if (!a) return mon(r.when);
+    if (r.empty || r.pending || !r.sealed || !b) return a.d + '\u00a0' + a.m;
+    if (a.m !== b.m) return a.d + '\u00a0' + a.m + '\u2013' + b.d + '\u00a0' + b.m;
+    return a.d === b.d ? a.d + '\u00a0' + a.m : a.d + '\u2013' + b.d + '\u00a0' + a.m;
+  };
+  var _monN = {};
+  rows.forEach(function(r){ var k = mon(r.when); _monN[k] = (_monN[k] || 0) + 1; });
+  var label = function(r){ var k = mon(r.when); return _monN[k] > 1 ? _lblDays(r) : k; };
 
   var box = document.getElementById('trk-rows');
   if (box){
@@ -10538,9 +10565,15 @@ function renderTrackRecord(){
          meet two phrasings of one fact. `gap >= 0` is ahead, matching it
          exactly; the colour follows the GAP, never the row's own return, so a
          losing cycle that still beat its index reads green on that line. */
+      if (r.empty){
+        return '<div class="trk-row is-pending is-empty">' +
+          '<span class="trk-when">' + label(r) + '</span>' +
+          '<span class="trk-pend">closed with no trading session \u00b7 not counted</span>' +
+        '</div>';
+      }
       if (r.pending){
         return '<div class="trk-row is-pending">' +
-          '<span class="trk-when">' + mon(r.when) + '<i>live</i></span>' +
+          '<span class="trk-when">' + label(r) + '<i>live</i></span>' +
           '<span class="trk-pend">opened ' + escapeHtml(_trkDay(r.when)) + ' \u00b7 no close yet</span>' +
         '</div>';
       }
@@ -10551,11 +10584,11 @@ function renderTrackRecord(){
                 (lvl ? 'level with the index'
                      : (ah ? '+' : '\u2212') + Math.abs(g).toFixed(2) + '\u00a0pts ' + (ah ? 'ahead' : 'behind')) + '</i>';
       }
-      var aria = mon(r.when) + ' cycle: ' + fmtPct(r.live) +
+      var aria = label(r) + ' cycle: ' + fmtPct(r.live) +
         (r.bench == null ? '' : ', against ' + fmtPct(r.bench) + ' for ' + r.benchName) +
         (r.sealed ? '' : ' — cycle still in progress, to the ' + _trkDay(r.through) + ' close');
       return '<div class="trk-row">' +
-        '<span class="trk-when">' + mon(r.when) + (r.sealed ? '' : '<i>live</i><i class="trk-to">to ' + escapeHtml(_trkDay(r.through)) + '</i>') + '</span>' +
+        '<span class="trk-when">' + label(r) + (r.sealed ? '' : '<i>live</i><i class="trk-to">to ' + escapeHtml(_trkDay(r.through)) + '</i>') + '</span>' +
         '<span class="trk-axis" role="img" aria-label="' + escapeHtml(aria) + '">' +
           '<i class="trk-bar ' + (cls === 'flat' ? 'up' : cls) + '" data-left="' + left.toFixed(2) +
             '" data-w="' + half.toFixed(2) + '" style="left:50%"></i>' + tick +
@@ -10593,7 +10626,7 @@ function renderTrackRecord(){
   if (sub){
     sub.textContent = rows.length === 1
       ? 'The first cycle on record. This builds a row a month.'
-      : rows.length + ' cycles on record' + (sealed < rows.length ? ', the newest still running' : '');
+      : rows.length + ' cycles on record' + (anyOpen ? ', the newest still running' : '');
     /* V37.6 — what the rows add up to. Each cycle rebalances into the next book,
        so the cycles chain multiplicatively, and that is only true when they are
        CONSECUTIVE: a null month skipped by the coverage guard would compound
@@ -10608,14 +10641,14 @@ function renderTrackRecord(){
         cm *= 1 + r.live / 100;
         if (r.bench == null) hasB = false; else cb *= 1 + r.bench / 100;
       });
-      sub.textContent += '\u00a0· ' + (rOne && cRows.length < rows.length ? cRows.length + ' closed, compounded ' : 'compounded ') + fmtPct((cm - 1) * 100) +
+      sub.textContent += '\u00a0· ' + (rOne && anyOpen ? sealed + ' closed, compounded ' : 'compounded ') + fmtPct((cm - 1) * 100) +
         (hasB ? ' against ' + fmtPct((cb - 1) * 100) + ' for ' + (cRows[cRows.length - 1].benchName || 'the index') : '');
     }
     if (trkCalm && sealed){                                                  // v1.0.4 — the same facts, in one sentence
       sub.textContent = sealed + ' closed month' + (sealed === 1 ? '' : 's') + (judged ? (judged === 1 ? (ahead ? ', ahead of the index' : ', not ahead of the index')
         : ', ahead of the index in ' + (ahead === judged ? (judged === 2 ? 'both' : 'all ' + judged) : ahead + ' of ' + judged)) : '') +   // v1.0.5: was 'in all 2'
         (chain ? ': together ' + fmtPct((cm - 1) * 100) + (hasB ? ' against ' + fmtPct((cb - 1) * 100) : '') : '') +
-        (sealed < rows.length ? '. This month is still running.' : '.');
+        (anyOpen ? '. This month is still running.' : '.');
     }
   }
   var badge = document.getElementById('trk-badge');
@@ -10650,11 +10683,20 @@ function renderTrackRecord(){
    discarding the knowledge was the miss.
    Gated on the identical comparison, so the notice and the hidden row can never
    disagree. It says a newer set exists and never a word about what is in it. */
+/* v1.0.10 — the day THIS book was last published. live-perf.json's top-level rebalance_date is the newest of
+   the three books, so a MultiAsset-only re-publish on 28 Nov 2026 told every monthly LargeMidcap and SmallMicro
+   member on the 27 Nov list that "a newer set published on 28 Nov", with a button to renew for it. live_perf.py
+   now writes each book's own date; an older file without it falls back to the shared one. */
+function _perfRebal(d, key){
+  var s = d && d.strategies && key ? d.strategies[key] : null;
+  return (s && s.rebalance_date) || (d && d.rebalance_date) || '';
+}
 function renderNewerSetNotice(){
   var el = document.getElementById('cyc-newer');
   if (!el) return;
   el.hidden = true; el.innerHTML = '';
   var d = _benchPerf; if (!d || !d.rebalance_date) return;
+  var rd = _perfRebal(d, _strategyPerfKey(currentStrategy || ''));
   /* THE GUARD THAT MATTERS. parseRebalanceDate falls back to subscribed_at when
      the run_id is missing or is a `default_run_*` placeholder — and a signup date
      is almost never equal to a rebalance date, so comparing against the fallback
@@ -10668,10 +10710,10 @@ function renderNewerSetNotice(){
   if (!_subIsPinned(sub0)) return;
   if (!/^\d{8}/.test(String(sub0.run_id || ''))) return;
   var mine = _isoDay(window._rebalDate);
-  if (!mine || mine === d.rebalance_date) return;
+  if (!mine || mine === rd) return;
   // Only ever forward: a member whose own run is NEWER than the published file
   // (the file lags a publish) must not be told they are behind.
-  var latest = new Date(d.rebalance_date + 'T00:00:00');
+  var latest = new Date(rd + 'T00:00:00');
   if (isNaN(latest.getTime()) || !(latest > window._rebalDate)) return;
 
   var sub = window._currentSub || {};
@@ -10764,7 +10806,8 @@ function renderBenchCompare(port){
   var s = d.strategies[key];
   if (!s || s.bench_pct == null || !isFinite(s.bench_pct)) return hide();
   // guard (1): same window on both sides, or nothing
-  if (!d.rebalance_date || _isoDay(window._rebalDate) !== d.rebalance_date) return hide();
+  var rd = _perfRebal(d, key);                                             // v1.0.10 — this book's own date
+  if (!rd || _isoDay(window._rebalDate) !== rd) return hide();
   // A capital change re-runs the headline, and with it this; the newest call owns
   // the element, so a slow first fetch can never paint over a later answer.
   var tok = (el._bcTok = (el._bcTok || 0) + 1);

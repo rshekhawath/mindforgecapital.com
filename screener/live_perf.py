@@ -111,6 +111,17 @@ def rebalance_date() -> datetime:
     return datetime.fromtimestamp(max(mts), IST)
 
 
+def strategy_rebalance_date(key: str) -> str:
+    """v1.0.10 — the day THIS book's list was published (its own portfolio.csv mtime).
+    rebalance_date() is the newest of the three, which is right for the shared
+    cycle in live-history.json but wrong for a book that was not re-published: on
+    28 Nov 2026 a MultiAsset-only re-publish moved it to 28 Nov, and every monthly
+    LargeMidcap and SmallMicro member on the 27 Nov list was told "a newer set
+    published on 28 Nov". The dashboard compares a member's run against this."""
+    p = IP / "strategies" / STRATS[key][0] / "outputs" / "portfolio.csv"
+    return datetime.fromtimestamp(p.stat().st_mtime, IST).strftime("%Y-%m-%d")
+
+
 # ── V39.3 — COMPLETED SESSIONS ONLY ─────────────────────────────────────────
 # On 25 Sep 2026 this script ran at 09:12 IST, before the open. yfinance hands
 # back TODAY's daily bar as soon as the session starts, `px()` took the last
@@ -454,6 +465,7 @@ def main() -> None:
             as_of = max(as_of or b.index[-1], b.index[-1])
         strategies[key] = {
             "name": name,
+            "rebalance_date": strategy_rebalance_date(key),   # v1.0.10 — this book's own publish day
             "live_pct": live_pct,
             "bench_pct": round(b_ret * 100, 2) if b_ok else None,
             "bench_name": BENCH_SHORT[key],

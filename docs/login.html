@@ -563,7 +563,7 @@ async function requestOTP() {
       // strategy first" — the one reply that reads like a lost registration.
       var when = data.registered_at ? new Date(data.registered_at) : null;
       showError('email-error', 'We have your registration' + (data.strategy ? ' for ' + data.strategy : '') +
-        (when && !isNaN(when.getTime()) ? ', from ' + when.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '') +
+        (when && !isNaN(when.getTime()) ? ', from ' + when.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).replace(/\bSep\b/, 'Sept') : '') +
         '. Your dashboard link is emailed within 24 hours of signing up — the sample dashboard on our homepage shows exactly what you will get.');
     } else if (data.error) {
       showError('email-error', data.error);
@@ -676,7 +676,7 @@ function renderSubscriptions(subs) {
     var safeStrat = String(sub.strategy || 'Strategy').replace(/[<>&"']/g, function(c){
       return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
     });
-    var dateStr = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}).replace(/\s+/g, '\u00a0');   // V41.3 — one unit
+    var dateStr = expiry.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}).replace(/\bSep\b/, 'Sept').replace(/\s+/g, '\u00a0');   // V41.3 — one unit
     if (expired && /multiasset/i.test(String(sub.strategy || '').replace(/ /g, ' '))) {
       // V40.3 — B2.3: the free book is not renewed on WhatsApp; there is nothing to
       // pay. It starts again at ₹0 from the same signup the homepage uses.
@@ -853,7 +853,7 @@ document.addEventListener('keydown', function(e) {
         var list = document.getElementById('resume-books');
         list.innerHTML = rows.map(function (b, i) {
           var exp = new Date(b.expires_at), when = isNaN(exp) ? '' :
-            exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\s+/g, '\u00a0');
+            exp.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\bSep\b/, 'Sept').replace(/\s+/g, '\u00a0');
           return '<button type="button" class="sub-row" data-i="' + i + '">' +
             '<div><div class="sub-name">' + esc(b.strategy) + '</div>' +
             (when ? '<div class="sub-meta">Access to ' + when + '</div>' : '') + '</div>' +

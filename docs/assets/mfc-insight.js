@@ -57,6 +57,12 @@
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
   function dt(isoStr) { var d = new Date(String(isoStr).slice(0, 10) + 'T00:00:00'); return isNaN(d.getTime()) ? null : d; }
+  /* v1.0.10 — a cycle sealed on its own baseline had no trading session (a list re-published the next day closed
+     it): 0.00 against 0.00 is the absence of a measurement, so it is never counted as a closed month or judged. */
+  function noSession(c) {
+    return !!(c && c.sealed && c.data_through && c.rebalance_date &&
+              String(c.data_through).slice(0, 10) <= String(c.rebalance_date).slice(0, 10));
+  }
   function dshort(d) {
     if (!d) return '';
     try { return W.mfDate(d, { day: 'numeric', month: 'short' }); } catch (e) {}
@@ -141,7 +147,8 @@
     benchP = W.loadBenchPerf().then(function (d) {
       if (!d || !d.strategies || !d.strategies[s.key]) return null;
       var b = d.strategies[s.key];
-      if (!d.rebalance_date || d.rebalance_date !== s.rebalIso) return null;
+      var rd = b.rebalance_date || d.rebalance_date;                         // v1.0.10 — this book's own publish day
+      if (!rd || rd !== s.rebalIso) return null;
       var tail = function (live) {
         if (live != null && isFinite(live)) return { bench: Number(live), name: b.bench_name, legs: b.bench_legs || [], live: true };
         if (b.bench_pct != null) return { bench: Number(b.bench_pct), model: Number(b.live_pct), name: b.bench_name, legs: b.bench_legs || [], live: false, asOf: d.data_through };
@@ -427,6 +434,13 @@
     'Textiles': 'Makes yarn, fabric or clothing; results follow cotton prices and export demand.',
     'Utilities': 'Supplies water, gas or other essentials; demand is steady and prices are often regulated.'
   };
+  /* v1.0.10 — the sample book (?demo=1) labels its placeholder names with short industry names ("Banks",
+     "Telecom", "IT Services"), so seven of its fifteen holdings showed no second line, on the page the homepage
+     links as proof that every holding has two. The live books carry NSE's names and never reach this map. */
+  var INDUSTRY_ALIAS = { 'Banks': 'Financial Services', 'IT Services': 'Information Technology', 'Telecom': 'Telecommunication',
+    'Pharma': 'Healthcare', 'Oil & Gas': 'Oil Gas & Consumable Fuels', 'Cement': 'Construction Materials',
+    'Automobile': 'Automobile and Auto Components' };
+  function plainFor(ind) { return INDUSTRY_PLAIN[ind] || INDUSTRY_PLAIN[INDUSTRY_ALIAS[ind]] || ''; }
   function ownKey(s) { return 'mfc_own_more' + (s && s.demo ? '::demo' : ''); }
 
   // ── V44.7 · "Since you joined" (SINCE_START) and "What it costs you" (FEE_LINE) ──────────────────────
@@ -487,7 +501,7 @@
     var startIso = iso(start).slice(0, 10), k = s.key;
     var cyc = ((hist && hist.cycles) || []).filter(function (c) {
       var x = c.strategies && c.strategies[k];
-      return c.rebalance_date >= startIso && x && x.live_pct != null && x.bench_pct != null;
+      return c.rebalance_date >= startIso && x && x.live_pct != null && x.bench_pct != null && !noSession(c);
     });
     var monthsIn = Math.max(1, Math.round((now - start.getTime()) / (30.44 * 864e5)));
     var html = '<div class="mi-head"><h2>Since you joined</h2><span class="mi-sub">' + (cyc.length ? plural(monthsIn, 'month') + ' · ' : '') + 'model portfolio, live record</span></div>';
@@ -532,7 +546,7 @@
     var startIso = iso(start).slice(0, 10), k = s.key;
     var cyc = ((hist && hist.cycles) || []).filter(function (c) {
       var x = c.strategies && c.strategies[k];
-      return c.rebalance_date >= startIso && x && x.live_pct != null && x.bench_pct != null;
+      return c.rebalance_date >= startIso && x && x.live_pct != null && x.bench_pct != null && !noSession(c);
     });
     var d = { start: start, n: cyc.length };
     if (!cyc.length) return d;
@@ -698,7 +712,7 @@
         return '<li><a class="mi-own-n" href="/scores/company.html?symbol=' + encodeURIComponent(t) + '" target="_blank" rel="noopener">' + esc(shortName(x.company_name || t)) + '</a>' +
           '<span class="mi-own-m"> · ' + esc(x.industry || (ma ? 'ETF' : '')) + '<span data-own-cap="' + esc(t) + '"></span></span>' +
           '<span class="mi-own-l" data-own-line="' + esc(t) + '">' + (ma ? esc(etfLine(t)) : '') + '</span>' +
-          (OWN_PLAIN && !ma && INDUSTRY_PLAIN[x.industry] ? '<span class="mi-own-x">' + esc(INDUSTRY_PLAIN[x.industry]) + '</span>' : '') + '</li>';
+          (OWN_PLAIN && !ma && plainFor(x.industry) ? '<span class="mi-own-x">' + esc(plainFor(x.industry)) + '</span>' : '') + '</li>';
       }).join('') + '</ul>' +
       (n > 5 ? '<button type="button" class="mi-own-more" aria-expanded="' + (open ? 'true' : 'false') + '">' + (open ? 'Show fewer' : 'Show all ' + n) + '</button>' : '') +
       '<p class="mi-note">' + (ma ? 'The model weighs these funds by its score; it does not pick the companies inside them.'
@@ -858,8 +872,8 @@
     // the live record against that range
     var cyc = hist && hist.cycles ? hist.cycles.filter(function (c) { return c.strategies && c.strategies[s.key] && c.strategies[s.key].live_pct != null; }) : [];
     if (cyc.length) {
-      var sealed = cyc.filter(function (c) { return c.sealed; }).length;
-      html += '<p class="mi-note">Live record so far: ' + plural(cyc.length, 'cycle') + ' (' + sealed + ' closed). ' +
+      var sealed = cyc.filter(function (c) { return c.sealed && !noSession(c); }).length, nEmpty = cyc.filter(noSession).length;
+      html += '<p class="mi-note">Live record so far: ' + plural(cyc.length, 'cycle') + ' (' + sealed + ' closed' + (nEmpty ? ', ' + nEmpty + ' with no trading session' : '') + '). ' +
         (sealed < 6 ? 'That is far too few to judge a strategy; each month adds one.' : 'Every closed cycle is on the record card below.') + '</p>';
     }
     html += learn(['Each month of the published backtest is one point on the range. A cycle in progress is compared with whole months, so treat the dot as a guide, not a verdict. The backtest window held no crash like 2008’s or 2020’s, so a real one can go further than the left end of this bar.']);
@@ -1248,14 +1262,14 @@
     if (!trk || !hist || !hist.cycles || !s.key) { if (old) old.remove(); if (warn) warn.remove(); return; }
     var cyc = hist.cycles.filter(function (c) { return c.strategies && c.strategies[s.key] && c.strategies[s.key].live_pct != null && c.strategies[s.key].bench_pct != null; });
     if (!cyc.length) { if (old) old.remove(); if (warn) warn.remove(); return; }
-    var sealed = cyc.filter(function (c) { return c.sealed; });
+    var sealed = cyc.filter(function (c) { return c.sealed && !noSession(c); });
     var ahead = sealed.filter(function (c) { var x = c.strategies[s.key]; return x.live_pct - x.bench_pct > 0.05; }).length;
     var m = 1, b = 1, peak = 1, dd = 0, worst = null;
     cyc.forEach(function (c) {
       var x = c.strategies[s.key];
       m *= 1 + x.live_pct / 100; b *= 1 + x.bench_pct / 100;
       peak = Math.max(peak, m); dd = Math.min(dd, m / peak - 1);
-      if (worst == null || x.live_pct < worst) worst = x.live_pct;
+      if (!noSession(c) && (worst == null || x.live_pct < worst)) worst = x.live_pct;
     });
     // the card's own subtitle already prints the compounded pair; these are the
     // figures it does not
@@ -1355,7 +1369,7 @@
     var anniv = [3, 6, 12].some(function (m) { return monthsIn >= m && monthsIn < m + 0.2; });
     if (!(daysLeft <= 14 && daysLeft >= 0) && !anniv) { hide('mi-review'); return; }
     var startIso = iso(start);
-    var cyc = hist.cycles.filter(function (c) { return c.rebalance_date >= startIso.slice(0, 10) && c.strategies && c.strategies[s.key] && c.strategies[s.key].live_pct != null; });
+    var cyc = hist.cycles.filter(function (c) { return c.rebalance_date >= startIso.slice(0, 10) && c.strategies && c.strategies[s.key] && c.strategies[s.key].live_pct != null && !noSession(c); });
     if (!cyc.length) { hide('mi-review'); return; }
     // ahead/behind counts closed cycles only, as the track record does; a running cycle has no verdict yet
     var m = 1, b = 1, ahead = 0, closed = 0;

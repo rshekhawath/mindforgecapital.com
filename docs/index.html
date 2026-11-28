@@ -3923,7 +3923,7 @@ if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',build);else bu
    FAQ orphan is bound with &nbsp; in its own question instead. */
 main details:not(.faq-item) > summary > span{ text-wrap:balance; }
 </style>
-<link rel="stylesheet" href="assets/mfc-deep.css?v=6">
+<link rel="stylesheet" href="assets/mfc-deep.css?v=7">
 <!-- V42.3 — PERF FLAGS (markdowns/website_restructure.md §4.4 and §7.2). A module behind a flag
      stays in the page: its machine-written markers keep updating at every publish and the
      numbers gate keeps checking them; the flag only decides whether it is SHOWN. Flip one to
@@ -5766,7 +5766,8 @@ html[data-theme="dark"] .notwhat-pill i{ color:#f87171; }
     if (!m) return;
     var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
     var began = Number(m[3]) + '\u00a0' + MON[Number(m[2]) - 1] + '\u00a0' + m[1];
-    var closed = cyc.filter(function (c) { return c.sealed; }), n = closed.length, txt;
+    // v1.0.10 — a cycle sealed on its own baseline (no trading session in it) is not a closed month
+    var closed = cyc.filter(function (c) { return c.sealed && !(c.data_through && c.rebalance_date && String(c.data_through).slice(0, 10) <= String(c.rebalance_date).slice(0, 10)); }), n = closed.length, txt;
     var names = { lm: 'LargeMidcap\u00a0250', sm: 'SmallMicro\u00a0500', ma: 'MultiAsset' };
     if (!n) {
       txt = 'The live record began on ' + began + '. No month has closed yet. ';
@@ -11598,7 +11599,7 @@ html[data-theme="dark"] .strat-card .price-amt.mf102-pop{ animation: mf102-pop-g
 <script src="assets/mfc-member.js?v=1" defer></script>
 <script src="assets/mfc-live.js?v=4430" defer></script>
 <script src="assets/mfc-walk.js?v=2" defer></script>
-<script src="assets/mfc-deep.js?v=1" defer></script>
+<script src="assets/mfc-deep.js?v=2" defer></script>
 <style id="mf-navfix-sis">
 /* V10.x — longer nav labels (Scanner / Integrity Score) collapse to
    the hamburger menu earlier (<=1024px) so they never wrap or cramp on tablets.

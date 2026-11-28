@@ -17,6 +17,14 @@
   function ready(fn) { if (d.readyState !== 'loading') fn(); else d.addEventListener('DOMContentLoaded', fn); }
   function $(sel, root) { return (root || d).querySelector(sel); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  /* v1.0.10 — a cycle sealed on its own baseline had no trading session (a list re-published the next day
+     closed it), and an open cycle measured to a close before it began has none yet. */
+  function noSession(c) {
+    return !!(c && c.sealed && c.data_through && c.rebalance_date && String(c.data_through).slice(0, 10) <= String(c.rebalance_date).slice(0, 10));
+  }
+  function pending(c) {
+    return !!(c && !c.sealed && c.data_through && c.rebalance_date && String(c.data_through).slice(0, 10) <= String(c.rebalance_date).slice(0, 10));
+  }
   function day(iso, withYear) {
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); if (!m) return '';
     return Number(m[3]) + ' ' + MONTHS[Number(m[2]) - 1] + (withYear ? ' ' + m[1] : '');
@@ -108,7 +116,7 @@
         var key = b[0];
         var cyc = h.cycles.filter(function (c) { return c.strategies && c.strategies[key] && c.strategies[key].live_pct != null && c.strategies[key].bench_pct != null; });
         if (!cyc.length) return;
-        var sealed = cyc.filter(function (c) { return c.sealed; });
+        var sealed = cyc.filter(function (c) { return c.sealed && !noSession(c); });
         var ahead = sealed.filter(function (c) { var x = c.strategies[key]; return x.live_pct - x.bench_pct > 0.05; }).length;
         var m = 1, ix = 1, scale = 1;
         cyc.forEach(function (c) { var x = c.strategies[key]; m *= 1 + x.live_pct / 100; ix *= 1 + x.bench_pct / 100; scale = Math.max(scale, Math.abs(x.live_pct), Math.abs(x.bench_pct)); });
@@ -116,6 +124,12 @@
         var pos = function (v) { return (50 + v / scale * 50).toFixed(2) + '%'; };
         var rows = cyc.map(function (c) {
           var x = c.strategies[key], gap = x.live_pct - x.bench_pct;
+          // v1.0.10 — no completed session in the cycle: nothing was measured, so no figures and no verdict
+          if (noSession(c) || pending(c)) {
+            return '<tr class="dp-nosess"><td>' + day(c.rebalance_date, true) + '</td>' + (c.sealed ? '<td>' + day(c.data_through) + ' close' : '<td class="dp-noclose">no close yet') + '</td>' +
+              '<td data-l="Model">—</td><td data-l="Index">—</td><td data-l="Difference">—</td><td></td>' +
+              '<td><span class="dp-tag ' + (c.sealed ? 'is-none">No session' : 'is-open">In progress') + '</span></td></tr>';
+          }
           var lo = Math.min(0, x.live_pct), hi = Math.max(0, x.live_pct);
           var bar = '<div class="dp-bar" role="img" aria-label="' + esc('Model ' + sgn(x.live_pct) + ', index ' + sgn(x.bench_pct)) + '"><i class="' + (x.live_pct >= 0 ? 'dp-b-up' : 'dp-b-dn') + '" style="left:' + pos(lo) + ';right:' + (100 - parseFloat(pos(hi))).toFixed(2) + '%"></i><b style="left:' + pos(x.bench_pct) + '"></b></div>';
           return '<tr><td>' + day(c.rebalance_date, true) + '</td><td>' + day(c.data_through) + ' close</td>' +
@@ -127,10 +141,11 @@
           '<thead><tr><th scope="col">Rebalance</th><th scope="col">Measured to</th><th scope="col">Model</th><th scope="col">Index</th><th scope="col">Difference</th><th scope="col"><span class="sr-only">Chart</span></th><th scope="col">Status</th></tr></thead>' +
           '<tbody>' + rows + '</tbody></table></div>' +
           '<p class="dp-note">' + (sealed.length ? 'Ahead of the index in <b>' + ahead + ' of ' + sealed.length + '</b> closed ' + (sealed.length === 1 ? 'cycle' : 'cycles') + '. ' : '') +
+          (cyc.some(noSession) ? 'A cycle marked No session closed before its first trading session, so it had nothing to measure and is not counted. ' : '') +
           'Compounded over all ' + cyc.length + ' ' + (cyc.length === 1 ? 'cycle' : 'cycles') + (cyc[cyc.length - 1].sealed ? '' : ' (the newest still running)') + ': model <span class="' + tone((m - 1) * 100) + '">' + sgn((m - 1) * 100) + '</span>, index <span class="' + tone((ix - 1) * 100) + '">' + sgn((ix - 1) * 100) + '</span>.</p>';
       });
       if (!html) return;
-      var nSealed = h.cycles.filter(function (c) { return c.sealed; }).length;
+      var nSealed = h.cycles.filter(function (c) { return c.sealed && !noSession(c); }).length;
       root.innerHTML = html +
         '<p class="dp-note">' + (nSealed < 6 ? nSealed + ' closed ' + (nSealed === 1 ? 'cycle is' : 'cycles are') + ' far too few to judge a strategy; each month adds one. ' : '') +
         'Bars share one scale per book; the tick is the index.' + (p && p.data_through ? ' Data to the ' + day(p.data_through, true) + ' close.' : '') + '</p>';
